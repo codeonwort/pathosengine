@@ -1,0 +1,483 @@
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <sstream>
+#include <iostream>
+#include <pathos/mesh/material.h>
+
+namespace pathos {
+
+	// MeshMaterial
+	MeshMaterial::MeshMaterial() { }
+	MeshMaterial::~MeshMaterial() {
+		for (auto it = passes.begin(); it != passes.end(); it++) {
+			delete *it;
+		}
+	}
+	void MeshMaterial::setGeometry(MeshGeometry* related) {
+		relatedGeometry = related;
+		for (auto it = passes.begin(); it != passes.end(); it++) {
+			(*it)->setGeometry(related);
+		}
+	}
+	void MeshMaterial::setModelMatrix(const glm::mat4& modelMatrix) {
+		this->modelMatrix = modelMatrix;
+		for (auto it = passes.begin(); it != passes.end(); it++) {
+			(*it)->setModelMatrix(modelMatrix);
+		}
+	}
+	glm::mat4& MeshMaterial::getModelMatrix() { return modelMatrix; }
+	glm::vec3& MeshMaterial::getEyeVector() { return eyeVector; }
+	glm::mat4& MeshMaterial::getVPTransform() { return vpTransform; }
+	void MeshMaterial::setEyeVector(glm::vec3& eye) { eyeVector = glm::normalize(eye); }
+	void MeshMaterial::setVPTransform(glm::mat4& vp) { vpTransform = vp; }
+
+	void MeshMaterial::updateProgram() {
+		if (!programDirty) return;
+		for (auto it = passes.begin(); it != passes.end(); it++) {
+			(*it)->clearCompilers();
+			(*it)->setMaterial(this);
+			(*it)->updateProgram(this);
+		}
+		programDirty = false;
+	}
+
+	void MeshMaterial::addPass(MeshMaterialPass* pass) {
+		passes.push_back(pass);
+		pass->setMaterial(this);
+		enabled.push_back(true);
+	}
+	size_t MeshMaterial::numPasses() { return passes.size(); }
+
+	bool MeshMaterial::isPassEnabled(int index) { return enabled[index]; }
+	void MeshMaterial::enablePass(int index) { enabled[index] = true; }
+	void MeshMaterial::disablePass(int index) { enabled[index] = false; }
+
+	void MeshMaterial::activatePass(int i) { passes[i]->activate(); }
+	void MeshMaterial::renderPass(int i) { passes[i]->renderMaterial(); }
+	void MeshMaterial::deactivatePass(int i) { passes[i]->deactivate(); }
+
+	void MeshMaterial::addLight(DirectionalLight* light) {
+		if (std::find(directionalLights.begin(), directionalLights.end(), light) != directionalLights.end()) {
+			// this light is already applied. do nothing
+			return;
+		}
+		directionalLights.push_back(light);
+		programDirty = true;
+	}
+	void MeshMaterial::addLight(PointLight* light) {
+		if (std::find(pointLights.begin(), pointLights.end(), light) != pointLights.end()) {
+			// this light is already applied. do nothing
+			return;
+		}
+		pointLights.push_back(light);
+		programDirty = true;
+	}
+	const std::vector<DirectionalLight*>& MeshMaterial::getDirectionalLights() { return directionalLights; }
+	const std::vector<PointLight*>& MeshMaterial::getPointLights() { return pointLights; }
+	
+	ShadowMap* MeshMaterial::getShadowMethod() { return shadowMethod; }
+	void MeshMaterial::setShadowMethod(ShadowMap* sm) {
+		shadowMethod = sm;
+		programDirty = true;
+	}
+
+	/*PlaneReflection* MeshMaterial::getReflectionMethod() { return reflectionMethod; }
+	void MeshMaterial::setReflectionMethod(PlaneReflection* pr) {
+		reflectionMethod = pr;
+		pr->setReflector(owner);
+		programDirty = true;
+	}*/
+
+	// MeshMaterialPass
+	MeshMaterialPass::MeshMaterialPass() {
+		program = 0;
+	}
+	MeshMaterialPass::~MeshMaterialPass() {
+		if (program) glDeleteProgram(program);
+	}
+	void MeshMaterialPass::setMaterial(MeshMaterial* M) { material = M; }
+	void MeshMaterialPass::setGeometry(MeshGeometry* geom) { geometry = geom; }
+	void MeshMaterialPass::setModelMatrix(const glm::mat4& modelMatrix) { this->modelMatrix = modelMatrix; }
+
+	void MeshMaterialPass::clearCompilers() {
+		vsCompiler.clear();
+		fsCompiler.clear();
+	}
+	void MeshMaterialPass::createProgram(std::string& vsCode, std::string& fsCode) {
+		if (program != 0) glDeleteProgram(program);
+		program = pathos::createProgram(vsCode, fsCode);
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////////
+	// ColorMaterial
+	ColorMaterial::ColorMaterial(GLfloat r, GLfloat g, GLfloat b, GLfloat a) { this->init(r, g, b, a); }
+	ColorMaterial::ColorMaterial(const glm::vec3& rgb) { this->init(rgb[0], rgb[1], rgb[2], 1.0f); }
+	ColorMaterial::ColorMaterial(const glm::vec4& rgba) { this->init(rgba[0], rgba[1], rgba[2], rgba[3]); }
+
+	void ColorMaterial::setAmbientColor(GLfloat r, GLfloat g, GLfloat b) { pass->setAmbient(r, g, b); }
+	void ColorMaterial::setDiffuseColor(GLfloat r, GLfloat g, GLfloat b) { pass->setDiffuse(r, g, b); }
+	void ColorMaterial::setSpecularColor(GLfloat r, GLfloat g, GLfloat b) { pass->setSpecular(r, g, b); }
+	void ColorMaterial::setAlpha(GLfloat a) { pass->setAlpha(a); }
+	void ColorMaterial::setBlendFactor(GLuint srcFactor, GLuint dstFactor) { pass->setBlendFactor(srcFactor, dstFactor); }
+
+	void ColorMaterial::init(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+		pass = new ColorMaterialPass(r, g, b, a);
+		addPass(pass);
+	}
+
+	// ColorMaterialPass
+	ColorMaterialPass::ColorMaterialPass(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+		diffuse[0] = r; diffuse[1] = g; diffuse[2] = b;
+		ambient[0] = ambient[1] = ambient[2] = 0;
+		specular[0] = specular[1] = specular[2] = 0;
+		alpha = a;
+	}
+	void ColorMaterialPass::setAmbient(GLfloat r, GLfloat g, GLfloat b) { ambient[0] = r; ambient[1] = g; ambient[2] = b; }
+	void ColorMaterialPass::setDiffuse(GLfloat r, GLfloat g, GLfloat b) { diffuse[0] = r; diffuse[1] = g; diffuse[2] = b; }
+	void ColorMaterialPass::setSpecular(GLfloat r, GLfloat g, GLfloat b) { specular[0] = r; specular[1] = g; specular[2] = b; }
+	void ColorMaterialPass::setAlpha(GLfloat a) { alpha = a; }
+	void ColorMaterialPass::setBlendFactor(GLuint srcFactor, GLuint dstFactor) { blendSrcFactor = srcFactor; blendDstFactor = dstFactor; }
+	void ColorMaterialPass::updateProgram(MeshMaterial* M) {
+		// light
+		size_t dirLights = M->getDirectionalLights().size();
+		if (dirLights > 0) {
+			vsCompiler.setUseNormal(true);
+			fsCompiler.directionalLights(dirLights);
+			fsCompiler.inVar("vec3", "normal");
+		}
+		size_t pointLights = M->getPointLights().size();
+		if (pointLights > 0){
+			vsCompiler.setUseNormal(true);
+			vsCompiler.setTransferPosition(true);
+			fsCompiler.inVar("vec3", "position");
+			fsCompiler.pointLights(pointLights);
+			fsCompiler.inVar("vec3", "normal");
+		}
+
+		// shadow
+		fsCompiler.mainCode("float visibility = 1.0;");
+		if (M->getShadowMethod() != nullptr) {
+			vsCompiler.setUseNormal(true);
+			vsCompiler.outVar("vec4", "shadowCoord");
+			vsCompiler.uniformMat4("depthMVP");
+			vsCompiler.mainCode("vs_out.shadowCoord = depthMVP * vec4(position, 1);");
+
+			fsCompiler.inVar("vec3", "normal");
+			fsCompiler.inVar("vec4", "shadowCoord");
+			fsCompiler.textureSamplerShadow("depthSampler");
+			fsCompiler.uniform("vec3", "shadowLight");
+			fsCompiler.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -shadowLight), 0, 1);");
+			fsCompiler.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
+			fsCompiler.mainCode("visibility = texture(depthSampler, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z-bias)/fs_in.shadowCoord.w));");
+			fsCompiler.mainCode("if(visibility < .5) visibility = .5;");
+		}
+
+		fsCompiler.uniform("vec3", "ambientColor");
+		fsCompiler.uniform("vec3", "diffuseColor");
+		fsCompiler.uniform("vec3", "specularColor");
+			fsCompiler.uniform("vec3", "eye");
+		fsCompiler.uniform("float", "materialAlpha");
+		fsCompiler.outVar("vec4", "outColor");
+
+		// directional lighting
+		fsCompiler.mainCode("vec3 diffuseTerm = vec3(0, 0, 0);");
+		fsCompiler.mainCode("vec3 specularTerm = vec3(0, 0, 0);");
+		if (dirLights > 0) {
+			fsCompiler.mainCode("vec3 norm = normalize(fs_in.normal);");
+			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 halfVector;");
+			for (size_t i = 0; i < dirLights; i++) {
+				string lightCol = "dirLightColors[" + to_string(i) + "]";
+				string lightDir = "dirLightDirs[" + to_string(i) + "]";
+				fsCompiler.mainCode("  diffuseLightAccum += " + lightCol + " * max(dot(norm," + lightDir + "),0);");
+				fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + eye);");
+				fsCompiler.mainCode("  specularLightAccum += " + lightCol + " * pow(max(dot(norm,halfVector),0), 128);");
+			}
+			fsCompiler.mainCode("diffuseTerm = visibility*diffuseColor*diffuseLightAccum;");
+			fsCompiler.mainCode("specularTerm = visibility*specularColor*specularLightAccum;");
+		}
+		// point lighting
+		if (pointLights > 0) {
+			fsCompiler.mainCode("vec3 norm2 = normalize(fs_in.normal);");
+			fsCompiler.mainCode("vec3 diffuseLightAccum2 = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 specularLightAccum2 = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 halfVector2;");
+			for (size_t i = 0; i < pointLights; i++) {
+				string lightCol = "pointLightColors[" + to_string(i) + "]";
+				string lightDir = "normalize(pointLightPos[" + to_string(i) + "] - fs_in.position)";
+				fsCompiler.mainCode("  diffuseLightAccum2 += " + lightCol + " * max(dot(norm2," + lightDir + "),0);");
+				fsCompiler.mainCode("halfVector2 = normalize(" + lightDir + " + eye);");
+				fsCompiler.mainCode("  specularLightAccum2 += " + lightCol + " * pow(max(dot(norm2,halfVector2),0), 128);");
+			}
+			fsCompiler.mainCode("diffuseTerm += visibility*diffuseColor*diffuseLightAccum2;");
+			fsCompiler.mainCode("specularTerm += visibility*specularColor*specularLightAccum2;");
+		}
+		// final shading
+		fsCompiler.mainCode("outColor.rgb = ambientColor + diffuseTerm + specularTerm;");
+		fsCompiler.mainCode("outColor.a = materialAlpha;");
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void ColorMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateIndexBuffer();
+		if (material->getDirectionalLights().size() > 0 || material->getPointLights().size() > 0) {
+			geometry->activateNormalBuffer(2);
+		}
+
+		glUseProgram(program);
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelMatrix));
+		glUniform3fv(glGetUniformLocation(program, "ambientColor"), 1, ambient);
+		glUniform3fv(glGetUniformLocation(program, "diffuseColor"), 1, diffuse);
+		glUniform3fv(glGetUniformLocation(program, "specularColor"), 1, specular);
+		glm::vec3& eye = material->getEyeVector();
+		glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
+		glUniform1f(glGetUniformLocation(program, "materialAlpha"), alpha);
+
+		if (material->getShadowMethod() != nullptr) {
+			const glm::mat4& depthMVP = material->getShadowMethod()->getDepthMVP();
+			glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+			GLuint depthMVPLoc = glGetUniformLocation(program, "depthMVP");
+			glUniformMatrix4fv(depthMVPLoc, 1, false, glm::value_ptr(bias * depthMVP));
+			glUniform3fv(glGetUniformLocation(program, "shadowLight"), 1, material->getShadowMethod()->getLight());
+			glUniform1i(glGetUniformLocation(program, "depthSampler"), 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, material->getShadowMethod()->getTexture());
+		}
+
+		auto lights = material->getDirectionalLights();
+		size_t numLights = lights.size();
+		if (numLights > 0) {
+			auto len = numLights * 3;
+			GLfloat* dir = new GLfloat[len];
+			GLfloat* col = new GLfloat[len];
+			for (size_t i = 0; i < numLights; i++) {
+				dir[i * 3] = -lights[i]->getDirection()[0];
+				dir[i * 3 + 1] = -lights[i]->getDirection()[1];
+				dir[i * 3 + 2] = -lights[i]->getDirection()[2];
+				col[i*3] = lights[i]->getColor()[0];
+				col[i*3 + 1] = lights[i]->getColor()[1];
+				col[i*3 + 2] = lights[i]->getColor()[2];
+			}
+			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numLights, dir);
+			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numLights, col);
+			delete[] dir;
+			delete[] col;
+		}
+		auto plights = material->getPointLights();
+		size_t numPointLights = plights.size();
+		if (numPointLights > 0){
+			auto len = numPointLights * 3;
+			GLfloat* pos = new GLfloat[len];
+			GLfloat* col = new GLfloat[len];
+			for (size_t i = 0; i < numPointLights; i++){
+				pos[i * 3] = plights[i]->getPosition()[0];
+				pos[i * 3 + 1] = plights[i]->getPosition()[1];
+				pos[i * 3 + 2] = plights[i]->getPosition()[2];
+				col[i * 3] = plights[i]->getColor()[0];
+				col[i * 3 + 1] = plights[i]->getColor()[1];
+				col[i * 3 + 2] = plights[i]->getColor()[2];
+			}
+			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, pos);
+			glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, col);
+			delete[] pos;
+			delete[] col;
+		}
+
+		glEnable(GL_BLEND);
+		glBlendFunc(blendSrcFactor, blendDstFactor);
+	}
+	void ColorMaterialPass::renderMaterial() {
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+	}
+	void ColorMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateIndexBuffer();
+		if (material->getDirectionalLights().size() > 0) {
+			geometry->deactivateNormalBuffer(2);
+		}
+		glDisable(GL_BLEND);
+
+		if (material->getShadowMethod() != nullptr) {
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+		glUseProgram(0);
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////////
+	// TextureMaterial
+	TextureMaterial::TextureMaterial(GLuint texID, bool useAlpha, string channelMapping) {
+		addPass(new TextureMaterialPass(texID, useAlpha, channelMapping));
+	}
+
+	// TextureMaterialPass
+	TextureMaterialPass::TextureMaterialPass(GLuint texID, bool useAlpha, string channelMapping) : textureID(texID), channelMapping(channelMapping), useAlpha(useAlpha) {
+		//
+	}
+	void TextureMaterialPass::updateProgram(MeshMaterial* M) {
+		vsCompiler.setUseUV(true);
+		vsCompiler.setUVLocation(1);
+		fsCompiler.textureSampler("texSampler");
+		fsCompiler.inVar("vec2", "uv");
+		useAlpha ? fsCompiler.outVar("vec4", "color") : fsCompiler.outVar("vec3", "color");
+
+		// shadow
+		fsCompiler.mainCode("float visibility = 1.0;");
+		if (M->getShadowMethod() != nullptr) {
+			vsCompiler.outVar("vec4", "shadowCoord");
+			vsCompiler.uniformMat4("depthMVP");
+			vsCompiler.setUseNormal(true);
+			vsCompiler.mainCode("vs_out.shadowCoord = depthMVP * vec4(position, 1);");
+
+			fsCompiler.inVar("vec3", "normal");
+			fsCompiler.inVar("vec4", "shadowCoord");
+			fsCompiler.textureSamplerShadow("depthSampler");
+			fsCompiler.uniform("vec3", "shadowLight");
+			fsCompiler.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -shadowLight), 0, 1);");
+			fsCompiler.mainCode("float bias = 0.005; //clamp(0.005 * tan(acos(cosTheta)), 0, 0.01);");
+			fsCompiler.mainCode("visibility = texture(depthSampler, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z-bias)/fs_in.shadowCoord.w));");
+			fsCompiler.mainCode("if(visibility < .5) visibility = .5;");
+		}
+
+		string colorOut = "color = visibility * texture2D(texSampler, fs_in.uv).";
+		colorOut += channelMapping;
+		colorOut += useAlpha ? "a;" : ";";
+		fsCompiler.mainCode(colorOut);
+
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void TextureMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateUVBuffer(1);
+		geometry->activateIndexBuffer();
+		
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		if (material->getShadowMethod() != nullptr) {
+			const glm::mat4& depthMVP = material->getShadowMethod()->getDepthMVP();
+			glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+			GLuint depthMVPLoc = glGetUniformLocation(program, "depthMVP");
+			glUniformMatrix4fv(depthMVPLoc, 1, false, glm::value_ptr(bias * depthMVP));
+			glUniform1i(glGetUniformLocation(program, "depthSampler"), 1);
+			glUniform3fv(glGetUniformLocation(program, "shadowLight"), 1, material->getShadowMethod()->getLight());
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, material->getShadowMethod()->getTexture());
+		}
+	}
+	void TextureMaterialPass::renderMaterial() {
+		if (useAlpha) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		if (useAlpha) glDisable(GL_BLEND);
+	}
+	void TextureMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateUVBuffer(1);
+		geometry->deactivateIndexBuffer();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// ShadowTextureMaterial
+	ShadowTextureMaterial::ShadowTextureMaterial(GLuint texID) {
+		addPass(new ShadowTextureMaterialPass(texID));
+	}
+
+	// ShadowTextureMaterialPass
+	ShadowTextureMaterialPass::ShadowTextureMaterialPass(GLuint texID) : debugTexture(texID) {}
+	void ShadowTextureMaterialPass::updateProgram(MeshMaterial* M) {
+		vsCompiler.setUseUV(true);
+		vsCompiler.setUVLocation(1);
+		fsCompiler.textureSampler("texSampler");
+		fsCompiler.inVar("vec2", "uv");
+		fsCompiler.outVar("vec4", "color");
+		fsCompiler.mainCode("float depth = texture2D(texSampler, fs_in.uv).r;");
+		fsCompiler.mainCode("depth = clamp(depth, 0, 1);");
+		fsCompiler.mainCode("color = vec4(depth);");
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void ShadowTextureMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateUVBuffer(1);
+		geometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glBindTexture(GL_TEXTURE_2D, debugTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glActiveTexture(GL_TEXTURE0);
+	}
+	void ShadowTextureMaterialPass::renderMaterial() {
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+	}
+	void ShadowTextureMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateUVBuffer(1);
+		geometry->deactivateIndexBuffer();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// WireframeMaterial
+	WireframeMaterial::WireframeMaterial(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+		red = r; green = g; blue = b; alpha = a;
+		addPass(new WireframeMaterialPass(r, g, b, a));
+	}
+	// WireframeMaterialPass
+	WireframeMaterialPass::WireframeMaterialPass(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+		color[0] = r; color[1] = g; color[2] = b; color[3] = a;
+	}
+	void WireframeMaterialPass::updateProgram(MeshMaterial*) {
+		fsCompiler.uniform("vec4", "color");
+		fsCompiler.outVar("vec4", "outColor");
+		fsCompiler.mainCode("outColor = color;");
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void WireframeMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+		glUniform4fv(glGetUniformLocation(program, "color"), 1, color);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	void WireframeMaterialPass::renderMaterial() {
+		glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glEnable(GL_CULL_FACE);
+	}
+	void WireframeMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateIndexBuffer();
+		glDisable(GL_BLEND);
+		glUseProgram(0);
+	}
+
+}
