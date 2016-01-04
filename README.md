@@ -1,11 +1,12 @@
-# pathosengine
+# What is this
 * opengl based rendering library (for 3d graphics study)
 * IDE: visual studio 2013
-* language: c++
-* gl version: PpenGL 3.3
+* language: C++
+* gl version: OpenGL 3.3
 
-# Required libraries for compilation and execution
+# Libraries used
 * freeglut
 * FreeImage
 * freetype
 * glew32
+* glm
