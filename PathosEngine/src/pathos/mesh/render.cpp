@@ -8,6 +8,12 @@ namespace pathos {
 		ShadowMap::clearShadowTextures();
 	}
 
+	void MeshDefaultRenderer::render(Skybox* sky, Camera* camera) {
+		glm::mat4 viewTransform = camera->getViewMatrix();
+		sky->activate(viewTransform);
+		sky->render();
+	}
+
 	void MeshDefaultRenderer::render(Mesh* mesh, Camera* camera) {
 		glm::mat4 modelTransform = mesh->getTransform().getMatrix();
 		glm::mat4 vpTransform = camera->getViewProjectionMatrix();

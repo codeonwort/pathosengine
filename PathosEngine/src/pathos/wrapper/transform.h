@@ -17,6 +17,8 @@ namespace pathos {
 		void appendMove(const glm::vec3& movement);
 		void appendMove(float dx, float dy, float dz);
 		void appendRotation(float angle, const glm::vec3& axis);
+		void appendScale(const glm::vec3& scale);
+		void appendScale(float sx, float sy, float sz);
 		glm::vec3 transformVector(glm::vec3);
 		glm::vec3 inverseTransformVector(glm::vec3);
 		glm::vec3 transformPoint(glm::vec3);

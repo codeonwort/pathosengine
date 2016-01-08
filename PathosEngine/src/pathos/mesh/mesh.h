@@ -15,7 +15,7 @@ namespace pathos {
 	using Materials = vector<shared_ptr<MeshMaterial>>;
 
 	// mesh = physical presence of geometry with material
-	class Mesh {
+	class Mesh : public NamedObject {
 	protected:
 		bool doubleSided = false;
 		bool renderInternal = false;
@@ -26,6 +26,8 @@ namespace pathos {
 	public:
 		Mesh(MeshGeometry* = nullptr, shared_ptr<MeshMaterial> = nullptr);
 		virtual ~Mesh();
+		void add(MeshGeometry*, shared_ptr<MeshMaterial>);
+
 		Transform& getTransform();
 		const Geometries& getGeometries();
 		const Materials& getMaterials();

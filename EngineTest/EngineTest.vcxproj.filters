@@ -18,5 +18,8 @@
     <ClCompile Include="src\main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\tiny_obj_loader.cc">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

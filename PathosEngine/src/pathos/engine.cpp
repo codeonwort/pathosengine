@@ -54,7 +54,6 @@ namespace pathos {
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_MULTISAMPLE);
-		glDepthFunc(GL_LESS);
 		std::cout << "- gl state initialized" << std::endl;
 	}
 

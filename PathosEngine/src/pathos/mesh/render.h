@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pathos/mesh/mesh.h>
+#include <pathos/mesh/envmap.h>
 #include <pathos/camera/camera.h>
 #include <memory>
 
@@ -12,5 +13,7 @@ namespace pathos {
 	public:
 		void ready();
 		void render(Mesh*, Camera*);
+		void render(Skybox*, Camera*);
 	};
+
 }

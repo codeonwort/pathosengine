@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm>
 
-#define DEBUG
+//#define DEBUG
 using namespace std;
 
 namespace pathos {
@@ -30,6 +30,9 @@ namespace pathos {
 		}
 	}
 	GLuint createProgram(std::string& vsCode, std::string& fsCode) {
+#ifdef DEBUG
+		std::cout << "start create program" << std::endl;
+#endif
 		GLuint vsid = glCreateShader(GL_VERTEX_SHADER);
 		GLuint fsid = glCreateShader(GL_FRAGMENT_SHADER);
 		compileShader(vsid, vsCode);

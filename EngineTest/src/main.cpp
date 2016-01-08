@@ -2,24 +2,27 @@
 #include <pathos/engine.h>
 #include <pathos/mesh/mesh.h>
 #include <pathos/mesh/render.h>
+#include <pathos/mesh/envmap.h>
 #include <pathos/camera/camera.h>
 #include <pathos/light/light.h>
 #include <pathos/loader/imageloader.h>
+#include <pathos/loader/objloader.h>
 #include <glm/gtx/transform.hpp>
 
 using namespace std;
 using namespace pathos;
 
 Camera* cam;
-Mesh *plane, *cube;
+Mesh *plane, *cube, *car;
 Mesh *caster, *viewer;
+Skybox* sky;
 MeshDefaultRenderer* renderer;
 
 void render() {
-	float dx = Engine::isDown('a') ? -0.1 : Engine::isDown('d') ? 0.1 : 0;
-	float dz = Engine::isDown('w') ? -0.1 : Engine::isDown('s') ? 0.1 : 0;
-	float dr = Engine::isDown('q') ? 0.5 : Engine::isDown('e') ? -0.5 : 0;
-	float dr2 = Engine::isDown('z') ? 0.5 : Engine::isDown('x') ? -0.5 : 0;
+	float dx = Engine::isDown('a') ? -0.05f : Engine::isDown('d') ? 0.05f : 0.0f;
+	float dz = Engine::isDown('w') ? -0.05f : Engine::isDown('s') ? 0.05f : 0.0f;
+	float dr = Engine::isDown('q') ? 0.5f : Engine::isDown('e') ? -0.5f : 0.0f;
+	float dr2 = Engine::isDown('z') ? 0.5f : Engine::isDown('x') ? -0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotate(dr, glm::vec3(0, 1, 0));
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
@@ -27,8 +30,10 @@ void render() {
 	renderer->ready();
 	renderer->render(caster, cam);
 	renderer->render(plane, cam);
-	renderer->render(viewer, cam);
-	renderer->render(cube, cam);
+	//renderer->render(viewer, cam);
+	//renderer->render(cube, cam);
+	renderer->render(car, cam);
+	renderer->render(sky, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -47,12 +52,35 @@ int main(int argc, char** argv) {
 	cam->move(glm::vec3(-0.2, 0, 3));
 	//cam->rotate(20, glm::vec3(0, 1, 0));
 
-	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
+	// light and shadow
+	auto light = new DirectionalLight(glm::vec3(0, -1, -1));
 	auto shadow = new ShadowMap(light, cam);
-
 	auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(0, 0, 1));
 	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
+
+	// obj loader test
+	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
+	OBJLoader obj("../resources/Pin.obj", "../resources/");
+	car = obj.craftMesh(0, obj.numGeometries(), "car");
+	car->getTransform().appendMove(5, 0, -5.0f);
+	car->getTransform().appendScale(5, 5, 5);
+	for (auto M : car->getMaterials()){
+		if (M->getDirectionalLights().size() == 0){
+			M->addLight(plight);
+			M->addLight(plight2);
+			M->addLight(plight3);
+		}
+	}
+	
+	// cubemap
+	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",
+		"../resources/cubemap1/pos_y.bmp", "../resources/cubemap1/neg_y.bmp",
+		"../resources/cubemap1/pos_z.bmp", "../resources/cubemap1/neg_z.bmp" };
+	FIBITMAP* cubeImg[6];
+	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
+	GLuint cubeTex = loadCubemapTexture(cubeImg);
+	sky = new Skybox(cubeTex);
 
 	auto color = make_shared<ColorMaterial>(1.0, 1.0, 1.0, 1);
 	//color->setAmbientColor(0, 0, 0);
