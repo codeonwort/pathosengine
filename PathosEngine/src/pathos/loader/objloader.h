@@ -2,6 +2,7 @@
 
 #include <tiny_obj_loader.h>
 #include <pathos/mesh/mesh.h>
+#include <assimp/scene.h>
 #include <vector>
 
 using namespace std;
@@ -19,6 +20,16 @@ namespace pathos {
 		OBJLoader(const char* objFile, const char* mtlDir);
 		Mesh* craftMesh(size_t start, size_t end, string name);
 		inline size_t numGeometries() { return geometries.size(); }
+	};
+
+	class ColladaLoader {
+	private:
+		//vector<Mesh*> meshes;
+		vector<MeshGeometry*> geometries;
+		void buildGeometry(aiMesh*);
+	public:
+		ColladaLoader(const char* file);
+		inline const Geometries& getGeometries() { return geometries; }
 	};
 
 }

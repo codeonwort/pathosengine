@@ -16,6 +16,7 @@ Camera* cam;
 Mesh *plane, *cube, *car;
 Mesh *caster, *viewer;
 Skybox* sky;
+Mesh* daeMesh;
 MeshDefaultRenderer* renderer;
 
 void render() {
@@ -33,6 +34,7 @@ void render() {
 	//renderer->render(viewer, cam);
 	//renderer->render(cube, cam);
 	renderer->render(car, cam);
+	renderer->render(daeMesh, cam);
 	renderer->render(sky, cam);
 }
 
@@ -72,6 +74,21 @@ int main(int argc, char** argv) {
 			M->addLight(plight3);
 		}
 	}
+
+	// collada loader test
+	/*ColladaLoader collada("../resources/birdcage2.dae");
+	auto geoms = collada.getGeometries();
+	daeMesh = new Mesh(nullptr, nullptr);
+	daeMesh->getTransform().appendScale(0.5, 0.5, 0.5);
+	auto testColor = make_shared<ColorMaterial>(1, 1, 1, 1);
+	testColor->addLight(plight);
+	for (auto geom : geoms){
+		daeMesh->add(geom, testColor);
+	}*/
+	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
+	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
+	//daeMesh->getTransform().appendMove(-5, 0, -5.0f);
+	daeMesh->getMaterials()[0]->addLight(plight);
 	
 	// cubemap
 	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",

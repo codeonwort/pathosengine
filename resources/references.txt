@@ -1,0 +1,5 @@
+[bird cage chandlier]
+https://3dwarehouse.sketchup.com/model.html?id=ue0cec8a0-8c8e-4d4f-a4ea-90e10dbf8c4d
+
+[cubemap textures]
+http://www.thegamecreators.com/
