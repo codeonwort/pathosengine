@@ -40,4 +40,19 @@ namespace pathos {
 		inline const GLfloat* getLight() { return light->getDirection(); }
 	};
 
+	class OmnidirectionalShadow {
+	private:
+		PointLight* light;
+		Camera* camera;
+		GLuint fbo[6], shadowTextures[6], depthBuffers[6];
+		GLuint program;
+		GLsizei width, height;
+	public:
+		OmnidirectionalShadow(PointLight* light, Camera* camera);
+		void setTarget(MeshGeometry*, const glm::mat4& modelMatrix);
+		void activate();
+		void renderDepth();
+		void deactivate();
+	};
+
 }

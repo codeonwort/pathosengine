@@ -156,4 +156,11 @@ void main() {
 		return glm::mat4(1.0f);
 	}
 
+	////////////////////////////////////////////////////////////////////////
+	// omnidirectional shadow
+	OmnidirectionalShadow::OmnidirectionalShadow(PointLight* light, Camera* camera) :light(light), camera(camera) {
+		// constructor
+	}
+
+
 }
