@@ -7,8 +7,8 @@
 
 namespace pathos {
 
-	vector<ShadowMap*> ShadowMap::instances;
-	void ShadowMap::clearShadowTextures() {
+	vector<ShadowMethod*> ShadowMethod::instances;
+	void ShadowMethod::clearShadowTextures() {
 		for (auto it = instances.begin(); it != instances.end(); it++) {
 			(*it)->clearTexture();
 		}
@@ -73,8 +73,6 @@ void main() {
 		glDeleteProgram(program);
 	}
 
-	void ShadowMap::setGeometry(MeshGeometry* geom) { geometry = geom; }
-
 	void ShadowMap::clearTexture() {
 		static const GLfloat zero[] = { 0.0f };
 		static const GLfloat one[] = { 1.0f };
@@ -84,11 +82,12 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void ShadowMap::activate(const glm::mat4 & modelMatrix) {
+	void ShadowMap::renderDepth() {
+		// set program
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glViewport(0, 0, width, height);
-		geometry->activateVertexBuffer(0);
-		geometry->activateIndexBuffer();
+		modelGeometry->activateVertexBuffer(0);
+		modelGeometry->activateIndexBuffer();
 
 		glUseProgram(program);
 		GLfloat* lightDir = light->getDirection();
@@ -99,22 +98,51 @@ void main() {
 		//projection = glm::perspective(glm::radians(110.0), 800.0 / 600, 1.0, 30.0);
 		//glm::mat4 projection = calculateAABB(view);
 		depthMVP = projection * view * modelMatrix;
-		
+
 		glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
-	}
 
-	void ShadowMap::renderDepth() {
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
-	}
+		// draw call
+		glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
 
-	void ShadowMap::deactivate() {
-		geometry->deactivateVertexBuffer(0);
-		geometry->deactivateIndexBuffer();
+		// unset program
+		modelGeometry->deactivateVertexBuffer(0);
+		modelGeometry->deactivateIndexBuffer();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		auto config = Engine::getConfig();
 		glViewport(0, 0, config.width, config.height);
 		glUseProgram(0);
+	}
+
+	void ShadowMap::activate(GLuint materialProgram) {
+		glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+		glm::mat4 depthMVPbiased = bias * depthMVP;
+		GLuint depthMVPLoc = glGetUniformLocation(materialProgram, "depthMVP");
+		glUniformMatrix4fv(depthMVPLoc, 1, false, &depthMVPbiased[0][0]);
+		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLight"), 1, light->getDirection());
+		glUniform1i(glGetUniformLocation(materialProgram, "depthSampler"), 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, shadowTexture);
+	}
+
+	void ShadowMap::deactivate() {
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void ShadowMap::addShaderCode(VertexShaderCompiler& vs, FragmentShaderCompiler& fs) {
+		vs.setUseNormal(true);
+		vs.outVar("vec4", "shadowCoord");
+		vs.uniformMat4("depthMVP");
+		vs.mainCode("vs_out.shadowCoord = depthMVP * vec4(position, 1);");
+
+		fs.inVar("vec3", "normal");
+		fs.inVar("vec4", "shadowCoord");
+		fs.textureSamplerShadow("depthSampler");
+		fs.uniform("vec3", "shadowLight");
+		fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -shadowLight), 0, 1);");
+		fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
+		fs.mainCode("visibility = texture(depthSampler, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z-bias)/fs_in.shadowCoord.w));");
+		fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 	glm::mat4 ShadowMap::calculateAABB(glm::mat4& lightView) {
@@ -160,7 +188,66 @@ void main() {
 	// omnidirectional shadow
 	OmnidirectionalShadow::OmnidirectionalShadow(PointLight* light, Camera* camera) :light(light), camera(camera) {
 		// constructor
+		/*
+		instances.push_back(this);
+
+		width = height = 1024;
+
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+		glGenTextures(1, &shadowTexture);
+		glBindTexture(GL_TEXTURE_2D, shadowTexture);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTexture, 0);
+
+		static const GLenum buffs[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, buffs);
+
+		glGenTextures(1, &debugTexture);
+		glBindTexture(GL_TEXTURE_2D, debugTexture);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, width, height);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, debugTexture, 0);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); // return to default framebuffer
+
+		string vshader = R"(#version 330 core
+layout (location=0) in vec3 position;
+uniform mat4 depthMVP;
+void main() {
+	gl_Position = depthMVP * vec4(position, 1);
+}
+)";
+		string fshader = R"(#version 330 core
+out vec4 color;
+void main() {
+	//color = vec4(gl_FragCoord.z);
+	color = vec4(gl_FragCoord.z, 0, 0, 1);
+}
+)";
+		program = createProgram(vshader, fshader);
+		*/
 	}
 
+	void OmnidirectionalShadow::activate(GLuint materialProgram) {
+		//
+	}
+	void OmnidirectionalShadow::renderDepth() {
+		//
+	}
+	void OmnidirectionalShadow::deactivate() {
+		//
+	}
 
 }

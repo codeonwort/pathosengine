@@ -46,7 +46,7 @@ namespace pathos {
 		glm::mat4 vpTransform; // view * projection matrix
 		glm::vec3 eyeVector; // camera's eye vector
 
-		ShadowMap* shadowMethod = nullptr;
+		ShadowMethod* shadowMethod = nullptr;
 		//PlaneReflection* reflectionMethod = nullptr;
 
 		// these 3 functions will be invoked only by View::render() //
@@ -80,8 +80,11 @@ namespace pathos {
 		void enablePass(int index);
 		void disablePass(int index);
 		
-		ShadowMap* getShadowMethod();
-		void setShadowMethod(ShadowMap*);
+		inline ShadowMethod* getShadowMethod() { return shadowMethod; }
+		inline void setShadowMethod(ShadowMethod* method) {
+			shadowMethod = method;
+			programDirty = true;
+		}
 
 		//PlaneReflection* getReflectionMethod();
 		//void setReflectionMethod(PlaneReflection*);

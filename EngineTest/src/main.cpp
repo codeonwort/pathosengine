@@ -14,7 +14,7 @@ using namespace pathos;
 
 Camera* cam;
 Mesh *plane, *cube, *car;
-Mesh *caster, *viewer;
+Mesh *caster, *viewer, *shadowLight;
 Skybox* sky;
 Mesh* daeMesh;
 MeshDefaultRenderer* renderer;
@@ -29,12 +29,16 @@ void render() {
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
 
 	renderer->ready();
+	// various models
 	renderer->render(caster, cam);
 	renderer->render(plane, cam);
-	//renderer->render(viewer, cam);
-	//renderer->render(cube, cam);
 	renderer->render(car, cam);
 	renderer->render(daeMesh, cam);
+	// about shadow
+	renderer->render(viewer, cam);
+	renderer->render(cube, cam);
+	renderer->render(shadowLight, cam);
+	// skybox
 	renderer->render(sky, cam);
 }
 
@@ -55,9 +59,9 @@ int main(int argc, char** argv) {
 	//cam->rotate(20, glm::vec3(0, 1, 0));
 
 	// light and shadow
-	auto light = new DirectionalLight(glm::vec3(0, -1, -1));
+	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
 	auto shadow = new ShadowMap(light, cam);
-	auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(0, 0, 1));
+	auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(1, 1, 1));
 	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
 
@@ -89,6 +93,7 @@ int main(int argc, char** argv) {
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
 	//daeMesh->getTransform().appendMove(-5, 0, -5.0f);
 	daeMesh->getMaterials()[0]->addLight(plight);
+	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
 	
 	// cubemap
 	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",
@@ -104,7 +109,7 @@ int main(int argc, char** argv) {
 	color->addLight(plight);
 	color->addLight(plight2);
 	color->addLight(plight3);
-	//color->setShadowMethod(shadow);
+	color->setShadowMethod(shadow);
 
 	auto planeColor = make_shared<ColorMaterial>(0.0, 1.0, 1.0, 1);
 	planeColor->setAmbientColor(0, 0, 1);
@@ -128,7 +133,7 @@ int main(int argc, char** argv) {
 	planeGeom->uploadPosition();
 	planeGeom->calculateNormals();
 
-	plane = new Mesh(planeGeom, planeColor);
+	plane = new Mesh(planeGeom, mat);
 	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));
 	plane->getTransform().appendMove(0, -0.5, -4);
 
@@ -143,6 +148,11 @@ int main(int argc, char** argv) {
 	GLfloat* lightDir = light->getDirection();
 	glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
+
+	auto shadowLightColor = make_shared<ColorMaterial>(0, 0, 0, 1);
+	shadowLightColor->setAmbientColor(1, 1, 0);
+	shadowLight = new Mesh(new SphereGeometry(0.3, 20), shadowLightColor);
+	shadowLight->getTransform().appendMove(lightPos);
 
 	renderer = new MeshDefaultRenderer();
 

@@ -3,11 +3,31 @@
 #include <GL/glew.h>
 #include <pathos/light/light.h>
 #include <pathos/camera/camera.h>
+#include <pathos/mesh/shader.h>
 #include <pathos/mesh/geometry.h>
 
 namespace pathos {
 
-	class ShadowMap {
+	class ShadowMethod {
+	protected:
+		MeshGeometry* modelGeometry;
+		glm::mat4 modelMatrix;
+	public:
+		static std::vector<ShadowMethod*> instances;
+		static void clearShadowTextures();
+
+		inline void setTarget(MeshGeometry* G, glm::mat4& M) {
+			modelGeometry = G;
+			modelMatrix = M;
+		}
+		virtual void clearTexture() = 0;
+		virtual void activate(GLuint materialPassProgram) = 0;
+		virtual void renderDepth() = 0;
+		virtual void deactivate() = 0;
+		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&) = 0;
+	};
+
+	class ShadowMap : public ShadowMethod {
 	private:
 		DirectionalLight* light;
 		Camera* camera;
@@ -15,32 +35,25 @@ namespace pathos {
 		GLsizei width, height;
 		GLuint fbo, shadowTexture, debugTexture, depthBuffer;
 		GLuint program;
-		MeshGeometry* geometry;
 		glm::mat4 depthMVP;
 
 		glm::vec4 vertices[8];
 		glm::mat4 calculateAABB(glm::mat4& lightView);
 
 	public:
-		static std::vector<ShadowMap*> instances;
-		static void clearShadowTextures();
-
 		ShadowMap(DirectionalLight*, Camera*);
 		virtual ~ShadowMap();
 
-		void setGeometry(MeshGeometry*);
-		void clearTexture();
-		void activate(const glm::mat4 & modelMatrix);
-		void renderDepth();
-		void deactivate();
+		virtual void clearTexture();
+		virtual void activate(GLuint materialPassProgram);
+		virtual void renderDepth();
+		virtual void deactivate();
+		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&);
 
-		inline GLuint getTexture() { return shadowTexture; }
 		inline GLuint getDebugTexture() { return debugTexture; }
-		inline const glm::mat4& getDepthMVP() { return depthMVP; }
-		inline const GLfloat* getLight() { return light->getDirection(); }
 	};
 
-	class OmnidirectionalShadow {
+	class OmnidirectionalShadow : public ShadowMethod {
 	private:
 		PointLight* light;
 		Camera* camera;
@@ -49,10 +62,9 @@ namespace pathos {
 		GLsizei width, height;
 	public:
 		OmnidirectionalShadow(PointLight* light, Camera* camera);
-		void setTarget(MeshGeometry*, const glm::mat4& modelMatrix);
-		void activate();
-		void renderDepth();
-		void deactivate();
+		virtual void activate(GLuint materialPassProgram);
+		virtual void renderDepth();
+		virtual void deactivate();
 	};
 
 }

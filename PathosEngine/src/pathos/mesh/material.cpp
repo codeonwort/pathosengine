@@ -75,12 +75,6 @@ namespace pathos {
 	const std::vector<DirectionalLight*>& MeshMaterial::getDirectionalLights() { return directionalLights; }
 	const std::vector<PointLight*>& MeshMaterial::getPointLights() { return pointLights; }
 	
-	ShadowMap* MeshMaterial::getShadowMethod() { return shadowMethod; }
-	void MeshMaterial::setShadowMethod(ShadowMap* sm) {
-		shadowMethod = sm;
-		programDirty = true;
-	}
-
 	/*PlaneReflection* MeshMaterial::getReflectionMethod() { return reflectionMethod; }
 	void MeshMaterial::setReflectionMethod(PlaneReflection* pr) {
 		reflectionMethod = pr;
@@ -157,19 +151,7 @@ namespace pathos {
 		// shadow
 		fsCompiler.mainCode("float visibility = 1.0;");
 		if (M->getShadowMethod() != nullptr) {
-			vsCompiler.setUseNormal(true);
-			vsCompiler.outVar("vec4", "shadowCoord");
-			vsCompiler.uniformMat4("depthMVP");
-			vsCompiler.mainCode("vs_out.shadowCoord = depthMVP * vec4(position, 1);");
-
-			fsCompiler.inVar("vec3", "normal");
-			fsCompiler.inVar("vec4", "shadowCoord");
-			fsCompiler.textureSamplerShadow("depthSampler");
-			fsCompiler.uniform("vec3", "shadowLight");
-			fsCompiler.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -shadowLight), 0, 1);");
-			fsCompiler.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
-			fsCompiler.mainCode("visibility = texture(depthSampler, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z-bias)/fs_in.shadowCoord.w));");
-			fsCompiler.mainCode("if(visibility < .5) visibility = .5;");
+			M->getShadowMethod()->addShaderCode(vsCompiler, fsCompiler);
 		}
 
 		fsCompiler.uniform("vec3", "ambientColor");
@@ -235,16 +217,8 @@ namespace pathos {
 		glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
 		glUniform1f(glGetUniformLocation(program, "materialAlpha"), alpha);
 
-		if (material->getShadowMethod() != nullptr) {
-			const glm::mat4& depthMVP = material->getShadowMethod()->getDepthMVP();
-			glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-			GLuint depthMVPLoc = glGetUniformLocation(program, "depthMVP");
-			glUniformMatrix4fv(depthMVPLoc, 1, false, glm::value_ptr(bias * depthMVP));
-			glUniform3fv(glGetUniformLocation(program, "shadowLight"), 1, material->getShadowMethod()->getLight());
-			glUniform1i(glGetUniformLocation(program, "depthSampler"), 0);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, material->getShadowMethod()->getTexture());
-		}
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->activate(program);
 
 		auto lights = material->getDirectionalLights();
 		size_t numLights = lights.size();
@@ -299,9 +273,9 @@ namespace pathos {
 		}
 		glDisable(GL_BLEND);
 
-		if (material->getShadowMethod() != nullptr) {
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->deactivate();
+
 		glUseProgram(0);
 	}
 	
@@ -325,19 +299,7 @@ namespace pathos {
 		// shadow
 		fsCompiler.mainCode("float visibility = 1.0;");
 		if (M->getShadowMethod() != nullptr) {
-			vsCompiler.outVar("vec4", "shadowCoord");
-			vsCompiler.uniformMat4("depthMVP");
-			vsCompiler.setUseNormal(true);
-			vsCompiler.mainCode("vs_out.shadowCoord = depthMVP * vec4(position, 1);");
-
-			fsCompiler.inVar("vec3", "normal");
-			fsCompiler.inVar("vec4", "shadowCoord");
-			fsCompiler.textureSamplerShadow("depthSampler");
-			fsCompiler.uniform("vec3", "shadowLight");
-			fsCompiler.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -shadowLight), 0, 1);");
-			fsCompiler.mainCode("float bias = 0.005; //clamp(0.005 * tan(acos(cosTheta)), 0, 0.01);");
-			fsCompiler.mainCode("visibility = texture(depthSampler, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z-bias)/fs_in.shadowCoord.w));");
-			fsCompiler.mainCode("if(visibility < .5) visibility = .5;");
+			M->getShadowMethod()->addShaderCode(vsCompiler, fsCompiler);
 		}
 
 		string colorOut = "color = visibility * texture2D(texSampler, fs_in.uv).";
@@ -364,16 +326,8 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		if (material->getShadowMethod() != nullptr) {
-			const glm::mat4& depthMVP = material->getShadowMethod()->getDepthMVP();
-			glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-			GLuint depthMVPLoc = glGetUniformLocation(program, "depthMVP");
-			glUniformMatrix4fv(depthMVPLoc, 1, false, glm::value_ptr(bias * depthMVP));
-			glUniform1i(glGetUniformLocation(program, "depthSampler"), 1);
-			glUniform3fv(glGetUniformLocation(program, "shadowLight"), 1, material->getShadowMethod()->getLight());
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, material->getShadowMethod()->getTexture());
-		}
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->activate(program);
 	}
 	void TextureMaterialPass::renderMaterial() {
 		if (useAlpha) {
@@ -388,6 +342,8 @@ namespace pathos {
 		geometry->deactivateUVBuffer(1);
 		geometry->deactivateIndexBuffer();
 		glBindTexture(GL_TEXTURE_2D, 0);
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->deactivate();
 		glUseProgram(0);
 	}
 

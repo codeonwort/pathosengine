@@ -5,7 +5,7 @@
 namespace pathos {
 
 	void MeshDefaultRenderer::ready() {
-		ShadowMap::clearShadowTextures();
+		ShadowMethod::clearShadowTextures();
 	}
 
 	void MeshDefaultRenderer::render(Skybox* sky, Camera* camera) {
@@ -43,12 +43,10 @@ namespace pathos {
 	void MeshDefaultRenderer::renderSub(MeshGeometry* G, shared_ptr<MeshMaterial> M) {
 		M->setGeometry(G);
 		// draw depth map
-		if (M->getShadowMethod() != nullptr) {
-			ShadowMap* sm = M->getShadowMethod();
-			sm->setGeometry(G);
-			sm->activate(M->getModelMatrix());
-			sm->renderDepth();
-			sm->deactivate();
+		auto shadow = M->getShadowMethod();
+		if (shadow != nullptr) {
+			shadow->setTarget(G, M->getModelMatrix());
+			shadow->renderDepth();
 		}
 		/*
 		// fill stencil buffer for reflection
