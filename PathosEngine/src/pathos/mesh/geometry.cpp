@@ -9,18 +9,8 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
-	MeshGeometry::MeshGeometry() {
-		positionData = nullptr;
-		indexData = nullptr;
-		normalData = nullptr;
-		positionBuffer = uvBuffer = normalBuffer = indexBuffer = 0;
-		vertexLocation = uvLocation = normalLocation = 0;
-		vertexActivated = uvActivated = normalActivated = false;
-	}
-
-	MeshGeometry::~MeshGeometry() {
-		this->dispose();
-	}
+	MeshGeometry::MeshGeometry() { }
+	MeshGeometry::~MeshGeometry() { this->dispose(); }
 
 	unsigned int MeshGeometry::getIndexCount() { return indexCount; }
 
@@ -50,6 +40,22 @@ namespace pathos {
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), normalData, GL_STATIC_DRAW);
+	}
+	void MeshGeometry::updateTangentData(GLfloat* data, unsigned int length) {
+		tangentData = data;
+		if (!tangentBuffer){
+			glGenBuffers(1, &tangentBuffer);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
+		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), tangentData, GL_STATIC_DRAW);
+	}
+	void MeshGeometry::updateBitangentData(GLfloat* data, unsigned int length) {
+		bitangentData = data;
+		if (!bitangentBuffer){
+			glGenBuffers(1, &bitangentBuffer);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
+		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), bitangentData, GL_STATIC_DRAW);
 	}
 	void MeshGeometry::updateIndexData(GLuint* data, unsigned int length) {
 		indexData = data;
@@ -98,6 +104,28 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDisableVertexAttribArray(index);
 		normalActivated = false;
+	}
+
+	void MeshGeometry::activateTangentBuffer(GLuint index) {
+		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
+		glVertexAttribPointer(index, 3, GL_FLOAT, GL_TRUE, 0, (void*)0);
+		glEnableVertexAttribArray(index);
+		tangentLocation = index;
+	}
+	void MeshGeometry::deactivateTangentBuffer(GLuint index) {
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDisableVertexAttribArray(index);
+	}
+
+	void MeshGeometry::activateBitangentBuffer(GLuint index) {
+		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
+		glVertexAttribPointer(index, 3, GL_FLOAT, GL_TRUE, 0, (void*)0);
+		glEnableVertexAttribArray(index);
+		bitangentLocation = index;
+	}
+	void MeshGeometry::deactivateBitangentBuffer(GLuint index) {
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDisableVertexAttribArray(index);
 	}
 
 	void MeshGeometry::activateIndexBuffer() {
@@ -160,6 +188,51 @@ namespace pathos {
 		delete accum;
 		delete counts;
 	}
+	void MeshGeometry::calculateTangentBasis() {
+		if (tangentData) delete tangentData;
+		if (bitangentData) delete bitangentData;
+		int numPos = positionCount / 3;
+		glm::vec3* accum = new glm::vec3[numPos]; // tangent accum
+		glm::vec3* accum2 = new glm::vec3[numPos]; // bitangent accum
+		for (int i = 0; i < numPos; i++){
+			accum[i] = glm::vec3(0.0f);
+			accum2[i] = glm::vec3(0.0f);
+		}
+
+		auto P = positionData;
+		auto UV = uvData;
+		for (auto i = 0; i < indexCount; i += 3){
+			auto i0 = indexData[i], i1 = indexData[i + 1], i2 = indexData[i + 2];
+			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
+			auto uv0 = i0 * 2, uv1 = i1 * 2, uv2 = i2 * 2;
+			// delta position
+			glm::vec3 dp1 = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
+			glm::vec3 dp2 = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
+			// delta uv
+			glm::vec2 duv1 = glm::vec2(UV[uv1] - UV[uv0], UV[uv1 + 1] - UV[uv0 + 1]);
+			glm::vec2 duv2 = glm::vec2(UV[uv2] - UV[uv0], UV[uv2 + 1] - UV[uv0 + 1]);
+			float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+			glm::vec3 tangent = (dp1 * duv2.y - dp2 * duv1.y) * r;
+			glm::vec3 bitangent = (dp2 * duv1.x - dp1 * duv2.x) * r;
+			accum[i0] += tangent; accum[i1] += tangent; accum[i2] += tangent;
+			accum2[i0] += bitangent; accum2[i1] += bitangent; accum2[i2] += bitangent;
+		}
+
+		GLfloat* tangents = new GLfloat[positionCount];
+		GLfloat* bitangents = new GLfloat[positionCount];
+		for (auto i = 0; i < numPos; i++){
+			accum[i] = glm::normalize(accum[i]);
+			tangents[i * 3] = accum[i].x;
+			tangents[i * 3 + 1] = accum[i].y;
+			tangents[i * 3 + 2] = accum[i].z;
+			accum2[i] = glm::normalize(accum2[i]);
+			bitangents[i * 3] = accum2[i].x;
+			bitangents[i * 3 + 1] = accum2[i].y;
+			bitangents[i * 3 + 2] = accum2[i].z;
+		}
+		updateTangentData(tangents, positionCount);
+		updateBitangentData(bitangents, positionCount);
+	}
 
 	void MeshGeometry::uploadPosition() {
 		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
@@ -170,10 +243,14 @@ namespace pathos {
 		glDeleteBuffers(1, &indexBuffer);
 		glDeleteBuffers(1, &uvBuffer);
 		glDeleteBuffers(1, &normalBuffer);
+		if(tangentBuffer) glDeleteBuffers(1, &tangentBuffer);
+		if(bitangentBuffer) glDeleteBuffers(1, &bitangentBuffer);
 		if (positionData) delete positionData;
 		if (indexData) delete indexData;
 		if (normalData) delete normalData;
 		if (uvData) delete uvData;
+		if (tangentData) delete tangentData;
+		if (bitangentData) delete bitangentData;
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////

@@ -116,13 +116,16 @@ int main(int argc, char** argv) {
 	planeColor->addLight(light);
 	planeColor->setShadowMethod(shadow);
 
-	GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
-	auto mat = make_shared<TextureMaterial>(tex);
+	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
+	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
+	//auto mat = make_shared<TextureMaterial>(tex);
+	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
 	mat->addLight(light);
 	mat->setShadowMethod(shadow);
 
 	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
-	auto test = planeGeom->getPos();
+	/*auto test = planeGeom->getPos();
 	int k = 2;
 	for (int i = 0; i <= 30; i++){
 		for (int j = 0; j <= 30; j++){
@@ -131,7 +134,7 @@ int main(int argc, char** argv) {
 		}
 	}
 	planeGeom->uploadPosition();
-	planeGeom->calculateNormals();
+	planeGeom->calculateNormals();*/
 
 	plane = new Mesh(planeGeom, mat);
 	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));

@@ -9,11 +9,11 @@ namespace pathos {
 
 	class MeshGeometry : public NamedObject {
 	private:
-		GLfloat *positionData, *uvData, *normalData;
-		GLuint* indexData;
-		GLuint positionBuffer, uvBuffer, normalBuffer, indexBuffer;
-		GLuint vertexLocation, uvLocation, normalLocation; // xxLocation is valid only if xxActivated == true
-		bool vertexActivated, uvActivated, normalActivated;
+		GLfloat *positionData = nullptr, *uvData = nullptr, *normalData = nullptr, *tangentData = nullptr, *bitangentData = nullptr;
+		GLuint* indexData = nullptr;
+		GLuint positionBuffer = 0, uvBuffer = 0, normalBuffer = 0, indexBuffer = 0, tangentBuffer = 0, bitangentBuffer = 0;
+		GLuint vertexLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation; // xxLocation is valid only if xxActivated == true
+		bool vertexActivated = false, uvActivated = false, normalActivated = false;
 		unsigned int positionCount = 0, uvCount = 0, normalCount = 0, indexCount = 0; // it's array length, not actual count!
 	public:
 		MeshGeometry();
@@ -25,18 +25,26 @@ namespace pathos {
 		void updateIndexData(GLuint* data, unsigned int length);
 		void updateUVData(GLfloat* data, unsigned int length);
 		void updateNormalData(GLfloat* data, unsigned int length);
+		void updateTangentData(GLfloat* data, unsigned int length);
+		void updateBitangentData(GLfloat* data, unsigned int length);
 
 		inline GLfloat* getPos() { return positionData; }
+		void uploadPosition();
 		void calculateNormals();
+		void calculateTangentBasis();
 
 		void activateVertexBuffer(GLuint index);
 		void activateUVBuffer(GLuint index);
 		void activateNormalBuffer(GLuint index);
+		void activateTangentBuffer(GLuint index);
+		void activateBitangentBuffer(GLuint index);
 		void activateIndexBuffer();
 
 		void deactivateVertexBuffer(GLuint index);
 		void deactivateUVBuffer(GLuint index);
 		void deactivateNormalBuffer(GLuint index);
+		void deactivateTangentBuffer(GLuint index);
+		void deactivateBitangentBuffer(GLuint index);
 		void deactivateIndexBuffer();
 
 		GLuint getVertexLocation();
@@ -49,7 +57,6 @@ namespace pathos {
 		void applyTransform(glm::mat4 &transform);
 		void scale(float value);
 		void scaleUV(float scaleU, float scaleV);
-		void uploadPosition();
 		void dispose();
 		//void convertToSeparateBuffers();
 	};

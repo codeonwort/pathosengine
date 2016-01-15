@@ -220,6 +220,7 @@ namespace pathos {
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
 
+		// upload directional light uniforms
 		auto lights = material->getDirectionalLights();
 		size_t numLights = lights.size();
 		if (numLights > 0) {
@@ -341,6 +342,124 @@ namespace pathos {
 		geometry->deactivateVertexBuffer(0);
 		geometry->deactivateUVBuffer(1);
 		geometry->deactivateIndexBuffer();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->deactivate();
+		glUseProgram(0);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// BumpTextureMaterial
+	BumpTextureMaterial::BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha) {
+		addPass(new BumpTextureMaterialPass(imageTexture, normalMapTexture, useAlpha));
+	}
+
+	// BumpTextureMaterialPass
+	BumpTextureMaterialPass::BumpTextureMaterialPass(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha)
+		: imageTexture(imageTexture), normalMapTexture(normalMapTexture), useAlpha(useAlpha) {
+		//
+	}
+	void BumpTextureMaterialPass::updateProgram(MeshMaterial* M) {
+		vsCompiler.setUseUV(true);
+		vsCompiler.setUVLocation(1);
+		fsCompiler.textureSampler("imageSampler");
+		fsCompiler.textureSampler("normalSampler");
+		fsCompiler.inVar("vec2", "uv");
+		fsCompiler.outVar(useAlpha ? "vec4" : "vec3", "color");
+
+		// shadow
+		fsCompiler.mainCode("float visibility = 1.0;");
+		if (M->getShadowMethod() != nullptr) {
+			M->getShadowMethod()->addShaderCode(vsCompiler, fsCompiler);
+		}
+
+		// normal mapping
+		fsCompiler.mainCode("vec3 norm = normalize(texture2D(normalSampler, fs_in.uv).rgb * 2.0 - 1.0);");
+
+		// directional lighting
+		fsCompiler.mainCode("vec3 diffuseTerm = vec3(0, 0, 0);");
+		fsCompiler.mainCode("vec3 specularTerm = vec3(0, 0, 0);");
+		auto dirLights = M->getDirectionalLights().size();
+		if (dirLights > 0) {
+			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 halfVector;");
+			for (size_t i = 0; i < dirLights; i++) {
+				string lightCol = "dirLightColors[" + to_string(i) + "]";
+				string lightDir = "dirLightDirs[" + to_string(i) + "]";
+				fsCompiler.mainCode("  diffuseLightAccum += " + lightCol + " * max(dot(norm," + lightDir + "),0);");
+				fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + eye);");
+				fsCompiler.mainCode("  specularLightAccum += " + lightCol + " * pow(max(dot(norm,halfVector),0), 128);");
+			}
+			fsCompiler.mainCode("diffuseTerm = visibility*diffuseColor*diffuseLightAccum;");
+			fsCompiler.mainCode("specularTerm = visibility*specularColor*specularLightAccum;");
+		}
+
+		if (useAlpha) fsCompiler.mainCode("color = diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
+		else fsCompiler.mainCode("color = vec4(diffuseTerm,1.0) * texture2D(imageSampler, fs_in.uv);");
+
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void BumpTextureMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateUVBuffer(1);
+		geometry->activateTangentBuffer(3);
+		geometry->activateBitangentBuffer(4);
+		geometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, imageTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		auto shadow = material->getShadowMethod();
+		if (shadow != nullptr) shadow->activate(program);
+
+		// upload directional light uniforms
+		auto lights = material->getDirectionalLights();
+		size_t numLights = lights.size();
+		if (numLights > 0) {
+			auto len = numLights * 3;
+			GLfloat* dir = new GLfloat[len];
+			GLfloat* col = new GLfloat[len];
+			for (size_t i = 0; i < numLights; i++) {
+				dir[i * 3] = -lights[i]->getDirection()[0];
+				dir[i * 3 + 1] = -lights[i]->getDirection()[1];
+				dir[i * 3 + 2] = -lights[i]->getDirection()[2];
+				col[i * 3] = lights[i]->getColor()[0];
+				col[i * 3 + 1] = lights[i]->getColor()[1];
+				col[i * 3 + 2] = lights[i]->getColor()[2];
+			}
+			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numLights, dir);
+			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numLights, col);
+			delete[] dir;
+			delete[] col;
+		}
+	}
+	void BumpTextureMaterialPass::renderMaterial() {
+		if (useAlpha) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		if (useAlpha) glDisable(GL_BLEND);
+	}
+	void BumpTextureMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateUVBuffer(1);
+		geometry->deactivateTangentBuffer(3);
+		geometry->deactivateBitangentBuffer(4);
+		geometry->deactivateIndexBuffer();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->deactivate();

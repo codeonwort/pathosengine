@@ -16,11 +16,11 @@
 namespace pathos {
 
 	class MeshMaterial;
-		class ColorMaterial;
-		class TextureMaterial;
+	class ColorMaterial;
+	class TextureMaterial;
 	class MeshMaterialPass;
-		class ColorMaterialPass;
-		class TextureMaterialPass;
+	class ColorMaterialPass;
+	class TextureMaterialPass;
 
 	// classes in other headers
 	class Mesh;
@@ -79,7 +79,7 @@ namespace pathos {
 		bool isPassEnabled(int index);
 		void enablePass(int index);
 		void disablePass(int index);
-		
+
 		inline ShadowMethod* getShadowMethod() { return shadowMethod; }
 		inline void setShadowMethod(ShadowMethod* method) {
 			shadowMethod = method;
@@ -94,7 +94,7 @@ namespace pathos {
 		const std::vector<DirectionalLight*>& getDirectionalLights();
 		const std::vector<PointLight*>& getPointLights();
 	};
-	
+
 	class ColorMaterial : public MeshMaterial {
 	private:
 		ColorMaterialPass* pass; // only single pass for ColorMaterial
@@ -109,10 +109,15 @@ namespace pathos {
 		void setAlpha(GLfloat a);
 		void setBlendFactor(GLuint, GLuint);
 	};
-	
+
 	class TextureMaterial : public MeshMaterial {
 	public:
 		TextureMaterial(GLuint texID, bool useAlpha = false, string channelMapping = "rgb");
+	};
+
+	class BumpTextureMaterial : public MeshMaterial {
+	public:
+		BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha = false);
 	};
 
 	class ShadowTextureMaterial : public MeshMaterial {
@@ -126,10 +131,10 @@ namespace pathos {
 	public:
 		WireframeMaterial(GLfloat, GLfloat, GLfloat, GLfloat = 1.0f);
 	};
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	// passes
-	
+
 	class MeshMaterialPass {
 	protected:
 		GLuint program;
@@ -151,7 +156,7 @@ namespace pathos {
 		virtual void renderMaterial() = 0;
 		virtual void deactivate() = 0;
 	};
-	
+
 	class ColorMaterialPass : public MeshMaterialPass {
 	private:
 		GLfloat ambient[3], diffuse[3], specular[3], alpha;
@@ -168,7 +173,7 @@ namespace pathos {
 		virtual void renderMaterial();
 		virtual void deactivate();
 	};
-	
+
 	class TextureMaterialPass : public MeshMaterialPass {
 	private:
 		GLuint textureID;
@@ -176,6 +181,18 @@ namespace pathos {
 		bool useAlpha;
 	public:
 		TextureMaterialPass(GLuint texID, bool useAlpha = false, string channelMapping = "rgb");
+		virtual void updateProgram(MeshMaterial*);
+		virtual void activate();
+		virtual void renderMaterial();
+		virtual void deactivate();
+	};
+
+	class BumpTextureMaterialPass : public MeshMaterialPass {
+	private:
+		GLuint imageTexture, normalMapTexture;
+		bool useAlpha;
+	public:
+		BumpTextureMaterialPass(GLuint, GLuint, bool);
 		virtual void updateProgram(MeshMaterial*);
 		virtual void activate();
 		virtual void renderMaterial();
