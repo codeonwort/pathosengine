@@ -124,9 +124,11 @@ int main(int argc, char** argv) {
 	//mat->addLight(light);
 	//mat->setShadowMethod(shadow);
 
+	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
 	planeGeom->calculateTangentBasis();
-	/*auto test = planeGeom->getPos();
+	/*
+	auto test = planeGeom->getPos();
 	int k = 2;
 	for (int i = 0; i <= 30; i++){
 		for (int j = 0; j <= 30; j++){
@@ -139,7 +141,7 @@ int main(int argc, char** argv) {
 
 	plane = new Mesh(planeGeom, mat);
 	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));
-	plane->getTransform().appendMove(0, -0.5, -4);
+	plane->getTransform().appendMove(0, -0.5, -5);
 
 	caster = new Mesh(new SphereGeometry(2, 40), color);
 	//caster->getGeometries()[0]->calculateNormals();

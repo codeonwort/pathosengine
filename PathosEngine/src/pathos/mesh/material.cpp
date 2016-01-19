@@ -369,10 +369,10 @@ namespace pathos {
 		vsCompiler.outVar("vec3", "light_tangent");
 		vsCompiler.outVar("vec3", "eye_tangent");
 		vsCompiler.uniform("mat3", "mvTransform");
-		vsCompiler.mainCode("vec3 normal_camera = mvTransform * normal;");
 		vsCompiler.mainCode("vec3 tangent_camera = mvTransform * tangent;");
 		vsCompiler.mainCode("vec3 bitangent_camera = mvTransform * bitangent;");
-		vsCompiler.mainCode("mat3 TBN = transpose(mat3(normal_camera, tangent_camera, bitangent_camera));");
+		vsCompiler.mainCode("vec3 normal_camera = mvTransform * normal;");
+		vsCompiler.mainCode("mat3 TBN = transpose(mat3(tangent_camera, bitangent_camera, normal_camera));");
 		vsCompiler.mainCode("vs_out.light_tangent = TBN * light;");
 		vsCompiler.mainCode("vs_out.eye_tangent = TBN * eye;");
 
@@ -426,7 +426,7 @@ namespace pathos {
 		}*/
 
 		if (useAlpha) fsCompiler.mainCode("color = diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
-		else fsCompiler.mainCode("color = vec4(diffuseTerm,1.0) * texture2D(imageSampler, fs_in.uv);");
+		else fsCompiler.mainCode("color = vec4(diffuseTerm, 1.0) * texture2D(imageSampler, fs_in.uv);");
 
 		std::cout << vsCompiler.getCode() << std::endl;
 		std::cout << fsCompiler.getCode() << std::endl;
@@ -442,25 +442,29 @@ namespace pathos {
 
 		glUseProgram(program);
 		const glm::mat4 & modelTransform = modelMatrix;
+		const glm::mat3 viewTransform = glm::mat3(material->getCamera()->getViewMatrix());
+		const glm::mat3 mvTransform = viewTransform * glm::mat3(modelTransform);
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
-		glUniformMatrix3fv(glGetUniformLocation(program, "vpTransform"), 1, false, glm::value_ptr(glm::mat3(material->getCamera()->getViewMatrix() * modelTransform)));
-		glUniform3f(glGetUniformLocation(program, "light"), 0, 1, 0);
-		glUniform3f(glGetUniformLocation(program, "eye"), 0, 0, -1);
+		glUniformMatrix3fv(glGetUniformLocation(program, "mvTransform"), 1, false, glm::value_ptr(mvTransform));
+		glm::vec3 light_cameraspace = viewTransform * glm::vec3(0, -1, 1);
+		glm::vec3 eye_cameraspace = viewTransform * glm::vec3(0, 1, -1);
+		glUniform3f(glGetUniformLocation(program, "light"), -light_cameraspace.x, -light_cameraspace.y, -light_cameraspace.z);
+		glUniform3f(glGetUniformLocation(program, "eye"), eye_cameraspace.x, eye_cameraspace.y, eye_cameraspace.z);
 		glUniform1i(glGetUniformLocation(program, "imageSampler"), 0);
 		glUniform1i(glGetUniformLocation(program, "normalSampler"), 2);
 		glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, imageTexture);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);*/
 		glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, normalMapTexture);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);*/
 
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
