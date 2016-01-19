@@ -74,6 +74,8 @@ namespace pathos {
 
 	void VertexShaderCompiler::setUseUV(bool use) { useUV = use; }
 	void VertexShaderCompiler::setUseNormal(bool use) { useNormal = use; }
+	void VertexShaderCompiler::setUseTangent(bool use) { useTangent = use; }
+	void VertexShaderCompiler::setUseBitangent(bool use) { useBitangent = use; }
 	void VertexShaderCompiler::setTransferPosition(bool transfer) { transferPosition = transfer; }
 	void VertexShaderCompiler::setPositionLocation(GLuint loc) { positionLocation = loc; }
 	void VertexShaderCompiler::setUVLocation(GLuint loc) { uvLocation = loc; }
@@ -91,16 +93,27 @@ namespace pathos {
 	void VertexShaderCompiler::uniformMat4(const string& name) {
 		uniforms.push_back(pair<string, string>("mat4", name));
 	}
+	void VertexShaderCompiler::uniform(const string& type, const string& name) {
+		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("VertexShaderCompiler::uniform() - variable already defined with different type");
+			}
+		}
+		uniforms.push_back(pair<string, string>(type, name));
+	}
 	void VertexShaderCompiler::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
 
 	void VertexShaderCompiler::clear() {
 		usePosition = true;
-		useNormal = useUV = false;
+		useNormal = useUV = useTangent = useBitangent = false;
 		positionLocation = 0;
 		uvLocation = 1;
 		normalLocation = 2;
+		tangentLocation = 3;
+		bitangentLocation = 4;
 		maincode = "";
 	}
 	string VertexShaderCompiler::getCode() {
@@ -119,6 +132,10 @@ namespace pathos {
 			src << "layout (location = " << normalLocation << ") in vec3 normal;" << std::endl;
 		if (useUV)
 			src << "layout (location = " << uvLocation << ") in vec2 uv;" << std::endl;
+		if (useTangent)
+			src << "layout (location = " << tangentLocation << ") in vec3 tangent;" << std::endl;
+		if (useBitangent)
+			src << "layout (location = " << bitangentLocation << ") in vec3 bitangent;" << std::endl;
 		if (useVarying() || outVars.size() > 0) {
 			src << "out VS_OUT {" << std::endl;
 			for (auto it = outVars.begin(); it != outVars.end(); it++) {

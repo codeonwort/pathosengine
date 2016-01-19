@@ -361,11 +361,36 @@ namespace pathos {
 	}
 	void BumpTextureMaterialPass::updateProgram(MeshMaterial* M) {
 		vsCompiler.setUseUV(true);
-		vsCompiler.setUVLocation(1);
+		vsCompiler.setUseNormal(true);
+		vsCompiler.setUseTangent(true);
+		vsCompiler.setUseBitangent(true);
+		vsCompiler.uniform("vec3", "light");
+		vsCompiler.uniform("vec3", "eye");
+		vsCompiler.outVar("vec3", "light_tangent");
+		vsCompiler.outVar("vec3", "eye_tangent");
+		vsCompiler.uniform("mat3", "mvTransform");
+		vsCompiler.mainCode("vec3 normal_camera = mvTransform * normal;");
+		vsCompiler.mainCode("vec3 tangent_camera = mvTransform * tangent;");
+		vsCompiler.mainCode("vec3 bitangent_camera = mvTransform * bitangent;");
+		vsCompiler.mainCode("mat3 TBN = transpose(mat3(normal_camera, tangent_camera, bitangent_camera));");
+		vsCompiler.mainCode("vs_out.light_tangent = TBN * light;");
+		vsCompiler.mainCode("vs_out.eye_tangent = TBN * eye;");
+
 		fsCompiler.textureSampler("imageSampler");
 		fsCompiler.textureSampler("normalSampler");
 		fsCompiler.inVar("vec2", "uv");
-		fsCompiler.outVar(useAlpha ? "vec4" : "vec3", "color");
+		fsCompiler.inVar("vec3", "normal");
+		fsCompiler.inVar("vec3", "light_tangent");
+		fsCompiler.inVar("vec3", "eye_tangent");
+		fsCompiler.outVar("vec4", "color");
+
+		// light
+		size_t dirLights = M->getDirectionalLights().size();
+		if (dirLights > 0) {
+			//vsCompiler.setUseNormal(true);
+			fsCompiler.directionalLights(dirLights);
+			fsCompiler.inVar("vec3", "normal");
+		}
 
 		// shadow
 		fsCompiler.mainCode("float visibility = 1.0;");
@@ -379,8 +404,13 @@ namespace pathos {
 		// directional lighting
 		fsCompiler.mainCode("vec3 diffuseTerm = vec3(0, 0, 0);");
 		fsCompiler.mainCode("vec3 specularTerm = vec3(0, 0, 0);");
-		auto dirLights = M->getDirectionalLights().size();
-		if (dirLights > 0) {
+
+		fsCompiler.mainCode("vec3 halfVector;");
+		fsCompiler.mainCode("halfVector = normalize(fs_in.light_tangent + fs_in.eye_tangent);");
+		fsCompiler.mainCode("diffuseTerm = visibility * vec3(1,1,1) * max(dot(norm, fs_in.light_tangent), 0);");
+		fsCompiler.mainCode("specularTerm = visibility * vec3(1,1,1) * pow(max(dot(norm, halfVector),0), 128);");
+
+		/*if (dirLights > 0) {
 			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 halfVector;");
@@ -388,21 +418,24 @@ namespace pathos {
 				string lightCol = "dirLightColors[" + to_string(i) + "]";
 				string lightDir = "dirLightDirs[" + to_string(i) + "]";
 				fsCompiler.mainCode("  diffuseLightAccum += " + lightCol + " * max(dot(norm," + lightDir + "),0);");
-				fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + eye);");
+				fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + fs_in.eye_camera);");
 				fsCompiler.mainCode("  specularLightAccum += " + lightCol + " * pow(max(dot(norm,halfVector),0), 128);");
 			}
-			fsCompiler.mainCode("diffuseTerm = visibility*diffuseColor*diffuseLightAccum;");
-			fsCompiler.mainCode("specularTerm = visibility*specularColor*specularLightAccum;");
-		}
+			fsCompiler.mainCode("diffuseTerm = visibility * diffuseLightAccum;");
+			fsCompiler.mainCode("specularTerm = visibility * specularLightAccum;");
+		}*/
 
 		if (useAlpha) fsCompiler.mainCode("color = diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
 		else fsCompiler.mainCode("color = vec4(diffuseTerm,1.0) * texture2D(imageSampler, fs_in.uv);");
 
+		std::cout << vsCompiler.getCode() << std::endl;
+		std::cout << fsCompiler.getCode() << std::endl;
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void BumpTextureMaterialPass::activate() {
 		geometry->activateVertexBuffer(0);
 		geometry->activateUVBuffer(1);
+		geometry->activateNormalBuffer(2);
 		geometry->activateTangentBuffer(3);
 		geometry->activateBitangentBuffer(4);
 		geometry->activateIndexBuffer();
@@ -411,13 +444,23 @@ namespace pathos {
 		const glm::mat4 & modelTransform = modelMatrix;
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
-		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glUniformMatrix3fv(glGetUniformLocation(program, "vpTransform"), 1, false, glm::value_ptr(glm::mat3(material->getCamera()->getViewMatrix() * modelTransform)));
+		glUniform3f(glGetUniformLocation(program, "light"), 0, 1, 0);
+		glUniform3f(glGetUniformLocation(program, "eye"), 0, 0, -1);
+		glUniform1i(glGetUniformLocation(program, "imageSampler"), 0);
+		glUniform1i(glGetUniformLocation(program, "normalSampler"), 2);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, imageTexture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glBindTexture(GL_TEXTURE_2D, imageTexture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, normalMapTexture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
@@ -454,13 +497,14 @@ namespace pathos {
 	void BumpTextureMaterialPass::deactivate() {
 		geometry->deactivateVertexBuffer(0);
 		geometry->deactivateUVBuffer(1);
+		geometry->deactivateNormalBuffer(2);
 		geometry->deactivateTangentBuffer(3);
 		geometry->deactivateBitangentBuffer(4);
 		geometry->deactivateIndexBuffer();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->deactivate();
 		glUseProgram(0);

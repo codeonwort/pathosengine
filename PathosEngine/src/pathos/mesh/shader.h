@@ -12,8 +12,8 @@ namespace pathos {
 
 	class VertexShaderCompiler {
 	private:
-		GLuint positionLocation, uvLocation, normalLocation;
-		bool usePosition, useUV, useNormal;
+		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;
+		bool usePosition, useUV, useNormal, useTangent, useBitangent;
 		bool transferPosition = false;
 		bool useVarying();
 		vector<pair<string, string>> uniforms;
@@ -25,6 +25,8 @@ namespace pathos {
 		void clear();
 		void setUseUV(bool);
 		void setUseNormal(bool);
+		void setUseTangent(bool);
+		void setUseBitangent(bool);
 		void setTransferPosition(bool);
 		void setPositionLocation(GLuint);
 		void setUVLocation(GLuint);
@@ -32,6 +34,7 @@ namespace pathos {
 
 		void mainCode(const string& code);
 		void outVar(const string& type, const string &name);
+		void uniform(const string& type, const string& name);
 		void uniformMat4(const string& name);
 	};
 

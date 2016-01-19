@@ -3,6 +3,7 @@
 #include <vector>
 #include <GL/glew.h>
 #include <pathos/core.h>
+#include <pathos/camera/camera.h>
 #include <pathos/mesh/geometry.h>
 #include <pathos/mesh/shader.h>
 #include <pathos/mesh/shadow.h>
@@ -42,6 +43,7 @@ namespace pathos {
 	private:
 		Mesh* owner = nullptr;
 		MeshGeometry* relatedGeometry;
+		Camera* camera = nullptr;
 		glm::mat4 modelMatrix;
 		glm::mat4 vpTransform; // view * projection matrix
 		glm::vec3 eyeVector; // camera's eye vector
@@ -70,9 +72,11 @@ namespace pathos {
 		glm::vec3& getEyeVector();
 		glm::mat4& getVPTransform();
 		glm::mat4& getModelMatrix();
+		inline Camera* getCamera() { return camera; }
 		void setModelMatrix(const glm::mat4& modelMatrix);
 		void setEyeVector(glm::vec3& eye);
 		void setVPTransform(glm::mat4&);
+		inline void setCamera(Camera* c) { camera = c; }
 
 		size_t numPasses();
 		void addPass(MeshMaterialPass*);

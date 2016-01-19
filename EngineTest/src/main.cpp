@@ -119,12 +119,13 @@ int main(int argc, char** argv) {
 	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
 	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
-	//auto mat = make_shared<TextureMaterial>(tex);
+	//auto mat = make_shared<TextureMaterial>(tex_norm);
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
-	mat->addLight(light);
-	mat->setShadowMethod(shadow);
+	//mat->addLight(light);
+	//mat->setShadowMethod(shadow);
 
 	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
+	planeGeom->calculateTangentBasis();
 	/*auto test = planeGeom->getPos();
 	int k = 2;
 	for (int i = 0; i <= 30; i++){

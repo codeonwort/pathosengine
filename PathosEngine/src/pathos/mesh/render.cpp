@@ -32,6 +32,7 @@ namespace pathos {
 			M->setModelMatrix(modelTransform);
 			M->setVPTransform(vpTransform);
 			M->setEyeVector(eye);
+			M->setCamera(camera);
 			M->updateProgram();
 			renderSub(G, M);
 		}
