@@ -530,7 +530,7 @@ namespace pathos {
 		fsCompiler.outVar("vec4", "color");
 		fsCompiler.mainCode("float depth = texture2D(texSampler, fs_in.uv).r;");
 		fsCompiler.mainCode("depth = clamp(depth, 0, 1);");
-		fsCompiler.mainCode("color = vec4(depth);");
+		fsCompiler.mainCode("color = vec4(depth, depth, depth, 1.0);");
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void ShadowTextureMaterialPass::activate() {
@@ -543,12 +543,12 @@ namespace pathos {
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
 		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, debugTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glActiveTexture(GL_TEXTURE0);
 	}
 	void ShadowTextureMaterialPass::renderMaterial() {
 		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);

@@ -27,13 +27,14 @@ namespace pathos {
 		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&) = 0;
 	};
 
+	// shadow mapping (by directional light)
 	class ShadowMap : public ShadowMethod {
 	private:
 		DirectionalLight* light;
 		Camera* camera;
 
 		GLsizei width, height;
-		GLuint fbo, shadowTexture, debugTexture, depthBuffer;
+		GLuint fbo, shadowTexture, debugTexture;
 		GLuint program;
 		glm::mat4 depthMVP;
 
@@ -53,13 +54,15 @@ namespace pathos {
 		inline GLuint getDebugTexture() { return debugTexture; }
 	};
 
+	// shadow mapping (omnidirectional, by point light)
 	class OmnidirectionalShadow : public ShadowMethod {
 	private:
 		PointLight* light;
 		Camera* camera;
-		GLuint fbo[6], shadowTextures[6], depthBuffers[6];
+		GLuint fbo[6], shadowTextures[6], debugTextures[6];
 		GLuint program;
 		GLsizei width, height;
+		glm::mat4 depthMVP;
 	public:
 		OmnidirectionalShadow(PointLight* light, Camera* camera);
 		virtual void activate(GLuint materialPassProgram);

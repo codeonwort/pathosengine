@@ -58,7 +58,6 @@ void main() {
 		string fshader = R"(#version 330 core
 out vec4 color;
 void main() {
-	//color = vec4(gl_FragCoord.z);
 	color = vec4(gl_FragCoord.z, 0, 0, 1);
 }
 )";
@@ -100,7 +99,7 @@ void main() {
 		depthMVP = projection * view * modelMatrix;
 
 		glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
-
+		
 		// draw call
 		glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
 
@@ -188,38 +187,37 @@ void main() {
 	// omnidirectional shadow
 	OmnidirectionalShadow::OmnidirectionalShadow(PointLight* light, Camera* camera) :light(light), camera(camera) {
 		// constructor
-		/*
 		instances.push_back(this);
 
 		width = height = 1024;
-
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-		glGenTextures(1, &shadowTexture);
-		glBindTexture(GL_TEXTURE_2D, shadowTexture);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTexture, 0);
-
+		
+		glGenFramebuffers(6, fbo);
+		glGenTextures(6, shadowTextures);
+		glGenTextures(6, debugTextures);
 		static const GLenum buffs[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, buffs);
 
-		glGenTextures(1, &debugTexture);
-		glBindTexture(GL_TEXTURE_2D, debugTexture);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, width, height);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, debugTexture, 0);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
+		for (int i = 0; i < 6; i++){
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
+			glBindTexture(GL_TEXTURE_2D, shadowTextures[i]);
+			glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTextures[i], 0);
+			glDrawBuffers(1, buffs);
+			glBindTexture(GL_TEXTURE_2D, debugTextures[i]);
+			glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, width, height);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, debugTextures[i], 0);
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+				std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
+			}
 		}
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // return to default framebuffer
 
 		string vshader = R"(#version 330 core
@@ -237,14 +235,52 @@ void main() {
 }
 )";
 		program = createProgram(vshader, fshader);
+	}
+
+	void OmnidirectionalShadow::renderDepth() {
+		/*
+		// set program
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glViewport(0, 0, width, height);
+		modelGeometry->activateVertexBuffer(0);
+		modelGeometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		GLfloat* lightDir = light->getDirection();
+		glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]);
+		lightPos = lightPos * 5.0f;
+		glm::mat4 view = glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0));
+		glm::mat4 projection = glm::ortho(-20.0, 20.0, -20.0, 20.0, -10.0, 10.0);
+		//projection = glm::perspective(glm::radians(110.0), 800.0 / 600, 1.0, 30.0);
+		//glm::mat4 projection = calculateAABB(view);
+		depthMVP = projection * view * modelMatrix;
+
+		glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
+
+		// draw call
+		glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+
+		// unset program
+		modelGeometry->deactivateVertexBuffer(0);
+		modelGeometry->deactivateIndexBuffer();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		auto config = Engine::getConfig();
+		glViewport(0, 0, config.width, config.height);
+		glUseProgram(0);
 		*/
 	}
 
 	void OmnidirectionalShadow::activate(GLuint materialProgram) {
-		//
-	}
-	void OmnidirectionalShadow::renderDepth() {
-		//
+		/*
+		glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+		glm::mat4 depthMVPbiased = bias * depthMVP;
+		GLuint depthMVPLoc = glGetUniformLocation(materialProgram, "depthMVP");
+		glUniformMatrix4fv(depthMVPLoc, 1, false, &depthMVPbiased[0][0]);
+		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLight"), 1, light->getDirection());
+		glUniform1i(glGetUniformLocation(materialProgram, "depthSampler"), 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, shadowTexture);*/
 	}
 	void OmnidirectionalShadow::deactivate() {
 		//
