@@ -355,13 +355,13 @@ namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// BumpTextureMaterial
-	BumpTextureMaterial::BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha) {
-		addPass(new BumpTextureMaterialPass(imageTexture, normalMapTexture, useAlpha));
+	BumpTextureMaterial::BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, PointLight* light, bool useAlpha) {
+		addPass(new BumpTextureMaterialPass(imageTexture, normalMapTexture, light, useAlpha));
 	}
 
 	// BumpTextureMaterialPass
-	BumpTextureMaterialPass::BumpTextureMaterialPass(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha)
-		: imageTexture(imageTexture), normalMapTexture(normalMapTexture), useAlpha(useAlpha) {
+	BumpTextureMaterialPass::BumpTextureMaterialPass(GLuint imageTexture, GLuint normalMapTexture, PointLight* light, bool useAlpha)
+		: imageTexture(imageTexture), normalMapTexture(normalMapTexture), light(light), useAlpha(useAlpha) {
 		//
 	}
 	void BumpTextureMaterialPass::updateProgram(MeshMaterial* M) {
@@ -369,8 +369,8 @@ namespace pathos {
 		vsCompiler.setUseNormal(true);
 		vsCompiler.setUseTangent(true);
 		vsCompiler.setUseBitangent(true);
-		vsCompiler.uniform("vec3", "light");
-		vsCompiler.uniform("vec3", "eye");
+		vsCompiler.uniform("vec3", "eyeDir_camera");
+		vsCompiler.uniform("vec3", "lightPos_camera");
 		vsCompiler.outVar("vec3", "light_tangent");
 		vsCompiler.outVar("vec3", "eye_tangent");
 		vsCompiler.uniform("mat3", "mvTransform");
@@ -378,8 +378,9 @@ namespace pathos {
 		vsCompiler.mainCode("vec3 bitangent_camera = mvTransform * bitangent;");
 		vsCompiler.mainCode("vec3 normal_camera = mvTransform * normal;");
 		vsCompiler.mainCode("mat3 TBN = transpose(mat3(tangent_camera, bitangent_camera, normal_camera));");
-		vsCompiler.mainCode("vs_out.light_tangent = TBN * light;");
-		vsCompiler.mainCode("vs_out.eye_tangent = TBN * eye;");
+		vsCompiler.mainCode("vec3 position_camera = mvTransform * position;");
+		vsCompiler.mainCode("vs_out.light_tangent = TBN * normalize(lightPos_camera - position_camera);");
+		vsCompiler.mainCode("vs_out.eye_tangent = TBN * eyeDir_camera;");
 
 		fsCompiler.textureSampler("imageSampler");
 		fsCompiler.textureSampler("normalSampler");
@@ -412,7 +413,7 @@ namespace pathos {
 
 		fsCompiler.mainCode("vec3 halfVector;");
 		fsCompiler.mainCode("halfVector = normalize(fs_in.light_tangent + fs_in.eye_tangent);");
-		fsCompiler.mainCode("diffuseTerm = visibility * vec3(1,1,1) * max(dot(norm, fs_in.light_tangent), 0);");
+		fsCompiler.mainCode("diffuseTerm = visibility * vec3(1,1,1) * max(dot(norm, normalize(fs_in.light_tangent)), 0);");
 		fsCompiler.mainCode("specularTerm = visibility * vec3(1,1,1) * pow(max(dot(norm, halfVector),0), 128);");
 
 		/*if (dirLights > 0) {
@@ -433,6 +434,9 @@ namespace pathos {
 		if (useAlpha) fsCompiler.mainCode("color = diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
 		else fsCompiler.mainCode("color = vec4(diffuseTerm, 1.0) * texture2D(imageSampler, fs_in.uv);");
 
+		//std::cout << vsCompiler.getCode() << std::endl;
+		//std::cout << fsCompiler.getCode() << std::endl;
+
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void BumpTextureMaterialPass::activate() {
@@ -450,10 +454,11 @@ namespace pathos {
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
 		glUniformMatrix3fv(glGetUniformLocation(program, "mvTransform"), 1, false, glm::value_ptr(mvTransform));
-		glm::vec3 light_cameraspace = viewTransform * glm::vec3(0, -1, 1);
-		glm::vec3 eye_cameraspace = viewTransform * glm::vec3(0, 1, -1);
-		glUniform3f(glGetUniformLocation(program, "light"), -light_cameraspace.x, -light_cameraspace.y, -light_cameraspace.z);
-		glUniform3f(glGetUniformLocation(program, "eye"), eye_cameraspace.x, eye_cameraspace.y, eye_cameraspace.z);
+		glm::vec3 light_cameraspace = viewTransform * light->getPositionVector();
+		glm::vec3 eye_cameraspace = viewTransform * material->getCamera()->getEyeVector();
+
+		glUniform3f(glGetUniformLocation(program, "lightPos_camera"), light_cameraspace.x, light_cameraspace.y, light_cameraspace.z);
+		glUniform3f(glGetUniformLocation(program, "eyeDir_camera"), eye_cameraspace.x, eye_cameraspace.y, eye_cameraspace.z);
 		glUniform1i(glGetUniformLocation(program, "imageSampler"), 0);
 		glUniform1i(glGetUniformLocation(program, "normalSampler"), 2);
 		glActiveTexture(GL_TEXTURE0);
@@ -579,8 +584,8 @@ namespace pathos {
 		fsCompiler.inVar("vec2", "uv");
 		fsCompiler.outVar("vec4", "color");
 		fsCompiler.mainCode("vec2 uv = fs_in.uv * 2 - vec2(1.0);");
-		if (face == 0) fsCompiler.mainCode("float depth = texture(texSampler, vec3(1, -uv.y, -uv.x)).r;");
-		if (face == 1) fsCompiler.mainCode("float depth = texture(texSampler, vec3(-1, -uv.y, uv.x)).r;");
+		if (face == 0) fsCompiler.mainCode("float depth = texture(texSampler, vec3(1, uv.y, uv.x)).r;");
+		if (face == 1) fsCompiler.mainCode("float depth = texture(texSampler, vec3(-1, uv.y, uv.x)).r;");
 		if (face == 2) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.y, 1, uv.x)).r;");
 		if (face == 3) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.y, -1, uv.x)).r;");
 		if (face == 4) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.x, uv.y, 1)).r;");

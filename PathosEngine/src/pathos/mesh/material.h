@@ -121,7 +121,7 @@ namespace pathos {
 
 	class BumpTextureMaterial : public MeshMaterial {
 	public:
-		BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, bool useAlpha = false);
+		BumpTextureMaterial(GLuint imageTexture, GLuint normalMapTexture, PointLight* light, bool useAlpha = false);
 	};
 
 	class ShadowTextureMaterial : public MeshMaterial {
@@ -198,9 +198,10 @@ namespace pathos {
 	class BumpTextureMaterialPass : public MeshMaterialPass {
 	private:
 		GLuint imageTexture, normalMapTexture;
+		PointLight* light;
 		bool useAlpha;
 	public:
-		BumpTextureMaterialPass(GLuint, GLuint, bool);
+		BumpTextureMaterialPass(GLuint, GLuint, PointLight*, bool);
 		virtual void updateProgram(MeshMaterial*);
 		virtual void activate();
 		virtual void renderMaterial();

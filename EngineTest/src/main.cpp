@@ -13,9 +13,9 @@ using namespace std;
 using namespace pathos;
 
 Camera* cam;
-Mesh *plane, *cube, *car;
-Mesh *plane_posX;
+Mesh *cube, *car;
 Mesh *caster, *viewer, *shadowLight;
+Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ;
 Skybox* sky;
 Mesh* daeMesh;
 MeshDefaultRenderer* renderer;
@@ -32,7 +32,6 @@ void render() {
 	renderer->ready();
 	// various models
 	renderer->render(caster, cam);
-	//renderer->render(plane, cam);
 	//renderer->render(car, cam);
 	renderer->render(daeMesh, cam);
 	// about shadow
@@ -40,6 +39,11 @@ void render() {
 	renderer->render(cube, cam);
 	renderer->render(shadowLight, cam);
 	renderer->render(plane_posX, cam);
+	renderer->render(plane_negX, cam);
+	renderer->render(plane_posY, cam);
+	renderer->render(plane_negY, cam);
+	renderer->render(plane_posZ, cam);
+	renderer->render(plane_negZ, cam);
 	// skybox
 	renderer->render(sky, cam);
 }
@@ -96,7 +100,7 @@ int main(int argc, char** argv) {
 	}*/
 	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
-	daeMesh->getTransform().appendMove(4, 0, 0);
+	daeMesh->getTransform().appendMove(0, 0, 0);
 	daeMesh->getMaterials()[0]->addLight(plight);
 	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
 	
@@ -116,38 +120,46 @@ int main(int argc, char** argv) {
 	color->addLight(plight3);
 	color->setShadowMethod(shadow);
 
-	auto planeColor = make_shared<ColorMaterial>(0.0, 1.0, 1.0, 1);
-	planeColor->setAmbientColor(0, 0, 1);
-	planeColor->addLight(light);
-	planeColor->setShadowMethod(shadow);
-
 	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
 	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
-	auto mat = make_shared<TextureMaterial>(tex);
-	//auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
+	//auto mat = make_shared<TextureMaterial>(tex);
+	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
 	mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
-	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
+	auto planeGeom = new PlaneGeometry(30, 30);
 	planeGeom->calculateTangentBasis();
 
-	plane = new Mesh(planeGeom, mat);
-	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));
-	plane->getTransform().appendMove(0, -0.5, -5);
-
-	auto planeGeom_posX = new PlaneGeometry(25, 25);
-	planeGeom_posX->calculateTangentBasis();
-	plane_posX = new Mesh(planeGeom_posX, mat);
+	plane_posX = new Mesh(planeGeom, mat);
 	plane_posX->getTransform().appendMove(15, 0, 0);
-	plane_posX->getTransform().appendRotation(glm::radians(-60.0f), glm::vec3(0, 1, 0));
+	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
+	plane_negX = new Mesh(planeGeom, mat);
+	plane_negX->getTransform().appendMove(-15, 0, 0);
+	plane_negX->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+	plane_posY = new Mesh(planeGeom, mat);
+	plane_posY->getTransform().appendMove(0, 15, 0);
+	plane_posY->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(1, 0, 0));
+
+	plane_negY = new Mesh(planeGeom, mat);
+	plane_negY->getTransform().appendMove(0, -15, 0);
+	plane_negY->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1, 0, 0));
+
+	plane_posZ = new Mesh(planeGeom, mat);
+	plane_posZ->getTransform().appendMove(0, 0, 15);
+	plane_posZ->getTransform().appendRotation(glm::radians(180.0f), glm::vec3(0, 1, 0));
+
+	plane_negZ = new Mesh(planeGeom, mat);
+	plane_negZ->getTransform().appendMove(0, 0, -15);
 
 	caster = new Mesh(new SphereGeometry(2, 40), color);
 	//caster->getGeometries()[0]->calculateNormals();
 	caster->getTransform().appendMove(7, 4, 0);
 
-	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
+	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 1));
 	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
 	viewer->getTransform().appendMove(10, 0, 0);
 

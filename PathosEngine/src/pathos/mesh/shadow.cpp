@@ -265,7 +265,7 @@ void main() {
 		lightFarZ = 25.0f;
 		glm::vec3 lightPos = light->getPositionVector();
 		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
-		glm::vec3 ups[6] = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0) };
+		glm::vec3 ups[6] = { glm::vec3(0, -1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0), glm::vec3(0, -1, 0) };
 		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, lightNearZ, lightFarZ);
 
 		for (int i = 0; i < 6; i++){
@@ -327,15 +327,16 @@ void main() {
 		fs.uniform("float", "f_minus_n");
 		fs.uniform("float", "f_mult_n");
 		fs.mainCode("vec3 dir = fs_in.shadowCoord - shadowLightPos;");
+		//fs.mainCode("dir.y = -dir.y;");
 		//fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -dir), 0, 1);");
 		//fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
 		//fs.mainCode("visibility = texture(depthSampler, vec4(dir, posFromLight.z/posFromLight.w));");
 		fs.mainCode("float localZ = max(abs(dir.x), max(abs(dir.y), abs(dir.z)));");
 		//fs.mainCode("localZ = (f+n)/(f-n) - (2*f*n)/(f-n)/localZ;");
 		fs.mainCode("localZ = f_plus_n/f_minus_n - (2*f_mult_n)/f_minus_n/localZ;");
-		fs.mainCode("localZ = (localZ-0.005 + 1) * 0.5;");
+		fs.mainCode("localZ = (localZ-0.004 + 1) * 0.5;");
 		fs.mainCode("visibility = texture(depthSampler, vec4(normalize(dir), localZ));");
-		fs.mainCode("if(visibility < .5) visibility = .5;");
+		//fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 }
