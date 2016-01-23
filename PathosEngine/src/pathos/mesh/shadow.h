@@ -62,6 +62,7 @@ namespace pathos {
 		GLuint fbo, shadowTexture, debugTexture; // cubemap texture
 		GLuint program;
 		GLsizei width, height;
+		GLfloat lightNearZ, lightFarZ;
 		glm::mat4 depthMVP[6];
 	public:
 		OmnidirectionalShadow(PointLight* light, Camera* camera);

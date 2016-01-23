@@ -33,13 +33,13 @@ void render() {
 	// various models
 	renderer->render(caster, cam);
 	//renderer->render(plane, cam);
-	renderer->render(plane_posX, cam);
 	//renderer->render(car, cam);
 	renderer->render(daeMesh, cam);
 	// about shadow
 	renderer->render(viewer, cam);
 	renderer->render(cube, cam);
 	renderer->render(shadowLight, cam);
+	renderer->render(plane_posX, cam);
 	// skybox
 	renderer->render(sky, cam);
 }
@@ -64,24 +64,25 @@ int main(int argc, char** argv) {
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
 	//auto shadow = new ShadowMap(light, cam);
 	//auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(1, 1, 1));
-	auto plight = new PointLight(glm::vec3(0, 5, 0.5), glm::vec3(1, 1, 1));
+	auto plight = new PointLight(glm::vec3(0, 2, 0), glm::vec3(1, 1, 1));
 	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
 	auto shadow = new OmnidirectionalShadow(plight, cam);
 
 	// obj loader test
 	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
-	/*OBJLoader obj("../resources/Pin.obj", "../resources/");
+	OBJLoader obj("../resources/Pin.obj", "../resources/");
 	car = obj.craftMesh(0, obj.numGeometries(), "car");
-	car->getTransform().appendMove(5, 0, -5.0f);
-	car->getTransform().appendScale(5, 5, 5);
+	car->getTransform().appendMove(7, 1, 0);
+	car->getTransform().appendScale(20, 20, 20);
 	for (auto M : car->getMaterials()){
 		if (M->getDirectionalLights().size() == 0){
 			M->addLight(plight);
 			M->addLight(plight2);
 			M->addLight(plight3);
+			M->setShadowMethod(shadow);
 		}
-	}*/
+	}
 
 	// collada loader test
 	/*ColladaLoader collada("../resources/birdcage2.dae");
@@ -95,7 +96,7 @@ int main(int argc, char** argv) {
 	}*/
 	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
-	//daeMesh->getTransform().appendMove(-5, 0, -5.0f);
+	daeMesh->getTransform().appendMove(4, 0, 0);
 	daeMesh->getMaterials()[0]->addLight(plight);
 	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
 	
@@ -131,17 +132,6 @@ int main(int argc, char** argv) {
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
 	planeGeom->calculateTangentBasis();
-	/*
-	auto test = planeGeom->getPos();
-	int k = 2;
-	for (int i = 0; i <= 30; i++){
-		for (int j = 0; j <= 30; j++){
-			test[k] = ((i*j) % 7) / 5.0;
-			k += 3;
-		}
-	}
-	planeGeom->uploadPosition();
-	planeGeom->calculateNormals();*/
 
 	plane = new Mesh(planeGeom, mat);
 	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));
@@ -151,7 +141,7 @@ int main(int argc, char** argv) {
 	planeGeom_posX->calculateTangentBasis();
 	plane_posX = new Mesh(planeGeom_posX, mat);
 	plane_posX->getTransform().appendMove(15, 0, 0);
-	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+	plane_posX->getTransform().appendRotation(glm::radians(-60.0f), glm::vec3(0, 1, 0));
 
 	caster = new Mesh(new SphereGeometry(2, 40), color);
 	//caster->getGeometries()[0]->calculateNormals();

@@ -196,8 +196,8 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glGenTextures(1, &shadowTexture);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowTexture);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -261,10 +261,12 @@ void main() {
 		modelGeometry->activateVertexBuffer(0);
 		modelGeometry->activateIndexBuffer();
 
+		lightNearZ = 0.05f;
+		lightFarZ = 25.0f;
 		glm::vec3 lightPos = light->getPositionVector();
 		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
 		glm::vec3 ups[6] = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0) };
-		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, 0.05f, 25.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, lightNearZ, lightFarZ);
 
 		for (int i = 0; i < 6; i++){
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
@@ -298,6 +300,11 @@ void main() {
 		}
 		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLightPos"), 1, light->getPosition());
 		glUniform1i(glGetUniformLocation(materialProgram, "depthSampler"), 1);
+		//glUniform1f(glGetUniformLocation(materialProgram, "lightNearZ"), lightNearZ);
+		//glUniform1f(glGetUniformLocation(materialProgram, "lightFarZ"), lightFarZ);
+		glUniform1f(glGetUniformLocation(materialProgram, "f_plus_n"), lightNearZ + lightFarZ);
+		glUniform1f(glGetUniformLocation(materialProgram, "f_minus_n"), lightFarZ - lightNearZ);
+		glUniform1f(glGetUniformLocation(materialProgram, "f_mult_n"), lightFarZ * lightNearZ);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowTexture);
 	}
@@ -315,31 +322,20 @@ void main() {
 		fs.inVar("vec3", "normal");
 		fs.inVar("vec3", "shadowCoord");
 		fs.textureSamplerCubeShadow("depthSampler");
-		//fs.uniform("mat4", "depthMVP0"); fs.uniform("mat4", "depthMVP1"); fs.uniform("mat4", "depthMVP2");
-		//fs.uniform("mat4", "depthMVP3"); fs.uniform("mat4", "depthMVP4"); fs.uniform("mat4", "depthMVP5");
 		fs.uniform("vec3", "shadowLightPos");
-		fs.mainCode("vec3 dir = (fs_in.shadowCoord - shadowLightPos);");
-		fs.mainCode("float dist = (length(dir) - 0.05) / (25 - 0.05);");
-		fs.mainCode("dist = clamp(dist, 0, 1);");
-		fs.mainCode("dir = normalize(dir);");
-		/*fs.mainCode("mat4 depthMVP;");
-		fs.mainCode("if(abs(dir.x) > abs(dir.z)){");
-		fs.mainCode("  if(abs(dir.x) > abs(dir.y)){");
-		fs.mainCode("    if(dir.x > 0) depthMVP = depthMVP0;");
-		fs.mainCode("    else depthMVP = depthMVP1;");
-		fs.mainCode("  }else if(dir.y > 0) depthMVP = depthMVP2;");
-		fs.mainCode("  else depthMVP = depthMVP3;");
-		fs.mainCode("}else if(abs(dir.z) > abs(dir.y)){");
-		fs.mainCode("  if(dir.z > 0) depthMVP = depthMVP4;");
-		fs.mainCode("  else depthMVP = depthMVP5;");
-		fs.mainCode("}else if(dir.y > 0) depthMVP = depthMVP2;");
-		fs.mainCode("else depthMVP = depthMVP3;");
-		fs.mainCode("vec4 posFromLight = depthMVP * vec4(fs_in.shadowCoord, 1);");*/
+		fs.uniform("float", "f_plus_n");
+		fs.uniform("float", "f_minus_n");
+		fs.uniform("float", "f_mult_n");
+		fs.mainCode("vec3 dir = fs_in.shadowCoord - shadowLightPos;");
 		//fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -dir), 0, 1);");
 		//fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
 		//fs.mainCode("visibility = texture(depthSampler, vec4(dir, posFromLight.z/posFromLight.w));");
-		fs.mainCode("visibility = texture(depthSampler, vec4(dir, dist));");
-		//fs.mainCode("if(visibility < .5) visibility = .5;");
+		fs.mainCode("float localZ = max(abs(dir.x), max(abs(dir.y), abs(dir.z)));");
+		//fs.mainCode("localZ = (f+n)/(f-n) - (2*f*n)/(f-n)/localZ;");
+		fs.mainCode("localZ = f_plus_n/f_minus_n - (2*f_mult_n)/f_minus_n/localZ;");
+		fs.mainCode("localZ = (localZ-0.005 + 1) * 0.5;");
+		fs.mainCode("visibility = texture(depthSampler, vec4(normalize(dir), localZ));");
+		fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 }
