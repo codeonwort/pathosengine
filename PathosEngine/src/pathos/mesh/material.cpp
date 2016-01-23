@@ -308,6 +308,11 @@ namespace pathos {
 		colorOut += useAlpha ? "a;" : ";";
 		fsCompiler.mainCode(colorOut);
 
+		std::cout << "==============================" << std::endl;
+		std::cout << vsCompiler.getCode() << std::endl;
+		std::cout << fsCompiler.getCode() << std::endl;
+		std::cout << "==============================" << std::endl;
+
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void TextureMaterialPass::activate() {
@@ -573,12 +578,13 @@ namespace pathos {
 		fsCompiler.textureSamplerCube("texSampler");
 		fsCompiler.inVar("vec2", "uv");
 		fsCompiler.outVar("vec4", "color");
-		if (face == 0) fsCompiler.mainCode("float depth = texture(texSampler, vec3(1, fs_in.uv.y, fs_in.uv.x)).r;");
-		if (face == 1) fsCompiler.mainCode("float depth = texture(texSampler, vec3(-1, fs_in.uv.y, fs_in.uv.x)).r;");
-		if (face == 2) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, 1, fs_in.uv.x)).r;");
-		if (face == 3) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, -1, fs_in.uv.x)).r;");
-		if (face == 4) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, fs_in.uv.x, 1)).r;");
-		if (face == 5) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, fs_in.uv.x, -1)).r;");
+		fsCompiler.mainCode("vec2 uv = fs_in.uv * 2 - vec2(1.0);");
+		if (face == 0) fsCompiler.mainCode("float depth = texture(texSampler, vec3(1, -uv.y, -uv.x)).r;");
+		if (face == 1) fsCompiler.mainCode("float depth = texture(texSampler, vec3(-1, -uv.y, uv.x)).r;");
+		if (face == 2) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.y, 1, uv.x)).r;");
+		if (face == 3) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.y, -1, uv.x)).r;");
+		if (face == 4) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.x, uv.y, 1)).r;");
+		if (face == 5) fsCompiler.mainCode("float depth = texture(texSampler, vec3(uv.x, uv.y, -1)).r;");
 		fsCompiler.mainCode("depth = clamp(depth, 0, 1);");
 		fsCompiler.mainCode("color = vec4(depth, depth, depth, 1.0);");
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());

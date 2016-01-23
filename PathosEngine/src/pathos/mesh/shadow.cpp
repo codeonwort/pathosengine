@@ -232,7 +232,7 @@ void main() {
 		string fshader = R"(#version 330 core
 out vec4 color;
 void main() {
-	color = vec4(gl_FragCoord.z, 0, 0, 1);
+	color = vec4(pow(gl_FragCoord.z, 32), 0, 0, 1);
 }
 )";
 		program = createProgram(vshader, fshader);
@@ -244,9 +244,9 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		for (int i = 0; i < 6; i++){
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
-			glClearBufferfv(GL_COLOR, 0, zero);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
 			glClearBufferfv(GL_DEPTH, 0, one);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
+			glClearBufferfv(GL_COLOR, 0, zero);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -261,14 +261,15 @@ void main() {
 		modelGeometry->activateVertexBuffer(0);
 		modelGeometry->activateIndexBuffer();
 
-		glm::vec3 lightPos = glm::mat3(camera->getViewMatrix()) * light->getPositionVector();
+		glm::vec3 lightPos = light->getPositionVector();
 		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
-		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, 0.1f, 15.0f);
+		glm::vec3 ups[6] = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0) };
+		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, 0.05f, 25.0f);
 
 		for (int i = 0; i < 6; i++){
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
-			glm::mat4 view = glm::lookAt(lightPos, lightPos + directions[i], glm::vec3(0, 1, 0));
+			glm::mat4 view = glm::lookAt(lightPos, lightPos + directions[i], ups[i]);
 			depthMVP[i] = projection * view * modelMatrix;
 			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &((depthMVP[i])[0][0]));
 			// draw call
@@ -309,15 +310,19 @@ void main() {
 		vs.setUseNormal(true);
 		vs.outVar("vec3", "shadowCoord");
 		vs.mainCode("vs_out.shadowCoord = vec3(modelTransform * vec4(position, 1));");
+		//vs.mainCode("vs_out.shadowCoord = position;");
 
 		fs.inVar("vec3", "normal");
 		fs.inVar("vec3", "shadowCoord");
 		fs.textureSamplerCubeShadow("depthSampler");
-		fs.uniform("mat4", "depthMVP0"); fs.uniform("mat4", "depthMVP1"); fs.uniform("mat4", "depthMVP2");
-		fs.uniform("mat4", "depthMVP3"); fs.uniform("mat4", "depthMVP4"); fs.uniform("mat4", "depthMVP5");
+		//fs.uniform("mat4", "depthMVP0"); fs.uniform("mat4", "depthMVP1"); fs.uniform("mat4", "depthMVP2");
+		//fs.uniform("mat4", "depthMVP3"); fs.uniform("mat4", "depthMVP4"); fs.uniform("mat4", "depthMVP5");
 		fs.uniform("vec3", "shadowLightPos");
-		fs.mainCode("vec3 dir = normalize(fs_in.shadowCoord - shadowLightPos);");
-		fs.mainCode("mat4 depthMVP;");
+		fs.mainCode("vec3 dir = (fs_in.shadowCoord - shadowLightPos);");
+		fs.mainCode("float dist = (length(dir) - 0.05) / (25 - 0.05);");
+		fs.mainCode("dist = clamp(dist, 0, 1);");
+		fs.mainCode("dir = normalize(dir);");
+		/*fs.mainCode("mat4 depthMVP;");
 		fs.mainCode("if(abs(dir.x) > abs(dir.z)){");
 		fs.mainCode("  if(abs(dir.x) > abs(dir.y)){");
 		fs.mainCode("    if(dir.x > 0) depthMVP = depthMVP0;");
@@ -329,12 +334,12 @@ void main() {
 		fs.mainCode("  else depthMVP = depthMVP5;");
 		fs.mainCode("}else if(dir.y > 0) depthMVP = depthMVP2;");
 		fs.mainCode("else depthMVP = depthMVP3;");
-		fs.mainCode("vec4 posFromLight = depthMVP * vec4(fs_in.shadowCoord, 1);");
+		fs.mainCode("vec4 posFromLight = depthMVP * vec4(fs_in.shadowCoord, 1);");*/
 		//fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -dir), 0, 1);");
 		//fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
-		//fs.mainCode("float shadow_w = ((f+n)+(2*f*n/fs_in.shadowCoord.z)) / (f-n);");
-		fs.mainCode("visibility = texture(depthSampler, vec4(dir, 0.5));");
-		fs.mainCode("if(visibility < .5) visibility = .5;");
+		//fs.mainCode("visibility = texture(depthSampler, vec4(dir, posFromLight.z/posFromLight.w));");
+		fs.mainCode("visibility = texture(depthSampler, vec4(dir, dist));");
+		//fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 }

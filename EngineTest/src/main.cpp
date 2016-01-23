@@ -32,7 +32,7 @@ void render() {
 	renderer->ready();
 	// various models
 	renderer->render(caster, cam);
-	renderer->render(plane, cam);
+	//renderer->render(plane, cam);
 	renderer->render(plane_posX, cam);
 	//renderer->render(car, cam);
 	renderer->render(daeMesh, cam);
@@ -96,7 +96,6 @@ int main(int argc, char** argv) {
 	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
 	//daeMesh->getTransform().appendMove(-5, 0, -5.0f);
-	daeMesh->getGeometries()[0]->calculateTangentBasis();
 	daeMesh->getMaterials()[0]->addLight(plight);
 	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
 	
@@ -124,8 +123,8 @@ int main(int argc, char** argv) {
 	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
 	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
-	//auto mat = make_shared<TextureMaterial>(tex_norm);
-	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
+	auto mat = make_shared<TextureMaterial>(tex);
+	//auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
 	//mat->addLight(light);
 	mat->setShadowMethod(shadow);
 
@@ -155,9 +154,8 @@ int main(int argc, char** argv) {
 	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
 	caster = new Mesh(new SphereGeometry(2, 40), color);
-	caster->getGeometries()[0]->calculateTangentBasis();
 	//caster->getGeometries()[0]->calculateNormals();
-	caster->getTransform().appendMove(0, 2, -4);
+	caster->getTransform().appendMove(7, 4, 0);
 
 	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
 	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
