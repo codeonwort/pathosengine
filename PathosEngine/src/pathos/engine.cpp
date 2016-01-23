@@ -23,6 +23,8 @@ namespace pathos {
 
 		Engine::conf = config;
 
+		//glutInitContextProfile(GLUT_CORE_PROFILE);
+		//glutInitContextFlags(GLUT_DEBUG);
 		glutInit(argcp, argv);
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE);
 		glutInitWindowSize(conf.width, conf.height);

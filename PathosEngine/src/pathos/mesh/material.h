@@ -128,6 +128,10 @@ namespace pathos {
 	public:
 		ShadowTextureMaterial(GLuint texID);
 	};
+	class ShadowCubeTextureMaterial : public MeshMaterial {
+	public:
+		ShadowCubeTextureMaterial(GLuint texID, unsigned int face);
+	};
 
 	class WireframeMaterial : public MeshMaterial {
 	private:
@@ -208,6 +212,18 @@ namespace pathos {
 		GLuint debugTexture;
 	public:
 		ShadowTextureMaterialPass(GLuint texID);
+		virtual void updateProgram(MeshMaterial*);
+		virtual void activate();
+		virtual void renderMaterial();
+		virtual void deactivate();
+	};
+
+	class ShadowCubeTextureMaterialPass : public MeshMaterialPass {
+	private:
+		GLuint debugTexture;
+		unsigned int face;
+	public:
+		ShadowCubeTextureMaterialPass(GLuint texID, unsigned int face);
 		virtual void updateProgram(MeshMaterial*);
 		virtual void activate();
 		virtual void renderMaterial();

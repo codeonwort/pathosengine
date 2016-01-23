@@ -15,6 +15,7 @@ namespace pathos {
 		 GLfloat colorPtr[3];
 	public:
 		PointLight(const glm::vec3& position, const glm::vec3& color = glm::vec3(1, 1, 1));
+		inline const glm::vec3& getPositionVector() { return position; }
 		GLfloat* getPosition();
 		GLfloat* getColor();
 	};

@@ -14,6 +14,7 @@ using namespace pathos;
 
 Camera* cam;
 Mesh *plane, *cube, *car;
+Mesh *plane_posX;
 Mesh *caster, *viewer, *shadowLight;
 Skybox* sky;
 Mesh* daeMesh;
@@ -32,7 +33,8 @@ void render() {
 	// various models
 	renderer->render(caster, cam);
 	renderer->render(plane, cam);
-	renderer->render(car, cam);
+	renderer->render(plane_posX, cam);
+	//renderer->render(car, cam);
 	renderer->render(daeMesh, cam);
 	// about shadow
 	renderer->render(viewer, cam);
@@ -60,14 +62,16 @@ int main(int argc, char** argv) {
 
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
-	auto shadow = new ShadowMap(light, cam);
-	auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(1, 1, 1));
+	//auto shadow = new ShadowMap(light, cam);
+	//auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(1, 1, 1));
+	auto plight = new PointLight(glm::vec3(0, 5, 0.5), glm::vec3(1, 1, 1));
 	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
+	auto shadow = new OmnidirectionalShadow(plight, cam);
 
 	// obj loader test
 	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
-	OBJLoader obj("../resources/Pin.obj", "../resources/");
+	/*OBJLoader obj("../resources/Pin.obj", "../resources/");
 	car = obj.craftMesh(0, obj.numGeometries(), "car");
 	car->getTransform().appendMove(5, 0, -5.0f);
 	car->getTransform().appendScale(5, 5, 5);
@@ -77,7 +81,7 @@ int main(int argc, char** argv) {
 			M->addLight(plight2);
 			M->addLight(plight3);
 		}
-	}
+	}*/
 
 	// collada loader test
 	/*ColladaLoader collada("../resources/birdcage2.dae");
@@ -92,6 +96,7 @@ int main(int argc, char** argv) {
 	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
 	//daeMesh->getTransform().appendMove(-5, 0, -5.0f);
+	daeMesh->getGeometries()[0]->calculateTangentBasis();
 	daeMesh->getMaterials()[0]->addLight(plight);
 	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
 	
@@ -122,7 +127,7 @@ int main(int argc, char** argv) {
 	//auto mat = make_shared<TextureMaterial>(tex_norm);
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm);
 	//mat->addLight(light);
-	//mat->setShadowMethod(shadow);
+	mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(25, 25, 30, 30);
@@ -143,16 +148,25 @@ int main(int argc, char** argv) {
 	plane->getTransform().appendRotation(glm::radians(-85.0), glm::vec3(1, 0, 0));
 	plane->getTransform().appendMove(0, -0.5, -5);
 
+	auto planeGeom_posX = new PlaneGeometry(25, 25);
+	planeGeom_posX->calculateTangentBasis();
+	plane_posX = new Mesh(planeGeom_posX, mat);
+	plane_posX->getTransform().appendMove(15, 0, 0);
+	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
 	caster = new Mesh(new SphereGeometry(2, 40), color);
+	caster->getGeometries()[0]->calculateTangentBasis();
 	//caster->getGeometries()[0]->calculateNormals();
 	caster->getTransform().appendMove(0, 2, -4);
 
-	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
+	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
+	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
 	viewer->getTransform().appendMove(10, 0, 0);
 
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), make_shared<WireframeMaterial>(1, 1, 1));
 	GLfloat* lightDir = light->getDirection();
-	glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
+	//glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
+	glm::vec3 lightPos = plight->getPositionVector();
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
 
 	auto shadowLightColor = make_shared<ColorMaterial>(0, 0, 0, 1);

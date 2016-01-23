@@ -59,15 +59,19 @@ namespace pathos {
 	private:
 		PointLight* light;
 		Camera* camera;
-		GLuint fbo[6], shadowTextures[6], debugTextures[6];
+		GLuint fbo, shadowTexture, debugTexture; // cubemap texture
 		GLuint program;
 		GLsizei width, height;
-		glm::mat4 depthMVP;
+		glm::mat4 depthMVP[6];
 	public:
 		OmnidirectionalShadow(PointLight* light, Camera* camera);
+		virtual void clearTexture();
 		virtual void activate(GLuint materialPassProgram);
 		virtual void renderDepth();
 		virtual void deactivate();
+		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&);
+
+		inline GLuint getDebugTexture() { return debugTexture; }
 	};
 
 }

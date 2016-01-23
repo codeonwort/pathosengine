@@ -228,9 +228,9 @@ namespace pathos {
 		uniform("sampler2D", samplerName);
 		//texSamplers.push_back(samplerName);
 	}
-	void FragmentShaderCompiler::textureSamplerShadow(const string& samplerName) {
-		uniform("sampler2DShadow", samplerName);
-	}
+	void FragmentShaderCompiler::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
+	void FragmentShaderCompiler::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
+	void FragmentShaderCompiler::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
 	void FragmentShaderCompiler::uniform(const string & type, const string & name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {

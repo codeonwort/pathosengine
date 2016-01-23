@@ -125,6 +125,7 @@ void main() {
 	}
 
 	void ShadowMap::deactivate() {
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
@@ -190,34 +191,35 @@ void main() {
 		instances.push_back(this);
 
 		width = height = 1024;
-		
-		glGenFramebuffers(6, fbo);
-		glGenTextures(6, shadowTextures);
-		glGenTextures(6, debugTextures);
-		static const GLenum buffs[] = { GL_COLOR_ATTACHMENT0 };
 
-		for (int i = 0; i < 6; i++){
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
-			glBindTexture(GL_TEXTURE_2D, shadowTextures[i]);
-			glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTextures[i], 0);
-			glDrawBuffers(1, buffs);
-			glBindTexture(GL_TEXTURE_2D, debugTextures[i]);
-			glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32F, width, height);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, debugTextures[i], 0);
-			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-				std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
-			}
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glGenTextures(1, &shadowTexture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowTexture);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		for (int i = 0; i < 6; i++) glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTexture, 0);
+
+		glGenTextures(1, &debugTexture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, debugTexture);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		for (int i = 0; i < 6; i++) glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_R32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, debugTexture, 0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cerr << "[ERROR] Cannot create a framebuffer for omnidirectional shadow map" << std::endl;
 		}
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // return to default framebuffer
 
 		string vshader = R"(#version 330 core
@@ -230,60 +232,109 @@ void main() {
 		string fshader = R"(#version 330 core
 out vec4 color;
 void main() {
-	//color = vec4(gl_FragCoord.z);
 	color = vec4(gl_FragCoord.z, 0, 0, 1);
 }
 )";
 		program = createProgram(vshader, fshader);
 	}
 
+	void OmnidirectionalShadow::clearTexture() {
+		static const GLfloat zero[] = { 0.0f };
+		static const GLfloat one[] = { 1.0f };
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		for (int i = 0; i < 6; i++){
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
+			glClearBufferfv(GL_COLOR, 0, zero);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
+			glClearBufferfv(GL_DEPTH, 0, one);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
 	void OmnidirectionalShadow::renderDepth() {
-		/*
-		// set program
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glViewport(0, 0, width, height);
+
+		// set program
+		glUseProgram(program);
+		
 		modelGeometry->activateVertexBuffer(0);
 		modelGeometry->activateIndexBuffer();
 
-		glUseProgram(program);
-		GLfloat* lightDir = light->getDirection();
-		glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]);
-		lightPos = lightPos * 5.0f;
-		glm::mat4 view = glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0));
-		glm::mat4 projection = glm::ortho(-20.0, 20.0, -20.0, 20.0, -10.0, 10.0);
-		//projection = glm::perspective(glm::radians(110.0), 800.0 / 600, 1.0, 30.0);
-		//glm::mat4 projection = calculateAABB(view);
-		depthMVP = projection * view * modelMatrix;
+		glm::vec3 lightPos = glm::mat3(camera->getViewMatrix()) * light->getPositionVector();
+		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
+		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, 0.1f, 15.0f);
 
-		glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
-
-		// draw call
-		glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		for (int i = 0; i < 6; i++){
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
+			glm::mat4 view = glm::lookAt(lightPos, lightPos + directions[i], glm::vec3(0, 1, 0));
+			depthMVP[i] = projection * view * modelMatrix;
+			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &((depthMVP[i])[0][0]));
+			// draw call
+			glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		}
 
 		// unset program
 		modelGeometry->deactivateVertexBuffer(0);
 		modelGeometry->deactivateIndexBuffer();
 
+		// return to default setting
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		auto config = Engine::getConfig();
 		glViewport(0, 0, config.width, config.height);
 		glUseProgram(0);
-		*/
 	}
 
 	void OmnidirectionalShadow::activate(GLuint materialProgram) {
-		/*
 		glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-		glm::mat4 depthMVPbiased = bias * depthMVP;
-		GLuint depthMVPLoc = glGetUniformLocation(materialProgram, "depthMVP");
-		glUniformMatrix4fv(depthMVPLoc, 1, false, &depthMVPbiased[0][0]);
-		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLight"), 1, light->getDirection());
+		GLchar name[] = "depthMVP0";
+		for (int i = 0; i < 6; i++){
+			glm::mat4 depthMVPbiased = bias * depthMVP[i];
+			name[8] = '0' + i;
+			GLuint depthMVPLoc = glGetUniformLocation(materialProgram, name);
+			glUniformMatrix4fv(depthMVPLoc, 1, false, &depthMVPbiased[0][0]);
+		}
+		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLightPos"), 1, light->getPosition());
 		glUniform1i(glGetUniformLocation(materialProgram, "depthSampler"), 1);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, shadowTexture);*/
+		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowTexture);
 	}
 	void OmnidirectionalShadow::deactivate() {
-		//
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
+
+	void OmnidirectionalShadow::addShaderCode(VertexShaderCompiler& vs, FragmentShaderCompiler& fs) {
+		vs.setUseNormal(true);
+		vs.outVar("vec3", "shadowCoord");
+		vs.mainCode("vs_out.shadowCoord = vec3(modelTransform * vec4(position, 1));");
+
+		fs.inVar("vec3", "normal");
+		fs.inVar("vec3", "shadowCoord");
+		fs.textureSamplerCubeShadow("depthSampler");
+		fs.uniform("mat4", "depthMVP0"); fs.uniform("mat4", "depthMVP1"); fs.uniform("mat4", "depthMVP2");
+		fs.uniform("mat4", "depthMVP3"); fs.uniform("mat4", "depthMVP4"); fs.uniform("mat4", "depthMVP5");
+		fs.uniform("vec3", "shadowLightPos");
+		fs.mainCode("vec3 dir = normalize(fs_in.shadowCoord - shadowLightPos);");
+		fs.mainCode("mat4 depthMVP;");
+		fs.mainCode("if(abs(dir.x) > abs(dir.z)){");
+		fs.mainCode("  if(abs(dir.x) > abs(dir.y)){");
+		fs.mainCode("    if(dir.x > 0) depthMVP = depthMVP0;");
+		fs.mainCode("    else depthMVP = depthMVP1;");
+		fs.mainCode("  }else if(dir.y > 0) depthMVP = depthMVP2;");
+		fs.mainCode("  else depthMVP = depthMVP3;");
+		fs.mainCode("}else if(abs(dir.z) > abs(dir.y)){");
+		fs.mainCode("  if(dir.z > 0) depthMVP = depthMVP4;");
+		fs.mainCode("  else depthMVP = depthMVP5;");
+		fs.mainCode("}else if(dir.y > 0) depthMVP = depthMVP2;");
+		fs.mainCode("else depthMVP = depthMVP3;");
+		fs.mainCode("vec4 posFromLight = depthMVP * vec4(fs_in.shadowCoord, 1);");
+		//fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -dir), 0, 1);");
+		//fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
+		//fs.mainCode("float shadow_w = ((f+n)+(2*f*n/fs_in.shadowCoord.z)) / (f-n);");
+		fs.mainCode("visibility = texture(depthSampler, vec4(dir, 0.5));");
+		fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 }

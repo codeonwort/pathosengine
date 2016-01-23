@@ -54,7 +54,9 @@ namespace pathos {
 		void outVar(const string& type, const string &name);
 		void uniform(const string& type, const string& name);
 		void textureSampler(const string& samplerName);
+		void textureSamplerCube(const string& samplerName);
 		void textureSamplerShadow(const string& samplerName);
+		void textureSamplerCubeShadow(const string& samplerName);
 		void mainCode(const string& code);
 		void directionalLights(unsigned int num);
 		void pointLights(unsigned int num);

@@ -428,8 +428,6 @@ namespace pathos {
 		if (useAlpha) fsCompiler.mainCode("color = diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
 		else fsCompiler.mainCode("color = vec4(diffuseTerm, 1.0) * texture2D(imageSampler, fs_in.uv);");
 
-		std::cout << vsCompiler.getCode() << std::endl;
-		std::cout << fsCompiler.getCode() << std::endl;
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void BumpTextureMaterialPass::activate() {
@@ -554,6 +552,54 @@ namespace pathos {
 		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
 	}
 	void ShadowTextureMaterialPass::deactivate() {
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateUVBuffer(1);
+		geometry->deactivateIndexBuffer();
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// ShadowCubeTextureMaterial
+	ShadowCubeTextureMaterial::ShadowCubeTextureMaterial(GLuint texID, unsigned int face) {
+		addPass(new ShadowCubeTextureMaterialPass(texID, face));
+	}
+
+	// ShadowCubeTextureMaterialPass
+	ShadowCubeTextureMaterialPass::ShadowCubeTextureMaterialPass(GLuint texID, unsigned int face) : debugTexture(texID), face(face) {}
+	void ShadowCubeTextureMaterialPass::updateProgram(MeshMaterial* M) {
+		vsCompiler.setUseUV(true);
+		vsCompiler.setUVLocation(1);
+		fsCompiler.textureSamplerCube("texSampler");
+		fsCompiler.inVar("vec2", "uv");
+		fsCompiler.outVar("vec4", "color");
+		if (face == 0) fsCompiler.mainCode("float depth = texture(texSampler, vec3(1, fs_in.uv.y, fs_in.uv.x)).r;");
+		if (face == 1) fsCompiler.mainCode("float depth = texture(texSampler, vec3(-1, fs_in.uv.y, fs_in.uv.x)).r;");
+		if (face == 2) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, 1, fs_in.uv.x)).r;");
+		if (face == 3) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, -1, fs_in.uv.x)).r;");
+		if (face == 4) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, fs_in.uv.x, 1)).r;");
+		if (face == 5) fsCompiler.mainCode("float depth = texture(texSampler, vec3(fs_in.uv.y, fs_in.uv.x, -1)).r;");
+		fsCompiler.mainCode("depth = clamp(depth, 0, 1);");
+		fsCompiler.mainCode("color = vec4(depth, depth, depth, 1.0);");
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void ShadowCubeTextureMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateUVBuffer(1);
+		geometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+		glUniform1i(glGetUniformLocation(program, "texSampler"), 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, debugTexture);
+	}
+	void ShadowCubeTextureMaterialPass::renderMaterial() {
+		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+	}
+	void ShadowCubeTextureMaterialPass::deactivate() {
 		geometry->deactivateVertexBuffer(0);
 		geometry->deactivateUVBuffer(1);
 		geometry->deactivateIndexBuffer();
