@@ -28,6 +28,7 @@ void render() {
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotate(dr, glm::vec3(0, 1, 0));
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
+	daeMesh->getTransform().appendRotation(0.001, glm::vec3(1.0f, 0.5f, 0));
 
 	renderer->ready();
 	// various models
@@ -98,11 +99,13 @@ int main(int argc, char** argv) {
 	for (auto geom : geoms){
 		daeMesh->add(geom, testColor);
 	}*/
-	OBJLoader obj2("../resources/birdcage3.obj", "../resources/");
+	OBJLoader obj2("../resources/lightbulb.obj", "../resources/");
 	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
-	daeMesh->getTransform().appendMove(0, 0, 0);
+	daeMesh->getTransform().appendScale(4, 4, 4);
 	daeMesh->getMaterials()[0]->addLight(plight);
+	daeMesh->getMaterials()[0]->addLight(plight2);
 	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
+	daeMesh->setDoubleSided(true);
 	
 	// cubemap
 	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",
@@ -123,8 +126,8 @@ int main(int argc, char** argv) {
 	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
 	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
-	//auto mat = make_shared<TextureMaterial>(tex);
-	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
+	auto mat = make_shared<TextureMaterial>(tex);
+	//auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
 	mat->setShadowMethod(shadow);
 

@@ -336,7 +336,7 @@ void main() {
 		fs.mainCode("localZ = f_plus_n/f_minus_n - (2*f_mult_n)/f_minus_n/localZ;");
 		fs.mainCode("localZ = (localZ-0.004 + 1) * 0.5;");
 		fs.mainCode("visibility = texture(depthSampler, vec4(normalize(dir), localZ));");
-		//fs.mainCode("if(visibility < .5) visibility = .5;");
+		fs.mainCode("if(visibility < .5) visibility = .5;");
 	}
 
 }
