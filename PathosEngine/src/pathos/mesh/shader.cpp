@@ -158,7 +158,8 @@ namespace pathos {
 			src << "  vs_out.uv = uv;" << std::endl;
 		src << "  gl_Position = mvpTransform * vec4(position, 1.0);" << std::endl;
 		if (transferPosition)
-			src << "  vs_out.position = gl_Position.xyz / gl_Position.w;" << std::endl;
+			//src << "  vs_out.position = gl_Position.xyz / gl_Position.w;" << std::endl;
+			src << "  vs_out.position = vec3(modelTransform * vec4(position, 1));" << std::endl; // position in world space
 		src << "}" << std::endl;
 
 		string vcode = src.str();

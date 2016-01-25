@@ -68,9 +68,9 @@ int main(int argc, char** argv) {
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
 	//auto shadow = new ShadowMap(light, cam);
-	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(1, 1, 1));
-	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
-	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
+	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
+	auto plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
+	auto plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
 	auto shadow = new OmnidirectionalShadow(plight, cam);
 
 	// obj loader test
@@ -117,6 +117,7 @@ int main(int argc, char** argv) {
 
 	auto color = make_shared<ColorMaterial>(1.0, 1.0, 1.0, 1);
 	//color->setAmbientColor(0, 0, 0);
+	color->setSpecularColor(1, 1, 1);
 	color->addLight(plight);
 	color->addLight(plight2);
 	color->addLight(plight3);
@@ -128,7 +129,7 @@ int main(int argc, char** argv) {
 	//auto mat = make_shared<TextureMaterial>(tex);
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
-	//mat->setShadowMethod(shadow);
+	mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(30, 30);

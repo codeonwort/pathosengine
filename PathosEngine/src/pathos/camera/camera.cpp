@@ -16,7 +16,7 @@ namespace pathos {
 
 	glm::mat4 Camera::getViewMatrix() { return transform.getMatrix(); }
 	glm::mat4 Camera::getViewProjectionMatrix() { return lens->getProjectionMatrix() * transform.getMatrix(); }
-	glm::vec3 Camera::getEyeVector() { return transform.transformVector(glm::vec3(0, 0, -1)); }
+	glm::vec3 Camera::getEyeVector() { return transform.inverseTransformVector(glm::vec3(0, 0, -1)); } // eye direction in world space
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
 		transform.copyFrom(glm::lookAt(position, target, up));

@@ -181,7 +181,7 @@ namespace pathos {
 		}
 		// point lighting
 		if (pointLights > 0) {
-			fsCompiler.mainCode("vec3 norm2 = normalize(fs_in.normal);");
+			fsCompiler.mainCode("vec3 norm2 = normalize(fs_in.normal);"); // normal in world space
 			fsCompiler.mainCode("vec3 diffuseLightAccum2 = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 specularLightAccum2 = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 halfVector2;");
@@ -383,7 +383,6 @@ namespace pathos {
 		vsCompiler.mainCode("vec3 bitangent_camera = mvTransform3x3 * bitangent;");
 		vsCompiler.mainCode("vec3 normal_camera = mvTransform3x3 * normal;");
 		vsCompiler.mainCode("mat3 TBN = transpose(mat3(tangent_camera, bitangent_camera, normal_camera));");
-		//vsCompiler.mainCode("vec3 position_camera = mvTransform3x3 * position;");
 		vsCompiler.mainCode("vec3 position_camera = vec3(mvTransform4x4 * vec4(position,1));");
 		vsCompiler.mainCode("vec3 lightDir = lightPos_camera - position_camera;");
 		vsCompiler.mainCode("vs_out.light_distance = dot(lightDir, lightDir);");
@@ -425,7 +424,6 @@ namespace pathos {
 		fsCompiler.mainCode("float lambert = clamp(dot(norm, normalize(fs_in.light_tangent)), 0.0, 1.0);");
 		fsCompiler.mainCode("diffuseTerm = (1/(1+0.001*fs_in.light_distance)) * visibility * vec3(1,1,1) * lambert;");
 		fsCompiler.mainCode("specularTerm = visibility * vec3(1,1,1) * pow(max(dot(norm, halfVector),0), 128);");
-		//fsCompiler.mainCode("specularTerm = vec3(0, 0, 0);");
 
 		/*if (dirLights > 0) {
 			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
@@ -444,9 +442,6 @@ namespace pathos {
 
 		if (useAlpha) fsCompiler.mainCode("color = specularTerm + diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
 		else fsCompiler.mainCode("color = vec4(specularTerm, 1.0) + vec4(diffuseTerm, 1.0) * texture2D(imageSampler, fs_in.uv);");
-
-		//std::cout << vsCompiler.getCode() << std::endl;
-		//std::cout << fsCompiler.getCode() << std::endl;
 
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
