@@ -196,8 +196,8 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glGenTextures(1, &shadowTexture);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowTexture);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -262,7 +262,7 @@ void main() {
 		modelGeometry->activateIndexBuffer();
 
 		lightNearZ = 0.05f;
-		lightFarZ = 25.0f;
+		lightFarZ = 20.0f;
 		glm::vec3 lightPos = light->getPositionVector();
 		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
 		glm::vec3 ups[6] = { glm::vec3(0, -1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0), glm::vec3(0, -1, 0) };
@@ -272,8 +272,8 @@ void main() {
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadowTexture, 0);
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, debugTexture, 0);
 			glm::mat4 view = glm::lookAt(lightPos, lightPos + directions[i], ups[i]);
-			depthMVP[i] = projection * view * modelMatrix;
-			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &((depthMVP[i])[0][0]));
+			glm::mat4 depthMVP = projection * view * modelMatrix;
+			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &(depthMVP[0][0]));
 			// draw call
 			glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
 		}
@@ -290,18 +290,8 @@ void main() {
 	}
 
 	void OmnidirectionalShadow::activate(GLuint materialProgram) {
-		glm::mat4 bias(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-		GLchar name[] = "depthMVP0";
-		for (int i = 0; i < 6; i++){
-			glm::mat4 depthMVPbiased = bias * depthMVP[i];
-			name[8] = '0' + i;
-			GLuint depthMVPLoc = glGetUniformLocation(materialProgram, name);
-			glUniformMatrix4fv(depthMVPLoc, 1, false, &depthMVPbiased[0][0]);
-		}
 		glUniform3fv(glGetUniformLocation(materialProgram, "shadowLightPos"), 1, light->getPosition());
 		glUniform1i(glGetUniformLocation(materialProgram, "depthSampler"), 1);
-		//glUniform1f(glGetUniformLocation(materialProgram, "lightNearZ"), lightNearZ);
-		//glUniform1f(glGetUniformLocation(materialProgram, "lightFarZ"), lightFarZ);
 		glUniform1f(glGetUniformLocation(materialProgram, "f_plus_n"), lightNearZ + lightFarZ);
 		glUniform1f(glGetUniformLocation(materialProgram, "f_minus_n"), lightFarZ - lightNearZ);
 		glUniform1f(glGetUniformLocation(materialProgram, "f_mult_n"), lightFarZ * lightNearZ);
@@ -317,7 +307,6 @@ void main() {
 		vs.setUseNormal(true);
 		vs.outVar("vec3", "shadowCoord");
 		vs.mainCode("vs_out.shadowCoord = vec3(modelTransform * vec4(position, 1));");
-		//vs.mainCode("vs_out.shadowCoord = position;");
 
 		fs.inVar("vec3", "normal");
 		fs.inVar("vec3", "shadowCoord");
@@ -327,12 +316,9 @@ void main() {
 		fs.uniform("float", "f_minus_n");
 		fs.uniform("float", "f_mult_n");
 		fs.mainCode("vec3 dir = fs_in.shadowCoord - shadowLightPos;");
-		//fs.mainCode("dir.y = -dir.y;");
 		//fs.mainCode("float cosTheta = clamp(dot(normalize(fs_in.normal), -dir), 0, 1);");
 		//fs.mainCode("float bias = clamp(0.05 * tan(acos(cosTheta)), 0, 0.1);");
-		//fs.mainCode("visibility = texture(depthSampler, vec4(dir, posFromLight.z/posFromLight.w));");
 		fs.mainCode("float localZ = max(abs(dir.x), max(abs(dir.y), abs(dir.z)));");
-		//fs.mainCode("localZ = (f+n)/(f-n) - (2*f*n)/(f-n)/localZ;");
 		fs.mainCode("localZ = f_plus_n/f_minus_n - (2*f_mult_n)/f_minus_n/localZ;");
 		fs.mainCode("localZ = (localZ-0.004 + 1) * 0.5;");
 		fs.mainCode("visibility = texture(depthSampler, vec4(normalize(dir), localZ));");

@@ -13,31 +13,32 @@ using namespace std;
 using namespace pathos;
 
 Camera* cam;
-Mesh *cube, *car;
-Mesh *caster, *viewer, *shadowLight;
-Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ;
+Mesh *cube, *viewer, *shadowLight; // shadow debugger
+Mesh *ball, *lamp; // shadow casters
+Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
+Mesh *car; // assimp test (incomplete)
 Skybox* sky;
-Mesh* daeMesh;
 MeshDefaultRenderer* renderer;
 
 void render() {
-	float dx = Engine::isDown('a') ? -0.05f : Engine::isDown('d') ? 0.05f : 0.0f;
-	float dz = Engine::isDown('w') ? -0.05f : Engine::isDown('s') ? 0.05f : 0.0f;
+	float speedX = 0.1f, speedY = 0.1f;
+	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
+	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
 	float dr = Engine::isDown('q') ? 0.5f : Engine::isDown('e') ? -0.5f : 0.0f;
 	float dr2 = Engine::isDown('z') ? 0.5f : Engine::isDown('x') ? -0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotate(dr, glm::vec3(0, 1, 0));
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
-	daeMesh->getTransform().appendRotation(0.001, glm::vec3(1.0f, 0.5f, 0));
+	lamp->getTransform().appendRotation(0.001, glm::vec3(1.0f, 0.5f, 0));
 
 	renderer->ready();
 	// various models
-	renderer->render(caster, cam);
+	renderer->render(ball, cam);
 	//renderer->render(car, cam);
-	renderer->render(daeMesh, cam);
-	// about shadow
-	renderer->render(viewer, cam);
-	renderer->render(cube, cam);
+	renderer->render(lamp, cam);
+	// shadow debugger
+	//renderer->render(viewer, cam);
+	//renderer->render(cube, cam);
 	renderer->render(shadowLight, cam);
 	renderer->render(plane_posX, cam);
 	renderer->render(plane_negX, cam);
@@ -63,13 +64,11 @@ int main(int argc, char** argv) {
 
 	cam = new Camera(new PerspectiveLens(45.0, 800.0 / 600.0, 0.1, 100.0));
 	cam->move(glm::vec3(-0.2, 0, 3));
-	//cam->rotate(20, glm::vec3(0, 1, 0));
 
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
 	//auto shadow = new ShadowMap(light, cam);
-	//auto plight = new PointLight(glm::vec3(0, 5, 5), glm::vec3(1, 1, 1));
-	auto plight = new PointLight(glm::vec3(0, 2, 0), glm::vec3(1, 1, 1));
+	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(1, 1, 1));
 	auto plight2 = new PointLight(glm::vec3(5, 0, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(-5, -2, 3), glm::vec3(0, 1, 0));
 	auto shadow = new OmnidirectionalShadow(plight, cam);
@@ -92,20 +91,20 @@ int main(int argc, char** argv) {
 	// collada loader test
 	/*ColladaLoader collada("../resources/birdcage2.dae");
 	auto geoms = collada.getGeometries();
-	daeMesh = new Mesh(nullptr, nullptr);
-	daeMesh->getTransform().appendScale(0.5, 0.5, 0.5);
+	lamp = new Mesh(nullptr, nullptr);
+	lamp->getTransform().appendScale(0.5, 0.5, 0.5);
 	auto testColor = make_shared<ColorMaterial>(1, 1, 1, 1);
 	testColor->addLight(plight);
 	for (auto geom : geoms){
-		daeMesh->add(geom, testColor);
+		lamp->add(geom, testColor);
 	}*/
 	OBJLoader obj2("../resources/lightbulb.obj", "../resources/");
-	daeMesh = obj2.craftMesh(0, obj2.numGeometries(), "cage");
-	daeMesh->getTransform().appendScale(4, 4, 4);
-	daeMesh->getMaterials()[0]->addLight(plight);
-	daeMesh->getMaterials()[0]->addLight(plight2);
-	daeMesh->getMaterials()[0]->setShadowMethod(shadow);
-	daeMesh->setDoubleSided(true);
+	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
+	lamp->getTransform().appendScale(4, 4, 4);
+	lamp->getMaterials()[0]->addLight(plight);
+	lamp->getMaterials()[0]->addLight(plight2);
+	lamp->getMaterials()[0]->setShadowMethod(shadow);
+	lamp->setDoubleSided(true);
 	
 	// cubemap
 	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",
@@ -124,12 +123,12 @@ int main(int argc, char** argv) {
 	color->setShadowMethod(shadow);
 
 	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
-	GLuint tex = loadTexture(loadImage("../resources/151.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../resources/151_norm.jpg"));
-	auto mat = make_shared<TextureMaterial>(tex);
-	//auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
+	GLuint tex = loadTexture(loadImage("../resources/154.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("../resources/154_norm.jpg"));
+	//auto mat = make_shared<TextureMaterial>(tex);
+	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
-	mat->setShadowMethod(shadow);
+	//mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(30, 30);
@@ -158,9 +157,9 @@ int main(int argc, char** argv) {
 	plane_negZ = new Mesh(planeGeom, mat);
 	plane_negZ->getTransform().appendMove(0, 0, -15);
 
-	caster = new Mesh(new SphereGeometry(2, 40), color);
-	//caster->getGeometries()[0]->calculateNormals();
-	caster->getTransform().appendMove(7, 4, 0);
+	ball = new Mesh(new SphereGeometry(2, 40), color);
+	//ball->getGeometries()[0]->calculateNormals();
+	ball->getTransform().appendMove(7, 4, 0);
 
 	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 1));
 	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
