@@ -4,7 +4,7 @@
 * language: C++
 * gl version: OpenGL 3.3
 
-# Libraries used (.lib and .dll are x86 based)
+# Libraries used (x86 based)
 * freeglut
 * FreeImage
 * freetype
