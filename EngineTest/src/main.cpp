@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 	//caster->getGeometries()[0]->calculateNormals();
 	caster->getTransform().appendMove(7, 4, 0);
 
-	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 1));
+	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
 	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
 	viewer->getTransform().appendMove(10, 0, 0);
 
