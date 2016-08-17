@@ -1,5 +1,5 @@
 #include <pathos/mesh/envmap.h>
-#include <pathos/mesh/shader.h>
+#include <pathos/render/shader.h>
 
 namespace pathos {
 

@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <pathos/light/light.h>
 #include <pathos/camera/camera.h>
-#include <pathos/mesh/shader.h>
+#include <pathos/render/shader.h>
 #include <pathos/mesh/geometry.h>
 
 namespace pathos {

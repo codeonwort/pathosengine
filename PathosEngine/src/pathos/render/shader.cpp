@@ -1,4 +1,4 @@
-#include <pathos/mesh/shader.h>
+#include <pathos/render/shader.h>
 #include <sstream>
 #include <iostream>
 #include <algorithm>

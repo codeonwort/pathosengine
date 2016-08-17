@@ -1,4 +1,4 @@
-#include <pathos/mesh/render.h>
+#include <pathos/render/render.h>
 #include <pathos/mesh/shadow.h>
 #include <iostream>
 

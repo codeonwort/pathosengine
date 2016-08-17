@@ -1,5 +1,6 @@
 #include <pathos/loader/objloader.h>
 #include <pathos/loader/imageloader.h>
+
 #include <string>
 #include <iostream>
 #include <memory>
@@ -91,7 +92,7 @@ namespace pathos {
 		}
 
 		std::cout << "num mesh: " << scene->mNumMeshes << std::endl;
-		for (int i = 0; i < scene->mNumMeshes; i++){
+		for (unsigned int i = 0; i < scene->mNumMeshes; i++){
 			buildGeometry(scene->mMeshes[i]);
 		}
 	}
@@ -104,20 +105,20 @@ namespace pathos {
 		GLfloat* normalData = new GLfloat[mesh->mNumVertices * 3];
 		GLfloat* uvData = new GLfloat[mesh->mNumVertices * 2];
 		// copy data
-		if (mesh->HasPositions()) for (int i = 0; i < mesh->mNumVertices; i++){
+		if (mesh->HasPositions()) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
 			aiVector3D& pos = mesh->mVertices[i];
 			positionData[i * 3] = pos.x; positionData[i * 3 + 1] = pos.y; positionData[i * 3 + 2] = pos.z;
 		}
-		if (mesh->HasNormals()) for (int i = 0; i < mesh->mNumVertices; i++){
+		if (mesh->HasNormals()) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
 			aiVector3D& norm = mesh->mNormals[i];
 			normalData[i * 3] = norm.x; normalData[i * 3 + 1] = norm.y; normalData[i * 3 + 2] = norm.z;
 		}
-		if (mesh->HasTextureCoords(0)) for (int i = 0; i < mesh->mNumVertices; i++){
+		if (mesh->HasTextureCoords(0)) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
 			aiVector3D& uv = mesh->mTextureCoords[0][i];
 			uvData[i * 2] = uv.x; uvData[i * 2 + 1] = uv.y;
 		}
 		GLuint* indexData = new GLuint[mesh->mNumFaces * 3];
-		for (int i = 0; i < mesh->mNumFaces; i++){
+		for (unsigned int i = 0; i < mesh->mNumFaces; i++){
 			const aiFace& face = mesh->mFaces[i];
 			for (int k = 0; k < 3; k++) indexData[i * 3 + k] = face.mIndices[k];
 		}

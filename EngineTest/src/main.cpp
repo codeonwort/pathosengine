@@ -1,13 +1,14 @@
 #include <iostream>
+
+#include <glm/gtx/transform.hpp>
 #include <pathos/engine.h>
+#include <pathos/render/render.h>
 #include <pathos/mesh/mesh.h>
-#include <pathos/mesh/render.h>
 #include <pathos/mesh/envmap.h>
 #include <pathos/camera/camera.h>
 #include <pathos/light/light.h>
 #include <pathos/loader/imageloader.h>
 #include <pathos/loader/objloader.h>
-#include <glm/gtx/transform.hpp>
 
 using namespace std;
 using namespace pathos;
@@ -29,7 +30,7 @@ void render() {
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotate(dr, glm::vec3(0, 1, 0));
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
-	lamp->getTransform().appendRotation(0.001, glm::vec3(1.0f, 0.5f, 0));
+	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
 	renderer->ready();
 	// various models
@@ -62,7 +63,7 @@ int main(int argc, char** argv) {
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
-	cam = new Camera(new PerspectiveLens(45.0, 800.0 / 600.0, 0.1, 100.0));
+	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 100.f));
 	cam->move(glm::vec3(-0.2, 0, 3));
 
 	// light and shadow
@@ -129,7 +130,7 @@ int main(int argc, char** argv) {
 	//auto mat = make_shared<TextureMaterial>(tex);
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
-	mat->setShadowMethod(shadow);
+	//mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(30, 30);
@@ -174,7 +175,7 @@ int main(int argc, char** argv) {
 
 	auto shadowLightColor = make_shared<ColorMaterial>(0, 0, 0, 1);
 	shadowLightColor->setAmbientColor(1, 1, 0);
-	shadowLight = new Mesh(new SphereGeometry(0.3, 20), shadowLightColor);
+	shadowLight = new Mesh(new SphereGeometry(0.3f, 20), shadowLightColor);
 	shadowLight->getTransform().appendMove(lightPos);
 
 	renderer = new MeshDefaultRenderer();

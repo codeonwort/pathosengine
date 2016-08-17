@@ -49,6 +49,12 @@
     <Filter Include="소스 파일\pathos\loader">
       <UniqueIdentifier>{2f70ce44-9931-4dff-a6d5-52139338860d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\pathos\render">
+      <UniqueIdentifier>{bf5aac87-21b4-4fe3-905c-cff751d2a9bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\pathos\render">
+      <UniqueIdentifier>{f4874087-6128-48cd-bc03-bf59c6277b96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -72,29 +78,29 @@
     <ClCompile Include="src\pathos\wrapper\transform.cpp">
       <Filter>소스 파일\pathos\wrapper</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\shader.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\light\light.cpp">
       <Filter>소스 파일\pathos\light</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\camera\camera.cpp">
       <Filter>소스 파일\pathos\camera</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\render.cpp">
+    <ClCompile Include="src\pathos\mesh\envmap.cpp">
       <Filter>소스 파일\pathos\mesh</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\imageloader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\pathos\loader</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\objloader.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\mesh\envmap.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\pathos\loader</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\mesh\shadow.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\pathos\mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\render.cpp">
+      <Filter>소스 파일\pathos\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\shader.cpp">
+      <Filter>소스 파일\pathos\render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,28 +122,34 @@
     <ClInclude Include="src\pathos\wrapper\transform.h">
       <Filter>헤더 파일\pathos\wrapper</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\shader.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\light\light.h">
       <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\camera\camera.h">
       <Filter>헤더 파일\pathos\camera</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\render.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\loader\imageloader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\pathos\loader</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\objloader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\pathos\loader</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\envmap.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\pathos\mesh</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\shadow.h">
+      <Filter>헤더 파일\pathos\mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\render.h">
+      <Filter>헤더 파일\pathos\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\shader.h">
+      <Filter>헤더 파일\pathos\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\render.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

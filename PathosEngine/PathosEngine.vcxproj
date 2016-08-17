@@ -29,13 +29,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -172,9 +172,9 @@
     <ClCompile Include="src\pathos\mesh\geometry.cpp" />
     <ClCompile Include="src\pathos\mesh\material.cpp" />
     <ClCompile Include="src\pathos\mesh\mesh.cpp" />
-    <ClCompile Include="src\pathos\mesh\render.cpp" />
-    <ClCompile Include="src\pathos\mesh\shader.cpp" />
     <ClCompile Include="src\pathos\mesh\shadow.cpp" />
+    <ClCompile Include="src\pathos\render\render.cpp" />
+    <ClCompile Include="src\pathos\render\shader.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +191,8 @@
     <ClInclude Include="src\pathos\mesh\render.h" />
     <ClInclude Include="src\pathos\mesh\shader.h" />
     <ClInclude Include="src\pathos\mesh\shadow.h" />
+    <ClInclude Include="src\pathos\render\render.h" />
+    <ClInclude Include="src\pathos\render\shader.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

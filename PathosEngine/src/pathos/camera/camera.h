@@ -20,8 +20,8 @@ namespace pathos {
 
 	class Camera {
 	private:
-		Transform transform; // view transform
-		Lens* lens;
+		Transform transform;	// view transform
+		Lens* lens;				// projection transform
 	public:
 		Camera(Lens* lens);
 		glm::mat4 getViewMatrix();

@@ -1,8 +1,10 @@
 #include <pathos/mesh/shadow.h>
-#include <pathos/mesh/shader.h>
+#include <pathos/render/shader.h>
 #include <pathos/engine.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+
 #include <iostream>
 
 namespace pathos {
