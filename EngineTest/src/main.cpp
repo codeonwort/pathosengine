@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
 	//auto mat = make_shared<TextureMaterial>(tex);
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
 	//mat->addLight(light);
-	//mat->setShadowMethod(shadow);
+	mat->setShadowMethod(shadow);
 
 	//auto planeGeom = new SphereGeometry(5, 40);
 	auto planeGeom = new PlaneGeometry(30, 30);

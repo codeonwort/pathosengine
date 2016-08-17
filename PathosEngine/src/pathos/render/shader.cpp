@@ -125,7 +125,7 @@ namespace pathos {
 		if (transferPosition) outVar("vec3", "position");
 		std::sort(outVars.begin(), outVars.end(), varComp);
 
-		src << "#version 330 core" << std::endl;
+		src << "#version 430 core" << std::endl;
 		if (usePosition)
 			src << "layout (location = " << positionLocation << ") in vec3 position;" << std::endl;
 		if (useNormal)
@@ -185,7 +185,7 @@ namespace pathos {
 	
 	string FragmentShaderCompiler::getCode() {
 		stringstream src;
-		src << "#version 330 core" << endl;
+		src << "#version 430 core" << endl;
 
 		// sort variables by name
 		std::sort(inVars.begin(), inVars.end(), varComp);

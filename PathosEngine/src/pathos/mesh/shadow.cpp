@@ -50,14 +50,14 @@ namespace pathos {
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // return to default framebuffer
 
-		string vshader = R"(#version 330 core
+		string vshader = R"(#version 430 core
 layout (location=0) in vec3 position;
 uniform mat4 depthMVP;
 void main() {
 	gl_Position = depthMVP * vec4(position, 1);
 }
 )";
-		string fshader = R"(#version 330 core
+		string fshader = R"(#version 430 core
 out vec4 color;
 void main() {
 	color = vec4(gl_FragCoord.z, 0, 0, 1);
@@ -224,14 +224,14 @@ void main() {
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // return to default framebuffer
 
-		string vshader = R"(#version 330 core
+		string vshader = R"(#version 430 core
 layout (location=0) in vec3 position;
 uniform mat4 depthMVP;
 void main() {
 	gl_Position = depthMVP * vec4(position, 1);
 }
 )";
-		string fshader = R"(#version 330 core
+		string fshader = R"(#version 430 core
 out vec4 color;
 void main() {
 	color = vec4(pow(gl_FragCoord.z, 32), 0, 0, 1);

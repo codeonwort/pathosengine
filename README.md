@@ -1,8 +1,8 @@
 # What is this
 * OpenGL based rendering framework (for 3d graphics study)
 * IDE: visual studio 2015
-* language: C++
-* gl version: OpenGL 3.3
+* Language: C++
+* GL version: OpenGL 4.3
 
 # Libraries used (x86 based)
 * freeglut
