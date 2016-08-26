@@ -21,14 +21,14 @@ namespace pathos {
 	*/
 	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) :t_shapes(), t_materials(), geometries(), materialIndices(), materials() {
 		string err = tinyobj::LoadObj(t_shapes, t_materials, objFile, mtlDir);
-		cout << "Loading .obj file: " << objFile << endl;
+		cout << "Loading .obj file: \"" << objFile << "\"" << endl;
 		if (!err.empty()) {
 			cerr << err << endl;
 			return;
 		}
-		cout << "# of shapes: " << t_shapes.size() << endl;
-		cout << "# of materials: " << t_materials.size() << endl;
-
+		cout << "\  number of shapes: " << t_shapes.size() << endl;
+		cout << "\  number of materials: " << t_materials.size() << endl;
+		
 		// create materials
 		map<string, GLuint> textureDict;
 		for (size_t i = 0; i < t_materials.size(); i++) {
@@ -58,13 +58,15 @@ namespace pathos {
 			}
 			materials.push_back(move(mat));
 		}
-
+		
 		// wrap shapes with geometries
 		for (size_t i = 0; i < t_shapes.size(); i++) {
 			tinyobj::shape_t &shape = t_shapes[i];
 			MeshGeometry* geom = new MeshGeometry;
 			geom->updateVertexData(&shape.mesh.positions[0], shape.mesh.positions.size());
-			geom->updateUVData(&shape.mesh.texcoords[0], shape.mesh.texcoords.size());
+			if (shape.mesh.texcoords.size() > 0){
+				geom->updateUVData(&shape.mesh.texcoords[0], shape.mesh.texcoords.size());
+			}
 			geom->updateNormalData(&shape.mesh.normals[0], shape.mesh.normals.size());
 			geom->updateIndexData(&shape.mesh.indices[0], shape.mesh.indices.size());
 			geom->setName(shape.name);

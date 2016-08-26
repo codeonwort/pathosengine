@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 
 	// obj loader test
 	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
-	OBJLoader obj("../resources/Pin.obj", "../resources/");
+	OBJLoader obj("../../resources/Pin.obj", "../../resources/");
 	car = obj.craftMesh(0, obj.numGeometries(), "car");
 	car->getTransform().appendMove(7, 1, 0);
 	car->getTransform().appendScale(20, 20, 20);
@@ -97,20 +97,20 @@ int main(int argc, char** argv) {
 	auto testColor = make_shared<ColorMaterial>(1, 1, 1, 1);
 	testColor->addLight(plight);
 	for (auto geom : geoms){
-		lamp->add(geom, testColor);
+	lamp->add(geom, testColor);
 	}*/
-	OBJLoader obj2("../resources/lightbulb.obj", "../resources/");
+	OBJLoader obj2("../../resources/lightbulb.obj", "../../resources/");
 	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->getMaterials()[0]->addLight(plight);
 	lamp->getMaterials()[0]->addLight(plight2);
 	lamp->getMaterials()[0]->setShadowMethod(shadow);
 	lamp->setDoubleSided(true);
-	
+
 	// cubemap
-	const char* cubeImgName[6] = { "../resources/cubemap1/pos_x.bmp", "../resources/cubemap1/neg_x.bmp",
-		"../resources/cubemap1/pos_y.bmp", "../resources/cubemap1/neg_y.bmp",
-		"../resources/cubemap1/pos_z.bmp", "../resources/cubemap1/neg_z.bmp" };
+	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
+		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
+		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
@@ -124,18 +124,14 @@ int main(int argc, char** argv) {
 	color->addLight(plight3);
 	color->setShadowMethod(shadow);
 
-	//GLuint tex = loadTexture(loadImage("../resources/image2.jpg"));
-	GLuint tex = loadTexture(loadImage("../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../resources/154_norm.jpg"));
-	//auto mat = make_shared<TextureMaterial>(tex);
+	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
-	//mat->addLight(light);
 	mat->setShadowMethod(shadow);
-
-	//auto planeGeom = new SphereGeometry(5, 40);
+	
 	auto planeGeom = new PlaneGeometry(30, 30);
 	planeGeom->calculateTangentBasis();
-
+	
 	plane_posX = new Mesh(planeGeom, mat);
 	plane_posX->getTransform().appendMove(15, 0, 0);
 	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
