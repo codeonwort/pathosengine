@@ -26,8 +26,8 @@ namespace pathos {
 			cerr << err << endl;
 			return;
 		}
-		cout << "\  number of shapes: " << t_shapes.size() << endl;
-		cout << "\  number of materials: " << t_materials.size() << endl;
+		cout << "  number of shapes: " << t_shapes.size() << endl;
+		cout << "  number of materials: " << t_materials.size() << endl;
 		
 		// create materials
 		map<string, GLuint> textureDict;

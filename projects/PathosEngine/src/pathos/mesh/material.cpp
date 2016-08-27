@@ -198,6 +198,7 @@ namespace pathos {
 		// final shading
 		fsCompiler.mainCode("outColor.rgb = ambientColor + diffuseTerm + specularTerm;");
 		fsCompiler.mainCode("outColor.a = materialAlpha;");
+
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void ColorMaterialPass::activate() {

@@ -15,9 +15,13 @@ using namespace pathos;
 
 Camera* cam;
 Mesh *lamp; // shadow casters
+Mesh *box;
 Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
 Skybox* sky;
 MeshDefaultRenderer* renderer;
+
+PointLight *plight, *plight2, *plight3;
+OmnidirectionalShadow* shadow;
 
 void setupModel();
 void setupPlanes();
@@ -82,9 +86,10 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
-	auto plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
-	auto shadow = new OmnidirectionalShadow(plight, cam);
+	plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
+	plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
+	plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
+	shadow = new OmnidirectionalShadow(plight, cam);
 
 	OBJLoader obj2("../../resources/lightbulb.obj", "../../resources/");
 	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
@@ -106,12 +111,6 @@ void setupSkybox() {
 }
 
 void setupPlanes() {
-	// light and shadow
-	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
-	auto plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
-	auto plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
-	auto shadow = new OmnidirectionalShadow(plight, cam);
-
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);

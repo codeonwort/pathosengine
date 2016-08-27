@@ -31,7 +31,7 @@ namespace pathos {
 	}
 	GLuint createProgram(std::string& vsCode, std::string& fsCode) {
 #ifdef DEBUG
-		std::cout << "start create program" << std::endl;
+		std::cout << "start creating a shader program" << std::endl;
 #endif
 		GLuint vsid = glCreateShader(GL_VERTEX_SHADER);
 		GLuint fsid = glCreateShader(GL_FRAGMENT_SHADER);
@@ -65,11 +65,55 @@ namespace pathos {
 		return program;
 	}
 
+	GLuint createProgram(std::vector<ShaderCompiler*>& shaders) {
+#ifdef DEBUG
+		std::cout << "start creating a shader program" << std::endl;
+#endif
+		vector<GLuint> shaderIDs;
+		for (ShaderCompiler* it : shaders){
+			GLuint id = glCreateShader(it->getShaderType());
+			shaderIDs.push_back(id);
+			compileShader(id, it->getCode());
+		}
+#ifdef DEBUG
+		std::cout << "linking program" << std::endl;
+#endif
+		GLuint program = glCreateProgram();
+		for (GLuint id : shaderIDs){
+			glAttachShader(program, id);
+		}
+		glLinkProgram(program);
+
+		GLint isLinked = 0;
+		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+		if (isLinked == GL_FALSE) {
+			GLint maxLength = 0;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+			vector<GLchar> infoLog(maxLength);
+			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
+			for (ShaderCompiler* it : shaders){
+				cout << it->getCode() << endl;
+			}
+		}
+#ifdef DEBUG
+		std::cout << "link error code: " << glGetError() << std::endl;
+#endif
+		for (GLuint id : shaderIDs){
+			glDeleteShader(id);
+		}
+
+		return program;
+	}
+
 	bool varComp(pair<string, string>& a, pair<string, string>& b) { return a.second < b.second; }
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	VertexShaderCompiler::VertexShaderCompiler() { clear(); }
+	VertexShaderCompiler::VertexShaderCompiler() {
+		clear();
+		shaderType = GL_VERTEX_SHADER;
+	}
 	bool VertexShaderCompiler::useVarying() { return useNormal || useUV; }
 
 	void VertexShaderCompiler::setUseUV(bool use) { useUV = use; }
@@ -174,6 +218,7 @@ namespace pathos {
 
 	FragmentShaderCompiler::FragmentShaderCompiler() {
 		clear();
+		shaderType = GL_FRAGMENT_SHADER;
 	}
 	void FragmentShaderCompiler::clear() {
 		uniforms.clear();
@@ -269,5 +314,41 @@ namespace pathos {
 	}
 	void FragmentShaderCompiler::directionalLights(unsigned int num) { numDirLights = num; }
 	void FragmentShaderCompiler::pointLights(unsigned int num) { numPointLights = num; }
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	TessellationControlShaderCompiler::TessellationControlShaderCompiler() {
+		shaderType = GL_TESS_CONTROL_SHADER;
+	}
+	string TessellationControlShaderCompiler::getCode() {
+		throw "not implemeneted";
+		return "";
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	TessellationEvaluationShaderCompiler::TessellationEvaluationShaderCompiler() {
+		shaderType = GL_TESS_EVALUATION_SHADER;
+	}
+	string TessellationEvaluationShaderCompiler::getCode() {
+		throw "not implemeneted";
+		return "";
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	GeometryShaderCompiler::GeometryShaderCompiler() {
+		shaderType = GL_GEOMETRY_SHADER;
+	}
+	string GeometryShaderCompiler::getCode() {
+		throw "not implemeneted";
+		return "";
+	}
 
 }

@@ -7,10 +7,23 @@ using namespace std;
 
 namespace pathos {
 
+	class ShaderCompiler;
+
 	void compileShader(GLuint shaderID, std::string &code);
 	GLuint createProgram(std::string& vsCode, std::string& fsCode);
+	GLuint createProgram(std::vector<ShaderCompiler*>& shaders);
 
-	class VertexShaderCompiler {
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	class ShaderCompiler {
+	protected:
+		GLuint shaderType; // set default value in child's constructor
+	public:
+		virtual string getCode() = 0;
+		GLuint getShaderType() { return shaderType; }
+	};
+
+	class VertexShaderCompiler : public ShaderCompiler {
 	private:
 		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;
 		bool usePosition, useUV, useNormal, useTangent, useBitangent;
@@ -21,7 +34,7 @@ namespace pathos {
 		string maincode;
 	public:
 		VertexShaderCompiler();
-		string getCode();
+		virtual string getCode();
 		void clear();
 		void setUseUV(bool);
 		void setUseNormal(bool);
@@ -38,7 +51,7 @@ namespace pathos {
 		void uniformMat4(const string& name);
 	};
 
-	class FragmentShaderCompiler {
+	class FragmentShaderCompiler : public ShaderCompiler {
 	private:
 		vector<pair<string, string>> uniforms;
 		vector<pair<string, string>> inVars;
@@ -48,7 +61,7 @@ namespace pathos {
 		//vector<string> texSamplers;
 	public:
 		FragmentShaderCompiler();
-		string getCode();
+		virtual string getCode();
 		void clear();
 		void inVar(const string& type, const string &name);
 		void outVar(const string& type, const string &name);
@@ -60,6 +73,24 @@ namespace pathos {
 		void mainCode(const string& code);
 		void directionalLights(unsigned int num);
 		void pointLights(unsigned int num);
+	};
+
+	class TessellationControlShaderCompiler : public ShaderCompiler {
+	public:
+		TessellationControlShaderCompiler();
+		virtual string getCode();
+	};
+
+	class TessellationEvaluationShaderCompiler : public ShaderCompiler {
+	public:
+		TessellationEvaluationShaderCompiler();
+		virtual string getCode();
+	};
+
+	class GeometryShaderCompiler : public ShaderCompiler {
+	public:
+		GeometryShaderCompiler();
+		virtual string getCode();
 	};
 
 }
