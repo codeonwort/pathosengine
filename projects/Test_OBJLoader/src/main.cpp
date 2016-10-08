@@ -42,8 +42,8 @@ void render() {
 	renderer->ready();
 	
 	// various models
-	//renderer->render(city, cam);
-	renderer->render(male, cam);
+	renderer->render(city, cam);
+	//renderer->render(male, cam);
 
 	// skybox
 	renderer->render(sky, cam);
@@ -79,11 +79,11 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 0, 0));
+	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	shadow = new OmnidirectionalShadow(plight, cam);
 
-	/*OBJLoader cityLoader("../../resources/city/The_City.obj", "../../resources/city/");
+	OBJLoader cityLoader("../../resources/city/The_City.obj", "../../resources/city/");
 	city = cityLoader.craftMesh(0, cityLoader.numGeometries(), "city");
 	city->getTransform().appendScale(.1, .1, .1);
 	for (int i = 0; i < cityLoader.getMaterials().size(); i++){
@@ -92,16 +92,18 @@ void setupModel() {
 		mat->addLight(plight2);
 		mat->setShadowMethod(shadow);
 	}
-	city->getTransform().appendMove(0, -60, 0);*/
+	city->getTransform().appendMove(0, -60, 0);
 
-	//OBJLoader maleLoader("../../resources/models/cornell_box.obj", "../../resources/models/");
-	OBJLoader maleLoader("../../resources/models/cube.obj", "../../resources/models/");
+	/*OBJLoader maleLoader("../../resources/models/street.obj", "../../resources/models/");
 	for (int i = 0; i < maleLoader.getMaterials().size(); i++){
 		auto& mat = maleLoader.getMaterials()[i];
 		mat->addLight(plight);
-		mat->addLight(plight2);
+		//mat->addLight(plight2);
 	}
 	male = maleLoader.craftMesh(0, maleLoader.numGeometries(), "male");
+	male->getTransform().appendMove(0, -10, 0);*/
+	//male->getTransform().appendScale(.1, .1, .1);
+	//male->setDoubleSided(true);
 }
 
 void setupSkybox() {

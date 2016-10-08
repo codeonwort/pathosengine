@@ -5,7 +5,7 @@ namespace pathos {
 
 	// PerspectiveLens
 	PerspectiveLens::PerspectiveLens(float fov, float aspect, float znear, float zfar) {
-		transform = glm::perspective(fov, aspect, znear, zfar);
+		transform = glm::perspective(glm::radians(fov), aspect, znear, zfar);
 	}
 	glm::mat4 PerspectiveLens::getProjectionMatrix() { return transform; }
 

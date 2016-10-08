@@ -35,7 +35,6 @@ void render() {
 	renderer->ready();
 	// various models
 	renderer->render(ball, cam);
-	//renderer->render(car, cam);
 	renderer->render(lamp, cam);
 	// shadow debugger
 	//renderer->render(viewer, cam);
@@ -76,17 +75,15 @@ int main(int argc, char** argv) {
 
 	// obj loader test
 	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
-	OBJLoader obj("../../resources/Pin.obj", "../../resources/");
+	OBJLoader obj("../../resources/models/Pin.obj", "../../models/resources/");
 	car = obj.craftMesh(0, obj.numGeometries(), "car");
 	car->getTransform().appendMove(7, 1, 0);
 	car->getTransform().appendScale(20, 20, 20);
-	for (auto M : car->getMaterials()){
-		if (M->getDirectionalLights().size() == 0){
-			M->addLight(plight);
-			M->addLight(plight2);
-			M->addLight(plight3);
-			M->setShadowMethod(shadow);
-		}
+	for (auto M : obj.getMaterials()){
+		M->addLight(plight);
+		M->addLight(plight2);
+		M->addLight(plight3);
+		M->setShadowMethod(shadow);
 	}
 
 	// collada loader test
@@ -99,7 +96,7 @@ int main(int argc, char** argv) {
 	for (auto geom : geoms){
 	lamp->add(geom, testColor);
 	}*/
-	OBJLoader obj2("../../resources/lightbulb.obj", "../../resources/");
+	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
 	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->getMaterials()[0]->addLight(plight);

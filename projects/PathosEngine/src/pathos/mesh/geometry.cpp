@@ -183,6 +183,7 @@ namespace pathos {
 			normals[i * 3] = accum[i].x;
 			normals[i * 3 + 1] = accum[i].y;
 			normals[i * 3 + 2] = accum[i].z;
+			//std::cout << accum[i].x << " " << accum[i].y << " " << accum[i].z << std::endl;
 		}
 		updateNormalData(normals, positionCount);
 		delete accum;

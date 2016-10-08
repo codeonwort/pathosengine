@@ -35,6 +35,7 @@ namespace pathos {
 		cout << "  number of shapes: " << t_shapes.size() << endl;
 		cout << "  number of materials: " << t_materials.size() << endl;
 		
+		// gather materials
 		map<string, GLuint> textureDict;
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t &t_mat = t_materials[i];
@@ -64,6 +65,17 @@ namespace pathos {
 			}
 			materials.push_back(move(mat));
 		}
+
+		// if tehere is no material, create a random color material
+		if (materials.size() == 0){
+			shared_ptr<MeshMaterial> mat = make_shared<MeshMaterial>();
+			ColorMaterialPass *pass = new ColorMaterialPass(0.5, 0.5, 0.5, 1.0f);
+			pass->setAmbient(0, 0, 0);
+			pass->setSpecular(1, 1, 1);
+			//WireframeMaterialPass *pass = new WireframeMaterialPass(1, 1, 1, 1);
+			mat->addPass(pass);
+			materials.push_back(move(mat));
+		}
 		
 		// wrap shapes with geometries
 		vector<GLuint> indices;
@@ -71,33 +83,37 @@ namespace pathos {
 			tinyobj::shape_t &shape = t_shapes[i];
 			size_t index_offset = 0;
 
-			for (size_t f = 0; f < t_shapes[i].mesh.num_face_vertices.size(); f++) {
+			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
 				int fv = shape.mesh.num_face_vertices[f];
 				for (size_t v = 0; v < fv; v++){
 					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
 					indices.push_back(idx.vertex_index);
 				}
 				index_offset += fv;
-				materialIndices.push_back(shape.mesh.material_ids[f]);
+				int faceMatID = shape.mesh.material_ids[f];
+				if (faceMatID < 0) faceMatID = 0;
+				materialIndices.push_back(faceMatID);
 			}
-
-			MeshGeometry* geom = new MeshGeometry;
 
 			//cout << "num vertices: " << attrib.vertices.size() << endl;
 			//cout << "num texcoords: " << attrib.texcoords.size() << endl;
 			//cout << "num normals: " << attrib.normals.size() << endl;
+			//cout << "num indices: " << indices.size() << endl;
 
+			MeshGeometry* geom = new MeshGeometry;
 			geom->updateVertexData(&attrib.vertices[0], attrib.vertices.size());
 			if (attrib.texcoords.size() > 0){
 				geom->updateUVData(&attrib.texcoords[0], attrib.texcoords.size());
 			}
-			if (attrib.normals.size() > 0){
-				geom->updateNormalData(&attrib.normals[0], attrib.normals.size());
-			}else{
-				geom->calculateNormals();
-			}
-			//geom->updateIndexData(&shape.mesh.indices[0], shape.mesh.indices.size());
 			geom->updateIndexData(&indices[0], indices.size());
+			
+			if (attrib.normals.empty()){
+				cout << "no normal buffer: auto calculating..." << endl;
+				geom->calculateNormals();
+			}else{
+				geom->updateNormalData(&attrib.normals[0], attrib.normals.size());
+			}
+			//geom->calculateNormals(); // always recalculate normals
 			geom->setName(shape.name);
 			geometries.push_back(geom);
 		}
