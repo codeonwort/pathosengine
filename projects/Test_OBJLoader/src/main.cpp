@@ -13,14 +13,16 @@
 using namespace std;
 using namespace pathos;
 
+// Camera and renderer
 Camera* cam;
-Mesh *lamp; // shadow casters
-Mesh *box;
-Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
-Skybox* sky;
 MeshDefaultRenderer* renderer;
 
-PointLight *plight, *plight2, *plight3;
+// 3D objects
+Mesh *city, *male;
+Skybox* sky;
+
+// Lights and shadow
+PointLight *plight, *plight2;
 OmnidirectionalShadow* shadow;
 
 void setupModel();
@@ -36,20 +38,12 @@ void render() {
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotate(dr, glm::vec3(0, 1, 0));
 	cam->rotate(dr2, glm::vec3(1, 0, 0));
-	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 	
 	renderer->ready();
 	
 	// various models
-	renderer->render(lamp, cam);
-
-	// shadow debugger
-	renderer->render(plane_posX, cam);
-	renderer->render(plane_negX, cam);
-	renderer->render(plane_posY, cam);
-	renderer->render(plane_negY, cam);
-	renderer->render(plane_posZ, cam);
-	renderer->render(plane_negZ, cam);
+	//renderer->render(city, cam);
+	renderer->render(male, cam);
 
 	// skybox
 	renderer->render(sky, cam);
@@ -68,7 +62,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 100.f));
+	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
 	cam->move(glm::vec3(-0.2, 0, 3));
 
 	// renderer
@@ -77,7 +71,6 @@ int main(int argc, char** argv) {
 	// 3d objects
 	setupModel();
 	setupSkybox();
-	setupPlanes();
 
 	// start the main loop
 	Engine::start();
@@ -86,18 +79,29 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
-	plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
-	plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
+	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 0, 0));
+	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	shadow = new OmnidirectionalShadow(plight, cam);
 
-	OBJLoader obj2("../../resources/lightbulb.obj", "../../resources/");
-	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
-	lamp->getTransform().appendScale(4, 4, 4);
-	lamp->getMaterials()[0]->addLight(plight);
-	lamp->getMaterials()[0]->addLight(plight2);
-	lamp->getMaterials()[0]->setShadowMethod(shadow);
-	lamp->setDoubleSided(true);
+	/*OBJLoader cityLoader("../../resources/city/The_City.obj", "../../resources/city/");
+	city = cityLoader.craftMesh(0, cityLoader.numGeometries(), "city");
+	city->getTransform().appendScale(.1, .1, .1);
+	for (int i = 0; i < cityLoader.getMaterials().size(); i++){
+		auto& mat = cityLoader.getMaterials()[i];
+		mat->addLight(plight);
+		mat->addLight(plight2);
+		mat->setShadowMethod(shadow);
+	}
+	city->getTransform().appendMove(0, -60, 0);*/
+
+	//OBJLoader maleLoader("../../resources/models/cornell_box.obj", "../../resources/models/");
+	OBJLoader maleLoader("../../resources/models/cube.obj", "../../resources/models/");
+	for (int i = 0; i < maleLoader.getMaterials().size(); i++){
+		auto& mat = maleLoader.getMaterials()[i];
+		mat->addLight(plight);
+		mat->addLight(plight2);
+	}
+	male = maleLoader.craftMesh(0, maleLoader.numGeometries(), "male");
 }
 
 void setupSkybox() {
@@ -108,37 +112,4 @@ void setupSkybox() {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
-}
-
-void setupPlanes() {
-	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
-	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
-	mat->setShadowMethod(shadow);
-
-	auto planeGeom = new PlaneGeometry(30, 30);
-	planeGeom->calculateTangentBasis();
-
-	plane_posX = new Mesh(planeGeom, mat);
-	plane_posX->getTransform().appendMove(15, 0, 0);
-	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
-
-	plane_negX = new Mesh(planeGeom, mat);
-	plane_negX->getTransform().appendMove(-15, 0, 0);
-	plane_negX->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
-
-	plane_posY = new Mesh(planeGeom, mat);
-	plane_posY->getTransform().appendMove(0, 15, 0);
-	plane_posY->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(1, 0, 0));
-
-	plane_negY = new Mesh(planeGeom, mat);
-	plane_negY->getTransform().appendMove(0, -15, 0);
-	plane_negY->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1, 0, 0));
-
-	plane_posZ = new Mesh(planeGeom, mat);
-	plane_posZ->getTransform().appendMove(0, 0, 15);
-	plane_posZ->getTransform().appendRotation(glm::radians(180.0f), glm::vec3(0, 1, 0));
-
-	plane_negZ = new Mesh(planeGeom, mat);
-	plane_negZ->getTransform().appendMove(0, 0, -15);
 }

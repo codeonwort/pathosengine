@@ -19,6 +19,8 @@ namespace pathos {
 	public:
 		OBJLoader(const char* objFile, const char* mtlDir);
 		Mesh* craftMesh(size_t start, size_t end, string name);
+		const vector<shared_ptr<MeshMaterial>>& getMaterials() { return materials; }
+		const vector<MeshGeometry*>& getGeometries() { return geometries; }
 		inline size_t numGeometries() { return geometries.size(); }
 	};
 

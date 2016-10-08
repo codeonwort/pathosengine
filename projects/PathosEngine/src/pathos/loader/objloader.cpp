@@ -9,6 +9,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+//#define TINYOBJLOADER_IMPLEMENTATION
+//#include "tiny_obj_loader.h"
+
 using namespace std;
 
 namespace pathos {
@@ -20,24 +23,27 @@ namespace pathos {
 	* load a .obj file
 	*/
 	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) :t_shapes(), t_materials(), geometries(), materialIndices(), materials() {
-		string err = tinyobj::LoadObj(t_shapes, t_materials, objFile, mtlDir);
+		//string err = tinyobj::LoadObj(t_shapes, t_materials, objFile, mtlDir);
+		string err;
+		tinyobj::attrib_t attrib;
+		bool ret = tinyobj::LoadObj(&attrib, &t_shapes, &t_materials, &err, objFile, mtlDir);
+
 		cout << "Loading .obj file: \"" << objFile << "\"" << endl;
 		if (!err.empty()) {
 			cerr << err << endl;
-			return;
 		}
 		cout << "  number of shapes: " << t_shapes.size() << endl;
 		cout << "  number of materials: " << t_materials.size() << endl;
 		
-		// create materials
 		map<string, GLuint> textureDict;
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t &t_mat = t_materials[i];
 			shared_ptr<MeshMaterial> mat = make_shared<MeshMaterial>();
 			mat->setName(t_mat.name);
 			if (t_mat.diffuse_texname.length() != 0) {
-				string tex_path = "../resources/models/" + t_mat.diffuse_texname;
+				string tex_path = mtlDir + t_mat.diffuse_texname;
 				GLuint texID;
+				cout << "required texture: " << tex_path << endl;
 				auto it = textureDict.find(tex_path);
 				if (it != textureDict.end()) {
 					texID = it->second;
@@ -60,18 +66,40 @@ namespace pathos {
 		}
 		
 		// wrap shapes with geometries
+		vector<GLuint> indices;
 		for (size_t i = 0; i < t_shapes.size(); i++) {
 			tinyobj::shape_t &shape = t_shapes[i];
-			MeshGeometry* geom = new MeshGeometry;
-			geom->updateVertexData(&shape.mesh.positions[0], shape.mesh.positions.size());
-			if (shape.mesh.texcoords.size() > 0){
-				geom->updateUVData(&shape.mesh.texcoords[0], shape.mesh.texcoords.size());
+			size_t index_offset = 0;
+
+			for (size_t f = 0; f < t_shapes[i].mesh.num_face_vertices.size(); f++) {
+				int fv = shape.mesh.num_face_vertices[f];
+				for (size_t v = 0; v < fv; v++){
+					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+					indices.push_back(idx.vertex_index);
+				}
+				index_offset += fv;
+				materialIndices.push_back(shape.mesh.material_ids[f]);
 			}
-			geom->updateNormalData(&shape.mesh.normals[0], shape.mesh.normals.size());
-			geom->updateIndexData(&shape.mesh.indices[0], shape.mesh.indices.size());
+
+			MeshGeometry* geom = new MeshGeometry;
+
+			//cout << "num vertices: " << attrib.vertices.size() << endl;
+			//cout << "num texcoords: " << attrib.texcoords.size() << endl;
+			//cout << "num normals: " << attrib.normals.size() << endl;
+
+			geom->updateVertexData(&attrib.vertices[0], attrib.vertices.size());
+			if (attrib.texcoords.size() > 0){
+				geom->updateUVData(&attrib.texcoords[0], attrib.texcoords.size());
+			}
+			if (attrib.normals.size() > 0){
+				geom->updateNormalData(&attrib.normals[0], attrib.normals.size());
+			}else{
+				geom->calculateNormals();
+			}
+			//geom->updateIndexData(&shape.mesh.indices[0], shape.mesh.indices.size());
+			geom->updateIndexData(&indices[0], indices.size());
 			geom->setName(shape.name);
 			geometries.push_back(geom);
-			materialIndices.push_back(shape.mesh.material_ids[0]);
 		}
 	}
 

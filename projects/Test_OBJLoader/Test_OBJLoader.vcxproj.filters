@@ -18,7 +18,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tiny_obj_loader.cc">
+    <ClCompile Include="src\tiny_obj_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
