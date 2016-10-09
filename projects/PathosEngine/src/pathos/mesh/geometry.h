@@ -28,6 +28,11 @@ namespace pathos {
 		void updateTangentData(GLfloat* data, unsigned int length);
 		void updateBitangentData(GLfloat* data, unsigned int length);
 
+		// use same buffer with another MeshGeometry object.
+		void burrowVertexBuffer(const MeshGeometry* other);
+		void burrowNormalBuffer(const MeshGeometry* other);
+		void burrowUVBuffer(const MeshGeometry* other);
+
 		inline GLfloat* getPos() { return positionData; }
 		void uploadPosition();
 		void calculateNormals();

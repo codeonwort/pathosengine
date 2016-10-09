@@ -14,7 +14,7 @@ namespace pathos {
 		vector<tinyobj::shape_t> t_shapes;
 		vector<tinyobj::material_t> t_materials;
 		vector<MeshGeometry*> geometries;
-		vector<int> materialIndices;
+		vector<int> materialIndices; // material index for each geometry
 		vector<shared_ptr<MeshMaterial>> materials;
 	public:
 		OBJLoader(const char* objFile, const char* mtlDir);

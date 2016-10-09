@@ -67,6 +67,23 @@ namespace pathos {
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(GLuint), indexData, GL_STATIC_DRAW);
 	}
 
+	// burrow
+	void MeshGeometry::burrowVertexBuffer(const MeshGeometry* other) {
+		positionData = other->positionData;
+		positionCount = other->positionCount;
+		positionBuffer = other->positionBuffer;
+	}
+	void MeshGeometry::burrowNormalBuffer(const MeshGeometry* other) {
+		normalData = other->normalData;
+		normalCount = other->normalCount;
+		normalBuffer = other->normalBuffer;
+	}
+	void MeshGeometry::burrowUVBuffer(const MeshGeometry* other) {
+		uvData = other->uvData;
+		uvCount = other->uvCount;
+		uvBuffer = other->uvBuffer;
+	}
+
 	void MeshGeometry::activateVertexBuffer(GLuint index) {
 		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 		glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
@@ -153,6 +170,7 @@ namespace pathos {
 		//throw Exceptions::NotImplemented(__FUNCTION__);
 	}
 
+	// requirements: positionData and indexData should be ready
 	void MeshGeometry::calculateNormals() {
 		if (normalData) delete normalData;
 		int numPos = positionCount / 3;

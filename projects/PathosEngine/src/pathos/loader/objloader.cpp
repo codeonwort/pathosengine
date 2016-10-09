@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <memory>
+#include <set>
+#include <map>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -77,45 +79,59 @@ namespace pathos {
 			materials.push_back(move(mat));
 		}
 		
-		// wrap shapes with geometries
-		vector<GLuint> indices;
+		// convert each shape into geometries
 		for (size_t i = 0; i < t_shapes.size(); i++) {
 			tinyobj::shape_t &shape = t_shapes[i];
 			size_t index_offset = 0;
 
-			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
-				int fv = shape.mesh.num_face_vertices[f];
-				for (size_t v = 0; v < fv; v++){
-					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-					indices.push_back(idx.vertex_index);
-				}
-				index_offset += fv;
+			cout << "analyzing a shape: " << shape.name << endl;
+
+			set<int> materialIDs; // material IDs used by faces of this shape
+			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++){
 				int faceMatID = shape.mesh.material_ids[f];
 				if (faceMatID < 0) faceMatID = 0;
-				materialIndices.push_back(faceMatID);
+				materialIDs.insert(faceMatID);
+			}
+			int numMaterialIDs = materialIDs.size();
+			map<int, vector<GLuint>> indicesPerMaterial;
+
+			cout << "-> num materials: " << numMaterialIDs << endl;
+
+			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+				int fv = shape.mesh.num_face_vertices[f];
+				int faceMatID = shape.mesh.material_ids[f];
+				if (faceMatID < 0) faceMatID = 0;
+
+				for (size_t v = 0; v < fv; v++){
+					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+					indicesPerMaterial[faceMatID].push_back(idx.vertex_index); // index buffer
+				}
+				index_offset += fv;
 			}
 
-			//cout << "num vertices: " << attrib.vertices.size() << endl;
-			//cout << "num texcoords: " << attrib.texcoords.size() << endl;
-			//cout << "num normals: " << attrib.normals.size() << endl;
-			//cout << "num indices: " << indices.size() << endl;
+			cout << "-> index buffers are filled" << endl;
 
-			MeshGeometry* geom = new MeshGeometry;
-			geom->updateVertexData(&attrib.vertices[0], attrib.vertices.size());
-			if (attrib.texcoords.size() > 0){
-				geom->updateUVData(&attrib.texcoords[0], attrib.texcoords.size());
-			}
-			geom->updateIndexData(&indices[0], indices.size());
-			
-			if (attrib.normals.empty()){
-				cout << "no normal buffer: auto calculating..." << endl;
+			// Create a geometry for this shape
+			MeshGeometry* originalGeom = new MeshGeometry;
+			originalGeom->setName(shape.name);
+			originalGeom->updateVertexData(&attrib.vertices[0], attrib.vertices.size());
+			if (attrib.texcoords.size() > 0) originalGeom->updateUVData(&attrib.texcoords[0], attrib.texcoords.size());
+			if (attrib.normals.size() > 0) originalGeom->updateNormalData(&attrib.normals[0], attrib.normals.size());
+			//else geom->calculateNormals();
+			cout << "-> geometry created for " << i << "-th material" << endl;
+
+			// group the geometry with each index buffer
+			for (auto it = materialIDs.begin(); it != materialIDs.end(); it++){
+				int i = *it;
+				MeshGeometry* geom = new MeshGeometry;
+				geom->burrowVertexBuffer(originalGeom);
+				//geom->burrowNormalBuffer(originalGeom);
+				geom->burrowUVBuffer(originalGeom);
+				geom->updateIndexData(&indicesPerMaterial[i][0], indicesPerMaterial[i].size());
 				geom->calculateNormals();
-			}else{
-				geom->updateNormalData(&attrib.normals[0], attrib.normals.size());
+				geometries.push_back(geom);
+				materialIndices.push_back(i);
 			}
-			//geom->calculateNormals(); // always recalculate normals
-			geom->setName(shape.name);
-			geometries.push_back(geom);
 		}
 	}
 
@@ -180,25 +196,47 @@ namespace pathos {
 
 }
 
-/*for (size_t j = 0; j < materials.size(); j++) {
-tinyobj::material_t mat = materials[j];
-cout << "=====================" << endl;
-cout << "name: " << mat.name << endl;
-cout << "ambient: " << mat.ambient[0] << " " << mat.ambient[1] << " " << mat.ambient[2] << endl;
-cout << "diffuse: " << mat.diffuse[0] << " " << mat.diffuse[1] << " " << mat.diffuse[2] << endl;
-cout << "specular: " << mat.specular[0] << " " << mat.specular[1] << " " << mat.specular[2] << endl;
-cout << "transmittance: " << mat.transmittance[0] << " " << mat.transmittance[1] << " " << mat.transmittance[2] << endl;
-cout << "emission: " << mat.emission[0] << " " << mat.emission[1] << " " << mat.emission[2] << endl;
-cout << "shiniess: " << mat.shininess << endl;
-cout << "index of refraction: " << mat.ior << endl;
-cout << "dissolve: " << mat.dissolve << endl;
-cout << "illumination model: " << mat.illum << endl;
-cout << "ambient_texname: " << mat.ambient_texname << endl;
-cout << "diffuse_texname: " << mat.diffuse_texname << endl;
-cout << "specular_texname: " << mat.specular_texname << endl;
-cout << "specular_highlight_texname: " << mat.specular_highlight_texname << endl;
-cout << "bump_texname: " << mat.bump_texname << endl;
-cout << "displacement_texname: " << mat.displacement_texname << endl;
-cout << "alpha_texname: " << mat.alpha_texname << endl;
-cout << "=====================" << endl;
-}*/
+/* template code for tinyobjloader
+std::string inputfile = "cornell_box.obj";
+tinyobj::attrib_t attrib;
+std::vector<tinyobj::shape_t> shapes;
+std::vector<tinyobj::material_t> materials;
+
+std::string err;
+bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
+
+if (!err.empty()) { // `err` may contain warning message.
+std::cerr << err << std::endl;
+}
+
+if (!ret) {
+exit(1);
+}
+
+// Loop over shapes
+for (size_t s = 0; s < shapes.size(); s++) {
+// Loop over faces(polygon)
+size_t index_offset = 0;
+for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+int fv = shapes[s].mesh.num_face_vertices[f];
+
+// Loop over vertices in the face.
+for (size_t v = 0; v < fv; v++) {
+// access to vertex
+tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+float vx = attrib.vertices[3*idx.vertex_index+0];
+float vy = attrib.vertices[3*idx.vertex_index+1];
+float vz = attrib.vertices[3*idx.vertex_index+2];
+float nx = attrib.normals[3*idx.normal_index+0];
+float ny = attrib.normals[3*idx.normal_index+1];
+float nz = attrib.normals[3*idx.normal_index+2];
+float tx = attrib.texcoords[2*idx.texcoord_index+0];
+float ty = attrib.texcoords[2*idx.texcoord_index+1];
+}
+index_offset += fv;
+
+// per-face material
+shapes[s].mesh.material_ids[f];
+}
+}
+*/
