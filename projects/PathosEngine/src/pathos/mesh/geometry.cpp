@@ -9,10 +9,18 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
-	MeshGeometry::MeshGeometry() { }
+	MeshGeometry::MeshGeometry() :drawArraysMode(false) {}
 	MeshGeometry::~MeshGeometry() { this->dispose(); }
 
 	unsigned int MeshGeometry::getIndexCount() { return indexCount; }
+
+	void MeshGeometry::draw() {
+		if (drawArraysMode){
+			glDrawArrays(GL_TRIANGLES, 0, positionCount);
+		}else{
+			glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)0);
+		}
+	}
 
 	void MeshGeometry::updateVertexData(GLfloat* data, unsigned int length) {
 		positionData = data;
@@ -159,8 +167,9 @@ namespace pathos {
 	bool MeshGeometry::isUVActivated() { return uvActivated; }
 	bool MeshGeometry::isNormalActivated() { return normalActivated; }
 
-	void MeshGeometry::applyTransform(glm::mat4 &transform) {
+	/*void MeshGeometry::applyTransform(glm::mat4 &transform) {
 		// update positionData, normalData
+		//throw Exceptions::NotImplemented(__FUNCTION__);
 	}
 
 	void MeshGeometry::scale(float value) {
@@ -168,9 +177,11 @@ namespace pathos {
 	}
 	void MeshGeometry::scaleUV(float scaleU, float scaleV) {
 		//throw Exceptions::NotImplemented(__FUNCTION__);
-	}
+	}*/
 
 	// requirements: positionData and indexData should be ready
+	// it only handles indexed vertex buffer (glDrawElements).
+	// vertex array should be supported.
 	void MeshGeometry::calculateNormals() {
 		if (normalData) delete normalData;
 		int numPos = positionCount / 3;
@@ -262,8 +273,8 @@ namespace pathos {
 		glDeleteBuffers(1, &indexBuffer);
 		glDeleteBuffers(1, &uvBuffer);
 		glDeleteBuffers(1, &normalBuffer);
-		if(tangentBuffer) glDeleteBuffers(1, &tangentBuffer);
-		if(bitangentBuffer) glDeleteBuffers(1, &bitangentBuffer);
+		if (tangentBuffer) glDeleteBuffers(1, &tangentBuffer);
+		if (bitangentBuffer) glDeleteBuffers(1, &bitangentBuffer);
 		if (positionData) delete positionData;
 		if (indexData) delete indexData;
 		if (normalData) delete normalData;

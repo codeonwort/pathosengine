@@ -265,7 +265,7 @@ namespace pathos {
 		glBlendFunc(blendSrcFactor, blendDstFactor);
 	}
 	void ColorMaterialPass::renderMaterial() {
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 	}
 	void ColorMaterialPass::deactivate() {
 		geometry->deactivateVertexBuffer(0);
@@ -341,7 +341,7 @@ namespace pathos {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 		if (useAlpha) glDisable(GL_BLEND);
 	}
 	void TextureMaterialPass::deactivate() {
@@ -511,7 +511,7 @@ namespace pathos {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 		if (useAlpha) glDisable(GL_BLEND);
 	}
 	void BumpTextureMaterialPass::deactivate() {
@@ -567,7 +567,7 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
 	void ShadowTextureMaterialPass::renderMaterial() {
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 	}
 	void ShadowTextureMaterialPass::deactivate() {
 		geometry->deactivateVertexBuffer(0);
@@ -616,7 +616,7 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, debugTexture);
 	}
 	void ShadowCubeTextureMaterialPass::renderMaterial() {
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 	}
 	void ShadowCubeTextureMaterialPass::deactivate() {
 		geometry->deactivateVertexBuffer(0);
@@ -657,7 +657,7 @@ namespace pathos {
 	void WireframeMaterialPass::renderMaterial() {
 		glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawElements(GL_TRIANGLES, geometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		geometry->draw();
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glEnable(GL_CULL_FACE);
 	}

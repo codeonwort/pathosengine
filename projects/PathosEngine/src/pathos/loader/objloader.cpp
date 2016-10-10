@@ -68,7 +68,7 @@ namespace pathos {
 			materials.push_back(move(mat));
 		}
 
-		// if tehere is no material, create a random color material
+		// if there is no material, create a random color material
 		if (materials.size() == 0){
 			shared_ptr<MeshMaterial> mat = make_shared<MeshMaterial>();
 			ColorMaterialPass *pass = new ColorMaterialPass(0.5, 0.5, 0.5, 1.0f);
@@ -82,8 +82,7 @@ namespace pathos {
 		// convert each shape into geometries
 		for (size_t i = 0; i < t_shapes.size(); i++) {
 			tinyobj::shape_t &shape = t_shapes[i];
-			size_t index_offset = 0;
-
+			
 			cout << "analyzing a shape: " << shape.name << endl;
 
 			set<int> materialIDs; // material IDs used by faces of this shape
@@ -93,10 +92,12 @@ namespace pathos {
 				materialIDs.insert(faceMatID);
 			}
 			int numMaterialIDs = materialIDs.size();
-			map<int, vector<GLuint>> indicesPerMaterial;
+
+			map<int, vector<GLfloat>> positionMap, normalMap, texcoordMap;
 
 			cout << "-> num materials: " << numMaterialIDs << endl;
 
+			size_t index_offset = 0;
 			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
 				int fv = shape.mesh.num_face_vertices[f];
 				int faceMatID = shape.mesh.material_ids[f];
@@ -104,31 +105,41 @@ namespace pathos {
 
 				for (size_t v = 0; v < fv; v++){
 					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-					indicesPerMaterial[faceMatID].push_back(idx.vertex_index); // index buffer
+					float vx = attrib.vertices[3 * idx.vertex_index + 0];
+					float vy = attrib.vertices[3 * idx.vertex_index + 1];
+					float vz = attrib.vertices[3 * idx.vertex_index + 2];
+					positionMap[faceMatID].push_back(vx);
+					positionMap[faceMatID].push_back(vy);
+					positionMap[faceMatID].push_back(vz);
+					if (idx.normal_index >= 0){
+						float nx = attrib.normals[3 * idx.normal_index + 0];
+						float ny = attrib.normals[3 * idx.normal_index + 1];
+						float nz = attrib.normals[3 * idx.normal_index + 2];
+						normalMap[faceMatID].push_back(nx);
+						normalMap[faceMatID].push_back(ny);
+						normalMap[faceMatID].push_back(nz);
+					}
+					if (idx.texcoord_index >= 0){
+						float u = attrib.texcoords[2 * idx.texcoord_index + 0];
+						float v = attrib.texcoords[2 * idx.texcoord_index + 1];
+						texcoordMap[faceMatID].push_back(u);
+						texcoordMap[faceMatID].push_back(v);
+					}
 				}
 				index_offset += fv;
 			}
 
-			cout << "-> index buffers are filled" << endl;
-
-			// Create a geometry for this shape
-			MeshGeometry* originalGeom = new MeshGeometry;
-			originalGeom->setName(shape.name);
-			originalGeom->updateVertexData(&attrib.vertices[0], attrib.vertices.size());
-			if (attrib.texcoords.size() > 0) originalGeom->updateUVData(&attrib.texcoords[0], attrib.texcoords.size());
-			if (attrib.normals.size() > 0) originalGeom->updateNormalData(&attrib.normals[0], attrib.normals.size());
-			//else geom->calculateNormals();
-			cout << "-> geometry created for " << i << "-th material" << endl;
+			cout << "-> buffers are filled" << endl;
 
 			// group the geometry with each index buffer
 			for (auto it = materialIDs.begin(); it != materialIDs.end(); it++){
 				int i = *it;
 				MeshGeometry* geom = new MeshGeometry;
-				geom->burrowVertexBuffer(originalGeom);
-				//geom->burrowNormalBuffer(originalGeom);
-				geom->burrowUVBuffer(originalGeom);
-				geom->updateIndexData(&indicesPerMaterial[i][0], indicesPerMaterial[i].size());
-				geom->calculateNormals();
+				geom->updateVertexData(&positionMap[i][0], positionMap[i].size());
+				if(normalMap[i].size() > 0) geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
+				if(texcoordMap[i].size() > 0) geom->updateUVData(&texcoordMap[i][0], texcoordMap[i].size());
+				geom->setDrawArraysMode(true);
+				//geom->calculateNormals();
 				geometries.push_back(geom);
 				materialIndices.push_back(i);
 			}

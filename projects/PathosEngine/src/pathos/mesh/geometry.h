@@ -15,9 +15,14 @@ namespace pathos {
 		GLuint vertexLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation; // xxLocation is valid only if xxActivated == true
 		bool vertexActivated = false, uvActivated = false, normalActivated = false;
 		unsigned int positionCount = 0, uvCount = 0, normalCount = 0, indexCount = 0; // it's array length, not actual count!
+
+		bool drawArraysMode; // use glDrawArrays() if true. use glDrawElements() if false. (default: false)
 	public:
 		MeshGeometry();
 		virtual ~MeshGeometry();
+
+		void setDrawArraysMode(bool value) { drawArraysMode = value; }
+		void draw();
 
 		unsigned int getIndexCount();
 
@@ -59,9 +64,9 @@ namespace pathos {
 		bool isUVActivated();
 		bool isNormalActivated();
 
-		void applyTransform(glm::mat4 &transform);
-		void scale(float value);
-		void scaleUV(float scaleU, float scaleV);
+		//void applyTransform(glm::mat4 &transform);
+		//void scale(float value);
+		//void scaleUV(float scaleU, float scaleV);
 		void dispose();
 		//void convertToSeparateBuffers();
 	};
