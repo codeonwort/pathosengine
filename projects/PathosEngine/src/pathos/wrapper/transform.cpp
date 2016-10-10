@@ -7,7 +7,7 @@ namespace pathos {
 
 	const glm::mat4& Transform::getMatrix() { return matrix; }
 
-	inline void Transform::identity() { matrix = glm::mat4(1.0f); }
+	void Transform::identity() { matrix = glm::mat4(1.0f); }
 	void Transform::append(const glm::mat4& t) { matrix = matrix * t; }
 	void Transform::appendMove(const glm::vec3& movement) { matrix = glm::translate(matrix, movement); }
 	void Transform::appendMove(float dx, float dy, float dz) { appendMove(glm::vec3(dx, dy, dz)); }

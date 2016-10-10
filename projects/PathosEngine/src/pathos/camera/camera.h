@@ -18,6 +18,7 @@ namespace pathos {
 		virtual glm::mat4 getProjectionMatrix();
 	};
 
+	// flying camera
 	class Camera {
 	private:
 		Transform transform;	// view transform
@@ -30,6 +31,8 @@ namespace pathos {
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
 		void move(const glm::vec3& movement);
 		void rotate(float angleDegree, const glm::vec3& axis);
+		void rotateZ(float angleDegree); // mouse move to left & right in first person mode
+		void rotateX(float angleDegree); // mouse move to up & down in first person mode
 
 	};
 }

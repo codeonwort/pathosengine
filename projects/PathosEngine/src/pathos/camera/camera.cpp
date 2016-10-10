@@ -23,13 +23,24 @@ namespace pathos {
 	}
 
 	// move direction is alongside the camera's view direction
-	void Camera::move(const glm::vec3& movement) { transform.appendMove(transform.inverseTransformVector(-movement)); }
+	void Camera::move(const glm::vec3& movement) {
+		transform.appendMove(transform.inverseTransformVector(-movement));
+	}
 	void Camera::rotate(float angleDegree, const glm::vec3& axis) {
 		glm::vec3 pos = transform.getPosition();
 		pos = transform.inverseTransformPoint(pos);
 		transform.appendMove(-pos);
 		transform.appendRotation(-glm::radians(angleDegree), axis);
 		transform.appendMove(pos);
+	}
+
+	void Camera::rotateZ(float angleDegree) {
+		glm::vec3 up = transform.transformVector(glm::vec3(0, 1, 0));
+		transform.appendRotation(-glm::radians(angleDegree), up);
+	}
+	void Camera::rotateX(float angleDegree) {
+		glm::vec3 side = transform.transformVector(glm::vec3(1, 0, 0));
+		transform.appendRotation(glm::radians(angleDegree), side);
 	}
 
 }
