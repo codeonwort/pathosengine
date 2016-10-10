@@ -9,6 +9,7 @@
 #include <pathos/light/light.h>
 #include <pathos/loader/imageloader.h>
 #include <pathos/loader/objloader.h>
+#include <pathos/text/textmesh.h>
 
 using namespace std;
 using namespace pathos;
@@ -18,7 +19,8 @@ Camera* cam;
 MeshDefaultRenderer* renderer;
 
 // 3D objects
-Mesh *city, *male;
+Mesh *city, *city2;
+TextMesh *label;
 Skybox* sky;
 
 // Lights and shadow
@@ -34,20 +36,21 @@ void render() {
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
 	float dr = Engine::isDown('q') ? 0.5f : Engine::isDown('e') ? -0.5f : 0.0f;
-	float dr2 = Engine::isDown('z') ? 0.5f : Engine::isDown('x') ? -0.5f : 0.0f;
+	float dr2 = Engine::isDown('z') ? 0.2f : Engine::isDown('x') ? -0.2f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateZ(dr);
 	cam->rotateX(dr2);
 	//cam->rotate(dr, glm::vec3(0, 1, 0));
 	//cam->rotate(dr2, glm::vec3(1, 0, 0));
 
-	male->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
+	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
 	
 	renderer->ready();
 	
 	// various models
 	//renderer->render(city, cam);
-	renderer->render(male, cam);
+	renderer->render(city2, cam);
+	renderer->render(label, cam);
 
 	// skybox
 	renderer->render(sky, cam);
@@ -67,7 +70,7 @@ int main(int argc, char** argv) {
 
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
-	cam->move(glm::vec3(-0.2, 0, 3));
+	cam->move(glm::vec3(0, 0, 3));
 
 	// renderer
 	renderer = new MeshDefaultRenderer();
@@ -98,16 +101,21 @@ void setupModel() {
 	}
 	city->getTransform().appendMove(0, -60, 0);*/
 
-	OBJLoader maleLoader("../../resources/models/street.obj", "../../resources/models/");
-	for (int i = 0; i < maleLoader.getMaterials().size(); i++){
-		auto& mat = maleLoader.getMaterials()[i];
+	label = new TextMesh("default");
+	label->setText("text mesh test", 0xff0000);
+	label->getTransform().appendScale(10, 10, 10);
+	label->setDoubleSided(true);
+
+	OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
+	for (int i = 0; i < city2Loader.getMaterials().size(); i++){
+		auto& mat = city2Loader.getMaterials()[i];
 		mat->addLight(plight);
 		mat->addLight(plight2);
 	}
-	male = maleLoader.craftMesh(0, maleLoader.numGeometries(), "male");
-	male->getTransform().appendMove(0, -10, 0);
-	//male->getTransform().appendScale(.1, .1, .1);
-	//male->setDoubleSided(true);
+	city2 = city2Loader.craftMesh(0, city2Loader.numGeometries(), "city2");
+	city2->getTransform().appendMove(0, -10, 0);
+	//city2->getTransform().appendScale(.1, .1, .1);
+	//city2->setDoubleSided(true);
 }
 
 void setupSkybox() {

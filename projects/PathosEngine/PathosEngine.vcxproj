@@ -176,6 +176,7 @@
     <ClCompile Include="src\pathos\mesh\shadow.cpp" />
     <ClCompile Include="src\pathos\render\render.cpp" />
     <ClCompile Include="src\pathos\render\shader.cpp" />
+    <ClCompile Include="src\pathos\text\textmesh.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -194,6 +195,7 @@
     <ClInclude Include="src\pathos\mesh\shadow.h" />
     <ClInclude Include="src\pathos\render\render.h" />
     <ClInclude Include="src\pathos\render\shader.h" />
+    <ClInclude Include="src\pathos\text\textmesh.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
