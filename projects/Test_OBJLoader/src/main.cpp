@@ -112,12 +112,12 @@ void setupModel() {
 	for (int i = 0; i < city2Loader.getMaterials().size(); i++){
 		auto& mat = city2Loader.getMaterials()[i];
 		mat->addLight(plight);
-		mat->addLight(plight2);
+		//mat->addLight(plight2);
 		//mat->setShadowMethod(shadow);
 	}
 	city2 = city2Loader.craftMesh(0, city2Loader.numGeometries(), "city2");
 	city2->getTransform().appendScale(.2, .2, .2);
-	city2->getTransform().appendMove(0, -10, -50);
+	city2->getTransform().appendMove(0, -40, -50);
 	//city2->setDoubleSided(true);
 }
 
