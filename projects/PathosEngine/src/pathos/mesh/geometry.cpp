@@ -183,6 +183,26 @@ namespace pathos {
 	// it only handles indexed vertex buffer (glDrawElements).
 	// vertex array should be supported.
 	void MeshGeometry::calculateNormals() {
+		if (drawArraysMode) calculateNormals_array();
+		else calculateNormals_indexed();
+	}
+	void MeshGeometry::calculateNormals_array() {
+		if (normalData) delete normalData;
+		GLfloat* normals = new GLfloat[positionCount];
+		auto P = positionData;
+		for (auto i = 0; i < positionCount; i += 9){
+			auto p0 = i, p1 = i + 3, p2 = i + 6;
+			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
+			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
+			auto norm = glm::normalize(glm::cross(a, b));
+			normals[i] = normals[i + 3] = normals[i + 6] = norm.x;
+			normals[i + 1] = normals[i + 4] = normals[i + 7] = norm.y;
+			normals[i + 2] = normals[i + 5] = normals[i + 8] = norm.z;
+			//std::cout << norm.x << ' ' << norm.y << norm.z << std::endl;
+		}
+		updateNormalData(normals, positionCount);
+	}
+	void MeshGeometry::calculateNormals_indexed() {
 		if (normalData) delete normalData;
 		int numPos = positionCount / 3;
 		glm::vec3* accum = new glm::vec3[numPos];

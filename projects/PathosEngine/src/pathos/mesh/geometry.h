@@ -40,6 +40,10 @@ namespace pathos {
 
 		inline GLfloat* getPos() { return positionData; }
 		void uploadPosition();
+	private:
+		void calculateNormals_array();
+		void calculateNormals_indexed();
+	public:
 		void calculateNormals();
 		void calculateTangentBasis();
 

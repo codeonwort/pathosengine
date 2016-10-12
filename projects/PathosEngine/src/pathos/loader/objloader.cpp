@@ -58,6 +58,9 @@ namespace pathos {
 					textureDict.insert(pair<std::string, GLuint>(tex_path, texID));
 				}
 				mat->addPass(new TextureMaterialPass(texID));
+				if (t_mat.bump_texname.length() != 0){
+					cout << "!!!! BUMP TEXTURE HERE: " << t_mat.bump_texname << endl;
+				}
 			}
 			else {
 				ColorMaterialPass *pass = new ColorMaterialPass(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2], 1.0f);
@@ -135,11 +138,14 @@ namespace pathos {
 			for (auto it = materialIDs.begin(); it != materialIDs.end(); it++){
 				int i = *it;
 				MeshGeometry* geom = new MeshGeometry;
+				geom->setDrawArraysMode(true);
 				geom->updateVertexData(&positionMap[i][0], positionMap[i].size());
 				if(normalMap[i].size() > 0) geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
+				else{
+					std::cout << "-> normal data not found. auto calculating..." << endl;
+					geom->calculateNormals();
+				}
 				if(texcoordMap[i].size() > 0) geom->updateUVData(&texcoordMap[i][0], texcoordMap[i].size());
-				geom->setDrawArraysMode(true);
-				//geom->calculateNormals();
 				geometries.push_back(geom);
 				materialIndices.push_back(i);
 			}

@@ -106,13 +106,14 @@ void setupModel() {
 	label->getTransform().appendScale(10, 10, 10);
 	label->setDoubleSided(true);
 
-	//OBJLoader city2Loader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
+	//OBJLoader city2Loader("../../resources/models/yoda/yoda.obj", "../../resources/models/yoda/");
+	OBJLoader city2Loader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
+	//OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
 	for (int i = 0; i < city2Loader.getMaterials().size(); i++){
 		auto& mat = city2Loader.getMaterials()[i];
 		mat->addLight(plight);
 		mat->addLight(plight2);
-		mat->setShadowMethod(shadow);
+		//mat->setShadowMethod(shadow);
 	}
 	city2 = city2Loader.craftMesh(0, city2Loader.numGeometries(), "city2");
 	city2->getTransform().appendScale(.2, .2, .2);
