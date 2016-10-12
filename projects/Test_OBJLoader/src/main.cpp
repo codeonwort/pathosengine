@@ -46,14 +46,14 @@ void render() {
 	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
 	
 	renderer->ready();
+
+	// skybox
+	renderer->render(sky, cam);
 	
 	// various models
 	//renderer->render(city, cam);
 	renderer->render(city2, cam);
 	renderer->render(label, cam);
-
-	// skybox
-	renderer->render(sky, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
