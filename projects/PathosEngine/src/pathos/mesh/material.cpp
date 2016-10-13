@@ -38,7 +38,35 @@ namespace pathos {
 			(*it)->setMaterial(this);
 			(*it)->updateProgram(this);
 		}
+		updateDirectionalLightBuffer();
+		updatePointLightBuffer();
 		programDirty = false;
+	}
+	void MeshMaterial::updateDirectionalLightBuffer() {
+		size_t numLights = directionalLights.size();
+		dirLightDirections.clear();
+		dirLightColors.clear();
+		for (size_t i = 0; i < numLights; i++){
+			dirLightDirections.push_back(directionalLights[i]->getDirection()[0]);
+			dirLightDirections.push_back(directionalLights[i]->getDirection()[1]);
+			dirLightDirections.push_back(directionalLights[i]->getDirection()[2]);
+			dirLightColors.push_back(directionalLights[i]->getColor()[0]);
+			dirLightColors.push_back(directionalLights[i]->getColor()[1]);
+			dirLightColors.push_back(directionalLights[i]->getColor()[2]);
+		}
+	}
+	void MeshMaterial::updatePointLightBuffer() {
+		size_t numLights = pointLights.size();
+		pointLightPositions.clear();
+		pointLightColors.clear();
+		for (size_t i = 0; i < numLights; i++){
+			pointLightPositions.push_back(pointLights[i]->getPosition()[0]);
+			pointLightPositions.push_back(pointLights[i]->getPosition()[1]);
+			pointLightPositions.push_back(pointLights[i]->getPosition()[2]);
+			pointLightColors.push_back(pointLights[i]->getColor()[0]);
+			pointLightColors.push_back(pointLights[i]->getColor()[1]);
+			pointLightColors.push_back(pointLights[i]->getColor()[2]);
+		}
 	}
 
 	void MeshMaterial::addPass(MeshMaterialPass* pass) {
@@ -100,6 +128,20 @@ namespace pathos {
 	void MeshMaterialPass::createProgram(std::string& vsCode, std::string& fsCode) {
 		if (program != 0) glDeleteProgram(program);
 		program = pathos::createProgram(vsCode, fsCode);
+	}
+	void MeshMaterialPass::uploadDirectionalLightUniform() {
+		size_t numDirLights = material->getDirectionalLights().size();
+		if (numDirLights > 0) {
+			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numDirLights, &material->getDirectionalLightDirectionBuffer()[0]);
+			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numDirLights, &material->getDirectionalLightColorBuffer()[0]);
+		}
+	}
+	void MeshMaterialPass::uploadPointLightUniform() {
+		size_t numPointLights = material->getPointLights().size();
+		if (numPointLights > 0){
+			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, &material->getPointLightPositionBuffer()[0]);
+			glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, &material->getPointLightColorBuffer()[0]);
+		}
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////////
@@ -221,45 +263,8 @@ namespace pathos {
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
 
-		// upload directional light uniforms
-		auto lights = material->getDirectionalLights();
-		size_t numLights = lights.size();
-		if (numLights > 0) {
-			auto len = numLights * 3;
-			GLfloat* dir = new GLfloat[len];
-			GLfloat* col = new GLfloat[len];
-			for (size_t i = 0; i < numLights; i++) {
-				dir[i * 3] = -lights[i]->getDirection()[0];
-				dir[i * 3 + 1] = -lights[i]->getDirection()[1];
-				dir[i * 3 + 2] = -lights[i]->getDirection()[2];
-				col[i*3] = lights[i]->getColor()[0];
-				col[i*3 + 1] = lights[i]->getColor()[1];
-				col[i*3 + 2] = lights[i]->getColor()[2];
-			}
-			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numLights, dir);
-			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numLights, col);
-			delete[] dir;
-			delete[] col;
-		}
-		auto plights = material->getPointLights();
-		size_t numPointLights = plights.size();
-		if (numPointLights > 0){
-			auto len = numPointLights * 3;
-			GLfloat* pos = new GLfloat[len];
-			GLfloat* col = new GLfloat[len];
-			for (size_t i = 0; i < numPointLights; i++){
-				pos[i * 3] = plights[i]->getPosition()[0];
-				pos[i * 3 + 1] = plights[i]->getPosition()[1];
-				pos[i * 3 + 2] = plights[i]->getPosition()[2];
-				col[i * 3] = plights[i]->getColor()[0];
-				col[i * 3 + 1] = plights[i]->getColor()[1];
-				col[i * 3 + 2] = plights[i]->getColor()[2];
-			}
-			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, pos);
-			glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, col);
-			delete[] pos;
-			delete[] col;
-		}
+		uploadDirectionalLightUniform();
+		uploadPointLightUniform();
 
 		glEnable(GL_BLEND);
 		glBlendFunc(blendSrcFactor, blendDstFactor);
@@ -284,12 +289,18 @@ namespace pathos {
 	////////////////////////////////////////////////////////////////////////////////////
 	// TextureMaterial
 	TextureMaterial::TextureMaterial(GLuint texID, bool useAlpha, string channelMapping) {
-		addPass(new TextureMaterialPass(texID, useAlpha, channelMapping));
+		addPass(pass0 = new TextureMaterialPass(texID, useAlpha, channelMapping));
+	}
+	void TextureMaterial::setLighting(bool value) {
+		pass0->setLighting(value);
 	}
 
 	// TextureMaterialPass
 	TextureMaterialPass::TextureMaterialPass(GLuint texID, bool useAlpha, string channelMapping) : textureID(texID), channelMapping(channelMapping), useAlpha(useAlpha) {
-		//
+		useLighting = true;
+	}
+	void TextureMaterialPass::setLighting(bool value) {
+		useLighting = value;
 	}
 	void TextureMaterialPass::updateProgram(MeshMaterial* M) {
 		vsCompiler.setUseUV(true);
@@ -299,20 +310,23 @@ namespace pathos {
 		useAlpha ? fsCompiler.outVar("vec4", "color") : fsCompiler.outVar("vec3", "color");
 
 		// light
-		fsCompiler.uniform("vec3", "eye");
 		size_t dirLights = M->getDirectionalLights().size();
-		if (dirLights > 0) {
-			vsCompiler.setUseNormal(true);
-			fsCompiler.directionalLights(dirLights);
-			fsCompiler.inVar("vec3", "normal");
-		}
 		size_t pointLights = M->getPointLights().size();
-		if (pointLights > 0){
-			vsCompiler.setUseNormal(true);
-			vsCompiler.setTransferPosition(true);
-			fsCompiler.inVar("vec3", "position");
-			fsCompiler.pointLights(pointLights);
-			fsCompiler.inVar("vec3", "normal");
+		if (useLighting){
+			fsCompiler.uniform("vec3", "eye");
+			if (dirLights > 0) {
+				vsCompiler.setUseNormal(true);
+				fsCompiler.directionalLights(dirLights);
+				fsCompiler.inVar("vec3", "normal");
+			}
+			if (pointLights > 0){
+				vsCompiler.setUseNormal(true);
+				vsCompiler.setTransferPosition(true);
+				fsCompiler.inVar("vec3", "position");
+				fsCompiler.pointLights(pointLights);
+				fsCompiler.inVar("vec3", "normal");
+			}
+
 		}
 
 		// shadow
@@ -322,31 +336,33 @@ namespace pathos {
 		}
 
 		// directional lighting
-		fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
-		fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
-		fsCompiler.mainCode("vec3 diffuseLightAccum2 = vec3(0, 0, 0);");
-		fsCompiler.mainCode("vec3 specularLightAccum2 = vec3(0, 0, 0);");
-		if (dirLights > 0) {
-			fsCompiler.mainCode("vec3 norm = normalize(fs_in.normal);");
-			fsCompiler.mainCode("vec3 halfVector;");
-			for (size_t i = 0; i < dirLights; i++) {
-				string lightCol = "dirLightColors[" + to_string(i) + "]";
-				string lightDir = "dirLightDirs[" + to_string(i) + "]";
-				fsCompiler.mainCode("  diffuseLightAccum += " + lightCol + " * max(dot(norm," + lightDir + "),0);");
-				fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + eye);");
-				fsCompiler.mainCode("  specularLightAccum += " + lightCol + " * pow(max(dot(norm,halfVector),0), 128);");
+		if (useLighting){
+			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 diffuseLightAccum2 = vec3(0, 0, 0);");
+			fsCompiler.mainCode("vec3 specularLightAccum2 = vec3(0, 0, 0);");
+			if (dirLights > 0) {
+				fsCompiler.mainCode("vec3 norm = normalize(fs_in.normal);");
+				fsCompiler.mainCode("vec3 halfVector;");
+				for (size_t i = 0; i < dirLights; i++) {
+					string lightCol = "dirLightColors[" + to_string(i) + "]";
+					string lightDir = "dirLightDirs[" + to_string(i) + "]";
+					fsCompiler.mainCode("  diffuseLightAccum += " + lightCol + " * max(dot(norm," + lightDir + "),0);");
+					fsCompiler.mainCode("halfVector = normalize(" + lightDir + " + eye);");
+					fsCompiler.mainCode("  specularLightAccum += " + lightCol + " * pow(max(dot(norm,halfVector),0), 128);");
+				}
 			}
-		}
-		// point lighting
-		if (pointLights > 0) {
-			fsCompiler.mainCode("vec3 norm2 = normalize(fs_in.normal);"); // normal in world space
-			fsCompiler.mainCode("vec3 halfVector2;");
-			for (size_t i = 0; i < pointLights; i++) {
-				string lightCol = "pointLightColors[" + to_string(i) + "]";
-				string lightDir = "normalize(pointLightPos[" + to_string(i) + "] - fs_in.position)";
-				fsCompiler.mainCode("  diffuseLightAccum2 += " + lightCol + " * max(dot(norm2," + lightDir + "),0);");
-				fsCompiler.mainCode("halfVector2 = normalize(" + lightDir + " + eye);");
-				fsCompiler.mainCode("  specularLightAccum2 += " + lightCol + " * pow(max(dot(norm2,halfVector2),0), 128);");
+			// point lighting
+			if (pointLights > 0) {
+				fsCompiler.mainCode("vec3 norm2 = normalize(fs_in.normal);"); // normal in world space
+				fsCompiler.mainCode("vec3 halfVector2;");
+				for (size_t i = 0; i < pointLights; i++) {
+					string lightCol = "pointLightColors[" + to_string(i) + "]";
+					string lightDir = "normalize(pointLightPos[" + to_string(i) + "] - fs_in.position)";
+					fsCompiler.mainCode("  diffuseLightAccum2 += " + lightCol + " * max(dot(norm2," + lightDir + "),0);");
+					fsCompiler.mainCode("halfVector2 = normalize(" + lightDir + " + eye);");
+					fsCompiler.mainCode("  specularLightAccum2 += " + lightCol + " * pow(max(dot(norm2,halfVector2),0), 128);");
+				}
 			}
 		}
 
@@ -354,13 +370,15 @@ namespace pathos {
 		colorOut += channelMapping;
 		colorOut += useAlpha ? "a;" : ";";
 		fsCompiler.mainCode(colorOut);
-		colorOut = "color.rgb = color.rgb * (diffuseLightAccum + diffuseLightAccum2 + specularLightAccum + specularLightAccum2);";
-		fsCompiler.mainCode(colorOut);
+		if (useLighting){
+			colorOut = "color.rgb = color.rgb * (diffuseLightAccum + diffuseLightAccum2 + specularLightAccum + specularLightAccum2);";
+			fsCompiler.mainCode(colorOut);
+		}
 
-		std::cout << "==============================" << std::endl;
+		/*std::cout << "== TextureMaterialPass =======" << std::endl;
 		std::cout << vsCompiler.getCode() << std::endl;
 		std::cout << fsCompiler.getCode() << std::endl;
-		std::cout << "==============================" << std::endl;
+		std::cout << "==============================" << std::endl;*/
 
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
@@ -370,11 +388,13 @@ namespace pathos {
 		geometry->activateIndexBuffer();
 
 		// lighting related
-		if (material->getDirectionalLights().size() > 0 || material->getPointLights().size() > 0) {
-			geometry->activateNormalBuffer(2);
+		if (useLighting){
+			if (material->getDirectionalLights().size() > 0 || material->getPointLights().size() > 0) {
+				geometry->activateNormalBuffer(2);
+			}
+			glm::vec3& eye = material->getEyeVector();
+			glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
 		}
-		glm::vec3& eye = material->getEyeVector();
-		glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
 		
 		glUseProgram(program);
 		const glm::mat4 & modelTransform = modelMatrix;
@@ -391,45 +411,8 @@ namespace pathos {
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
 
-		// upload directional light uniforms
-		auto lights = material->getDirectionalLights();
-		size_t numLights = lights.size();
-		if (numLights > 0) {
-			auto len = numLights * 3;
-			GLfloat* dir = new GLfloat[len];
-			GLfloat* col = new GLfloat[len];
-			for (size_t i = 0; i < numLights; i++) {
-				dir[i * 3] = -lights[i]->getDirection()[0];
-				dir[i * 3 + 1] = -lights[i]->getDirection()[1];
-				dir[i * 3 + 2] = -lights[i]->getDirection()[2];
-				col[i * 3] = lights[i]->getColor()[0];
-				col[i * 3 + 1] = lights[i]->getColor()[1];
-				col[i * 3 + 2] = lights[i]->getColor()[2];
-			}
-			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numLights, dir);
-			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numLights, col);
-			delete[] dir;
-			delete[] col;
-		}
-		auto plights = material->getPointLights();
-		size_t numPointLights = plights.size();
-		if (numPointLights > 0){
-			auto len = numPointLights * 3;
-			GLfloat* pos = new GLfloat[len];
-			GLfloat* col = new GLfloat[len];
-			for (size_t i = 0; i < numPointLights; i++){
-				pos[i * 3] = plights[i]->getPosition()[0];
-				pos[i * 3 + 1] = plights[i]->getPosition()[1];
-				pos[i * 3 + 2] = plights[i]->getPosition()[2];
-				col[i * 3] = plights[i]->getColor()[0];
-				col[i * 3 + 1] = plights[i]->getColor()[1];
-				col[i * 3 + 2] = plights[i]->getColor()[2];
-			}
-			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, pos);
-			glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, col);
-			delete[] pos;
-			delete[] col;
-		}
+		uploadDirectionalLightUniform();
+		uploadPointLightUniform();
 	}
 	void TextureMaterialPass::renderMaterial() {
 		if (useAlpha) {
@@ -446,7 +429,7 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->deactivate();
-		if (material->getDirectionalLights().size() > 0) {
+		if (material->getDirectionalLights().size() > 0 || material->getPointLights().size() > 0) {
 			geometry->deactivateNormalBuffer(2);
 		}
 		glUseProgram(0);
@@ -583,26 +566,8 @@ namespace pathos {
 		auto shadow = material->getShadowMethod();
 		if (shadow != nullptr) shadow->activate(program);
 
-		// upload directional light uniforms
-		auto lights = material->getDirectionalLights();
-		size_t numLights = lights.size();
-		if (numLights > 0) {
-			auto len = numLights * 3;
-			GLfloat* dir = new GLfloat[len];
-			GLfloat* col = new GLfloat[len];
-			for (size_t i = 0; i < numLights; i++) {
-				dir[i * 3] = -lights[i]->getDirection()[0];
-				dir[i * 3 + 1] = -lights[i]->getDirection()[1];
-				dir[i * 3 + 2] = -lights[i]->getDirection()[2];
-				col[i * 3] = lights[i]->getColor()[0];
-				col[i * 3 + 1] = lights[i]->getColor()[1];
-				col[i * 3 + 2] = lights[i]->getColor()[2];
-			}
-			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numLights, dir);
-			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numLights, col);
-			delete[] dir;
-			delete[] col;
-		}
+		uploadDirectionalLightUniform();
+		uploadPointLightUniform();
 	}
 	void BumpTextureMaterialPass::renderMaterial() {
 		if (useAlpha) {

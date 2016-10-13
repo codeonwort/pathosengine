@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 10));
+	cam->move(glm::vec3(0, 0, 20));
 
 	// renderer
 	renderer = new MeshDefaultRenderer();
@@ -106,9 +106,8 @@ void setupModel() {
 	label->getTransform().appendScale(10, 10, 10);
 	label->setDoubleSided(true);
 
-	//OBJLoader city2Loader("../../resources/models/yoda/yoda.obj", "../../resources/models/yoda/");
-	OBJLoader city2Loader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	//OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
+	//OBJLoader city2Loader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
+	OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
 	for (int i = 0; i < city2Loader.getMaterials().size(); i++){
 		auto& mat = city2Loader.getMaterials()[i];
 		mat->addLight(plight);

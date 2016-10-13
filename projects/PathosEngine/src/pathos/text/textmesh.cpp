@@ -51,7 +51,9 @@ namespace pathos {
 		doubleSided = true;
 		glGenTextures(1, &texID);
 		geometries.push_back(new PlaneGeometry(1, 1));
-		materials.push_back(make_shared<TextureMaterial>(texID, true));
+		auto mat = make_shared<TextureMaterial>(texID, true);
+		mat->setLighting(false);
+		materials.push_back(mat);
 	}
 
 	void TextMesh::setText(string txt, unsigned int rgb) {
