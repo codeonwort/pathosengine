@@ -32,16 +32,14 @@ void setupPlanes();
 void setupSkybox();
 
 void render() {
-	float speedX = 0.1f, speedY = 0.1f;
+	float speedX = 0.05f, speedY = 0.05f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float dr = Engine::isDown('q') ? 0.5f : Engine::isDown('e') ? -0.5f : 0.0f;
-	float dr2 = Engine::isDown('z') ? 0.2f : Engine::isDown('x') ? -0.2f : 0.0f;
+	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateZ(dr);
-	cam->rotateX(dr2);
-	//cam->rotate(dr, glm::vec3(0, 1, 0));
-	//cam->rotate(dr2, glm::vec3(1, 0, 0));
+	cam->rotateY(rotY);
+	cam->rotateX(rotX);
 
 	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
 	
