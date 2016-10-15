@@ -23,6 +23,8 @@ namespace pathos {
 	private:
 		Transform transform;	// view transform
 		Lens* lens;				// projection transform
+		float rotationX, rotationY;
+		glm::vec3 movement;
 	public:
 		Camera(Lens* lens);
 		glm::mat4 getViewMatrix();
@@ -30,8 +32,8 @@ namespace pathos {
 		glm::vec3 getEyeVector();
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
 		void move(const glm::vec3& movement);
-		void rotate(float angleDegree, const glm::vec3& axis);
-		void rotateZ(float angleDegree); // mouse move to left & right in first person mode
+		//void rotate(float angleDegree, const glm::vec3& axis);
+		void rotateY(float angleDegree); // mouse move to left & right in first person mode
 		void rotateX(float angleDegree); // mouse move to up & down in first person mode
 
 	};

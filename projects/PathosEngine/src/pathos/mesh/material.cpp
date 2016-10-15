@@ -1,7 +1,9 @@
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/rotate_vector.hpp>
 #include <sstream>
 #include <iostream>
+
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+
 #include <pathos/mesh/material.h>
 
 namespace pathos {
@@ -335,12 +337,12 @@ namespace pathos {
 			M->getShadowMethod()->addShaderCode(vsCompiler, fsCompiler);
 		}
 
-		// directional lighting
 		if (useLighting){
 			fsCompiler.mainCode("vec3 diffuseLightAccum = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 specularLightAccum = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 diffuseLightAccum2 = vec3(0, 0, 0);");
 			fsCompiler.mainCode("vec3 specularLightAccum2 = vec3(0, 0, 0);");
+			// directional lighting
 			if (dirLights > 0) {
 				fsCompiler.mainCode("vec3 norm = normalize(fs_in.normal);");
 				fsCompiler.mainCode("vec3 halfVector;");
@@ -374,11 +376,6 @@ namespace pathos {
 			colorOut = "color.rgb = color.rgb * (diffuseLightAccum + diffuseLightAccum2 + specularLightAccum + specularLightAccum2);";
 			fsCompiler.mainCode(colorOut);
 		}
-
-		/*std::cout << "== TextureMaterialPass =======" << std::endl;
-		std::cout << vsCompiler.getCode() << std::endl;
-		std::cout << fsCompiler.getCode() << std::endl;
-		std::cout << "==============================" << std::endl;*/
 
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
