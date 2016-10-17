@@ -728,4 +728,60 @@ namespace pathos {
 		glUseProgram(0);
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////
+	// CubeEnvMapMaterial
+	CubeEnvMapMaterial::CubeEnvMapMaterial(GLuint cubeTexture){
+		addPass(new CubeEnvMapMaterialPass(cubeTexture));
+	}
+
+	CubeEnvMapMaterialPass::CubeEnvMapMaterialPass(GLuint cubeTexture) : texture(cubeTexture) {}
+	void CubeEnvMapMaterialPass::updateProgram(MeshMaterial*) {
+		vsCompiler.setUseNormal(true);
+		vsCompiler.uniform("mat4", "mv_matrix");
+		vsCompiler.outVar("vec3", "viewVector");
+		vsCompiler.outVar("vec3", "normal_mv");
+		vsCompiler.mainCode("vec4 pos_vs = mv_matrix * vec4(position, 1.0);");
+		vsCompiler.mainCode("vs_out.normal_mv = mat3(mv_matrix) * normal;");
+		vsCompiler.mainCode("vs_out.viewVector = pos_vs.xyz;");
+
+		fsCompiler.uniform("samplerCube", "tex_cubemap");
+		fsCompiler.inVar("vec3", "normal");
+		fsCompiler.inVar("vec3", "viewVector");
+		fsCompiler.inVar("vec3", "normal_mv");
+		fsCompiler.outVar("vec4", "color");
+		fsCompiler.mainCode("vec3 r = reflect(fs_in.viewVector, normalize(fs_in.normal_mv));");
+		fsCompiler.mainCode("color = texture(tex_cubemap, r);");
+
+		cout << vsCompiler.getCode() << endl;
+		cout << fsCompiler.getCode() << endl;
+
+		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
+	}
+	void CubeEnvMapMaterialPass::activate() {
+		geometry->activateVertexBuffer(0);
+		geometry->activateNormalBuffer(2);
+		geometry->activateIndexBuffer();
+
+		glUseProgram(program);
+		const glm::mat4 & modelTransform = modelMatrix;
+		const glm::mat4& mvTransform = material->getCamera()->getViewMatrix() * modelMatrix;
+		glUniformMatrix4fv(glGetUniformLocation(program, "mv_matrix"), 1, false, glm::value_ptr(mvTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelTransform));
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(material->getVPTransform() * modelTransform));
+
+		glUniform1i(glGetUniformLocation(program, "tex_cubemap"), 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+	}
+	void CubeEnvMapMaterialPass::renderMaterial() {
+		geometry->draw();
+	}
+	void CubeEnvMapMaterialPass::deactivate() {
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		geometry->deactivateVertexBuffer(0);
+		geometry->deactivateNormalBuffer(2);
+		geometry->deactivateIndexBuffer();
+		glUseProgram(0);
+	}
+
 }

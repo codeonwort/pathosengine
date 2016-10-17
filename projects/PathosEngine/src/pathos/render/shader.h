@@ -23,6 +23,16 @@ namespace pathos {
 		GLuint getShaderType() { return shaderType; }
 	};
 
+	/**
+	 * Auto-generated variables and uniforms:
+	 * vs_out {
+	 *   vec3 position;		// if usePosition = true
+	 *   vec3 normal;		// if useNormal = true
+	 *   vec2 uv;			// if useUV = true
+	 * }
+	 * mat4 modelTransform;
+	 * mat4 mvpTransform;
+	 */
 	class VertexShaderCompiler : public ShaderCompiler {
 	private:
 		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;

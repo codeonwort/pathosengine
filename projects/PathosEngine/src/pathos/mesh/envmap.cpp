@@ -4,7 +4,7 @@
 namespace pathos {
 
 	/**
-	* @param	textureID	texture id in which cubemap images are loaded. see pathos/mesh/imageloader.h -> loadCubemapTexture().
+	* @param	textureID	texture id in which cubemap images are loaded. see pathos/loader/imageloader.h -> loadCubemapTexture().
 	*/
 	Skybox::Skybox(GLuint textureID) {
 		this->textureID = textureID;

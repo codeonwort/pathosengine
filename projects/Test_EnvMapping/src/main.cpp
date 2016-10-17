@@ -19,6 +19,7 @@ Camera* cam;
 MeshDefaultRenderer* renderer;
 
 // 3D objects
+shared_ptr<MeshMaterial> envMapMaterial = nullptr;
 Mesh *teapot;
 TextMesh *label;
 Skybox* sky;
@@ -28,7 +29,6 @@ PointLight *plight, *plight2;
 OmnidirectionalShadow* shadow;
 
 void setupModel();
-void setupPlanes();
 void setupSkybox();
 
 void render() {
@@ -71,8 +71,8 @@ int main(int argc, char** argv) {
 	renderer = new MeshDefaultRenderer();
 
 	// 3d objects
-	setupModel();
 	setupSkybox();
+	setupModel();
 
 	// start the main loop
 	Engine::start();
@@ -91,16 +91,16 @@ void setupModel() {
 	label->setDoubleSided(true);
 
 	OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	for (int i = 0; i < teapotLoader.getMaterials().size(); i++){
-		auto& mat = teapotLoader.getMaterials()[i];
-		mat->addLight(plight);
-		//mat->addLight(plight2);
-		//mat->setShadowMethod(shadow);
+	teapot = new Mesh();
+	for (int i = 0; i < teapotLoader.getGeometries().size(); i++){
+		if (envMapMaterial == nullptr){
+			cerr << "Env map material is not initialized!" << endl;
+		}
+		teapot->add(teapotLoader.getGeometries()[i], envMapMaterial);
 	}
-	teapot = teapotLoader.craftMesh(0, teapotLoader.numGeometries(), "teapot");
 	teapot->getTransform().appendScale(.2, .2, .2);
 	teapot->getTransform().appendMove(0, -40, -50);
-	//teapot->setDoubleSided(true);
+	//teapot = new Mesh(new SphereGeometry(5, 20), envMapMaterial);
 }
 
 void setupSkybox() {
@@ -111,4 +111,6 @@ void setupSkybox() {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
+
+	envMapMaterial = make_shared<CubeEnvMapMaterial>(cubeTex);
 }
