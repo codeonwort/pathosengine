@@ -103,7 +103,7 @@ void main() {
 		glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
 		
 		// draw call
-		glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+		modelGeometry->draw();
 
 		// unset program
 		modelGeometry->deactivateVertexBuffer(0);
@@ -277,7 +277,7 @@ void main() {
 			glm::mat4 depthMVP = projection * view * modelMatrix;
 			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &(depthMVP[0][0]));
 			// draw call
-			glDrawElements(GL_TRIANGLES, modelGeometry->getIndexCount(), GL_UNSIGNED_INT, (void*)0);
+			modelGeometry->draw();
 		}
 
 		// unset program
