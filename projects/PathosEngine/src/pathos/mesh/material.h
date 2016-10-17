@@ -59,6 +59,11 @@ namespace pathos {
 
 		bool programDirty = true;
 		void updateProgram();
+
+		vector<GLfloat> dirLightColors, dirLightDirections;
+		vector<GLfloat> pointLightColors, pointLightPositions;
+		void updatePointLightBuffer();
+		void updateDirectionalLightBuffer();
 	protected:
 		std::vector<DirectionalLight*> directionalLights;
 		std::vector<PointLight*> pointLights;
@@ -97,6 +102,11 @@ namespace pathos {
 		void addLight(PointLight* light);
 		const std::vector<DirectionalLight*>& getDirectionalLights();
 		const std::vector<PointLight*>& getPointLights();
+		const std::vector<GLfloat>& getDirectionalLightDirectionBuffer() { return dirLightDirections; }
+		const std::vector<GLfloat>& getDirectionalLightColorBuffer() { return dirLightColors; }
+		const std::vector<GLfloat>& getPointLightPositionBuffer() { return pointLightPositions; }
+		const std::vector<GLfloat>& getPointLightColorBuffer() { return pointLightColors; }
+
 	};
 
 	class ColorMaterial : public MeshMaterial {
@@ -115,8 +125,11 @@ namespace pathos {
 	};
 
 	class TextureMaterial : public MeshMaterial {
+	private:
+		TextureMaterialPass* pass0;
 	public:
 		TextureMaterial(GLuint texID, bool useAlpha = false, string channelMapping = "rgb");
+		void setLighting(bool value);
 	};
 
 	class BumpTextureMaterial : public MeshMaterial {
@@ -152,6 +165,9 @@ namespace pathos {
 		VertexShaderCompiler vsCompiler;
 		FragmentShaderCompiler fsCompiler;
 		void createProgram(std::string &vsCode, std::string &fsCode);
+	protected:
+		void uploadDirectionalLightUniform();
+		void uploadPointLightUniform();
 	public:
 		MeshMaterialPass();
 		virtual ~MeshMaterialPass();
@@ -187,8 +203,10 @@ namespace pathos {
 		GLuint textureID;
 		string channelMapping;
 		bool useAlpha;
+		bool useLighting;
 	public:
 		TextureMaterialPass(GLuint texID, bool useAlpha = false, string channelMapping = "rgb");
+		void setLighting(bool value);
 		virtual void updateProgram(MeshMaterial*);
 		virtual void activate();
 		virtual void renderMaterial();
