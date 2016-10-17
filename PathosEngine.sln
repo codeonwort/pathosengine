@@ -9,6 +9,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathosEngine", "projects\Pa
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_OBJLoader", "projects\Test_OBJLoader\Test_OBJLoader.vcxproj", "{FBAD6C42-C426-49E5-987B-53C668A588B4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_EnvMapping", "projects\Test_EnvMapping\Test_EnvMapping.vcxproj", "{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E} = {F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,6 +44,12 @@ Global
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|Win32.ActiveCfg = Release|Win32
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|Win32.Build.0 = Release|Win32
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|x64.ActiveCfg = Release|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|Win32.Build.0 = Debug|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|x64.ActiveCfg = Debug|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|Win32.ActiveCfg = Release|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|Win32.Build.0 = Release|Win32
+		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

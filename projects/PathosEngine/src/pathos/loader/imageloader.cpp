@@ -50,6 +50,7 @@ namespace pathos {
 			return 0;
 		}
 		//gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 		return tex_id;
 	}
@@ -89,14 +90,17 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+		int mapping[6] = { 0, 1, 3, 2, 4, 5 };
+		//int mapping[6] = { 0, 1, 2, 3, 4, 5 };
 		for (int i = 0; i < 6; i++){
 			unsigned char* data = FreeImage_GetBits(dib[i]);
 			if (bpp == 32) {
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
 			}else if (bpp == 24) {
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
 			}
 		}
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
 		return tex_id;
 	}

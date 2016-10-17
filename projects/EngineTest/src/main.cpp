@@ -17,19 +17,18 @@ Camera* cam;
 Mesh *cube, *viewer, *shadowLight; // shadow debugger
 Mesh *ball, *lamp; // shadow casters
 Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
-Mesh *car; // assimp test (incomplete)
 Skybox* sky;
 MeshDefaultRenderer* renderer;
 
 void render() {
-	float speedX = 0.1f, speedY = 0.1f;
+	float speedX = 0.05f, speedY = 0.05f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float dr = Engine::isDown('q') ? 0.5f : Engine::isDown('e') ? -0.5f : 0.0f;
-	float dr2 = Engine::isDown('z') ? 0.5f : Engine::isDown('x') ? -0.5f : 0.0f;
+	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotate(dr, glm::vec3(0, 1, 0));
-	cam->rotate(dr2, glm::vec3(1, 0, 0));
+	cam->rotateY(rotY);
+	cam->rotateX(rotX);
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
 	renderer->ready();
@@ -37,7 +36,7 @@ void render() {
 	renderer->render(ball, cam);
 	renderer->render(lamp, cam);
 	// shadow debugger
-	//renderer->render(viewer, cam);
+	renderer->render(viewer, cam);
 	//renderer->render(cube, cam);
 	renderer->render(shadowLight, cam);
 	renderer->render(plane_posX, cam);
@@ -67,24 +66,10 @@ int main(int argc, char** argv) {
 
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
-	//auto shadow = new ShadowMap(light, cam);
 	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
 	auto plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
 	auto shadow = new OmnidirectionalShadow(plight, cam);
-
-	// obj loader test
-	//OBJLoader obj("../resources/volkswagen/Volkswagen.obj", "../resources/volkswagen/");
-	OBJLoader obj("../../resources/models/Pin.obj", "../../models/resources/");
-	car = obj.craftMesh(0, obj.numGeometries(), "car");
-	car->getTransform().appendMove(7, 1, 0);
-	car->getTransform().appendScale(20, 20, 20);
-	for (auto M : obj.getMaterials()){
-		M->addLight(plight);
-		M->addLight(plight2);
-		M->addLight(plight3);
-		M->setShadowMethod(shadow);
-	}
 
 	// collada loader test
 	/*ColladaLoader collada("../resources/birdcage2.dae");
@@ -99,9 +84,11 @@ int main(int argc, char** argv) {
 	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
 	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
 	lamp->getTransform().appendScale(4, 4, 4);
-	lamp->getMaterials()[0]->addLight(plight);
-	lamp->getMaterials()[0]->addLight(plight2);
-	lamp->getMaterials()[0]->setShadowMethod(shadow);
+	for (int i = 0; i < obj2.getMaterials().size(); i++){
+		obj2.getMaterials()[i]->addLight(plight);
+		obj2.getMaterials()[i]->addLight(plight2);
+		obj2.getMaterials()[i]->setShadowMethod(shadow);
+	}
 	lamp->setDoubleSided(true);
 
 	// cubemap
@@ -113,14 +100,7 @@ int main(int argc, char** argv) {
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
 
-	auto color = make_shared<ColorMaterial>(1.0, 1.0, 1.0, 1);
-	//color->setAmbientColor(0, 0, 0);
-	color->setSpecularColor(1, 1, 1);
-	color->addLight(plight);
-	color->addLight(plight2);
-	color->addLight(plight3);
-	color->setShadowMethod(shadow);
-
+	// bump texture for planes
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
 	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
@@ -152,12 +132,18 @@ int main(int argc, char** argv) {
 	plane_negZ = new Mesh(planeGeom, mat);
 	plane_negZ->getTransform().appendMove(0, 0, -15);
 
+	// color material for ball
+	auto color = make_shared<ColorMaterial>(1.0, 1.0, 1.0, 1);
+	color->setSpecularColor(1, 1, 1);
+	color->addLight(plight);
+	color->addLight(plight2);
+	color->addLight(plight3);
+	color->setShadowMethod(shadow);
+
 	ball = new Mesh(new SphereGeometry(2, 40), color);
-	//ball->getGeometries()[0]->calculateNormals();
 	ball->getTransform().appendMove(7, 4, 0);
 
 	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
-	//viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowTextureMaterial>(shadow->getDebugTexture()));
 	viewer->getTransform().appendMove(10, 0, 0);
 
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), make_shared<WireframeMaterial>(1, 1, 1));

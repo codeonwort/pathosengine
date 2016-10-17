@@ -153,6 +153,11 @@ namespace pathos {
 		WireframeMaterial(GLfloat, GLfloat, GLfloat, GLfloat = 1.0f);
 	};
 
+	class CubeEnvMapMaterial : public MeshMaterial {
+	public:
+		CubeEnvMapMaterial(GLuint cubeTexture);
+	};
+
 	//////////////////////////////////////////////////////////////////////////
 	// passes
 
@@ -254,6 +259,17 @@ namespace pathos {
 		GLfloat color[4];
 	public:
 		WireframeMaterialPass(GLfloat, GLfloat, GLfloat, GLfloat);
+		virtual void updateProgram(MeshMaterial*);
+		virtual void activate();
+		virtual void renderMaterial();
+		virtual void deactivate();
+	};
+
+	class CubeEnvMapMaterialPass : public MeshMaterialPass {
+	private:
+		GLuint texture;
+	public:
+		CubeEnvMapMaterialPass(GLuint texture);
 		virtual void updateProgram(MeshMaterial*);
 		virtual void activate();
 		virtual void renderMaterial();
