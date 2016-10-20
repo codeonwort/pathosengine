@@ -90,7 +90,7 @@ void setupModel() {
 	label->getTransform().appendScale(10, 10, 10);
 	label->setDoubleSided(true);
 
-	OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
+	/*OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
 	teapot = new Mesh();
 	for (int i = 0; i < teapotLoader.getGeometries().size(); i++){
 		if (envMapMaterial == nullptr){
@@ -99,8 +99,8 @@ void setupModel() {
 		teapot->add(teapotLoader.getGeometries()[i], envMapMaterial);
 	}
 	teapot->getTransform().appendScale(.2, .2, .2);
-	teapot->getTransform().appendMove(0, -40, -50);
-	//teapot = new Mesh(new SphereGeometry(5, 20), envMapMaterial);
+	teapot->getTransform().appendMove(0, -40, -50);*/
+	teapot = new Mesh(new SphereGeometry(5, 20), envMapMaterial);
 }
 
 void setupSkybox() {
