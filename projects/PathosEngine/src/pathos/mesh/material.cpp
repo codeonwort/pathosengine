@@ -756,9 +756,6 @@ namespace pathos {
 		//fsCompiler.mainCode("vec3 r = fs_in.viewVector;");
 		fsCompiler.mainCode("color = texture(tex_cubemap, r);");
 
-		cout << vsCompiler.getCode() << endl;
-		cout << fsCompiler.getCode() << endl;
-
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}
 	void CubeEnvMapMaterialPass::activate() {

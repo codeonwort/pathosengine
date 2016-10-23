@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
+	plight = new PointLight(glm::vec3(5, 0, 25), glm::vec3(1, 1, 1));
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	shadow = new OmnidirectionalShadow(plight, cam);
 
@@ -90,7 +90,7 @@ void setupModel() {
 	label->getTransform().appendScale(10, 10, 10);
 	label->setDoubleSided(true);
 
-	/*OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
+	OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
 	teapot = new Mesh();
 	for (int i = 0; i < teapotLoader.getGeometries().size(); i++){
 		if (envMapMaterial == nullptr){
@@ -99,8 +99,12 @@ void setupModel() {
 		teapot->add(teapotLoader.getGeometries()[i], envMapMaterial);
 	}
 	teapot->getTransform().appendScale(.2, .2, .2);
-	teapot->getTransform().appendMove(0, -40, -50);*/
-	teapot = new Mesh(new SphereGeometry(5, 20), envMapMaterial);
+	teapot->getTransform().appendMove(0, -40, -50);
+
+	/*teapot = teapotLoader.craftMesh(0, teapotLoader.numGeometries(), "teapot");
+	for (int i = 0; i < teapotLoader.getMaterials().size(); i++){
+		teapotLoader.getMaterials()[i]->addLight(plight);
+	}*/
 }
 
 void setupSkybox() {
