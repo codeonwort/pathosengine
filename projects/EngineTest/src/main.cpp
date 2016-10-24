@@ -32,6 +32,8 @@ void render() {
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
 	renderer->ready();
+	// skybox
+	renderer->render(sky, cam);
 	// various models
 	renderer->render(ball, cam);
 	renderer->render(lamp, cam);
@@ -45,8 +47,6 @@ void render() {
 	renderer->render(plane_negY, cam);
 	renderer->render(plane_posZ, cam);
 	renderer->render(plane_negZ, cam);
-	// skybox
-	renderer->render(sky, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
