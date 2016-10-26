@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 100.f));
-	cam->move(glm::vec3(-0.2, 0, 3));
+	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));

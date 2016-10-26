@@ -18,7 +18,7 @@ namespace pathos {
 		movement = glm::vec3(0, 0, 0);
 	}
 
-	glm::mat4 Camera::getViewMatrix() {
+	void Camera::calculateViewMatrix() {
 		if (viewDirty){
 			transform.identity();
 			transform.appendRotation(rotationX, glm::vec3(1, 0, 0));
@@ -26,16 +26,18 @@ namespace pathos {
 			transform.appendMove(movement);
 			viewDirty = false;
 		}
-		return transform.getMatrix();
 	}
-	//glm::mat4 Camera::getViewMatrix() { return transform.getMatrix(); }
+	glm::mat4 Camera::getViewMatrix() { calculateViewMatrix(); return transform.getMatrix(); }
 	glm::mat4 Camera::getViewProjectionMatrix() { return lens->getProjectionMatrix() * getViewMatrix(); }
-	glm::vec3 Camera::getEyeVector() { getViewMatrix(); return transform.inverseTransformVector(glm::vec3(0, 0, -1)); } // eye direction in world space
-	glm::vec3 Camera::getPosition() { getViewMatrix(); return transform.getPosition(); }
+	glm::vec3 Camera::getEyeVector() { calculateViewMatrix(); return transform.inverseTransformVector(glm::vec3(0, 0, -1)); } // eye direction in world space
+	glm::vec3 Camera::getPosition() { calculateViewMatrix(); return transform.getPosition(); }
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
-		transform.copyFrom(glm::lookAt(position, target, up));
-		movement = position;
+		glm::mat3 L = glm::transpose(glm::mat3(glm::lookAt(position, target, up)));
+		glm::vec3 v = glm::normalize(L * glm::vec3(0, 0, -1));
+		rotationX = -asin(v.y);
+		rotationY = asin(v.x);
+		movement = -position;
 		viewDirty = true;
 	}
 
