@@ -17,6 +17,7 @@ using namespace pathos;
 // Camera and renderer
 Camera* cam;
 MeshDefaultRenderer* renderer;
+NormalRenderer* normRenderer;
 
 // 3D objects
 shared_ptr<MeshMaterial> envMapMaterial = nullptr;
@@ -49,6 +50,9 @@ void render() {
 	// various models
 	renderer->render(teapot, cam);
 	renderer->render(label, cam);
+
+	// model normal debugger
+	normRenderer->render(teapot, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -69,6 +73,7 @@ int main(int argc, char** argv) {
 
 	// renderer
 	renderer = new MeshDefaultRenderer();
+	normRenderer = new NormalRenderer(5);
 
 	// 3d objects
 	setupSkybox();

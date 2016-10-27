@@ -1,4 +1,5 @@
 #include <pathos/render/render.h>
+#include <pathos/render/shader.h>
 #include <pathos/mesh/shadow.h>
 #include <iostream>
 
@@ -89,6 +90,71 @@ namespace pathos {
 			//glDisable(GL_BLEND);
 		}*/
 		glDepthFunc(GL_LESS);
+	}
+
+	///////////////////////////////////////////////////////////////
+	// NormalRenderer
+	NormalRenderer::NormalRenderer(float normLen):normalLength(normLen) {
+		vector<ShaderCompiler*> shaders;
+		VertexShaderCompiler* vs = new VertexShaderCompiler;
+		GeometryShaderCompiler* gs = new GeometryShaderCompiler("triangles", "line_strip", 2);
+		FragmentShaderCompiler* fs = new FragmentShaderCompiler;
+		shaders.push_back(vs);
+		shaders.push_back(gs);
+		shaders.push_back(fs);
+
+		// vs
+		vs->setUseNormal(true);
+		vs->outVar("vec4", "normalAdded");
+		vs->uniform("float", "normalLength");
+		vs->mainCode("vs_out.normalAdded = mvpTransform * vec4(position + normal * normalLength, 1);");
+
+		// gs
+		gs->inVar("vec3", "normal");
+		gs->inVar("vec4", "normalAdded");
+		gs->mainCode("gl_Position = gl_in[0].gl_Position;");
+		gs->mainCode("EmitVertex();");
+		gs->mainCode("gl_Position = gs_in[0].normalAdded;");
+		gs->mainCode("EmitVertex();");
+		gs->mainCode("EndPrimitive();");
+
+		// fs
+		fs->interfaceBlockName("GS_OUT");
+		fs->outVar("vec4", "color");
+		fs->mainCode("color = vec4(1, 0, 0, 1);");
+
+		cout << endl << vs->getCode() << endl << endl;
+		cout << endl << gs->getCode() << endl << endl;
+		cout << endl << fs->getCode() << endl << endl;
+
+		program = createProgram(shaders);
+	}
+
+	void NormalRenderer::render(Mesh* mesh, Camera* camera) {
+		glm::mat4 model = mesh->getTransform().getMatrix();
+		glm::mat4 mvp = camera->getViewProjectionMatrix() * model;
+
+		glUseProgram(program);
+		glUniform1f(glGetUniformLocation(program, "normalLength"), normalLength);
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, GL_FALSE, &model[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, GL_FALSE, &mvp[0][0]);
+
+		//glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		Geometries geoms = mesh->getGeometries();
+		for (auto i = 0; i < geoms.size(); i++){
+			geoms[i]->activateVertexBuffer(0);
+			geoms[i]->activateNormalBuffer(2);
+			geoms[i]->activateIndexBuffer();
+			geoms[i]->draw();
+			geoms[i]->deactivateVertexBuffer(0);
+			geoms[i]->deactivateNormalBuffer(2);
+			geoms[i]->deactivateIndexBuffer();
+		}
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glEnable(GL_CULL_FACE);
+
+		glUseProgram(0);
 	}
 
 }

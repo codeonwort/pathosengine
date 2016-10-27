@@ -67,6 +67,7 @@ namespace pathos {
 		vector<pair<string, string>> inVars;
 		vector<pair<string, string>> outVars;
 		unsigned int numDirLights, numPointLights;
+		string interfaceBlock;
 		string maincode;
 		//vector<string> texSamplers;
 	public:
@@ -80,6 +81,7 @@ namespace pathos {
 		void textureSamplerCube(const string& samplerName);
 		void textureSamplerShadow(const string& samplerName);
 		void textureSamplerCubeShadow(const string& samplerName);
+		void interfaceBlockName(const string& name);
 		void mainCode(const string& code);
 		void directionalLights(unsigned int num);
 		void pointLights(unsigned int num);
@@ -98,8 +100,20 @@ namespace pathos {
 	};
 
 	class GeometryShaderCompiler : public ShaderCompiler {
+	private:
+		vector<pair<string, string>> uniforms;
+		vector<pair<string, string>> inVars;
+		vector<pair<string, string>> outVars;
+		string inPrimitive, outPrimitive;
+		unsigned int maxVertices;
+		string maincode;
 	public:
 		GeometryShaderCompiler();
+		GeometryShaderCompiler(string, string, unsigned int);
+		void inVar(const string& type, const string &name);
+		void outVar(const string& type, const string &name);
+		void uniform(const string& type, const string& name);
+		void mainCode(const string& code);
 		virtual string getCode();
 	};
 

@@ -225,6 +225,7 @@ namespace pathos {
 		inVars.clear();
 		outVars.clear();
 		numDirLights = numPointLights = 0;
+		interfaceBlock = "VS_OUT";
 		maincode = "";
 	}
 	
@@ -248,7 +249,7 @@ namespace pathos {
 			src << "uniform vec3 pointLightColors[" << numPointLights << "];\n";
 		}
 		if (inVars.size() > 0) {
-			src << "in VS_OUT {\n";
+			src << "in " << interfaceBlock << " {\n";
 			for (auto it = inVars.begin(); it != inVars.end(); it++) {
 				pair<string, string> &inVar = *it;
 				src << "  " << inVar.first << " " << inVar.second << ";\n";
@@ -309,6 +310,9 @@ namespace pathos {
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
+	void FragmentShaderCompiler::interfaceBlockName(const string& name) {
+		interfaceBlock = name; // VS_OUT or GS_OUT
+	}
 	void FragmentShaderCompiler::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
@@ -344,11 +348,93 @@ namespace pathos {
 
 
 	GeometryShaderCompiler::GeometryShaderCompiler() {
-		shaderType = GL_GEOMETRY_SHADER;
+		GeometryShaderCompiler("triangles", "triangle_strip", 3);
 	}
+	GeometryShaderCompiler::GeometryShaderCompiler(string inPrim, string outPrim, unsigned int maxV){
+		shaderType = GL_GEOMETRY_SHADER;
+		inPrimitive = inPrim; outPrimitive = outPrim; maxVertices = maxV;
+	}
+
+	void GeometryShaderCompiler::uniform(const string& type, const string& name) {
+		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderCompiler::uniform() - variable already defined with different type");
+			}
+		}
+		uniforms.push_back(pair<string, string>(type, name));
+	}
+	void GeometryShaderCompiler::inVar(const string& type, const string& name) {
+		for (auto it = inVars.begin(); it != inVars.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderCompiler::inVar() - variable already defined with different type");
+			}
+		}
+		inVars.push_back(pair<string, string>(type, name));
+	}
+	void GeometryShaderCompiler::outVar(const string& type, const string& name) {
+		for (auto it = outVars.begin(); it != outVars.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderCompiler::outVar() - variable already defined with different type");
+			}
+		}
+		outVars.push_back(pair<string, string>(type, name));
+	}
+
+	void GeometryShaderCompiler::mainCode(const string& code) {
+		maincode += "  " + code + "\n";
+	}
+
 	string GeometryShaderCompiler::getCode() {
-		throw "not implemeneted";
-		return "";
+		stringstream src;
+		src << "#version 430 core" << endl;
+
+		src << "layout (" << inPrimitive << ") in;" << endl;
+		src << "layout (" << outPrimitive << ", max_vertices = " << maxVertices << ") out;" << endl;
+
+		// sort variables by name
+		std::sort(inVars.begin(), inVars.end(), varComp);
+
+		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
+			pair<string, string> &uniform = *it;
+			src << "uniform " << uniform.first << " " << uniform.second << ";\n";
+		}
+		/*if (numDirLights > 0) {
+			src << "uniform vec3 dirLightDirs[" << numDirLights << "];\n";
+			src << "uniform vec3 dirLightColors[" << numDirLights << "];\n";
+		}
+		if (numPointLights > 0){
+			src << "uniform vec3 pointLightPos[" << numPointLights << "];\n";
+			src << "uniform vec3 pointLightColors[" << numPointLights << "];\n";
+		}*/
+		if (inVars.size() > 0) {
+			src << "in VS_OUT {\n";
+			for (auto it = inVars.begin(); it != inVars.end(); it++) {
+				pair<string, string> &inVar = *it;
+				src << "  " << inVar.first << " " << inVar.second << ";\n";
+			}
+			src << "} gs_in[];\n";
+		}
+		if (outVars.size() > 0) {
+			src << "out GS_OUT {\n";
+			for (auto it = outVars.begin(); it != outVars.end(); it++) {
+				pair<string, string> &outVar = *it;
+				src << "  " << outVar.first << " " << outVar.second << ";\n";
+			}
+			src << "} gs_out;\n";
+		}
+		src << "void main() {\n";
+		src << maincode;
+		src << "}\n";
+
+		string gcode = src.str();
+#ifdef DEBUG
+		cout << endl << "geometry shader code" << endl;
+		cout << fcode << endl;
+#endif
+		return gcode;
 	}
 
 }

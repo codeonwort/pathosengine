@@ -19,6 +19,7 @@ Mesh *ball, *lamp; // shadow casters
 Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
 Skybox* sky;
 MeshDefaultRenderer* renderer;
+NormalRenderer* normRenderer;
 
 void render() {
 	float speedX = 0.05f, speedY = 0.05f;
@@ -47,6 +48,8 @@ void render() {
 	renderer->render(plane_negY, cam);
 	renderer->render(plane_posZ, cam);
 	renderer->render(plane_negZ, cam);
+	
+	normRenderer->render(ball, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -158,6 +161,7 @@ int main(int argc, char** argv) {
 	shadowLight->getTransform().appendMove(lightPos);
 
 	renderer = new MeshDefaultRenderer();
+	normRenderer = new NormalRenderer(0.2);
 
 	// start the main loop
 	Engine::start();

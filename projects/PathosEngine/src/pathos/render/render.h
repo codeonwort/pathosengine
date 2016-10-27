@@ -16,4 +16,13 @@ namespace pathos {
 		void render(Skybox*, Camera*);
 	};
 
+	class NormalRenderer {
+	private:
+		float normalLength;
+		GLuint program;
+	public:
+		NormalRenderer(float normalLength = 0.5);
+		void render(Mesh*, Camera*);
+	};
+
 }
