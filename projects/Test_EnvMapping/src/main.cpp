@@ -91,7 +91,7 @@ void setupModel() {
 	shadow = new OmnidirectionalShadow(plight, cam);
 
 	label = new TextMesh("default");
-	label->setText("Working on Envrionmental mapping", 0xffff00);
+	label->setText("Envrionmental mapping test", 0xffff00);
 	label->getTransform().appendScale(10, 10, 10);
 	label->setDoubleSided(true);
 

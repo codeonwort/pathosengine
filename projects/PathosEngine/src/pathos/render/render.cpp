@@ -1,12 +1,20 @@
-#include <pathos/render/render.h>
-#include <pathos/render/shader.h>
-#include <pathos/mesh/shadow.h>
+#include "pathos/render/render.h"
+#include "pathos/render/shader.h"
+#include "pathos/mesh/shadow.h"
 #include <iostream>
 
 namespace pathos {
 
 	void MeshDefaultRenderer::ready() {
 		ShadowMethod::clearShadowTextures();
+	}
+
+	void MeshDefaultRenderer::render(Scene* scene, Camera* camera) {
+		// Currently no optimization. Just render all objects.
+		if(scene->skybox != nullptr) render(scene->skybox, camera);
+		for (Mesh* mesh : scene->meshes) {
+			render(mesh, camera);
+		}
 	}
 
 	void MeshDefaultRenderer::render(Skybox* sky, Camera* camera) {

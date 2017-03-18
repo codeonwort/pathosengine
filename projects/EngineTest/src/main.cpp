@@ -13,11 +13,17 @@
 using namespace std;
 using namespace pathos;
 
+// camera
 Camera* cam;
-Mesh *cube, *viewer, *shadowLight; // shadow debugger
-Mesh *ball, *lamp; // shadow casters
-Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
-Skybox* sky;
+
+// scene
+Scene scene;
+	Mesh *cube, *viewer, *shadowLight; // shadow debugger
+	Mesh *ball, *lamp; // shadow casters
+	Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
+	Skybox* sky;
+
+// renderer
 MeshDefaultRenderer* renderer;
 NormalRenderer* normRenderer;
 
@@ -33,21 +39,7 @@ void render() {
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
 	renderer->ready();
-	// skybox
-	renderer->render(sky, cam);
-	// various models
-	renderer->render(ball, cam);
-	renderer->render(lamp, cam);
-	// shadow debugger
-	renderer->render(viewer, cam);
-	//renderer->render(cube, cam);
-	renderer->render(shadowLight, cam);
-	renderer->render(plane_posX, cam);
-	renderer->render(plane_negX, cam);
-	renderer->render(plane_posY, cam);
-	renderer->render(plane_negY, cam);
-	renderer->render(plane_posZ, cam);
-	renderer->render(plane_negZ, cam);
+	renderer->render(&scene, cam);
 	
 	normRenderer->render(ball, cam);
 }
@@ -102,6 +94,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
+	scene.skybox = sky;
 
 	// bump texture for planes
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
@@ -159,6 +152,15 @@ int main(int argc, char** argv) {
 	shadowLightColor->setAmbientColor(1, 1, 0);
 	shadowLight = new Mesh(new SphereGeometry(0.3f, 20), shadowLightColor);
 	shadowLight->getTransform().appendMove(lightPos);
+
+	// scene configuration
+	scene.skybox = sky;
+	scene.add(ball);
+	scene.add(lamp);
+	scene.add(viewer);
+	//scene.add(cube); // bounding box of shadow mapping
+	scene.add(shadowLight);
+	scene.add({ plane_posX, plane_negX, plane_posY, plane_negY, plane_posZ, plane_negZ });
 
 	renderer = new MeshDefaultRenderer();
 	normRenderer = new NormalRenderer(0.2);
