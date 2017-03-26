@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.width = 800;
 	conf.height = 600;
-	conf.title = "engine test";
+	conf.title = "Omnidirectional Light";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);

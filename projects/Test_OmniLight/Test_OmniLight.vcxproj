@@ -21,8 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C166C27E-D5B5-4346-B8CA-D7739B7DD4EE}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>EngineTest</RootNamespace>
+    <RootNamespace>Test_OmniLight</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>Test_OmniLight</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
