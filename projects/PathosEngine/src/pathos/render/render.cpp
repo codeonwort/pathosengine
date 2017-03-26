@@ -103,10 +103,10 @@ namespace pathos {
 	///////////////////////////////////////////////////////////////
 	// NormalRenderer
 	NormalRenderer::NormalRenderer(float normLen):normalLength(normLen) {
-		vector<ShaderCompiler*> shaders;
-		VertexShaderCompiler* vs = new VertexShaderCompiler;
-		GeometryShaderCompiler* gs = new GeometryShaderCompiler("triangles", "line_strip", 2);
-		FragmentShaderCompiler* fs = new FragmentShaderCompiler;
+		vector<ShaderSource*> shaders;
+		VertexShaderSource* vs = new VertexShaderSource;
+		GeometryShaderSource* gs = new GeometryShaderSource("triangles", "line_strip", 2);
+		FragmentShaderSource* fs = new FragmentShaderSource;
 		shaders.push_back(vs);
 		shaders.push_back(gs);
 		shaders.push_back(fs);

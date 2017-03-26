@@ -131,7 +131,7 @@ void main() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void ShadowMap::addShaderCode(VertexShaderCompiler& vs, FragmentShaderCompiler& fs) {
+	void ShadowMap::addShaderCode(VertexShaderSource& vs, FragmentShaderSource& fs) {
 		vs.setUseNormal(true);
 		vs.outVar("vec4", "shadowCoord");
 		vs.uniformMat4("depthMVP");
@@ -305,7 +305,7 @@ void main() {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
 
-	void OmnidirectionalShadow::addShaderCode(VertexShaderCompiler& vs, FragmentShaderCompiler& fs) {
+	void OmnidirectionalShadow::addShaderCode(VertexShaderSource& vs, FragmentShaderSource& fs) {
 		vs.setUseNormal(true);
 		vs.outVar("vec3", "shadowCoord");
 		vs.mainCode("vs_out.shadowCoord = vec3(modelTransform * vec4(position, 1));");

@@ -65,12 +65,12 @@ namespace pathos {
 		return program;
 	}
 
-	GLuint createProgram(std::vector<ShaderCompiler*>& shaders) {
+	GLuint createProgram(std::vector<ShaderSource*>& shaders) {
 #ifdef DEBUG
 		std::cout << "start creating a shader program" << std::endl;
 #endif
 		vector<GLuint> shaderIDs;
-		for (ShaderCompiler* it : shaders){
+		for (ShaderSource* it : shaders){
 			GLuint id = glCreateShader(it->getShaderType());
 			shaderIDs.push_back(id);
 			compileShader(id, it->getCode());
@@ -92,7 +92,7 @@ namespace pathos {
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
 			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
-			for (ShaderCompiler* it : shaders){
+			for (ShaderSource* it : shaders){
 				cout << it->getCode() << endl;
 			}
 		}
@@ -110,47 +110,47 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	VertexShaderCompiler::VertexShaderCompiler() {
+	VertexShaderSource::VertexShaderSource() {
 		clear();
 		shaderType = GL_VERTEX_SHADER;
 	}
-	bool VertexShaderCompiler::useVarying() { return useNormal || useUV; }
+	bool VertexShaderSource::useVarying() { return useNormal || useUV; }
 
-	void VertexShaderCompiler::setUseUV(bool use) { useUV = use; }
-	void VertexShaderCompiler::setUseNormal(bool use) { useNormal = use; }
-	void VertexShaderCompiler::setUseTangent(bool use) { useTangent = use; }
-	void VertexShaderCompiler::setUseBitangent(bool use) { useBitangent = use; }
-	void VertexShaderCompiler::setTransferPosition(bool transfer) { transferPosition = transfer; }
-	void VertexShaderCompiler::setPositionLocation(GLuint loc) { positionLocation = loc; }
-	void VertexShaderCompiler::setUVLocation(GLuint loc) { uvLocation = loc; }
-	void VertexShaderCompiler::setNormalLocation(GLuint loc) { normalLocation = loc; }
+	void VertexShaderSource::setUseUV(bool use) { useUV = use; }
+	void VertexShaderSource::setUseNormal(bool use) { useNormal = use; }
+	void VertexShaderSource::setUseTangent(bool use) { useTangent = use; }
+	void VertexShaderSource::setUseBitangent(bool use) { useBitangent = use; }
+	void VertexShaderSource::setTransferPosition(bool transfer) { transferPosition = transfer; }
+	void VertexShaderSource::setPositionLocation(GLuint loc) { positionLocation = loc; }
+	void VertexShaderSource::setUVLocation(GLuint loc) { uvLocation = loc; }
+	void VertexShaderSource::setNormalLocation(GLuint loc) { normalLocation = loc; }
 	
-	void VertexShaderCompiler::outVar(const string & type, const string & name) {
+	void VertexShaderSource::outVar(const string & type, const string & name) {
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("VertexShaderCompiler::outVar() - variable already defined with different type");
+				else throw ("VertexShaderSource::outVar() - variable already defined with different type");
 			}
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
-	void VertexShaderCompiler::uniformMat4(const string& name) {
+	void VertexShaderSource::uniformMat4(const string& name) {
 		uniforms.push_back(pair<string, string>("mat4", name));
 	}
-	void VertexShaderCompiler::uniform(const string& type, const string& name) {
+	void VertexShaderSource::uniform(const string& type, const string& name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("VertexShaderCompiler::uniform() - variable already defined with different type");
+				else throw ("VertexShaderSource::uniform() - variable already defined with different type");
 			}
 		}
 		uniforms.push_back(pair<string, string>(type, name));
 	}
-	void VertexShaderCompiler::mainCode(const string& code) {
+	void VertexShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
 
-	void VertexShaderCompiler::clear() {
+	void VertexShaderSource::clear() {
 		usePosition = true;
 		useNormal = useUV = useTangent = useBitangent = false;
 		positionLocation = 0;
@@ -160,7 +160,7 @@ namespace pathos {
 		bitangentLocation = 4;
 		maincode = "";
 	}
-	string VertexShaderCompiler::getCode() {
+	string VertexShaderSource::getCode() {
 		stringstream src;
 
 		// sort variables by name
@@ -216,11 +216,11 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	FragmentShaderCompiler::FragmentShaderCompiler() {
+	FragmentShaderSource::FragmentShaderSource() {
 		clear();
 		shaderType = GL_FRAGMENT_SHADER;
 	}
-	void FragmentShaderCompiler::clear() {
+	void FragmentShaderSource::clear() {
 		uniforms.clear();
 		inVars.clear();
 		outVars.clear();
@@ -229,7 +229,7 @@ namespace pathos {
 		maincode = "";
 	}
 	
-	string FragmentShaderCompiler::getCode() {
+	string FragmentShaderSource::getCode() {
 		stringstream src;
 		src << "#version 430 core" << endl;
 
@@ -271,18 +271,18 @@ namespace pathos {
 #endif
 		return fcode;
 	}
-	void FragmentShaderCompiler::textureSampler(const string& samplerName) {
+	void FragmentShaderSource::textureSampler(const string& samplerName) {
 		uniform("sampler2D", samplerName);
 		//texSamplers.push_back(samplerName);
 	}
-	void FragmentShaderCompiler::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
-	void FragmentShaderCompiler::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
-	void FragmentShaderCompiler::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
-	void FragmentShaderCompiler::uniform(const string & type, const string & name) {
+	void FragmentShaderSource::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
+	void FragmentShaderSource::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
+	void FragmentShaderSource::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
+	void FragmentShaderSource::uniform(const string & type, const string & name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::uniform() - variable already defined with different type");
+				else throw ("FragmentShaderSource::uniform() - variable already defined with different type");
 			}
 		}
 		uniforms.push_back(pair<string, string>(type, name));
@@ -292,41 +292,41 @@ namespace pathos {
 	* if already defined with same name and same type, nothing happens.
 	* error thrown if already defined with same name but diffent type.
 	*/
-	void FragmentShaderCompiler::inVar(const string & type, const string & name) {
+	void FragmentShaderSource::inVar(const string & type, const string & name) {
 		for (auto it = inVars.begin(); it != inVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::inVar() - variable already defined with different type");
+				else throw ("FragmentShaderSource::inVar() - variable already defined with different type");
 			}
 		}
 		inVars.push_back(pair<string, string>(type, name));
 	}
-	void FragmentShaderCompiler::outVar(const string & type, const string & name) {
+	void FragmentShaderSource::outVar(const string & type, const string & name) {
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::outVar() - variable already defined with different type");
+				else throw ("FragmentShaderSource::outVar() - variable already defined with different type");
 			}
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
-	void FragmentShaderCompiler::interfaceBlockName(const string& name) {
+	void FragmentShaderSource::interfaceBlockName(const string& name) {
 		interfaceBlock = name; // VS_OUT or GS_OUT
 	}
-	void FragmentShaderCompiler::mainCode(const string& code) {
+	void FragmentShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
-	void FragmentShaderCompiler::directionalLights(unsigned int num) { numDirLights = num; }
-	void FragmentShaderCompiler::pointLights(unsigned int num) { numPointLights = num; }
+	void FragmentShaderSource::directionalLights(unsigned int num) { numDirLights = num; }
+	void FragmentShaderSource::pointLights(unsigned int num) { numPointLights = num; }
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	TessellationControlShaderCompiler::TessellationControlShaderCompiler() {
+	TessellationControlShaderSource::TessellationControlShaderSource() {
 		shaderType = GL_TESS_CONTROL_SHADER;
 	}
-	string TessellationControlShaderCompiler::getCode() {
+	string TessellationControlShaderSource::getCode() {
 		throw "not implemeneted";
 		return "";
 	}
@@ -335,10 +335,10 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	TessellationEvaluationShaderCompiler::TessellationEvaluationShaderCompiler() {
+	TessellationEvaluationShaderSource::TessellationEvaluationShaderSource() {
 		shaderType = GL_TESS_EVALUATION_SHADER;
 	}
-	string TessellationEvaluationShaderCompiler::getCode() {
+	string TessellationEvaluationShaderSource::getCode() {
 		throw "not implemeneted";
 		return "";
 	}
@@ -347,47 +347,47 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	GeometryShaderCompiler::GeometryShaderCompiler() {
-		GeometryShaderCompiler("triangles", "triangle_strip", 3);
+	GeometryShaderSource::GeometryShaderSource() {
+		GeometryShaderSource("triangles", "triangle_strip", 3);
 	}
-	GeometryShaderCompiler::GeometryShaderCompiler(string inPrim, string outPrim, unsigned int maxV){
+	GeometryShaderSource::GeometryShaderSource(string inPrim, string outPrim, unsigned int maxV){
 		shaderType = GL_GEOMETRY_SHADER;
 		inPrimitive = inPrim; outPrimitive = outPrim; maxVertices = maxV;
 	}
 
-	void GeometryShaderCompiler::uniform(const string& type, const string& name) {
+	void GeometryShaderSource::uniform(const string& type, const string& name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("GeometryShaderCompiler::uniform() - variable already defined with different type");
+				else throw ("GeometryShaderSource::uniform() - variable already defined with different type");
 			}
 		}
 		uniforms.push_back(pair<string, string>(type, name));
 	}
-	void GeometryShaderCompiler::inVar(const string& type, const string& name) {
+	void GeometryShaderSource::inVar(const string& type, const string& name) {
 		for (auto it = inVars.begin(); it != inVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("GeometryShaderCompiler::inVar() - variable already defined with different type");
+				else throw ("GeometryShaderSource::inVar() - variable already defined with different type");
 			}
 		}
 		inVars.push_back(pair<string, string>(type, name));
 	}
-	void GeometryShaderCompiler::outVar(const string& type, const string& name) {
+	void GeometryShaderSource::outVar(const string& type, const string& name) {
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("GeometryShaderCompiler::outVar() - variable already defined with different type");
+				else throw ("GeometryShaderSource::outVar() - variable already defined with different type");
 			}
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
 
-	void GeometryShaderCompiler::mainCode(const string& code) {
+	void GeometryShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
 
-	string GeometryShaderCompiler::getCode() {
+	string GeometryShaderSource::getCode() {
 		stringstream src;
 		src << "#version 430 core" << endl;
 

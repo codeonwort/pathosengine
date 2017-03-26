@@ -1,21 +1,27 @@
 #pragma once
 
+// OpenGL
 #include <GL/glew.h>
+
+// STL
 #include <string>
 #include <vector>
 using namespace std;
 
 namespace pathos {
 
-	class ShaderCompiler;
+	// Forward declaration
+	class ShaderSource;
 
+	// Utilities
 	void compileShader(GLuint shaderID, std::string &code);
 	GLuint createProgram(std::string& vsCode, std::string& fsCode);
-	GLuint createProgram(std::vector<ShaderCompiler*>& shaders);
+	GLuint createProgram(std::vector<ShaderSource*>& shaders);
+	//GLuint loadShaderFromFile(GLuint shaderType, std::string& filepath);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	class ShaderCompiler {
+	class ShaderSource {
 	protected:
 		GLuint shaderType; // set default value in child's constructor
 	public:
@@ -24,7 +30,7 @@ namespace pathos {
 	};
 
 	/**
-	 * Auto-generated variables and uniforms:
+	 * Auto-generated variables and uniforms for vertex shaders:
 	 * vs_out {
 	 *   vec3 position;		// if usePosition = true
 	 *   vec3 normal;		// if useNormal = true
@@ -33,7 +39,7 @@ namespace pathos {
 	 * mat4 modelTransform;
 	 * mat4 mvpTransform;
 	 */
-	class VertexShaderCompiler : public ShaderCompiler {
+	class VertexShaderSource : public ShaderSource {
 	private:
 		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;
 		bool usePosition, useUV, useNormal, useTangent, useBitangent;
@@ -43,7 +49,7 @@ namespace pathos {
 		vector<pair<string, string>> outVars;
 		string maincode;
 	public:
-		VertexShaderCompiler();
+		VertexShaderSource();
 		virtual string getCode();
 		void clear();
 		void setUseUV(bool);
@@ -61,7 +67,7 @@ namespace pathos {
 		void uniformMat4(const string& name);
 	};
 
-	class FragmentShaderCompiler : public ShaderCompiler {
+	class FragmentShaderSource : public ShaderSource {
 	private:
 		vector<pair<string, string>> uniforms;
 		vector<pair<string, string>> inVars;
@@ -71,7 +77,7 @@ namespace pathos {
 		string maincode;
 		//vector<string> texSamplers;
 	public:
-		FragmentShaderCompiler();
+		FragmentShaderSource();
 		virtual string getCode();
 		void clear();
 		void inVar(const string& type, const string &name);
@@ -87,19 +93,19 @@ namespace pathos {
 		void pointLights(unsigned int num);
 	};
 
-	class TessellationControlShaderCompiler : public ShaderCompiler {
+	class TessellationControlShaderSource : public ShaderSource {
 	public:
-		TessellationControlShaderCompiler();
+		TessellationControlShaderSource();
 		virtual string getCode();
 	};
 
-	class TessellationEvaluationShaderCompiler : public ShaderCompiler {
+	class TessellationEvaluationShaderSource : public ShaderSource {
 	public:
-		TessellationEvaluationShaderCompiler();
+		TessellationEvaluationShaderSource();
 		virtual string getCode();
 	};
 
-	class GeometryShaderCompiler : public ShaderCompiler {
+	class GeometryShaderSource : public ShaderSource {
 	private:
 		vector<pair<string, string>> uniforms;
 		vector<pair<string, string>> inVars;
@@ -108,8 +114,8 @@ namespace pathos {
 		unsigned int maxVertices;
 		string maincode;
 	public:
-		GeometryShaderCompiler();
-		GeometryShaderCompiler(string, string, unsigned int);
+		GeometryShaderSource();
+		GeometryShaderSource(string, string, unsigned int);
 		void inVar(const string& type, const string &name);
 		void outVar(const string& type, const string &name);
 		void uniform(const string& type, const string& name);

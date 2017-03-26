@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <pathos/wrapper/transform.h>
+#include "glm/glm.hpp"
+#include "pathos/wrapper/transform.h"
 
 namespace pathos {
 
