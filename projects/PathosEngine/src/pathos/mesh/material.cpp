@@ -1,10 +1,10 @@
-#include <sstream>
-#include <iostream>
-
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-#include <pathos/mesh/material.h>
+#include "pathos/mesh/material.h"
+
+#include <sstream>
+#include <iostream>
 
 namespace pathos {
 

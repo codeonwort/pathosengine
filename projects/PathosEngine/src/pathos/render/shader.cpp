@@ -1,87 +1,63 @@
-#include <pathos/render/shader.h>
+// Pathos
+#include "pathos/render/shader.h"
+
+// STL
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
-//#define DEBUG
 using namespace std;
 
 namespace pathos {
 
-	void compileShader(GLuint id, std::string &code) {
-#ifdef DEBUG
-		std::cout << "compiling a shader" << std::endl;
-#endif
-		char const* ptr = code.c_str();
-		glShaderSource(id, 1, &ptr, NULL);
-		glCompileShader(id);
-
-		// check shader compile error
-		GLint success;
-		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-		if (success == GL_FALSE) {
-			GLint logSize;
-			glGetShaderiv(id, GL_INFO_LOG_LENGTH, &logSize);
-			GLchar* log = new GLchar[logSize];
-			glGetShaderInfoLog(id, logSize, NULL, log);
-			std::cout << "shader compile error: " << log;
-			std::cout << code << endl;
-			delete[] log;
-		}
-	}
 	GLuint createProgram(std::string& vsCode, std::string& fsCode) {
-#ifdef DEBUG
-		std::cout << "start creating a shader program" << std::endl;
-#endif
-		GLuint vsid = glCreateShader(GL_VERTEX_SHADER);
-		GLuint fsid = glCreateShader(GL_FRAGMENT_SHADER);
-		compileShader(vsid, vsCode);
-		compileShader(fsid, fsCode);
-#ifdef DEBUG
-		std::cout << "linking program" << std::endl;
-#endif
-		GLuint program = glCreateProgram();
-		glAttachShader(program, vsid);
-		glAttachShader(program, fsid);
-		glLinkProgram(program);
+		Shader* vshader = new Shader(GL_VERTEX_SHADER);
+		Shader* fshader = new Shader(GL_FRAGMENT_SHADER);
+		vshader->setSource(vsCode);
+		fshader->setSource(fsCode);
+		std::vector<Shader*> shaders = { vshader, fshader };
 
-		GLint isLinked = 0;
-		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-		if (isLinked == GL_FALSE) {
-			GLint maxLength = 0;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-			vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
-			cout << "<vertex shader> " << vsCode << endl;
-			cout << "<frag shader> " << fsCode << endl;
-		}
-#ifdef DEBUG
-		std::cout << "link error code: " << glGetError() << std::endl;
-#endif
-		glDeleteShader(vsid);
-		glDeleteShader(fsid);
+		GLuint program = createProgram(shaders);
+		delete vshader;
+		delete fshader;
 
 		return program;
 	}
 
-	GLuint createProgram(std::vector<ShaderSource*>& shaders) {
-#ifdef DEBUG
-		std::cout << "start creating a shader program" << std::endl;
-#endif
-		vector<GLuint> shaderIDs;
-		for (ShaderSource* it : shaders){
-			GLuint id = glCreateShader(it->getShaderType());
-			shaderIDs.push_back(id);
-			compileShader(id, it->getCode());
+	GLuint createProgram(std::vector<ShaderSource*>& sources) {
+		vector<Shader*> shaders(sources.size(), nullptr);
+		for (auto i = 0; i < sources.size(); ++i) {
+			ShaderSource* it = sources[i];
+			Shader* shader = shaders[i] = new Shader(it->getShaderType());
+			shader->setSource(it->getCode());
 		}
-#ifdef DEBUG
-		std::cout << "linking program" << std::endl;
+
+		GLuint program = createProgram(shaders);
+		for (Shader* shader : shaders) delete shader;
+
+		return program;
+	}
+
+	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
+	GLuint createProgram(std::vector<Shader*>& shaders) {
+#ifdef _DEBUG
+		std::cout << std::endl << "=== start creating a shader program ===" << std::endl;
+#endif
+		for (Shader* shader : shaders) {
+			bool compiled = shader->compile();
+			if (!compiled) {
+#ifdef _DEBUG
+				std::cout << "> shader compile error: " << shader->getErrorLog() << endl;
+#endif
+				break;
+			}
+		}
+#ifdef _DEBUG
+		std::cout << "> linking a program" << std::endl;
 #endif
 		GLuint program = glCreateProgram();
-		for (GLuint id : shaderIDs){
-			glAttachShader(program, id);
-		}
+		for (Shader* shader : shaders) glAttachShader(program, shader->getName());
 		glLinkProgram(program);
 
 		GLint isLinked = 0;
@@ -89,24 +65,81 @@ namespace pathos {
 		if (isLinked == GL_FALSE) {
 			GLint maxLength = 0;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+			if (maxLength == 0) maxLength = 1000;
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
-			for (ShaderSource* it : shaders){
-				cout << it->getCode() << endl;
-			}
-		}
-#ifdef DEBUG
-		std::cout << "link error code: " << glGetError() << std::endl;
+#ifdef _DEBUG
+			cout << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
+			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
+			std::cout << "> link error code: " << glGetError() << std::endl;
 #endif
-		for (GLuint id : shaderIDs){
-			glDeleteShader(id);
 		}
-
+#ifdef _DEBUG
+		std::cout << "=== finish program creation ===" << std::endl << std::endl;
+#endif
 		return program;
 	}
 
 	bool varComp(pair<string, string>& a, pair<string, string>& b) { return a.second < b.second; }
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	Shader::Shader(GLenum type) {
+		name = glCreateShader(type);
+		this->type = type;
+	}
+
+	Shader::~Shader() {
+		glDeleteShader(name);
+	}
+
+	void Shader::setSource(std::string& source) { this->source = source; }
+	void Shader::setSource(const char* source) { this->source = source; }
+
+	bool Shader::loadSource(std::string& filepath) { return loadSource(filepath.c_str()); }
+	bool Shader::loadSource(const char* filepath) {
+		std::ifstream file(filepath);
+		if (!file.is_open()) return false;
+
+		std::ostringstream code;
+		code << file.rdbuf();
+		source = std::move(code.str());
+
+		return true;
+	}
+
+	bool Shader::compile() {
+#ifdef _DEBUG
+		const char* shaderType;
+		if (type == GL_VERTEX_SHADER) shaderType = "GL_VERTEX_SHADER";
+		else if (type == GL_FRAGMENT_SHADER) shaderType = "GL_FRAGMENT_SHADER";
+		else if (type == GL_GEOMETRY_SHADER) shaderType = "GL_GEOMETRY_SHADER";
+		else if (type == GL_TESS_CONTROL_SHADER) shaderType = "GL_TESS_CONTROL_SHADER";
+		else if (type == GL_TESS_EVALUATION_SHADER) shaderType = "GL_TESS_EVALUATION_SHADER";
+		else if (type == GL_COMPUTE_SHADER) shaderType = "GL_COMPUTE_SHADER";
+		else shaderType = "<unknown shader type>";
+		std::cout << "> trying to compile a " << shaderType << " shader" << std::endl;
+#endif
+		char* const src = const_cast<char*>(source.c_str());
+		glShaderSource(name, 1, &src, NULL);
+		glCompileShader(name);
+
+		GLint success;
+		glGetShaderiv(name, GL_COMPILE_STATUS, &success);
+		if (success == GL_FALSE) {
+			GLint logSize;
+			glGetShaderiv(name, GL_INFO_LOG_LENGTH, &logSize);
+
+			errorLog.resize(logSize);
+			glGetShaderInfoLog(name, logSize, NULL, const_cast<char*>(errorLog.c_str()));
+#ifdef _DEBUG
+			std::cout << "> shader compile error: " << errorLog;
+			std::cout << source << endl;
+#endif
+			return false;
+		}
+		return true;
+	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 

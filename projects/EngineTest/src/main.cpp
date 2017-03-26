@@ -1,14 +1,13 @@
+#include "glm/gtx/transform.hpp"
+#include "pathos/engine.h"
+#include "pathos/render/render.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/envmap.h"
+#include "pathos/camera/camera.h"
+#include "pathos/light/light.h"
+#include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
 #include <iostream>
-
-#include <glm/gtx/transform.hpp>
-#include <pathos/engine.h>
-#include <pathos/render/render.h>
-#include <pathos/mesh/mesh.h>
-#include <pathos/mesh/envmap.h>
-#include <pathos/camera/camera.h>
-#include <pathos/light/light.h>
-#include <pathos/loader/imageloader.h>
-#include <pathos/loader/objloader.h>
 
 using namespace std;
 using namespace pathos;
@@ -56,7 +55,7 @@ int main(int argc, char** argv) {
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 100.f));
+	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 100.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	// light and shadow

@@ -12,12 +12,35 @@ namespace pathos {
 
 	// Forward declaration
 	class ShaderSource;
+	class Shader;
 
 	// Utilities
-	void compileShader(GLuint shaderID, std::string &code);
 	GLuint createProgram(std::string& vsCode, std::string& fsCode);
-	GLuint createProgram(std::vector<ShaderSource*>& shaders);
-	//GLuint loadShaderFromFile(GLuint shaderType, std::string& filepath);
+	GLuint createProgram(std::vector<ShaderSource*>& sources);
+	GLuint createProgram(std::vector<Shader*>& shaders);
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	class Shader {
+	public:
+		Shader(GLenum type);
+		virtual ~Shader();
+
+		void setSource(const char* source);
+		inline void setSource(std::string& source);
+		bool loadSource(const char* filepath);
+		inline bool loadSource(std::string& filepath);
+		bool compile();
+
+		const GLuint getName() { return name; }
+		const char* getErrorLog() { return errorLog.c_str(); }
+
+	protected:
+		GLuint name;
+		GLenum type;
+		std::string source;
+		std::string errorLog;
+	};
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 

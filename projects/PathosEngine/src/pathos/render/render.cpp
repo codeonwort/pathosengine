@@ -102,20 +102,19 @@ namespace pathos {
 
 	///////////////////////////////////////////////////////////////
 	// NormalRenderer
-	NormalRenderer::NormalRenderer(float normLen):normalLength(normLen) {
-		vector<ShaderSource*> shaders;
+	NormalRenderer::NormalRenderer(float normLen): normalLength(normLen) {
 		VertexShaderSource* vs = new VertexShaderSource;
 		GeometryShaderSource* gs = new GeometryShaderSource("triangles", "line_strip", 2);
 		FragmentShaderSource* fs = new FragmentShaderSource;
-		shaders.push_back(vs);
-		shaders.push_back(gs);
-		shaders.push_back(fs);
+		vector<ShaderSource*> shaders = { vs, gs, fs };
 
 		// vs
 		vs->setUseNormal(true);
 		vs->outVar("vec4", "normalAdded");
 		vs->uniform("float", "normalLength");
 		vs->mainCode("vs_out.normalAdded = mvpTransform * vec4(position + normal * normalLength, 1);");
+		//Shader* v = new Shader(GL_VERTEX_SHADER);
+		//v->setSource(vs->getCode());
 
 		// gs
 		gs->inVar("vec3", "normal");
@@ -125,17 +124,27 @@ namespace pathos {
 		gs->mainCode("gl_Position = gs_in[0].normalAdded;");
 		gs->mainCode("EmitVertex();");
 		gs->mainCode("EndPrimitive();");
+		// quite messy path...
+		//Shader* g = new Shader(GL_GEOMETRY_SHADER);
+		//g->loadSource("../../projects/PathosEngine/src/glsl/normal_renderer_geom_shader.txt");
 
 		// fs
 		fs->interfaceBlockName("GS_OUT");
 		fs->outVar("vec4", "color");
 		fs->mainCode("color = vec4(1, 0, 0, 1);");
+		//Shader* f = new Shader(GL_FRAGMENT_SHADER);
+		//f->setSource(fs->getCode());
 
-		cout << endl << vs->getCode() << endl << endl;
-		cout << endl << gs->getCode() << endl << endl;
-		cout << endl << fs->getCode() << endl << endl;
+		//cout << endl << vs->getCode() << endl << endl;
+		//cout << endl << gs->getCode() << endl << endl;
+		//cout << endl << fs->getCode() << endl << endl;
 
 		program = createProgram(shaders);
+		//program = createProgram(std::vector<Shader*>{ v, g, f });
+
+		delete vs;
+		delete gs;
+		delete fs;
 	}
 
 	void NormalRenderer::render(Mesh* mesh, Camera* camera) {

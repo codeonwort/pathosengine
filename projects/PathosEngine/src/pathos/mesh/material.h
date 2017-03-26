@@ -1,14 +1,14 @@
 #pragma once
 
-#include <vector>
 #include <GL/glew.h>
-#include <pathos/core.h>
-#include <pathos/camera/camera.h>
-#include <pathos/render/shader.h>
-#include <pathos/mesh/geometry.h>
-#include <pathos/mesh/shadow.h>
-#include <pathos/light/light.h>
+#include "pathos/core.h"
+#include "pathos/camera/camera.h"
+#include "pathos/render/shader.h"
+#include "pathos/mesh/geometry.h"
+#include "pathos/mesh/shadow.h"
+#include "pathos/light/light.h"
 //#include <BossEngine/Render/ReflectionMethod.h>
+#include <vector>
 
 /* CAUTION
 - a MaterialPass must be added by addPass(), not directly calling push_back() to std::vector<MaterialPass*> passes
