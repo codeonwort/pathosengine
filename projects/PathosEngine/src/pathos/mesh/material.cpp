@@ -1,10 +1,10 @@
-#include <sstream>
-#include <iostream>
-
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
-#include <pathos/mesh/material.h>
+#include "pathos/mesh/material.h"
+
+#include <sstream>
+#include <iostream>
 
 namespace pathos {
 
@@ -240,6 +240,9 @@ namespace pathos {
 			fsCompiler.mainCode("specularTerm += visibility*specularColor*specularLightAccum2;");
 		}
 		// final shading
+		fsCompiler.mainCode("diffuseTerm.r = ceil(diffuseTerm.r*5)/5.0;");
+		fsCompiler.mainCode("diffuseTerm.g = ceil(diffuseTerm.g*5)/5.0;");
+		fsCompiler.mainCode("diffuseTerm.b = ceil(diffuseTerm.b*5)/5.0;");
 		fsCompiler.mainCode("outColor.rgb = ambientColor + diffuseTerm + specularTerm;");
 		fsCompiler.mainCode("outColor.a = materialAlpha;");
 
@@ -519,6 +522,11 @@ namespace pathos {
 			fsCompiler.mainCode("specularTerm = visibility * specularLightAccum;");
 		}*/
 
+		/*fsCompiler.mainCode("float ir = ceil((diffuseTerm.r + specularTerm.r) * 5) / 5;");
+		fsCompiler.mainCode("float ig = ceil((diffuseTerm.g + specularTerm.g) * 5) / 5;");
+		fsCompiler.mainCode("float ib = ceil((diffuseTerm.b + specularTerm.b) * 5) / 5;");
+		if (useAlpha) fsCompiler.mainCode("color = vec3(ir, ig, ib) * texture2D(imageSampler, fs_in.uv).rgb;");
+		else fsCompiler.mainCode("color = vec4(ir, ig, ib, 1) * texture2D(imageSampler, fs_in.uv);");*/
 		if (useAlpha) fsCompiler.mainCode("color = specularTerm + diffuseTerm * texture2D(imageSampler, fs_in.uv).rgb;");
 		else fsCompiler.mainCode("color = vec4(specularTerm, 1.0) + vec4(diffuseTerm, 1.0) * texture2D(imageSampler, fs_in.uv);");
 
@@ -755,9 +763,6 @@ namespace pathos {
 		fsCompiler.mainCode("vec3 r = reflect(-fs_in.viewVector, normalize(fs_in.normal_mv));");
 		//fsCompiler.mainCode("vec3 r = fs_in.viewVector;");
 		fsCompiler.mainCode("color = texture(tex_cubemap, r);");
-
-		cout << vsCompiler.getCode() << endl;
-		cout << fsCompiler.getCode() << endl;
 
 		createProgram(vsCompiler.getCode(), fsCompiler.getCode());
 	}

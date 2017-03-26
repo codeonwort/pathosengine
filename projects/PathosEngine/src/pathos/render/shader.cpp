@@ -1,87 +1,63 @@
-#include <pathos/render/shader.h>
+// Pathos
+#include "pathos/render/shader.h"
+
+// STL
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
-//#define DEBUG
 using namespace std;
 
 namespace pathos {
 
-	void compileShader(GLuint id, std::string &code) {
-#ifdef DEBUG
-		std::cout << "compiling a shader" << std::endl;
-#endif
-		char const* ptr = code.c_str();
-		glShaderSource(id, 1, &ptr, NULL);
-		glCompileShader(id);
-
-		// check shader compile error
-		GLint success;
-		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-		if (success == GL_FALSE) {
-			GLint logSize;
-			glGetShaderiv(id, GL_INFO_LOG_LENGTH, &logSize);
-			GLchar* log = new GLchar[logSize];
-			glGetShaderInfoLog(id, logSize, NULL, log);
-			std::cout << "shader compile error: " << log;
-			std::cout << code << endl;
-			delete[] log;
-		}
-	}
 	GLuint createProgram(std::string& vsCode, std::string& fsCode) {
-#ifdef DEBUG
-		std::cout << "start creating a shader program" << std::endl;
-#endif
-		GLuint vsid = glCreateShader(GL_VERTEX_SHADER);
-		GLuint fsid = glCreateShader(GL_FRAGMENT_SHADER);
-		compileShader(vsid, vsCode);
-		compileShader(fsid, fsCode);
-#ifdef DEBUG
-		std::cout << "linking program" << std::endl;
-#endif
-		GLuint program = glCreateProgram();
-		glAttachShader(program, vsid);
-		glAttachShader(program, fsid);
-		glLinkProgram(program);
+		Shader* vshader = new Shader(GL_VERTEX_SHADER);
+		Shader* fshader = new Shader(GL_FRAGMENT_SHADER);
+		vshader->setSource(vsCode);
+		fshader->setSource(fsCode);
+		std::vector<Shader*> shaders = { vshader, fshader };
 
-		GLint isLinked = 0;
-		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-		if (isLinked == GL_FALSE) {
-			GLint maxLength = 0;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-			vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
-			cout << "<vertex shader> " << vsCode << endl;
-			cout << "<frag shader> " << fsCode << endl;
-		}
-#ifdef DEBUG
-		std::cout << "link error code: " << glGetError() << std::endl;
-#endif
-		glDeleteShader(vsid);
-		glDeleteShader(fsid);
+		GLuint program = createProgram(shaders);
+		delete vshader;
+		delete fshader;
 
 		return program;
 	}
 
-	GLuint createProgram(std::vector<ShaderCompiler*>& shaders) {
-#ifdef DEBUG
-		std::cout << "start creating a shader program" << std::endl;
-#endif
-		vector<GLuint> shaderIDs;
-		for (ShaderCompiler* it : shaders){
-			GLuint id = glCreateShader(it->getShaderType());
-			shaderIDs.push_back(id);
-			compileShader(id, it->getCode());
+	GLuint createProgram(std::vector<ShaderSource*>& sources) {
+		vector<Shader*> shaders(sources.size(), nullptr);
+		for (auto i = 0; i < sources.size(); ++i) {
+			ShaderSource* it = sources[i];
+			Shader* shader = shaders[i] = new Shader(it->getShaderType());
+			shader->setSource(it->getCode());
 		}
-#ifdef DEBUG
-		std::cout << "linking program" << std::endl;
+
+		GLuint program = createProgram(shaders);
+		for (Shader* shader : shaders) delete shader;
+
+		return program;
+	}
+
+	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
+	GLuint createProgram(std::vector<Shader*>& shaders) {
+#ifdef _DEBUG
+		std::cout << std::endl << "=== start creating a shader program ===" << std::endl;
+#endif
+		for (Shader* shader : shaders) {
+			bool compiled = shader->compile();
+			if (!compiled) {
+#ifdef _DEBUG
+				std::cout << "> shader compile error: " << shader->getErrorLog() << endl;
+#endif
+				break;
+			}
+		}
+#ifdef _DEBUG
+		std::cout << "> linking a program" << std::endl;
 #endif
 		GLuint program = glCreateProgram();
-		for (GLuint id : shaderIDs){
-			glAttachShader(program, id);
-		}
+		for (Shader* shader : shaders) glAttachShader(program, shader->getName());
 		glLinkProgram(program);
 
 		GLint isLinked = 0;
@@ -89,20 +65,18 @@ namespace pathos {
 		if (isLinked == GL_FALSE) {
 			GLint maxLength = 0;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+			if (maxLength == 0) maxLength = 1000;
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-			cout << "program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
-			for (ShaderCompiler* it : shaders){
-				cout << it->getCode() << endl;
-			}
-		}
-#ifdef DEBUG
-		std::cout << "link error code: " << glGetError() << std::endl;
+#ifdef _DEBUG
+			cout << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
+			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
+			std::cout << "> link error code: " << glGetError() << std::endl;
 #endif
-		for (GLuint id : shaderIDs){
-			glDeleteShader(id);
 		}
-
+#ifdef _DEBUG
+		std::cout << "=== finish program creation ===" << std::endl << std::endl;
+#endif
 		return program;
 	}
 
@@ -110,47 +84,106 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	VertexShaderCompiler::VertexShaderCompiler() {
+	Shader::Shader(GLenum type) {
+		name = glCreateShader(type);
+		this->type = type;
+	}
+
+	Shader::~Shader() {
+		glDeleteShader(name);
+	}
+
+	void Shader::setSource(std::string& source) { this->source = source; }
+	void Shader::setSource(const char* source) { this->source = source; }
+
+	bool Shader::loadSource(std::string& filepath) { return loadSource(filepath.c_str()); }
+	bool Shader::loadSource(const char* filepath) {
+		std::ifstream file(filepath);
+		if (!file.is_open()) return false;
+
+		std::ostringstream code;
+		code << file.rdbuf();
+		source = std::move(code.str());
+
+		return true;
+	}
+
+	bool Shader::compile() {
+#ifdef _DEBUG
+		const char* shaderType;
+		if (type == GL_VERTEX_SHADER) shaderType = "GL_VERTEX_SHADER";
+		else if (type == GL_FRAGMENT_SHADER) shaderType = "GL_FRAGMENT_SHADER";
+		else if (type == GL_GEOMETRY_SHADER) shaderType = "GL_GEOMETRY_SHADER";
+		else if (type == GL_TESS_CONTROL_SHADER) shaderType = "GL_TESS_CONTROL_SHADER";
+		else if (type == GL_TESS_EVALUATION_SHADER) shaderType = "GL_TESS_EVALUATION_SHADER";
+		else if (type == GL_COMPUTE_SHADER) shaderType = "GL_COMPUTE_SHADER";
+		else shaderType = "<unknown shader type>";
+		std::cout << "> trying to compile a " << shaderType << " shader" << std::endl;
+#endif
+		char* const src = const_cast<char*>(source.c_str());
+		glShaderSource(name, 1, &src, NULL);
+		glCompileShader(name);
+
+		GLint success;
+		glGetShaderiv(name, GL_COMPILE_STATUS, &success);
+		if (success == GL_FALSE) {
+			GLint logSize;
+			glGetShaderiv(name, GL_INFO_LOG_LENGTH, &logSize);
+
+			errorLog.resize(logSize);
+			glGetShaderInfoLog(name, logSize, NULL, const_cast<char*>(errorLog.c_str()));
+#ifdef _DEBUG
+			std::cout << "> shader compile error: " << errorLog;
+			std::cout << source << endl;
+#endif
+			return false;
+		}
+		return true;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	VertexShaderSource::VertexShaderSource() {
 		clear();
 		shaderType = GL_VERTEX_SHADER;
 	}
-	bool VertexShaderCompiler::useVarying() { return useNormal || useUV; }
+	bool VertexShaderSource::useVarying() { return useNormal || useUV; }
 
-	void VertexShaderCompiler::setUseUV(bool use) { useUV = use; }
-	void VertexShaderCompiler::setUseNormal(bool use) { useNormal = use; }
-	void VertexShaderCompiler::setUseTangent(bool use) { useTangent = use; }
-	void VertexShaderCompiler::setUseBitangent(bool use) { useBitangent = use; }
-	void VertexShaderCompiler::setTransferPosition(bool transfer) { transferPosition = transfer; }
-	void VertexShaderCompiler::setPositionLocation(GLuint loc) { positionLocation = loc; }
-	void VertexShaderCompiler::setUVLocation(GLuint loc) { uvLocation = loc; }
-	void VertexShaderCompiler::setNormalLocation(GLuint loc) { normalLocation = loc; }
+	void VertexShaderSource::setUseUV(bool use) { useUV = use; }
+	void VertexShaderSource::setUseNormal(bool use) { useNormal = use; }
+	void VertexShaderSource::setUseTangent(bool use) { useTangent = use; }
+	void VertexShaderSource::setUseBitangent(bool use) { useBitangent = use; }
+	void VertexShaderSource::setTransferPosition(bool transfer) { transferPosition = transfer; }
+	void VertexShaderSource::setPositionLocation(GLuint loc) { positionLocation = loc; }
+	void VertexShaderSource::setUVLocation(GLuint loc) { uvLocation = loc; }
+	void VertexShaderSource::setNormalLocation(GLuint loc) { normalLocation = loc; }
 	
-	void VertexShaderCompiler::outVar(const string & type, const string & name) {
+	void VertexShaderSource::outVar(const string & type, const string & name) {
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("VertexShaderCompiler::outVar() - variable already defined with different type");
+				else throw ("VertexShaderSource::outVar() - variable already defined with different type");
 			}
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
-	void VertexShaderCompiler::uniformMat4(const string& name) {
+	void VertexShaderSource::uniformMat4(const string& name) {
 		uniforms.push_back(pair<string, string>("mat4", name));
 	}
-	void VertexShaderCompiler::uniform(const string& type, const string& name) {
+	void VertexShaderSource::uniform(const string& type, const string& name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("VertexShaderCompiler::uniform() - variable already defined with different type");
+				else throw ("VertexShaderSource::uniform() - variable already defined with different type");
 			}
 		}
 		uniforms.push_back(pair<string, string>(type, name));
 	}
-	void VertexShaderCompiler::mainCode(const string& code) {
+	void VertexShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
 
-	void VertexShaderCompiler::clear() {
+	void VertexShaderSource::clear() {
 		usePosition = true;
 		useNormal = useUV = useTangent = useBitangent = false;
 		positionLocation = 0;
@@ -160,7 +193,7 @@ namespace pathos {
 		bitangentLocation = 4;
 		maincode = "";
 	}
-	string VertexShaderCompiler::getCode() {
+	string VertexShaderSource::getCode() {
 		stringstream src;
 
 		// sort variables by name
@@ -216,19 +249,20 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	FragmentShaderCompiler::FragmentShaderCompiler() {
+	FragmentShaderSource::FragmentShaderSource() {
 		clear();
 		shaderType = GL_FRAGMENT_SHADER;
 	}
-	void FragmentShaderCompiler::clear() {
+	void FragmentShaderSource::clear() {
 		uniforms.clear();
 		inVars.clear();
 		outVars.clear();
 		numDirLights = numPointLights = 0;
+		interfaceBlock = "VS_OUT";
 		maincode = "";
 	}
 	
-	string FragmentShaderCompiler::getCode() {
+	string FragmentShaderSource::getCode() {
 		stringstream src;
 		src << "#version 430 core" << endl;
 
@@ -248,7 +282,7 @@ namespace pathos {
 			src << "uniform vec3 pointLightColors[" << numPointLights << "];\n";
 		}
 		if (inVars.size() > 0) {
-			src << "in VS_OUT {\n";
+			src << "in " << interfaceBlock << " {\n";
 			for (auto it = inVars.begin(); it != inVars.end(); it++) {
 				pair<string, string> &inVar = *it;
 				src << "  " << inVar.first << " " << inVar.second << ";\n";
@@ -270,18 +304,18 @@ namespace pathos {
 #endif
 		return fcode;
 	}
-	void FragmentShaderCompiler::textureSampler(const string& samplerName) {
+	void FragmentShaderSource::textureSampler(const string& samplerName) {
 		uniform("sampler2D", samplerName);
 		//texSamplers.push_back(samplerName);
 	}
-	void FragmentShaderCompiler::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
-	void FragmentShaderCompiler::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
-	void FragmentShaderCompiler::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
-	void FragmentShaderCompiler::uniform(const string & type, const string & name) {
+	void FragmentShaderSource::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
+	void FragmentShaderSource::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
+	void FragmentShaderSource::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
+	void FragmentShaderSource::uniform(const string & type, const string & name) {
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::uniform() - variable already defined with different type");
+				else throw ("FragmentShaderSource::uniform() - variable already defined with different type");
 			}
 		}
 		uniforms.push_back(pair<string, string>(type, name));
@@ -291,38 +325,41 @@ namespace pathos {
 	* if already defined with same name and same type, nothing happens.
 	* error thrown if already defined with same name but diffent type.
 	*/
-	void FragmentShaderCompiler::inVar(const string & type, const string & name) {
+	void FragmentShaderSource::inVar(const string & type, const string & name) {
 		for (auto it = inVars.begin(); it != inVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::inVar() - variable already defined with different type");
+				else throw ("FragmentShaderSource::inVar() - variable already defined with different type");
 			}
 		}
 		inVars.push_back(pair<string, string>(type, name));
 	}
-	void FragmentShaderCompiler::outVar(const string & type, const string & name) {
+	void FragmentShaderSource::outVar(const string & type, const string & name) {
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
 			if ((*it).second == name) {
 				if ((*it).first == type) return;
-				else throw ("FragmentShaderCompiler::outVar() - variable already defined with different type");
+				else throw ("FragmentShaderSource::outVar() - variable already defined with different type");
 			}
 		}
 		outVars.push_back(pair<string, string>(type, name));
 	}
-	void FragmentShaderCompiler::mainCode(const string& code) {
+	void FragmentShaderSource::interfaceBlockName(const string& name) {
+		interfaceBlock = name; // VS_OUT or GS_OUT
+	}
+	void FragmentShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
 	}
-	void FragmentShaderCompiler::directionalLights(unsigned int num) { numDirLights = num; }
-	void FragmentShaderCompiler::pointLights(unsigned int num) { numPointLights = num; }
+	void FragmentShaderSource::directionalLights(unsigned int num) { numDirLights = num; }
+	void FragmentShaderSource::pointLights(unsigned int num) { numPointLights = num; }
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	TessellationControlShaderCompiler::TessellationControlShaderCompiler() {
+	TessellationControlShaderSource::TessellationControlShaderSource() {
 		shaderType = GL_TESS_CONTROL_SHADER;
 	}
-	string TessellationControlShaderCompiler::getCode() {
+	string TessellationControlShaderSource::getCode() {
 		throw "not implemeneted";
 		return "";
 	}
@@ -331,10 +368,10 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	TessellationEvaluationShaderCompiler::TessellationEvaluationShaderCompiler() {
+	TessellationEvaluationShaderSource::TessellationEvaluationShaderSource() {
 		shaderType = GL_TESS_EVALUATION_SHADER;
 	}
-	string TessellationEvaluationShaderCompiler::getCode() {
+	string TessellationEvaluationShaderSource::getCode() {
 		throw "not implemeneted";
 		return "";
 	}
@@ -343,12 +380,94 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	GeometryShaderCompiler::GeometryShaderCompiler() {
-		shaderType = GL_GEOMETRY_SHADER;
+	GeometryShaderSource::GeometryShaderSource() {
+		GeometryShaderSource("triangles", "triangle_strip", 3);
 	}
-	string GeometryShaderCompiler::getCode() {
-		throw "not implemeneted";
-		return "";
+	GeometryShaderSource::GeometryShaderSource(string inPrim, string outPrim, unsigned int maxV){
+		shaderType = GL_GEOMETRY_SHADER;
+		inPrimitive = inPrim; outPrimitive = outPrim; maxVertices = maxV;
+	}
+
+	void GeometryShaderSource::uniform(const string& type, const string& name) {
+		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderSource::uniform() - variable already defined with different type");
+			}
+		}
+		uniforms.push_back(pair<string, string>(type, name));
+	}
+	void GeometryShaderSource::inVar(const string& type, const string& name) {
+		for (auto it = inVars.begin(); it != inVars.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderSource::inVar() - variable already defined with different type");
+			}
+		}
+		inVars.push_back(pair<string, string>(type, name));
+	}
+	void GeometryShaderSource::outVar(const string& type, const string& name) {
+		for (auto it = outVars.begin(); it != outVars.end(); it++) {
+			if ((*it).second == name) {
+				if ((*it).first == type) return;
+				else throw ("GeometryShaderSource::outVar() - variable already defined with different type");
+			}
+		}
+		outVars.push_back(pair<string, string>(type, name));
+	}
+
+	void GeometryShaderSource::mainCode(const string& code) {
+		maincode += "  " + code + "\n";
+	}
+
+	string GeometryShaderSource::getCode() {
+		stringstream src;
+		src << "#version 430 core" << endl;
+
+		src << "layout (" << inPrimitive << ") in;" << endl;
+		src << "layout (" << outPrimitive << ", max_vertices = " << maxVertices << ") out;" << endl;
+
+		// sort variables by name
+		std::sort(inVars.begin(), inVars.end(), varComp);
+
+		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
+			pair<string, string> &uniform = *it;
+			src << "uniform " << uniform.first << " " << uniform.second << ";\n";
+		}
+		/*if (numDirLights > 0) {
+			src << "uniform vec3 dirLightDirs[" << numDirLights << "];\n";
+			src << "uniform vec3 dirLightColors[" << numDirLights << "];\n";
+		}
+		if (numPointLights > 0){
+			src << "uniform vec3 pointLightPos[" << numPointLights << "];\n";
+			src << "uniform vec3 pointLightColors[" << numPointLights << "];\n";
+		}*/
+		if (inVars.size() > 0) {
+			src << "in VS_OUT {\n";
+			for (auto it = inVars.begin(); it != inVars.end(); it++) {
+				pair<string, string> &inVar = *it;
+				src << "  " << inVar.first << " " << inVar.second << ";\n";
+			}
+			src << "} gs_in[];\n";
+		}
+		if (outVars.size() > 0) {
+			src << "out GS_OUT {\n";
+			for (auto it = outVars.begin(); it != outVars.end(); it++) {
+				pair<string, string> &outVar = *it;
+				src << "  " << outVar.first << " " << outVar.second << ";\n";
+			}
+			src << "} gs_out;\n";
+		}
+		src << "void main() {\n";
+		src << maincode;
+		src << "}\n";
+
+		string gcode = src.str();
+#ifdef DEBUG
+		cout << endl << "geometry shader code" << endl;
+		cout << fcode << endl;
+#endif
+		return gcode;
 	}
 
 }

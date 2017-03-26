@@ -1,13 +1,9 @@
-
-// OpenGL libraries
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <FreeImage.h>
 
-// Pathos engine
-#include <pathos/engine.h>
+#include "pathos/engine.h"
 
-// STL
 #include <iostream>
 
 namespace pathos {
@@ -15,7 +11,7 @@ namespace pathos {
 	EngineConfig Engine::conf;
 	std::string Engine::version = "0.0.1.0";
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
-	bool Engine::keymap[] = { false };
+	bool Engine::keymap[256] = { false };
 
 	void Engine::init(int* argcp, char** argv, const EngineConfig& config) {
 		std::cout << "initialize pathos engine..." << std::endl;

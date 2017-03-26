@@ -1,11 +1,20 @@
-#include <pathos/render/render.h>
-#include <pathos/mesh/shadow.h>
+#include "pathos/render/render.h"
+#include "pathos/render/shader.h"
+#include "pathos/mesh/shadow.h"
 #include <iostream>
 
 namespace pathos {
 
 	void MeshDefaultRenderer::ready() {
 		ShadowMethod::clearShadowTextures();
+	}
+
+	void MeshDefaultRenderer::render(Scene* scene, Camera* camera) {
+		// Currently no optimization. Just render all objects.
+		if(scene->skybox != nullptr) render(scene->skybox, camera);
+		for (Mesh* mesh : scene->meshes) {
+			render(mesh, camera);
+		}
 	}
 
 	void MeshDefaultRenderer::render(Skybox* sky, Camera* camera) {
@@ -89,6 +98,80 @@ namespace pathos {
 			//glDisable(GL_BLEND);
 		}*/
 		glDepthFunc(GL_LESS);
+	}
+
+	///////////////////////////////////////////////////////////////
+	// NormalRenderer
+	NormalRenderer::NormalRenderer(float normLen): normalLength(normLen) {
+		VertexShaderSource* vs = new VertexShaderSource;
+		GeometryShaderSource* gs = new GeometryShaderSource("triangles", "line_strip", 2);
+		FragmentShaderSource* fs = new FragmentShaderSource;
+		vector<ShaderSource*> shaders = { vs, gs, fs };
+
+		// vs
+		vs->setUseNormal(true);
+		vs->outVar("vec4", "normalAdded");
+		vs->uniform("float", "normalLength");
+		vs->mainCode("vs_out.normalAdded = mvpTransform * vec4(position + normal * normalLength, 1);");
+		//Shader* v = new Shader(GL_VERTEX_SHADER);
+		//v->setSource(vs->getCode());
+
+		// gs
+		gs->inVar("vec3", "normal");
+		gs->inVar("vec4", "normalAdded");
+		gs->mainCode("gl_Position = gl_in[0].gl_Position;");
+		gs->mainCode("EmitVertex();");
+		gs->mainCode("gl_Position = gs_in[0].normalAdded;");
+		gs->mainCode("EmitVertex();");
+		gs->mainCode("EndPrimitive();");
+		// quite messy path...
+		//Shader* g = new Shader(GL_GEOMETRY_SHADER);
+		//g->loadSource("../../projects/PathosEngine/src/glsl/normal_renderer_geom_shader.txt");
+
+		// fs
+		fs->interfaceBlockName("GS_OUT");
+		fs->outVar("vec4", "color");
+		fs->mainCode("color = vec4(1, 0, 0, 1);");
+		//Shader* f = new Shader(GL_FRAGMENT_SHADER);
+		//f->setSource(fs->getCode());
+
+		//cout << endl << vs->getCode() << endl << endl;
+		//cout << endl << gs->getCode() << endl << endl;
+		//cout << endl << fs->getCode() << endl << endl;
+
+		program = createProgram(shaders);
+		//program = createProgram(std::vector<Shader*>{ v, g, f });
+
+		delete vs;
+		delete gs;
+		delete fs;
+	}
+
+	void NormalRenderer::render(Mesh* mesh, Camera* camera) {
+		glm::mat4 model = mesh->getTransform().getMatrix();
+		glm::mat4 mvp = camera->getViewProjectionMatrix() * model;
+
+		glUseProgram(program);
+		glUniform1f(glGetUniformLocation(program, "normalLength"), normalLength);
+		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, GL_FALSE, &model[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, GL_FALSE, &mvp[0][0]);
+
+		//glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		Geometries geoms = mesh->getGeometries();
+		for (auto i = 0; i < geoms.size(); i++){
+			geoms[i]->activateVertexBuffer(0);
+			geoms[i]->activateNormalBuffer(2);
+			geoms[i]->activateIndexBuffer();
+			geoms[i]->draw();
+			geoms[i]->deactivateVertexBuffer(0);
+			geoms[i]->deactivateNormalBuffer(2);
+			geoms[i]->deactivateIndexBuffer();
+		}
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glEnable(GL_CULL_FACE);
+
+		glUseProgram(0);
 	}
 
 }

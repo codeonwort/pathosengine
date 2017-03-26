@@ -1,24 +1,30 @@
+#include "glm/gtx/transform.hpp"
+#include "pathos/engine.h"
+#include "pathos/render/render.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/envmap.h"
+#include "pathos/camera/camera.h"
+#include "pathos/light/light.h"
+#include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
 #include <iostream>
-
-#include <glm/gtx/transform.hpp>
-#include <pathos/engine.h>
-#include <pathos/render/render.h>
-#include <pathos/mesh/mesh.h>
-#include <pathos/mesh/envmap.h>
-#include <pathos/camera/camera.h>
-#include <pathos/light/light.h>
-#include <pathos/loader/imageloader.h>
-#include <pathos/loader/objloader.h>
 
 using namespace std;
 using namespace pathos;
 
+// camera
 Camera* cam;
-Mesh *cube, *viewer, *shadowLight; // shadow debugger
-Mesh *ball, *lamp; // shadow casters
-Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
-Skybox* sky;
+
+// scene
+Scene scene;
+	Mesh *cube, *viewer, *shadowLight; // shadow debugger
+	Mesh *ball, *lamp; // shadow casters
+	Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
+	Skybox* sky;
+
+// renderer
 MeshDefaultRenderer* renderer;
+NormalRenderer* normRenderer;
 
 void render() {
 	float speedX = 0.05f, speedY = 0.05f;
@@ -32,21 +38,9 @@ void render() {
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
 	renderer->ready();
-	// various models
-	renderer->render(ball, cam);
-	renderer->render(lamp, cam);
-	// shadow debugger
-	renderer->render(viewer, cam);
-	//renderer->render(cube, cam);
-	renderer->render(shadowLight, cam);
-	renderer->render(plane_posX, cam);
-	renderer->render(plane_negX, cam);
-	renderer->render(plane_posY, cam);
-	renderer->render(plane_negY, cam);
-	renderer->render(plane_posZ, cam);
-	renderer->render(plane_negZ, cam);
-	// skybox
-	renderer->render(sky, cam);
+	renderer->render(&scene, cam);
+	
+	normRenderer->render(ball, cam);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -61,8 +55,8 @@ int main(int argc, char** argv) {
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 100.f));
-	cam->move(glm::vec3(-0.2, 0, 3));
+	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 100.f));
+	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
@@ -99,6 +93,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
+	scene.skybox = sky;
 
 	// bump texture for planes
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
@@ -157,7 +152,17 @@ int main(int argc, char** argv) {
 	shadowLight = new Mesh(new SphereGeometry(0.3f, 20), shadowLightColor);
 	shadowLight->getTransform().appendMove(lightPos);
 
+	// scene configuration
+	scene.skybox = sky;
+	scene.add(ball);
+	scene.add(lamp);
+	scene.add(viewer);
+	//scene.add(cube); // bounding box of shadow mapping
+	scene.add(shadowLight);
+	scene.add({ plane_posX, plane_negX, plane_posY, plane_negY, plane_posZ, plane_negZ });
+
 	renderer = new MeshDefaultRenderer();
+	normRenderer = new NormalRenderer(0.2);
 
 	// start the main loop
 	Engine::start();

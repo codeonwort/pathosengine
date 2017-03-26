@@ -1,14 +1,14 @@
 #pragma once
 
-#include <vector>
 #include <GL/glew.h>
-#include <pathos/core.h>
-#include <pathos/camera/camera.h>
-#include <pathos/render/shader.h>
-#include <pathos/mesh/geometry.h>
-#include <pathos/mesh/shadow.h>
-#include <pathos/light/light.h>
+#include "pathos/core.h"
+#include "pathos/camera/camera.h"
+#include "pathos/render/shader.h"
+#include "pathos/mesh/geometry.h"
+#include "pathos/mesh/shadow.h"
+#include "pathos/light/light.h"
 //#include <BossEngine/Render/ReflectionMethod.h>
+#include <vector>
 
 /* CAUTION
 - a MaterialPass must be added by addPass(), not directly calling push_back() to std::vector<MaterialPass*> passes
@@ -32,7 +32,7 @@ namespace pathos {
 
 	/**
 	* One material can be shared among multiple meshes.<br/>
-	* But be aware of that if you apply something like lighting to a material through a mesh
+	* But be aware of that if you apply something like lighting to a material through a mesh,
 	* then every meshes sharing the material will be affected by it!<br/>
 	* For example, if mesh M1, M2, M3 share a material X, then don't add a light to the X through M1, M2, M3. X will be lit 3 times.
 	*/
@@ -163,12 +163,12 @@ namespace pathos {
 
 	class MeshMaterialPass {
 	protected:
-		GLuint program;
-		MeshGeometry* geometry;
-		MeshMaterial* material;
+		GLuint program;					// shader program name for this material pass
+		MeshGeometry* geometry;			// points that of the mesh which is rendered now
+		MeshMaterial* material;			// points that of the mesh which is rendered now
 		glm::mat4 modelMatrix;
-		VertexShaderCompiler vsCompiler;
-		FragmentShaderCompiler fsCompiler;
+		VertexShaderSource vsCompiler;
+		FragmentShaderSource fsCompiler;
 		void createProgram(std::string &vsCode, std::string &fsCode);
 	protected:
 		void uploadDirectionalLightUniform();
@@ -179,8 +179,10 @@ namespace pathos {
 		void setMaterial(MeshMaterial*);
 		void setGeometry(MeshGeometry* geom);
 		void setModelMatrix(const glm::mat4& modelMatrix);
+
 		void clearCompilers();
 		virtual void updateProgram(MeshMaterial*) = 0;
+
 		virtual void activate() = 0;
 		virtual void renderMaterial() = 0;
 		virtual void deactivate() = 0;
@@ -197,10 +199,10 @@ namespace pathos {
 		void setSpecular(GLfloat, GLfloat, GLfloat);
 		void setAlpha(GLfloat);
 		void setBlendFactor(GLuint, GLuint);
-		virtual void updateProgram(MeshMaterial*);
-		virtual void activate();
-		virtual void renderMaterial();
-		virtual void deactivate();
+		virtual void updateProgram(MeshMaterial*) override;
+		virtual void activate() override;
+		virtual void renderMaterial() override;
+		virtual void deactivate() override;
 	};
 
 	class TextureMaterialPass : public MeshMaterialPass {

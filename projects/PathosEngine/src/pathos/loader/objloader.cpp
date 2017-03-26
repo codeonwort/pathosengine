@@ -24,6 +24,41 @@ namespace pathos {
 	/**
 	* load a .obj file
 	*/
+	void calculateNormal(const tinyobj::attrib_t& attrib, const vector<GLuint>& indices, vector<GLfloat>& normals) {
+		int numPos = attrib.vertices.size() / 3;
+		glm::vec3* accum = new glm::vec3[numPos];
+		unsigned int* counts = new unsigned int[numPos];
+		for (int i = 0; i < numPos; i++){
+			accum[i] = glm::vec3(0.0f);
+			counts[i] = 0;
+		}
+		const auto& P = attrib.vertices;
+		for (auto i = 0; i < indices.size(); i += 3){
+			auto i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
+			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
+			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
+			if (a == b) continue;
+			//auto norm = glm::normalize(glm::cross(a, b));
+			auto norm = glm::cross(a, b);
+
+			accum[i0] *= counts[i0]; accum[i1] *= counts[i1]; accum[i2] *= counts[i2];
+			accum[i0] += norm; accum[i1] += norm; accum[i2] += norm;
+			counts[i0] ++; counts[i1] ++; counts[i2] ++;
+			accum[i0] /= counts[i0]; accum[i1] /= counts[i1]; accum[i2] /= counts[i2];
+		}
+		for (auto i = 0; i < numPos; i++){
+			accum[i] = glm::normalize(accum[i]);
+			//std::cerr << accum[i].x << ' ' << accum[i].y << ' ' << accum[i].z << endl;
+		}
+		for (auto i = 0; i < indices.size(); i++){
+			normals.push_back(accum[indices[i]].x);
+			normals.push_back(accum[indices[i]].y);
+			normals.push_back(accum[indices[i]].z);
+		}
+		delete accum;
+		delete counts;
+	}
 	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) :t_shapes(), t_materials(), geometries(), materialIndices(), materials() {
 		//string err = tinyobj::LoadObj(t_shapes, t_materials, objFile, mtlDir);
 		string err;
@@ -38,6 +73,7 @@ namespace pathos {
 		cout << "  number of materials: " << t_materials.size() << endl;
 		
 		// gather materials
+		// currently, plain texture or color materials are supported
 		map<string, GLuint> textureDict;
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t &t_mat = t_materials[i];
@@ -97,6 +133,7 @@ namespace pathos {
 			int numMaterialIDs = materialIDs.size();
 
 			map<int, vector<GLfloat>> positionMap, normalMap, texcoordMap;
+			map<int, vector<GLuint>> indexMap;
 
 			cout << "-> num materials: " << numMaterialIDs << endl;
 
@@ -114,20 +151,21 @@ namespace pathos {
 					positionMap[faceMatID].push_back(vx);
 					positionMap[faceMatID].push_back(vy);
 					positionMap[faceMatID].push_back(vz);
-					if (idx.normal_index >= 0){
+					/*if (idx.normal_index >= 0){
 						float nx = attrib.normals[3 * idx.normal_index + 0];
 						float ny = attrib.normals[3 * idx.normal_index + 1];
 						float nz = attrib.normals[3 * idx.normal_index + 2];
 						normalMap[faceMatID].push_back(nx);
 						normalMap[faceMatID].push_back(ny);
 						normalMap[faceMatID].push_back(nz);
-					}
+					}*/
 					if (idx.texcoord_index >= 0){
 						float u = attrib.texcoords[2 * idx.texcoord_index + 0];
 						float v = attrib.texcoords[2 * idx.texcoord_index + 1];
 						texcoordMap[faceMatID].push_back(u);
 						texcoordMap[faceMatID].push_back(v);
 					}
+					indexMap[faceMatID].push_back(idx.vertex_index);
 				}
 				index_offset += fv;
 			}
@@ -140,11 +178,14 @@ namespace pathos {
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(true);
 				geom->updateVertexData(&positionMap[i][0], positionMap[i].size());
-				if(normalMap[i].size() > 0) geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
-				else{
-					std::cout << "-> normal data not found. auto calculating..." << endl;
-					geom->calculateNormals();
-				}
+				geom->updateIndexData(&indexMap[i][0], indexMap[i].size());
+				//if(normalMap[i].size() > 0) geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
+				//else{
+					calculateNormal(attrib, indexMap[i], normalMap[i]);
+					std::cout << "-> auto calculating normals..." << endl;
+					//geom->calculateNormals();
+					geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
+				//}
 				if(texcoordMap[i].size() > 0) geom->updateUVData(&texcoordMap[i][0], texcoordMap[i].size());
 				geometries.push_back(geom);
 				materialIndices.push_back(i);

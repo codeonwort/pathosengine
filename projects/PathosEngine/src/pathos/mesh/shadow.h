@@ -24,7 +24,7 @@ namespace pathos {
 		virtual void activate(GLuint materialPassProgram) = 0;
 		virtual void renderDepth() = 0;
 		virtual void deactivate() = 0;
-		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&) = 0;
+		virtual void addShaderCode(VertexShaderSource&, FragmentShaderSource&) = 0;
 	};
 
 	// shadow mapping (by directional light)
@@ -49,7 +49,7 @@ namespace pathos {
 		virtual void activate(GLuint materialPassProgram);
 		virtual void renderDepth();
 		virtual void deactivate();
-		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&);
+		virtual void addShaderCode(VertexShaderSource&, FragmentShaderSource&);
 
 		inline GLuint getDebugTexture() { return debugTexture; }
 	};
@@ -69,7 +69,7 @@ namespace pathos {
 		virtual void activate(GLuint materialPassProgram);
 		virtual void renderDepth();
 		virtual void deactivate();
-		virtual void addShaderCode(VertexShaderCompiler&, FragmentShaderCompiler&);
+		virtual void addShaderCode(VertexShaderSource&, FragmentShaderSource&);
 
 		inline GLuint getDebugTexture() { return debugTexture; }
 	};

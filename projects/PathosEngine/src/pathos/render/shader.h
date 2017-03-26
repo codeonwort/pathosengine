@@ -1,21 +1,50 @@
 #pragma once
 
+// OpenGL
 #include <GL/glew.h>
+
+// STL
 #include <string>
 #include <vector>
 using namespace std;
 
 namespace pathos {
 
-	class ShaderCompiler;
+	// Forward declaration
+	class ShaderSource;
+	class Shader;
 
-	void compileShader(GLuint shaderID, std::string &code);
+	// Utilities
 	GLuint createProgram(std::string& vsCode, std::string& fsCode);
-	GLuint createProgram(std::vector<ShaderCompiler*>& shaders);
+	GLuint createProgram(std::vector<ShaderSource*>& sources);
+	GLuint createProgram(std::vector<Shader*>& shaders);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	class ShaderCompiler {
+	class Shader {
+	public:
+		Shader(GLenum type);
+		virtual ~Shader();
+
+		void setSource(const char* source);
+		inline void setSource(std::string& source);
+		bool loadSource(const char* filepath);
+		inline bool loadSource(std::string& filepath);
+		bool compile();
+
+		const GLuint getName() { return name; }
+		const char* getErrorLog() { return errorLog.c_str(); }
+
+	protected:
+		GLuint name;
+		GLenum type;
+		std::string source;
+		std::string errorLog;
+	};
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	class ShaderSource {
 	protected:
 		GLuint shaderType; // set default value in child's constructor
 	public:
@@ -24,7 +53,7 @@ namespace pathos {
 	};
 
 	/**
-	 * Auto-generated variables and uniforms:
+	 * Auto-generated variables and uniforms for vertex shaders:
 	 * vs_out {
 	 *   vec3 position;		// if usePosition = true
 	 *   vec3 normal;		// if useNormal = true
@@ -33,7 +62,7 @@ namespace pathos {
 	 * mat4 modelTransform;
 	 * mat4 mvpTransform;
 	 */
-	class VertexShaderCompiler : public ShaderCompiler {
+	class VertexShaderSource : public ShaderSource {
 	private:
 		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;
 		bool usePosition, useUV, useNormal, useTangent, useBitangent;
@@ -43,7 +72,7 @@ namespace pathos {
 		vector<pair<string, string>> outVars;
 		string maincode;
 	public:
-		VertexShaderCompiler();
+		VertexShaderSource();
 		virtual string getCode();
 		void clear();
 		void setUseUV(bool);
@@ -61,16 +90,17 @@ namespace pathos {
 		void uniformMat4(const string& name);
 	};
 
-	class FragmentShaderCompiler : public ShaderCompiler {
+	class FragmentShaderSource : public ShaderSource {
 	private:
 		vector<pair<string, string>> uniforms;
 		vector<pair<string, string>> inVars;
 		vector<pair<string, string>> outVars;
 		unsigned int numDirLights, numPointLights;
+		string interfaceBlock;
 		string maincode;
 		//vector<string> texSamplers;
 	public:
-		FragmentShaderCompiler();
+		FragmentShaderSource();
 		virtual string getCode();
 		void clear();
 		void inVar(const string& type, const string &name);
@@ -80,26 +110,39 @@ namespace pathos {
 		void textureSamplerCube(const string& samplerName);
 		void textureSamplerShadow(const string& samplerName);
 		void textureSamplerCubeShadow(const string& samplerName);
+		void interfaceBlockName(const string& name);
 		void mainCode(const string& code);
 		void directionalLights(unsigned int num);
 		void pointLights(unsigned int num);
 	};
 
-	class TessellationControlShaderCompiler : public ShaderCompiler {
+	class TessellationControlShaderSource : public ShaderSource {
 	public:
-		TessellationControlShaderCompiler();
+		TessellationControlShaderSource();
 		virtual string getCode();
 	};
 
-	class TessellationEvaluationShaderCompiler : public ShaderCompiler {
+	class TessellationEvaluationShaderSource : public ShaderSource {
 	public:
-		TessellationEvaluationShaderCompiler();
+		TessellationEvaluationShaderSource();
 		virtual string getCode();
 	};
 
-	class GeometryShaderCompiler : public ShaderCompiler {
+	class GeometryShaderSource : public ShaderSource {
+	private:
+		vector<pair<string, string>> uniforms;
+		vector<pair<string, string>> inVars;
+		vector<pair<string, string>> outVars;
+		string inPrimitive, outPrimitive;
+		unsigned int maxVertices;
+		string maincode;
 	public:
-		GeometryShaderCompiler();
+		GeometryShaderSource();
+		GeometryShaderSource(string, string, unsigned int);
+		void inVar(const string& type, const string &name);
+		void outVar(const string& type, const string &name);
+		void uniform(const string& type, const string& name);
+		void mainCode(const string& code);
 		virtual string getCode();
 	};
 
