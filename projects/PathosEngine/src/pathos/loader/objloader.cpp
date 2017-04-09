@@ -1,15 +1,15 @@
-#include <pathos/loader/objloader.h>
-#include <pathos/loader/imageloader.h>
+#include "pathos/loader/objloader.h"
+#include "pathos/loader/imageloader.h"
+
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 #include <string>
 #include <iostream>
 #include <memory>
 #include <set>
 #include <map>
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 //#define TINYOBJLOADER_IMPLEMENTATION
 //#include "tiny_obj_loader.h"
@@ -59,8 +59,8 @@ namespace pathos {
 		delete accum;
 		delete counts;
 	}
+
 	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) :t_shapes(), t_materials(), geometries(), materialIndices(), materials() {
-		//string err = tinyobj::LoadObj(t_shapes, t_materials, objFile, mtlDir);
 		string err;
 		tinyobj::attrib_t attrib;
 		bool ret = tinyobj::LoadObj(&attrib, &t_shapes, &t_materials, &err, objFile, mtlDir);
@@ -73,12 +73,12 @@ namespace pathos {
 		cout << "  number of materials: " << t_materials.size() << endl;
 		
 		// gather materials
-		// currently, plain texture or color materials are supported
 		map<string, GLuint> textureDict;
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t &t_mat = t_materials[i];
-			shared_ptr<MeshMaterial> mat = make_shared<MeshMaterial>();
-			mat->setName(t_mat.name);
+			MeshMaterial* mat = nullptr;
+			
+			// currently, only plain texture or color materials are supported
 			if (t_mat.diffuse_texname.length() != 0) {
 				string tex_path = mtlDir + t_mat.diffuse_texname;
 				GLuint texID;
@@ -87,34 +87,36 @@ namespace pathos {
 				if (it != textureDict.end()) {
 					texID = it->second;
 					cout << "texture for " << t_mat.diffuse_texname << " already exists. reuse it" << endl;
-				}
-				else {
+				} else {
 					texID = loadTexture(loadImage(tex_path.c_str()));
 					cout << "texture for " << t_mat.diffuse_texname << " does not exists. make one" << endl;
 					textureDict.insert(pair<std::string, GLuint>(tex_path, texID));
 				}
-				mat->addPass(new TextureMaterialPass(texID));
 				if (t_mat.bump_texname.length() != 0){
+					// TODO: support bump mapping
 					cout << "!!!! BUMP TEXTURE HERE: " << t_mat.bump_texname << endl;
 				}
+				TextureMaterial* flatTexture = new TextureMaterial(texID);
+				mat = flatTexture;
+			} else {
+				ColorMaterial* solidColor = new ColorMaterial;
+				solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
+				solidColor->setDiffuse(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
+				solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
+				solidColor->setAlpha(1.0f);
+				mat = solidColor;
 			}
-			else {
-				ColorMaterialPass *pass = new ColorMaterialPass(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2], 1.0f);
-				pass->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
-				pass->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
-				mat->addPass(pass);
-			}
-			materials.push_back(move(mat));
+
+			mat->setName(t_mat.name);
+			materials.push_back(mat);
 		}
 
 		// if there is no material, create a random color material
 		if (materials.size() == 0){
-			shared_ptr<MeshMaterial> mat = make_shared<MeshMaterial>();
-			ColorMaterialPass *pass = new ColorMaterialPass(0.5, 0.5, 0.5, 1.0f);
-			pass->setAmbient(0, 0, 0);
-			pass->setSpecular(1, 1, 1);
+			ColorMaterial *defaultMaterial = new ColorMaterial;
+			defaultMaterial->setDiffuse(0.5f, 0.5f, 0.5f);
 			//WireframeMaterialPass *pass = new WireframeMaterialPass(1, 1, 1, 1);
-			mat->addPass(pass);
+			MeshMaterial* mat = defaultMaterial;
 			materials.push_back(move(mat));
 		}
 		

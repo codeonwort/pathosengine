@@ -7,7 +7,7 @@ namespace pathos {
 	* each geometry is regarded as uniquely belongs to only one mesh.<br/>
 	* each material can be shared among multiple meshes.
 	*/
-	Mesh::Mesh(MeshGeometry* geom, shared_ptr<MeshMaterial> mat) {
+	Mesh::Mesh(MeshGeometry* geom, MeshMaterial* mat) {
 		doubleSided = false;
 		castShadow = true;
 		if (geom != nullptr || mat != nullptr){
@@ -24,7 +24,7 @@ namespace pathos {
 		for (auto geom : geometries) if(geom != nullptr) delete geom;
 	}
 
-	void Mesh::add(MeshGeometry* G, shared_ptr<MeshMaterial> M) {
+	void Mesh::add(MeshGeometry* G, MeshMaterial* M) {
 		geometries.push_back(G);
 		materials.push_back(M);
 	}

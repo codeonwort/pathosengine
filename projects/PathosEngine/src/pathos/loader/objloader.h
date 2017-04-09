@@ -15,11 +15,11 @@ namespace pathos {
 		vector<tinyobj::material_t> t_materials;
 		vector<MeshGeometry*> geometries;
 		vector<int> materialIndices; // material index for each geometry
-		vector<shared_ptr<MeshMaterial>> materials;
+		vector<MeshMaterial*> materials;
 	public:
 		OBJLoader(const char* objFile, const char* mtlDir);
 		Mesh* craftMesh(size_t start, size_t end, string name);
-		const vector<shared_ptr<MeshMaterial>>& getMaterials() { return materials; }
+		const vector<MeshMaterial*>& getMaterials() { return materials; }
 		const vector<MeshGeometry*>& getGeometries() { return geometries; }
 		inline size_t numGeometries() { return geometries.size(); }
 	};

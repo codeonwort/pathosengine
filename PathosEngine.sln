@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_OmniLight", "projects\Test_OmniLight\Test_OmniLight.vcxproj", "{C166C27E-D5B5-4346-B8CA-D7739B7DD4EE}"
 EndProject
@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_EnvMapping", "projects
 	ProjectSection(ProjectDependencies) = postProject
 		{F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E} = {F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ForwardRendererRefactoring", "projects\Test_ForwardRendererRefactoring\Test_ForwardRendererRefactoring.vcxproj", "{B87A743B-1B64-4350-AE12-98BDB9EDD379}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +52,14 @@ Global
 		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|Win32.ActiveCfg = Release|Win32
 		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|Win32.Build.0 = Release|Win32
 		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|x64.ActiveCfg = Release|Win32
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|Win32.Build.0 = Debug|Win32
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|x64.ActiveCfg = Debug|x64
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|x64.Build.0 = Debug|x64
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Release|Win32.ActiveCfg = Release|Win32
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Release|Win32.Build.0 = Release|Win32
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Release|x64.ActiveCfg = Release|x64
+		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

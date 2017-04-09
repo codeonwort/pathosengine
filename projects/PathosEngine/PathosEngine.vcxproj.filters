@@ -69,9 +69,6 @@
     <ClCompile Include="src\pathos\mesh\geometry.cpp">
       <Filter>소스 파일\pathos\mesh</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\material.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\mesh\mesh.cpp">
       <Filter>소스 파일\pathos\mesh</Filter>
     </ClCompile>
@@ -84,20 +81,11 @@
     <ClCompile Include="src\pathos\camera\camera.cpp">
       <Filter>소스 파일\pathos\camera</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\envmap.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\loader\imageloader.cpp">
       <Filter>소스 파일\pathos\loader</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\objloader.cpp">
       <Filter>소스 파일\pathos\loader</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\mesh\shadow.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\render\render.cpp">
-      <Filter>소스 파일\pathos\render</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\shader.cpp">
       <Filter>소스 파일\pathos\render</Filter>
@@ -108,12 +96,54 @@
     <ClCompile Include="src\pathos\render\scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\material\material.cpp">
+      <Filter>소스 파일\pathos\mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\render_forward.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_solidcolor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\envmap.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\light\shadow.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_shadowtexture.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\render_norm.cpp">
+      <Filter>소스 파일\pathos\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_cubeenv.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\light\shadow_omni.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\forward\renderpass_shadowcubemap.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\mesh\material.h">
       <Filter>헤더 파일\pathos\mesh</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\mesh.h">
@@ -140,20 +170,11 @@
     <ClInclude Include="src\pathos\loader\objloader.h">
       <Filter>헤더 파일\pathos\loader</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\envmap.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\mesh\shadow.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\mesh\render.h">
       <Filter>헤더 파일\pathos\render</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\shader.h">
       <Filter>헤더 파일\pathos\render</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\render.h">
-      <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\shader.h">
       <Filter>헤더 파일</Filter>
@@ -165,6 +186,54 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\render_forward.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\material\material.h">
+      <Filter>헤더 파일\pathos\mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\material\material_id.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_base.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_solidcolor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\geometry_primitive.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\envmap.h">
+      <Filter>헤더 파일\pathos\mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_texture.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_wireframe.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\shadow.h">
+      <Filter>헤더 파일\pathos\mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\render_norm.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_cubeenv.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_bumptexture.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\shadow_omni.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

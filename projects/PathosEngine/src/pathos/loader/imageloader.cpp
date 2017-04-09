@@ -1,5 +1,7 @@
-#include <pathos/loader/imageloader.h>
+#include "pathos/loader/imageloader.h"
 #include <iostream>
+#include <algorithm>
+using std::max;
 
 namespace pathos {
 
@@ -36,20 +38,22 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_2D, tex_id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+		unsigned int numMipmaps = floor(log2(max(w, h))) + 1;
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
-			glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, w, h);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0,w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		}else if (bpp == 24) {
-			glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0,w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		}else {
-			std::cerr << "loadTexture(): An image with unexpected BPP " << bpp << std::endl;
+#ifdef _DEBUG
+			std::cerr << "pathos::loadTexture(): An image with unexpected BPP " << bpp << std::endl;
+#endif
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glDeleteTextures(1, &tex_id);
 			return 0;
 		}
-		//gluBuild2DMipmaps(GL_TEXTURE_2D, 3, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		return tex_id;
@@ -72,16 +76,6 @@ namespace pathos {
 			return 0;
 		}
 
-		unsigned int bpp = FreeImage_GetBPP(dib[0]);
-		if (bpp == 32){
-			glTexStorage2D(GL_TEXTURE_CUBE_MAP, 0, GL_RGBA, w, h);
-		}else if (bpp == 24){
-			glTexStorage2D(GL_TEXTURE_CUBE_MAP, 0, GL_RGB, w, h);
-		}else {
-			std::cerr << "loadCubemapTexture(): An image with unexpected BPP " << bpp << std::endl;
-			return 0;
-		}
-
 		GLuint tex_id;
 		glGenTextures(1, &tex_id);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, tex_id);
@@ -90,14 +84,22 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+		unsigned int bpp = FreeImage_GetBPP(dib[0]);
+		if (bpp == 32 || bpp == 24) {
+			glTexStorage2D(GL_TEXTURE_CUBE_MAP, 1, GL_RGBA32F, w, h);
+		} else {
+			std::cerr << "loadCubemapTexture(): An image with unexpected BPP " << bpp << std::endl;
+			return 0;
+		}
+
 		int mapping[6] = { 0, 1, 3, 2, 4, 5 };
 		//int mapping[6] = { 0, 1, 2, 3, 4, 5 };
 		for (int i = 0; i < 6; i++){
 			unsigned char* data = FreeImage_GetBits(dib[i]);
 			if (bpp == 32) {
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, 0,0,w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 			}else if (bpp == 24) {
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, 0,0,w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
 			}
 		}
 		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);

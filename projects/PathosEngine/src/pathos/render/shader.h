@@ -21,6 +21,21 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
+	struct ShaderVariable {
+
+		string type;
+		string name;
+		unsigned int arrayLength;
+
+		ShaderVariable(const string& type, const string& name, unsigned int length);
+
+		inline string getDecl() {
+			if (arrayLength == 0) return (type + " " + name);
+			return (type + " " + name + "[" + to_string(arrayLength) + "]");
+		}
+
+	};
+
 	class Shader {
 	public:
 		Shader(GLenum type);
@@ -47,6 +62,7 @@ namespace pathos {
 	class ShaderSource {
 	protected:
 		GLuint shaderType; // set default value in child's constructor
+
 	public:
 		virtual string getCode() = 0;
 		GLuint getShaderType() { return shaderType; }
@@ -68,8 +84,8 @@ namespace pathos {
 		bool usePosition, useUV, useNormal, useTangent, useBitangent;
 		bool transferPosition = false;
 		bool useVarying();
-		vector<pair<string, string>> uniforms;
-		vector<pair<string, string>> outVars;
+		vector<ShaderVariable> uniforms;
+		vector<ShaderVariable> outVars;
 		string maincode;
 	public:
 		VertexShaderSource();
@@ -84,21 +100,28 @@ namespace pathos {
 		void setUVLocation(GLuint);
 		void setNormalLocation(GLuint);
 
+		inline GLuint getPositionLocation() { return positionLocation; }
+		inline GLuint getNormalLocation() { return normalLocation; }
+		inline GLuint getUVLocation() { return uvLocation; }
+		inline GLuint getTangentLocation() { return tangentLocation; }
+		inline GLuint getBitangentLocation() { return bitangentLocation; }
+
 		void mainCode(const string& code);
 		void outVar(const string& type, const string &name);
+		void outVar(const string& type, const string &name, unsigned int length);
 		void uniform(const string& type, const string& name);
+		void uniform(const string& type, const string& name, unsigned int length);
 		void uniformMat4(const string& name);
 	};
 
 	class FragmentShaderSource : public ShaderSource {
 	private:
-		vector<pair<string, string>> uniforms;
-		vector<pair<string, string>> inVars;
-		vector<pair<string, string>> outVars;
+		vector<ShaderVariable> uniforms;
+		vector<ShaderVariable> inVars;
+		vector<ShaderVariable> outVars;
 		unsigned int numDirLights, numPointLights;
 		string interfaceBlock;
 		string maincode;
-		//vector<string> texSamplers;
 	public:
 		FragmentShaderSource();
 		virtual string getCode();
@@ -106,6 +129,8 @@ namespace pathos {
 		void inVar(const string& type, const string &name);
 		void outVar(const string& type, const string &name);
 		void uniform(const string& type, const string& name);
+		void inVar(const string& type, const string &name, unsigned int length);
+		void uniform(const string& type, const string& name, unsigned int length);
 		void textureSampler(const string& samplerName);
 		void textureSamplerCube(const string& samplerName);
 		void textureSamplerShadow(const string& samplerName);

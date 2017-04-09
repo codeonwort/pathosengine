@@ -1,15 +1,13 @@
 #pragma once
 
-#include <string>
-#include <map>
-
-#include <pathos/mesh/mesh.h>
+#include "pathos/mesh/mesh.h"
 
 #include <GL/glew.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-using namespace pathos;
+#include <string>
+#include <map>
 
 namespace pathos {
 

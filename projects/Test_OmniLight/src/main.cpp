@@ -1,12 +1,15 @@
-#include "glm/gtx/transform.hpp"
 #include "pathos/engine.h"
-#include "pathos/render/render.h"
+#include "pathos/render/render_forward.h"
+#include "pathos/render/render_norm.h"
+#include "pathos/render/envmap.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/mesh/envmap.h"
+#include "pathos/mesh/geometry_primitive.h"
 #include "pathos/camera/camera.h"
 #include "pathos/light/light.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
+
+#include "glm/gtx/transform.hpp"
 #include <iostream>
 
 using namespace std;
@@ -23,8 +26,10 @@ Scene scene;
 	Skybox* sky;
 
 // renderer
-MeshDefaultRenderer* renderer;
+MeshForwardRenderer* renderer;
 NormalRenderer* normRenderer;
+
+void setupScene();
 
 void render() {
 	float speedX = 0.05f, speedY = 0.05f;
@@ -37,9 +42,7 @@ void render() {
 	cam->rotateX(rotX);
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
 
-	renderer->ready();
 	renderer->render(&scene, cam);
-	
 	normRenderer->render(ball, cam);
 }
 
@@ -58,12 +61,28 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 100.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
+	renderer = new MeshForwardRenderer;
+	normRenderer = new NormalRenderer(0.2);
+
+	setupScene();
+
+	// start the main loop
+	Engine::start();
+
+	return 0;
+}
+
+void setupScene() {
 	// light and shadow
 	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
 	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
-	auto plight2 = new PointLight(glm::vec3(13, 10, 5), glm::vec3(1, 0, 0));
-	auto plight3 = new PointLight(glm::vec3(20, -10, 13), glm::vec3(0, 1, 0));
-	auto shadow = new OmnidirectionalShadow(plight, cam);
+	auto plight2 = new PointLight(glm::vec3(-3, 5, 2), glm::vec3(1, 0, 0));
+	auto plight3 = new PointLight(glm::vec3(2, -2, 0), glm::vec3(0, 1, 0));
+
+	scene.add(light);
+	scene.add(plight);
+	//scene.add(plight2);
+	//scene.add(plight3);
 
 	// collada loader test
 	/*ColladaLoader collada("../resources/birdcage2.dae");
@@ -78,11 +97,6 @@ int main(int argc, char** argv) {
 	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
 	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
 	lamp->getTransform().appendScale(4, 4, 4);
-	for (int i = 0; i < obj2.getMaterials().size(); i++){
-		obj2.getMaterials()[i]->addLight(plight);
-		obj2.getMaterials()[i]->addLight(plight2);
-		obj2.getMaterials()[i]->setShadowMethod(shadow);
-	}
 	lamp->setDoubleSided(true);
 
 	// cubemap
@@ -98,12 +112,11 @@ int main(int argc, char** argv) {
 	// bump texture for planes
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
-	auto mat = make_shared<BumpTextureMaterial>(tex, tex_norm, plight);
-	mat->setShadowMethod(shadow);
-	
+	auto mat = new BumpTextureMaterial(tex, tex_norm);
+
 	auto planeGeom = new PlaneGeometry(30, 30);
 	planeGeom->calculateTangentBasis();
-	
+
 	plane_posX = new Mesh(planeGeom, mat);
 	plane_posX->getTransform().appendMove(15, 0, 0);
 	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
@@ -128,27 +141,27 @@ int main(int argc, char** argv) {
 	plane_negZ->getTransform().appendMove(0, 0, -15);
 
 	// color material for ball
-	auto color = make_shared<ColorMaterial>(1.0, 1.0, 1.0, 1);
-	color->setSpecularColor(1, 1, 1);
-	color->addLight(plight);
-	color->addLight(plight2);
-	color->addLight(plight3);
-	color->setShadowMethod(shadow);
+	auto color = new ColorMaterial;
 
 	ball = new Mesh(new SphereGeometry(2, 40), color);
 	ball->getTransform().appendMove(7, 4, 0);
 
-	viewer = new Mesh(new PlaneGeometry(3, 3), make_shared<ShadowCubeTextureMaterial>(shadow->getDebugTexture(), 0));
-	viewer->getTransform().appendMove(10, 0, 0);
+	// omni shadow debugger
+	auto omni = renderer->getOmnidirectionalShadow();
+	unsigned int face = 0;
+	viewer = new Mesh(new PlaneGeometry(10, 10), new ShadowCubeTextureMaterial(omni->getDebugTexture(0), face, omni->getLightNearZ(), omni->getLightFarZ()));
+	viewer->getTransform().appendMove(10, 0, 10);
+	viewer->setDoubleSided(true);
 
-	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), make_shared<WireframeMaterial>(1, 1, 1));
+	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), new WireframeMaterial(1, 1, 1));
 	GLfloat* lightDir = light->getDirection();
 	//glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
 	glm::vec3 lightPos = plight->getPositionVector();
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
 
-	auto shadowLightColor = make_shared<ColorMaterial>(0, 0, 0, 1);
-	shadowLightColor->setAmbientColor(1, 1, 0);
+	auto shadowLightColor = new ColorMaterial;
+	shadowLightColor->setAmbient(1, 1, 0);
+	shadowLightColor->setDiffuse(0, 0, 0);
 	shadowLight = new Mesh(new SphereGeometry(0.3f, 20), shadowLightColor);
 	shadowLight->getTransform().appendMove(lightPos);
 
@@ -160,12 +173,4 @@ int main(int argc, char** argv) {
 	//scene.add(cube); // bounding box of shadow mapping
 	scene.add(shadowLight);
 	scene.add({ plane_posX, plane_negX, plane_posY, plane_negY, plane_posZ, plane_negZ });
-
-	renderer = new MeshDefaultRenderer();
-	normRenderer = new NormalRenderer(0.2);
-
-	// start the main loop
-	Engine::start();
-
-	return 0;
 }
