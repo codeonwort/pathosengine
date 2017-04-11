@@ -1,8 +1,8 @@
+#include "pathos/engine.h"
+#include "FreeImage.h"
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <FreeImage.h>
-
-#include "pathos/engine.h"
 
 #include <iostream>
 

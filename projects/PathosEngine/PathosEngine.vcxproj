@@ -178,6 +178,9 @@
     <ClCompile Include="src\pathos\material\material.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp" />
     <ClCompile Include="src\pathos\mesh\mesh.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
     <ClCompile Include="src\pathos\render\envmap.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
@@ -187,6 +190,7 @@
     <ClCompile Include="src\pathos\render\forward\renderpass_solidcolor.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp" />
+    <ClCompile Include="src\pathos\render\render_deferred.cpp" />
     <ClCompile Include="src\pathos\render\render_norm.cpp" />
     <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
@@ -202,6 +206,10 @@
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
     <ClInclude Include="src\pathos\render\envmap.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
     <ClInclude Include="src\pathos\material\material.h" />
@@ -220,6 +228,7 @@
     <ClInclude Include="src\pathos\render\forward\renderpass_solidcolor.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_texture.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_wireframe.h" />
+    <ClInclude Include="src\pathos\render\render_deferred.h" />
     <ClInclude Include="src\pathos\render\render_norm.h" />
     <ClInclude Include="src\pathos\render\render_forward.h" />
     <ClInclude Include="src\pathos\render\scene.h" />

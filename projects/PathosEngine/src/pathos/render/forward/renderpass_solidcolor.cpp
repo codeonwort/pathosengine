@@ -3,9 +3,9 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-#define DEBUG_SOLID_COLOR
+#define DEBUG_DEFERRED_SOLID_COLOR
 
-#if defined(_DEBUG) && defined(DEBUG_SOLID_COLOR)
+#if defined(_DEBUG) && defined(DEBUG_DEFERRED_SOLID_COLOR)
 #include <iostream>
 #endif
 
@@ -92,7 +92,7 @@ namespace pathos {
 		fsSource.mainCode("outColor.rgb = rim + ambientColor + diffuseTerm + specularTerm;");
 		fsSource.mainCode("outColor.a = materialAlpha;");
 
-#if defined(_DEBUG) && defined(DEBUG_SOLID_COLOR)
+#if defined(_DEBUG) && defined(DEBUG_DEFERRED_SOLID_COLOR)
 		std::cout << "=== SolidColorPass ===" << std::endl;
 		std::cout << "[Vertex Shader]" << std::endl;
 		std::cout << vsSource.getCode() << std::endl << std::endl;

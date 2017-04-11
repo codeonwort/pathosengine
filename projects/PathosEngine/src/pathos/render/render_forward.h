@@ -1,6 +1,5 @@
 #pragma once
 
-// TODO: Refactor MeshDefaultRenderer.
 // Render passes (shader programs) shall be maintained here by renderer, not material.
 
 #include "envmap.h"
@@ -15,6 +14,7 @@ namespace pathos {
 	class MeshForwardRenderer {
 
 	public:
+		// maximum number of lights this renderer can handle
 		static constexpr unsigned int MAX_DIRECTIONAL_LIGHTS = 2;
 		static constexpr unsigned int MAX_POINT_LIGHTS = 4;
 

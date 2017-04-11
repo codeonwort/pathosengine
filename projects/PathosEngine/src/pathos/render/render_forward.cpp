@@ -113,10 +113,6 @@ namespace pathos {
 	}
 
 	void MeshForwardRenderer::render(Mesh* mesh) {
-		glm::mat4 modelTransform = mesh->getTransform().getMatrix();
-		glm::mat4 vpTransform = camera->getViewProjectionMatrix();
-		glm::vec3 eye = camera->getEyeVector();
-
 		Geometries geoms = mesh->getGeometries();
 		Materials materials = mesh->getMaterials();
 		size_t len = geoms.size();
