@@ -133,7 +133,7 @@ void setupScene() {
 	sky = new Skybox(cubeTexture);
 
 	// model 1: solid color
-	model = new Mesh(geom_sphere_big, material_color);
+	model = new Mesh(geom_sphere_big, material_texture);
 	model->getTransform().appendMove(-40, 0, 0);
 
 	// model 2: flat texture

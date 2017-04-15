@@ -19,6 +19,7 @@ namespace pathos {
 
 	void DeferredRenderer::createShaders() {
 		pack_colorPass = new MeshDeferredRenderPass_Pack_SolidColor;
+		pack_texture = new MeshDeferredRenderPass_Pack_FlatTexture;
 		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1]);
 
 		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
@@ -43,6 +44,7 @@ namespace pathos {
 	void DeferredRenderer::destroyShaders() {
 #define release(x) if(x) delete x
 		release(pack_colorPass);
+		release(pack_texture);
 		release(unpack_pass);
 		/*release(shadowMap);
 		release(omniShadow);
@@ -183,10 +185,10 @@ namespace pathos {
 		case MATERIAL_ID::SOLID_COLOR:
 			renderSolidColor(mesh, G, static_cast<ColorMaterial*>(M));
 			break;
-		/*case MATERIAL_ID::FLAT_TEXTURE:
+		case MATERIAL_ID::FLAT_TEXTURE:
 			renderFlatTexture(mesh, G, static_cast<TextureMaterial*>(M));
 			break;
-		case MATERIAL_ID::WIREFRAME:
+		/*case MATERIAL_ID::WIREFRAME:
 			renderWireframe(mesh, G, static_cast<WireframeMaterial*>(M));
 			break;
 		case MATERIAL_ID::SHADOW_TEXTURE:
@@ -211,6 +213,10 @@ namespace pathos {
 	void DeferredRenderer::renderSolidColor(Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
 		pack_colorPass->setModelMatrix(mesh->getTransform().getMatrix());
 		pack_colorPass->render(scene, camera, G, M);
+	}
+	void DeferredRenderer::renderFlatTexture(Mesh* mesh, MeshGeometry* G, TextureMaterial* M) {
+		pack_texture->setModelMatrix(mesh->getTransform().getMatrix());
+		pack_texture->render(scene, camera, G, M);
 	}
 
 }
