@@ -86,7 +86,7 @@ vec4 calculateShading(fragment_info fragment) {
 			vec3 diffuse_color = pointLightColors[i] * fragment.color * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
-	}
+	}else discard;
 	return result;
 }
 

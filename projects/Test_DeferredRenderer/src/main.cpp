@@ -149,7 +149,7 @@ void setupScene() {
 	scene.add(model);
 	scene.add(model2);
 	scene.add(model3);
-	//scene.skybox = sky;
+	scene.skybox = sky;
 }
 
 void render() {

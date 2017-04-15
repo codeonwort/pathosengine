@@ -1,6 +1,7 @@
 #include "render_deferred.h"
-#include "pathos/mesh/mesh.h"
 #include "pathos/engine.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/render/envmap.h"
 
 #ifdef _DEBUG
 #include <iostream>
@@ -157,7 +158,15 @@ namespace pathos {
 	void DeferredRenderer::unpackGBuffer() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDrawBuffer(GL_BACK);
+		renderSkybox(scene->skybox); // actually not an unpack work, but rendering order is here...
 		unpack_pass->render(scene, camera);
+	}
+	
+	void DeferredRenderer::renderSkybox(Skybox* sky) {
+		if (!sky) return;
+		glm::mat4 viewTransform = camera->getViewMatrix();
+		sky->activate(viewTransform);
+		sky->render();
 	}
 
 	void DeferredRenderer::renderMeshToGBuffer(Mesh* mesh) {

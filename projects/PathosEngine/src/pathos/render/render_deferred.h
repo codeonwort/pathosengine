@@ -40,10 +40,14 @@ namespace pathos {
 		void renderMeshToGBuffer(Mesh*);
 		void renderMeshPieceToGBuffer(Mesh*, MeshGeometry*, MeshMaterial*);
 
+		// render logic for skybox
+		void renderSkybox(Skybox*);
+
 		// render logic for each material
 		void renderSolidColor(Mesh*, MeshGeometry*, ColorMaterial*);
 		void renderFlatTexture(Mesh*, MeshGeometry*, TextureMaterial*);
 
+		// deferred render passes
 		MeshDeferredRenderPass_Pack_SolidColor* pack_colorPass = nullptr;
 		MeshDeferredRenderPass_Pack_FlatTexture* pack_texture = nullptr;
 		MeshDeferredRenderPass_Unpack* unpack_pass = nullptr;
