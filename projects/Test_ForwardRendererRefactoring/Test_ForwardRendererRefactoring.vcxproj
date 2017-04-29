@@ -145,7 +145,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\tiny_obj_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PathosEngine\PathosEngine.vcxproj">

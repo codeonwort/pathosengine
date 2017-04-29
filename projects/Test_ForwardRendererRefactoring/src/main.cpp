@@ -132,7 +132,7 @@ void setupScene() {
 
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
-	model3->getTransform().appendMove(-10, 5, 0);
+	model3->getTransform().appendMove(60, 30, 0);
 
 	// model : shadow debug
 	model_shadowdebug = new Mesh(geom_plane, material_shadowdebug);

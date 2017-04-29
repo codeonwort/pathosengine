@@ -156,6 +156,9 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
