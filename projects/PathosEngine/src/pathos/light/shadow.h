@@ -8,31 +8,12 @@
 #include <GL/glew.h>
 #include <vector>
 
+// TODO: move ShadowMap to shadow_directional.h
+//       make this header includes shadow_omni.h and shadow_directional.h
+
 namespace pathos {
 
-	class ShadowMethod {
-
-	protected:
-		MeshGeometry* modelGeometry;
-		glm::mat4 modelMatrix;
-
-	public:
-		//static std::vector<ShadowMethod*> instances;
-		//static void clearShadowTextures();
-
-		inline void setTarget(MeshGeometry* G, glm::mat4& M) {
-			modelGeometry = G;
-			modelMatrix = M;
-		}
-		virtual void clearTexture() = 0;
-		virtual void activate(GLuint materialPassProgram) = 0;
-		//virtual void renderToDepthMap() = 0;
-		virtual void deactivate() = 0;
-		virtual void addShaderCode(VertexShaderSource&, FragmentShaderSource&) = 0;
-
-	};
-
-	// shadow mapping (by directional light)
+	// shadow mapping by directional light
 	class ShadowMap {
 
 	public:
@@ -68,14 +49,7 @@ namespace pathos {
 		vector<GLint> textureBindings;
 
 
-		// TODO: 이게 maxLights만큼 있어야 함 ㅅㅄㅄㅄㅄㅄㅄㅄㅂ 아 난 개병신이다!!!! 으아악강아아아악!!!!!
 		glm::mat4 view, projection; // light space transform
-		// deprecated
-		//DirectionalLight* light;
-		//Camera* camera;
-		//GLuint shadowTexture, debugTexture;
-		//glm::vec4 vertices[8];
-		//glm::mat4 calculateAABB(glm::mat4& lightView);
 	};
 
 }
