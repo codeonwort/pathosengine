@@ -181,6 +181,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
     <ClCompile Include="src\pathos\render\envmap.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
     <ClInclude Include="src\pathos\render\envmap.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />

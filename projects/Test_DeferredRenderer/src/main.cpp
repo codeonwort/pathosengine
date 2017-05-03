@@ -132,17 +132,17 @@ void setupScene() {
 	// skybox
 	sky = new Skybox(cubeTexture);
 
-	// model 1: solid color
+	// model 1: flat texture
 	model = new Mesh(geom_sphere_big, material_texture);
 	model->getTransform().appendMove(-40, 0, 0);
 
-	// model 2: flat texture
+	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
 	model2->getTransform().appendMove(50, 0, 0);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
 
 	// model 3: wireframe
-	model3 = new Mesh(geom_cube, material_color);
+	model3 = new Mesh(geom_cube, material_wireframe);
 	model3->getTransform().appendMove(30, 30, 10);
 
 	// add them to scene
