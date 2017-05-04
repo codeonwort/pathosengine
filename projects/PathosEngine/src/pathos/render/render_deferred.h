@@ -10,8 +10,6 @@ namespace pathos {
 	class DeferredRenderer {
 
 	public:
-
-	public:
 		DeferredRenderer();
 		DeferredRenderer(const DeferredRenderer& other) = delete;
 		DeferredRenderer(DeferredRenderer&&) = delete;
@@ -19,7 +17,11 @@ namespace pathos {
 
 		void render(Scene* scene, Camera*); // render the total scene
 
+		inline void setHDR(bool value) { useHDR = value; }
+
 	protected:
+		bool useHDR = false;
+
 		void createShaders();
 		void destroyShaders();
 

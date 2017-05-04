@@ -15,13 +15,22 @@ namespace pathos {
 		static constexpr unsigned int MAX_DIRECTIONAL_LIGHTS = 8;
 		static constexpr unsigned int MAX_POINT_LIGHTS = 24;
 
+		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
+
 	protected:
-		GLuint program = 0; // shader program name
-		GLuint gbuffer_tex0, gbuffer_tex1;
+		GLuint program = 0; // shader program (original LDR rendering)
+		GLuint program_hdr = 0, program_tone_mapping = 0; // shader programs for HDR rendering
+		GLuint gbuffer_tex0, gbuffer_tex1; // packed input
+
+		GLuint fbo_hdr, fbo_hdr_attachment;
 
 		PlaneGeometry* quad = nullptr;
 
-		virtual void createProgram();
+		void createProgram();
+		void createProgram_LDR();
+		void createProgram_HDR();
+		void createResource_HDR();
+
 		void uploadDirectionalLightUniform(Scene*, unsigned int maxLights);
 		void uploadPointLightUniform(Scene*, unsigned int maxLights);
 
@@ -32,7 +41,8 @@ namespace pathos {
 		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
 		//inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
 
-		virtual void render(Scene*, Camera*);
+		void render(Scene*, Camera*); // plain LDR rendering
+		void renderHDR(Scene*, Camera*); // HDR rendering
 
 	};
 

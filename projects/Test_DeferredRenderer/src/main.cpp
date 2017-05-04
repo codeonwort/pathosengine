@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
 
 	// renderer
 	renderer = new DeferredRenderer;
+	renderer->setHDR(true);
 	//normRenderer = new NormalRenderer(0.2);
 
 	// scene

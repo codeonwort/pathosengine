@@ -156,10 +156,10 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::unpackGBuffer() {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDrawBuffer(GL_BACK);
+		unpack_pass->bindFramebuffer(useHDR);
 		renderSkybox(scene->skybox); // actually not an unpack work, but rendering order is here...
-		unpack_pass->render(scene, camera);
+		if (useHDR) unpack_pass->renderHDR(scene, camera);
+		else unpack_pass->render(scene, camera);
 	}
 	
 	void DeferredRenderer::renderSkybox(Skybox* sky) {
