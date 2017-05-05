@@ -22,7 +22,7 @@ namespace pathos {
 		glDeleteProgram(program_hdr);
 		glDeleteProgram(program_tone_mapping);
 		glDeleteFramebuffers(1, &fbo_hdr);
-		glDeleteTextures(1, &fbo_hdr_attachment);
+		glDeleteTextures(NUM_HDR_ATTACHMENTS, fbo_hdr_attachment);
 		quad->dispose();
 	}
 
@@ -130,6 +130,7 @@ void main() {
 		string fshader = R"(#version 430 core
 
 layout (location = 0) out vec4 out_color;
+layout (location = 1) out vec4 out_bright; // bright area only
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
@@ -143,6 +144,10 @@ uniform vec3 dirLightColors[8];
 uniform uint numPointLights;
 uniform vec3 pointLightPos[16];
 uniform vec3 pointLightColors[16];
+
+// bloom threshold
+const float bloom_min = 0.8;
+const float bloom_max = 1.2;
 
 struct fragment_info {
 	vec3 color;
@@ -193,7 +198,15 @@ vec4 calculateShading(fragment_info fragment) {
 void main() {
 	fragment_info fragment;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
-	out_color = calculateShading(fragment);
+	vec4 color = calculateShading(fragment);
+
+	// output: standard shading
+	out_color = color;
+
+	// output: light bloom
+	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
+	color.xyz = color.xyz * 4.0 * smoothstep(bloom_min, bloom_max, Y);
+	out_bright = color;
 }
 
 )";
@@ -204,13 +217,17 @@ void main() {
 #version 430 core
 
 layout (binding = 0) uniform sampler2D hdr_image;
+layout (binding = 1) uniform sampler2D hdr_bloom;
 
 uniform float exposure = 1.0; // TODO: set this in application-side
 
 out vec4 color;
 
 void main() {
+	// TODO: it doubles intensity of skybox area. should be fixed - how?
 	vec4 c = texelFetch(hdr_image, ivec2(gl_FragCoord.xy), 0);
+	c += texelFetch(hdr_bloom, ivec2(gl_FragCoord.xy), 0);
+
 	c.rgb = vec3(1.0) - exp(-c.rgb * exposure);
 	color = c;
 }
@@ -227,17 +244,23 @@ void main() {
 		glGenFramebuffers(1, &fbo_hdr);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 
-		glGenTextures(1, &fbo_hdr_attachment);
+		glGenTextures(NUM_HDR_ATTACHMENTS, fbo_hdr_attachment);
 
-		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment);
+		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[0]);
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment, 0);
+		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[1]);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, draw_buffers);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment[0], 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_hdr_attachment[1], 0);
+
+		GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(NUM_HDR_ATTACHMENTS, draw_buffers);
 
 		// check if our framebuffer is ok
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -255,6 +278,7 @@ void main() {
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 			static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			glClearBufferfv(GL_COLOR, 0, zero);
+			glClearBufferfv(GL_COLOR, 1, zero);
 		} else {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDrawBuffer(GL_BACK);
@@ -325,7 +349,9 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glUseProgram(program_tone_mapping);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment);
+		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[1]);
 
 		//quad->activatePositionBuffer(0);
 		//quad->activateIndexBuffer();

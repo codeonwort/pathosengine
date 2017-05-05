@@ -22,7 +22,8 @@ namespace pathos {
 		GLuint program_hdr = 0, program_tone_mapping = 0; // shader programs for HDR rendering
 		GLuint gbuffer_tex0, gbuffer_tex1; // packed input
 
-		GLuint fbo_hdr, fbo_hdr_attachment;
+		static constexpr unsigned int NUM_HDR_ATTACHMENTS = 2;
+		GLuint fbo_hdr, fbo_hdr_attachment[NUM_HDR_ATTACHMENTS];
 
 		PlaneGeometry* quad = nullptr;
 
