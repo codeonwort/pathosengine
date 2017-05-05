@@ -30,13 +30,13 @@ namespace pathos {
 		void createProgram();
 		void createProgram_LDR();
 		void createProgram_HDR();
-		void createResource_HDR();
+		void createResource_HDR(unsigned int width, unsigned int height);
 
 		void uploadDirectionalLightUniform(Scene*, unsigned int maxLights);
 		void uploadPointLightUniform(Scene*, unsigned int maxLights);
 
 	public:
-		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1);
+		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height);
 		virtual ~MeshDeferredRenderPass_Unpack();
 
 		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }

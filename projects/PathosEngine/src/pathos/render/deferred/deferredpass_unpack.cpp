@@ -9,12 +9,12 @@ using std::min;
 
 namespace pathos {
 
-	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1)
+	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height)
 		: gbuffer_tex0(gbuffer_tex0), gbuffer_tex1(gbuffer_tex1)
 	{
 		quad = new PlaneGeometry(2.0f, 2.0f);
 		createProgram();
-		createResource_HDR();
+		createResource_HDR(width, height);
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
@@ -236,11 +236,7 @@ void main() {
 		program_tone_mapping = pathos::createProgram(vshader, fshader);
 	}
 
-	void MeshDeferredRenderPass_Unpack::createResource_HDR() {
-		auto& config = Engine::getConfig();
-		int width = config.width;
-		int height = config.height;
-
+	void MeshDeferredRenderPass_Unpack::createResource_HDR(unsigned int width, unsigned int height) {
 		glGenFramebuffers(1, &fbo_hdr);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 

@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
 	cam->move(glm::vec3(0, 0, 100));
 
 	// renderer
-	renderer = new DeferredRenderer;
+	renderer = new DeferredRenderer(conf.width, conf.height);
 	renderer->setHDR(true);
 	//normRenderer = new NormalRenderer(0.2);
 

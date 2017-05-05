@@ -124,6 +124,7 @@ void main() {
 
 		// restore original viewport
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// TODO: remove the global access
 		auto config = Engine::getConfig();
 		glViewport(0, 0, config.width, config.height);
 	}

@@ -10,7 +10,7 @@ namespace pathos {
 	class DeferredRenderer {
 
 	public:
-		DeferredRenderer();
+		DeferredRenderer(unsigned int width, unsigned int height);
 		DeferredRenderer(const DeferredRenderer& other) = delete;
 		DeferredRenderer(DeferredRenderer&&) = delete;
 		virtual ~DeferredRenderer();

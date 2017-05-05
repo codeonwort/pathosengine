@@ -1,5 +1,4 @@
 #include "render_deferred.h"
-#include "pathos/engine.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/envmap.h"
 
@@ -9,7 +8,7 @@
 
 namespace pathos {
 
-	DeferredRenderer::DeferredRenderer() {
+	DeferredRenderer::DeferredRenderer(unsigned int width, unsigned int height):width(width), height(height) {
 		createGBuffer();
 		createShaders();
 	}
@@ -22,7 +21,7 @@ namespace pathos {
 		pack_colorPass = new MeshDeferredRenderPass_Pack_SolidColor;
 		pack_texture = new MeshDeferredRenderPass_Pack_FlatTexture;
 		pack_wireframe = new MeshDeferredRenderPass_Pack_Wireframe;
-		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1]);
+		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1], width, height);
 
 		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
@@ -61,10 +60,6 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createGBuffer() {
-		auto& config = Engine::getConfig();
-		width = config.width;
-		height = config.height;
-
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 

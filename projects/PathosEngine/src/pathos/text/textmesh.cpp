@@ -112,6 +112,7 @@ namespace pathos {
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, totalWidth, totalHeight, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 		delete buf;
 
+		// TODO: remove the global access
 		const EngineConfig& config = Engine::getConfig();
 		float sx = (float)(2.0f / config.width) * totalWidth;
 		float sy = (float)(2.0f / config.height) * totalHeight;
