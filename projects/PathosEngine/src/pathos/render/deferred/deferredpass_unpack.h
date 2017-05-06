@@ -16,6 +16,7 @@ namespace pathos {
 		static constexpr unsigned int MAX_POINT_LIGHTS = 24;
 
 		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
+		void setDrawBuffers(bool both); // enable only first buffer or both buffers
 
 	protected:
 		GLuint program = 0; // shader program (original LDR rendering)

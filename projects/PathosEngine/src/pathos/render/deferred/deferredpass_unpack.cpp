@@ -191,7 +191,7 @@ vec4 calculateShading(fragment_info fragment) {
 			vec3 diffuse_color = pointLightColors[i] * fragment.color * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
-	}else discard;
+	} else discard;
 	return result;
 }
 
@@ -224,7 +224,6 @@ uniform float exposure = 1.0; // TODO: set this in application-side
 out vec4 color;
 
 void main() {
-	// TODO: it doubles intensity of skybox area. should be fixed - how?
 	vec4 c = texelFetch(hdr_image, ivec2(gl_FragCoord.xy), 0);
 	c += texelFetch(hdr_bloom, ivec2(gl_FragCoord.xy), 0);
 
@@ -255,9 +254,6 @@ void main() {
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment[0], 0);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_hdr_attachment[1], 0);
 
-		GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		glDrawBuffers(NUM_HDR_ATTACHMENTS, draw_buffers);
-
 		// check if our framebuffer is ok
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 #if defined(_DEBUG)
@@ -278,6 +274,17 @@ void main() {
 		} else {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDrawBuffer(GL_BACK);
+		}
+	}
+
+	// This should be called after bindFramebuffer
+	void MeshDeferredRenderPass_Unpack::setDrawBuffers(bool both) {
+		if (both) {
+			GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			glDrawBuffers(NUM_HDR_ATTACHMENTS, draw_buffers);
+		} else {
+			GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers(1, draw_buffers);
 		}
 	}
 
