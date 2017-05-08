@@ -1,6 +1,7 @@
-#include <glm/gtx/transform.hpp>
-#include <pathos/mesh/envmap.h>
-#include <pathos/render/shader.h>
+#include "envmap.h"
+#include "pathos/render/shader.h"
+#include "glm/gtx/transform.hpp"
+#include <string>
 
 namespace pathos {
 
@@ -9,7 +10,10 @@ namespace pathos {
 	*/
 	Skybox::Skybox(GLuint textureID) {
 		this->textureID = textureID;
-		
+		createShader();
+	}
+
+	void Skybox::createShader() {
 		string vshader = R"(#version 430 core
 out VS_OUT { vec3 tc; } vs_out;
 uniform mat4 viewTransform;
@@ -29,12 +33,15 @@ void main() {
 }
 )";
 		program = createProgram(vshader, fshader);
+		if (program != 0) {
+			uniform_viewTransform = glGetUniformLocation(program, "viewTransform");
+		}
 	}
 
 	void Skybox::activate(const glm::mat4& viewTransform) {
 		glUseProgram(program);
 		glm::mat4 transform = glm::scale(viewTransform, glm::vec3(1, 1, 1));
-		glUniformMatrix4fv(glGetUniformLocation(program, "viewTransform"), 1, GL_FALSE, &transform[0][0]);
+		glUniformMatrix4fv(uniform_viewTransform, 1, GL_FALSE, &transform[0][0]);
 		glActiveTexture(GL_TEXTURE0);
 		glDisable(GL_DEPTH_TEST);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);

@@ -1,18 +1,18 @@
 #pragma once
 
+#include "pathos/core.h"
+#include "pathos/mesh/geometry.h"
+#include "pathos/material/material.h"
+#include "pathos/wrapper/transform.h"
 #include <vector>
 #include <memory>
-#include <pathos/core.h>
-#include <pathos/mesh/geometry.h>
-#include <pathos/mesh/material.h>
-#include <pathos/wrapper/transform.h>
 
 using namespace std;
 
 namespace pathos {
 
 	using Geometries = vector<MeshGeometry*>;
-	using Materials = vector<shared_ptr<MeshMaterial>>;
+	using Materials = vector<MeshMaterial*>;
 
 	// mesh = physical presence of geometry with material
 	class Mesh : public NamedObject {
@@ -24,9 +24,9 @@ namespace pathos {
 		Geometries geometries;
 		Materials materials;
 	public:
-		Mesh(MeshGeometry* = nullptr, shared_ptr<MeshMaterial> = nullptr);
+		Mesh(MeshGeometry* = nullptr, MeshMaterial* = nullptr);
 		virtual ~Mesh();
-		void add(MeshGeometry*, shared_ptr<MeshMaterial>);
+		void add(MeshGeometry*, MeshMaterial*);
 
 		Transform& getTransform();
 		const Geometries& getGeometries();

@@ -1,36 +1,37 @@
+#include "glm/gtx/transform.hpp"
+#include "pathos/engine.h"
+#include "pathos/render/render_forward.h"
+#include "pathos/render/render_norm.h"
+#include "pathos/render/envmap.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/camera/camera.h"
+#include "pathos/light/light.h"
+#include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
+#include "pathos/text/textmesh.h"
 #include <iostream>
-
-#include <glm/gtx/transform.hpp>
-#include <pathos/engine.h>
-#include <pathos/render/render.h>
-#include <pathos/mesh/mesh.h>
-#include <pathos/mesh/envmap.h>
-#include <pathos/camera/camera.h>
-#include <pathos/light/light.h>
-#include <pathos/loader/imageloader.h>
-#include <pathos/loader/objloader.h>
-#include <pathos/text/textmesh.h>
 
 using namespace std;
 using namespace pathos;
 
-// Camera and renderer
+// Camera and scnee
 Camera* cam;
-MeshDefaultRenderer* renderer;
+Scene scene;
+
+// renderers
+MeshForwardRenderer* renderer;
 NormalRenderer* normRenderer;
 
 // 3D objects
-shared_ptr<MeshMaterial> envMapMaterial = nullptr;
+MeshMaterial* envMapMaterial = nullptr;
 Mesh *teapot;
 TextMesh *label;
 Skybox* sky;
 
 // Lights and shadow
 PointLight *plight, *plight2;
-OmnidirectionalShadow* shadow;
 
-void setupModel();
-void setupSkybox();
+void setupScene();
 
 void render() {
 	float speedX = 0.1f, speedY = 0.1f;
@@ -42,16 +43,7 @@ void render() {
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
 
-	renderer->ready();
-
-	// skybox
-	renderer->render(sky, cam);
-
-	// various models
-	renderer->render(teapot, cam);
-	renderer->render(label, cam);
-
-	// model normal debugger
+	renderer->render(&scene, cam);
 	normRenderer->render(teapot, cam);
 }
 
@@ -68,16 +60,15 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
+	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
 	cam->move(glm::vec3(0, 0, 20));
 
 	// renderer
-	renderer = new MeshDefaultRenderer();
+	renderer = new MeshForwardRenderer;
 	normRenderer = new NormalRenderer(5);
 
 	// 3d objects
-	setupSkybox();
-	setupModel();
+	setupScene();
 
 	// start the main loop
 	Engine::start();
@@ -85,18 +76,31 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-void setupModel() {
+void setupScene() {
+	// skybox
+	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
+		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
+		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
+	FIBITMAP* cubeImg[6];
+	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
+	GLuint cubeTex = loadCubemapTexture(cubeImg);
+	sky = new Skybox(cubeTex);
+
+	envMapMaterial = new CubeEnvMapMaterial(cubeTex);
+
+	// light and shadow
 	plight = new PointLight(glm::vec3(5, 0, 25), glm::vec3(1, 1, 1));
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
-	shadow = new OmnidirectionalShadow(plight, cam);
 
+	// text label
 	label = new TextMesh("default");
 	label->setText("Envrionmental mapping test", 0xffff00);
 	label->getTransform().appendScale(10, 10, 10);
-	label->setDoubleSided(true);
+	label->getTransform().appendMove(0, -5, 0);
 
+	// 3d object
 	OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	teapot = new Mesh();
+	teapot = new Mesh;
 	for (int i = 0; i < teapotLoader.getGeometries().size(); i++){
 		if (envMapMaterial == nullptr){
 			cerr << "Env map material is not initialized!" << endl;
@@ -106,20 +110,8 @@ void setupModel() {
 	teapot->getTransform().appendScale(.2, .2, .2);
 	teapot->getTransform().appendMove(0, -40, -50);
 
-	/*teapot = teapotLoader.craftMesh(0, teapotLoader.numGeometries(), "teapot");
-	for (int i = 0; i < teapotLoader.getMaterials().size(); i++){
-		teapotLoader.getMaterials()[i]->addLight(plight);
-	}*/
-}
-
-void setupSkybox() {
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
-		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
-		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
-	FIBITMAP* cubeImg[6];
-	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
-	GLuint cubeTex = loadCubemapTexture(cubeImg);
-	sky = new Skybox(cubeTex);
-
-	envMapMaterial = make_shared<CubeEnvMapMaterial>(cubeTex);
+	// construct scene
+	scene.skybox = sky;
+	scene.add(teapot);
+	scene.add(label);
 }

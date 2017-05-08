@@ -1,15 +1,15 @@
+#include "pathos/engine.h"
+#include "FreeImage.h"
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <FreeImage.h>
-
-#include "pathos/engine.h"
 
 #include <iostream>
 
 namespace pathos {
 
 	EngineConfig Engine::conf;
-	std::string Engine::version = "0.0.1.0";
+	std::string Engine::version = "1.0.0.0";
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
 	bool Engine::keymap[256] = { false };
 

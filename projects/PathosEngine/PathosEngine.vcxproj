@@ -72,10 +72,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(IncludePath)</IncludePath>
@@ -90,7 +93,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,7 +129,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)PathosEngine\src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -167,34 +170,72 @@
     <ClCompile Include="src\pathos\core.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\light.cpp" />
+    <ClCompile Include="src\pathos\light\shadow.cpp" />
+    <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
     <ClCompile Include="src\pathos\loader\objloader.cpp" />
-    <ClCompile Include="src\pathos\mesh\envmap.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry.cpp" />
-    <ClCompile Include="src\pathos\mesh\material.cpp" />
+    <ClCompile Include="src\pathos\material\material.cpp" />
+    <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp" />
     <ClCompile Include="src\pathos\mesh\mesh.cpp" />
-    <ClCompile Include="src\pathos\mesh\shadow.cpp" />
-    <ClCompile Include="src\pathos\render\render.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
+    <ClCompile Include="src\pathos\render\envmap.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_cubeenv.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_shadowcubemap.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_shadowtexture.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_solidcolor.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp" />
+    <ClCompile Include="src\pathos\render\render_deferred.cpp" />
+    <ClCompile Include="src\pathos\render\render_norm.cpp" />
+    <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
     <ClCompile Include="src\pathos\render\shader.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
+    <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\core.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light.h" />
+    <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
-    <ClInclude Include="src\pathos\mesh\envmap.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
+    <ClInclude Include="src\pathos\render\envmap.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
-    <ClInclude Include="src\pathos\mesh\material.h" />
+    <ClInclude Include="src\pathos\material\material.h" />
+    <ClInclude Include="src\pathos\material\material_id.h" />
+    <ClInclude Include="src\pathos\mesh\geometry_primitive.h" />
     <ClInclude Include="src\pathos\mesh\mesh.h" />
     <ClInclude Include="src\pathos\mesh\render.h" />
     <ClInclude Include="src\pathos\mesh\shader.h" />
-    <ClInclude Include="src\pathos\mesh\shadow.h" />
-    <ClInclude Include="src\pathos\render\render.h" />
+    <ClInclude Include="src\pathos\light\shadow.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_bumptexture.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_cubeenv.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_base.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_solidcolor.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_texture.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_wireframe.h" />
+    <ClInclude Include="src\pathos\render\render_deferred.h" />
+    <ClInclude Include="src\pathos\render\render_norm.h" />
+    <ClInclude Include="src\pathos\render\render_forward.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
     <ClInclude Include="src\pathos\render\shader.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />

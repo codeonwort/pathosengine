@@ -21,7 +21,6 @@ namespace pathos {
 		GLfloat* getColor();
 	};
 
-	// affect the diffuse color of a mesh
 	class DirectionalLight {
 	private:
 		glm::vec3 direction, color;

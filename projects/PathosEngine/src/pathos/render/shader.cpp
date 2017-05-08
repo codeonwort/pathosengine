@@ -2,6 +2,7 @@
 #include "pathos/render/shader.h"
 
 // STL
+#include <tuple>
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -27,7 +28,7 @@ namespace pathos {
 
 	GLuint createProgram(std::vector<ShaderSource*>& sources) {
 		vector<Shader*> shaders(sources.size(), nullptr);
-		for (auto i = 0; i < sources.size(); ++i) {
+		for (size_t i = 0; i < sources.size(); ++i) {
 			ShaderSource* it = sources[i];
 			Shader* shader = shaders[i] = new Shader(it->getShaderType());
 			shader->setSource(it->getCode());
@@ -72,7 +73,10 @@ namespace pathos {
 			cout << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
 			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
 			std::cout << "> link error code: " << glGetError() << std::endl;
+			std::cout << "> program was not created. return NULL..." << std::endl;
 #endif
+			glDeleteProgram(program);
+			return 0;
 		}
 #ifdef _DEBUG
 		std::cout << "=== finish program creation ===" << std::endl << std::endl;
@@ -80,7 +84,26 @@ namespace pathos {
 		return program;
 	}
 
-	bool varComp(pair<string, string>& a, pair<string, string>& b) { return a.second < b.second; }
+	static bool svarComp(const ShaderVariable& a, const ShaderVariable& b) { return a.name < b.name; }
+	static bool varComp(const pair<string, string>& a, const pair<string, string>& b) { return a.second < b.second; }
+
+	static enum class COLLISION { NO_COLLISION, ALREADY_EXIST, COLLIDE };
+	static COLLISION collide(vector<ShaderVariable>& vars, const ShaderVariable& var) {
+		for (auto it = vars.begin(); it != vars.end(); ++it) {
+			if ((*it).name == var.name) {
+				if ((*it).type != var.type || (*it).arrayLength != var.arrayLength) {
+					return COLLISION::COLLIDE;
+				}
+				return COLLISION::ALREADY_EXIST;
+			}
+		}
+		return COLLISION::NO_COLLISION;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	ShaderVariable::ShaderVariable(const string& type, const string& name, unsigned int length)
+		:type(type), name(name), arrayLength(length) {}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -158,26 +181,32 @@ namespace pathos {
 	void VertexShaderSource::setUVLocation(GLuint loc) { uvLocation = loc; }
 	void VertexShaderSource::setNormalLocation(GLuint loc) { normalLocation = loc; }
 	
-	void VertexShaderSource::outVar(const string & type, const string & name) {
-		for (auto it = outVars.begin(); it != outVars.end(); it++) {
-			if ((*it).second == name) {
-				if ((*it).first == type) return;
-				else throw ("VertexShaderSource::outVar() - variable already defined with different type");
-			}
-		}
-		outVars.push_back(pair<string, string>(type, name));
+	void VertexShaderSource::outVar(const string& type, const string& name) {
+		ShaderVariable var(type, name, 0);
+		COLLISION coll = collide(outVars, var);
+		if(coll == COLLISION::COLLIDE) throw ("VertexShaderSource::outVar() - variable already defined with different type or length");
+		if(coll == COLLISION::NO_COLLISION) outVars.push_back(var);
 	}
-	void VertexShaderSource::uniformMat4(const string& name) {
-		uniforms.push_back(pair<string, string>("mat4", name));
+	void VertexShaderSource::outVar(const string& type, const string& name, unsigned int length) {
+		if(length == 0) throw ("VertexShaderSource::outVar() - length cannot be 0");
+		ShaderVariable var(type, name, length);
+		COLLISION coll = collide(outVars, var);
+		if (coll == COLLISION::COLLIDE) throw ("VertexShaderSource::outVar() - variable already defined with different type or length");
+		if (coll == COLLISION::NO_COLLISION) outVars.push_back(var);
 	}
+	void VertexShaderSource::uniformMat4(const string& name) { outVar("mat4", name); }
 	void VertexShaderSource::uniform(const string& type, const string& name) {
-		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
-			if ((*it).second == name) {
-				if ((*it).first == type) return;
-				else throw ("VertexShaderSource::uniform() - variable already defined with different type");
-			}
-		}
-		uniforms.push_back(pair<string, string>(type, name));
+		ShaderVariable var(type, name, 0);
+		COLLISION coll = collide(uniforms, var);
+		if (coll == COLLISION::COLLIDE) throw ("VertexShaderSource::uniform() - variable already defined with different type");
+		if(coll == COLLISION::NO_COLLISION) uniforms.push_back(var);
+	}
+	void VertexShaderSource::uniform(const string& type, const string& name, unsigned int length) {
+		if (length == 0) throw ("VertexShaderSource::uniform() - length cannot be 0");
+		ShaderVariable var(type, name, length);
+		COLLISION coll = collide(uniforms, var);
+		if (coll == COLLISION::COLLIDE) throw ("VertexShaderSource::uniform() - variable already defined with different type");
+		if (coll == COLLISION::NO_COLLISION) uniforms.push_back(var);
 	}
 	void VertexShaderSource::mainCode(const string& code) {
 		maincode += "  " + code + "\n";
@@ -200,7 +229,7 @@ namespace pathos {
 		if (useNormal) outVar("vec3", "normal");
 		if (useUV) outVar("vec2", "uv");
 		if (transferPosition) outVar("vec3", "position");
-		std::sort(outVars.begin(), outVars.end(), varComp);
+		std::sort(outVars.begin(), outVars.end(), svarComp);
 
 		src << "#version 430 core" << std::endl;
 		if (usePosition)
@@ -216,15 +245,14 @@ namespace pathos {
 		if (useVarying() || outVars.size() > 0) {
 			src << "out VS_OUT {" << std::endl;
 			for (auto it = outVars.begin(); it != outVars.end(); it++) {
-				src << "  " << it->first << " " << it->second << ";\n";
+				src << "  " << it->getDecl() << ";\n";
 			}
 			src << "} vs_out;" << std::endl;
 		}
 		src << "uniform mat4 modelTransform;" << std::endl;
 		src << "uniform mat4 mvpTransform;" << std::endl;
 		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
-			pair<string, string> &uniform = *it;
-			src << "uniform " << uniform.first << " " << uniform.second << ";\n";
+			src << "uniform " << it->getDecl() << ";\n";
 		}
 		//src << "out gl_PerVertex{ vec4 gl_Position; };" << std::endl;
 		src << "void main() {" << std::endl;
@@ -267,11 +295,10 @@ namespace pathos {
 		src << "#version 430 core" << endl;
 
 		// sort variables by name
-		std::sort(inVars.begin(), inVars.end(), varComp);
+		std::sort(inVars.begin(), inVars.end(), svarComp);
 
-		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
-			pair<string, string> &uniform = *it;
-			src << "uniform " << uniform.first << " " << uniform.second << ";\n";
+		for (auto it = uniforms.begin(); it != uniforms.end(); ++it) {
+			src << "uniform " << it->getDecl() << ";\n";
 		}
 		if (numDirLights > 0) {
 			src << "uniform vec3 dirLightDirs[" << numDirLights << "];\n";
@@ -284,14 +311,12 @@ namespace pathos {
 		if (inVars.size() > 0) {
 			src << "in " << interfaceBlock << " {\n";
 			for (auto it = inVars.begin(); it != inVars.end(); it++) {
-				pair<string, string> &inVar = *it;
-				src << "  " << inVar.first << " " << inVar.second << ";\n";
+				src << "  " << it->getDecl() << ";\n";
 			}
 			src << "} fs_in;\n";
 		}
 		for (auto it = outVars.begin(); it != outVars.end(); it++) {
-			pair<string, string> &outVar = *it;
-			src << "out " << outVar.first << " " << outVar.second << ";\n";
+			src << "out " << it->getDecl() << ";\n";
 		}
 		src << "void main() {\n";
 		src << maincode;
@@ -304,44 +329,41 @@ namespace pathos {
 #endif
 		return fcode;
 	}
-	void FragmentShaderSource::textureSampler(const string& samplerName) {
-		uniform("sampler2D", samplerName);
-		//texSamplers.push_back(samplerName);
-	}
+	void FragmentShaderSource::textureSampler(const string& samplerName) { uniform("sampler2D", samplerName); }
 	void FragmentShaderSource::textureSamplerCube(const string& samplerName) { uniform("samplerCube", samplerName); }
 	void FragmentShaderSource::textureSamplerShadow(const string& samplerName) { uniform("sampler2DShadow", samplerName); }
 	void FragmentShaderSource::textureSamplerCubeShadow(const string& samplerName) { uniform("samplerCubeShadow", samplerName); }
-	void FragmentShaderSource::uniform(const string & type, const string & name) {
-		for (auto it = uniforms.begin(); it != uniforms.end(); it++) {
-			if ((*it).second == name) {
-				if ((*it).first == type) return;
-				else throw ("FragmentShaderSource::uniform() - variable already defined with different type");
-			}
-		}
-		uniforms.push_back(pair<string, string>(type, name));
+	void FragmentShaderSource::uniform(const string& type, const string& name) {
+		ShaderVariable var(type, name, 0);
+		COLLISION coll = collide(uniforms, var);
+		if (coll == COLLISION::COLLIDE) throw ("FragmentShaderSource::uniform() - variable already defined with different type or length");
+		if (coll == COLLISION::NO_COLLISION) uniforms.push_back(var);
 	}
-	/**
-	* declear an in-variable.
-	* if already defined with same name and same type, nothing happens.
-	* error thrown if already defined with same name but diffent type.
-	*/
-	void FragmentShaderSource::inVar(const string & type, const string & name) {
-		for (auto it = inVars.begin(); it != inVars.end(); it++) {
-			if ((*it).second == name) {
-				if ((*it).first == type) return;
-				else throw ("FragmentShaderSource::inVar() - variable already defined with different type");
-			}
-		}
-		inVars.push_back(pair<string, string>(type, name));
+	void FragmentShaderSource::uniform(const string& type, const string& name, unsigned int length) {
+		if (length == 0) throw("FragmentShaderSource::uniform() - length cannot be 0");
+		ShaderVariable var(type, name, length);
+		COLLISION coll = collide(uniforms, var);
+		if (coll == COLLISION::COLLIDE) throw ("FragmentShaderSource::uniform() - variable already defined with different type or length");
+		if (coll == COLLISION::NO_COLLISION) uniforms.push_back(var);
 	}
-	void FragmentShaderSource::outVar(const string & type, const string & name) {
-		for (auto it = outVars.begin(); it != outVars.end(); it++) {
-			if ((*it).second == name) {
-				if ((*it).first == type) return;
-				else throw ("FragmentShaderSource::outVar() - variable already defined with different type");
-			}
-		}
-		outVars.push_back(pair<string, string>(type, name));
+	void FragmentShaderSource::inVar(const string& type, const string& name) {
+		ShaderVariable var(type, name, 0);
+		COLLISION coll = collide(inVars, var);
+		if (coll == COLLISION::COLLIDE) throw ("FragmentShaderSource::inVar() - variable already defined with different type or length");
+		if (coll == COLLISION::NO_COLLISION) inVars.push_back(var);
+	}
+	void FragmentShaderSource::inVar(const string& type, const string& name, unsigned int length) {
+		if (length == 0) throw("FragmentShaderSource::inVar() - length cannot be 0");
+		ShaderVariable var(type, name, length);
+		COLLISION coll = collide(inVars, var);
+		if (coll == COLLISION::COLLIDE) throw ("FragmentShaderSource::inVar() - variable already defined with different type or length");
+		if (coll == COLLISION::NO_COLLISION) inVars.push_back(var);
+	}
+	void FragmentShaderSource::outVar(const string& type, const string& name) {
+		ShaderVariable var(type, name, 0);
+		COLLISION coll = collide(inVars, var);
+		if (coll == COLLISION::COLLIDE) throw ("FragmentShaderSource::outVar() - variable already defined with different type");
+		if (coll == COLLISION::NO_COLLISION) outVars.push_back(var);
 	}
 	void FragmentShaderSource::interfaceBlockName(const string& name) {
 		interfaceBlock = name; // VS_OUT or GS_OUT

@@ -1,12 +1,15 @@
-#include <pathos/text/textmesh.h>
-#include <pathos/engine.h>
+#include "textmesh.h"
+#include "pathos/mesh/geometry_primitive.h"
+#include "pathos/engine.h"
 #include <iostream>
 
 namespace pathos {
 
+	// static members
 	FT_Library TextMesh::library;
 	std::map<std::string, FaceMap*> TextMesh::fontSet;
 	bool TextMesh::textMeshReady = false;
+
 	void TextMesh::textMeshInit() {
 		if (textMeshReady) return;
 
@@ -15,7 +18,7 @@ namespace pathos {
 			std::cerr << "** Cannot init freetype library **" << std::endl;
 			return;
 		}
-		loadFont("default", "../../resources/fonts/consola.ttf", 16);
+		loadFont("default", "../../resources/fonts/consola.ttf", 28);
 
 		textMeshReady = true;
 	}
@@ -51,7 +54,8 @@ namespace pathos {
 		doubleSided = true;
 		glGenTextures(1, &texID);
 		geometries.push_back(new PlaneGeometry(1, 1));
-		auto mat = make_shared<TextureMaterial>(texID, true);
+		auto mat = new TextureMaterial(texID);
+		mat->setUseAlpha(true);
 		mat->setLighting(false);
 		materials.push_back(mat);
 	}
@@ -74,7 +78,9 @@ namespace pathos {
 		totalHeight += 8;
 
 		glBindTexture(GL_TEXTURE_2D, texID);
-		glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA, totalWidth, totalHeight);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, totalWidth, totalHeight);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		// Fill background color
 		unsigned char red = (rgb >> 16) & 0xFF;
@@ -103,9 +109,10 @@ namespace pathos {
 				x += g->advance.x >> 6;
 			}
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, totalWidth, totalHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, totalWidth, totalHeight, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 		delete buf;
 
+		// TODO: remove the global access
 		const EngineConfig& config = Engine::getConfig();
 		float sx = (float)(2.0f / config.width) * totalWidth;
 		float sy = (float)(2.0f / config.height) * totalHeight;
