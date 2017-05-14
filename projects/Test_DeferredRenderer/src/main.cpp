@@ -149,7 +149,7 @@ void setupScene() {
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
 	//model3 = new Mesh(geom_plane, material_tex_debug);
-	model3->getTransform().appendMove(30, 30, 0);
+	model3->getTransform().appendMove(5, 30, 0);
 
 	// model: god ray source
 	godRaySource = new Mesh(geom_sphere, material_color);

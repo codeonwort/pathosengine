@@ -198,14 +198,27 @@ void main() {
 	void GodRay::renderSilhouette(Camera* camera, Mesh* mesh, GLfloat* color) {
 		const auto modelMatrix = mesh->getTransform().getMatrix();
 		const auto geoms = mesh->getGeometries();
+		const auto materials = mesh->getMaterials();
 		glUniform3fv(uniform_color, 1, color);
 		glUniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
-		for (MeshGeometry* G : geoms) {
+		for (auto i = 0; i < geoms.size(); ++i) {
+			MeshGeometry* G = geoms[i];
+			MeshMaterial* M = materials[i];
+
+			bool wireframe = M != nullptr && M->getMaterialID() == MATERIAL_ID::WIREFRAME;
+			if (wireframe) {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			}
+
 			G->activatePositionBuffer(0);
 			G->activateIndexBuffer();
 			G->draw();
 			G->deactivatePositionBuffer(0);
 			G->deactivateIndexBuffer();
+
+			if (wireframe) {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
 		}
 	}
 
