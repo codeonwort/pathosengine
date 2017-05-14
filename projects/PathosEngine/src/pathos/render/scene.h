@@ -28,6 +28,7 @@ namespace pathos {
 		Scene(Scene&& other) = delete;
 
 		Skybox* skybox = nullptr;
+		Mesh* godRaySource = nullptr;
 		std::vector<Mesh*> meshes;
 
 		std::vector<DirectionalLight*> directionalLights;

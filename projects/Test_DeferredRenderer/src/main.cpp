@@ -23,6 +23,7 @@ NormalRenderer* normRenderer;
 
 // 3D objects
 Mesh *model, *model2, *model3;
+Mesh* godRaySource;
 Skybox* sky;
 
 // Lights and shadow
@@ -98,6 +99,9 @@ void setupScene() {
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
 
+	GLuint tex_debug = renderer->debug_godRayTexture();
+	auto material_tex_debug = new TextureMaterial(tex_debug);
+
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
 	auto material_color = new ColorMaterial;
@@ -144,13 +148,21 @@ void setupScene() {
 
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
-	model3->getTransform().appendMove(30, 30, 10);
+	//model3 = new Mesh(geom_plane, material_tex_debug);
+	model3->getTransform().appendMove(30, 30, 0);
+
+	// model: god ray source
+	godRaySource = new Mesh(geom_sphere, material_color);
+	godRaySource->getTransform().appendMove(0, 100, -300);
+	godRaySource->getTransform().appendScale(2.0f);
 
 	// add them to scene
 	scene.add(model);
 	scene.add(model2);
 	scene.add(model3);
+	//scene.add(godRaySource);
 	scene.skybox = sky;
+	scene.godRaySource = godRaySource;
 }
 
 void render() {

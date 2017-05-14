@@ -15,6 +15,7 @@ namespace pathos {
 		quad = new PlaneGeometry(2.0f, 2.0f);
 		createProgram();
 		createResource_HDR(width, height);
+		godRay = new GodRay(width, height);
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
@@ -27,6 +28,7 @@ namespace pathos {
 		glDeleteFramebuffers(1, &fbo_blur);
 		glDeleteTextures(1, &fbo_blur_attachment);
 		quad->dispose();
+		delete godRay;
 	}
 
 	void MeshDeferredRenderPass_Unpack::createProgram() {
@@ -216,19 +218,23 @@ void main() {
 
 		program_hdr = pathos::createProgram(vshader, fshader);
 
+		// tone mapping
 		fshader = R"(
 #version 430 core
 
 layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;
+layout (binding = 2) uniform sampler2D god_ray;
 
 uniform float exposure = 1.0; // TODO: set this in application-side
 
 out vec4 color;
 
 void main() {
-	vec4 c = texelFetch(hdr_image, ivec2(gl_FragCoord.xy), 0);
-	c += texelFetch(hdr_bloom, ivec2(gl_FragCoord.xy), 0);
+	ivec2 uv = ivec2(gl_FragCoord.xy);
+	vec4 c = texelFetch(hdr_image, uv, 0);
+	c += texelFetch(hdr_bloom, uv, 0);
+	c += texelFetch(god_ray, uv, 0);
 
 	c.rgb = vec3(1.0) - exp(-c.rgb * exposure);
 	color = c;
@@ -237,6 +243,7 @@ void main() {
 )";
 		program_tone_mapping = pathos::createProgram(vshader, fshader);
 
+		// blur pass
 		fshader = R"(
 #version 430 core
 
@@ -380,6 +387,11 @@ void main() {
 	}
 
 	void MeshDeferredRenderPass_Unpack::renderHDR(Scene* scene, Camera* camera) {
+		// prepare god ray image
+		godRay->render(scene, camera);
+
+		// bind
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 		glUseProgram(program_hdr);
 
 		// texture binding
@@ -426,6 +438,8 @@ void main() {
 		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[0]);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[1]);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, godRay->getTexture());
 
 		//quad->activatePositionBuffer(0);
 		//quad->activateIndexBuffer();
@@ -433,6 +447,13 @@ void main() {
 		quad->deactivatePositionBuffer(0);
 		quad->deactivateIndexBuffer();
 
+		// unbind
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glEnable(GL_DEPTH_TEST);
 	}
 

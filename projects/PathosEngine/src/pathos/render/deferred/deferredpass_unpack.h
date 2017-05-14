@@ -5,6 +5,7 @@
 #include "pathos/material/material.h"
 #include "pathos/render/scene.h"
 #include "pathos/camera/camera.h"
+#include "pathos/render/god_ray.h"
 
 namespace pathos {
 
@@ -15,8 +16,7 @@ namespace pathos {
 		static constexpr unsigned int MAX_DIRECTIONAL_LIGHTS = 8;
 		static constexpr unsigned int MAX_POINT_LIGHTS = 24;
 
-		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
-		void setDrawBuffers(bool both); // enable only first buffer or both buffers
+		GLuint debug_godRayTexture() { return godRay->getTexture(); }
 
 	protected:
 		GLuint program = 0; // shader program (original LDR rendering)
@@ -27,6 +27,7 @@ namespace pathos {
 		static constexpr unsigned int NUM_HDR_ATTACHMENTS = 2;
 		GLuint fbo_hdr, fbo_hdr_attachment[NUM_HDR_ATTACHMENTS];
 		GLuint fbo_blur, fbo_blur_attachment;
+		GodRay* godRay = nullptr;
 
 		PlaneGeometry* quad = nullptr;
 
@@ -47,6 +48,9 @@ namespace pathos {
 
 		void render(Scene*, Camera*); // plain LDR rendering
 		void renderHDR(Scene*, Camera*); // HDR rendering
+
+		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
+		void setDrawBuffers(bool both); // enable only first buffer or both buffers
 
 	};
 

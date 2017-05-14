@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ForwardRendererRefacto
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DeferredRenderer", "projects\Test_DeferredRenderer\Test_DeferredRenderer.vcxproj", "{8FCB4198-9275-4294-9C7B-02F20BFE333B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_SkeletalAnimation", "projects\Test_SkeletalAnimation\Test_SkeletalAnimation.vcxproj", "{21FB9607-AA39-4F30-931E-3A5F5736465F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -70,6 +72,14 @@ Global
 		{8FCB4198-9275-4294-9C7B-02F20BFE333B}.Release|Win32.Build.0 = Release|Win32
 		{8FCB4198-9275-4294-9C7B-02F20BFE333B}.Release|x64.ActiveCfg = Release|x64
 		{8FCB4198-9275-4294-9C7B-02F20BFE333B}.Release|x64.Build.0 = Release|x64
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|Win32.Build.0 = Debug|Win32
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|x64.ActiveCfg = Debug|x64
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|x64.Build.0 = Debug|x64
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|Win32.ActiveCfg = Release|Win32
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|Win32.Build.0 = Release|Win32
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.ActiveCfg = Release|x64
+		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
