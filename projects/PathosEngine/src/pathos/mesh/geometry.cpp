@@ -297,10 +297,6 @@ namespace pathos {
 		updateBitangentData(bitangents, positionCount);
 	}
 
-	void MeshGeometry::uploadPosition() {
-		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-		glBufferData(GL_ARRAY_BUFFER, positionCount * sizeof(GLfloat), positionData, GL_STATIC_DRAW);
-	}
 	void MeshGeometry::dispose() {
 		glDeleteBuffers(1, &positionBuffer);
 		glDeleteBuffers(1, &indexBuffer);

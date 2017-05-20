@@ -12,9 +12,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
-#include "assimp/cimport.h"
+#include "daeloader.h"
 
 using namespace std;
 using namespace pathos;
@@ -27,6 +25,7 @@ NormalRenderer* normRenderer;
 
 // 3D objects
 Mesh *model, *model2;
+Mesh *daeModel;
 Skybox* sky;
 
 // Lights and shadow
@@ -68,15 +67,11 @@ int main(int argc, char** argv) {
 }
 
 void loadDAE() {
-	const aiScene* ai_scene = aiImportFile("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
-	if (ai_scene) {
-		auto anim = ai_scene->mAnimations[0];
-		auto chans = anim->mChannels;
-		for (int i = 0; i < anim->mNumChannels; ++i) {
-			auto chan = anim->mChannels[i];
-			int z = 0;
-		}
-	}
+	DAELoader dae("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
+	daeModel = dae.getMeshes()[0];
+	//mesh->getTransform().appendMove(0, 0, 50);
+	daeModel->getTransform().appendScale(2.0f);
+	scene.add(daeModel);
 }
 
 void setupScene() {
@@ -177,6 +172,8 @@ void render() {
 	model2->getTransform().appendMove(-60, 0, 0);
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
 	model2->getTransform().appendMove(60, 0, 0);
+
+	daeModel->getTransform().appendRotation(0.01f, glm::vec3(0.2, 0.5, 0));
 
 	renderer->render(&scene, cam);
 	//normRenderer->render(model, cam);
