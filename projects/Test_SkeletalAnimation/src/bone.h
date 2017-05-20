@@ -11,6 +11,7 @@ namespace pathos {
 		std::string name;
 		std::vector<float> weights;
 		std::vector<unsigned int> vertexIDs;
+		glm::mat4 offset;
 	};
 
 }

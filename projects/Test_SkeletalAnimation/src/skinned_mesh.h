@@ -13,8 +13,15 @@ namespace pathos {
 
 		void addBone(Bone&& bone);
 
+		// TODO: switch to hardware skinning
+		void setInitialPositions(std::vector<float> positions);
+		void updateSoftwareSkinning();
+
 	protected:
 		std::vector<Bone> bones;
+
+		// TODO: switch to hardware skinning
+		std::vector<float> positions;
 
 	};
 

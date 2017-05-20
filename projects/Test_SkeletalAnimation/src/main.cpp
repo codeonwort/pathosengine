@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 void loadDAE() {
 	DAELoader dae("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
 	daeModel = dae.getMeshes()[0];
-	//mesh->getTransform().appendMove(0, 0, 50);
+	daeModel->getTransform().appendMove(0, 0, 50);
 	daeModel->getTransform().appendScale(2.0f);
 	scene.add(daeModel);
 }
@@ -173,7 +173,7 @@ void render() {
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
 	model2->getTransform().appendMove(60, 0, 0);
 
-	daeModel->getTransform().appendRotation(0.01f, glm::vec3(0.2, 0.5, 0));
+	daeModel->getTransform().appendRotation(0.003f, glm::vec3(0, 1, 0));
 
 	renderer->render(&scene, cam);
 	//normRenderer->render(model, cam);
