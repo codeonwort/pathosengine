@@ -21,9 +21,18 @@
     <ClCompile Include="src\daeloader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\skinned_mesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\daeloader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bone.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\skinned_mesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

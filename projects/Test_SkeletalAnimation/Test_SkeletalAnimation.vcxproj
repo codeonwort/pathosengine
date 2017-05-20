@@ -121,9 +121,12 @@
   <ItemGroup>
     <ClCompile Include="src\daeloader.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\skinned_mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\bone.h" />
     <ClInclude Include="src\daeloader.h" />
+    <ClInclude Include="src\skinned_mesh.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

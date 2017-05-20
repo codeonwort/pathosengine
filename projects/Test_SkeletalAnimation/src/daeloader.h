@@ -25,6 +25,7 @@ namespace pathos {
 		inline const std::vector<Mesh*>& getMeshes() { return meshes; }
 
 	protected:
+		void loadMaterials();
 		void loadMeshes();
 
 	private:

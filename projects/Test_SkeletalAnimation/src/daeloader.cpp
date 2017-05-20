@@ -1,4 +1,5 @@
 #include "daeloader.h"
+#include "skinned_mesh.h"
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
@@ -29,7 +30,7 @@ namespace pathos {
 		scene = aiImportFile(filename, flags);
 		if (!scene) return false;
 
-		// mesh
+		loadMaterials();
 		loadMeshes();
 
 		// animation
@@ -50,6 +51,12 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////
 	// sub functions
+
+	void DAELoader::loadMaterials() {
+		for (auto i = 0; i < scene->mNumMaterials; ++i) {
+			const auto material = scene->mMaterials[i];
+		}
+	}
 	
 	void DAELoader::loadMeshes() {
 		for (auto i = 0; i < scene->mNumMeshes; ++i) {
@@ -74,6 +81,7 @@ namespace pathos {
 				indices.push_back(face.mIndices[2]);
 			}
 			
+			// construct the geometry
 			MeshGeometry* G = new MeshGeometry;
 			if (mesh->HasPositions()) G->updateVertexData(vertices, 3 * mesh->mNumVertices);
 			if (mesh->HasNormals()) G->updateNormalData(normals, 3 * mesh->mNumVertices);
@@ -84,9 +92,28 @@ namespace pathos {
 			}
 			G->updateIndexData(&indices[0], indices.size());
 
+			// TODO: use correct material
 			ColorMaterial* M = new ColorMaterial;
 			M->setAmbient(1.0f, 0.0f, 0.0f);
-			meshes.push_back(new Mesh(G, M));
+
+			// engine's mesh class
+			SkinnedMesh* pathosMesh = new SkinnedMesh(G, M);
+
+			// load bones
+			if (mesh->HasBones()) {
+				for (auto i = 0; i < mesh->mNumBones; ++i) {
+					Bone bone;
+					const auto aiBone = mesh->mBones[i];
+					bone.name = aiBone->mName.C_Str();
+					for (auto j = 0; j < aiBone->mNumWeights; ++j) {
+						bone.vertexIDs.push_back(aiBone->mWeights[j].mVertexId);
+						bone.weights.push_back(aiBone->mWeights[j].mWeight);
+					}
+					pathosMesh->addBone(std::move(bone));
+				}
+			}
+
+			meshes.push_back(pathosMesh);
 		}
 	}
 
