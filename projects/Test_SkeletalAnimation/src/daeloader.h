@@ -8,6 +8,8 @@
 #include "assimp/postprocess.h"
 #include "assimp/cimport.h"
 
+#include "skinned_mesh.h"
+
 #include <vector>
 
 namespace pathos {
@@ -41,6 +43,7 @@ namespace pathos {
 	private:
 		const aiScene* scene = nullptr;
 		std::vector<Mesh*> meshes;
+		Node* root = nullptr;
 
 	};
 

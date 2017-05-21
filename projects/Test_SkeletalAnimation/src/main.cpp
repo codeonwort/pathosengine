@@ -13,6 +13,7 @@
 #include <ctime>
 
 #include "daeloader.h"
+#include "skinned_mesh.h"
 
 using namespace std;
 using namespace pathos;
@@ -25,7 +26,7 @@ NormalRenderer* normRenderer;
 
 // 3D objects
 Mesh *model, *model2;
-Mesh *daeModel;
+SkinnedMesh *daeModel;
 Skybox* sky;
 
 // Lights and shadow
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
 
 void loadDAE() {
 	DAELoader dae("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
-	daeModel = dae.getMeshes()[0];
+	daeModel = dynamic_cast<SkinnedMesh*>(dae.getMeshes()[0]);
 	daeModel->getTransform().appendMove(0, 0, 50);
 	daeModel->getTransform().appendScale(2.0f);
 	scene.add(daeModel);
@@ -81,7 +82,7 @@ void setupScene() {
 	scene.add(dlight);
 
 	srand(time(NULL));
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 10; ++i) {
 		float x = rand() % 50 - 25;
 		float y = rand() % 50 - 25;
 		float z = rand() % 50 - 25;
@@ -149,6 +150,8 @@ void setupScene() {
 	model2->getTransform().appendMove(50, 0, 0);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
 
+	daeModel->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
+
 	// add them to scene
 	scene.add(model);
 	scene.add(model2);
@@ -173,7 +176,12 @@ void render() {
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
 	model2->getTransform().appendMove(60, 0, 0);
 
-	daeModel->getTransform().appendRotation(0.003f, glm::vec3(0, 1, 0));
+	static double time = 0.0;
+	time += 0.01;
+	if (time > 1.0) time = 0.0;
+	daeModel->updateAnimation(0, time);
+	daeModel->updateSoftwareSkinning();
+	//daeModel->getTransform().appendRotation(0.003f, glm::vec3(0, 1, 0));
 
 	renderer->render(&scene, cam);
 	//normRenderer->render(model, cam);

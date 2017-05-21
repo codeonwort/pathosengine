@@ -29,27 +29,20 @@ namespace pathos {
 
 	bool DAELoader::load(const char* filename, unsigned int flags) {
 		if (scene) abort();
-
 		scene = aiImportFile(filename, flags);
 		if (!scene) return false;
 
 		loadNodes();
-		loadAnimations();
 		loadMaterials();
 		loadMeshes();
+		loadAnimations();
 
-		// animation
-		auto anim = scene->mAnimations[0];
-		auto chans = anim->mChannels;
-		for (int i = 0; i < anim->mNumChannels; ++i) {
-			auto chan = anim->mChannels[i];
-			int z = 0;
-		}
+		return true;
 	}
 
 	bool DAELoader::unload() {
 		if (!scene) return false;
-
+		//aiReleaseImport(scene);
 		scene = nullptr;
 		return true;
 	}
@@ -57,25 +50,19 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////
 	// sub functions
 
-	struct Node {
-		std::string name;
-		std::vector<Node> children;
-		aiNode* ai;
-	};
-
 	void DAELoader::loadNodes() {
-		 std::function<void(aiNode*,Node&)> dfs = [&](aiNode* anode, Node& node) {
-			 node.name = anode->mName.C_Str();
-			 node.ai = anode;
+		 std::function<void(aiNode*,Node*)> dfs = [&](aiNode* anode, Node* node) {
+			 node->name = anode->mName.C_Str();
+			 node->localTransform = getGlmMat(anode->mTransformation);
 			for (auto i = 0; i < anode->mNumChildren; ++i) {
 				auto achild = anode->mChildren[i];
-				Node child;
+				Node* child = new Node;
 				dfs(achild, child);
-				node.children.push_back(child);
+				node->children.push_back(child);
 			}
 		};
 		const auto aiRoot = scene->mRootNode;
-		Node root;
+		root = new Node;
 		dfs(aiRoot, root);
 	}
 
@@ -129,16 +116,7 @@ namespace pathos {
 			pos.assign(vertices, vertices + mesh->mNumVertices * 3);
 			pathosMesh->setInitialPositions(std::move(pos));
 
-			// acquire transforms from the node hierarchy
-			std::map<std::string, glm::mat4> nodeTransformMap;
-			std::function<void(aiNode*, glm::mat4&)> calcTransform = [&](aiNode* node, glm::mat4& parent) {
-				glm::mat4 T = parent * getGlmMat(node->mTransformation);
-				nodeTransformMap[std::string(node->mName.C_Str())] = T;
-				for (auto i = 0; i < node->mNumChildren; ++i) {
-					calcTransform(node->mChildren[i], T);
-				}
-			};
-			calcTransform(scene->mRootNode, glm::mat4(1.0f));
+			pathosMesh->setRoot(root);
 
 			// load bones
 			if (mesh->HasBones()) {
@@ -150,8 +128,7 @@ namespace pathos {
 						bone.vertexIDs.push_back(aiBone->mWeights[j].mVertexId);
 						bone.weights.push_back(aiBone->mWeights[j].mWeight);
 					}
-					auto& nodeT = nodeTransformMap[bone.name];
-					bone.offset = nodeT * getGlmMat(aiBone->mOffsetMatrix);
+					bone.offset = getGlmMat(aiBone->mOffsetMatrix);
 					pathosMesh->addBone(std::move(bone));
 				}
 			}
@@ -164,9 +141,12 @@ namespace pathos {
 
 	void DAELoader::loadAnimations() {
 		for (auto i = 0; i < scene->mNumAnimations; ++i) {
-			const auto anim = scene->mAnimations[i];
-			std::vector<aiNodeAnim*> xs;
-			xs.assign(anim->mChannels, anim->mChannels + anim->mNumChannels);
+			const auto aiAnim = scene->mAnimations[i];
+			SkeletalAnimation* anim = new SkeletalAnimation(aiAnim);
+			SkinnedMesh* mesh = dynamic_cast<SkinnedMesh*>(meshes[0]);
+			if (mesh) {
+				mesh->addAnimation(anim);
+			}
 		}
 	}
 

@@ -124,6 +124,7 @@
     <ClCompile Include="src\skinned_mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\animation.h" />
     <ClInclude Include="src\bone.h" />
     <ClInclude Include="src\daeloader.h" />
     <ClInclude Include="src\skinned_mesh.h" />
