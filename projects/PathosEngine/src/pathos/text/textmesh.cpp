@@ -1,55 +1,12 @@
 #include "textmesh.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"
 #include <iostream>
 
 namespace pathos {
 
-	// static members
-	FT_Library TextMesh::library;
-	std::map<std::string, FaceMap*> TextMesh::fontSet;
-	bool TextMesh::textMeshReady = false;
-
-	void TextMesh::textMeshInit() {
-		if (textMeshReady) return;
-
-		// init free type and load fonts
-		if (FT_Init_FreeType(&library)) {
-			std::cerr << "** Cannot init freetype library **" << std::endl;
-			return;
-		}
-		loadFont("default", "../../resources/fonts/consola.ttf", 28);
-
-		textMeshReady = true;
-	}
-	void TextMesh::loadChar(FT_Face* face, char x, const char* name, unsigned int size) {
-		if (FT_New_Face(library, name, 0, face)) {
-			std::cerr << "** Cannot open the font file" << std::endl;
-			return;
-		}
-		FT_Set_Pixel_Sizes(*face, 0, size);
-		if (FT_Load_Char(*face, x, FT_LOAD_RENDER)) {
-			std::cerr << "** Cannot load the character: " << x << std::endl;
-			return;
-		}
-	}
-	void TextMesh::loadFont(std::string tag, const char* name, unsigned int size) {
-		FaceMap* map = new FaceMap;
-		FT_Face face;
-		string ary = " ./";
-		for (char x = 'a'; x <= 'z'; x++) ary += x;
-		for (char x = 'A'; x <= 'Z'; x++) ary += x;
-		for (char x = '0'; x <= '9'; x++) ary += x;
-		for (auto it = ary.begin(); it != ary.end(); it++) {
-			char x = *it;
-			loadChar(&face, x, name, size);
-			map->insert(std::pair<char, FT_Face>(x, face));
-		}
-		fontSet.insert(std::pair<std::string, FaceMap*>(tag, map));
-	}
-
 	TextMesh::TextMesh(string tag):Mesh(nullptr, nullptr) {
-		TextMesh::textMeshInit();
 		this->tag = tag;
 		doubleSided = true;
 		glGenTextures(1, &texID);
@@ -62,7 +19,7 @@ namespace pathos {
 
 	void TextMesh::setText(string txt, unsigned int rgb) {
 		text = txt;
-		FaceMap* set = fontSet.find(tag)->second;
+		auto set = FontManager::getFaceMap(tag);
 
 		// Calculate appropriate texture size
 		int totalWidth = 0, totalHeight = 0;

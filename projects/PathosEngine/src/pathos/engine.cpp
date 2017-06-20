@@ -1,5 +1,6 @@
 #include "pathos/engine.h"
-#include "FreeImage.h"
+#include "pathos/text/font_mgr.h" // subsystem: font manager
+#include "FreeImage.h" // subsystem: image file loader
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -13,7 +14,7 @@ namespace pathos {
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
 	bool Engine::keymap[256] = { false };
 
-	void Engine::init(int* argcp, char** argv, const EngineConfig& config) {
+	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
 		std::cout << "initialize pathos engine..." << std::endl;
 		std::cout << "engine version: " << Engine::version << std::endl;
 
@@ -35,6 +36,13 @@ namespace pathos {
 		FreeImage_Initialise();
 		std::cout << "- freeimage initialized" << std::endl;
 
+		// init font manager
+		if (FontManager::init() == false) {
+			std::cerr << "Failed to initialize the font manager" << std::endl;
+			return false;
+		}
+		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28);
+
 		// init callbacks
 		glutIdleFunc(Engine::idle);
 		glutDisplayFunc(Engine::display);
@@ -52,6 +60,8 @@ namespace pathos {
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_MULTISAMPLE);
 		std::cout << "- gl state initialized" << std::endl;
+
+		return true;
 	}
 
 	/**

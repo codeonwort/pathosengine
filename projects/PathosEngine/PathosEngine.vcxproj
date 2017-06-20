@@ -198,6 +198,7 @@
     <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
     <ClCompile Include="src\pathos\render\shader.cpp" />
+    <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="src\pathos\render\render_forward.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
     <ClInclude Include="src\pathos\render\shader.h" />
+    <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>
