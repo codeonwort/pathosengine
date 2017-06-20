@@ -19,6 +19,8 @@ namespace pathos {
 
 		inline void setHDR(bool value) { useHDR = value; }
 
+		GLuint debug_godRayTexture() { return unpack_pass->debug_godRayTexture(); }
+
 	protected:
 		bool useHDR = false;
 

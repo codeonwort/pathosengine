@@ -2,10 +2,12 @@
     정적 라이브러리 : PathosEngine 프로젝트 개요
 ========================================================================
 
-응용 프로그램 마법사에서 이 PathosEngine 라이브러리 프로젝트를 만들었습니다.
+### Directory Configuration
 
-프로젝트에 대해 소스 파일은 만들어지지 않았습니다.
-
+src/							root
+	glsl/						shader files. currently not used (hardcoded in classes)
+	pathos/						main source code
+	tinyobjloader/				tinyobjloader integration (https://github.com/syoyo/tinyobjloader)
 
 PathosEngine.vcxproj
     응용 프로그램 마법사를 사용하여 생성한 VC++ 프로젝트의 기본 프로젝트 파일입니다. 파일을 생성한 Visual C++ 버전에 대한 정보와 응용 프로그램 마법사를 사용하여 선택한 플랫폼, 구성 및 프로젝트 기능에 대한 정보가 포함되어 있습니다.

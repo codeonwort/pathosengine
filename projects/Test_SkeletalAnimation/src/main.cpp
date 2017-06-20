@@ -12,6 +12,9 @@
 #include <iostream>
 #include <ctime>
 
+#include "daeloader.h"
+#include "skinned_mesh.h"
+
 using namespace std;
 using namespace pathos;
 
@@ -22,14 +25,15 @@ DeferredRenderer* renderer;
 NormalRenderer* normRenderer;
 
 // 3D objects
-Mesh *model, *model2, *model3;
-Mesh* godRaySource;
+Mesh *model, *model2;
+SkinnedMesh *daeModel;
 Skybox* sky;
 
 // Lights and shadow
 PointLight *plight;
 DirectionalLight *dlight;
 
+void loadDAE();
 void setupScene();
 void render();
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -39,7 +43,7 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.width = 800;
 	conf.height = 600;
-	conf.title = "Test: Deferred Rendering";
+	conf.title = "Test: Skeletal Animation";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
@@ -54,12 +58,21 @@ int main(int argc, char** argv) {
 	//normRenderer = new NormalRenderer(0.2);
 
 	// scene
+	loadDAE();
 	setupScene();
 
 	// start the main loop
 	Engine::start();
 
 	return 0;
+}
+
+void loadDAE() {
+	DAELoader dae("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
+	daeModel = dynamic_cast<SkinnedMesh*>(dae.getMeshes()[0]);
+	daeModel->getTransform().appendMove(0, 0, 50);
+	daeModel->getTransform().appendScale(2.0f);
+	scene.add(daeModel);
 }
 
 void setupScene() {
@@ -69,7 +82,7 @@ void setupScene() {
 	scene.add(dlight);
 
 	srand(time(NULL));
-	for (int i = 0; i < 20; ++i) {
+	for (int i = 0; i < 10; ++i) {
 		float x = rand() % 50 - 25;
 		float y = rand() % 50 - 25;
 		float z = rand() % 50 - 25;
@@ -79,12 +92,6 @@ void setupScene() {
 		float power = 0.1 + 0.5 * (rand() % 100) / 100.0;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
-
-	/*scene.add(new DirectionalLight(glm::vec3(0, -1, 0), glm::vec3(0.1, 0, 0.1)));
-	scene.add(new DirectionalLight(glm::vec3(0.2, 0, -1), glm::vec3(0.0, 0.5, 1)));
-	scene.add(new DirectionalLight(glm::vec3(-0.5, -0.5, 0), glm::vec3(0.0, 0.3, 0.4)));
-	scene.add(new DirectionalLight(glm::vec3(0, 0.5, 0.5), glm::vec3(0.1, 0.3, 0.1)));
-	scene.add(new DirectionalLight(glm::vec3(0, 1, 1), glm::vec3(0.0, 0.3, 1)));*/
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -98,9 +105,6 @@ void setupScene() {
 
 	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
 	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
-
-	GLuint tex_debug = renderer->debug_godRayTexture();
-	auto material_tex_debug = new TextureMaterial(tex_debug);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
@@ -146,23 +150,12 @@ void setupScene() {
 	model2->getTransform().appendMove(50, 0, 0);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
 
-	// model 3: wireframe
-	model3 = new Mesh(geom_cube, material_wireframe);
-	//model3 = new Mesh(geom_plane, material_tex_debug);
-	model3->getTransform().appendMove(5, 30, 0);
-
-	// model: god ray source
-	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().appendMove(0, 100, -300);
-	godRaySource->getTransform().appendScale(2.0f);
+	daeModel->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
 
 	// add them to scene
 	scene.add(model);
 	scene.add(model2);
-	scene.add(model3);
-	//scene.add(godRaySource);
 	scene.skybox = sky;
-	scene.godRaySource = godRaySource;
 }
 
 void render() {
@@ -182,6 +175,13 @@ void render() {
 	model2->getTransform().appendMove(-60, 0, 0);
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
 	model2->getTransform().appendMove(60, 0, 0);
+
+	static double time = 0.0;
+	time += 0.01;
+	if (time > 1.0) time = 0.0;
+	daeModel->updateAnimation(0, time);
+	daeModel->updateSoftwareSkinning();
+	//daeModel->getTransform().appendRotation(0.003f, glm::vec3(0, 1, 0));
 
 	renderer->render(&scene, cam);
 	//normRenderer->render(model, cam);

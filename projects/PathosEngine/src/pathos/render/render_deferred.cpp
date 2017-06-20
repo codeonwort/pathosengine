@@ -26,10 +26,7 @@ namespace pathos {
 		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
 
-		colorPass = new SolidColorPass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
-		texturePass = new FlatTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
 		bumpTexturePass = new BumpTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
-		wireframePass = new WireframePass;
 		shadowTexturePass = new ShadowTexturePass;
 		cubeEnvMapPass = new CubeEnvMapPass;
 		shadowCubeTexturePass = new ShadowCubeTexturePass;

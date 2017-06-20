@@ -23,7 +23,7 @@ namespace pathos {
 		static bool keymap[256];
 	public:
 		static std::string version;
-		static void init(int* argcp, char** argv, const EngineConfig& conf); /** initialize the engine. */
+		static bool init(int* argcp, char** argv, const EngineConfig& conf); /** initialize the engine. */
 		static void start(); /** start the main loop. */
 		static void stop(); /** stop the main loop. */
 		static const EngineConfig& getConfig();

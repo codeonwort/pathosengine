@@ -38,8 +38,6 @@ namespace pathos {
 		void burrowNormalBuffer(const MeshGeometry* other);
 		void burrowUVBuffer(const MeshGeometry* other);
 
-		inline GLfloat* getPos() { return positionData; }
-		void uploadPosition();
 	private:
 		void calculateNormals_array();
 		void calculateNormals_indexed();
