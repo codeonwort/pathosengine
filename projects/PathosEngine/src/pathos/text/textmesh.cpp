@@ -2,11 +2,10 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"
-#include <iostream>
 
 namespace pathos {
 
-	TextMesh::TextMesh(string tag):Mesh(nullptr, nullptr) {
+	TextMesh::TextMesh(const std::string& tag):Mesh(nullptr, nullptr) {
 		this->tag = tag;
 		doubleSided = true;
 		glGenTextures(1, &texID);
@@ -17,14 +16,22 @@ namespace pathos {
 		materials.push_back(mat);
 	}
 
-	void TextMesh::setText(string txt, unsigned int rgb) {
+	// CAUTION: ASCII-only! MBCS is not supported.
+	void TextMesh::setText(const std::string& txt, unsigned int rgb) {
+		std::wstring w(txt.begin(), txt.end());
+		setText(w, rgb);
+	}
+
+	void TextMesh::setText(const std::wstring& txt, unsigned int rgb) {
 		text = txt;
-		auto set = FontManager::getFaceMap(tag);
+		auto set = &FontManager::getGlyphMap(tag)->mapping;
 
 		// Calculate appropriate texture size
 		int totalWidth = 0, totalHeight = 0;
 		for (auto it = text.begin(); it != text.end(); it++) {
-			FT_GlyphSlot g = set->find(*it)->second->glyph;
+			auto mapping = set->find(*it);
+			if (mapping == set->end()) mapping = set->find(L'?');
+			auto g = &mapping->second;
 			totalWidth += g->advance.x >> 6;
 			if (g->bitmap.rows > totalHeight) {
 				totalHeight = g->bitmap.rows;
@@ -50,9 +57,13 @@ namespace pathos {
 		
 		// Draw text to the texture
 		if (text.length() > 0) {
-			int x = 0, y = set->find(text[0])->second->glyph->bitmap.rows + 4, dy;
-			for (auto it = text.begin(); it != text.end(); it++) {
-				FT_GlyphSlot g = set->find(*it)->second->glyph;
+			int x = 0;
+			int y = set->find(text[0])->second.bitmap.rows + 4;
+			int dy;
+			for (auto it = text.begin(); it != text.end(); ++it) {
+				auto mapping = set->find(*it);
+				if (mapping == set->end()) mapping = set->find(L'?');
+				auto g = &mapping->second;
 				dy = g->bitmap.rows - g->bitmap_top;
 				//dy = totalHeight
 				for (int ty = 0; ty < g->bitmap.rows; ty++) {

@@ -7,6 +7,7 @@
 #include "pathos/light/light.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/text/textmesh.h"
+#include "pathos/text/font_mgr.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include <iostream>
 
@@ -53,7 +54,10 @@ int main(int argc, char** argv) {
 	conf.title = "Test: Text Rendering";
 	conf.render = render;
 	conf.keyDown = keyDown;
-	Engine::init(&argc, argv, conf);
+	if (Engine::init(&argc, argv, conf) == false) {
+		std::cerr << "Failed to initialize Pathos" << std::endl;
+		return 1;
+	}
 
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
@@ -76,10 +80,11 @@ void setupModel() {
 	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
 	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
 
-	label = new TextMesh("default");
-	label->setText("text mesh test", 0xff0000);
+	FontManager::loadAdditionalGlyphs("hangul", L'¤¡', L'ÆR');
+
+	label = new TextMesh("hangul");
+	label->setText(L"ÇÑ±Û Å×½ºÆ® / ¿µ¾îµµ ³ª¿À³ª English Text", 0xff0000);
 	label->getTransform().appendScale(2);
-	label->setDoubleSided(true);
 
 	scene.add(plight);
 	scene.add(dlight);

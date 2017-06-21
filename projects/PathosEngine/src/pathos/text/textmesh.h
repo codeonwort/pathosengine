@@ -12,13 +12,15 @@ namespace pathos {
 	class TextMesh : public Mesh {
 	private:
 
-		string tag, text;
+		std::string tag;
+		std::wstring text;
 		GLuint texID;
 		//Transform* transform; // owner game object's transform
 	public:
 		//TextMesh(string tag, Transform* ownerTransform);
-		TextMesh(string tag);
-		void setText(string txt, unsigned int rgb);
+		TextMesh(const std::string& tag);
+		void setText(const std::string& txt, unsigned int rgb); // CAUTION: ASCII-only! MBCS is not supported.
+		void setText(const std::wstring& txt, unsigned int rgb);
 	};
 
 }

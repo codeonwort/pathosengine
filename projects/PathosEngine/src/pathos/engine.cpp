@@ -41,7 +41,8 @@ namespace pathos {
 			std::cerr << "Failed to initialize the font manager" << std::endl;
 			return false;
 		}
-		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28);
+		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28); // consolas
+		FontManager::loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28); // 배달의 민족 주아체 [http://font.woowahan.com/jua/]
 
 		// init callbacks
 		glutIdleFunc(Engine::idle);
