@@ -49,15 +49,9 @@ namespace pathos {
 	}
 
 	bool FontManager::_loadFont(const std::string& tag, const char* name, unsigned int size) {
-		GlyphMap* map = new GlyphMap;
-		map->filename = name;
-		map->fontSize = size;
-
 		FT_Face face;
-		std::wstring ary = L" ./?";
-		for (wchar_t x = L'a'; x <= L'z'; x++) ary += x;
-		for (wchar_t x = L'A'; x <= L'Z'; x++) ary += x;
-		for (wchar_t x = L'0'; x <= L'9'; x++) ary += x;
+		std::wstring ary = L" ";
+		for (wchar_t x = 33; x <= 126; ++x) ary += x;
 
 		if (FT_New_Face(library, name, 0, &face)) {
 			std::cerr << "** Cannot retrieve the font face" << std::endl;
@@ -68,13 +62,18 @@ namespace pathos {
 			return false;
 		}
 
+		GlyphMap* map = new GlyphMap;
+		map->filename = name;
+		map->fontSize = size;
+		map->maxHeight = face->size->metrics.height >> 6;
+
 		for (auto it = ary.begin(); it != ary.end(); ++it) {
 			wchar_t x = *it;
 			if (_loadChar(face, x, map->mapping) == false) {
 				return false;
 			}
 		}
-		fontDB.insert(std::pair<std::string, GlyphMap*>(tag, map));
+		fontDB[tag] = map;
 
 		FT_Done_Face(face);
 

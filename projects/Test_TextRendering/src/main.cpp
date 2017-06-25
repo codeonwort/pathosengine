@@ -39,6 +39,21 @@ void render() {
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
+
+	static std::wstring txt = L"°¡³ª´Ù¶ó¸¶¹Ù»ç¾ÆÀÚÂ÷Ä«ÆÄÅ¸ÇÏ";
+	static bool first = true;
+	if (first) {
+		//for (wchar_t x = L'°í'; x <= (L'°í' + 100); ++x) txt += x;
+		first = false;
+	}
+	
+	static int cnt = 0;
+	if (cnt++ > 10) {
+		txt.push_back(txt.front());
+		txt = txt.substr(1);
+		cnt = 0;
+	}
+	//label->setText(txt, 0xff0000);
 	
 	// skybox
 	renderer->render(&scene, cam);
@@ -61,7 +76,7 @@ int main(int argc, char** argv) {
 
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 10));
+	cam->move(glm::vec3(0, 0, 2));
 
 	// renderer
 	renderer = new MeshForwardRenderer;
@@ -80,11 +95,11 @@ void setupModel() {
 	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
 	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
 
-	FontManager::loadAdditionalGlyphs("hangul", L'¤¡', L'ÆR');
+	//FontManager::loadAdditionalGlyphs("hangul", L'¤¡', L'ÆR');
 
 	label = new TextMesh("hangul");
-	label->setText(L"ÇÑ±Û Å×½ºÆ® / ¿µ¾îµµ ³ª¿À³ª English Text", 0xff0000);
-	label->getTransform().appendScale(2);
+	label->setText(L"ÇÑ±Û Å×½ºÆ® / ¿µ¾îµµ ³ª¿À³ª English Text\n¿©±âºÎÅÍ »õ ÁÙ", 0xff0000);
+	label->getTransform().appendScale(5);
 
 	scene.add(plight);
 	scene.add(dlight);

@@ -41,6 +41,7 @@ namespace pathos {
 		WireframePass* wireframePass = nullptr;
 		CubeEnvMapPass* cubeEnvMapPass = nullptr;
 		ShadowCubeTexturePass* shadowCubeTexturePass = nullptr;
+		AlphaOnlyTexturePass* alphaOnlyTexturePass = nullptr;
 
 		// shadow method
 		ShadowMap* shadowMap = nullptr; // for directional light
@@ -61,6 +62,7 @@ namespace pathos {
 		void renderWireframe(Mesh*, MeshGeometry*, WireframeMaterial*);
 		void renderCubeEnvMap(Mesh*, MeshGeometry*, CubeEnvMapMaterial*);
 		void renderShadowCubeTexture(Mesh*, MeshGeometry*, ShadowCubeTextureMaterial*);
+		void renderAlphaOnlyTexture(Mesh*, MeshGeometry*, AlphaOnlyTextureMaterial*);
 
 	private:
 		//

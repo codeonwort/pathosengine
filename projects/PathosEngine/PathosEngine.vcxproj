@@ -184,6 +184,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
     <ClCompile Include="src\pathos\render\envmap.cpp" />
+    <ClCompile Include="src\pathos\render\forward\renderpass_alphaonlytexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_cubeenv.cpp" />
@@ -199,6 +200,7 @@
     <ClCompile Include="src\pathos\render\scene.cpp" />
     <ClCompile Include="src\pathos\render\shader.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
+    <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
@@ -226,6 +228,7 @@
     <ClInclude Include="src\pathos\mesh\render.h" />
     <ClInclude Include="src\pathos\mesh\shader.h" />
     <ClInclude Include="src\pathos\light\shadow.h" />
+    <ClInclude Include="src\pathos\render\forward\renderpass_alphaonlytexture.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_bumptexture.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_cubeenv.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass.h" />
@@ -242,6 +245,7 @@
     <ClInclude Include="src\pathos\render\scene.h" />
     <ClInclude Include="src\pathos\render\shader.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
+    <ClInclude Include="src\pathos\text\font_texture_cache.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>

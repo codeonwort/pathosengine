@@ -12,6 +12,7 @@
 
 namespace pathos {
 
+	// Base class for all material calsses.
 	// One material can be applied to multiple meshes.
 	class MeshMaterial : public NamedObject {
 
@@ -38,6 +39,9 @@ namespace pathos {
 		const std::vector<GLfloat>& getPointLightColorBuffer() { return pointLightColors; }
 		*/
 	};
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Materials
 
 	class ColorMaterial : public MeshMaterial {
 
@@ -139,6 +143,19 @@ namespace pathos {
 	public:
 		CubeEnvMapMaterial(GLuint cubeTexture);
 		inline const GLuint getTexture() { return texture; }
+	};
+
+	class AlphaOnlyTextureMaterial : public MeshMaterial {
+
+	protected:
+		GLuint texture;
+		GLfloat color[3];
+
+	public:
+		AlphaOnlyTextureMaterial(GLuint texture, GLfloat r = 1.0f, GLfloat g = 1.0f, GLfloat b = 1.0f);
+		inline const GLuint getTexture() { return texture; }
+		inline const GLfloat* getColor() const { return color; }
+		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
 	};
 
 }

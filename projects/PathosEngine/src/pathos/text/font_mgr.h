@@ -19,10 +19,18 @@ namespace pathos {
 		std::map<wchar_t, FT_GlyphCache> mapping;
 		std::string filename;
 		unsigned int fontSize;
+		unsigned int maxHeight;
+
+		const FT_GlyphCache& getGlyphCache(wchar_t x) {
+			auto it = mapping.find(x);
+			if (it == mapping.end()) return mapping.find(L'?')->second;
+			return it->second;
+		}
 	};
 
 	using FontDB = std::map<std::string, GlyphMap*>;
 
+	// singleton
 	class FontManager {
 
 	// static
@@ -33,17 +41,18 @@ namespace pathos {
 		static bool loadFont(const std::string& tag, const char* name, unsigned int size) { return getInstance()->_loadFont(tag, name, size); }
 		static bool loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) { return getInstance()->_loadAdditionalGlyphs(tag, start, end); }
 		static GlyphMap* getGlyphMap(const std::string& tag) { return getInstance()->_getGlyphMap(tag); }
+		static FT_Library& getFTLibrary() { return getInstance()->library; }
 	private:
 		static FontManager* instance;
 		static FontManager* getInstance();
 
 	// non-static
-	public:
+	private:
 		FontManager();
 		FontManager(const FontManager& other) = delete;
 		FontManager(FontManager&& rhs) = delete;
 		~FontManager();
-	private:
+
 		bool initialized = false;
 		FT_Library library;
 		FontDB fontDB;

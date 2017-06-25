@@ -20,6 +20,7 @@ namespace pathos {
 		shadowTexturePass = new ShadowTexturePass;
 		cubeEnvMapPass = new CubeEnvMapPass;
 		shadowCubeTexturePass = new ShadowCubeTexturePass;
+		alphaOnlyTexturePass = new AlphaOnlyTexturePass;
 
 		colorPass->setShadowMapping(shadowMap);
 		texturePass->setShadowMapping(shadowMap);
@@ -41,6 +42,7 @@ namespace pathos {
 		release(wireframePass);
 		release(cubeEnvMapPass);
 		release(shadowCubeTexturePass);
+		release(alphaOnlyTexturePass);
 #undef release
 	}
 
@@ -167,6 +169,9 @@ namespace pathos {
 		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
 			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
 			break;
+		case MATERIAL_ID::ALPHA_ONLY_TEXTURE:
+			renderAlphaOnlyTexture(mesh, G, static_cast<AlphaOnlyTextureMaterial*>(M));
+			break;
 		default:
 			// no render pass exists for this material id. should not be here...
 			assert(0);
@@ -236,6 +241,11 @@ namespace pathos {
 	void MeshForwardRenderer::renderShadowCubeTexture(Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
 		shadowCubeTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		shadowCubeTexturePass->render(scene, camera, geom, material);
+	}
+
+	void MeshForwardRenderer::renderAlphaOnlyTexture(Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
+		alphaOnlyTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
+		alphaOnlyTexturePass->render(scene, camera, geom, material);
 	}
 
 }
