@@ -178,6 +178,8 @@
     <ClCompile Include="src\pathos\material\material.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp" />
     <ClCompile Include="src\pathos\mesh\mesh.cpp" />
+    <ClCompile Include="src\pathos\overlay\display_object.cpp" />
+    <ClCompile Include="src\pathos\overlay\rectangle.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
@@ -194,9 +196,12 @@
     <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\god_ray.cpp" />
+    <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp" />
+    <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp" />
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
     <ClCompile Include="src\pathos\render\render_norm.cpp" />
     <ClCompile Include="src\pathos\render\render_forward.cpp" />
+    <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
     <ClCompile Include="src\pathos\render\shader.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
@@ -213,6 +218,8 @@
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
+    <ClInclude Include="src\pathos\overlay\display_object.h" />
+    <ClInclude Include="src\pathos\overlay\rectangle.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
@@ -239,9 +246,13 @@
     <ClInclude Include="src\pathos\render\forward\renderpass_texture.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_wireframe.h" />
     <ClInclude Include="src\pathos\render\god_ray.h" />
+    <ClInclude Include="src\pathos\render\overlay\overlaypass.h" />
+    <ClInclude Include="src\pathos\render\overlay\overlaypass_base.h" />
+    <ClInclude Include="src\pathos\render\overlay\overlaypass_standard.h" />
     <ClInclude Include="src\pathos\render\render_deferred.h" />
     <ClInclude Include="src\pathos\render\render_norm.h" />
     <ClInclude Include="src\pathos\render\render_forward.h" />
+    <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
     <ClInclude Include="src\pathos\render\shader.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />

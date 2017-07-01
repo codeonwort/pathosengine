@@ -9,6 +9,11 @@
 #include "pathos/text/textmesh.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/mesh/geometry_primitive.h"
+
+// overlay
+#include "pathos/render/render_overlay.h"
+#include "pathos/overlay/rectangle.h"
+
 #include <iostream>
 
 using namespace std;
@@ -18,15 +23,21 @@ using namespace pathos;
 Camera* cam;
 Scene scene;
 MeshForwardRenderer* renderer;
+OverlayRenderer* overlayRenderer;
 
 // 3D objects
 TextMesh *label;
 Skybox* sky;
 
+// 2D objects (overlay)
+DisplayObject2D* overlayRoot;
+Rectangle* rect0;
+
 // Lights
 PointLight *plight;
 DirectionalLight *dlight;
 
+void setupOverlay();
 void setupModel();
 void setupSkybox();
 
@@ -55,8 +66,8 @@ void render() {
 	}
 	//label->setText(txt, 0xff0000);
 	
-	// skybox
 	renderer->render(&scene, cam);
+	overlayRenderer->render(overlayRoot);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -80,8 +91,10 @@ int main(int argc, char** argv) {
 
 	// renderer
 	renderer = new MeshForwardRenderer;
+	overlayRenderer = new OverlayRenderer;
 
 	// 3d objects
+	setupOverlay();
 	setupModel();
 	setupSkybox();
 
@@ -118,4 +131,10 @@ void setupSkybox() {
 	sky = new Skybox(cubeTex);
 
 	scene.skybox = sky;
+}
+
+void setupOverlay() {
+	overlayRoot = DisplayObject2D::createRoot();
+	rect0 = new Rectangle(400.0f, 500.0f);
+	overlayRoot->addChild(rect0);
 }

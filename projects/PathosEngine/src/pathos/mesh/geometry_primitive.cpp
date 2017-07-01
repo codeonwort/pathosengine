@@ -54,11 +54,6 @@ namespace pathos {
 		updateNormalData(normalData, numPos * 3);
 		updateIndexData(indexData, gridX * gridY * 6);
 
-		delete[] positionData;
-		delete[] uvData;
-		delete[] normalData;
-		delete[] indexData;
-
 		/*float hw = width / 2, hh = height / 2;
 		GLfloat* vertexData = new GLfloat[12]{ -hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0 };
 		GLfloat* uvData = new GLfloat[8]{ 0.0f,0.0f, 1.0f,0.0f, 1.0f,1.0f, 0.0f,1.0f };
@@ -104,11 +99,6 @@ namespace pathos {
 		updateUVData(uvData, 16);
 		updateNormalData(normalData, 24);
 		updateIndexData(indexData, 36);
-
-		delete[] vertexData;
-		delete[] uvData;
-		delete[] normalData;
-		delete[] indexData;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -168,11 +158,6 @@ namespace pathos {
 		updateUVData(uvData, numVertices * 2);
 		updateNormalData(normalData, numVertices * 3);
 		updateIndexData(indexData, numTriangles * 3);
-
-		delete[] vertexData;
-		delete[] uvData;
-		delete[] normalData;
-		delete[] indexData;
 	}
 
 }
