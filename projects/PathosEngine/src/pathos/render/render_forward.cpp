@@ -68,6 +68,7 @@ namespace pathos {
 		shadowMap->clearLightDepths(scene->numDirectionalLights());
 		omniShadow->clearLightDepths(scene->numPointLights());
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			renderLightDepth(mesh);
 		}
 
@@ -75,6 +76,7 @@ namespace pathos {
 		// @TODO: occluder or BSP tree
 		if (scene->skybox != nullptr) render(scene->skybox);
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			render(mesh);
 		}
 

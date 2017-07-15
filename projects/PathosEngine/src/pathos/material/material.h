@@ -79,6 +79,8 @@ namespace pathos {
 		//TextureMaterial(GLuint texture, bool useAlpha = false, string channelMapping = "rgb");
 
 		inline GLuint getTexture() { return texture; }
+		inline void setTexture(GLuint _texture) { texture = _texture; }
+
 		void setSpecular(GLfloat r, GLfloat g, GLfloat b);
 		inline const GLfloat* getSpecular() const { return specular; }
 

@@ -143,6 +143,7 @@ namespace pathos {
 		}
 
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			renderMeshToGBuffer(mesh);
 		}
 	}

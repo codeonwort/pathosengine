@@ -28,6 +28,8 @@ Mesh *teapot;
 TextMesh *label;
 Skybox* sky;
 
+OBJLoader teapotLoader;
+
 // Lights and shadow
 PointLight *plight, *plight2;
 
@@ -99,13 +101,10 @@ void setupScene() {
 	label->getTransform().appendMove(0, -5, 0);
 
 	// 3d object
-	OBJLoader teapotLoader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	teapot = new Mesh;
-	for (int i = 0; i < teapotLoader.getGeometries().size(); i++){
-		if (envMapMaterial == nullptr){
-			cerr << "Env map material is not initialized!" << endl;
-		}
-		teapot->add(teapotLoader.getGeometries()[i], envMapMaterial);
+	teapotLoader.load("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
+	teapot = teapotLoader.craftMeshFromAllShapes();
+	for (int i = 0; i < teapot->getMaterials().size(); ++i) {
+		teapot->setMaterial(i, envMapMaterial);
 	}
 	teapot->getTransform().appendScale(.2, .2, .2);
 	teapot->getTransform().appendMove(0, -40, -50);

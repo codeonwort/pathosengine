@@ -3,7 +3,7 @@
 #include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"
 
-#define DEBUG_TEXT
+//#define DEBUG_TEXT
 
 namespace pathos {
 

@@ -1,9 +1,10 @@
 #include "pathos/engine.h"
-#include "pathos/text/font_mgr.h" // subsystem: font manager
-#include "FreeImage.h" // subsystem: image file loader
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+
+#include "pathos/text/font_mgr.h" // subsystem: font manager
+#include "FreeImage.h" // subsystem: image file loader
 
 #include <iostream>
 
@@ -13,6 +14,10 @@ namespace pathos {
 	std::string Engine::version = "1.0.0.0";
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
 	bool Engine::keymap[256] = { false };
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+	HGLRC Engine::mainContext = nullptr;
+	HDC Engine::hdc = nullptr;
+#endif
 
 	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
 		std::cout << "initialize pathos engine..." << std::endl;
@@ -20,6 +25,7 @@ namespace pathos {
 
 		Engine::conf = config;
 
+		// freeglut
 		//glutInitContextProfile(GLUT_CORE_PROFILE);
 		//glutInitContextFlags(GLUT_DEBUG);
 		glutInit(argcp, argv);
@@ -28,15 +34,21 @@ namespace pathos {
 		static int wid = glutCreateWindow(conf.title);
 		std::cout << "- window created" << std::endl;
 
-		// init glew
+		// glew
 		if (glewInit() != GLEW_OK) exit(1);
 		std::cout << "- glew initialized" << std::endl;
 
-		// init FreeImage
+		// multi-threading
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+		hdc = wglGetCurrentDC();
+		mainContext = wglGetCurrentContext();
+#endif
+
+		// FreeImage
 		FreeImage_Initialise();
 		std::cout << "- freeimage initialized" << std::endl;
 
-		// init font manager
+		// font manager
 		if (FontManager::init() == false) {
 			std::cerr << "Failed to initialize the font manager" << std::endl;
 			return false;
@@ -44,7 +56,7 @@ namespace pathos {
 		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28); // consolas
 		FontManager::loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28); // 배달의 민족 주아체 [http://font.woowahan.com/jua/]
 
-		// init callbacks
+		// callbacks
 		glutIdleFunc(Engine::idle);
 		glutDisplayFunc(Engine::display);
 		glutReshapeFunc(Engine::reshape);
@@ -53,7 +65,7 @@ namespace pathos {
 		//glutSpecialFunc(Engine::specialKeyboardCallback);
 		//glutSpecialUpFunc(Engine::specialKeyboardUpCallback);
 
-		// init rendering environment
+		// render state
 		glClearColor(0, 0, 0, 0);
 		glClearDepth(1.0f);
 		glClearStencil(0);
@@ -111,5 +123,17 @@ namespace pathos {
 	}
 
 	void Engine::reshape(int w, int h) { glViewport(0, 0, w, h); }
+
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+	HGLRC Engine::createContext() {
+		HDC hdc = wglGetCurrentDC();
+		HGLRC context = wglCreateContext(hdc);
+		return context;
+	}
+
+	void Engine::deleteContext(HGLRC context) {
+		wglDeleteContext(context);
+	}
+#endif
 	
 }

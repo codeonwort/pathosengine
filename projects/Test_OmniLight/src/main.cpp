@@ -95,7 +95,7 @@ void setupScene() {
 	lamp->add(geom, testColor);
 	}*/
 	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
-	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
+	lamp = obj2.craftMeshFromAllShapes();
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->setDoubleSided(true);
 

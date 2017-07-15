@@ -24,7 +24,7 @@ namespace pathos {
 		return dib;
 	}
 
-	GLuint loadTexture(FIBITMAP* dib) {
+	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap) {
 		int w, h;
 		unsigned char* data;
 		GLuint tex_id = 0;
@@ -42,11 +42,11 @@ namespace pathos {
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, w, h);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0,w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
-		}else if (bpp == 24) {
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		} else if (bpp == 24) {
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0,w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
-		}else {
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
+		} else {
 #ifdef _DEBUG
 			std::cerr << "pathos::loadTexture(): An image with unexpected BPP " << bpp << std::endl;
 #endif
@@ -54,7 +54,9 @@ namespace pathos {
 			glDeleteTextures(1, &tex_id);
 			return 0;
 		}
-		glGenerateMipmap(GL_TEXTURE_2D);
+		if (generateMipmap) {
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
 
 		return tex_id;
 	}
@@ -68,7 +70,7 @@ namespace pathos {
 	* <li> width and height must be same</li>
 	* <li> all images have same bpp (24-bit or 32-bit)</li></ul>
 	*/
-	GLuint loadCubemapTexture(FIBITMAP* dib[]) {
+	GLuint loadCubemapTexture(FIBITMAP* dib[], bool generateMipmap) {
 		int w = FreeImage_GetWidth(dib[0]);
 		int h = FreeImage_GetHeight(dib[0]);
 		if (w != h){
@@ -102,7 +104,9 @@ namespace pathos {
 				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, 0,0,w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
 			}
 		}
-		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		if (generateMipmap) {
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		}
 
 		return tex_id;
 	}
