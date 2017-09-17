@@ -29,6 +29,7 @@ namespace pathos {
 	}
 	glm::mat4 Camera::getViewMatrix() { calculateViewMatrix(); return transform.getMatrix(); }
 	glm::mat4 Camera::getViewProjectionMatrix() { return lens->getProjectionMatrix() * getViewMatrix(); }
+	glm::mat4 Camera::getProjectionMatrix() { return lens->getProjectionMatrix(); }
 	glm::vec3 Camera::getEyeVector() { calculateViewMatrix(); return transform.inverseTransformVector(glm::vec3(0, 0, -1)); } // eye direction in world space
 	glm::vec3 Camera::getPosition() { calculateViewMatrix(); return transform.getPosition(); }
 
