@@ -21,7 +21,7 @@ namespace pathos {
 		fsSource.uniform("samplerCube", "tex_cubemap");
 		fsSource.inVar("vec3", "normal");
 		fsSource.outVar("vec4", "outColor");
-		fsSource.mainCode("vec3 n = vec3(fs_in.normal.x, -fs_in.normal.y, -fs_in.normal.z);");
+		fsSource.mainCode("vec3 n = vec3(fs_in.normal.x, -fs_in.normal.y, fs_in.normal.z);");
 		//fsSource.mainCode("vec3 r = reflect(-eye, n);");
 		//fsSource.mainCode("outColor = texture(tex_cubemap, r);");
 		fsSource.mainCode("outColor = texture(tex_cubemap, n);");
