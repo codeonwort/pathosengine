@@ -106,9 +106,9 @@ void setupModel() {
 }
 
 void setupSkybox() {
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
-		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
-		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
+	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
+		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
+		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
