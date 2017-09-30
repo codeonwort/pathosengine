@@ -22,6 +22,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_SkeletalAnimation", "p
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_TextRendering", "projects\Test_TextRendering\Test_TextRendering.vcxproj", "{41AA4914-5C4F-43A9-A7DE-F3BB118C98D7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_NvidiaAnsel", "projects\Test_NvidiaAnsel\Test_NvidiaAnsel.vcxproj", "{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -90,6 +92,14 @@ Global
 		{41AA4914-5C4F-43A9-A7DE-F3BB118C98D7}.Release|Win32.Build.0 = Release|Win32
 		{41AA4914-5C4F-43A9-A7DE-F3BB118C98D7}.Release|x64.ActiveCfg = Release|x64
 		{41AA4914-5C4F-43A9-A7DE-F3BB118C98D7}.Release|x64.Build.0 = Release|x64
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|Win32.Build.0 = Debug|Win32
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|x64.ActiveCfg = Debug|x64
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|x64.Build.0 = Debug|x64
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|Win32.ActiveCfg = Release|Win32
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|Win32.Build.0 = Release|Win32
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|x64.ActiveCfg = Release|x64
+		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
