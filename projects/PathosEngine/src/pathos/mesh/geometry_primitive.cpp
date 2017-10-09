@@ -55,11 +55,11 @@ namespace pathos {
 		updateIndexData(indexData, gridX * gridY * 6);
 
 		/*float hw = width / 2, hh = height / 2;
-		GLfloat* vertexData = new GLfloat[12]{ -hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0 };
+		GLfloat* positionData = new GLfloat[12]{ -hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0 };
 		GLfloat* uvData = new GLfloat[8]{ 0.0f,0.0f, 1.0f,0.0f, 1.0f,1.0f, 0.0f,1.0f };
 		GLfloat* normalData = new GLfloat[12]{ 0.0f,0,1, 0,0,1, 0,0,1, 0,0,1 };
 		GLuint* indexData = new GLuint[6]{ 0,1,2, 0,2,3 };
-		updateVertexData(vertexData, 12);
+		updateVertexData(positionData, 12);
 		updateUVData(uvData, 8);
 		updateNormalData(normalData, 12);
 		updateIndexData(indexData, 6);*/
@@ -73,7 +73,7 @@ namespace pathos {
 	void CubeGeometry::buildGeometry() {
 		float hx = halfSize.x, hy = halfSize.y, hz = halfSize.z;
 		// ccw winding
-		GLfloat* vertexData = new GLfloat[24]{
+		GLfloat* positionData = new GLfloat[24]{
 			hx, hy, hz,
 			hx, -hy, hz,
 			-hx, -hy, hz,
@@ -94,7 +94,8 @@ namespace pathos {
 			-1, -1, -1,
 			-1, 1, -1 };
 		GLuint* indexData = new GLuint[36]{ 0,2,1, 0,3,2, 4,1,5, 4,0,1, 4,3,0, 4,7,3, 3,6,2, 3,7,6, 7,5,6, 7,4,5, 1,6,5, 1,2,6 };
-		updateVertexData(vertexData, 24);
+
+		updateVertexData(positionData, 24);
 		updateUVData(uvData, 16);
 		updateNormalData(normalData, 24);
 		updateIndexData(indexData, 36);
@@ -109,7 +110,7 @@ namespace pathos {
 		unsigned int numVertices = division*division;
 		unsigned int numTriangles = division*(division - 1) * 2;
 		// ccw winding
-		GLfloat* vertexData = new GLfloat[numVertices * 3];
+		GLfloat* positionData = new GLfloat[numVertices * 3];
 		GLfloat* uvData = new GLfloat[numVertices * 2];
 		GLfloat* normalData = new GLfloat[numVertices * 3];
 		GLuint* indexData = new GLuint[numTriangles * 3];
@@ -126,11 +127,11 @@ namespace pathos {
 				x = radius * cos(phi) * cos(theta);
 				y = radius * cos(phi) * sin(theta);
 				z = radius * sin(phi);
-				vertexData[3 * k] = normalData[3 * k] = x;
-				vertexData[3 * k + 1] = normalData[3 * k + 1] = y;
-				vertexData[3 * k + 2] = normalData[3 * k + 2] = z;
-				uvData[2 * k] = theta;
-				uvData[2 * k + 1] = phi;
+				positionData[3 * k] = normalData[3 * k] = x;
+				positionData[3 * k + 1] = normalData[3 * k + 1] = y;
+				positionData[3 * k + 2] = normalData[3 * k + 2] = z;
+				uvData[2 * k] = theta / pi2;
+				uvData[2 * k + 1] = (phi + pi_2) / pi;
 				if (i != division - 1) {
 					if (j != division - 1) {
 						indexData[6 * k] = k;
@@ -153,7 +154,7 @@ namespace pathos {
 			}
 		}
 
-		updateVertexData(vertexData, numVertices * 3);
+		updateVertexData(positionData, numVertices * 3);
 		updateUVData(uvData, numVertices * 2);
 		updateNormalData(normalData, numVertices * 3);
 		updateIndexData(indexData, numTriangles * 3);

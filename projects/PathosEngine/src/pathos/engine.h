@@ -1,5 +1,13 @@
 #pragma once
 
+//#define PATHOS_MULTI_THREAD_SUPPORT
+
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+#include <GL/wglext.h>
+#endif
+
 #include <string>
 
 namespace pathos {
@@ -17,10 +25,16 @@ namespace pathos {
 	};
 
 	class Engine final {
+
 	private:
 		static EngineConfig conf;
 		static void render();
 		static bool keymap[256];
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+		static HDC hdc;
+		static HGLRC mainContext;
+#endif
+
 	public:
 		static std::string version;
 		static bool init(int* argcp, char** argv, const EngineConfig& conf); /** initialize the engine. */
@@ -35,6 +49,12 @@ namespace pathos {
 		static void reshape(int w, int h);
 		static void keyDown(unsigned char ascii, int x, int y);
 		static void keyUp(unsigned char ascii, int x, int y);
+
+#ifdef PATHOS_MULTI_THREAD_SUPPORT
+		static HGLRC createContext();
+		static void deleteContext(HGLRC context);
+		static inline HDC getHDC() { return hdc; }
+#endif
 	};
 
 }

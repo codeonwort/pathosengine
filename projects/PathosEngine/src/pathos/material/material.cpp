@@ -73,4 +73,11 @@ namespace pathos {
 		materialID = MATERIAL_ID::CUBE_ENV_MAP;
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////
+	// AlphaOnlyTextureMaterial
+	AlphaOnlyTextureMaterial::AlphaOnlyTextureMaterial(GLuint texture, GLfloat r, GLfloat g, GLfloat b) :texture(texture) {
+		materialID = MATERIAL_ID::ALPHA_ONLY_TEXTURE;
+		setColor(r, g, b);
+	}
+
 }

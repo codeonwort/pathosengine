@@ -10,3 +10,4 @@
 #include "renderpass_cubeenv.h"
 #include "renderpass_bumptexture.h"
 #include "renderpass_shadowcubemap.h"
+#include "renderpass_alphaonlytexture.h"

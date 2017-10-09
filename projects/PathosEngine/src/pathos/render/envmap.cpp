@@ -6,24 +6,31 @@
 namespace pathos {
 
 	/**
-	* @param	textureID	texture id in which cubemap images are loaded. see pathos/loader/imageloader.h -> loadCubemapTexture().
+	* @param	textureID	cubemap texture id in which cubemap images are loaded. see pathos/loader/imageloader.h -> loadCubemapTexture().
 	*/
 	Skybox::Skybox(GLuint textureID) {
 		this->textureID = textureID;
 		createShader();
+		cube = new CubeGeometry(glm::vec3(1.0f));
+	}
+
+	Skybox::~Skybox() {
+		glDeleteProgram(program);
+		delete cube;
 	}
 
 	void Skybox::createShader() {
 		string vshader = R"(#version 430 core
+layout (location = 0) in vec3 position;
+uniform mat4 viewProj;
 out VS_OUT { vec3 tc; } vs_out;
-uniform mat4 viewTransform;
 void main() {
-  const vec3[4] vertices = vec3[4](vec3(-1,-1,1), vec3(1,-1,1), vec3(-1,1,1), vec3(1,1,1));
-  vs_out.tc = mat3(viewTransform) * vertices[gl_VertexID];
+  vs_out.tc = position;
   vs_out.tc.y *= -1;
-  gl_Position = vec4(vertices[gl_VertexID], 1.0);
+  gl_Position = (viewProj * vec4(position, 1)).xyww;
 }
 )";
+
 		string fshader = R"(#version 430 core
 layout (binding = 0) uniform samplerCube texCube;
 in VS_OUT { vec3 tc; } fs_in;
@@ -34,23 +41,36 @@ void main() {
 )";
 		program = createProgram(vshader, fshader);
 		if (program != 0) {
-			uniform_viewTransform = glGetUniformLocation(program, "viewTransform");
+			uniform_transform = glGetUniformLocation(program, "viewProj");
 		}
 	}
 
-	void Skybox::activate(const glm::mat4& viewTransform) {
+	void Skybox::activate(const glm::mat4& transform) {
 		glUseProgram(program);
-		glm::mat4 transform = glm::scale(viewTransform, glm::vec3(1, 1, 1));
-		glUniformMatrix4fv(uniform_viewTransform, 1, GL_FALSE, &transform[0][0]);
+		
+		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+
 		glActiveTexture(GL_TEXTURE0);
-		glDisable(GL_DEPTH_TEST);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_DEPTH_TEST);
+		glCullFace(GL_FRONT);
+
+		cube->activatePositionBuffer(0);
+		cube->activateIndexBuffer();
 	}
 
 	void Skybox::render() {
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		cube->draw();
+		
+		// deactivate()
+		cube->deactivateIndexBuffer();
+		cube->deactivatePositionBuffer(0);
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
+		glDepthFunc(GL_LESS);
+		glCullFace(GL_BACK);
+		glUseProgram(0);
 	}
 
 }

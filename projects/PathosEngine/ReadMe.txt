@@ -5,8 +5,19 @@
 ### Directory Configuration
 
 src/							root
-	glsl/						shader files. currently not used (hardcoded in classes)
+	glsl/						shader files. currently not used (shaders are hard-coded into classes)
 	pathos/						main source code
+		camera/					camera class
+		light/					light and shadow
+		loader/					various loaders (image, 3d object, and so on)
+		material/				material class
+		mesh/					mesh and geometry (TODO: move material into mesh or separate geom from mesh)
+		overlay/				2d display over 3d scene
+		render/					renderer & render passes (shader programs)
+		text/					literally, text
+		wrapper/				simple wrappers
+		core.h/.cpp				fundamental objects
+		engine.h/.cpp			manages engine itself
 	tinyobjloader/				tinyobjloader integration (https://github.com/syoyo/tinyobjloader)
 
 PathosEngine.vcxproj

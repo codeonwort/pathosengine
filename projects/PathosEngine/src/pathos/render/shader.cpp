@@ -8,6 +8,8 @@
 #include <fstream>
 #include <algorithm>
 
+//#define DEBUG_SHADER
+
 using namespace std;
 
 namespace pathos {
@@ -42,19 +44,19 @@ namespace pathos {
 
 	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
 	GLuint createProgram(std::vector<Shader*>& shaders) {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(DEBUG_SHADER)
 		std::cout << std::endl << "=== start creating a shader program ===" << std::endl;
 #endif
 		for (Shader* shader : shaders) {
 			bool compiled = shader->compile();
 			if (!compiled) {
-#ifdef _DEBUG
-				std::cout << "> shader compile error: " << shader->getErrorLog() << endl;
+#if defined(_DEBUG)
+				std::cerr << "> shader compile error: " << shader->getErrorLog() << endl;
 #endif
 				break;
 			}
 		}
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(DEBUG_SHADER)
 		std::cout << "> linking a program" << std::endl;
 #endif
 		GLuint program = glCreateProgram();
@@ -70,15 +72,15 @@ namespace pathos {
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
 #ifdef _DEBUG
-			cout << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
+			std::cerr << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
 			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
-			std::cout << "> link error code: " << glGetError() << std::endl;
-			std::cout << "> program was not created. return NULL..." << std::endl;
+			std::cerr << "> link error code: " << glGetError() << std::endl;
+			std::cerr << "> program was not created. return NULL..." << std::endl;
 #endif
 			glDeleteProgram(program);
 			return 0;
 		}
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(DEBUG_SHADER)
 		std::cout << "=== finish program creation ===" << std::endl << std::endl;
 #endif
 		return program;
@@ -132,7 +134,7 @@ namespace pathos {
 	}
 
 	bool Shader::compile() {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(DEBUG_SHADER)
 		const char* shaderType;
 		if (type == GL_VERTEX_SHADER) shaderType = "GL_VERTEX_SHADER";
 		else if (type == GL_FRAGMENT_SHADER) shaderType = "GL_FRAGMENT_SHADER";
@@ -156,8 +158,8 @@ namespace pathos {
 			errorLog.resize(logSize);
 			glGetShaderInfoLog(name, logSize, NULL, const_cast<char*>(errorLog.c_str()));
 #ifdef _DEBUG
-			std::cout << "> shader compile error: " << errorLog;
-			std::cout << source << endl;
+			std::cerr << "> shader compile error: " << errorLog;
+			std::cerr << source << endl;
 #endif
 			return false;
 		}

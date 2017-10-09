@@ -95,14 +95,14 @@ void setupScene() {
 	lamp->add(geom, testColor);
 	}*/
 	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
-	lamp = obj2.craftMesh(0, obj2.numGeometries(), "lamp");
+	lamp = obj2.craftMeshFromAllShapes();
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->setDoubleSided(true);
 
 	// cubemap
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
-		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
-		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
+	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
+		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
+		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);

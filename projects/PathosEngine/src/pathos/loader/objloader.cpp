@@ -1,9 +1,4 @@
 #include "pathos/loader/objloader.h"
-#include "pathos/loader/imageloader.h"
-
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
 
 #include <string>
 #include <iostream>
@@ -11,10 +6,10 @@
 #include <set>
 #include <map>
 
-//#define TINYOBJLOADER_IMPLEMENTATION
-//#include "tiny_obj_loader.h"
-
 using namespace std;
+
+//#define LOAD_NORMAL_DATA
+//#define WARN_INVALID_FACE_MARTERIAL
 
 namespace pathos {
 
@@ -25,6 +20,7 @@ namespace pathos {
 	* load a .obj file
 	*/
 	void calculateNormal(const tinyobj::attrib_t& attrib, const vector<GLuint>& indices, vector<GLfloat>& normals) {
+		normals.clear();
 		int numPos = attrib.vertices.size() / 3;
 		glm::vec3* accum = new glm::vec3[numPos];
 		unsigned int* counts = new unsigned int[numPos];
@@ -49,7 +45,6 @@ namespace pathos {
 		}
 		for (auto i = 0; i < numPos; i++){
 			accum[i] = glm::normalize(accum[i]);
-			//std::cerr << accum[i].x << ' ' << accum[i].y << ' ' << accum[i].z << endl;
 		}
 		for (auto i = 0; i < indices.size(); i++){
 			normals.push_back(accum[indices[i]].x);
@@ -60,198 +55,228 @@ namespace pathos {
 		delete counts;
 	}
 
-	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) :t_shapes(), t_materials(), geometries(), materialIndices(), materials() {
-		string err;
-		tinyobj::attrib_t attrib;
-		bool ret = tinyobj::LoadObj(&attrib, &t_shapes, &t_materials, &err, objFile, mtlDir);
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		cout << "Loading .obj file: \"" << objFile << "\"" << endl;
+	OBJLoader::OBJLoader() {}
+
+	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) {
+		bool ok = load(objFile, mtlDir);
+		assert(ok);
+	}
+
+	bool OBJLoader::load(const char* objFile, const char* _mtlDir) {
+		mtlDir = _mtlDir;
+
+		// read data using tinyobjloader
+		string err;
+		bool ret = tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile, mtlDir.c_str());
+
+		std::cout << "Loading .obj file: \"" << objFile << "\"" << std::endl;
 		if (!err.empty()) {
-			cerr << err << endl;
+			std::cerr << "\tError while loading obj: " << err << std::endl;
+			return false;
 		}
-		cout << "  number of shapes: " << t_shapes.size() << endl;
-		cout << "  number of materials: " << t_materials.size() << endl;
-		
-		// gather materials
-		map<string, GLuint> textureDict;
+		std::cout << "\tnumber of shapes: " << t_shapes.size() << std::endl;
+		std::cout << "\tnumber of materials: " << t_materials.size() << std::endl;
+
+		// reconstruct data
+		analyzeMaterials(t_materials, materials);
+		reconstructShapes(t_shapes, t_attrib, pendingShapes);
+
+		return true;
+	}
+	
+	void OBJLoader::unload() {
+		mtlDir.clear();
+		t_shapes.clear();
+		t_materials.clear();
+		t_attrib.normals.clear();
+		t_attrib.texcoords.clear();
+		t_attrib.vertices.clear();
+		pendingShapes.clear();
+		materials.clear();
+		for (auto& bmp : bitmapDB) FreeImage_Unload(bmp.second);
+		bitmapDB.clear();
+		isPendingMaterial.clear();
+		pendingTextureData.clear();
+		textureDB.clear();
+	}
+
+	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<MeshMaterial*>& output) {
 		for (size_t i = 0; i < t_materials.size(); i++) {
-			tinyobj::material_t &t_mat = t_materials[i];
-			MeshMaterial* mat = nullptr;
-			
-			// currently, only plain texture or color materials are supported
-			if (t_mat.diffuse_texname.length() != 0) {
-				string tex_path = mtlDir + t_mat.diffuse_texname;
-				GLuint texID;
-				cout << "required texture: " << tex_path << endl;
-				auto it = textureDict.find(tex_path);
-				if (it != textureDict.end()) {
-					texID = it->second;
-					cout << "texture for " << t_mat.diffuse_texname << " already exists. reuse it" << endl;
+			tinyobj::material_t& t_mat = t_materials[i];
+			MeshMaterial* M = nullptr;
+
+			if (t_mat.diffuse_texname.length() > 0) {
+				std::string image_path = mtlDir + t_mat.diffuse_texname;
+				FIBITMAP* bmp;
+				if (bitmapDB.find(image_path) == bitmapDB.end()) {
+					bmp = loadImage(image_path.c_str());
+					bitmapDB.insert(std::make_pair(image_path, bmp));
 				} else {
-					texID = loadTexture(loadImage(tex_path.c_str()));
-					cout << "texture for " << t_mat.diffuse_texname << " does not exists. make one" << endl;
-					textureDict.insert(pair<std::string, GLuint>(tex_path, texID));
+					bmp = bitmapDB[image_path];
 				}
-				if (t_mat.bump_texname.length() != 0){
-					// TODO: support bump mapping
-					cout << "!!!! BUMP TEXTURE HERE: " << t_mat.bump_texname << endl;
-				}
-				TextureMaterial* flatTexture = new TextureMaterial(texID);
-				mat = flatTexture;
+				M = new TextureMaterial(0); // pending request
+				isPendingMaterial.push_back(true);
+				pendingTextureData.insert(make_pair(i, bmp));
 			} else {
 				ColorMaterial* solidColor = new ColorMaterial;
 				solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
 				solidColor->setDiffuse(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
 				solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
 				solidColor->setAlpha(1.0f);
-				mat = solidColor;
+				M = solidColor;
+				isPendingMaterial.push_back(false);
 			}
 
-			mat->setName(t_mat.name);
-			materials.push_back(mat);
+			M->setName(t_mat.name);
+			materials.push_back(M);
 		}
 
-		// if there is no material, create a random color material
-		if (materials.size() == 0){
-			ColorMaterial *defaultMaterial = new ColorMaterial;
-			defaultMaterial->setDiffuse(0.5f, 0.5f, 0.5f);
-			//WireframeMaterialPass *pass = new WireframeMaterialPass(1, 1, 1, 1);
-			MeshMaterial* mat = defaultMaterial;
-			materials.push_back(move(mat));
-		}
-		
-		// convert each shape into geometries
-		for (size_t i = 0; i < t_shapes.size(); i++) {
-			tinyobj::shape_t &shape = t_shapes[i];
-			
-			cout << "analyzing a shape: " << shape.name << endl;
+		// used for shapes whose material id is invalid
+		defaultMaterial = new ColorMaterial;
+		ColorMaterial* M = defaultMaterial;
+		M->setAmbient(0.1f, 0.0f, 0.0f);
+		M->setDiffuse(0.5f, 0.5f, 0.5f);
+		M->setSpecular(1.0f, 1.0f, 1.0f);
+		M->setAlpha(1.0f);
+		materials.push_back(M);
+	}
 
-			set<int> materialIDs; // material IDs used by faces of this shape
-			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++){
-				int faceMatID = shape.mesh.material_ids[f];
-				if (faceMatID < 0) faceMatID = 0;
-				materialIDs.insert(faceMatID);
+	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& attrib, std::vector<PendingShape>& output) {
+		output.clear();
+		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
+			const tinyobj::shape_t& src = t_shapes[i];
+			PendingShape dst;
+
+			std::cout << "analyzing shape: " << src.name << std::endl;
+
+			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
+				int faceMaterialID = src.mesh.material_ids[f];
+#ifdef WARN_INVALID_FACE_MARTERIAL
+				assert(faceMaterialID >= 0); // invalid material id
+#endif
+				dst.materialIDs.insert(faceMaterialID);
 			}
-			int numMaterialIDs = materialIDs.size();
 
-			map<int, vector<GLfloat>> positionMap, normalMap, texcoordMap;
-			map<int, vector<GLuint>> indexMap;
-
-			cout << "-> num materials: " << numMaterialIDs << endl;
-
+			auto numMaterials = dst.materialIDs.size();
 			size_t index_offset = 0;
-			for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
-				int fv = shape.mesh.num_face_vertices[f];
-				int faceMatID = shape.mesh.material_ids[f];
-				if (faceMatID < 0) faceMatID = 0;
 
-				for (size_t v = 0; v < fv; v++){
-					tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+			std::cout << "\tnumber of materials: " << numMaterials << std::endl;
+
+			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
+				int fv = src.mesh.num_face_vertices[f];
+				int materialID = src.mesh.material_ids[f];
+				for (size_t v = 0; v < fv; ++v) {
+					tinyobj::index_t idx = src.mesh.indices[index_offset + v];
+					// position data
 					float vx = attrib.vertices[3 * idx.vertex_index + 0];
 					float vy = attrib.vertices[3 * idx.vertex_index + 1];
 					float vz = attrib.vertices[3 * idx.vertex_index + 2];
-					positionMap[faceMatID].push_back(vx);
-					positionMap[faceMatID].push_back(vy);
-					positionMap[faceMatID].push_back(vz);
-					/*if (idx.normal_index >= 0){
+					dst.positions[materialID].push_back(vx);
+					dst.positions[materialID].push_back(vy);
+					dst.positions[materialID].push_back(vz);
+#ifdef LOAD_NORMAL_DATA
+					// normal data
+					if (idx.normal_index >= 0) {
 						float nx = attrib.normals[3 * idx.normal_index + 0];
 						float ny = attrib.normals[3 * idx.normal_index + 1];
 						float nz = attrib.normals[3 * idx.normal_index + 2];
-						normalMap[faceMatID].push_back(nx);
-						normalMap[faceMatID].push_back(ny);
-						normalMap[faceMatID].push_back(nz);
-					}*/
-					if (idx.texcoord_index >= 0){
+						dst.normals[materialID].push_back(nx);
+						dst.normals[materialID].push_back(ny);
+						dst.normals[materialID].push_back(nz);
+					}
+#endif // LOAD_NORMAL_DATA
+					// texcoord data
+					if (idx.texcoord_index >= 0) {
 						float u = attrib.texcoords[2 * idx.texcoord_index + 0];
 						float v = attrib.texcoords[2 * idx.texcoord_index + 1];
-						texcoordMap[faceMatID].push_back(u);
-						texcoordMap[faceMatID].push_back(v);
+						dst.texcoords[materialID].push_back(u);
+						dst.texcoords[materialID].push_back(v);
 					}
-					indexMap[faceMatID].push_back(idx.vertex_index);
+					dst.indices[materialID].push_back(idx.vertex_index);
 				}
 				index_offset += fv;
 			}
 
-			cout << "-> buffers are filled" << endl;
+			output.emplace_back(std::move(dst));
 
-			// group the geometry with each index buffer
-			for (auto it = materialIDs.begin(); it != materialIDs.end(); it++){
-				int i = *it;
-				MeshGeometry* geom = new MeshGeometry;
-				geom->setDrawArraysMode(true);
-				geom->updateVertexData(&positionMap[i][0], positionMap[i].size());
-				geom->updateIndexData(&indexMap[i][0], indexMap[i].size());
-				//if(normalMap[i].size() > 0) geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
-				//else{
-					calculateNormal(attrib, indexMap[i], normalMap[i]);
-					std::cout << "-> auto calculating normals..." << endl;
-					//geom->calculateNormals();
-					geom->updateNormalData(&normalMap[i][0], normalMap[i].size());
-				//}
-				if(texcoordMap[i].size() > 0) geom->updateUVData(&texcoordMap[i][0], texcoordMap[i].size());
-				geometries.push_back(geom);
-				materialIndices.push_back(i);
+			std::cout << "\tthis shape has been successfully parsed" << std::endl;
+		}
+	}
+
+	Mesh* OBJLoader::craftMeshFrom(const string& shapeName) {
+		for (size_t i = 0; i < t_shapes.size(); ++i) {
+			if (t_shapes[i].name == shapeName) {
+				return craftMeshFrom(i);
 			}
 		}
+		return nullptr;
+	}
+	Mesh* OBJLoader::craftMeshFrom(unsigned int shapeIndex) { return craftMesh(shapeIndex, shapeIndex); }
+	Mesh* OBJLoader::craftMeshFromAllShapes() { return craftMesh(0, pendingShapes.size() - 1); }
+
+	Mesh* OBJLoader::craftMesh(unsigned int from, unsigned int to) {
+		assert(0 <= from && from < pendingShapes.size());
+		assert(0 <= to && to < pendingShapes.size());
+		assert(from <= to);
+
+		Mesh* mesh = new Mesh;
+
+		for (unsigned int i = from; i <= to; ++i) {
+			PendingShape& shape = pendingShapes[i];
+
+			for (auto materialID : shape.materialIDs) {
+#ifdef WARN_INVALID_FACE_MARTERIAL
+				assert(materialID >= 0);
+#endif
+				auto& positions = shape.positions[materialID];
+				auto& normals = shape.normals[materialID];
+				auto& texcoords = shape.texcoords[materialID];
+				auto& indices = shape.indices[materialID];
+#ifdef LOAD_NORMAL_DATA
+				if (normals.size() < positions.size()) calculateNormal(t_attrib, indices, normals);
+#else
+				calculateNormal(t_attrib, indices, normals);
+#endif
+				MeshGeometry* geom = new MeshGeometry;
+				geom->setDrawArraysMode(true);
+				geom->updateVertexData(&positions[0], positions.size());
+				geom->updateNormalData(&normals[0], normals.size());
+				if (texcoords.size() > 0) geom->updateUVData(&texcoords[0], texcoords.size());
+				geom->updateIndexData(&indices[0], indices.size());
+				mesh->add(geom, getMaterial(materialID));
+			}
+		}
+
+		return mesh;
 	}
 
-	Mesh* OBJLoader::craftMesh(size_t start, size_t end, string name) {
-		Mesh* m = new Mesh(nullptr, nullptr);
-		m->setName(name);
-		for (auto i = start; i < end; i++) {
-			m->add(geometries[i], materials[materialIndices[i]]);
-		}
-		return m;
-	}
+	MeshMaterial* OBJLoader::getMaterial(int index) {
+		assert(-1 <= index && index < (int)materials.size());
+		if (index == -1) return defaultMaterial;
 
-	///////////////////////////////////////////////
-	// ColladaLoader
-	ColladaLoader::ColladaLoader(const char* file):geometries() {
-		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(file, aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
-		if (!scene){
-			std::cerr << "error loading collada: " << *file << std::endl;
+		MeshMaterial* M = materials[index];
+		
+		if (isPendingMaterial[index]) {
+			switch (M->getMaterialID()) {
+			case MATERIAL_ID::FLAT_TEXTURE:
+				GLuint texture;
+				if (textureDB.find(index) == textureDB.end()) {
+					texture = pathos::loadTexture(pendingTextureData[index]);
+					textureDB.insert(make_pair(index, texture));
+				} else {
+					texture = textureDB[index];
+				}
+				static_cast<TextureMaterial*>(M)->setTexture(texture);
+				break;
+			default:
+				// no impl for a pending material. find out what's missing!
+				assert(0);
+			}
 		}
 
-		std::cout << "num mesh: " << scene->mNumMeshes << std::endl;
-		for (unsigned int i = 0; i < scene->mNumMeshes; i++){
-			buildGeometry(scene->mMeshes[i]);
-		}
-	}
-	void ColladaLoader::buildGeometry(aiMesh* mesh) {
-		const int vertexTotalSize = sizeof(aiVector3D) * 2 + sizeof(aiVector2D);
-		int totalVertices = 0;
-
-		MeshGeometry* G = new MeshGeometry;
-		GLfloat* positionData = new GLfloat[mesh->mNumVertices * 3];
-		GLfloat* normalData = new GLfloat[mesh->mNumVertices * 3];
-		GLfloat* uvData = new GLfloat[mesh->mNumVertices * 2];
-		// copy data
-		if (mesh->HasPositions()) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
-			aiVector3D& pos = mesh->mVertices[i];
-			positionData[i * 3] = pos.x; positionData[i * 3 + 1] = pos.y; positionData[i * 3 + 2] = pos.z;
-		}
-		if (mesh->HasNormals()) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
-			aiVector3D& norm = mesh->mNormals[i];
-			normalData[i * 3] = norm.x; normalData[i * 3 + 1] = norm.y; normalData[i * 3 + 2] = norm.z;
-		}
-		if (mesh->HasTextureCoords(0)) for (unsigned int i = 0; i < mesh->mNumVertices; i++){
-			aiVector3D& uv = mesh->mTextureCoords[0][i];
-			uvData[i * 2] = uv.x; uvData[i * 2 + 1] = uv.y;
-		}
-		GLuint* indexData = new GLuint[mesh->mNumFaces * 3];
-		for (unsigned int i = 0; i < mesh->mNumFaces; i++){
-			const aiFace& face = mesh->mFaces[i];
-			for (int k = 0; k < 3; k++) indexData[i * 3 + k] = face.mIndices[k];
-		}
-		// upload to GPU memory
-		if(mesh->HasPositions()) G->updateVertexData(positionData, mesh->mNumVertices);
-		if(mesh->HasNormals()) G->updateNormalData(normalData, mesh->mNumVertices);
-		else G->calculateNormals();
-		if(mesh->HasTextureCoords(0)) G->updateUVData(uvData, mesh->mNumVertices);
-		G->updateIndexData(indexData, mesh->mNumFaces * 3);
-		// add this geometry to list
-		geometries.push_back(G);
+		return M;
 	}
 
 }

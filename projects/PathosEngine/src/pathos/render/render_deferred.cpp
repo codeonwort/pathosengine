@@ -143,6 +143,7 @@ namespace pathos {
 		}
 
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			renderMeshToGBuffer(mesh);
 		}
 	}
@@ -158,8 +159,11 @@ namespace pathos {
 	
 	void DeferredRenderer::renderSkybox(Skybox* sky) {
 		if (!sky) return;
-		glm::mat4 viewTransform = camera->getViewMatrix();
-		sky->activate(viewTransform);
+
+		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4& proj = camera->getProjectionMatrix();
+		glm::mat4& transform = proj * view;
+		sky->activate(transform);
 		sky->render();
 	}
 

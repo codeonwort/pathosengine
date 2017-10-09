@@ -30,6 +30,7 @@ namespace pathos {
 		Camera(Lens* lens);
 		glm::mat4 getViewMatrix();
 		glm::mat4 getViewProjectionMatrix();
+		glm::mat4 getProjectionMatrix();
 		glm::vec3 getEyeVector();
 		glm::vec3 getPosition();
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);

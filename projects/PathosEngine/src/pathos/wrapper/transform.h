@@ -9,7 +9,8 @@ namespace pathos {
 		glm::mat4 matrix;
 	public:
 		Transform();
-		const glm::mat4& getMatrix();
+		Transform(const glm::mat4& matrix);
+		const glm::mat4& getMatrix() const;
 		inline void copyFrom(const glm::mat4& m) { matrix = m; }
 		inline glm::vec3 getPosition() { return glm::vec3(matrix[3]); }
 		void identity();

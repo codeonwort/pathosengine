@@ -3,7 +3,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-#define DEBUG_DEFERRED_SOLID_COLOR
+//#define DEBUG_DEFERRED_SOLID_COLOR
 
 #if defined(_DEBUG) && defined(DEBUG_DEFERRED_SOLID_COLOR)
 #include <iostream>

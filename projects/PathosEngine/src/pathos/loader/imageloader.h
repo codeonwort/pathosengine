@@ -6,7 +6,7 @@
 namespace pathos {
 
 	FIBITMAP* loadImage(const char* filename);
-	GLuint loadTexture(FIBITMAP* dib);
-	GLuint loadCubemapTexture(FIBITMAP* dib[]);
+	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap = true);
+	GLuint loadCubemapTexture(FIBITMAP* dib[], bool generateMipmap = true);
 
 }

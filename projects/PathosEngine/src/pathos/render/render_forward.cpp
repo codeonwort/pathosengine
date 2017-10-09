@@ -20,6 +20,7 @@ namespace pathos {
 		shadowTexturePass = new ShadowTexturePass;
 		cubeEnvMapPass = new CubeEnvMapPass;
 		shadowCubeTexturePass = new ShadowCubeTexturePass;
+		alphaOnlyTexturePass = new AlphaOnlyTexturePass;
 
 		colorPass->setShadowMapping(shadowMap);
 		texturePass->setShadowMapping(shadowMap);
@@ -41,6 +42,7 @@ namespace pathos {
 		release(wireframePass);
 		release(cubeEnvMapPass);
 		release(shadowCubeTexturePass);
+		release(alphaOnlyTexturePass);
 #undef release
 	}
 
@@ -66,6 +68,7 @@ namespace pathos {
 		shadowMap->clearLightDepths(scene->numDirectionalLights());
 		omniShadow->clearLightDepths(scene->numPointLights());
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			renderLightDepth(mesh);
 		}
 
@@ -73,6 +76,7 @@ namespace pathos {
 		// @TODO: occluder or BSP tree
 		if (scene->skybox != nullptr) render(scene->skybox);
 		for (Mesh* mesh : scene->meshes) {
+			if (mesh->getVisible() == false) continue;
 			render(mesh);
 		}
 
@@ -107,8 +111,10 @@ namespace pathos {
 	}
 
 	void MeshForwardRenderer::render(Skybox* sky) {
-		glm::mat4 viewTransform = camera->getViewMatrix();
-		sky->activate(viewTransform);
+		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4& proj = camera->getProjectionMatrix();
+		glm::mat4& transform = proj * view;
+		sky->activate(transform);
 		sky->render();
 	}
 
@@ -166,6 +172,9 @@ namespace pathos {
 			break;
 		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
 			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
+			break;
+		case MATERIAL_ID::ALPHA_ONLY_TEXTURE:
+			renderAlphaOnlyTexture(mesh, G, static_cast<AlphaOnlyTextureMaterial*>(M));
 			break;
 		default:
 			// no render pass exists for this material id. should not be here...
@@ -236,6 +245,11 @@ namespace pathos {
 	void MeshForwardRenderer::renderShadowCubeTexture(Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
 		shadowCubeTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		shadowCubeTexturePass->render(scene, camera, geom, material);
+	}
+
+	void MeshForwardRenderer::renderAlphaOnlyTexture(Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
+		alphaOnlyTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
+		alphaOnlyTexturePass->render(scene, camera, geom, material);
 	}
 
 }

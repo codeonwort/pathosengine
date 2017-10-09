@@ -1,11 +1,12 @@
-#include <pathos/wrapper/transform.h>
+#include "pathos/wrapper/transform.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace pathos {
 
 	Transform::Transform() :matrix(glm::mat4(1.0f)) {}
+	Transform::Transform(const glm::mat4& _matrix) { matrix = _matrix; }
 
-	const glm::mat4& Transform::getMatrix() { return matrix; }
+	const glm::mat4& Transform::getMatrix() const { return matrix; }
 
 	void Transform::identity() { matrix = glm::mat4(1.0f); }
 	void Transform::append(const glm::mat4& t) { matrix = matrix * t; }

@@ -11,6 +11,9 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include <iostream>
 
+// For multithreaded model loading.
+#include <thread>
+
 using namespace std;
 using namespace pathos;
 
@@ -28,39 +31,32 @@ Skybox* sky;
 PointLight *plight, *plight2;
 DirectionalLight *dlight;
 
+OBJLoader cityLoader;
+bool loaderReady = false;
+
 void setupModel();
 void setupSkybox();
-
-void render() {
-	float speedX = 0.05f, speedY = 0.05f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
-
-	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
-	
-	// skybox
-	renderer->render(&scene, cam);
-}
+void render();
 
 void keyDown(unsigned char ascii, int x, int y) {}
+
+void loadTask() {
+	cityLoader.load("../../resources/models/city/The_City.obj", "../../resources/models/city/");
+	loaderReady = true;
+}
 
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
+	conf.width = 1600;
+	conf.height = 1200;
 	conf.title = "Test: Loading Wavefront OBJ Model";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
+	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 1000.f));
 	cam->move(glm::vec3(0, 0, 20));
 
 	// renderer
@@ -70,8 +66,12 @@ int main(int argc, char** argv) {
 	setupModel();
 	setupSkybox();
 
+	std::thread loadWorker(loadTask);
+
 	// start the main loop
 	Engine::start();
+
+	loadWorker.join();
 
 	return 0;
 }
@@ -81,13 +81,8 @@ void setupModel() {
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
 
-	OBJLoader cityLoader("../../resources/models/city/The_City.obj", "../../resources/models/city/");
-	city = cityLoader.craftMesh(0, cityLoader.numGeometries(), "city");
-	city->getTransform().appendScale(.1, .1, .1);
-	city->getTransform().appendMove(0, -60, 0);
-
 	label = new TextMesh("default");
-	label->setText("text mesh test", 0xff0000);
+	label->setText("Loading OBJ model. Please wait...", 0xff0000);
 	label->getTransform().appendScale(20);
 	label->setDoubleSided(true);
 
@@ -100,11 +95,10 @@ void setupModel() {
 	*/
 
 	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
-	debug->getTransform().appendMove(0, 0, 10);
+	debug->getTransform().appendMove(30, 0, 10);
 
 	scene.add(plight);
 	scene.add(dlight);
-	scene.add(city);
 	scene.add(label);
 	scene.add(debug);
 
@@ -112,13 +106,40 @@ void setupModel() {
 }
 
 void setupSkybox() {
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.bmp", "../../resources/cubemap1/neg_x.bmp",
-		"../../resources/cubemap1/pos_y.bmp", "../../resources/cubemap1/neg_y.bmp",
-		"../../resources/cubemap1/pos_z.bmp", "../../resources/cubemap1/neg_z.bmp" };
+	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
+		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
+		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
 
 	scene.skybox = sky;
+}
+
+void render() {
+	if (loaderReady) {
+		loaderReady = false;
+		city = cityLoader.craftMeshFromAllShapes();
+		city->getTransform().appendScale(.1, .1, .1);
+		city->getTransform().appendMove(0, -60, 0);
+
+		scene.add(city);
+		cityLoader.unload();
+		label->setVisible(false);
+	}
+
+	float speedX = 0.1f, speedY = 0.1f;
+	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
+	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
+	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	cam->move(glm::vec3(dx, 0, dz));
+	cam->rotateY(rotY);
+	cam->rotateX(rotX);
+
+	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
+
+	// skybox
+	renderer->render(&scene, cam);
 }
