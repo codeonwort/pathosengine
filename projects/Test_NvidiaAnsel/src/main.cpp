@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.width = 1600;
 	conf.height = 1200;
-	conf.title = "Test: Loading Wavefront OBJ Model";
+	conf.title = "Test: Nvidia Ansel";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);

@@ -86,6 +86,19 @@ namespace pathos {
 		return program;
 	}
 
+	GLuint createComputeProgram(const std::string& shader_source) {
+		Shader* cs = new Shader(GL_COMPUTE_SHADER);
+		cs->setSource(shader_source);
+		std::vector<Shader*> shaders = { cs };
+
+		GLuint program = createProgram(shaders);
+		delete cs;
+
+		return program;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
 	static bool svarComp(const ShaderVariable& a, const ShaderVariable& b) { return a.name < b.name; }
 	static bool varComp(const pair<string, string>& a, const pair<string, string>& b) { return a.second < b.second; }
 
@@ -118,10 +131,10 @@ namespace pathos {
 		glDeleteShader(name);
 	}
 
-	void Shader::setSource(std::string& source) { this->source = source; }
+	void Shader::setSource(const std::string& source) { this->source = source; }
 	void Shader::setSource(const char* source) { this->source = source; }
 
-	bool Shader::loadSource(std::string& filepath) { return loadSource(filepath.c_str()); }
+	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
 	bool Shader::loadSource(const char* filepath) {
 		std::ifstream file(filepath);
 		if (!file.is_open()) return false;

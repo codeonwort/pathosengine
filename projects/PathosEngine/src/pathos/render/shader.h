@@ -15,9 +15,10 @@ namespace pathos {
 	class Shader;
 
 	// Utilities
-	GLuint createProgram(std::string& vsCode, std::string& fsCode);
-	GLuint createProgram(std::vector<ShaderSource*>& sources);
-	GLuint createProgram(std::vector<Shader*>& shaders);
+	GLuint createProgram(std::string& vsCode, std::string& fsCode);	// only vertex and fragment shaders
+	GLuint createProgram(std::vector<ShaderSource*>& sources);		// multiple shaders
+	GLuint createProgram(std::vector<Shader*>& shaders);			// multiple shaders
+	GLuint createComputeProgram(const std::string& shader_source);	// compute shader
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -42,9 +43,9 @@ namespace pathos {
 		virtual ~Shader();
 
 		void setSource(const char* source);
-		inline void setSource(std::string& source);
+		inline void setSource(const std::string& source);
 		bool loadSource(const char* filepath);
-		inline bool loadSource(std::string& filepath);
+		inline bool loadSource(const std::string& filepath);
 		bool compile();
 
 		const GLuint getName() { return name; }
