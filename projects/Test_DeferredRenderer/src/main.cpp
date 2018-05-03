@@ -8,12 +8,22 @@
 #include "pathos/render/render_norm.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
 #include <iostream>
 #include <ctime>
-
-using namespace std;
 using namespace pathos;
+
+// Compile options
+#define USE_NORMAL_RENDERER 0
+
+// Rendering configurations
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
+const float FOV = 90.0f;
+const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
+const bool USE_HDR = true;
+const unsigned int NUM_BALLS = 10;
 
 // Camera, Scene, and renderer
 Camera* cam;
@@ -23,6 +33,7 @@ NormalRenderer* normRenderer;
 
 // 3D objects
 Mesh *model, *model2, *model3;
+std::vector<Mesh*> balls;
 Mesh* godRaySource;
 Skybox* sky;
 
@@ -37,21 +48,28 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
 	conf.title = "Test: Deferred Rendering";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../shaders/");
+
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 100));
+	float aspect_ratio = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, 1.0f, 1000.f));
+	cam->move(CAMERA_POSITION);
 
 	// renderer
 	renderer = new DeferredRenderer(conf.width, conf.height);
-	renderer->setHDR(true);
-	//normRenderer = new NormalRenderer(0.2);
+	renderer->setHDR(USE_HDR);
+#if USE_NORMAL_RENDERER
+	normRenderer = new NormalRenderer(0.2);
+#endif
 
 	// scene
 	setupScene();
@@ -64,19 +82,18 @@ int main(int argc, char** argv) {
 
 void setupScene() {
 	// light
-	//plight = new PointLight(glm::vec3(0, 0, 20), glm::vec3(1, 1, 1));
-	dlight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1, 0.1, 0.1));
+	dlight = new DirectionalLight(glm::vec3(0, -1, 0), glm::vec3(1.0, 1.0, 1.0));
 	scene.add(dlight);
 
-	srand(time(NULL));
-	for (int i = 0; i < 20; ++i) {
-		float x = rand() % 50 - 25;
-		float y = rand() % 50 - 25;
-		float z = rand() % 50 - 25;
-		float r = (rand() % 256) / 255.0;
-		float g = (rand() % 256) / 255.0;
-		float b = (rand() % 256) / 255.0;
-		float power = 0.1 + 0.5 * (rand() % 100) / 100.0;
+	srand((unsigned int)time(NULL));
+	for (int i = 0; i < 4; ++i) {
+		float x = rand() % 50 - 25.0f;
+		float y = rand() % 50 - 25.0f;
+		float z = rand() % 50 - 25.0f;
+		float r = (rand() % 256) / 255.0f;
+		float g = (rand() % 256) / 255.0f;
+		float b = (rand() % 256) / 255.0f;
+		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
 
@@ -89,15 +106,17 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
+		"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
+		"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
-	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
-	GLuint cubeTexture = loadCubemapTexture(cubeImg);
+	for (int i = 0; i < 6; i++) cubeImg[i] = pathos::loadImage(cubeImgName[i]);
+	GLuint cubeTexture = pathos::loadCubemapTexture(cubeImg);
 
-	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
+	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"));
+	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"));
 
 	GLuint tex_debug = renderer->debug_godRayTexture();
 	auto material_tex_debug = new TextureMaterial(tex_debug);
@@ -151,22 +170,30 @@ void setupScene() {
 	//model3 = new Mesh(geom_plane, material_tex_debug);
 	model3->getTransform().appendMove(5, 30, 0);
 
+	// model: balls
+	for (auto i = 0u; i < NUM_BALLS; ++i) {
+		Mesh* ball = new Mesh(geom_sphere, material_texture);
+		ball->getTransform().appendMove(0, -10.0f, -15.0f * i);
+		balls.push_back(ball);
+		scene.add(ball);
+	}
+
 	// model: god ray source
 	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().appendMove(0, 100, -300);
-	godRaySource->getTransform().appendScale(2.0f);
+	godRaySource->getTransform().appendMove(0, 300, -500);
+	godRaySource->getTransform().appendScale(10.0f);
 
 	// add them to scene
 	scene.add(model);
 	scene.add(model2);
-	scene.add(model3);
+	//scene.add(model3);
 	//scene.add(godRaySource);
 	scene.skybox = sky;
 	scene.godRaySource = godRaySource;
 }
 
 void render() {
-	float speedX = 0.1f, speedY = 0.1f;
+	float speedX = 0.5f, speedY = 0.5f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
 	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
@@ -184,5 +211,8 @@ void render() {
 	model2->getTransform().appendMove(60, 0, 0);
 
 	renderer->render(&scene, cam);
-	//normRenderer->render(model, cam);
+#if USE_NORMAL_RENDERER
+	normRenderer->render(model, cam);
+	normRenderer->render(model2, cam);
+#endif
 }

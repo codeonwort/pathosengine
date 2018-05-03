@@ -32,9 +32,8 @@ namespace pathos {
 		gs->mainCode("gl_Position = gs_in[0].normalAdded;");
 		gs->mainCode("EmitVertex();");
 		gs->mainCode("EndPrimitive();");
-		// quite messy path...
 		//Shader* g = new Shader(GL_GEOMETRY_SHADER);
-		//g->loadSource("../../projects/PathosEngine/src/glsl/normal_renderer_geom_shader.txt");
+		//g->loadSource("normal_visualizer.glsl");
 
 		// fs
 		fs->interfaceBlockName("GS_OUT");

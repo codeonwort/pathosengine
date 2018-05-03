@@ -121,7 +121,7 @@ void render() {
 	if (loaderReady) {
 		loaderReady = false;
 		city = cityLoader.craftMeshFromAllShapes();
-		city->getTransform().appendScale(.1, .1, .1);
+		city->getTransform().appendScale(0.1f, 0.1f, 0.1f);
 		city->getTransform().appendMove(0, -60, 0);
 
 		scene.add(city);

@@ -102,7 +102,7 @@ namespace pathos {
 		this->camera = camera;
 
 		// ready scene for rendering
-		scene->calculateLightBuffer();
+		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
 
 		// render to fbo
 		clearGBuffer();

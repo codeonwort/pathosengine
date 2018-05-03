@@ -181,7 +181,7 @@ void main() {
 		const auto lightMVP = camera->getViewProjectionMatrix() * scene->godRaySource->getTransform().getMatrix();
 		auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
 		lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
-		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f - 0.05 };
+		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f - 0.05f };
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 		glUseProgram(program_godRay);
@@ -201,7 +201,7 @@ void main() {
 		const auto materials = mesh->getMaterials();
 		glUniform3fv(uniform_color, 1, color);
 		glUniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
-		for (auto i = 0; i < geoms.size(); ++i) {
+		for (auto i = 0u; i < geoms.size(); ++i) {
 			MeshGeometry* G = geoms[i];
 			MeshMaterial* M = materials[i];
 

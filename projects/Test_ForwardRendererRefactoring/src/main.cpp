@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 
 	// renderer
 	renderer = new MeshForwardRenderer;
-	normRenderer = new NormalRenderer(0.2);
+	normRenderer = new NormalRenderer(0.2f);
 
 	// scene
 	setupScene();

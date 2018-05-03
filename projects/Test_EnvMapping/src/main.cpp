@@ -103,10 +103,10 @@ void setupScene() {
 	// 3d object
 	teapotLoader.load("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
 	teapot = teapotLoader.craftMeshFromAllShapes();
-	for (int i = 0; i < teapot->getMaterials().size(); ++i) {
+	for (auto i = 0u; i < teapot->getMaterials().size(); ++i) {
 		teapot->setMaterial(i, envMapMaterial);
 	}
-	teapot->getTransform().appendScale(.2, .2, .2);
+	teapot->getTransform().appendScale(0.2f, 0.2f, 0.2f);
 	teapot->getTransform().appendMove(0, -40, -50);
 
 	// construct scene

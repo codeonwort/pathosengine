@@ -171,9 +171,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\core.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
@@ -193,6 +190,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
+    <ClCompile Include="src\pathos\render\depth_of_field.cpp" />
     <ClCompile Include="src\pathos\render\envmap.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_alphaonlytexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
@@ -215,6 +213,7 @@
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
+    <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
   </ItemGroup>
@@ -234,6 +233,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
+    <ClInclude Include="src\pathos\render\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\envmap.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
     <ClInclude Include="src\pathos\material\material.h" />
@@ -266,6 +266,7 @@
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />
+    <ClInclude Include="src\pathos\util\resource_finder.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

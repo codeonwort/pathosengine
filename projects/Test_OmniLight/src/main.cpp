@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	renderer = new MeshForwardRenderer;
-	normRenderer = new NormalRenderer(0.2);
+	normRenderer = new NormalRenderer(0.2f);
 
 	setupScene();
 

@@ -1,6 +1,4 @@
 // geometry shader for NormalRenderer
-// currently not used due to difficulty in file path management
-// this shader code is generated on the fly in NormalRenderer in render.cpp
 
 #version 430 core
 

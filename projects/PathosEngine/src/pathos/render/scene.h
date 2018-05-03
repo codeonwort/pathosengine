@@ -42,7 +42,8 @@ namespace pathos {
 		inline size_t numDirectionalLights() { return directionalLights.size(); }
 		inline size_t numPointLights() { return pointLights.size(); }
 
-		void calculateLightBuffer();
+		void calculateLightBuffer(); // in world space
+		void calculateLightBufferInViewSpace(const glm::mat4& viewMatrix);
 		inline const GLfloat* getPointLightPositionBuffer() { return &pointLightPositionBuffer[0]; }
 		inline const GLfloat* getPointLightColorBuffer() { return &pointLightColorBuffer[0]; }
 		inline const GLfloat* getDirectionalLightDirectionBuffer() { return &directionalLightDirectionBuffer[0]; }

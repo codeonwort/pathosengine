@@ -33,6 +33,38 @@ namespace pathos {
 		}
 	}
 
+	void Scene::calculateLightBufferInViewSpace(const glm::mat4& viewMatrix) {
+		pointLightPositionBuffer.resize(pointLights.size() * 3);
+		pointLightColorBuffer.resize(pointLights.size() * 3);
+		for (int i = 0; i < pointLights.size(); ++i) {
+			auto pos = pointLights[i]->getPosition();
+			auto col = pointLights[i]->getColor();
+			glm::vec4 v_pos(pos[0], pos[1], pos[2], 1.0f);
+			glm::vec4 pos_viewspace = viewMatrix * v_pos;
+			pointLightPositionBuffer[i * 3 + 0] = pos_viewspace.x;
+			pointLightPositionBuffer[i * 3 + 1] = pos_viewspace.y;
+			pointLightPositionBuffer[i * 3 + 2] = pos_viewspace.z;
+			pointLightColorBuffer[i * 3 + 0] = col[0];
+			pointLightColorBuffer[i * 3 + 1] = col[1];
+			pointLightColorBuffer[i * 3 + 2] = col[2];
+		}
+
+		directionalLightDirectionBuffer.resize(directionalLights.size() * 3);
+		directionalLightColorBuffer.resize(directionalLights.size() * 3);
+		for (int i = 0; i < directionalLights.size(); ++i) {
+			auto dir = directionalLights[i]->getDirection();
+			auto col = directionalLights[i]->getColor();
+			glm::vec4 v_dir(dir[0], dir[1], dir[2], 0.0f);
+			glm::vec4 dir_viewspace = viewMatrix * v_dir;
+			directionalLightDirectionBuffer[i * 3 + 0] = dir_viewspace.x;
+			directionalLightDirectionBuffer[i * 3 + 1] = dir_viewspace.y;
+			directionalLightDirectionBuffer[i * 3 + 2] = dir_viewspace.z;
+			directionalLightColorBuffer[i * 3 + 0] = col[0];
+			directionalLightColorBuffer[i * 3 + 1] = col[1];
+			directionalLightColorBuffer[i * 3 + 2] = col[2];
+		}
+	}
+
 	void Scene::add(std::initializer_list<Mesh*> meshes) {
 		for (Mesh* mesh : meshes) {
 			this->meshes.push_back(mesh);

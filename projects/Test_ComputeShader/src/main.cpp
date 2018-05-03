@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, config);
 
 	float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
-	camera = new Camera(new PerspectiveLens(45.0f, aspect, 0.1f, 500.0f));
+	camera = new Camera(new PerspectiveLens(45.0f, aspect, 1.0f, 500.0f));
 
 	renderer = new DeferredRenderer(config.width, config.height);
 	renderer->setHDR(true);

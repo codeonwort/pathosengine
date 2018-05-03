@@ -1,21 +1,26 @@
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
 #include <iostream>
 #include <algorithm>
+#include <assert.h>
 using std::max;
 
 namespace pathos {
 
-	FIBITMAP* loadImage(const char* filename) {
+	FIBITMAP* loadImage(const char* filename_) {
+		std::string path = ResourceFinder::get().find(filename_);
+		assert(path.size() != 0);
+
 		FIBITMAP *img = NULL, *dib = NULL;
-		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(filename);
-		img = FreeImage_Load(fif, filename, 0);
+		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
+		img = FreeImage_Load(fif, path.c_str(), 0);
 		if (!img) {
-			std::cerr << "Error loading: " << filename << std::endl;
+			std::cerr << "Error loading: " << path << std::endl;
 		}
 		unsigned int bpp = FreeImage_GetBPP(img);
 		if (bpp == 32) {
 			dib = FreeImage_ConvertTo32Bits(img);
-		}else if (bpp = 24) {
+		}else if (bpp == 24) {
 			dib = FreeImage_ConvertTo24Bits(img);
 		}else {
 			std::cerr << "loadImage(): An image with unexpected BPP " << bpp << std::endl;

@@ -1,14 +1,20 @@
 // Pathos
 #include "pathos/render/shader.h"
+#include "pathos/util/resource_finder.h"
 
-// STL
+// STL & CRT
 #include <tuple>
 #include <sstream>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <assert.h>
 
-//#define DEBUG_SHADER
+// on/off console output
+#define DEBUG_SHADER 0
+
+// Inefficient in current design so enabling this is not recommended.
+#define CONDITIONAL_COMPILE 0
 
 using namespace std;
 
@@ -28,6 +34,11 @@ namespace pathos {
 		return program;
 	}
 
+	GLuint createProgram(Shader& vs, Shader& fs) {
+		std::vector<Shader*> shaders = { &vs, &fs };
+		return createProgram(shaders);
+	}
+
 	GLuint createProgram(std::vector<ShaderSource*>& sources) {
 		vector<Shader*> shaders(sources.size(), nullptr);
 		for (size_t i = 0; i < sources.size(); ++i) {
@@ -42,9 +53,14 @@ namespace pathos {
 		return program;
 	}
 
+	GLuint createProgram(Shader& shader) {
+		std::vector<Shader*> shaders{ &shader };
+		return createProgram(shaders);
+	}
+
 	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
 	GLuint createProgram(std::vector<Shader*>& shaders) {
-#if defined(_DEBUG) && defined(DEBUG_SHADER)
+#if defined(_DEBUG) && DEBUG_SHADER
 		std::cout << std::endl << "=== start creating a shader program ===" << std::endl;
 #endif
 		for (Shader* shader : shaders) {
@@ -56,7 +72,7 @@ namespace pathos {
 				break;
 			}
 		}
-#if defined(_DEBUG) && defined(DEBUG_SHADER)
+#if defined(_DEBUG) && DEBUG_SHADER
 		std::cout << "> linking a program" << std::endl;
 #endif
 		GLuint program = glCreateProgram();
@@ -80,7 +96,7 @@ namespace pathos {
 			glDeleteProgram(program);
 			return 0;
 		}
-#if defined(_DEBUG) && defined(DEBUG_SHADER)
+#if defined(_DEBUG) && DEBUG_SHADER
 		std::cout << "=== finish program creation ===" << std::endl << std::endl;
 #endif
 		return program;
@@ -135,7 +151,10 @@ namespace pathos {
 	void Shader::setSource(const char* source) { this->source = source; }
 
 	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
-	bool Shader::loadSource(const char* filepath) {
+	bool Shader::loadSource(const char* filepath_) {
+		std::string filepath = ResourceFinder::get().find(filepath_);
+		assert(filepath.size() > 0);
+
 		std::ifstream file(filepath);
 		if (!file.is_open()) return false;
 
@@ -147,7 +166,7 @@ namespace pathos {
 	}
 
 	bool Shader::compile() {
-#if defined(_DEBUG) && defined(DEBUG_SHADER)
+#if defined(_DEBUG) && DEBUG_SHADER
 		const char* shaderType;
 		if (type == GL_VERTEX_SHADER) shaderType = "GL_VERTEX_SHADER";
 		else if (type == GL_FRAGMENT_SHADER) shaderType = "GL_FRAGMENT_SHADER";
@@ -158,7 +177,24 @@ namespace pathos {
 		else shaderType = "<unknown shader type>";
 		std::cout << "> trying to compile a " << shaderType << " shader" << std::endl;
 #endif
-		char* const src = const_cast<char*>(source.c_str());
+#if CONDITIONAL_COMPILE
+		char* shaderDefine = "";
+		if (type == GL_VERTEX_SHADER) shaderDefine = "#define GL_VERTEX_SHADER 1\n";
+		else if (type == GL_FRAGMENT_SHADER) shaderDefine = "#define GL_FRAGMENT_SHADER 1\n";
+		else if (type == GL_GEOMETRY_SHADER) shaderDefine = "#define GL_GEOMETRY_SHADER 1\n";
+		else if (type == GL_TESS_CONTROL_SHADER) shaderDefine = "#define GL_TESS_CONTROL_SHADER 1\n";
+		else if (type == GL_TESS_EVALUATION_SHADER) shaderDefine = "#define GL_TESS_EVALUATION_SHADER 1\n";
+		else if (type == GL_COMPUTE_SHADER) shaderDefine = "#define GL_COMPUTE_SHADER 1\n";
+
+		size_t linebreak = source.find_first_of('\n', source.find("#version"));
+		std::string versionDefine = source.substr(0, linebreak + 1);
+		std::string tail = source.substr(linebreak + 1);
+		std::string finalSource = versionDefine + shaderDefine + tail;
+		char* src = const_cast<char*>(finalSource.c_str());
+#else
+		char* src = const_cast<char*>(source.c_str());
+#endif
+
 		glShaderSource(name, 1, &src, NULL);
 		glCompileShader(name);
 

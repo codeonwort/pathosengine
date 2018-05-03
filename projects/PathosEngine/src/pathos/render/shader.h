@@ -16,8 +16,10 @@ namespace pathos {
 
 	// Utilities
 	GLuint createProgram(std::string& vsCode, std::string& fsCode);	// only vertex and fragment shaders
+	GLuint createProgram(Shader& vs, Shader& fs);					// only vertex and fragment shaders
 	GLuint createProgram(std::vector<ShaderSource*>& sources);		// multiple shaders
 	GLuint createProgram(std::vector<Shader*>& shaders);			// multiple shaders
+	GLuint createProgram(Shader& shader);							// single shader
 	GLuint createComputeProgram(const std::string& shader_source);	// compute shader
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,6 +39,8 @@ namespace pathos {
 
 	};
 
+	// Takes shader sources and compile them.
+	// sources come from ShaderSource (setSource) or physical files (loadSource).
 	class Shader {
 	public:
 		Shader(GLenum type);
@@ -60,13 +64,14 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
+	// generates shader source codes for Shader::setSource().
 	class ShaderSource {
 	protected:
-		GLuint shaderType; // set default value in child's constructor
+		GLenum shaderType; // set default value in child's constructor
 
 	public:
-		virtual string getCode() = 0;
-		GLuint getShaderType() { return shaderType; }
+		virtual std::string getCode() = 0;
+		GLenum getShaderType() { return shaderType; }
 	};
 
 	/**
