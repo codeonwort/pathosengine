@@ -13,10 +13,12 @@ OpenGL rendering library (for 3d graphics study)
 * Font:    freetype
 * Loader:  tinyobjloader, assimp
 
+## Features
+### Depth of Field
+![DepthOfField](https://user-images.githubusercontent.com/11644393/39674785-3dbe0b7c-518c-11e8-8204-aef8136321f1.jpg)
+
+### Omnidirectional Shadow Mapping
 ![Sample Image](https://cloud.githubusercontent.com/assets/11644393/15381530/30adbcc2-1dbb-11e6-9286-13c0f82e6f92.jpg)
 
-![Sample Image](https://cloud.githubusercontent.com/assets/11644393/15381530/30adbcc2-1dbb-11e6-9286-13c0f82e6f92.jpg)
-
-![Sample Image 3](https://user-images.githubusercontent.com/11644393/30523783-730775c2-9c22-11e7-9032-6ba054bc390d.jpg)
-
+### Loading OBJ Model and Shadow Mapping
 ![Sample Image 4](https://user-images.githubusercontent.com/11644393/30523779-681265a0-9c22-11e7-8118-f6e9c10a7272.jpg)
