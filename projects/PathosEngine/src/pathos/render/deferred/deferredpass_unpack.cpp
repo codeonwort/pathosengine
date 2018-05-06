@@ -293,7 +293,7 @@ void main() {
 
 	void MeshDeferredRenderPass_Unpack::uploadDirectionalLightUniform(Scene* scene, unsigned int maxDirectionalLights) {
 		if (program == 0) return;
-		unsigned int numDirLights = min(scene->directionalLights.size(), maxDirectionalLights);
+		unsigned int numDirLights = std::min(static_cast<unsigned int>(scene->directionalLights.size()), maxDirectionalLights);
 		glUniform1ui(glGetUniformLocation(program, "numDirLights"), numDirLights);
 		if (numDirLights > 0) {
 			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numDirLights, scene->getDirectionalLightDirectionBuffer());
@@ -302,7 +302,7 @@ void main() {
 	}
 	void MeshDeferredRenderPass_Unpack::uploadPointLightUniform(Scene* scene, unsigned int maxPointLights) {
 		if (program == 0) return;
-		unsigned int numPointLights = min(scene->pointLights.size(), maxPointLights);
+		unsigned int numPointLights = min(static_cast<unsigned int>(scene->pointLights.size()), maxPointLights);
 		glUniform1ui(glGetUniformLocation(program, "numPointLights"), numPointLights);
 		if (numPointLights) {
 			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, scene->getPointLightPositionBuffer());

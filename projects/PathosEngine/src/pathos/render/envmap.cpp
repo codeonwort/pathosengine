@@ -21,9 +21,13 @@ namespace pathos {
 
 	void Skybox::createShader() {
 		string vshader = R"(#version 430 core
+
 layout (location = 0) in vec3 position;
+
 uniform mat4 viewProj;
+
 out VS_OUT { vec3 tc; } vs_out;
+
 void main() {
   vs_out.tc = position;
   vs_out.tc.y *= -1;
@@ -33,8 +37,11 @@ void main() {
 
 		string fshader = R"(#version 430 core
 layout (binding = 0) uniform samplerCube texCube;
+
 in VS_OUT { vec3 tc; } fs_in;
+
 layout (location = 0) out vec4 color;
+
 void main() {
   color = texture(texCube, fs_in.tc);
 }

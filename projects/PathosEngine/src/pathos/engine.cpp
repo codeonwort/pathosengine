@@ -11,7 +11,7 @@
 namespace pathos {
 
 	EngineConfig Engine::conf;
-	std::string Engine::version = "1.0.0.0";
+	std::string Engine::version = "1.0.0";
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
 	bool Engine::keymap[256] = { false };
 #ifdef PATHOS_MULTI_THREAD_SUPPORT

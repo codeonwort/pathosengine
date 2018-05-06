@@ -30,7 +30,7 @@ namespace pathos {
 		// compute program. output is transposed.
 		program_subsum2D = createSubsumShader();
 
-		// program with vertex and fragment shaders
+		// program with vertex and fragment shaders.
 		program_blur = createBlurShader();
 	}
 
@@ -42,20 +42,18 @@ namespace pathos {
 		glDispatchCompute(height, 1, 1);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-		glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
+		//glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
 		glBindImageTexture(0, texture_subsum2D[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 		glBindImageTexture(1, texture_subsum2D[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glDispatchCompute(width, 1, 1);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
+		//glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
 
 		/* texture_subsum2D[1] now holds subsum table */
 		
 		// apply box blur whose strength is relative to difference between pixel depth and focal depth
 		glUseProgram(program_blur);
 		glActiveTexture(GL_TEXTURE0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glBindTexture(GL_TEXTURE_2D, texture_subsum2D[1]);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to backbuffer (assume: DOF is the final stage)
@@ -72,19 +70,9 @@ namespace pathos {
 	}
 
 	GLuint DepthOfField::createBlurShader() {
-		std::string vs_source = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-
-void main() {
-	const vec3[4] vertices = vec3[4](vec3(-1,-1,1), vec3(1,-1,1), vec3(-1,1,1), vec3(1,1,1));
-	gl_Position = vec4(vertices[gl_VertexID], 1);
-}
-)";
 		Shader vs(GL_VERTEX_SHADER);
 		Shader fs(GL_FRAGMENT_SHADER);
-		vs.setSource(vs_source);
+		vs.loadSource("fullscreen_quad.glsl");
 		fs.loadSource("depth_of_field.glsl");
 
 		GLuint program = pathos::createProgram(vs, fs);
