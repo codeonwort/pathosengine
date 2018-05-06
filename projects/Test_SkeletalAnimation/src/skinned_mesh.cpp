@@ -41,9 +41,9 @@ namespace pathos {
 		const auto G = geometries[0];
 		std::vector<float> pos(positions.size(), 0.0f);
 
-		for (auto i = 0; i < bones.size(); ++i) {
+		for (auto i = 0u; i < bones.size(); ++i) {
 			const auto& bone = bones[i];
-			for (auto j = 0; j < bone.weights.size(); ++j) {
+			for (auto j = 0u; j < bone.weights.size(); ++j) {
 				auto p = 3 * bone.vertexIDs[j];
 				auto vert = glm::vec4(positions[p], positions[p + 1], positions[p + 2], 1.0f);
 				auto v = bone.weights[j] * bone.finalTransform * vert;
@@ -60,7 +60,7 @@ namespace pathos {
 		progress = std::min(1.0, std::max(0.0, progress));
 		double time = anim->mDuration * progress;
 
-		for (auto i = 0; i < anim->mNumChannels; ++i) {
+		for (auto i = 0u; i < anim->mNumChannels; ++i) {
 			aiNodeAnim* chan = anim->mChannels[i];
 			int ix_trans = translation_lower_bound(chan, time);
 			int ix_rot = rotation_lower_bound(chan, time);
@@ -81,7 +81,7 @@ namespace pathos {
 	}
 	void SkinnedMesh::updateAnimation(std::string name, double progress) {
 		// TODO: encalsulate aiAnimation
-		for (auto i = 0; i < animations.size(); ++i) {
+		for (auto i = 0u; i < animations.size(); ++i) {
 			if (std::string(animations[i]->getName()) == name) {
 				updateAnimation(i, progress);
 				break;
@@ -94,7 +94,7 @@ namespace pathos {
 		std::function<void(Node*, glm::mat4&)> calcTransform = [&](Node* node, glm::mat4& parent) {
 			glm::mat4 T = parent * node->localTransform;
 			setNodeGlobalTransform(node->name, T);
-			for (auto i = 0; i < node->children.size(); ++i) {
+			for (auto i = 0u; i < node->children.size(); ++i) {
 				calcTransform(node->children[i], T);
 			}
 		};
@@ -109,7 +109,7 @@ namespace pathos {
 
 	int SkinnedMesh::translation_lower_bound(aiNodeAnim* channel, double time) {
 		if (channel->mNumPositionKeys == 1) return 0;
-		for (auto i = 0; i < channel->mNumPositionKeys - 1; ++i) {
+		for (auto i = 0u; i < channel->mNumPositionKeys - 1; ++i) {
 			if (time < channel->mPositionKeys[i + 1].mTime) {
 				return i;
 			}
@@ -120,7 +120,7 @@ namespace pathos {
 
 	int SkinnedMesh::rotation_lower_bound(aiNodeAnim* channel, double time) {
 		if (channel->mNumRotationKeys == 1) return 0;
-		for (auto i = 0; i < channel->mNumRotationKeys - 1; ++i) {
+		for (auto i = 0u; i < channel->mNumRotationKeys - 1; ++i) {
 			if (time < channel->mRotationKeys[i + 1].mTime) {
 				return i;
 			}
@@ -131,7 +131,7 @@ namespace pathos {
 
 	int SkinnedMesh::scale_lower_bound(aiNodeAnim* channel, double time) {
 		if (channel->mNumScalingKeys == 1) return 0;
-		for (auto i = 0; i < channel->mNumScalingKeys - 1; ++i) {
+		for (auto i = 0u; i < channel->mNumScalingKeys - 1; ++i) {
 			if (time < channel->mScalingKeys[i + 1].mTime) {
 				return i;
 			}
@@ -145,7 +145,7 @@ namespace pathos {
 		if (len == 1) {
 			result = keys[0].mValue;
 		} else {
-			float ratio = (time - keys[i].mTime) / (keys[i + 1].mTime - keys[i].mTime);
+			float ratio = static_cast<float>((time - keys[i].mTime) / (keys[i + 1].mTime - keys[i].mTime));
 			result = ratio * keys[i].mValue + (1 - ratio) * keys[i + 1].mValue;
 		}
 		return glm::vec3(result.x, result.y, result.z);
@@ -155,7 +155,7 @@ namespace pathos {
 		if (len == 1) {
 			result = keys[0].mValue;
 		} else {
-			float ratio = (time - keys[i].mTime) / (keys[i + 1].mTime - keys[i].mTime);
+			float ratio = static_cast<float>((time - keys[i].mTime) / (keys[i + 1].mTime - keys[i].mTime));
 			aiQuaternion::Interpolate(result, keys[i].mValue, keys[i + 1].mValue, ratio);
 			result = result.Normalize();
 		}

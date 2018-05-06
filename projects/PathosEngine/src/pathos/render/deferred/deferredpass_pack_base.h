@@ -22,7 +22,7 @@ namespace pathos {
 	public:
 		virtual ~MeshDeferredRenderPass_Pack();
 
-		inline void setModelMatrix(const glm::mat4& modelMatrix) { this->modelMatrix = modelMatrix; }
+		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
 
 		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) = 0;
 

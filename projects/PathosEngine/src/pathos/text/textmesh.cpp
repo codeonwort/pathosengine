@@ -120,7 +120,7 @@ namespace pathos {
 	}
 	*/
 
-	void TextMesh::configureGeometry(const std::wstring& text) {
+	void TextMesh::configureGeometry(const std::wstring& newText) {
 		positions.clear();
 		uvs.clear();
 		indices.clear();
@@ -130,7 +130,7 @@ namespace pathos {
 		GLuint idx = 0;
 
 		cache.startGetGlyph();
-		for (wchar_t x : text) {
+		for (wchar_t x : newText) {
 			if (x == L'\n') {
 				penX = 0.0f;
 				penY += cache.getCellHeight();
@@ -173,7 +173,7 @@ namespace pathos {
 		geom->updateIndexData(&indices[0], indices.size());
 
 		if (normals.size() == 0) {
-			for (int i = 0; i < text.size(); ++i) {
+			for (auto i = 0u; i < newText.size(); ++i) {
 				normals.push_back(0.0f); normals.push_back(0.0f); normals.push_back(1.0f);
 			}
 			geom->updateNormalData(&normals[0], normals.size());

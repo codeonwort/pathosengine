@@ -8,6 +8,7 @@
 #include "pathos/render/render_norm.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
 #include <iostream>
 #include <ctime>
@@ -48,13 +49,18 @@ int main(int argc, char** argv) {
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
+
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
 	cam->move(glm::vec3(0, 0, 100));
 
 	// renderer
 	renderer = new DeferredRenderer(conf.width, conf.height);
-	renderer->setHDR(true);
+	renderer->setHDR(false);
 	//normRenderer = new NormalRenderer(0.2);
 
 	// scene
@@ -81,30 +87,32 @@ void setupScene() {
 	dlight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1, 0.1, 0.1));
 	scene.add(dlight);
 
-	srand(time(NULL));
+	srand(static_cast<unsigned int>(time(NULL)));
 	for (int i = 0; i < 10; ++i) {
-		float x = rand() % 50 - 25;
-		float y = rand() % 50 - 25;
-		float z = rand() % 50 - 25;
-		float r = (rand() % 256) / 255.0;
-		float g = (rand() % 256) / 255.0;
-		float b = (rand() % 256) / 255.0;
-		float power = 0.1 + 0.5 * (rand() % 100) / 100.0;
+		float x = rand() % 50 - 25.0f;
+		float y = rand() % 50 - 25.0f;
+		float z = rand() % 50 - 25.0f;
+		float r = (rand() % 256) / 255.0f;
+		float g = (rand() % 256) / 255.0f;
+		float b = (rand() % 256) / 255.0f;
+		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
 
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTexture = loadCubemapTexture(cubeImg);
 
-	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
+	GLuint tex = loadTexture(loadImage("154.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"));
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);

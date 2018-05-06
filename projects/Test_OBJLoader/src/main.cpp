@@ -9,9 +9,9 @@
 #include "pathos/loader/objloader.h"
 #include "pathos/text/textmesh.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include <iostream>
+#include "pathos/util/resource_finder.h"
 
-// For multithreaded model loading.
+#include <iostream>
 #include <thread>
 
 using namespace std;
@@ -41,7 +41,7 @@ void render();
 void keyDown(unsigned char ascii, int x, int y) {}
 
 void loadTask() {
-	cityLoader.load("../../resources/models/city/The_City.obj", "../../resources/models/city/");
+	cityLoader.load("models/city/The_City.obj", "models/city/");
 	loaderReady = true;
 }
 
@@ -54,6 +54,11 @@ int main(int argc, char** argv) {
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
+
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
 
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 1000.f));
@@ -87,8 +92,8 @@ void setupModel() {
 	label->setDoubleSided(true);
 
 	/*
-	//OBJLoader city2Loader("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
-	OBJLoader city2Loader("../../resources/models/street.obj", "../../resources/models/");
+	//OBJLoader city2Loader("models/teapot/teapot.obj", "models/teapot/");
+	OBJLoader city2Loader("models/street.obj", "models/");
 	city2 = city2Loader.craftMesh(0, city2Loader.numGeometries(), "city2");
 	city2->getTransform().appendScale(.2, .2, .2);
 	city2->getTransform().appendMove(0, -40, -50);
@@ -106,9 +111,11 @@ void setupModel() {
 }
 
 void setupSkybox() {
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);

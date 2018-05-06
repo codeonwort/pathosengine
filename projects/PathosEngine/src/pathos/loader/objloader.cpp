@@ -1,4 +1,5 @@
 #include "pathos/loader/objloader.h"
+#include "pathos/util/resource_finder.h"
 
 #include <string>
 #include <iostream>
@@ -21,15 +22,15 @@ namespace pathos {
 	*/
 	void calculateNormal(const tinyobj::attrib_t& attrib, const vector<GLuint>& indices, vector<GLfloat>& normals) {
 		normals.clear();
-		int numPos = attrib.vertices.size() / 3;
+		auto numPos = attrib.vertices.size() / 3;
 		glm::vec3* accum = new glm::vec3[numPos];
 		unsigned int* counts = new unsigned int[numPos];
-		for (int i = 0; i < numPos; i++){
+		for (auto i = 0u; i < numPos; i++) {
 			accum[i] = glm::vec3(0.0f);
 			counts[i] = 0;
 		}
 		const auto& P = attrib.vertices;
-		for (auto i = 0; i < indices.size(); i += 3){
+		for (auto i = 0u; i < indices.size(); i += 3) {
 			auto i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
 			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
@@ -43,10 +44,10 @@ namespace pathos {
 			counts[i0] ++; counts[i1] ++; counts[i2] ++;
 			accum[i0] /= counts[i0]; accum[i1] /= counts[i1]; accum[i2] /= counts[i2];
 		}
-		for (auto i = 0; i < numPos; i++){
+		for (auto i = 0u; i < numPos; i++) {
 			accum[i] = glm::normalize(accum[i]);
 		}
-		for (auto i = 0; i < indices.size(); i++){
+		for (auto i = 0u; i < indices.size(); i++) {
 			normals.push_back(accum[indices[i]].x);
 			normals.push_back(accum[indices[i]].y);
 			normals.push_back(accum[indices[i]].z);
@@ -64,12 +65,13 @@ namespace pathos {
 		assert(ok);
 	}
 
-	bool OBJLoader::load(const char* objFile, const char* _mtlDir) {
-		mtlDir = _mtlDir;
+	bool OBJLoader::load(const char* _objFile, const char* _mtlDir) {
+		std::string objFile = ResourceFinder::get().find(_objFile);
+		mtlDir = ResourceFinder::get().find(_mtlDir);
 
 		// read data using tinyobjloader
 		string err;
-		bool ret = tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile, mtlDir.c_str());
+		tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
 
 		std::cout << "Loading .obj file: \"" << objFile << "\"" << std::endl;
 		if (!err.empty()) {
@@ -85,7 +87,7 @@ namespace pathos {
 
 		return true;
 	}
-	
+
 	void OBJLoader::unload() {
 		mtlDir.clear();
 		t_shapes.clear();
@@ -103,6 +105,8 @@ namespace pathos {
 	}
 
 	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<MeshMaterial*>& output) {
+		static_cast<void>(tiny_materials);
+		static_cast<void>(output);
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t& t_mat = t_materials[i];
 			MeshMaterial* M = nullptr;
@@ -164,10 +168,10 @@ namespace pathos {
 
 			std::cout << "\tnumber of materials: " << numMaterials << std::endl;
 
-			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
+			for (auto f = 0u; f < src.mesh.num_face_vertices.size(); ++f) {
 				int fv = src.mesh.num_face_vertices[f];
 				int materialID = src.mesh.material_ids[f];
-				for (size_t v = 0; v < fv; ++v) {
+				for (auto v = 0; v < fv; ++v) {
 					tinyobj::index_t idx = src.mesh.indices[index_offset + v];
 					// position data
 					float vx = attrib.vertices[3 * idx.vertex_index + 0];
@@ -257,7 +261,7 @@ namespace pathos {
 		if (index == -1) return defaultMaterial;
 
 		MeshMaterial* M = materials[index];
-		
+
 		if (isPendingMaterial[index]) {
 			switch (M->getMaterialID()) {
 			case MATERIAL_ID::FLAT_TEXTURE:
@@ -281,7 +285,8 @@ namespace pathos {
 
 }
 
-/* template code for tinyobjloader
+// template code for tinyobjloader
+#if 0
 std::string inputfile = "cornell_box.obj";
 tinyobj::attrib_t attrib;
 std::vector<tinyobj::shape_t> shapes;
@@ -291,37 +296,37 @@ std::string err;
 bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
 
 if (!err.empty()) { // `err` may contain warning message.
-std::cerr << err << std::endl;
+	std::cerr << err << std::endl;
 }
 
 if (!ret) {
-exit(1);
+	exit(1);
 }
 
 // Loop over shapes
 for (size_t s = 0; s < shapes.size(); s++) {
-// Loop over faces(polygon)
-size_t index_offset = 0;
-for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-int fv = shapes[s].mesh.num_face_vertices[f];
+	// Loop over faces(polygon)
+	size_t index_offset = 0;
+	for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+		int fv = shapes[s].mesh.num_face_vertices[f];
 
-// Loop over vertices in the face.
-for (size_t v = 0; v < fv; v++) {
-// access to vertex
-tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-float vx = attrib.vertices[3*idx.vertex_index+0];
-float vy = attrib.vertices[3*idx.vertex_index+1];
-float vz = attrib.vertices[3*idx.vertex_index+2];
-float nx = attrib.normals[3*idx.normal_index+0];
-float ny = attrib.normals[3*idx.normal_index+1];
-float nz = attrib.normals[3*idx.normal_index+2];
-float tx = attrib.texcoords[2*idx.texcoord_index+0];
-float ty = attrib.texcoords[2*idx.texcoord_index+1];
-}
-index_offset += fv;
+		// Loop over vertices in the face.
+		for (size_t v = 0; v < fv; v++) {
+			// access to vertex
+			tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+			float vx = attrib.vertices[3 * idx.vertex_index + 0];
+			float vy = attrib.vertices[3 * idx.vertex_index + 1];
+			float vz = attrib.vertices[3 * idx.vertex_index + 2];
+			float nx = attrib.normals[3 * idx.normal_index + 0];
+			float ny = attrib.normals[3 * idx.normal_index + 1];
+			float nz = attrib.normals[3 * idx.normal_index + 2];
+			float tx = attrib.texcoords[2 * idx.texcoord_index + 0];
+			float ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+		}
+		index_offset += fv;
 
-// per-face material
-shapes[s].mesh.material_ids[f];
+		// per-face material
+		shapes[s].mesh.material_ids[f];
+	}
 }
-}
-*/
+#endif

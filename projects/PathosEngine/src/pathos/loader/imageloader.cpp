@@ -43,7 +43,7 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_2D, tex_id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		unsigned int numMipmaps = floor(log2(max(w, h))) + 1;
+		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, w, h);

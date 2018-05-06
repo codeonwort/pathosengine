@@ -203,7 +203,7 @@ namespace pathos {
 		if (normalData) delete normalData;
 		normalData = new GLfloat[positionCount];
 		auto P = positionData;
-		for (auto i = 0; i < positionCount; i += 9){
+		for (auto i = 0u; i < positionCount; i += 9){
 			auto p0 = i, p1 = i + 3, p2 = i + 6;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
@@ -225,7 +225,7 @@ namespace pathos {
 		}
 
 		auto P = positionData;
-		for (auto i = 0; i < indexCount; i += 3){
+		for (auto i = 0u; i < indexCount; i += 3){
 			auto i0 = indexData[i], i1 = indexData[i + 1], i2 = indexData[i + 2];
 			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
@@ -264,7 +264,7 @@ namespace pathos {
 
 		auto P = positionData;
 		auto UV = uvData;
-		for (auto i = 0; i < indexCount; i += 3){
+		for (auto i = 0u; i < indexCount; i += 3){
 			auto i0 = indexData[i], i1 = indexData[i + 1], i2 = indexData[i + 2];
 			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
 			auto uv0 = i0 * 2, uv1 = i1 * 2, uv2 = i2 * 2;

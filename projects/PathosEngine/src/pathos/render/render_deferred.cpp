@@ -97,9 +97,9 @@ namespace pathos {
 	}
 
 	// MOST OUTER RENDERING FUNCTION
-	void DeferredRenderer::render(Scene* scene, Camera* camera) {
-		this->scene = scene;
-		this->camera = camera;
+	void DeferredRenderer::render(Scene* scene_, Camera* camera_) {
+		scene = scene_;
+		camera = camera_;
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
@@ -109,8 +109,8 @@ namespace pathos {
 		packGBuffer();
 		unpackGBuffer();
 
-		this->scene = nullptr;
-		this->camera = nullptr;
+		scene = nullptr;
+		camera = nullptr;
 	}
 
 	void DeferredRenderer::clearGBuffer() {
@@ -137,7 +137,7 @@ namespace pathos {
 			Materials materials = mesh->getMaterials();
 			size_t len = geoms.size();
 			assert(geoms.size() == materials.size());
-			for (auto i = 0; i < len; ++i) {
+			for (auto i = 0u; i < len; ++i) {
 				assert(geoms[i] != nullptr && materials[i] != nullptr);
 			}
 		}
@@ -160,9 +160,9 @@ namespace pathos {
 	void DeferredRenderer::renderSkybox(Skybox* sky) {
 		if (!sky) return;
 
-		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4& proj = camera->getProjectionMatrix();
-		glm::mat4& transform = proj * view;
+		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4 proj = camera->getProjectionMatrix();
+		glm::mat4 transform = proj * view;
 		sky->activate(transform);
 		sky->render();
 	}
@@ -175,7 +175,7 @@ namespace pathos {
 		if (mesh->getDoubleSided()) glDisable(GL_CULL_FACE);
 		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
 
-		for (auto i = 0; i < len; i++) {
+		for (auto i = 0u; i < len; i++) {
 			auto G = geoms[i];
 			auto M = materials[i];
 			renderMeshPieceToGBuffer(mesh, G, M);

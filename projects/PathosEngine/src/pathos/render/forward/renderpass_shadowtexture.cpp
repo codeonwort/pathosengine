@@ -38,6 +38,7 @@ namespace pathos {
 	}
 
 	void ShadowTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		ShadowTextureMaterial* material = static_cast<ShadowTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

@@ -43,9 +43,9 @@ namespace pathos {
 	}
 
 	// move direction is alongside the camera's view direction
-	void Camera::move(const glm::vec3& movement) {
-		glm::vec3 mov = transform.inverseTransformVector(movement);
-		this->movement -= mov;
+	void Camera::move(const glm::vec3& movement_) {
+		glm::vec3 mov = transform.inverseTransformVector(movement_);
+		movement -= mov;
 		viewDirty = true;
 	}
 	/*void Camera::rotate(float angleDegree, const glm::vec3& axis) {

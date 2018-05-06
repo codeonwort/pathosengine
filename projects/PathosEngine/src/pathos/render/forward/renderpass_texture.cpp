@@ -107,7 +107,7 @@ namespace pathos {
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelMatrix));
 		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
 		glUniform3fv(glGetUniformLocation(program, "specularColor"), 1, material->getSpecular());
-		glm::vec3& eye = camera->getEyeVector();
+		glm::vec3 eye = camera->getEyeVector();
 		glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
 
 		// upload light

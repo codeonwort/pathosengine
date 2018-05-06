@@ -6,7 +6,7 @@
 #include <Shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 static inline bool fileExists(const std::string& path) {
-	return PathFileExistsA(path.c_str());
+	return PathFileExistsA(path.c_str()) == TRUE ? true : false;
 }
 ////////////////////////////////////////////////////////
 

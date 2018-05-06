@@ -15,7 +15,7 @@ namespace pathos {
 	class Shader;
 
 	// Utilities
-	GLuint createProgram(std::string& vsCode, std::string& fsCode);	// only vertex and fragment shaders
+	GLuint createProgram(const std::string& vsCode, const std::string& fsCode);	// only vertex and fragment shaders
 	GLuint createProgram(Shader& vs, Shader& fs);					// only vertex and fragment shaders
 	GLuint createProgram(std::vector<ShaderSource*>& sources);		// multiple shaders
 	GLuint createProgram(std::vector<Shader*>& shaders);			// multiple shaders

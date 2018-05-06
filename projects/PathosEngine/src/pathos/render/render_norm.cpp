@@ -71,7 +71,7 @@ namespace pathos {
 		//glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		Geometries geoms = mesh->getGeometries();
-		for (auto i = 0; i < geoms.size(); i++){
+		for (auto i = 0u; i < geoms.size(); i++){
 			geoms[i]->activatePositionBuffer(positionLocation);
 			geoms[i]->activateNormalBuffer(normalLocation);
 			geoms[i]->activateIndexBuffer();

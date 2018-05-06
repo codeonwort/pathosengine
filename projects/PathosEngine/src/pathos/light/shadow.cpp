@@ -79,7 +79,7 @@ void main() {
 		static const GLfloat one[] = { 1.0f };
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		for (int i = 0; i < numLights; ++i) {
+		for (auto i = 0u; i < numLights; ++i) {
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[i], 0);
 			glClearBufferfv(GL_DEPTH, 0, one);
 		}
@@ -133,7 +133,7 @@ void main() {
 		const auto numLights = lights.size();
 		//textureBindings.resize(numLights);
 		textureBindings.resize(maxLights);
-		for (auto i = 0; i < numLights; ++i) textureBindings[i] = textureBinding + i;
+		for (auto i = 0u; i < numLights; ++i) textureBindings[i] = textureBinding + i;
 
 		static glm::mat4 bias(
 			0.5, 0.0, 0.0, 0.0,
@@ -143,7 +143,7 @@ void main() {
 		static vector<glm::mat4> depthMVPbiased;
 		glm::mat4 depthMVP = projection * view * modelMatrix;
 		depthMVPbiased.resize(numLights);
-		for (auto lightIndex = 0; lightIndex < numLights; ++lightIndex) {
+		for (auto lightIndex = 0u; lightIndex < numLights; ++lightIndex) {
 			depthMVPbiased[lightIndex] = bias * depthMVP;
 			glActiveTexture(GL_TEXTURE0 + textureBindings[lightIndex]);
 			glBindTexture(GL_TEXTURE_2D, depthTextures[lightIndex]);
@@ -161,14 +161,15 @@ void main() {
 		GLint u_depthSampler = glGetUniformLocation(materialProgram, "depthSampler");
 		//glUniform1iv(u_depthSampler, numLights, &textureBindings[0]);
 		glUniform1iv(u_depthSampler, maxLights, &textureBindings[0]);
-		for (auto i = 0; i < numLights; ++i) {
+		for (auto i = 0u; i < numLights; ++i) {
 			std::string u_depthMVP = "depthMVP[" + to_string(i) + "]";
 			glUniformMatrix4fv(glGetUniformLocation(materialProgram, u_depthMVP.c_str()), 1, false, &(depthMVPbiased[i][0][0]));
 		}
 	}
 
 	void ShadowMap::deactivate(GLuint materialProgram, unsigned int textureBinding) {
-		for (auto i = 0; i < textureBindings.size(); ++i) {
+		static_cast<void>(materialProgram);
+		for (auto i = 0u; i < textureBindings.size(); ++i) {
 			glActiveTexture(GL_TEXTURE0 + textureBinding + i);
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}

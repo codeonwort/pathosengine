@@ -41,6 +41,7 @@ namespace pathos {
 	}
 
 	void AlphaOnlyTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		AlphaOnlyTextureMaterial* material = static_cast<AlphaOnlyTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

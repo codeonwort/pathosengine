@@ -21,9 +21,9 @@ namespace pathos {
 		glDeleteProgram(program_godRay);
 	}
 
-	void GodRay::initialize(unsigned int width, unsigned int height) {
-		this->width = width;
-		this->height = height;
+	void GodRay::initialize(unsigned int width_, unsigned int height_) {
+		width = width_;
+		height = height_;
 		createFBO();
 		createShaders();
 	}

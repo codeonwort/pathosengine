@@ -76,7 +76,7 @@ void main() {
 		static const GLfloat one[] = { 1.0f };
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		for (int k = 0; k < numLights; ++k) {
+		for (auto k = 0u; k < numLights; ++k) {
 			for (int i = 0; i < 6; i++) {
 				auto face = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, face, depthTextures[k], 0);
@@ -137,12 +137,14 @@ void main() {
 
 	void OmnidirectionalShadow::activate(GLuint materialProgram, const vector<PointLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix)
 	{
+		static_cast<void>(modelMatrix);
+
 		const auto numLights = lights.size();
 		//textureBindings.resize(numLights);
 		textureBindings.resize(maxLights);
 
 		//for (auto i = 0; i < numLights; ++i) {
-		for (auto i = 0; i < maxLights; ++i) {
+		for (auto i = 0u; i < maxLights; ++i) {
 			if (i < numLights) {
 				textureBindings[i] = textureBinding + i;
 				glActiveTexture(GL_TEXTURE0 + textureBindings[i]);
@@ -161,7 +163,8 @@ void main() {
 		glUniform1f(glGetUniformLocation(materialProgram, "f_mult_n"), lightFarZ * lightNearZ);
 	}
 	void OmnidirectionalShadow::deactivate(GLuint materialProgram, unsigned int textureBinding) {
-		for (auto i = 0; i < textureBindings.size(); ++i) {
+		static_cast<void>(materialProgram);
+		for (auto i = 0u; i < textureBindings.size(); ++i) {
 			glActiveTexture(GL_TEXTURE0 + textureBinding + i);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		}

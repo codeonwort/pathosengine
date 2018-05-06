@@ -61,7 +61,7 @@ namespace pathos {
 		inline bool isFull(Cache& cache) const;
 
 	private:
-		FT_Library library; // reference to FreeType library
+		//FT_Library library; // reference to FreeType library
 		FT_Face face;
 
 		unsigned int maxWidth, maxHeight; // max dimension among all glyphs in the font face

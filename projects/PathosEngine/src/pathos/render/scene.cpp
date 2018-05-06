@@ -8,7 +8,7 @@ namespace pathos {
 	void Scene::calculateLightBuffer() {
 		pointLightPositionBuffer.resize(pointLights.size() * 3);
 		pointLightColorBuffer.resize(pointLights.size() * 3);
-		for (int i = 0; i < pointLights.size(); ++i) {
+		for (auto i = 0u; i < pointLights.size(); ++i) {
 			auto pos = pointLights[i]->getPosition();
 			auto col = pointLights[i]->getColor();
 			pointLightPositionBuffer[i * 3 + 0] = pos[0];
@@ -21,7 +21,7 @@ namespace pathos {
 
 		directionalLightDirectionBuffer.resize(directionalLights.size() * 3);
 		directionalLightColorBuffer.resize(directionalLights.size() * 3);
-		for (int i = 0; i < directionalLights.size(); ++i) {
+		for (auto i = 0u; i < directionalLights.size(); ++i) {
 			auto dir = directionalLights[i]->getDirection();
 			auto col = directionalLights[i]->getColor();
 			directionalLightDirectionBuffer[i * 3 + 0] = dir[0];
@@ -36,7 +36,7 @@ namespace pathos {
 	void Scene::calculateLightBufferInViewSpace(const glm::mat4& viewMatrix) {
 		pointLightPositionBuffer.resize(pointLights.size() * 3);
 		pointLightColorBuffer.resize(pointLights.size() * 3);
-		for (int i = 0; i < pointLights.size(); ++i) {
+		for (auto i = 0u; i < pointLights.size(); ++i) {
 			auto pos = pointLights[i]->getPosition();
 			auto col = pointLights[i]->getColor();
 			glm::vec4 v_pos(pos[0], pos[1], pos[2], 1.0f);
@@ -51,7 +51,7 @@ namespace pathos {
 
 		directionalLightDirectionBuffer.resize(directionalLights.size() * 3);
 		directionalLightColorBuffer.resize(directionalLights.size() * 3);
-		for (int i = 0; i < directionalLights.size(); ++i) {
+		for (auto i = 0u; i < directionalLights.size(); ++i) {
 			auto dir = directionalLights[i]->getDirection();
 			auto col = directionalLights[i]->getColor();
 			glm::vec4 v_dir(dir[0], dir[1], dir[2], 0.0f);
@@ -65,9 +65,9 @@ namespace pathos {
 		}
 	}
 
-	void Scene::add(std::initializer_list<Mesh*> meshes) {
-		for (Mesh* mesh : meshes) {
-			this->meshes.push_back(mesh);
+	void Scene::add(std::initializer_list<Mesh*> newMeshes) {
+		for (Mesh* mesh : newMeshes) {
+			meshes.push_back(mesh);
 		}
 	}
 }

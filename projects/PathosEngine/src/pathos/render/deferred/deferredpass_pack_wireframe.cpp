@@ -19,6 +19,7 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Pack_Wireframe::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

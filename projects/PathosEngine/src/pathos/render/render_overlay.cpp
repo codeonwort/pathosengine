@@ -19,12 +19,12 @@ namespace pathos {
 #undef release
 	}
 
-	void OverlayRenderer::render(DisplayObject2D* root) {
-		assert(root && root->isRoot());
+	void OverlayRenderer::render(DisplayObject2D* root_) {
+		assert(root_ && root_->isRoot());
 		calculateTransformNDC();
-		this->root = root;
+		root = root_;
 		render_recurse(root, toNDC);
-		this->root = nullptr;
+		root = nullptr;
 	}
 
 	void OverlayRenderer::render_recurse(DisplayObject2D* object, const Transform& transformAccum) {

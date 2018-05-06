@@ -8,6 +8,7 @@
 #include "pathos/light/light.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
+#include "pathos/util/resource_finder.h"
 
 #include "glm/gtx/transform.hpp"
 #include <iostream>
@@ -58,6 +59,11 @@ int main(int argc, char** argv) {
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
+
 	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 100.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
@@ -94,15 +100,17 @@ void setupScene() {
 	for (auto geom : geoms){
 	lamp->add(geom, testColor);
 	}*/
-	OBJLoader obj2("../../resources/models/lightbulb.obj", "../../resources/models/");
+	OBJLoader obj2("models/lightbulb.obj", "models/");
 	lamp = obj2.craftMeshFromAllShapes();
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->setDoubleSided(true);
 
 	// cubemap
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
@@ -110,8 +118,8 @@ void setupScene() {
 	scene.skybox = sky;
 
 	// bump texture for planes
-	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
+	GLuint tex = loadTexture(loadImage("154.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"));
 	auto mat = new BumpTextureMaterial(tex, tex_norm);
 
 	auto planeGeom = new PlaneGeometry(30, 30);

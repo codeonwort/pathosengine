@@ -28,8 +28,8 @@ namespace pathos {
 		float ratioX = static_cast<float>(maxWidth) / TEXTURE_WIDTH;
 		float ratioY = static_cast<float>(maxHeight) / TEXTURE_HEIGHT;
 		
-		for (int y = 0; y < rows; ++y) {
-			for (int x = 0; x < cols; ++x) {
+		for (auto y = 0u; y < rows; ++y) {
+			for (auto x = 0u; x < cols; ++x) {
 				GlyphInTexture g;
 				g.ch = 0;
 				g.x = x * ratioX;
@@ -106,6 +106,6 @@ namespace pathos {
 		return true;
 	}
 
-	bool FontTextureCache::isFull(Cache& cache) const { return cache.unused.size() == 0; }
+	bool FontTextureCache::isFull(Cache& cache_) const { return cache_.unused.size() == 0; }
 
 }

@@ -19,6 +19,7 @@ namespace pathos {
 	}
 
 	void WireframePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		WireframeMaterial* material = static_cast<WireframeMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

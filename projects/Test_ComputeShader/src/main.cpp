@@ -2,6 +2,7 @@
 #include "pathos/camera/camera.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/render_deferred.h"
+#include "pathos/util/resource_finder.h"
 using namespace pathos;
 
 #include <iostream>
@@ -24,12 +25,16 @@ void onKeyDown(unsigned char ascii, int x, int y);
 
 int main(int argc, char** argv) {
 	EngineConfig config;
-	config.width = 1600;
-	config.height = 1200;
+	config.width = 800;
+	config.height = 600;
 	config.title = "Test: Compute Shader";
 	config.render = onRender;
 	config.keyDown = onKeyDown;
 	Engine::init(&argc, argv, config);
+
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../shaders/");
 
 	float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
 	camera = new Camera(new PerspectiveLens(45.0f, aspect, 1.0f, 500.0f));
@@ -164,7 +169,7 @@ void main() {
 }
 
 void initScene() {
-	auto light = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1));
+	auto light = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1f));
 	scene.add(light);
 }
 

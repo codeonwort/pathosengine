@@ -60,6 +60,7 @@ namespace pathos {
 	}
 
 	void CubeEnvMapPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		CubeEnvMapMaterial* material = static_cast<CubeEnvMapMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ namespace pathos {
 		glUseProgram(program);
 
 		const glm::mat4& modelTransform = modelMatrix;
-		const glm::mat4& mvTransform = camera->getViewMatrix() * modelMatrix;
+		//const glm::mat4& mvTransform = camera->getViewMatrix() * modelMatrix;
 		const glm::mat4& mvpTransform = camera->getViewProjectionMatrix() * modelTransform;
 		//glm::vec3 cameraPos = camera->getPosition();
 		//glUniformMatrix4fv(glGetUniformLocation(program, "mv_matrix"), 1, GL_FALSE, glm::value_ptr(mvTransform));

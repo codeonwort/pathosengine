@@ -27,7 +27,7 @@ namespace pathos {
 	public:
 		virtual ~MeshRenderPass();
 
-		inline void setModelMatrix(const glm::mat4& modelMatrix) { this->modelMatrix = modelMatrix; }
+		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
 		inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
 		inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
 

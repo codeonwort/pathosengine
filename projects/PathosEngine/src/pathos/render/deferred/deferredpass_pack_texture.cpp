@@ -20,6 +20,7 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Pack_FlatTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+		static_cast<void>(scene);
 		TextureMaterial* material = static_cast<TextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

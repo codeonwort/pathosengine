@@ -9,6 +9,7 @@
 #include "pathos/text/textmesh.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/util/resource_finder.h"
 
 // overlay
 #include "pathos/render/render_overlay.h"
@@ -85,6 +86,11 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
+
 	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
 	cam->move(glm::vec3(0, 0, 2));
@@ -122,9 +128,11 @@ void setupModel() {
 }
 
 void setupSkybox() {
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);

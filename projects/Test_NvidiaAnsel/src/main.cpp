@@ -8,15 +8,21 @@
 #include "pathos/loader/objloader.h"
 #include "pathos/text/textmesh.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include <iostream>
+#include "pathos/util/resource_finder.h"
 
 #include "ansel_envmap.h"
 
-// For multithreaded model loading.
+#include <iostream>
 #include <thread>
 
 using namespace std;
 using namespace pathos;
+
+// Rendering configurations
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
+const float FOV = 90.0f;
+const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 20.0f);
 
 // Camera, scene and renderer
 Camera* cam;
@@ -42,23 +48,27 @@ void render();
 void keyDown(unsigned char ascii, int x, int y) {}
 
 void loadTask() {
-	cityLoader.load("../../resources/models/city/The_City.obj", "../../resources/models/city/");
+	cityLoader.load("models/city/The_City.obj", "models/city/");
 	loaderReady = true;
 }
 
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 1600;
-	conf.height = 1200;
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
 	conf.title = "Test: Nvidia Ansel";
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 500.f));
-	cam->move(glm::vec3(0, 0, 20));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 1.0f, 500.f));
+	cam->move(CAMERA_POSITION);
 
 	// renderer
 	renderer = new MeshForwardRenderer;
@@ -67,12 +77,12 @@ int main(int argc, char** argv) {
 	setupModel();
 	setupSkybox();
 
-	std::thread loadWorker(loadTask);
+	//std::thread loadWorker(loadTask);
 
 	// start the main loop
 	Engine::start();
 
-	loadWorker.join();
+	//loadWorker.join();
 
 	return 0;
 }
@@ -92,15 +102,15 @@ void setupModel() {
 
 	scene.add(plight);
 	scene.add(dlight);
-	scene.add(label);
+	//scene.add(label);
 	scene.add(debug);
 
 	renderer->getShadowMap()->setProjection(glm::ortho(-200.f, 200.f, -200.f, 100.f, -200.f, 500.f));
 }
 
 void setupSkybox() {
-	auto anselImage = pathos::loadImage("../../resources/ansel/dishonored.jpg");
-	//auto anselImage = pathos::loadImage("../../resources/ansel/the_surge.jpg");
+	auto anselImage = pathos::loadImage("ansel/dishonored.jpg");
+	//auto anselImage = pathos::loadImage("ansel/the_surge.jpg");
 	GLuint anselTex = loadTexture(anselImage);
 	sky = new AnselEnvMapping(anselTex);
 	scene.skybox = nullptr; // use custom sky rendering
@@ -110,8 +120,8 @@ void render() {
 	if (loaderReady) {
 		loaderReady = false;
 		city = cityLoader.craftMeshFromAllShapes();
-		city->getTransform().appendScale(.1, .1, .1);
-		city->getTransform().appendMove(0, -60, 0);
+		city->getTransform().appendScale(0.1f, 0.1f, 0.1f);
+		city->getTransform().appendMove(0.0f, -60.0f, 0.0f);
 
 		//scene.add(city);
 		cityLoader.unload();

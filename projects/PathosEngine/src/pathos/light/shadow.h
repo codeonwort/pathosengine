@@ -29,7 +29,7 @@ namespace pathos {
 		void clearLightDepths(unsigned int numLights);
 		void renderLightDepth(unsigned int lightIndex, DirectionalLight* light, MeshGeometry*, const glm::mat4& modelMatrix);
 
-		inline void setProjection(glm::mat4& projection) { this->projection = projection; }
+		inline void setProjection(glm::mat4& newProjection) { projection = newProjection; }
 
 		// add shadow algorithm to the shadow castee's program
 		void activate(GLuint materialPassProgram, const vector<DirectionalLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix);

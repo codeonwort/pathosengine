@@ -54,7 +54,7 @@ namespace pathos {
 		 std::function<void(aiNode*,Node*)> dfs = [&](aiNode* anode, Node* node) {
 			 node->name = anode->mName.C_Str();
 			 node->localTransform = getGlmMat(anode->mTransformation);
-			for (auto i = 0; i < anode->mNumChildren; ++i) {
+			for (auto i = 0u; i < anode->mNumChildren; ++i) {
 				auto achild = anode->mChildren[i];
 				Node* child = new Node;
 				dfs(achild, child);
@@ -67,13 +67,13 @@ namespace pathos {
 	}
 
 	void DAELoader::loadMaterials() {
-		for (auto i = 0; i < scene->mNumMaterials; ++i) {
+		for (auto i = 0u; i < scene->mNumMaterials; ++i) {
 			const auto material = scene->mMaterials[i];
 		}
 	}
 	
 	void DAELoader::loadMeshes() {
-		for (auto i = 0; i < scene->mNumMeshes; ++i) {
+		for (auto i = 0u; i < scene->mNumMeshes; ++i) {
 			const auto mesh = scene->mMeshes[i];
 
 			// at least positions and indices are needed
@@ -87,7 +87,7 @@ namespace pathos {
 			GLfloat* bitangents = reinterpret_cast<GLfloat*>(&mesh->mBitangents[0]);
 
 			std::vector<GLuint> indices;
-			for (auto i = 0; i < mesh->mNumFaces; ++i) {
+			for (auto i = 0u; i < mesh->mNumFaces; ++i) {
 				const auto& face = mesh->mFaces[i];
 				assert(face.mNumIndices == 3); // TODO: support other primitives
 				indices.push_back(face.mIndices[0]);
@@ -120,11 +120,11 @@ namespace pathos {
 
 			// load bones
 			if (mesh->HasBones()) {
-				for (auto i = 0; i < mesh->mNumBones; ++i) {
+				for (auto i = 0u; i < mesh->mNumBones; ++i) {
 					Bone bone;
 					const auto aiBone = mesh->mBones[i];
 					bone.name = aiBone->mName.C_Str();
-					for (auto j = 0; j < aiBone->mNumWeights; ++j) {
+					for (auto j = 0u; j < aiBone->mNumWeights; ++j) {
 						bone.vertexIDs.push_back(aiBone->mWeights[j].mVertexId);
 						bone.weights.push_back(aiBone->mWeights[j].mWeight);
 					}
@@ -140,7 +140,7 @@ namespace pathos {
 	}
 
 	void DAELoader::loadAnimations() {
-		for (auto i = 0; i < scene->mNumAnimations; ++i) {
+		for (auto i = 0u; i < scene->mNumAnimations; ++i) {
 			const auto aiAnim = scene->mAnimations[i];
 			SkeletalAnimation* anim = new SkeletalAnimation(aiAnim);
 			SkinnedMesh* mesh = dynamic_cast<SkinnedMesh*>(meshes[0]);

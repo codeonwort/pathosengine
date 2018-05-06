@@ -47,9 +47,9 @@ namespace pathos {
 	}
 
 	// MOST OUTER RENDERING FUNCTION
-	void MeshForwardRenderer::render(Scene* scene, Camera* camera) {
-		this->scene = scene;
-		this->camera = camera;
+	void MeshForwardRenderer::render(Scene* scene_, Camera* camera_) {
+		scene = scene_;
+		camera = camera_;
 
 		// DEBUG: assertion
 		for (Mesh* mesh : scene->meshes) {
@@ -57,7 +57,7 @@ namespace pathos {
 			Materials materials = mesh->getMaterials();
 			size_t len = geoms.size();
 			assert(geoms.size() == materials.size());
-			for (auto i = 0; i < len; ++i) {
+			for (auto i = 0u; i < len; ++i) {
 				assert(geoms[i] != nullptr && materials[i] != nullptr);
 			}
 		}
@@ -93,15 +93,15 @@ namespace pathos {
 		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
 
 		// shadow mapping for directional light
-		for (auto i = 0; i < len; ++i) {
-			for (auto light = 0; light < scene->numDirectionalLights(); ++light) {
+		for (auto i = 0u; i < len; ++i) {
+			for (auto light = 0u; light < scene->numDirectionalLights(); ++light) {
 				shadowMap->renderLightDepth(light, scene->directionalLights[light], geoms[i], modelTransform);
 			}
 		}
 
 		// omnidirectional shadow for point light
-		for (auto i = 0; i < len; ++i) {
-			for (auto light = 0; light < scene->numPointLights(); ++light) {
+		for (auto i = 0u; i < len; ++i) {
+			for (auto light = 0u; light < scene->numPointLights(); ++light) {
 				omniShadow->renderLightDepth(light, scene->pointLights[light], geoms[i], modelTransform);
 			}
 		}
@@ -111,9 +111,9 @@ namespace pathos {
 	}
 
 	void MeshForwardRenderer::render(Skybox* sky) {
-		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4& proj = camera->getProjectionMatrix();
-		glm::mat4& transform = proj * view;
+		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4 proj = camera->getProjectionMatrix();
+		glm::mat4 transform = proj * view;
 		sky->activate(transform);
 		sky->render();
 	}
@@ -126,7 +126,7 @@ namespace pathos {
 		if (mesh->getDoubleSided()) glDisable(GL_CULL_FACE);
 		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
 
-		for (auto i = 0; i < len; i++) {
+		for (auto i = 0u; i < len; i++) {
 			auto G = geoms[i];
 			auto M = materials[i];
 			renderPiece(mesh, G, M);

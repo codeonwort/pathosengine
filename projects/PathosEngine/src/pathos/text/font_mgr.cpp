@@ -128,6 +128,7 @@ namespace pathos {
 				return false;
 			}
 		}
+		return true;
 	}
 
 	GlyphMap* FontManager::_getGlyphMap(const std::string& tag) {

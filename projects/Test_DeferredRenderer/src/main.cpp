@@ -23,6 +23,7 @@ const int WINDOW_HEIGHT = 1080;
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
 const bool USE_HDR = true;
+const unsigned int NUM_POINT_LIGHTS = 4;
 const unsigned int NUM_BALLS = 10;
 
 // Camera, Scene, and renderer
@@ -86,7 +87,7 @@ void setupScene() {
 	scene.add(dlight);
 
 	srand((unsigned int)time(NULL));
-	for (int i = 0; i < 4; ++i) {
+	for (auto i = 0u; i < NUM_POINT_LIGHTS; ++i) {
 		float x = rand() % 50 - 25.0f;
 		float y = rand() % 50 - 25.0f;
 		float z = rand() % 50 - 25.0f;

@@ -20,7 +20,7 @@ using namespace std;
 
 namespace pathos {
 
-	GLuint createProgram(std::string& vsCode, std::string& fsCode) {
+	GLuint createProgram(const std::string& vsCode, const std::string& fsCode) {
 		Shader* vshader = new Shader(GL_VERTEX_SHADER);
 		Shader* fshader = new Shader(GL_FRAGMENT_SHADER);
 		vshader->setSource(vsCode);
@@ -118,7 +118,7 @@ namespace pathos {
 	static bool svarComp(const ShaderVariable& a, const ShaderVariable& b) { return a.name < b.name; }
 	static bool varComp(const pair<string, string>& a, const pair<string, string>& b) { return a.second < b.second; }
 
-	static enum class COLLISION { NO_COLLISION, ALREADY_EXIST, COLLIDE };
+	enum class COLLISION { NO_COLLISION, ALREADY_EXIST, COLLIDE };
 	static COLLISION collide(vector<ShaderVariable>& vars, const ShaderVariable& var) {
 		for (auto it = vars.begin(); it != vars.end(); ++it) {
 			if ((*it).name == var.name) {
@@ -147,8 +147,8 @@ namespace pathos {
 		glDeleteShader(name);
 	}
 
-	void Shader::setSource(const std::string& source) { this->source = source; }
-	void Shader::setSource(const char* source) { this->source = source; }
+	void Shader::setSource(const std::string& newSource) { source = newSource; }
+	void Shader::setSource(const char* newSource) { source = newSource; }
 
 	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
 	bool Shader::loadSource(const char* filepath_) {
