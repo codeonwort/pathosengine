@@ -31,8 +31,8 @@ namespace pathos {
 		fsSource.uniform("vec3", "specularColor");
 		fsSource.uniform("vec3", "eye");
 		fsSource.uniform("float", "materialAlpha");
-		fsSource.uniform("unsigned int", "numDirLights");
-		fsSource.uniform("unsigned int", "numPointLights");
+		fsSource.uniform("uint", "numDirLights");
+		fsSource.uniform("uint", "numPointLights");
 		fsSource.outVar("vec4", "outColor");
 
 		// shadow

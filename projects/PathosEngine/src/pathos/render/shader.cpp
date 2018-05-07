@@ -11,7 +11,8 @@
 #include <assert.h>
 
 // on/off console output
-#define DEBUG_SHADER 0
+#define DEBUG_SHADER			0
+#define DEBUG_SHADER_SOURCE		0
 
 // Inefficient in current design so enabling this is not recommended.
 #define CONDITIONAL_COMPILE 0
@@ -176,6 +177,9 @@ namespace pathos {
 		else if (type == GL_COMPUTE_SHADER) shaderType = "GL_COMPUTE_SHADER";
 		else shaderType = "<unknown shader type>";
 		std::cout << "> trying to compile a " << shaderType << " shader" << std::endl;
+#if DEBUG_SHADER_SOURCE
+		std::cout << source << std::endl;
+#endif
 #endif
 #if CONDITIONAL_COMPILE
 		char* shaderDefine = "";

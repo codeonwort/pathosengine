@@ -8,11 +8,18 @@
 #include "pathos/render/render_forward.h"
 #include "pathos/render/render_norm.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
 #include <iostream>
 
 using namespace std;
 using namespace pathos;
+
+// Configurations
+constexpr int WINDOW_WIDTH = 1600;
+constexpr int WINDOW_HEIGHT = 900;
+constexpr char* WINDOW_TITLE = "Test: Refactor Forward Renderer";
+constexpr float FOV = 90.0f;
 
 // Camera, Scene, and renderer
 Camera* cam;
@@ -37,16 +44,20 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
-	conf.title = "Test: Refactor Forward Renderer";
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
+	conf.title = WINDOW_TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../resources/");
+
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 50));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.width / conf.height, 1.0f, 1000.f));
+	cam->move(glm::vec3(0.0f, 0.0f, 50.0f));
 
 	// renderer
 	renderer = new MeshForwardRenderer;
@@ -73,15 +84,17 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
-		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
-		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
+	const char* cubeImgName[6] = {
+		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTexture = loadCubemapTexture(cubeImg);
 
-	GLuint tex = loadTexture(loadImage("../../resources/154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("../../resources/154_norm.jpg"));
+	GLuint tex = loadTexture(loadImage("154.jpg"));
+	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"));
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
@@ -150,7 +163,7 @@ void setupScene() {
 }
 
 void render() {
-	float speedX = 0.1f, speedY = 0.1f;
+	float speedX = 0.2f, speedY = 0.2f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
 	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
@@ -165,4 +178,5 @@ void render() {
 
 	renderer->render(&scene, cam);
 	normRenderer->render(model, cam);
+	normRenderer->render(model2, cam);
 }

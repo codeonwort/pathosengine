@@ -177,7 +177,7 @@ void main() {
 
 	void ShadowMap::addShaderCode(VertexShaderSource& vs, FragmentShaderSource& fs, unsigned int maxLights) {
 		vs.setUseNormal(true);
-		vs.uniform("unsigned int", "numDirLights");
+		vs.uniform("uint", "numDirLights");
 		vs.uniform("mat4", "depthMVP", maxLights);
 		vs.outVar("vec4", "shadowMapCoord", maxLights);
 

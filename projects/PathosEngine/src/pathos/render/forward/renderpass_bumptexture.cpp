@@ -51,8 +51,8 @@ namespace pathos {
 		fsSource.outVar("vec4", "color");
 
 		// light
-		fsSource.uniform("unsigned int", "numDirLights");
-		fsSource.uniform("unsigned int", "numPointLights");
+		fsSource.uniform("uint", "numDirLights");
+		fsSource.uniform("uint", "numPointLights");
 		fsSource.directionalLights(maxDirectionalLights);
 		fsSource.pointLights(maxPointLights);
 

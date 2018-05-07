@@ -3,13 +3,18 @@
 #include <iostream>
 #include <algorithm>
 #include <assert.h>
-using std::max;
+
+#define DEBUG_IMAGE_LOADER 0
 
 namespace pathos {
 
 	FIBITMAP* loadImage(const char* filename_) {
 		std::string path = ResourceFinder::get().find(filename_);
 		assert(path.size() != 0);
+
+#if DEBUG_IMAGE_LOADER
+		std::cout << "- load an image: " << path << std::endl;
+#endif
 
 		FIBITMAP *img = NULL, *dib = NULL;
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
@@ -37,13 +42,15 @@ namespace pathos {
 		data = FreeImage_GetBits(dib);
 		w = FreeImage_GetWidth(dib);
 		h = FreeImage_GetHeight(dib);
-		std::cout << "texture load w: " << w << ", h: " << h << std::endl;
+#if DEBUG_IMAGE_LOADER
+		std::cout << "- create a texture (width=" << w << ", height=" << h << ")" << std::endl;
+#endif
 
 		glGenTextures(1, &tex_id);
 		glBindTexture(GL_TEXTURE_2D, tex_id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(max(w, h))) + 1);
+		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, w, h);

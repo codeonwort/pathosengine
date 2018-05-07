@@ -20,7 +20,7 @@ namespace pathos {
 		fsSource.inVar("vec2", "uv");
 		fsSource.outVar("vec4", "color");
 		fsSource.uniform("samplerCube", "texSampler");
-		fsSource.uniform("unsigned int", "face");
+		fsSource.uniform("uint", "face");
 		fsSource.uniform("float", "zNear");
 		fsSource.uniform("float", "zFar");
 

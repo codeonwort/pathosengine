@@ -20,8 +20,8 @@ namespace pathos {
 #endif
 
 	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
-		std::cout << "initialize pathos engine..." << std::endl;
-		std::cout << "engine version: " << Engine::version << std::endl;
+		std::cout << "=== initialize pathos engine ===" << std::endl;
+		std::cout << "- engine version: " << Engine::version << std::endl;
 
 		Engine::conf = config;
 
@@ -32,11 +32,14 @@ namespace pathos {
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE);
 		glutInitWindowSize(conf.width, conf.height);
 		static int wid = glutCreateWindow(conf.title);
-		std::cout << "- window created" << std::endl;
+		std::cout << "- main window has been created" << std::endl;
 
 		// glew
-		if (glewInit() != GLEW_OK) exit(1);
-		std::cout << "- glew initialized" << std::endl;
+		if (glewInit() != GLEW_OK) {
+			std::cerr << "[ERROR] failed to initialize glew" << std::endl;
+			exit(1);
+		}
+		std::cout << "- glew has been initialized" << std::endl;
 
 		// multi-threading
 #ifdef PATHOS_MULTI_THREAD_SUPPORT
@@ -50,7 +53,7 @@ namespace pathos {
 
 		// font manager
 		if (FontManager::init() == false) {
-			std::cerr << "Failed to initialize the font manager" << std::endl;
+			std::cerr << "[ERROR] failed to initialize the font manager" << std::endl;
 			return false;
 		}
 		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28); // consolas
@@ -81,7 +84,7 @@ namespace pathos {
 	* start the main loop.
 	*/
 	void Engine::start() {
-		std::cout << "main loop start" << std::endl;
+		std::cout << "- start the main loop" << std::endl;
 		glutMainLoop();
 	}
 
@@ -90,7 +93,7 @@ namespace pathos {
 	*/
 	void Engine::stop() {
 		glutLeaveMainLoop();
-		std::cout << "main loop stop" << std::endl;
+		std::cout << "- stop the main loop" << std::endl;
 	}
 
 	void Engine::render() {

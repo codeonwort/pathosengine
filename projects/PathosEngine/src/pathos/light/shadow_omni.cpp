@@ -177,7 +177,7 @@ void main() {
 
 		fs.inVar("vec3", "normal");
 		fs.inVar("vec3", "omniShadowCoord");
-		fs.uniform("unsigned int", "numPointLights");
+		fs.uniform("uint", "numPointLights");
 		fs.uniform("samplerCubeShadow", "omniShadow_depthSampler", maxLights);
 		fs.uniform("float", "f_plus_n");
 		fs.uniform("float", "f_minus_n");

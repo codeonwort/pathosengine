@@ -17,8 +17,8 @@ namespace pathos {
 
 		fsSource.textureSampler("texSampler");
 		fsSource.uniform("vec3", "specularColor");
-		fsSource.uniform("unsigned int", "numDirLights");
-		fsSource.uniform("unsigned int", "numPointLights");
+		fsSource.uniform("uint", "numDirLights");
+		fsSource.uniform("uint", "numPointLights");
 		fsSource.uniform("bool", "useLighting");
 
 		// light
