@@ -3,12 +3,12 @@
 #include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"
 
-//#define DEBUG_TEXT
+#define DEBUG_TEXT 0
 
 namespace pathos {
 
-	TextMesh::TextMesh(const std::string& tag):Mesh(nullptr, nullptr) {
-		this->tag = tag;
+	TextMesh::TextMesh(const std::string& tag_):Mesh(nullptr, nullptr) {
+		tag = tag_;
 		doubleSided = true;
 
 		auto fontInfo = FontManager::getGlyphMap(tag);
@@ -18,7 +18,7 @@ namespace pathos {
 		auto mat = new AlphaOnlyTextureMaterial(cache.getTexture());
 		materials.push_back(mat);
 
-#ifdef DEBUG_TEXT
+#if DEBUG_TEXT
 		geometries.push_back(new PlaneGeometry(1, 1));
 		materials.push_back(mat);
 #endif
@@ -143,6 +143,7 @@ namespace pathos {
 			positions.push_back(penX + cache.getCellWidth()); positions.push_back(penY + cache.getCellHeight()); positions.push_back(penZ);
 			positions.push_back(penX); positions.push_back(penY + cache.getCellHeight()); positions.push_back(penZ);
 			penY += glyph.offsetY;
+			penZ += 0.00001f;
 
 			u = glyph.x + (0.5f / cache.getTextureWidth());
 			v = glyph.y + (0.5f / cache.getTextureHeight());

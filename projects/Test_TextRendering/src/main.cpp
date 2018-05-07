@@ -11,14 +11,19 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/resource_finder.h"
 
-// overlay
+// Overlay (2D rendering)
 #include "pathos/render/render_overlay.h"
 #include "pathos/overlay/rectangle.h"
 
 #include <iostream>
 
-using namespace std;
 using namespace pathos;
+
+// Configurations
+constexpr int WINDOW_WIDTH = 800;
+constexpr int WINDOW_HEIGHT = 600;
+constexpr float FOV = 90.0f;
+const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 10.0f);
 
 // Camera, scene and renderer
 Camera* cam;
@@ -68,7 +73,7 @@ void render() {
 	//label->setText(txt, 0xff0000);
 	
 	renderer->render(&scene, cam);
-	overlayRenderer->render(overlayRoot);
+	//overlayRenderer->render(overlayRoot);
 }
 
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -76,8 +81,8 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
 	conf.title = "Test: Text Rendering";
 	conf.render = render;
 	conf.keyDown = keyDown;
@@ -92,8 +97,9 @@ int main(int argc, char** argv) {
 	ResourceFinder::get().add("../../shaders/");
 
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, 800.0f / 600.0f, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 2));
+	float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
+	cam->move(CAMERA_POSITION);
 
 	// renderer
 	renderer = new MeshForwardRenderer;
@@ -111,20 +117,20 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
-	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
+	plight = new PointLight(glm::vec3(5.0f, 30.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	dlight = new DirectionalLight(glm::vec3(0.1f, -1.0f, 2.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
 	//FontManager::loadAdditionalGlyphs("hangul", L'¤¡', L'ÆR');
 
 	label = new TextMesh("hangul");
 	label->setText(L"ÇÑ±Û Å×½ºÆ® / ¿µ¾îµµ ³ª¿À³ª English Text\n¿©±âºÎÅÍ »õ ÁÙ", 0xff0000);
-	label->getTransform().appendScale(5);
+	label->getTransform().appendScale(20.0f);
 
 	scene.add(plight);
 	scene.add(dlight);
 	scene.add(label);
 
-	renderer->getShadowMap()->setProjection(glm::ortho(-200.f, 200.f, -200.f, 100.f, -200.f, 500.f));
+	renderer->getShadowMap()->setProjection(glm::ortho(-200.0f, 200.0f, -200.0f, 100.0f, -200.0f, 500.0f));
 }
 
 void setupSkybox() {
