@@ -14,7 +14,7 @@ namespace pathos {
 	protected:
 		GLuint program = 0; // shader program name
 
-		// @TODO: eliminate these?
+		// @TODO: eliminate this?
 		glm::mat4 modelMatrix;
 
 		virtual void createProgram() = 0;

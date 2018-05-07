@@ -162,12 +162,12 @@ void setupScene() {
 
 	// model 1: flat texture
 	model = new Mesh(geom_sphere_big, material_texture);
-	model->getTransform().appendMove(-40, 0, 0);
+	model->getTransform().appendMove(-40.0f, 0.0f, 0.0f);
 
 	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendMove(50, 0, 0);
-	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
+	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
+	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
@@ -177,14 +177,14 @@ void setupScene() {
 	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_bump);
-		ball->getTransform().appendMove(0, -10.0f, -15.0f * i);
+		ball->getTransform().appendMove(0.0f, -10.0f, -15.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
 
 	// model: god ray source
 	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().appendMove(0, 300, -500);
+	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 	godRaySource->getTransform().appendScale(10.0f);
 
 	// add them to scene

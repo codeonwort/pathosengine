@@ -12,7 +12,14 @@ namespace pathos {
 		Shader fs(GL_FRAGMENT_SHADER);
 		vs.loadSource("deferred_pack_wireframe_vs.glsl");
 		fs.loadSource("deferred_pack_wireframe_fs.glsl");
+
 		program = pathos::createProgram(vs, fs);
+
+#define GET_UNIFORM(z) { assert((uniform_##z = glGetUniformLocation(program, #z)) != -1); }
+		GET_UNIFORM(mvTransform);
+		GET_UNIFORM(mvpTransform);
+		GET_UNIFORM(diffuseColor);
+#undef GET_UNIFORM
 
 		positionLocation = 0;
 		normalLocation = 2;
@@ -33,9 +40,9 @@ namespace pathos {
 
 		const glm::mat4& mvMatrix = camera->getViewMatrix() * modelMatrix;
 		const glm::mat4& mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
-		glUniformMatrix4fv(glGetUniformLocation(program, "mvTransform"), 1, false, glm::value_ptr(mvMatrix));
-		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(mvpMatrix));
-		glUniform3fv(glGetUniformLocation(program, "diffuseColor"), 1, material->getDiffuse());
+		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
+		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
+		glUniform3fv(uniform_diffuseColor, 1, material->getDiffuse());
 
 		//--------------------------------------------------------------------------------------
 		// draw call

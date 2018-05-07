@@ -12,7 +12,13 @@ namespace pathos {
 
 	protected:
 		virtual void createProgram() override;
-		GLint positionLocation = -1, normalLocation = -1;
+
+		GLint uniform_mvTransform;
+		GLint uniform_mvpTransform;
+		GLint uniform_diffuseColor;
+
+		GLint positionLocation = -1;
+		GLint normalLocation = -1;
 
 	};
 
