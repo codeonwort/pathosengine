@@ -4,7 +4,7 @@
 // let's hold glyphs in a texture and only pass (u,v,w,h)
 
 // But Unicode characters are too many that they cannot be stored in a single texture.
-// Maintain only recently used glyphs in a limited number of textures.
+// Only recently used glyphs are maintained in a limited number of textures.
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -61,7 +61,6 @@ namespace pathos {
 		inline bool isFull(Cache& cache) const;
 
 	private:
-		//FT_Library library; // reference to FreeType library
 		FT_Face face;
 
 		unsigned int maxWidth, maxHeight; // max dimension among all glyphs in the font face
