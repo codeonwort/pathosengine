@@ -21,12 +21,12 @@ namespace pathos {
 		pack_colorPass = new MeshDeferredRenderPass_Pack_SolidColor;
 		pack_texture = new MeshDeferredRenderPass_Pack_FlatTexture;
 		pack_wireframe = new MeshDeferredRenderPass_Pack_Wireframe;
+		pack_bumptexture = new MeshDeferredRenderPass_Pack_BumpTexture;
 		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1], width, height);
 
 		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
 
-		bumpTexturePass = new BumpTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
 		shadowTexturePass = new ShadowTexturePass;
 		cubeEnvMapPass = new CubeEnvMapPass;
 		shadowCubeTexturePass = new ShadowCubeTexturePass;
@@ -44,6 +44,7 @@ namespace pathos {
 		release(pack_colorPass);
 		release(pack_texture);
 		release(pack_wireframe);
+		release(pack_bumptexture);
 		release(unpack_pass);
 
 		/*release(shadowMap);
@@ -198,20 +199,20 @@ namespace pathos {
 		case MATERIAL_ID::WIREFRAME:
 			renderWireframe(mesh, G, static_cast<WireframeMaterial*>(M));
 			break;
+		case MATERIAL_ID::BUMP_TEXTURE:
+			renderBumpTexture(mesh, G, static_cast<BumpTextureMaterial*>(M));
+			break;
 		/*case MATERIAL_ID::SHADOW_TEXTURE:
 			renderShadowTexture(mesh, G, static_cast<ShadowTextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::CUBE_ENV_MAP:
 			renderCubeEnvMap(mesh, G, static_cast<CubeEnvMapMaterial*>(M));
 			break;
-		case MATERIAL_ID::BUMP_TEXTURE:
-			renderBumpTexture(mesh, G, static_cast<BumpTextureMaterial*>(M));
-			break;
 		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
 			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
 			break;*/
 		default:
-			// no render pass exists for this material id. should not be here...
+			// No render pass exists for this material id. You should not enter here.
 			assert(0);
 			break;
 		}
@@ -228,6 +229,10 @@ namespace pathos {
 	void DeferredRenderer::renderWireframe(Mesh* mesh, MeshGeometry* G, WireframeMaterial* M) {
 		pack_wireframe->setModelMatrix(mesh->getTransform().getMatrix());
 		pack_wireframe->render(scene, camera, G, M);
+	}
+	void DeferredRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* G, BumpTextureMaterial* M) {
+		pack_bumptexture->setModelMatrix(mesh->getTransform().getMatrix());
+		pack_bumptexture->render(scene, camera, G, M);
 	}
 
 }

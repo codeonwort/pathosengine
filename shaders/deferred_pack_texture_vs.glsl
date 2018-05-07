@@ -20,7 +20,7 @@ void main() {
 	vs_out.normal = mat3(mvTransform) * normal;
 	vs_out.tangent = vec3(0);
 	vs_out.texcoord = uv;
-	vs_out.material_id = 2;
+	vs_out.material_id = 3;
 
 	gl_Position = mvpTransform * vec4(position, 1.0f);
 }

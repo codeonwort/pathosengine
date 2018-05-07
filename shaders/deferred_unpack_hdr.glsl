@@ -78,7 +78,7 @@ void main() {
 	// output: standard shading
 	out_color = color;
 
-	// // for depth-of-field. continue to blur_pass.glsl
+	// for depth-of-field. continue to blur_pass.glsl
 	out_color.a = -fragment.ws_coords.z;
 
 	// output: light bloom

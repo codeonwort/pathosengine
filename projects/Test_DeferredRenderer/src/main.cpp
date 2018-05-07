@@ -10,16 +10,19 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
-#include <iostream>
-#include <ctime>
 using namespace pathos;
+
+#include <iostream>
+#include <time.h>
 
 // Compile options
 #define USE_NORMAL_RENDERER 0
 
 // Rendering configurations
-const int WINDOW_WIDTH = 1920;
-const int WINDOW_HEIGHT = 1080;
+//const int WINDOW_WIDTH = 1920;
+//const int WINDOW_HEIGHT = 1080;
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
 const bool USE_HDR = true;
@@ -173,7 +176,7 @@ void setupScene() {
 
 	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
-		Mesh* ball = new Mesh(geom_sphere, material_texture);
+		Mesh* ball = new Mesh(geom_sphere, material_bump);
 		ball->getTransform().appendMove(0, -10.0f, -15.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
@@ -204,12 +207,16 @@ void render() {
 	cam->rotateX(rotX);
 
 	model->getTransform().appendMove(0, 20, 0);
-	model->getTransform().appendRotation(0.01f, glm::vec3(0, 0.5, 1));
+	model->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 0.5f, 1.0f));
 	model->getTransform().appendMove(0, -20, 0);
 
 	model2->getTransform().appendMove(-60, 0, 0);
-	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
+	model2->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 	model2->getTransform().appendMove(60, 0, 0);
+
+	for (auto& ball : balls) {
+		ball->getTransform().appendRotation(0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
 
 	renderer->render(&scene, cam);
 #if USE_NORMAL_RENDERER

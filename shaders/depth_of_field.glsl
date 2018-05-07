@@ -9,7 +9,6 @@ uniform float focal_distance = 50.0;
 uniform float focal_depth = 80.0;
 
 const ivec2 zero = ivec2(0, 0);
-const vec2 one = vec2(1.0, 1.0);
 
 void main() {
 	vec2 s = 1.0 / textureSize(input_image, 0);

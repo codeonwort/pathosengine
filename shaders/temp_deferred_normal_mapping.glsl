@@ -13,13 +13,13 @@ layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 
 out VS_OUT {
-  vec3 eye_tangent;
-  float light_distance;
-  vec3 light_tangent;
-  vec3 normal;
-  vec3 omniShadowCoord;
-  vec4 shadowMapCoord[2];
-  vec2 uv;
+    vec3 eye_tangent; // for normal mapping
+    float light_distance;
+    vec3 light_tangent; // for normal mapping
+    vec3 normal;
+    vec3 omniShadowCoord;
+    vec4 shadowMapCoord[2];
+    vec2 uv;
 } vs_out;
 
 uniform mat4 modelTransform;
@@ -83,36 +83,46 @@ out vec4 color;
 
 void main() {
     float visibility = 1.0f;
+
+    // directional shadow
     vec3 sm_normal = normalize(fs_in.normal);
     for(uint i=0; i<numDirLights; ++i) {
-        float cosTheta = clamp(dot(sm_normal, -dirLightDirs[i]), 0.0f, 1.0f);
-        float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0f, 0.1f);
+        float cosTheta = clamp(dot(sm_normal, -dirLightDirs[i]), 0.0, 1.0);
+        float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.1);
         float w = fs_in.shadowMapCoord[i].w;
         float depth_test = texture(depthSampler[i], vec3(fs_in.shadowMapCoord[i].xy / w, (fs_in.shadowMapCoord[i].z - bias) / w));
-        if(depth_test < .5) visibility *= 0.2f;
+        if(depth_test < .5) visibility *= 0.2;
     }
+
+    // omnidirectional shadow
     uint omni_count = 0;
     for (uint i = 0; i < numPointLights; ++i) {
         vec3 dir = fs_in.omniShadowCoord - pointLightPos[i];
-        float cosTheta = clamp(dot(normalize(fs_in.normal), -normalize(dir)), 0.0f, 1.0f);
-        float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0f, 0.1f);
+        float cosTheta = clamp(dot(normalize(fs_in.normal), -normalize(dir)), 0.0, 1.0);
+        float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.1);
         float localZ = max(abs(dir.x), max(abs(dir.y), abs(dir.z)));
-        localZ = f_plus_n/f_minus_n - (2*f_mult_n)/f_minus_n/localZ;
+        localZ = f_plus_n / f_minus_n - (2 * f_mult_n) / f_minus_n / localZ;
         localZ = (localZ - bias + 1) * 0.5;
         float depth_test = texture(omniShadow_depthSampler[i], vec4(normalize(dir), localZ));
         if(depth_test > .5) ++omni_count;
     }
-    if (omni_count == 0) visibility *= 0.5f;
-    vec3 norm = normalize(texture2D(normalSampler, fs_in.uv).rgb * 2.0f - 1.0f);
-    vec3 diffuseTerm = vec3(0.0f);
-    vec3 specularTerm = vec3(0.0f);
-    vec3 halfVector;
-    halfVector = normalize(fs_in.light_tangent + fs_in.eye_tangent);
+    if (omni_count == 0) visibility *= 0.5;
+
+    // normal mapping
+    vec3 norm = normalize(texture2D(normalSampler, fs_in.uv).rgb * 2.0 - 1.0);
+
+    vec3 diffuseTerm = vec3(0.0);
+    vec3 specularTerm = vec3(0.0);
+    vec3 halfVector = normalize(fs_in.light_tangent + fs_in.eye_tangent);
     float lambert = clamp(dot(norm, normalize(fs_in.light_tangent)), 0.0, 1.0);
     float attenuation = 1 / (1 + 0.0003 * fs_in.light_distance);
-    diffuseTerm = attenuation * visibility * vec3(1.0f) * lambert;
-    specularTerm = visibility * vec3(1.0f) * pow(max(dot(norm, halfVector), 0.0f), 128);
+
+    diffuseTerm = (attenuation * visibility * lambert) * vec3(1.0);
+    specularTerm = (visibility * pow(max(dot(norm, halfVector), 0.0), 128)) * vec3(1.0);
+
     vec4 final_diffuse = vec4(diffuseTerm, 1.0) * texture2D(diffuseSampler, fs_in.uv);
     vec4 final_specular = 0.8 * vec4(specularTerm, 1.0);
+
+    // final output
     color = visibility * (final_diffuse + final_specular);
 }
