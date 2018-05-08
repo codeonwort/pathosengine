@@ -3,6 +3,8 @@
 // should match with MeshDeferredRenderPass_Unpack::MAX_DIRECTIONAL_LIGHTS
 #define MAX_DIRECTIONAL_LIGHTS 8
 
+#define APPLY_FOG 0
+
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright; // bright area only
 
@@ -10,7 +12,7 @@ layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 
 // in view space
-uniform vec3 eye;
+uniform vec3 eyeDirection;
 
 uniform uint numDirLights;
 uniform vec3 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];
@@ -20,6 +22,8 @@ uniform uint numPointLights;
 uniform vec3 pointLightPos[16];
 uniform vec3 pointLightColors[16];
 
+uniform vec3 fog_color = vec3(0.7, 0.8, 0.9);
+
 // bloom threshold
 const float bloom_min = 0.8;
 const float bloom_max = 1.2;
@@ -28,7 +32,7 @@ struct fragment_info {
 	vec3 color;
 	vec3 normal;
 	float specular_power;
-	vec3 ws_coords;
+	vec3 ws_coords; // in view space
 	uint material_id;
 };
 
@@ -62,7 +66,7 @@ vec4 calculateShading(fragment_info fragment) {
 			L = normalize(L);
 			vec3 R = reflect(-L, N);
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 specular_color = pointLightColors[i] * pow(max(0.0, dot(R, -eye)), fragment.specular_power);
+			vec3 specular_color = pointLightColors[i] * pow(max(0.0, dot(R, -eyeDirection)), fragment.specular_power);
 			vec3 diffuse_color = pointLightColors[i] * fragment.color * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
@@ -70,10 +74,27 @@ vec4 calculateShading(fragment_info fragment) {
 	return result;
 }
 
+#if APPLY_FOG
+vec3 applyFog(fragment_info fragment, vec3 color) {
+	float z = length(fragment.ws_coords);
+	// WRONG!!!
+	// I need y values in world space, not view space...
+	float de = 0.025 * smoothstep(0.0, 6.0, 10.0 - fragment.ws_coords.y);
+	float di = 0.045 * smoothstep(0.0, 40.0, 20.0 - fragment.ws_coords.y);
+	float extinction = exp(-z * de);
+	float inscattering = exp(-z * di);
+	return color * extinction + fog_color * (1.0 - inscattering);
+}
+#endif
+
 void main() {
 	fragment_info fragment;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
 	vec4 color = calculateShading(fragment);
+
+#if APPLY_FOG
+	color.rgb = applyFog(fragment, color.rgb);
+#endif
 
 	// output: standard shading
 	out_color = color;

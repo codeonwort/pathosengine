@@ -17,11 +17,45 @@ namespace pathos {
 
 		GLuint debug_godRayTexture();
 
+	public:
+		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height);
+		virtual ~MeshDeferredRenderPass_Unpack();
+
+		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
+		//inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
+
+		void render(Scene*, Camera*); // plain LDR rendering
+		void renderHDR(Scene*, Camera*); // HDR rendering
+
+		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
+		void setDrawBuffers(bool both); // enable only first buffer or both buffers
+
 	protected:
 		GLuint program = 0; // shader program (original LDR rendering)
 		GLuint program_hdr = 0, program_tone_mapping = 0; // HDR rendering
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1; // packed input
+
+		// program
+		GLint uniform_ldr_eyeDirection;
+		GLint uniform_ldr_numDirLights;
+		GLint uniform_ldr_dirLightDirs;
+		GLint uniform_ldr_dirLightColors;
+		GLint uniform_ldr_numPointLights;
+		GLint uniform_ldr_pointLightPos;
+		GLint uniform_ldr_pointLightColors;
+
+		// program_hdr
+		GLint uniform_hdr_eyeDirection;
+		GLint uniform_hdr_numDirLights;
+		GLint uniform_hdr_dirLightDirs;
+		GLint uniform_hdr_dirLightColors;
+		GLint uniform_hdr_numPointLights;
+		GLint uniform_hdr_pointLightPos;
+		GLint uniform_hdr_pointLightColors;
+
+		// program_blur
+		GLint uniform_blur_horizontal;
 
 		static constexpr unsigned int NUM_HDR_ATTACHMENTS = 2;
 		GLuint fbo_hdr, fbo_hdr_attachment[NUM_HDR_ATTACHMENTS];
@@ -38,21 +72,8 @@ namespace pathos {
 		void createProgram_HDR();
 		void createResource_HDR(unsigned int width, unsigned int height);
 
-		void uploadDirectionalLightUniform(Scene*, unsigned int maxLights);
-		void uploadPointLightUniform(Scene*, unsigned int maxLights);
-
-	public:
-		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height);
-		virtual ~MeshDeferredRenderPass_Unpack();
-
-		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
-		//inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
-
-		void render(Scene*, Camera*); // plain LDR rendering
-		void renderHDR(Scene*, Camera*); // HDR rendering
-
-		void bindFramebuffer(bool hdr); // call this before render() or renderHDR()
-		void setDrawBuffers(bool both); // enable only first buffer or both buffers
+		void uploadDirectionalLightUniform(Scene*, unsigned int maxLights, bool hdr);
+		void uploadPointLightUniform(Scene*, unsigned int maxLights, bool hdr);
 
 	};
 

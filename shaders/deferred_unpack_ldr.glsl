@@ -9,7 +9,7 @@ layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 
 // in view space
-uniform vec3 eye;
+uniform vec3 eyeDirection;
 
 uniform uint numDirLights;
 uniform vec3 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];
@@ -57,7 +57,7 @@ vec4 calculateShading(fragment_info fragment) {
 			L = normalize(L);
 			vec3 R = reflect(-L, N);
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 specular_color = pointLightColors[i] * pow(max(0.0, dot(R, -eye)), fragment.specular_power);
+			vec3 specular_color = pointLightColors[i] * pow(max(0.0, dot(R, -eyeDirection)), fragment.specular_power);
 			vec3 diffuse_color = pointLightColors[i] * fragment.color * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}

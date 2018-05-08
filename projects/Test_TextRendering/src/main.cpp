@@ -130,7 +130,8 @@ void setupModel() {
 	scene.add(dlight);
 	scene.add(label);
 
-	renderer->getShadowMap()->setProjection(glm::ortho(-200.0f, 200.0f, -200.0f, 100.0f, -200.0f, 500.0f));
+	renderer->getShadowMap()->setProjection(
+		glm::ortho(-200.0f, 200.0f, -200.0f, 100.0f, -200.0f, 500.0f));
 }
 
 void setupSkybox() {
