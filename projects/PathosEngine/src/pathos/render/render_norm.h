@@ -12,7 +12,6 @@ namespace pathos {
 	private:
 		float normalLength;
 		GLuint program;
-		GLuint positionLocation, normalLocation;
 	public:
 		NormalRenderer(float normalLength = 0.5);
 		void render(Mesh*, Camera*);

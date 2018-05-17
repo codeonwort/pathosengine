@@ -13,7 +13,6 @@ namespace pathos {
 		fsSource.mainCode("out_color = color;");
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
 		uniform_mvp = glGetUniformLocation(program, "mvpTransform");
 		uniform_color = glGetUniformLocation(program, "color");
 	}
@@ -25,7 +24,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
+		geometry->activate_position();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -49,7 +48,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glDisable(GL_BLEND);
 

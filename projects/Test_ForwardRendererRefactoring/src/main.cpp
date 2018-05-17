@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
 	ResourceFinder::get().add("../");
 	ResourceFinder::get().add("../../");
 	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
 
 	// camera
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.width / conf.height, 1.0f, 1000.f));

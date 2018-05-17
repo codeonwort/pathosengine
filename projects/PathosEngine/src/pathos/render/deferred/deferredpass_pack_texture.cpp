@@ -17,15 +17,11 @@ namespace pathos {
 
 		program = pathos::createProgram(vs, fs);
 
-#define GET_UNIFORM(z) { assert((uniform_##z = glGetUniformLocation(program, #z)) != -1); }
+#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
 		GET_UNIFORM(mvTransform);
 		GET_UNIFORM(mvpTransform);
 		GET_UNIFORM(tex_diffuse);
 #undef GET_UNIFORM
-
-		positionLocation = 0;
-		uvLocation = 1;
-		normalLocation = 2;
 	}
 
 	void MeshDeferredRenderPass_Pack_FlatTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -35,9 +31,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
-		geometry->activateNormalBuffer(normalLocation);
+		geometry->activate_position_uv_normal();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -61,9 +55,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 
 		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);

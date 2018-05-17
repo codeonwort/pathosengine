@@ -107,11 +107,6 @@ namespace pathos {
 #endif
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		uvLocation = vsSource.getUVLocation();
-		normalLocation = vsSource.getNormalLocation();
-		tangentLocation = vsSource.getTangentLocation();
-		bitangentLocation = vsSource.getBitangentLocation();
 	}
 
 	void BumpTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -120,11 +115,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
-		geometry->activateNormalBuffer(normalLocation);
-		geometry->activateTangentBuffer(tangentLocation);
-		geometry->activateBitangentBuffer(bitangentLocation);
+		geometry->activate_position_uv_normal_tangent_bitangent();
 		geometry->activateIndexBuffer();
 
 		PointLight* light = scene->pointLights[0];
@@ -186,11 +177,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
-		geometry->deactivateTangentBuffer(tangentLocation);
-		geometry->deactivateBitangentBuffer(bitangentLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 
 		glActiveTexture(GL_TEXTURE0 + BumpTexturePass::DIFFUSE_TEXTURE_UNIT);

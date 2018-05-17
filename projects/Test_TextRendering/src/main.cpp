@@ -1,3 +1,7 @@
+#include <iostream>
+
+#include "console.h"
+
 #include "glm/gtx/transform.hpp"
 #include "pathos/engine.h"
 #include "pathos/render/render_forward.h"
@@ -14,16 +18,19 @@
 // Overlay (2D rendering)
 #include "pathos/render/render_overlay.h"
 #include "pathos/overlay/rectangle.h"
-
-#include <iostream>
+#include "pathos/overlay/label.h"
 
 using namespace pathos;
 
 // Configurations
-constexpr int WINDOW_WIDTH = 800;
-constexpr int WINDOW_HEIGHT = 600;
+constexpr int WINDOW_WIDTH = 1920;
+constexpr int WINDOW_HEIGHT = 1080;
 constexpr float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 10.0f);
+constexpr char* TITLE = "Test: Text Rendering";
+
+// Console window
+ConsoleWindow* g_Console = nullptr;
 
 // Camera, scene and renderer
 Camera* cam;
@@ -34,10 +41,12 @@ OverlayRenderer* overlayRenderer;
 // 3D objects
 TextMesh *label;
 Skybox* sky;
+Mesh* debug_overlayLabel;
 
 // 2D objects (overlay)
 DisplayObject2D* overlayRoot;
-Rectangle* rect0;
+pathos::Rectangle* rect0;
+Label* label0;
 
 // Lights
 PointLight *plight;
@@ -47,45 +56,19 @@ void setupOverlay();
 void setupModel();
 void setupSkybox();
 
-void render() {
-	float speedX = 0.05f, speedY = 0.05f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
-
-	static std::wstring txt = L"가나다라마바사아자차카파타하";
-	static bool first = true;
-	if (first) {
-		//for (wchar_t x = L'고'; x <= (L'고' + 100); ++x) txt += x;
-		first = false;
-	}
-	
-	static int cnt = 0;
-	if (cnt++ > 10) {
-		txt.push_back(txt.front());
-		txt = txt.substr(1);
-		cnt = 0;
-	}
-	//label->setText(txt, 0xff0000);
-	
-	renderer->render(&scene, cam);
-	//overlayRenderer->render(overlayRoot);
-}
-
-void keyDown(unsigned char ascii, int x, int y) {}
+void render();
+void keyDown(unsigned char ascii, int x, int y);
+void keyPress(unsigned char ascii);
 
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
 	conf.width = WINDOW_WIDTH;
 	conf.height = WINDOW_HEIGHT;
-	conf.title = "Test: Text Rendering";
+	conf.title = TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
+	conf.keyPress = keyPress;
 	if (Engine::init(&argc, argv, conf) == false) {
 		std::cerr << "Failed to initialize Pathos" << std::endl;
 		return 1;
@@ -95,6 +78,15 @@ int main(int argc, char** argv) {
 	ResourceFinder::get().add("../../");
 	ResourceFinder::get().add("../../resources/");
 	ResourceFinder::get().add("../../shaders/");
+
+	// console
+	g_Console = new ConsoleWindow;
+	if (g_Console->initialize(WINDOW_WIDTH, 400) == false) {
+		std::cerr << "Failed to initialize console window" << std::endl;
+		delete g_Console;
+		g_Console = nullptr;
+	}
+	label0 = g_Console->addLine(L"asd");
 
 	// camera
 	float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
@@ -126,9 +118,14 @@ void setupModel() {
 	label->setText(L"한글 테스트 / 영어도 나오나 English Text\n여기부터 새 줄", 0xff0000);
 	label->getTransform().appendScale(20.0f);
 
+	debug_overlayLabel = new Mesh(
+		new PlaneGeometry(20.0f, 20.0f),
+		new AlphaOnlyTextureMaterial(label0->getFontTexture()));
+
 	scene.add(plight);
 	scene.add(dlight);
 	scene.add(label);
+	scene.add(debug_overlayLabel);
 
 	renderer->getShadowMap()->setProjection(
 		glm::ortho(-200.0f, 200.0f, -200.0f, 100.0f, -200.0f, 500.0f));
@@ -150,6 +147,48 @@ void setupSkybox() {
 
 void setupOverlay() {
 	overlayRoot = DisplayObject2D::createRoot();
-	rect0 = new Rectangle(400.0f, 500.0f);
+	rect0 = new pathos::Rectangle(400.0f, 500.0f);
 	overlayRoot->addChild(rect0);
+}
+
+void render() {
+	float speedX = 0.05f, speedY = 0.05f;
+	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
+	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
+	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	cam->move(glm::vec3(dx, 0, dz));
+	cam->rotateY(rotY);
+	cam->rotateX(rotX);
+
+	static std::wstring txt = L"가나다라마바사아자차카파타하";
+	static bool first = true;
+	if (first) {
+		//for (wchar_t x = L'고'; x <= (L'고' + 100); ++x) txt += x;
+		first = false;
+	}
+
+	static int cnt = 0;
+	if (cnt++ > 10) {
+		txt.push_back(txt.front());
+		txt = txt.substr(1);
+		cnt = 0;
+	}
+	//label->setText(txt, 0xff0000);
+
+	renderer->render(&scene, cam);
+	//overlayRenderer->render(overlayRoot);
+
+	if (g_Console) {
+		g_Console->render();
+	}
+}
+
+void keyDown(unsigned char ascii, int x, int y) {}
+
+void keyPress(unsigned char ascii) {
+	// backtick
+	if (ascii == 0x60) {
+		g_Console->toggle();
+	}
 }

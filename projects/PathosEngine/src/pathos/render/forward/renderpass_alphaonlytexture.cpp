@@ -3,41 +3,27 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-//#define DEBUG_ALPHAONLYTEXTURE
-
-#if defined(_DEBUG) && defined(DEBUG_ALPHAONLYTEXTURE)
-#include <iostream>
-#endif
-
 namespace pathos {
+
+	static constexpr unsigned int TEXTURE_UNIT = 0;
 
 	AlphaOnlyTexturePass::AlphaOnlyTexturePass() {
 		createProgram();
 	}
 
 	void AlphaOnlyTexturePass::createProgram() {
-		vsSource.setUseUV(true);
-		vsSource.setUVLocation(1);
+		Shader vs(GL_VERTEX_SHADER);
+		Shader fs(GL_FRAGMENT_SHADER);
+		vs.loadSource("forward_alphaonly_texture_vs.glsl");
+		fs.loadSource("forward_alphaonly_texture_fs.glsl");
 
-		fsSource.uniform("vec3", "color");
-		fsSource.inVar("vec2", "uv");
-		fsSource.outVar("vec4", "out_color");
-		fsSource.textureSampler("texSampler");
+		program = pathos::createProgram(vs, fs);
 
-		fsSource.mainCode("float alpha = texture2D(texSampler, fs_in.uv).r;");
-		//fsSource.mainCode("out_color = vec4(vec3((cos(gl_FragCoord.x / 30) + 1.0f) / 2.0f), alpha);");
-		fsSource.mainCode("out_color = vec4(color, alpha);");
-		//fsSource.mainCode("out_color = vec4(alpha, alpha, alpha, alpha);");
-
-#if defined(_DEBUG) && false
-		std::cout << "=== AlphaOnlyTexturePass ===" << std::endl;
-		std::cout << vsSource.getCode() << std::endl;
-		std::cout << fsSource.getCode() << std::endl;
-#endif
-
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		uvLocation = vsSource.getUVLocation();
+#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
+		GET_UNIFORM(mvpTransform);
+		GET_UNIFORM(texSampler);
+		GET_UNIFORM(color);
+#undef GET_UNIFORM
 	}
 
 	void AlphaOnlyTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -47,21 +33,19 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
+		geometry->activate_position_uv();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
 
 		// texture and sampler
-		glUniform1i(glGetUniformLocation(program, "texSampler"), AlphaOnlyTexturePass::TEXTURE_UNIT);
-		glActiveTexture(GL_TEXTURE0 + AlphaOnlyTexturePass::TEXTURE_UNIT);
+		glUniform1i(uniform_texSampler, TEXTURE_UNIT);
+		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, material->getTexture());
 
 		// upload uniform
-		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelMatrix));
-		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
-		glUniform3fv(glGetUniformLocation(program, "color"), 1, material->getColor());
+		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
+		glUniform3fv(uniform_color, 1, material->getColor());
 
 		//--------------------------------------------------------------------------------------
 		// draw call
@@ -74,8 +58,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);

@@ -3,52 +3,27 @@
 
 namespace pathos {
 
+	static constexpr unsigned int TEXTURE_UNIT = 0;
+
 	OverlayPass_Standard::OverlayPass_Standard() {
 		createProgram();
 	}
 
+	OverlayPass_Standard::~OverlayPass_Standard() {
+		glDeleteProgram(program);
+	}
+
 	void OverlayPass_Standard::createProgram() {
-		std::string vshader = R"(
-#version 430 core
+		Shader vs(GL_VERTEX_SHADER);
+		Shader fs(GL_FRAGMENT_SHADER);
+		vs.loadSource("overlay_standard_vs.glsl");
+		fs.loadSource("overlay_standard_fs.glsl");
+		program = pathos::createProgram(vs, fs);
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 uv;
-
-uniform mat4 transform;
-
-out VS_OUT {
-	vec2 uv;
-} vs_out;
-
-void main() {
-	vs_out.uv = uv;
-	gl_Position = transform * vec4(position, 1.0f);
-}
-
-)";
-
-		std::string fshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 uv;
-
-uniform vec4 color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-uniform sampler2D tex_sampler;
-
-in VS_OUT {
-	vec2 uv;
-} fs_in;
-
-out vec4 out_color;
-
-void main() {
-	//out_color = texture(tex_sampler, fs_in.uv) + color;
-	out_color = color;
-}
-
-)";
-		program = pathos::createProgram(vshader, fshader);
-		uniform_transform = glGetUniformLocation(program, "transform");
+#define GETUNIFORM(uname) { uniform_##uname = glGetUniformLocation(program, #uname); assert(uniform_##uname != -1); }
+		GETUNIFORM(transform);
+		GETUNIFORM(color);
+#undef GETUNIFORM
 	}
 
 	void OverlayPass_Standard::render(DisplayObject2D* object, const Transform& transformAccum) {
@@ -59,23 +34,19 @@ void main() {
 
 		// uniform
 		glUniformMatrix4fv(uniform_transform, 1, false, &transform[0][0]);
+		glUniform4fv(uniform_color, 1, rgba);
 		//glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
 		//glBindTexture(GL_TEXTURE_2D, 0);
 
-		// geometry
-		geom->activatePositionBuffer(0);
-		geom->activateUVBuffer(1);
+		geom->activate_position_uv();
 		geom->activateIndexBuffer();
-
-		// draw call
 		geom->draw();
-
-		// release
-		geom->deactivatePositionBuffer(0);
-		geom->deactivateUVBuffer(1);
+		geom->deactivate();
 		geom->deactivateIndexBuffer();
+	}
 
-
+	void OverlayPass_Standard::setUniform_color(float newRGBA[4]) {
+		memcpy(rgba, newRGBA, sizeof(float) * 4);
 	}
 
 }

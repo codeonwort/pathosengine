@@ -101,8 +101,6 @@ namespace pathos {
 #endif
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		normalLocation = vsSource.getNormalLocation();
 	}
 
 	void SolidColorPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -111,8 +109,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateNormalBuffer(normalLocation);
+		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -146,8 +143,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glDisable(GL_BLEND);
 

@@ -14,7 +14,7 @@ namespace pathos {
 		auto fontInfo = FontManager::getGlyphMap(tag);
 		cache.init(FontManager::getFTLibrary(), fontInfo->filename.c_str(), fontInfo->fontSize);
 
-		geometries.push_back(new MeshGeometry);
+		geometries.push_back(new TextGeometry);
 		auto mat = new AlphaOnlyTextureMaterial(cache.getTexture());
 		materials.push_back(mat);
 
@@ -44,6 +44,11 @@ namespace pathos {
 	}
 
 	void TextMesh::configureGeometry(const std::wstring& newText) {
+		auto geom = static_cast<TextGeometry*>(geometries[0]);
+		geom->configure(cache, newText);
+	}
+
+	void TextGeometry::configure(FontTextureCache& cache, const std::wstring& newText) {
 		positions.clear();
 		uvs.clear();
 		indices.clear();
@@ -61,10 +66,23 @@ namespace pathos {
 			const GlyphInTexture& glyph = cache.getGlyph(x);
 			// order: top-left, top-right, bottom-right, bottom-left
 			penY -= glyph.offsetY;
-			positions.push_back(penX); positions.push_back(penY); positions.push_back(penZ);
-			positions.push_back(penX + cache.getCellWidth()); positions.push_back(penY); positions.push_back(penZ);
-			positions.push_back(penX + cache.getCellWidth()); positions.push_back(penY + cache.getCellHeight()); positions.push_back(penZ);
-			positions.push_back(penX); positions.push_back(penY + cache.getCellHeight()); positions.push_back(penZ);
+
+			positions.push_back(penX);
+			positions.push_back(penY);
+			positions.push_back(penZ);
+
+			positions.push_back(penX + cache.getCellWidth());
+			positions.push_back(penY);
+			positions.push_back(penZ);
+
+			positions.push_back(penX + cache.getCellWidth());
+			positions.push_back(penY + cache.getCellHeight());
+			positions.push_back(penZ);
+
+			positions.push_back(penX);
+			positions.push_back(penY + cache.getCellHeight());
+			positions.push_back(penZ);
+
 			penY += glyph.offsetY;
 			penZ += 0.00001f; // TODO: remove this
 
@@ -91,16 +109,15 @@ namespace pathos {
 		}
 		cache.endGetGlyph();
 
-		MeshGeometry* geom = geometries[0];
-		geom->updateVertexData(&positions[0], positions.size());
-		geom->updateUVData(&uvs[0], uvs.size());
-		geom->updateIndexData(&indices[0], indices.size());
+		updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
+		updateUVData(&uvs[0], static_cast<uint32_t>(uvs.size()));
+		updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
 
 		if (normals.size() == 0) {
 			for (auto i = 0u; i < newText.size(); ++i) {
 				normals.push_back(0.0f); normals.push_back(0.0f); normals.push_back(1.0f);
 			}
-			geom->updateNormalData(&normals[0], normals.size());
+			updateNormalData(&normals[0], static_cast<uint32_t>(normals.size()));
 		}
 	}
 

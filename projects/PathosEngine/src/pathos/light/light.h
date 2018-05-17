@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include "GL/gl_core_4_3.h"
 #include <glm/glm.hpp>
 #include <vector>
 

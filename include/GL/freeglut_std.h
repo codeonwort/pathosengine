@@ -65,7 +65,17 @@
 /* Windows static library */
 #   ifdef FREEGLUT_STATIC
 
-#error Static linking is not supported with this build. Please remove the FREEGLUT_STATIC preprocessor directive, or download the source code from http://freeglut.sf.net/ and build against that.
+#       define FGAPI
+#       define FGAPIENTRY
+
+        /* Link with Win32 static freeglut lib */
+#       if FREEGLUT_LIB_PRAGMAS
+#           ifdef NDEBUG
+#              pragma comment (lib, "freeglut_static.lib")
+#           else
+#              pragma comment (lib, "freeglut_staticd.lib")
+#           endif
+#       endif
 
 /* Windows shared library (DLL) */
 #   else
@@ -78,7 +88,11 @@
 
             /* Link with Win32 shared freeglut lib */
 #           if FREEGLUT_LIB_PRAGMAS
-#             pragma comment (lib, "freeglut.lib")
+#               ifdef NDEBUG
+#                   pragma comment (lib, "freeglut.lib")
+#               else
+#                   pragma comment (lib, "freeglutd.lib")
+#               endif
 #           endif
 
 #       endif
@@ -636,3 +650,4 @@ static int FGAPIENTRY FGUNUSED glutCreateMenu_ATEXIT_HACK(void (* func)(int)) { 
 /*** END OF FILE ***/
 
 #endif /* __FREEGLUT_STD_H__ */
+

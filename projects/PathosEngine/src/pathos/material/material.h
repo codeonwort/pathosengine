@@ -7,7 +7,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/light/light.h"
 //#include "pathos/render/ReflectionMethod.h"
-#include <GL/glew.h>
+#include "GL/gl_core_4_3.h"
 #include <vector>
 
 namespace pathos {

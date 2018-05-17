@@ -19,8 +19,8 @@ using namespace std;
 using namespace pathos;
 
 // Rendering configurations
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 20.0f);
 
@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
 	ResourceFinder::get().add("../");
 	ResourceFinder::get().add("../../");
 	ResourceFinder::get().add("../../resources/");
+	ResourceFinder::get().add("../../shaders/");
 
 	// camera
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 1.0f, 500.f));

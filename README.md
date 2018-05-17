@@ -2,16 +2,16 @@
 ## What is this
 OpenGL rendering library (for 3d graphics study)
 
-* IDE: Visual Studio 2015
+* IDE: Visual Studio 2017, Visual Studio Code
 * Language: C++
-* GL version: OpenGL 4.3
+* GL version: OpenGL 4.3 Core Profile
 
 ## Libraries used
-* OpenGL:  glew32, glm
-* Windows: freeglut
-* Image:   FreeImage
-* Font:    freetype
-* Loader:  tinyobjloader, assimp
+* OpenGL   : glm, glLoadGen
+* Windows  : freeglut
+* Image    : freeimage
+* Font     : freetype
+* Loader   : tinyobjloader, assimp
 
 ## Features
 ### Depth of Field

@@ -122,7 +122,7 @@ namespace pathos {
 				}
 				M = new TextureMaterial(0); // pending request
 				isPendingMaterial.push_back(true);
-				pendingTextureData.insert(make_pair(i, bmp));
+				pendingTextureData.insert(make_pair(static_cast<int32_t>(i), bmp));
 			} else {
 				ColorMaterial* solidColor = new ColorMaterial;
 				solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
@@ -212,15 +212,15 @@ namespace pathos {
 	Mesh* OBJLoader::craftMeshFrom(const string& shapeName) {
 		for (size_t i = 0; i < t_shapes.size(); ++i) {
 			if (t_shapes[i].name == shapeName) {
-				return craftMeshFrom(i);
+				return craftMeshFrom(static_cast<uint32_t>(i));
 			}
 		}
 		return nullptr;
 	}
-	Mesh* OBJLoader::craftMeshFrom(unsigned int shapeIndex) { return craftMesh(shapeIndex, shapeIndex); }
-	Mesh* OBJLoader::craftMeshFromAllShapes() { return craftMesh(0, pendingShapes.size() - 1); }
+	Mesh* OBJLoader::craftMeshFrom(uint32_t shapeIndex) { return craftMesh(shapeIndex, shapeIndex); }
+	Mesh* OBJLoader::craftMeshFromAllShapes() { return craftMesh(0, static_cast<uint32_t>(pendingShapes.size() - 1)); }
 
-	Mesh* OBJLoader::craftMesh(unsigned int from, unsigned int to) {
+	Mesh* OBJLoader::craftMesh(uint32_t from, uint32_t to) {
 		assert(0 <= from && from < pendingShapes.size());
 		assert(0 <= to && to < pendingShapes.size());
 		assert(from <= to);
@@ -245,10 +245,10 @@ namespace pathos {
 #endif
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(true);
-				geom->updateVertexData(&positions[0], positions.size());
-				geom->updateNormalData(&normals[0], normals.size());
-				if (texcoords.size() > 0) geom->updateUVData(&texcoords[0], texcoords.size());
-				geom->updateIndexData(&indices[0], indices.size());
+				geom->updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
+				geom->updateNormalData(&normals[0], static_cast<uint32_t>(normals.size()));
+				if (texcoords.size() > 0) geom->updateUVData(&texcoords[0], static_cast<uint32_t>(texcoords.size()));
+				geom->updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
 				mesh->add(geom, getMaterial(materialID));
 			}
 		}
@@ -256,7 +256,7 @@ namespace pathos {
 		return mesh;
 	}
 
-	MeshMaterial* OBJLoader::getMaterial(int index) {
+	MeshMaterial* OBJLoader::getMaterial(int32_t index) {
 		assert(-1 <= index && index < (int)materials.size());
 		if (index == -1) return defaultMaterial;
 

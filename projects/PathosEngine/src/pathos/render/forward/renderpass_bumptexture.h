@@ -15,7 +15,6 @@ namespace pathos {
 
 	protected:
 		virtual void createProgram() override;
-		GLuint positionLocation, uvLocation, normalLocation, tangentLocation, bitangentLocation;
 
 		unsigned int maxDirectionalLights, maxPointLights;
 

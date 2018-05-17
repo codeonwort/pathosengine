@@ -210,10 +210,10 @@ void main() {
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			}
 
-			G->activatePositionBuffer(0);
+			G->activate_position();
 			G->activateIndexBuffer();
 			G->draw();
-			G->deactivatePositionBuffer(0);
+			G->deactivate();
 			G->deactivateIndexBuffer();
 
 			if (wireframe) {

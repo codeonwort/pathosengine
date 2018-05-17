@@ -97,7 +97,7 @@ namespace pathos {
 			
 			// construct the geometry
 			MeshGeometry* G = new MeshGeometry;
-			if (mesh->HasPositions()) G->updateVertexData(vertices, 3 * mesh->mNumVertices);
+			if (mesh->HasPositions()) G->updatePositionData(vertices, 3 * mesh->mNumVertices);
 			if (mesh->HasNormals()) G->updateNormalData(normals, 3 * mesh->mNumVertices);
 			if (mesh->HasTextureCoords(0)) G->updateUVData(texcoords, 2 * mesh->mNumVertices);
 			if (mesh->HasTangentsAndBitangents()) {

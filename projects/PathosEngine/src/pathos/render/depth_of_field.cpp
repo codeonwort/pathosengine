@@ -7,11 +7,13 @@ namespace pathos {
 	DepthOfField::DepthOfField(unsigned int width, unsigned int height)
 		:width(width), height(height)
 	{
+		glGenVertexArrays(1, &vao);
 		createFBO();
 		createShaders();
 	}
 
 	DepthOfField::~DepthOfField() {
+		glDeleteVertexArrays(1, &vao);
 		glDeleteTextures(2, texture_subsum2D);
 		glDeleteProgram(program_subsum2D);
 		glDeleteProgram(program_blur);
@@ -57,7 +59,10 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_2D, texture_subsum2D[1]);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to backbuffer (assume: DOF is the final stage)
+
+		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
 	}
 
 	GLuint DepthOfField::createSubsumShader() {

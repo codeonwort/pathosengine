@@ -160,7 +160,7 @@ namespace pathos {
 	*/
 
 	void IcosahedronGeometry::uploadToGPU() {
-		updateVertexData(positionData, numVertices * 3);
+		updatePositionData(positionData, numVertices * 3);
 		//updateUVData(uvData, numVertices * 2);
 		//updateNormalData(normalData, numVertices * 3);
 		updateIndexData(indexData, numTriangles * 3);
@@ -188,8 +188,7 @@ namespace pathos {
 		glDisable(GL_DEPTH_TEST);
 		//glCullFace(GL_FRONT);
 
-		sphere->activatePositionBuffer(0);
-		//sphere->activateUVBuffer(1);
+		sphere->activate_position();
 		sphere->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -204,8 +203,7 @@ namespace pathos {
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		// deactivate ///////////////////////////////////////////////////////
-		sphere->deactivatePositionBuffer(0);
-		//sphere->deactivateUVBuffer(1);
+		sphere->deactivate();
 		sphere->deactivateIndexBuffer();
 
 		glDepthFunc(GL_LESS);

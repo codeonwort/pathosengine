@@ -53,7 +53,7 @@ namespace pathos {
 			}
 		}
 
-		G->updateVertexData(&pos[0], pos.size());
+		G->updatePositionData(&pos[0], pos.size());
 	}
 	void SkinnedMesh::updateAnimation(int index, double progress) {
 		aiAnimation* anim = animations[index]->anim;

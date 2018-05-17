@@ -25,12 +25,6 @@ namespace pathos {
 		GLint uniform_lightDirection; // in view space
 		GLint uniform_eyeDirection; // in view space
 
-		GLint positionLocation;
-		GLint uvLocation;
-		GLint normalLocation;
-		GLint tangentLocation;
-		GLint bitangentLocation;
-
 	};
 
 }

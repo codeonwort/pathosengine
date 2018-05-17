@@ -3,7 +3,7 @@
 #include "pathos/overlay/display_object.h"
 #include "pathos/wrapper/transform.h"
 
-#include <GL/glew.h>
+#include "GL/gl_core_4_3.h"
 
 namespace pathos {
 

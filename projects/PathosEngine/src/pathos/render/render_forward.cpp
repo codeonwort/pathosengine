@@ -65,8 +65,8 @@ namespace pathos {
 		scene->calculateLightBuffer();
 
 		// ready shadow before rendering any object
-		shadowMap->clearLightDepths(scene->numDirectionalLights());
-		omniShadow->clearLightDepths(scene->numPointLights());
+		shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
+		omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
 		for (Mesh* mesh : scene->meshes) {
 			if (mesh->getVisible() == false) continue;
 			renderLightDepth(mesh);

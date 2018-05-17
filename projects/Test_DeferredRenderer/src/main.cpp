@@ -19,10 +19,10 @@ using namespace pathos;
 #define USE_NORMAL_RENDERER 0
 
 // Rendering configurations
-//const int WINDOW_WIDTH = 1920;
-//const int WINDOW_HEIGHT = 1080;
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
+//const int WINDOW_WIDTH = 800;
+//const int WINDOW_HEIGHT = 600;
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
 const bool USE_HDR = true;

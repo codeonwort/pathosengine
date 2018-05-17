@@ -9,10 +9,18 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/text/textmesh.h"
+#include "pathos/util/resource_finder.h"
 #include <iostream>
 
 using namespace std;
 using namespace pathos;
+
+// Rendering configurations
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
+const float FOV = 90.0f;
+const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 20.0f);
+const char* TITLE = "Test: Envrionmental Mapping";
 
 // Camera and scnee
 Camera* cam;
@@ -54,16 +62,20 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
-	conf.title = "Test: Envrionmental Mapping";
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
+	conf.title = TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
+	ResourceFinder::get().add("../");
+	ResourceFinder::get().add("../../");
+	ResourceFinder::get().add("../../shaders/");
+
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 20));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
+	cam->move(CAMERA_POSITION);
 
 	// renderer
 	renderer = new MeshForwardRenderer;
@@ -80,7 +92,8 @@ int main(int argc, char** argv) {
 
 void setupScene() {
 	// skybox
-	const char* cubeImgName[6] = { "../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
+	const char* cubeImgName[6] = {
+		"../../resources/cubemap1/pos_x.jpg", "../../resources/cubemap1/neg_x.jpg",
 		"../../resources/cubemap1/pos_y.jpg", "../../resources/cubemap1/neg_y.jpg",
 		"../../resources/cubemap1/pos_z.jpg", "../../resources/cubemap1/neg_z.jpg" };
 	FIBITMAP* cubeImg[6];

@@ -1,5 +1,5 @@
 #include "display_object.h"
-#include <cassert>
+#include <assert.h>
 
 namespace pathos {
 

@@ -5,7 +5,7 @@
 #include "pathos/render/scene.h"
 #include "pathos/camera/camera.h"
 #include "pathos/mesh/mesh.h"
-#include <GL/glew.h>
+#include "GL/gl_core_4_3.h"
 
 namespace pathos {
 

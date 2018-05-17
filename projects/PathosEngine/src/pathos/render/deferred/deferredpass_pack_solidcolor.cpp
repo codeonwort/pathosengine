@@ -15,14 +15,11 @@ namespace pathos {
 
 		program = pathos::createProgram(vs, fs);
 
-#define GET_UNIFORM(z) { assert((uniform_##z = glGetUniformLocation(program, #z)) != -1); }
+#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
 		GET_UNIFORM(mvTransform);
 		GET_UNIFORM(mvpTransform);
 		GET_UNIFORM(diffuseColor);
 #undef GET_UNIFORM
-
-		positionLocation = 0;
-		normalLocation = 2;
 	}
 
 	void MeshDeferredRenderPass_Pack_SolidColor::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -32,8 +29,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateNormalBuffer(normalLocation);
+		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -54,8 +50,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 
 		glUseProgram(0);

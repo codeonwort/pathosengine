@@ -6,21 +6,17 @@ namespace pathos {
 
 	// standard render pass that uses color and texture
 	class OverlayPass_Standard : public OverlayPass {
-
-	private:
-		static constexpr unsigned int TEXTURE_UNIT = 0;
-
 	public:
 		OverlayPass_Standard();
-
+		~OverlayPass_Standard();
 		virtual void render(DisplayObject2D* object, const Transform& transformAccum) override;
-
+		void setUniform_color(float rgba[4]);
 	protected:
 		virtual void createProgram() override;
-
 	private:
-		GLint uniform_transform = -1;
-
+		float rgba[4];
+		GLint uniform_transform;
+		GLint uniform_color;
 	};
 
 }

@@ -53,8 +53,7 @@ namespace pathos {
 #endif
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		normalLocation = vsSource.getNormalLocation();
+
 		uniform_eye = glGetUniformLocation(program, "eye");
 		uniform_sampler = glGetUniformLocation(program, "tex_cubemap");
 	}
@@ -66,8 +65,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateNormalBuffer(normalLocation);
+		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -97,8 +95,7 @@ namespace pathos {
 		// deactivate
 		//--------------------------------------------------------------------------------------
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glUseProgram(0);
 	}

@@ -12,7 +12,6 @@ namespace pathos {
 
 	protected:
 		virtual void createProgram() override;
-		GLuint positionLocation, uvLocation;
 
 	public:
 		ShadowTexturePass();

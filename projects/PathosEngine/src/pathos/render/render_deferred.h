@@ -11,11 +11,12 @@ namespace pathos {
 
 	public:
 		DeferredRenderer(unsigned int width, unsigned int height);
-		DeferredRenderer(const DeferredRenderer& other) = delete;
-		DeferredRenderer(DeferredRenderer&&) = delete;
 		virtual ~DeferredRenderer();
 
-		void render(Scene* scene, Camera*); // render the total scene
+		DeferredRenderer(const DeferredRenderer& other) = delete;
+		DeferredRenderer(DeferredRenderer&&) = delete;
+
+		void render(Scene*, Camera*); // render the total scene
 
 		inline void setHDR(bool value) { useHDR = value; }
 

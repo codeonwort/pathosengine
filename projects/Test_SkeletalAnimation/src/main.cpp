@@ -19,6 +19,13 @@
 using namespace std;
 using namespace pathos;
 
+// Configurations
+constexpr int WINDOW_WIDTH = 1920;
+constexpr int WINDOW_HEIGHT = 1080;
+constexpr float FOV = 90.0f;
+const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 100.0f);
+constexpr char* WINDOW_TITLE = "Test: Skeletal Animation";
+
 // Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
@@ -42,21 +49,22 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
-	conf.title = "Test: Skeletal Animation";
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
+	conf.title = WINDOW_TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
 	ResourceFinder::get().add("../");
 	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../resources/");
 	ResourceFinder::get().add("../../shaders/");
+	ResourceFinder::get().add("../../resources/");
 
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
-	cam->move(glm::vec3(0, 0, 100));
+	const float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
+	cam->move(CAMERA_POSITION);
 
 	// renderer
 	renderer = new DeferredRenderer(conf.width, conf.height);
@@ -84,7 +92,7 @@ void loadDAE() {
 void setupScene() {
 	// light
 	//plight = new PointLight(glm::vec3(0, 0, 20), glm::vec3(1, 1, 1));
-	dlight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1, 0.1, 0.1));
+	dlight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1f, 0.1f, 0.1f));
 	scene.add(dlight);
 
 	srand(static_cast<unsigned int>(time(NULL)));

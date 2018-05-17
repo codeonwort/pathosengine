@@ -1,12 +1,14 @@
 #pragma once
 
+#include <stdint.h>
+#include <vector>
+#include "GL/gl_core_4_3.h"
+
 #include "light.h"
 #include "shadow_omni.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/shader.h"
 #include "pathos/mesh/geometry.h"
-#include <GL/glew.h>
-#include <vector>
 
 // TODO: move ShadowMap to shadow_directional.h
 //       make this header includes shadow_omni.h and shadow_directional.h
@@ -26,8 +28,8 @@ namespace pathos {
 		ShadowMap(ShadowMap&& other) = delete;
 		virtual ~ShadowMap();
 
-		void clearLightDepths(unsigned int numLights);
-		void renderLightDepth(unsigned int lightIndex, DirectionalLight* light, MeshGeometry*, const glm::mat4& modelMatrix);
+		void clearLightDepths(uint32_t numLights);
+		void renderLightDepth(uint32_t lightIndex, DirectionalLight* light, MeshGeometry*, const glm::mat4& modelMatrix);
 
 		inline void setProjection(glm::mat4& newProjection) { projection = newProjection; }
 
@@ -35,7 +37,7 @@ namespace pathos {
 		void activate(GLuint materialPassProgram, const vector<DirectionalLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix);
 		void deactivate(GLuint materialPassProgram, unsigned int textureBinding);
 
-		inline const GLuint getDebugTexture(unsigned int index) const { return depthTextures[index]; }
+		inline const GLuint getDebugTexture(uint32_t index) const { return static_cast<GLuint>(depthTextures[index]); }
 
 	private:
 		GLuint fbo;

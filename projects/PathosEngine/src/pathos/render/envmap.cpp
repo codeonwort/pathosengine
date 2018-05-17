@@ -64,7 +64,7 @@ void main() {
 		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_FRONT);
 
-		cube->activatePositionBuffer(0);
+		cube->activate_position();
 		cube->activateIndexBuffer();
 	}
 
@@ -72,8 +72,8 @@ void main() {
 		cube->draw();
 		
 		// deactivate()
+		cube->deactivate();
 		cube->deactivateIndexBuffer();
-		cube->deactivatePositionBuffer(0);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 		glCullFace(GL_BACK);

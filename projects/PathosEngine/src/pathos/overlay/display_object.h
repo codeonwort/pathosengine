@@ -37,6 +37,9 @@ namespace pathos {
 		inline bool getVisible() { return visible; }
 		inline bool setVisible(bool value) { visible = value; }
 
+		inline class Brush* getBrush() { return brush; }
+		inline void setBrush(class Brush* newBrush) { brush = newBrush; }
+
 	protected:
 		float x = 0.0f, y = 0.0f;
 		float scaleX = 1.0f, scaleY = 1.0f;
@@ -52,6 +55,7 @@ namespace pathos {
 		DisplayObject2D* root = nullptr;
 		DisplayObject2D* parent = nullptr;
 		std::vector<DisplayObject2D*> children;
+		class Brush* brush = nullptr;
 
 	};
 

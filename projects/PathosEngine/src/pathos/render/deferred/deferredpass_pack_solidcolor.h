@@ -17,9 +17,6 @@ namespace pathos {
 		GLint uniform_mvpTransform;
 		GLint uniform_diffuseColor;
 
-		GLint positionLocation = -1;
-		GLint normalLocation = -1;
-
 	};
 
 }

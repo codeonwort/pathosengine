@@ -18,17 +18,11 @@ namespace pathos {
 
 		program = pathos::createProgram(vs, fs);
 
-#define GET_UNIFORM(z) { assert((uniform_##z = glGetUniformLocation(program, #z)) != -1); }
+#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
 		GET_UNIFORM(mvTransform3x3);
 		GET_UNIFORM(mvTransform);
 		GET_UNIFORM(mvpTransform);
 #undef GET_UNIFORM
-
-		positionLocation = 0;
-		uvLocation = 1;
-		normalLocation = 2;
-		tangentLocation = 3;
-		bitangentLocation = 4;
 	}
 
 	void MeshDeferredRenderPass_Pack_BumpTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -37,11 +31,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
-		geometry->activateNormalBuffer(normalLocation);
-		geometry->activateTangentBuffer(tangentLocation);
-		geometry->activateBitangentBuffer(bitangentLocation);
+		geometry->activate_position_uv_normal_tangent_bitangent();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -80,11 +70,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
-		geometry->deactivateTangentBuffer(tangentLocation);
-		geometry->deactivateBitangentBuffer(bitangentLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);

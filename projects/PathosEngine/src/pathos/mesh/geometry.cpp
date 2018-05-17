@@ -10,12 +10,18 @@
 
 namespace pathos {
 
+	static constexpr GLuint positionLocation = 0;
+	static constexpr GLuint uvLocation = 1;
+	static constexpr GLuint normalLocation = 2;
+	static constexpr GLuint tangentLocation = 3;
+	static constexpr GLuint bitangentLocation = 4;
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
 	MeshGeometry::MeshGeometry() :drawArraysMode(false) {}
 	MeshGeometry::~MeshGeometry() { this->dispose(); }
 
-	unsigned int MeshGeometry::getIndexCount() { return indexCount; }
+	uint32_t MeshGeometry::getIndexCount() { return indexCount; }
 
 	void MeshGeometry::draw() {
 		if (drawArraysMode){
@@ -25,7 +31,23 @@ namespace pathos {
 		}
 	}
 
-	void MeshGeometry::updateVertexData(GLfloat* data, unsigned int length) {
+#define DEFINE_ACTIVATE_VAO(combination)                       \
+	void MeshGeometry::activate_##combination() {              \
+		if(vao_##combination == 0) createVAO_##combination();  \
+		glBindVertexArray(vao_##combination);                  \
+	}
+	DEFINE_ACTIVATE_VAO(position)
+	DEFINE_ACTIVATE_VAO(position_uv)
+	DEFINE_ACTIVATE_VAO(position_normal)
+	DEFINE_ACTIVATE_VAO(position_uv_normal)
+	DEFINE_ACTIVATE_VAO(position_uv_normal_tangent_bitangent)
+#undef DEFINE_ACTIVATE_VAO
+	
+	void MeshGeometry::deactivate() {
+		glBindVertexArray(0);
+	}
+	
+	void MeshGeometry::updatePositionData(GLfloat* data, uint32_t length) {
 		positionData = data;
 		positionCount = length;
 		if (!positionBuffer) {
@@ -34,7 +56,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), positionData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateUVData(GLfloat* data, unsigned int length) {
+	void MeshGeometry::updateUVData(GLfloat* data, uint32_t length) {
 		uvData = data;
 		uvCount = length;
 		if (!uvBuffer) {
@@ -43,7 +65,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), uvData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateNormalData(GLfloat* data, unsigned int length) {
+	void MeshGeometry::updateNormalData(GLfloat* data, uint32_t length) {
 		normalData = data;
 		normalCount = length;
 		if (!normalBuffer) {
@@ -52,7 +74,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), normalData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateTangentData(GLfloat* data, unsigned int length) {
+	void MeshGeometry::updateTangentData(GLfloat* data, uint32_t length) {
 		tangentData = data;
 		if (!tangentBuffer){
 			glGenBuffers(1, &tangentBuffer);
@@ -60,7 +82,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), tangentData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateBitangentData(GLfloat* data, unsigned int length) {
+	void MeshGeometry::updateBitangentData(GLfloat* data, uint32_t length) {
 		bitangentData = data;
 		if (!bitangentBuffer){
 			glGenBuffers(1, &bitangentBuffer);
@@ -68,7 +90,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), bitangentData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateIndexData(GLuint* data, unsigned int length) {
+	void MeshGeometry::updateIndexData(GLuint* data, uint32_t length) {
 		indexData = data;
 		indexCount = length;
 		if (!indexBuffer) {
@@ -79,7 +101,7 @@ namespace pathos {
 	}
 
 	// burrow
-	void MeshGeometry::burrowVertexBuffer(const MeshGeometry* other) {
+	void MeshGeometry::burrowPositionBuffer(const MeshGeometry* other) {
 		positionData = other->positionData;
 		positionCount = other->positionCount;
 		positionBuffer = other->positionBuffer;
@@ -95,84 +117,12 @@ namespace pathos {
 		uvBuffer = other->uvBuffer;
 	}
 
-	void MeshGeometry::activatePositionBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-		glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-		glEnableVertexAttribArray(index);
-		vertexActivated = true;
-		vertexLocation = index;
-	}
-	void MeshGeometry::deactivatePositionBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDisableVertexAttribArray(index);
-		vertexActivated = false;
-	}
-
-	void MeshGeometry::activateUVBuffer(GLuint index) {
-		if (uvData == nullptr) assert(0);
-		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-		glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-		glEnableVertexAttribArray(index);
-		uvActivated = true;
-		uvLocation = index;
-	}
-	void MeshGeometry::deactivateUVBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDisableVertexAttribArray(index);
-		uvActivated = false;
-	}
-
-	void MeshGeometry::activateNormalBuffer(GLuint index) {
-		if (normalData == nullptr) assert(0);
-		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-		glVertexAttribPointer(index, 3, GL_FLOAT, GL_TRUE, 0, (void*)0);
-		glEnableVertexAttribArray(index);
-		normalActivated = true;
-		normalLocation = index;
-	}
-	void MeshGeometry::deactivateNormalBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDisableVertexAttribArray(index);
-		normalActivated = false;
-	}
-
-	void MeshGeometry::activateTangentBuffer(GLuint index) {
-		if (tangentData == nullptr) assert(0);
-		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
-		glVertexAttribPointer(index, 3, GL_FLOAT, GL_TRUE, 0, (void*)0);
-		glEnableVertexAttribArray(index);
-		tangentLocation = index;
-	}
-	void MeshGeometry::deactivateTangentBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDisableVertexAttribArray(index);
-	}
-
-	void MeshGeometry::activateBitangentBuffer(GLuint index) {
-		if (bitangentData == nullptr) assert(0);
-		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
-		glVertexAttribPointer(index, 3, GL_FLOAT, GL_TRUE, 0, (void*)0);
-		glEnableVertexAttribArray(index);
-		bitangentLocation = index;
-	}
-	void MeshGeometry::deactivateBitangentBuffer(GLuint index) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDisableVertexAttribArray(index);
-	}
-
 	void MeshGeometry::activateIndexBuffer() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 	}
 	void MeshGeometry::deactivateIndexBuffer() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
-
-	GLuint MeshGeometry::getVertexLocation() { return vertexLocation; }
-	GLuint MeshGeometry::getUVLocation() { return uvLocation; }
-	GLuint MeshGeometry::getNormalLocation() { return normalLocation; }
-	bool MeshGeometry::isVertexActivated() { return vertexActivated; }
-	bool MeshGeometry::isUVActivated() { return uvActivated; }
-	bool MeshGeometry::isNormalActivated() { return normalActivated; }
 
 	/*void MeshGeometry::applyTransform(glm::mat4 &transform) {
 		// update positionData, normalData
@@ -186,7 +136,7 @@ namespace pathos {
 		//throw Exceptions::NotImplemented(__FUNCTION__);
 	}*/
 
-	// requirements: positionData and indexData should be ready
+	// requirements: positionData and indexData should be ready.
 	// it only handles indexed vertex buffer (glDrawElements).
 	// vertex array should be supported.
 	void MeshGeometry::calculateNormals() {
@@ -298,18 +248,88 @@ namespace pathos {
 	}
 
 	void MeshGeometry::dispose() {
-		glDeleteBuffers(1, &positionBuffer);
-		glDeleteBuffers(1, &indexBuffer);
-		glDeleteBuffers(1, &uvBuffer);
-		glDeleteBuffers(1, &normalBuffer);
-		if (tangentBuffer) glDeleteBuffers(1, &tangentBuffer);
-		if (bitangentBuffer) glDeleteBuffers(1, &bitangentBuffer);
+		std::vector<GLuint> VBO;
+		if (positionBuffer != 0) VBO.push_back(positionBuffer);
+		if (uvBuffer != 0) VBO.push_back(uvBuffer);
+		if (normalBuffer != 0) VBO.push_back(normalBuffer);
+		if (tangentBuffer != 0) VBO.push_back(tangentBuffer);
+		if (bitangentBuffer != 0) VBO.push_back(bitangentBuffer);
+		if (indexBuffer != 0) VBO.push_back(indexBuffer);
+		glDeleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
+
+		std::vector<GLuint> VAO;
+		if (vao_position != 0) VAO.push_back(vao_position);
+		if (vao_position_uv != 0) VAO.push_back(vao_position_uv);
+		if (vao_position_normal != 0) VAO.push_back(vao_position_normal);
+		if (vao_position_uv_normal != 0) VAO.push_back(vao_position_uv_normal);
+		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
+		glDeleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
+
 		if (positionData) delete positionData;
 		if (indexData) delete indexData;
 		if (normalData) delete normalData;
 		if (uvData) delete uvData;
 		if (tangentData) delete tangentData;
 		if (bitangentData) delete bitangentData;
+	}
+
+	struct VAOElement {
+		GLuint buffer;
+		GLuint index;
+		GLint size;
+		GLenum type;
+		GLboolean normalized;
+	};
+
+	static void createVAO(GLuint* vao, const std::vector<VAOElement>& descs) {
+		assert(*vao == 0);
+		glGenVertexArrays(1, vao);
+		assert(*vao != 0);
+		glBindVertexArray(*vao);
+		for (const VAOElement& desc : descs) {
+			glBindBuffer(GL_ARRAY_BUFFER, desc.buffer);
+			glVertexAttribPointer(desc.index, desc.size, desc.type, desc.normalized, 0, (void*)0);
+			glEnableVertexAttribArray(desc.index);
+		}
+		glBindVertexArray(0);
+	}
+
+	void MeshGeometry::createVAO_position() {
+		createVAO(&vao_position, {
+			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE }
+		});
+	}
+
+	void MeshGeometry::createVAO_position_uv() {
+		createVAO(&vao_position_uv, {
+			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
+			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE }
+		});
+	}
+
+	void MeshGeometry::createVAO_position_normal() {
+		createVAO(&vao_position_normal, {
+			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
+			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE }
+		});
+	}
+
+	void MeshGeometry::createVAO_position_uv_normal() {
+		createVAO(&vao_position_uv_normal, {
+			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
+			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE },
+			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE }
+		});
+	}
+
+	void MeshGeometry::createVAO_position_uv_normal_tangent_bitangent() {
+		createVAO(&vao_position_uv_normal_tangent_bitangent, {
+			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
+			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE },
+			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE },
+			{ tangentBuffer, tangentLocation, 3, GL_FLOAT, GL_FALSE },
+			{ bitangentBuffer, bitangentLocation, 3, GL_FLOAT, GL_FALSE }
+		});
 	}
 
 }

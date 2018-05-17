@@ -19,6 +19,7 @@ namespace pathos {
 		GLuint createSubsumShader();
 		GLuint createBlurShader();
 
+		GLuint vao;
 		GLuint fbo;
 		GLuint texture_subsum2D[2];
 		GLuint program_subsum2D;

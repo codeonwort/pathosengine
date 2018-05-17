@@ -1,9 +1,10 @@
 #include "shadow.h"
-#include "pathos/render/shader.h"
-#include "pathos/engine.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
+
+#include "pathos/render/shader.h"
+#include "pathos/engine.h"
 
 #if defined(_DEBUG)
 #include <iostream>
@@ -28,7 +29,7 @@ namespace pathos {
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -74,7 +75,7 @@ void main() {
 		glDeleteProgram(program);
 	}
 
-	void ShadowMap::clearLightDepths(unsigned int numLights) {
+	void ShadowMap::clearLightDepths(uint32_t numLights) {
 		//static const GLfloat zero[] = { 0.0f };
 		static const GLfloat one[] = { 1.0f };
 
@@ -86,7 +87,7 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void ShadowMap::renderLightDepth(unsigned int lightIndex, DirectionalLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
+	void ShadowMap::renderLightDepth(uint32_t lightIndex, DirectionalLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) assert(0);
 
 		//--------------------------------------------------------------------------------------
@@ -96,7 +97,7 @@ void main() {
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[lightIndex], 0);
 		glViewport(0, 0, width, height);
 
-		modelGeometry->activatePositionBuffer(0);
+		modelGeometry->activate_position();
 		modelGeometry->activateIndexBuffer();
 
 		// calculate uniform value
@@ -118,7 +119,7 @@ void main() {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		modelGeometry->deactivatePositionBuffer(0);
+		modelGeometry->deactivate();
 		modelGeometry->deactivateIndexBuffer();
 		glUseProgram(0);
 
@@ -150,7 +151,7 @@ void main() {
 		}
 		// not necessary, but to eliminate a warning about invalid texture binding...
 		for (auto lightIndex = numLights; lightIndex < maxLights; ++lightIndex) {
-			glActiveTexture(GL_TEXTURE0 + textureBinding + lightIndex);
+			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(textureBinding + lightIndex));
 			textureBindings[lightIndex] = textureBindings[0];
 			glBindTexture(GL_TEXTURE_2D, depthTextures[0]);
 		}

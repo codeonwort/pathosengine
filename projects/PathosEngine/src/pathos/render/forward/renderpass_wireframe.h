@@ -8,7 +8,6 @@ namespace pathos {
 
 	protected:
 		virtual void createProgram() override;
-		GLuint positionLocation;
 		GLint uniform_mvp, uniform_color;
 
 	public:

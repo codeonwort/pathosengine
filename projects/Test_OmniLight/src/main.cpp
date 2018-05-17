@@ -16,6 +16,12 @@
 using namespace std;
 using namespace pathos;
 
+// Rendering configurations
+const int WINDOW_WIDTH = 1920;
+const int WINDOW_HEIGHT = 1080;
+const float FOV = 90.0f;
+const char* TITLE = "Test: Omnidirectional Light";
+
 // camera
 Camera* cam;
 
@@ -52,9 +58,9 @@ void keyDown(unsigned char ascii, int x, int y) {}
 int main(int argc, char** argv) {
 	// init the engine
 	EngineConfig conf;
-	conf.width = 800;
-	conf.height = 600;
-	conf.title = "Omnidirectional Light";
+	conf.width = WINDOW_WIDTH;
+	conf.height = WINDOW_HEIGHT;
+	conf.title = TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
@@ -64,7 +70,7 @@ int main(int argc, char** argv) {
 	ResourceFinder::get().add("../../resources/");
 	ResourceFinder::get().add("../../shaders/");
 
-	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 100.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 1.0f, 1000.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	renderer = new MeshForwardRenderer;

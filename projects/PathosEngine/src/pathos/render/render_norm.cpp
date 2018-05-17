@@ -1,9 +1,9 @@
 #include "pathos/render/render_norm.h"
 #include "pathos/render/shader.h"
 
-//#define DEBUG_NORMAL_RENDERER
+#define DEBUG_NORMAL_RENDERER 0
 
-#if defined(_DEBUG) && defined(DEBUG_NORMAL_RENDERER)
+#if defined(_DEBUG) && DEBUG_NORMAL_RENDERER
 #include <iostream>
 using namespace std;
 #endif
@@ -42,17 +42,13 @@ namespace pathos {
 		//Shader* f = new Shader(GL_FRAGMENT_SHADER);
 		//f->setSource(fs->getCode());
 
-#if defined(_DEBUG) && defined(DEBUG_NORMAL_RENDERER)
+#if defined(_DEBUG) && DEBUG_NORMAL_RENDERER
 		cout << endl << vs->getCode() << endl << endl;
 		cout << endl << gs->getCode() << endl << endl;
 		cout << endl << fs->getCode() << endl << endl;
 #endif
 
 		program = createProgram(shaders);
-		//program = createProgram(std::vector<Shader*>{ v, g, f });
-
-		positionLocation = vs->getPositionLocation();
-		normalLocation = vs->getNormalLocation();
 
 		delete vs;
 		delete gs;
@@ -72,12 +68,10 @@ namespace pathos {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		Geometries geoms = mesh->getGeometries();
 		for (auto i = 0u; i < geoms.size(); i++){
-			geoms[i]->activatePositionBuffer(positionLocation);
-			geoms[i]->activateNormalBuffer(normalLocation);
+			geoms[i]->activate_position_normal();
 			geoms[i]->activateIndexBuffer();
 			geoms[i]->draw();
-			geoms[i]->deactivatePositionBuffer(positionLocation);
-			geoms[i]->deactivateNormalBuffer(normalLocation);
+			geoms[i]->deactivate();
 			geoms[i]->deactivateIndexBuffer();
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

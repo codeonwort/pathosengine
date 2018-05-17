@@ -11,7 +11,6 @@ namespace pathos {
 
 	protected:
 		virtual void createProgram() override;
-		GLuint positionLocation, normalLocation;
 		GLint uniform_eye = -1, uniform_sampler = -1;
 
 	public:

@@ -1,8 +1,6 @@
 #pragma once
 
-#include "pathos/overlay/display_object.h"
 #include "pathos/wrapper/transform.h"
-#include "pathos/render/overlay/overlaypass.h"
 
 namespace pathos {
 
@@ -15,18 +13,23 @@ namespace pathos {
 		OverlayRenderer(OverlayRenderer&&) = delete;
 		virtual ~OverlayRenderer();
 
-		void render(DisplayObject2D* root);
-		void render_recurse(DisplayObject2D* object, const Transform& transformAccum);
+		void render(class DisplayObject2D* root);
+		void render_recurse(class DisplayObject2D* object, const Transform& transformAccum);
+
+		// Brushes retrieve desired programs in the renderer, configure them, and draw the geometry.
+		inline class OverlayPass_Standard* getStandardProgram() const { return renderpass_standard; }
+		inline class OverlayPass_Text* getTextProgram() const { return renderpass_text; }
 
 	protected:
 		void createShaders();
 		void destroyShaders();
 
 		// render passes
-		OverlayPass_Standard* renderpass_standard = nullptr;
+		class OverlayPass_Standard* renderpass_standard = nullptr;
+		class OverlayPass_Text* renderpass_text = nullptr;
 
 		// temporary variables (boring to pass them as arguments...)
-		DisplayObject2D* root = nullptr;
+		class DisplayObject2D* root = nullptr;
 
 	private:
 		Transform toNDC; // screen coordinates to NDC

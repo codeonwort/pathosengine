@@ -1,11 +1,13 @@
 #pragma once
 
-//#define PATHOS_MULTI_THREAD_SUPPORT
+// Build configurations
+#define PATHOS_MULTI_THREAD_SUPPORT 0
+#define GL_DEBUG_CONTEXT 0
 
-#ifdef PATHOS_MULTI_THREAD_SUPPORT
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-#include <GL/wglext.h>
+#if PATHOS_MULTI_THREAD_SUPPORT
+#include "GL/gl_core_4_3.h"
+#include "GL/freeglut.h"
+#include "GL/wgl_core.h"
 #endif
 
 #include <string>
@@ -16,12 +18,13 @@ namespace pathos {
 	* Only used for Engine::init()
 	*/
 	struct EngineConfig {
-		int width;								/** window width. */
+		int	width;								/** window width. */
 		int height;								/** window height. */
 		const char* title = "pathos engine";	/** window title. */
-		void (*render)() = nullptr;				/** render function */
-		void (*keyDown)(unsigned char, int, int) = nullptr;		/** keyDown function */
-		void (*keyUp)(unsigned char, int, int) = nullptr;		/** keyUp function */
+		void(*render)() = nullptr;
+		void(*keyDown)(unsigned char, int, int) = nullptr;
+		void(*keyUp)(unsigned char, int, int) = nullptr;
+		void(*keyPress)(unsigned char) = nullptr;
 	};
 
 	class Engine final {
@@ -30,13 +33,13 @@ namespace pathos {
 		static EngineConfig conf;
 		static void render();
 		static bool keymap[256];
-#ifdef PATHOS_MULTI_THREAD_SUPPORT
+#if PATHOS_MULTI_THREAD_SUPPORT
 		static HDC hdc;
 		static HGLRC mainContext;
 #endif
 
 	public:
-		static std::string version;
+		static const std::string version;
 		static bool init(int* argcp, char** argv, const EngineConfig& conf); /** initialize the engine. */
 		static void start(); /** start the main loop. */
 		static void stop(); /** stop the main loop. */
@@ -50,7 +53,7 @@ namespace pathos {
 		static void keyDown(unsigned char ascii, int x, int y);
 		static void keyUp(unsigned char ascii, int x, int y);
 
-#ifdef PATHOS_MULTI_THREAD_SUPPORT
+#if PATHOS_MULTI_THREAD_SUPPORT
 		static HGLRC createContext();
 		static void deleteContext(HGLRC context);
 		static inline HDC getHDC() { return hdc; }

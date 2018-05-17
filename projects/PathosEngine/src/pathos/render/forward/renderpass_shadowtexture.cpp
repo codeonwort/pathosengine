@@ -33,8 +33,6 @@ namespace pathos {
 #endif
 		
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		uvLocation = vsSource.getUVLocation();
 	}
 
 	void ShadowTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -44,8 +42,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
+		geometry->activate_position_uv();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -54,11 +51,9 @@ namespace pathos {
 		glUniform1i(glGetUniformLocation(program, "texSampler"), ShadowTexturePass::TEXTURE_UNIT);
 		glActiveTexture(GL_TEXTURE0 + ShadowTexturePass::TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, material->getTexture());
-		GLint compareMode, depthTextureMode;
+		GLint compareMode;
 		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, &compareMode);
-		glGetTexParameteriv(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, &depthTextureMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-		glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
 
 		// upload uniform
 		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelMatrix));
@@ -72,12 +67,10 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		// restore depth texture params
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, compareMode);
-		glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, depthTextureMode);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glUseProgram(0);
 	}

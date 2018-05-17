@@ -77,9 +77,6 @@ namespace pathos {
 		//fsSource.mainCode("if (color.a <= 0.0f) discard;");
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
-		positionLocation = vsSource.getPositionLocation();
-		uvLocation = vsSource.getUVLocation();
-		normalLocation = vsSource.getNormalLocation();
 	}
 
 	void FlatTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -88,9 +85,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activatePositionBuffer(positionLocation);
-		geometry->activateUVBuffer(uvLocation);
-		geometry->activateNormalBuffer(normalLocation);
+		geometry->activate_position_uv_normal();
 		geometry->activateIndexBuffer();
 
 		glUseProgram(program);
@@ -134,9 +129,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivatePositionBuffer(positionLocation);
-		geometry->deactivateUVBuffer(uvLocation);
-		geometry->deactivateNormalBuffer(normalLocation);
+		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glBindTexture(GL_TEXTURE_2D, 0);
 

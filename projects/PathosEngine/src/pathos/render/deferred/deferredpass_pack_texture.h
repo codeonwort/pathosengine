@@ -17,10 +17,6 @@ namespace pathos {
 		GLint uniform_mvpTransform;
 		GLint uniform_tex_diffuse;
 
-		GLint positionLocation = -1;
-		GLint uvLocation = -1;
-		GLint normalLocation = -1;
-
 	};
 
 }

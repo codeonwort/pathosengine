@@ -9,7 +9,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include <GL/glew.h>
+#include "GL/gl_core_4_3.h"
 #include <list>
 #include <map>
 #include <utility> // std::pair

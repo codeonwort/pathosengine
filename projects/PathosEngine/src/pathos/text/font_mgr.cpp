@@ -24,6 +24,9 @@ namespace pathos {
 			std::cerr << "** Cannot init FreeType library **" << std::endl;
 			return false;
 		}
+		FT_Int major, minor, patch;
+		FT_Library_Version(library, &major, &minor, &patch);
+		std::cout << "  - FreeType version: " << major << '.' << minor << '.' << patch << std::endl;
 
 		initialized = true;
 		return initialized;

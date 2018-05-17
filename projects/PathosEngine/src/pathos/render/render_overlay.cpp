@@ -1,5 +1,8 @@
 #include "render_overlay.h"
 #include "pathos/engine.h"
+#include "pathos/render/overlay/overlaypass.h"
+#include "pathos/overlay/display_object.h"
+#include "pathos/overlay/brush.h"
 
 namespace pathos {
 
@@ -12,10 +15,12 @@ namespace pathos {
 	
 	void OverlayRenderer::createShaders() {
 		renderpass_standard = new OverlayPass_Standard;
+		renderpass_text = new OverlayPass_Text;
 	}
 	void OverlayRenderer::destroyShaders() {
 #define release(x) if(x) delete x
 		release(renderpass_standard);
+		release(renderpass_text);
 #undef release
 	}
 
@@ -29,8 +34,12 @@ namespace pathos {
 
 	void OverlayRenderer::render_recurse(DisplayObject2D* object, const Transform& transformAccum) {
 		if (object->getVisible() == false) return;
-		if (object->getGeometry() != nullptr) {
-			renderpass_standard->render(object, transformAccum);
+		auto brush = object->getBrush();
+		if (brush) {
+			auto renderpass = brush->configure(this, transformAccum);
+			if (object->getGeometry() != nullptr) {
+				renderpass->render(object, transformAccum);
+			}
 		}
 		glm::mat4 mat = transformAccum.getMatrix() * object->getTransform().getMatrix();
 		Transform accum(mat);

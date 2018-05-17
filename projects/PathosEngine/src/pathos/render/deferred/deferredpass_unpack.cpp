@@ -71,7 +71,7 @@ void main() {
 		std::vector<Shader*> shaders = { &vs, &fs };
 		program = pathos::createProgram(shaders);
 
-#define GET_UNIFORM(z) { assert((uniform_ldr_##z = glGetUniformLocation(program, #z)) != -1); }
+#define GET_UNIFORM(z) { uniform_ldr_##z = glGetUniformLocation(program, #z); assert(uniform_ldr_##z != -1); }
 		GET_UNIFORM(eyeDirection);
 		GET_UNIFORM(numDirLights);
 		GET_UNIFORM(dirLightDirs);
@@ -109,7 +109,7 @@ void main() {
 		fs.loadSource("blur_pass.glsl");
 		program_blur = pathos::createProgram(shaders);
 
-#define GET_UNIFORM(z) { assert((uniform_hdr_##z = glGetUniformLocation(program_hdr, #z)) != -1); }
+#define GET_UNIFORM(z) { uniform_hdr_##z = glGetUniformLocation(program, #z); assert(uniform_hdr_##z != -1); }
 		GET_UNIFORM(eyeDirection);
 		GET_UNIFORM(numDirLights);
 		GET_UNIFORM(dirLightDirs);
@@ -219,10 +219,10 @@ void main() {
 
 		glDisable(GL_DEPTH_TEST);
 
-		quad->activatePositionBuffer(0);
+		quad->activate_position();
 		quad->activateIndexBuffer();
 		quad->draw();
-		quad->deactivatePositionBuffer(0);
+		quad->deactivate();
 		quad->deactivateIndexBuffer();
 
 		glEnable(GL_DEPTH_TEST);
@@ -254,10 +254,10 @@ void main() {
 		glDisable(GL_DEPTH_TEST);
 
 		// render HDR image
-		quad->activatePositionBuffer(0);
+		quad->activate_position();
 		quad->activateIndexBuffer();
 		quad->draw();
-		//quad->deactivatePositionBuffer(0);
+		//quad->deactivate();
 		//quad->deactivateIndexBuffer();
 
 		// blur bright area
@@ -289,10 +289,10 @@ void main() {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, godRay->getTexture());
 
-		//quad->activatePositionBuffer(0);
+		//quad->activate_position();
 		//quad->activateIndexBuffer();
 		quad->draw();
-		quad->deactivatePositionBuffer(0);
+		quad->deactivate();
 		quad->deactivateIndexBuffer();
 
 #if DOF
