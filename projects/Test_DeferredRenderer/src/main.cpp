@@ -1,3 +1,6 @@
+#include <iostream>
+#include <time.h>
+
 #include "pathos/engine.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -12,8 +15,7 @@
 #include "glm/gtx/transform.hpp"
 using namespace pathos;
 
-#include <iostream>
-#include <time.h>
+#include <GL/glut.h>
 
 // Compile options
 #define USE_NORMAL_RENDERER 0
@@ -23,6 +25,7 @@ const int WINDOW_WIDTH = 1920;
 const int WINDOW_HEIGHT = 1080;
 //const int WINDOW_WIDTH = 800;
 //const int WINDOW_HEIGHT = 600;
+const char* WINDOW_TITLE = "Test: Deferred Rendering";
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
 const bool USE_HDR = true;
@@ -41,10 +44,14 @@ std::vector<Mesh*> balls;
 Mesh* godRaySource;
 Skybox* sky;
 
+// Profiler
+GLuint timer_query = 0;
+
 // Lights and shadow
 PointLight *plight;
 DirectionalLight *dlight;
 
+void prepareProfiler();
 void setupScene();
 void render();
 void keyDown(unsigned char ascii, int x, int y) {}
@@ -54,7 +61,7 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.width = WINDOW_WIDTH;
 	conf.height = WINDOW_HEIGHT;
-	conf.title = "Test: Deferred Rendering";
+	conf.title = WINDOW_TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
@@ -77,6 +84,9 @@ int main(int argc, char** argv) {
 
 	// scene
 	setupScene();
+
+	// profiler
+	prepareProfiler();
 
 	// start the main loop
 	Engine::start();
@@ -196,6 +206,11 @@ void setupScene() {
 	scene.godRaySource = godRaySource;
 }
 
+void prepareProfiler() {
+	glGenQueries(1, &timer_query);
+	assert(timer_query != 0);
+}
+
 void render() {
 	float speedX = 0.5f, speedY = 0.5f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
@@ -218,7 +233,23 @@ void render() {
 		ball->getTransform().appendRotation(0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
+	// Start timer
+	GLuint64 elapsed_ms;
+	GLuint64 elapsed_ns;
+	glBeginQuery(GL_TIME_ELAPSED, timer_query);
+
+	// Render
 	renderer->render(&scene, cam);
+
+	// End timer
+	glEndQuery(GL_TIME_ELAPSED);
+	glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
+	elapsed_ms = elapsed_ns / 1000000u;
+
+	char title[256];
+	sprintf_s(title, "%s (Elapsed: %llu ms)", WINDOW_TITLE, elapsed_ms);
+	glutSetWindowTitle(title);
+
 #if USE_NORMAL_RENDERER
 	normRenderer->render(model, cam);
 	normRenderer->render(model2, cam);
