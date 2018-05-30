@@ -30,7 +30,7 @@ namespace pathos {
 		glUseProgram(program);
 
 		MeshGeometry* geom = object->getGeometry();
-		glm::mat4 transform = transformAccum.getMatrix() * object->getTransform().getMatrix();
+		glm::mat4 transform = transformAccum.getMatrix();
 
 		// uniform
 		glUniformMatrix4fv(uniform_transform, 1, false, &transform[0][0]);

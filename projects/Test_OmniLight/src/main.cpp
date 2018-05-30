@@ -9,8 +9,8 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/resource_finder.h"
-
 #include "glm/gtx/transform.hpp"
+
 #include <iostream>
 
 using namespace std;
@@ -39,7 +39,7 @@ NormalRenderer* normRenderer;
 void setupScene();
 
 void render() {
-	float speedX = 0.05f, speedY = 0.05f;
+	float speedX = 0.2f, speedY = 0.2f;
 	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
 	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
 	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
@@ -132,24 +132,24 @@ void setupScene() {
 	planeGeom->calculateTangentBasis();
 
 	plane_posX = new Mesh(planeGeom, mat);
-	plane_posX->getTransform().appendMove(15, 0, 0);
 	plane_posX->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+	plane_posX->getTransform().appendMove(15, 0, 0);
 
 	plane_negX = new Mesh(planeGeom, mat);
-	plane_negX->getTransform().appendMove(-15, 0, 0);
 	plane_negX->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
+	plane_negX->getTransform().appendMove(-15, 0, 0);
 
 	plane_posY = new Mesh(planeGeom, mat);
-	plane_posY->getTransform().appendMove(0, 15, 0);
 	plane_posY->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(1, 0, 0));
+	plane_posY->getTransform().appendMove(0, 15, 0);
 
 	plane_negY = new Mesh(planeGeom, mat);
-	plane_negY->getTransform().appendMove(0, -15, 0);
 	plane_negY->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1, 0, 0));
+	plane_negY->getTransform().appendMove(0, -15, 0);
 
 	plane_posZ = new Mesh(planeGeom, mat);
-	plane_posZ->getTransform().appendMove(0, 0, 15);
 	plane_posZ->getTransform().appendRotation(glm::radians(180.0f), glm::vec3(0, 1, 0));
+	plane_posZ->getTransform().appendMove(0, 0, 15);
 
 	plane_negZ = new Mesh(planeGeom, mat);
 	plane_negZ->getTransform().appendMove(0, 0, -15);

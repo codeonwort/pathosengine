@@ -16,8 +16,8 @@ namespace pathos {
 		}
 		geometry = new TextGeometry;
 		setBrush(new TextBrush(1.0f, 1.0f, 1.0f));
-		setScaleX(100.0f);
-		setScaleY(100.0f);
+		setScaleX(10.0f);
+		setScaleY(10.0f);
 	}
 
 	Label::Label(const wchar_t* text) : Label() {
@@ -39,7 +39,9 @@ namespace pathos {
 	void Label::updateTransform() {
 		transform.identity();
 		transform.appendMove(0.5f, 0.5f, 0.0f);
-		transform.appendScale(scaleX, -scaleY, 1.0f);
+		transform.appendScale(100 * scaleX, 100 * -scaleY, 1.0f);
+		transform.appendMove(x, y, 0.0f);
+		transform.appendScale(1.0f, -1.0f, 1.0f);
 	}
 
 }

@@ -176,8 +176,8 @@ void setupScene() {
 
 	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
 	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
 
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
@@ -194,8 +194,8 @@ void setupScene() {
 
 	// model: god ray source
 	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 	godRaySource->getTransform().appendScale(10.0f);
+	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 
 	// add them to scene
 	scene.add(model);
@@ -230,7 +230,7 @@ void render() {
 	model2->getTransform().appendMove(60, 0, 0);
 
 	for (auto& ball : balls) {
-		ball->getTransform().appendRotation(0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
+		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	// Start timer

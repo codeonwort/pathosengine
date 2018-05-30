@@ -26,25 +26,28 @@ namespace pathos {
 
 	void OverlayRenderer::render(DisplayObject2D* root_) {
 		assert(root_ && root_->isRoot());
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
 		calculateTransformNDC();
 		root = root_;
 		render_recurse(root, toNDC);
 		root = nullptr;
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
 	}
 
 	void OverlayRenderer::render_recurse(DisplayObject2D* object, const Transform& transformAccum) {
 		if (object->getVisible() == false) return;
+		Transform accum(transformAccum.getMatrix() * object->getTransform().getMatrix());
 		auto brush = object->getBrush();
 		if (brush) {
-			auto renderpass = brush->configure(this, transformAccum);
+			auto renderpass = brush->configure(this, accum);
 			if (object->getGeometry() != nullptr) {
-				renderpass->render(object, transformAccum);
+				renderpass->render(object, accum);
 			}
 		}
-		glm::mat4 mat = transformAccum.getMatrix() * object->getTransform().getMatrix();
-		Transform accum(mat);
+		
 		for (DisplayObject2D* child : object->getChildren()) {
-			// TODO: multiply object's transform
 			render_recurse(child, accum);
 		}
 	}
@@ -52,13 +55,12 @@ namespace pathos {
 	void OverlayRenderer::calculateTransformNDC() {
 		// TODO: remove global access
 		auto& config = Engine::getConfig();
-		unsigned int width = config.width;
-		unsigned int height = config.height;
+		float width = static_cast<float>(config.width);
+		float height = static_cast<float>(config.height);
 
 		toNDC.identity();
-		//toNDC.appendMove(-width / 2.0f, -height / 2.0f, 0.0f);
+		toNDC.appendScale(2.0f / width, -2.0f / height, 1.0f);
 		toNDC.appendMove(-1.0f, 1.0f, 0.0f);
-		toNDC.appendScale(4.0f / width, 4.0f / height, 1.0f);
 	}
 
 }

@@ -1,6 +1,6 @@
 #version 430 core
 
-uniform vec3 color;
+uniform vec4 color;
 uniform sampler2D texSampler;
 
 in VS_OUT {
@@ -11,5 +11,5 @@ out vec4 out_color;
 
 void main() {
     float alpha = texture2D(texSampler, fs_in.uv).r;
-    out_color = vec4(color, alpha);
+    out_color = vec4(color.xyz, alpha);
 }

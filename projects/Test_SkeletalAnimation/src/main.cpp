@@ -84,8 +84,9 @@ int main(int argc, char** argv) {
 void loadDAE() {
 	DAELoader dae("../../resources/models/animtest/animtest.dae", aiProcessPreset_TargetRealtime_MaxQuality);
 	daeModel = dynamic_cast<SkinnedMesh*>(dae.getMeshes()[0]);
-	daeModel->getTransform().appendMove(0, 0, 50);
+	daeModel->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
 	daeModel->getTransform().appendScale(2.0f);
+	daeModel->getTransform().appendMove(0, 0, 50);
 	scene.add(daeModel);
 }
 
@@ -149,7 +150,6 @@ void setupScene() {
 	geom_plane->calculateTangentBasis();
 	geom_cube->calculateTangentBasis();
 
-
 	//---------------------------------------------------------------------------------------
 	// create meshes
 	//---------------------------------------------------------------------------------------
@@ -163,10 +163,8 @@ void setupScene() {
 
 	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendMove(50, 0, 0);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
-
-	daeModel->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
+	model2->getTransform().appendMove(50, 0, 0);
 
 	// add them to scene
 	scene.add(model);

@@ -20,7 +20,9 @@ namespace pathos {
 	void Rectangle::updateTransform() {
 		transform.identity();
 		transform.appendMove(0.5f, 0.5f, 0.0f);
-		transform.appendScale(width * scaleX, height * scaleY, 1.0f);
+		transform.appendScale(width * scaleX, -height * scaleY, 1.0f);
+		transform.appendMove(x, -y, 0.0f);
+		transform.appendScale(1.0f, -1.0f, 1.0f);
 	}
 
 }

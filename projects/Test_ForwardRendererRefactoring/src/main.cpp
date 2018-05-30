@@ -141,8 +141,8 @@ void setupScene() {
 
 	// model 2: flat texture
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendMove(30, 0, 0);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
+	model2->getTransform().appendMove(30, 0, 0);
 
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);

@@ -21,9 +21,10 @@ namespace pathos {
 	void Camera::calculateViewMatrix() {
 		if (viewDirty){
 			transform.identity();
-			transform.appendRotation(rotationX, glm::vec3(1, 0, 0));
-			transform.appendRotation(rotationY, glm::vec3(0, 1, 0));
 			transform.appendMove(movement);
+			
+			transform.appendRotation(rotationY, glm::vec3(0, 1, 0));
+			transform.appendRotation(rotationX, glm::vec3(1, 0, 0));
 			viewDirty = false;
 		}
 	}

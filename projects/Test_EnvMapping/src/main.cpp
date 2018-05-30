@@ -111,7 +111,7 @@ void setupScene() {
 	label = new TextMesh("default");
 	label->setText("Envrionmental mapping test", 0xffff00);
 	label->getTransform().appendScale(10, 10, 10);
-	label->getTransform().appendMove(0, -5, 0);
+	label->getTransform().appendMove(0, 0, 10);
 
 	// 3d object
 	teapotLoader.load("../../resources/models/teapot/teapot.obj", "../../resources/models/teapot/");
@@ -120,7 +120,7 @@ void setupScene() {
 		teapot->setMaterial(i, envMapMaterial);
 	}
 	teapot->getTransform().appendScale(0.2f, 0.2f, 0.2f);
-	teapot->getTransform().appendMove(0, -40, -50);
+	teapot->getTransform().appendMove(0, -10, -30.0f);
 
 	// construct scene
 	scene.skybox = sky;

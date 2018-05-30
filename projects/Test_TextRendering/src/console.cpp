@@ -49,8 +49,8 @@ namespace pathos {
 
 	Label* ConsoleWindow::addLine(const wchar_t* text) {
 		Label* label = new Label(text);
-		label->setX(20.0f);
-		label->setY(50.0f);
+		//label->setX(200.0f);
+		//label->setY(200.0f);
 
 		textList.push_back(label);
 		root->addChild(label);

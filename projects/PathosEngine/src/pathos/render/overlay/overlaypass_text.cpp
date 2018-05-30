@@ -33,7 +33,7 @@ namespace pathos {
 		glUseProgram(program);
 
 		MeshGeometry* geom = object->getGeometry();
-		glm::mat4 transform = transformAccum.getMatrix() * object->getTransform().getMatrix();
+		glm::mat4 transform = transformAccum.getMatrix();
 
 		// uniform
 		glUniformMatrix4fv(uniform_transform, 1, false, &transform[0][0]);
@@ -41,11 +41,14 @@ namespace pathos {
 		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, label->getFontTexture());
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		geom->activate_position_uv();
 		geom->activateIndexBuffer();
 		geom->draw();
 		geom->deactivate();
 		geom->deactivateIndexBuffer();
+		glDisable(GL_BLEND);
 	}
 
 	void OverlayPass_Text::setUniform_color(float newRGBA[4]) {
