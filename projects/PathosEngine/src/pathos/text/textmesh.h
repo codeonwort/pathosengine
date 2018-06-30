@@ -25,7 +25,8 @@ namespace pathos {
 	public:
 		//TextMesh(string tag, Transform* ownerTransform);
 		TextMesh(const std::string& tag);
-		void setText(const std::string& txt, unsigned int rgb); // CAUTION: ASCII-only! MBCS is not supported.
+		// CAUTION: ASCII-only! MBCS is not supported.
+		void setText(const std::string& txt, unsigned int rgb);
 		void setText(const std::wstring& txt, unsigned int rgb);
 
 	private:

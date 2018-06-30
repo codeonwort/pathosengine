@@ -22,6 +22,8 @@
 
 using namespace pathos;
 
+#define DEBUG_FONT_TEXTURE 0
+
 // Configurations
 constexpr int WINDOW_WIDTH = 1920;
 constexpr int WINDOW_HEIGHT = 1080;
@@ -41,7 +43,9 @@ OverlayRenderer* overlayRenderer;
 // 3D objects
 TextMesh *label;
 Skybox* sky;
+#if DEBUG_FONT_TEXTURE
 Mesh* debug_overlayLabel;
+#endif
 
 // 2D objects (overlay)
 DisplayObject2D* overlayRoot;
@@ -86,7 +90,7 @@ int main(int argc, char** argv) {
 		delete g_Console;
 		g_Console = nullptr;
 	}
-	label0 = g_Console->addLine(L"asd");
+	label0 = g_Console->addLine(L"Making built-in debug console. Press ` to toggle.");
 
 	// camera
 	float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
@@ -118,14 +122,18 @@ void setupModel() {
 	label->setText(L"한글 테스트 / 영어도 나오나 English Text\n여기부터 새 줄", 0xff0000);
 	label->getTransform().appendScale(20.0f);
 
+#if DEBUG_FONT_TEXTURE
 	debug_overlayLabel = new Mesh(
 		new PlaneGeometry(20.0f, 20.0f),
 		new AlphaOnlyTextureMaterial(label0->getFontTexture()));
+#endif
 
 	scene.add(plight);
 	scene.add(dlight);
 	scene.add(label);
+#if DEBUG_FONT_TEXTURE
 	scene.add(debug_overlayLabel);
+#endif
 
 	renderer->getShadowMap()->setProjection(
 		glm::ortho(-200.0f, 200.0f, -200.0f, 100.0f, -200.0f, 500.0f));
@@ -153,13 +161,19 @@ void setupOverlay() {
 
 void render() {
 	float speedX = 0.05f, speedY = 0.05f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
+	float dx = 0.0f;
+	float dz = 0.0f;
+	float rotY = 0.0f;
+	float rotX = 0.0f;
+	if (g_Console->isVisible() == false) {
+		dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
+		dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
+		rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+		rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 
 	static std::wstring txt = L"가나다라마바사아자차카파타하";
 	static bool first = true;
@@ -190,5 +204,7 @@ void keyPress(unsigned char ascii) {
 	// backtick
 	if (ascii == 0x60) {
 		g_Console->toggle();
+	} else if (g_Console->isVisible()) {
+		g_Console->onKeyPress(ascii);
 	}
 }

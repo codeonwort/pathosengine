@@ -1,5 +1,7 @@
-
 #include "font_texture_cache.h"
+#include <vector>
+
+#define DRAW_GLYPH_BORDER 0
 
 namespace pathos {
 
@@ -97,11 +99,55 @@ namespace pathos {
 		g.advanceX = static_cast<float>(face->glyph->advance.x >> 6) / TEXTURE_WIDTH;
 		g.offsetY = static_cast<float>(face->glyph->bitmap_top) / TEXTURE_HEIGHT;
 		g.ch = x;
-		c.used.push_back(g);
 
 		FT_Bitmap& bmp = face->glyph->bitmap;
+
+		g.glyphPixelsX = bmp.width;
+		g.glyphPixelsY = bmp.rows;
+		g.glyphWidth = static_cast<float>(bmp.width) / TEXTURE_WIDTH;
+		g.glyphHeight = static_cast<float>(bmp.rows) / TEXTURE_HEIGHT;
+
+		c.used.push_back(g);
+
+		/* flip bmp
+		std::vector<unsigned char> flipped(bmp.width * bmp.rows, 0);
+		unsigned char* p = nullptr;
+		if(flipped.size() > 0) {
+			p = &flipped[0];
+			for (int i = bmp.rows - 1; i >= 0; --i) {
+				memcpy(p, bmp.buffer + i * bmp.width, bmp.width);
+				p += bmp.width;
+			}
+		}
+		p = flipped.size() == 0 ? nullptr : &flipped[0];
+		*/
+		
+		unsigned char* glyphBuffer = bmp.buffer;
+
+#if DRAW_GLYPH_BORDER
+		const size_t bufferSize = bmp.width * bmp.rows;
+		glyphBuffer = new unsigned char[bufferSize];
+		memcpy_s(glyphBuffer, bufferSize, bmp.buffer, bufferSize);
+		for (auto y = 0u; y < bmp.rows; ++y) {
+			glyphBuffer[y * bmp.width] = 0xff;
+			glyphBuffer[y * bmp.width + bmp.width - 1] = 0xff;
+		}
+		for (auto x = 0u; x < bmp.width; ++x) {
+			glyphBuffer[x] = 0xff;
+			glyphBuffer[(bmp.rows - 1) * bmp.width + x] = 0xff;
+		}
+#endif
+
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)(g.x * TEXTURE_WIDTH), (GLint)(g.y * TEXTURE_HEIGHT), bmp.width, bmp.rows, GL_RED, GL_UNSIGNED_BYTE, bmp.buffer);
+		glTexSubImage2D(GL_TEXTURE_2D, 0,
+			(GLint)(g.x * TEXTURE_WIDTH), (GLint)(g.y * TEXTURE_HEIGHT),
+			bmp.width, bmp.rows,
+			GL_RED, GL_UNSIGNED_BYTE,
+			glyphBuffer);
+
+#if DRAW_GLYPH_BORDER
+		delete[] glyphBuffer;
+#endif
 
 		return true;
 	}

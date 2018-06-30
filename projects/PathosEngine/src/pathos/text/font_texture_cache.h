@@ -18,10 +18,15 @@ namespace pathos {
 
 	struct GlyphInTexture {
 		wchar_t ch;
-		// values in texture space
-		float x, y, width, height;
+		float x, y; // position in texture space
+		float width, height; // cell size in texture space
 		float advanceX, offsetY;
 		//int age; // how long it had been not used
+
+		float glyphWidth;
+		float glyphHeight;
+		int glyphPixelsX;
+		int glyphPixelsY;
 	};
 
 	struct Cache {

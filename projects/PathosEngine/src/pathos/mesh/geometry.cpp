@@ -265,12 +265,15 @@ namespace pathos {
 		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
 		glDeleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
 
-		if (positionData) delete positionData;
-		if (indexData) delete indexData;
-		if (normalData) delete normalData;
-		if (uvData) delete uvData;
-		if (tangentData) delete tangentData;
-		if (bitangentData) delete bitangentData;
+#if 0
+		// TODO: fix
+		if (positionData) { delete[] positionData; positionData = nullptr; }
+		if (indexData) { delete[] indexData; indexData = nullptr; }
+		if (normalData) { delete[] normalData; normalData = nullptr; }
+		if (uvData) { delete[] uvData; uvData = nullptr; }
+		if (tangentData) { delete[] tangentData; tangentData = nullptr; }
+		if (bitangentData) { delete[] bitangentData; bitangentData = nullptr; }
+#endif
 	}
 
 	struct VAOElement {

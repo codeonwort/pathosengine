@@ -12,6 +12,7 @@ Your project's .h files.
 
 #include <stdint.h>
 #include <memory>
+#include <string>
 #include <list>
 
 namespace pathos {
@@ -28,6 +29,10 @@ namespace pathos {
 		void render();
 		void toggle();
 
+		bool isVisible() const;
+
+		void onKeyPress(unsigned char ascii);
+
 		class Label* addLine(const wchar_t* text);
 
 	private:
@@ -39,7 +44,10 @@ namespace pathos {
 		class OverlayRenderer* renderer;
 		class DisplayObject2D* root;
 		class Rectangle* background;
+		class Label* inputText;
 		std::list<class Label*> textList;
+
+		std::wstring input;
 
 	};
 

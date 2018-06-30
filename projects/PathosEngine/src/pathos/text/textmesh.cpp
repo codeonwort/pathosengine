@@ -4,6 +4,8 @@
 #include "pathos/engine.h"
 
 #define DEBUG_FONT_CACHE 0
+#define COMPACT_FONT_GLYPH 1
+#define FLIP_GLYPH_V 0
 
 namespace pathos {
 
@@ -49,11 +51,15 @@ namespace pathos {
 	}
 
 	void TextGeometry::configure(FontTextureCache& cache, const std::wstring& newText) {
+		// TODO: prevent crash when newText is empty.
+
 		positions.clear();
 		uvs.clear();
 		indices.clear();
 
-		GLfloat penX = 0.0f, penY = 0.0f, penZ = 0.0f;
+		GLfloat penX = 0.0f;
+		GLfloat penY = cache.getCellHeight();
+		GLfloat penZ = 0.0f;
 		GLfloat u, v, du, dv;
 		GLuint idx = 0;
 
@@ -62,38 +68,66 @@ namespace pathos {
 			if (x == L'\n') {
 				penX = 0.0f;
 				penY += cache.getCellHeight();
+				continue;
 			}
 			const GlyphInTexture& glyph = cache.getGlyph(x);
 			// order: top-left, top-right, bottom-right, bottom-left
 			penY -= glyph.offsetY;
 
+#if COMPACT_FONT_GLYPH
+			const float dw = static_cast<float>(glyph.glyphWidth);
+			const float dh = static_cast<float>(glyph.glyphHeight);
+#else
+			const float dw = cache.getCellWidth();
+			const float dh = cache.getCellHeight();
+#endif
+
+			// v0
 			positions.push_back(penX);
 			positions.push_back(penY);
 			positions.push_back(penZ);
 
-			positions.push_back(penX + cache.getCellWidth());
+			// v1
+			positions.push_back(penX + dw);
 			positions.push_back(penY);
 			positions.push_back(penZ);
 
-			positions.push_back(penX + cache.getCellWidth());
-			positions.push_back(penY + cache.getCellHeight());
+			// v2
+			positions.push_back(penX + dw);
+			positions.push_back(penY + dh);
 			positions.push_back(penZ);
 
+			// v3
 			positions.push_back(penX);
-			positions.push_back(penY + cache.getCellHeight());
+			positions.push_back(penY + dh);
 			positions.push_back(penZ);
 
 			penY += glyph.offsetY;
-			penZ += 0.00001f; // TODO: remove this
 
-			u = glyph.x + (0.5f / cache.getTextureWidth());
-			v = glyph.y + (0.5f / cache.getTextureHeight());
-			du = glyph.width - (1.0f / cache.getTextureWidth());
-			dv = glyph.height - (1.0f / cache.getTextureHeight());
+			const float tw = static_cast<float>(cache.getTextureWidth());
+			const float th = static_cast<float>(cache.getTextureHeight());
+
+			u = glyph.x + (0.5f / tw);
+			v = glyph.y + (0.5f / th);
+#if COMPACT_FONT_GLYPH
+			du = glyph.glyphWidth - (1.0f / tw);
+			dv = glyph.glyphHeight - (1.0f / th);
+#else
+			du = glyph.width - (1.0f / tw);
+			dv = glyph.height - (1.0f / th);
+#endif
+
+#if FLIP_GLYPH_V
+			uvs.push_back(u); uvs.push_back(v + dv);
+			uvs.push_back(u + du); uvs.push_back(v + dv);
+			uvs.push_back(u + du); uvs.push_back(v);
+			uvs.push_back(u); uvs.push_back(v);
+#else
 			uvs.push_back(u); uvs.push_back(v);
 			uvs.push_back(u + du); uvs.push_back(v);
 			uvs.push_back(u + du); uvs.push_back(v + dv);
 			uvs.push_back(u); uvs.push_back(v + dv);
+#endif
 
 			indices.push_back(idx);
 			indices.push_back(idx + 2);
@@ -115,7 +149,9 @@ namespace pathos {
 
 		if (normals.size() == 0) {
 			for (auto i = 0u; i < newText.size(); ++i) {
-				normals.push_back(0.0f); normals.push_back(0.0f); normals.push_back(1.0f);
+				normals.push_back(0.0f);
+				normals.push_back(0.0f);
+				normals.push_back(1.0f);
 			}
 			updateNormalData(&normals[0], static_cast<uint32_t>(normals.size()));
 		}

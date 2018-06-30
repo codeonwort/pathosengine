@@ -35,7 +35,7 @@ namespace pathos {
 		inline DisplayObject2D* getRoot() { return root; }
 
 		inline bool getVisible() { return visible; }
-		inline bool setVisible(bool value) { visible = value; }
+		inline void setVisible(bool value) { visible = value; }
 
 		inline class Brush* getBrush() { return brush; }
 		inline void setBrush(class Brush* newBrush) { brush = newBrush; }
