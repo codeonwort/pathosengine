@@ -80,4 +80,15 @@ namespace pathos {
 		setColor(r, g, b);
 	}
 
+	////////////////////////////////////////////////////////////////////////////////////
+	// PBRTextureMaterial
+	PBRTextureMaterial::PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao) {
+		materialID = MATERIAL_ID::PBR_TEXTURE;
+		tex_albedo = albedo;
+		tex_normal = normal;
+		tex_metallic = metallic;
+		tex_roughness = roughness;
+		tex_ao = ao;
+	}
+
 }

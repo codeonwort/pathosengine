@@ -23,13 +23,16 @@ namespace pathos {
 			std::cerr << "Error loading: " << path << std::endl;
 		}
 		unsigned int bpp = FreeImage_GetBPP(img);
+		dib = FreeImage_ConvertTo32Bits(img);
+		/*
 		if (bpp == 32) {
-			dib = FreeImage_ConvertTo32Bits(img);
+			//
 		}else if (bpp == 24) {
 			dib = FreeImage_ConvertTo24Bits(img);
 		}else {
-			std::cerr << "loadImage(): An image with unexpected BPP " << bpp << std::endl;
+			std::cerr << "loadImage(" << filename_ << "): An image with unexpected BPP " << bpp << std::endl;
 		}
+		*/
 		FreeImage_Unload(img);
 		return dib;
 	}
@@ -48,7 +51,6 @@ namespace pathos {
 
 		glGenTextures(1, &tex_id);
 		glBindTexture(GL_TEXTURE_2D, tex_id);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
@@ -69,6 +71,7 @@ namespace pathos {
 		if (generateMipmap) {
 			glGenerateMipmap(GL_TEXTURE_2D);
 		}
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		return tex_id;
 	}

@@ -2,6 +2,7 @@
 
 // should match with MeshDeferredRenderPass_Unpack::MAX_DIRECTIONAL_LIGHTS
 #define MAX_DIRECTIONAL_LIGHTS 8
+#define MAX_POINT_LIGHTS 16
 
 #define APPLY_FOG 0
 
@@ -10,53 +11,162 @@ layout (location = 1) out vec4 out_bright; // bright area only
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
+layout (binding = 2) uniform sampler2D gbuf2;
 
 // in view space
 uniform vec3 eyeDirection;
+uniform vec3 eyePosition;
 
 uniform uint numDirLights;
 uniform vec3 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];
 uniform vec3 dirLightColors[MAX_DIRECTIONAL_LIGHTS];
 
 uniform uint numPointLights;
-uniform vec3 pointLightPos[16];
-uniform vec3 pointLightColors[16];
+uniform vec3 pointLightPos[MAX_POINT_LIGHTS];
+uniform vec3 pointLightColors[MAX_POINT_LIGHTS];
 
 uniform vec3 fog_color = vec3(0.7, 0.8, 0.9);
+
+const float PI = 3.14159265359;
 
 // bloom threshold
 const float bloom_min = 0.8;
 const float bloom_max = 1.2;
 
 struct fragment_info {
-	vec3 color;
+	vec3 albedo;
 	vec3 normal;
 	float specular_power;
 	vec3 ws_coords; // in view space
 	uint material_id;
+	float metallic;
+	float roughness;
+	float ao;
 };
 
 void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	uvec4 data0 = texelFetch(gbuf0, coord, 0);
 	vec4 data1 = texelFetch(gbuf1, coord, 0);
+	vec4 data2 = texelFetch(gbuf2, coord, 0);
 	vec2 temp = unpackHalf2x16(data0.y);
 
-	fragment.color = vec3(unpackHalf2x16(data0.x), temp.x);
+	fragment.albedo = vec3(unpackHalf2x16(data0.x), temp.x);
 	fragment.normal = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
 	fragment.material_id = data0.w;
 
 	fragment.ws_coords = data1.xyz;
 	fragment.specular_power = data1.w;
+
+	fragment.metallic = data2.x;
+	fragment.roughness = data2.y;
+	fragment.ao = data2.z;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float distributionGGX(vec3 N, vec3 H, float roughness) {
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float geometrySchlickGGX(float NdotV, float roughness) {
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = geometrySchlickGGX(NdotV, roughness);
+    float ggx1  = geometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
+
+vec3 pbrShading(fragment_info fragment) {
+	vec3 N = fragment.normal;
+	//N.y = -N.y;
+	vec3 V = normalize(eyePosition - fragment.ws_coords);
+
+	vec3 F0 = vec3(0.04);
+	F0 = mix(F0, fragment.albedo, fragment.metallic);
+
+	vec3 Lo = vec3(0.0);
+
+	for(int i=0; i<numDirLights; ++i) {
+		vec3 L = -dirLightDirs[i];
+		vec3 H = normalize(V + L);
+		vec3 radiance = dirLightColors[i];
+
+		float NDF = distributionGGX(N, H, fragment.roughness);
+		float G = geometrySmith(N, V, L, fragment.roughness);
+		vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - fragment.metallic;
+
+		vec3 num = NDF * G * F;
+		float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular = num / max(denom, 0.001);
+
+		float NdotL = max(dot(N, L), 0.0);
+		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
+	}
+
+	for(int i=0; i<numPointLights; ++i) {
+		vec3 L = normalize(pointLightPos[i] - fragment.ws_coords);
+		vec3 H = normalize(V + L);
+		float distance = length(pointLightPos[i] - fragment.ws_coords);
+		float attenuation = 1000.0 / (1000.0 + distance * distance);
+		vec3 radiance = pointLightColors[i];
+		radiance *= attenuation;
+
+		float NDF = distributionGGX(N, H, fragment.roughness);
+		float G = geometrySmith(N, V, L, fragment.roughness);
+		vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+		vec3 kS = F;
+		vec3 kD = vec3(1.0) - kS;
+		kD *= 1.0 - fragment.metallic;
+
+		vec3 num = NDF * G * F;
+		float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+		vec3 specular = num / max(denom, 0.001);
+
+		float NdotL = max(dot(N, L), 0.0);
+		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
+	}
+
+	vec3 ambient = vec3(0.03) * fragment.albedo * fragment.ao;
+	vec3 color = ambient + Lo;
+
+	return color;
 }
 
 vec4 calculateShading(fragment_info fragment) {
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
-	if(fragment.material_id != 0){
+	if(fragment.material_id == 1 || fragment.material_id == 3) {
+		// old shading
 		vec3 N = fragment.normal;
 		for(uint i = 0; i < numDirLights; ++i) {
 			vec3 L = -dirLightDirs[i];
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 diffuse_color = dirLightColors[i] * fragment.color * cosTheta;
+			vec3 diffuse_color = dirLightColors[i] * fragment.albedo * cosTheta;
 			result += vec4(diffuse_color, 0.0);
 		}
 		for(uint i = 0; i < numPointLights; ++i) {
@@ -67,9 +177,11 @@ vec4 calculateShading(fragment_info fragment) {
 			vec3 R = reflect(-L, N);
 			float cosTheta = max(0.0, dot(N, L));
 			vec3 specular_color = pointLightColors[i] * pow(max(0.0, dot(R, -eyeDirection)), fragment.specular_power);
-			vec3 diffuse_color = pointLightColors[i] * fragment.color * cosTheta;
+			vec3 diffuse_color = pointLightColors[i] * fragment.albedo * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
+	} else if(fragment.material_id == 8) {
+		result.rgb += pbrShading(fragment);
 	} else discard;
 	return result;
 }

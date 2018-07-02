@@ -2,6 +2,7 @@
 
 layout (location = 0) out uvec4 output0;
 layout (location = 1) out vec4 output1;
+layout (location = 2) out vec4 output2;
 
 uniform vec3 diffuseColor;
 
@@ -28,4 +29,5 @@ void main() {
 
 	output0 = outvec0;
 	output1 = outvec1;
+	output2 = vec4(0.0);
 }

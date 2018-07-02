@@ -2,6 +2,8 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/envmap.h"
 
+#define ASSERT_GL_NO_ERROR 1
+
 #ifdef _DEBUG
 #include <iostream>
 #endif
@@ -22,7 +24,8 @@ namespace pathos {
 		pack_texture = new MeshDeferredRenderPass_Pack_FlatTexture;
 		pack_wireframe = new MeshDeferredRenderPass_Pack_Wireframe;
 		pack_bumptexture = new MeshDeferredRenderPass_Pack_BumpTexture;
-		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1], width, height);
+		pack_pbr = new MeshDeferredRenderPass_Pack_PBR;
+		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1], fbo_attachment[2], width, height);
 
 		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
@@ -45,6 +48,7 @@ namespace pathos {
 		release(pack_texture);
 		release(pack_wireframe);
 		release(pack_bumptexture);
+		release(pack_pbr);
 		release(unpack_pass);
 
 		/*release(shadowMap);
@@ -61,7 +65,7 @@ namespace pathos {
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-		glGenTextures(3, fbo_attachment);
+		glGenTextures(4, fbo_attachment);
 
 		glBindTexture(GL_TEXTURE_2D, fbo_attachment[0]);
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI, width, height);
@@ -74,13 +78,19 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glBindTexture(GL_TEXTURE_2D, fbo_attachment[2]);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glBindTexture(GL_TEXTURE_2D, fbo_attachment[3]);
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
 
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_attachment[0], 0);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_attachment[1], 0);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_attachment[2], 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, fbo_attachment[2], 0);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_attachment[3], 0);
 
-		glDrawBuffers(2, draw_buffers);
+		glDrawBuffers(3, draw_buffers);
 
 		// check if our framebuffer is ok
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -93,7 +103,7 @@ namespace pathos {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	void DeferredRenderer::destroyGBuffer() {
-		glDeleteTextures(3, fbo_attachment);
+		glDeleteTextures(4, fbo_attachment);
 		glDeleteFramebuffers(1, &fbo);
 	}
 
@@ -101,6 +111,10 @@ namespace pathos {
 	void DeferredRenderer::render(Scene* scene_, Camera* camera_) {
 		scene = scene_;
 		camera = camera_;
+
+#if ASSERT_GL_NO_ERROR
+		glGetError();
+#endif
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
@@ -110,27 +124,29 @@ namespace pathos {
 		packGBuffer();
 		unpackGBuffer();
 
+#if ASSERT_GL_NO_ERROR
+		assert(GL_NO_ERROR == glGetError());
+#endif
+
 		scene = nullptr;
 		camera = nullptr;
 	}
 
 	void DeferredRenderer::clearGBuffer() {
-		static const GLint zero_i[] = { 0, 0, 0, 0 };
+		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
-
+		
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearBufferfv(GL_COLOR, 0, zero);
-		glClearBufferiv(GL_COLOR, 0, zero_i);
+		glClearBufferuiv(GL_COLOR, 0, zero_ui);
 		glClearBufferfv(GL_COLOR, 1, zero);
+		glClearBufferfv(GL_COLOR, 2, zero);
 		glClearBufferfv(GL_DEPTH, 0, one);
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void DeferredRenderer::packGBuffer() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glDrawBuffers(2, draw_buffers);
 
 		// DEBUG: assertion
 		for (Mesh* mesh : scene->meshes) {
@@ -211,6 +227,9 @@ namespace pathos {
 		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
 			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
 			break;*/
+		case MATERIAL_ID::PBR_TEXTURE:
+			renderPBR(mesh, G, static_cast<PBRTextureMaterial*>(M));
+			break;
 		default:
 			// No render pass exists for this material id. You should not enter here.
 			assert(0);
@@ -233,6 +252,11 @@ namespace pathos {
 	void DeferredRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* G, BumpTextureMaterial* M) {
 		pack_bumptexture->setModelMatrix(mesh->getTransform().getMatrix());
 		pack_bumptexture->render(scene, camera, G, M);
+	}
+
+	void DeferredRenderer::renderPBR(Mesh* mesh, MeshGeometry* G, PBRTextureMaterial* M) {
+		pack_pbr->setModelMatrix(mesh->getTransform().getMatrix());
+		pack_pbr->render(scene, camera, G, M);
 	}
 
 }

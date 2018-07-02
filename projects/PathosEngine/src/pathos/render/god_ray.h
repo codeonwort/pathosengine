@@ -31,10 +31,13 @@ namespace pathos {
 		const unsigned int GOD_RAY_RESULT = 1;
 
 		GLuint program_silhouette;
-		GLint uniform_mvp, uniform_color;
+		GLint uniform_mvp;
+		GLint uniform_color;
 		
 		GLuint program_godRay;
 		GLint uniform_lightPos;
+
+		GLuint vao_dummy;
 
 	};
 

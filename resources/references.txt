@@ -3,3 +3,6 @@ http://www.thegamecreators.com/
 
 [normal map textures]
 http://opengameart.org/content/50-free-textures-4-normalmaps
+
+[pbr materials]
+https://freepbr.com/

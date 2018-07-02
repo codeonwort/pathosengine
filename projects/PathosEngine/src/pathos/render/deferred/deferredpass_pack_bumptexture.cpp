@@ -6,6 +6,9 @@ namespace pathos {
 	static constexpr unsigned int DIFFUSE_TEXTURE_UNIT = 0;
 	static constexpr unsigned int NORMALMAP_TEXTURE_UNIT = 1;
 
+	//static constexpr unsigned int SHADOW_MAPPING_TEXTURE_UNIT_START = 4;
+	//static constexpr unsigned int OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START = 12;
+
 	MeshDeferredRenderPass_Pack_BumpTexture::MeshDeferredRenderPass_Pack_BumpTexture() {
 		createProgram();
 	}
@@ -43,18 +46,6 @@ namespace pathos {
 		glUniformMatrix3fv(uniform_mvTransform3x3, 1, false, glm::value_ptr(mvMatrix3x3));
 		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
-
-		// uniform: lighting
-		/* no need
-		glm::vec3 lightDirection(0.0f, 0.0f, -1.0f);
-		if (scene->numDirectionalLights() > 0u) {
-			auto dir = scene->directionalLights[0]->getDirection();
-			lightDirection = mvMatrix3x3 * glm::vec3(dir[0], dir[1], dir[2]);
-		}
-		glm::vec3 eyeDirection = mvMatrix3x3 * camera->getEyeVector();
-		glUniform3fv(uniform_lightDirection, 1, glm::value_ptr(lightDirection));
-		glUniform3fv(uniform_lightDirection, 1, glm::value_ptr(eyeDirection));
-		*/
 
 		// uniform: texture
 		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);

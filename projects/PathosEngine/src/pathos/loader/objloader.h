@@ -22,6 +22,7 @@ namespace pathos {
 		std::set<int32_t> materialIDs;
 	};
 
+	// Wavefront OBJ
 	class OBJLoader {
 
 	public:

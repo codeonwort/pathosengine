@@ -144,7 +144,7 @@ namespace pathos {
 
 	public:
 		CubeEnvMapMaterial(GLuint cubeTexture);
-		inline const GLuint getTexture() { return texture; }
+		inline GLuint getTexture() const { return texture; }
 	};
 
 	class AlphaOnlyTextureMaterial : public MeshMaterial {
@@ -158,6 +158,22 @@ namespace pathos {
 		inline const GLuint getTexture() { return texture; }
 		inline const GLfloat* getColor() const { return color; }
 		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
+	};
+
+	class PBRTextureMaterial : public MeshMaterial {
+	public:
+		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);
+		inline GLuint getAlbedo() const { return tex_albedo; }
+		inline GLuint getNormal() const { return tex_normal; }
+		inline GLuint getMetallic() const { return tex_metallic; }
+		inline GLuint getRoughness() const { return tex_roughness; }
+		inline GLuint getAO() const { return tex_ao; }
+	protected:
+		GLuint tex_albedo;
+		GLuint tex_normal;
+		GLuint tex_metallic;
+		GLuint tex_roughness;
+		GLuint tex_ao;
 	};
 
 }

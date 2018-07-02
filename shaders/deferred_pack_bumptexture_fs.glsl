@@ -2,6 +2,7 @@
 
 layout (location = 0) out uvec4 output0;
 layout (location = 1) out vec4 output1;
+layout (location = 2) out vec4 output2;
 
 layout (location = 0) uniform sampler2D tex_diffuse;
 layout (location = 1) uniform sampler2D tex_normal;
@@ -35,7 +36,6 @@ void main() {
 
 	vec3 color = texture(tex_diffuse, fs_in.texcoord).rgb;
     vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, fs_in.texcoord);
-    //vec3 normal = normalize(fs_in.normal);
 
 	outvec0.x = packHalf2x16(color.xy);
 	outvec0.y = packHalf2x16(vec2(color.z, normal.x));
@@ -47,4 +47,5 @@ void main() {
 
 	output0 = outvec0;
 	output1 = outvec1;
+	output2 = vec4(0.0);
 }

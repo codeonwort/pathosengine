@@ -6,7 +6,7 @@ layout (binding = 0) uniform sampler2D input_image;
 layout (location = 0) out vec4 out_color;
 
 uniform float focal_distance = 50.0;
-uniform float focal_depth = 80.0;
+uniform float focal_depth = 300.0;
 
 const ivec2 zero = ivec2(0, 0);
 

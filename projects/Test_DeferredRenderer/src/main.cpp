@@ -29,7 +29,7 @@ const char* WINDOW_TITLE = "Test: Deferred Rendering";
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
 const bool USE_HDR = true;
-const unsigned int NUM_POINT_LIGHTS = 4;
+const unsigned int NUM_POINT_LIGHTS = 2;
 const unsigned int NUM_BALLS = 10;
 
 // Camera, Scene, and renderer
@@ -82,6 +82,7 @@ int main(int argc, char** argv) {
 	normRenderer = new NormalRenderer(0.2);
 #endif
 
+
 	// scene
 	setupScene();
 
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
 
 void setupScene() {
 	// light
-	dlight = new DirectionalLight(glm::vec3(0, -1, 0), glm::vec3(1.0, 1.0, 1.0));
+	dlight = new DirectionalLight(glm::vec3(0, -1, 0), 1.0f * glm::vec3(1.0, 1.0, 1.0));
 	scene.add(dlight);
 
 	srand((unsigned int)time(NULL));
@@ -108,6 +109,7 @@ void setupScene() {
 		float g = (rand() % 256) / 255.0f;
 		float b = (rand() % 256) / 255.0f;
 		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
+		r = g = b = 1.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
 
@@ -148,6 +150,26 @@ void setupScene() {
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
 	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
 
+	// PBR material
+	PBRTextureMaterial* material_pbr;
+	{
+#if 1
+		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"));
+		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), false);
+		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"));
+		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"));
+		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"));
+#else
+		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"));
+		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), false);
+		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"));
+		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"));
+		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"));
+#endif
+		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
+	}
+	
+
 	//---------------------------------------------------------------------------------------
 	// create geometries
 	//---------------------------------------------------------------------------------------
@@ -171,7 +193,8 @@ void setupScene() {
 	sky = new Skybox(cubeTexture);
 
 	// model 1: flat texture
-	model = new Mesh(geom_sphere_big, material_texture);
+	//model = new Mesh(geom_sphere_big, material_texture);
+	model = new Mesh(geom_plane, material_bump);
 	model->getTransform().appendMove(-40.0f, 0.0f, 0.0f);
 
 	// model 2: solid color
@@ -186,7 +209,7 @@ void setupScene() {
 
 	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
-		Mesh* ball = new Mesh(geom_sphere, material_bump);
+		Mesh* ball = new Mesh(geom_sphere, material_pbr);
 		ball->getTransform().appendMove(0.0f, -10.0f, -15.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
@@ -221,16 +244,18 @@ void render() {
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
 
+	/*
 	model->getTransform().appendMove(0, 20, 0);
 	model->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 0.5f, 1.0f));
 	model->getTransform().appendMove(0, -20, 0);
+	*/
 
 	model2->getTransform().appendMove(-60, 0, 0);
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 	model2->getTransform().appendMove(60, 0, 0);
 
 	for (auto& ball : balls) {
-		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
+		ball->getTransform().prependRotation(0.002f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
 	// Start timer

@@ -18,7 +18,7 @@ namespace pathos {
 		GLuint debug_godRayTexture();
 
 	public:
-		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height);
+		MeshDeferredRenderPass_Unpack(GLuint gbuffer_tex0, GLuint gbuffer_tex1, GLuint gbuffer_tex2, unsigned int width, unsigned int height);
 		virtual ~MeshDeferredRenderPass_Unpack();
 
 		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
@@ -34,7 +34,7 @@ namespace pathos {
 		GLuint program = 0; // shader program (original LDR rendering)
 		GLuint program_hdr = 0, program_tone_mapping = 0; // HDR rendering
 		GLuint program_blur = 0; // gaussian blur
-		GLuint gbuffer_tex0, gbuffer_tex1; // packed input
+		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 
 		// program
 		GLint uniform_ldr_eyeDirection;
@@ -47,6 +47,7 @@ namespace pathos {
 
 		// program_hdr
 		GLint uniform_hdr_eyeDirection;
+		GLint uniform_hdr_eyePosition;
 		GLint uniform_hdr_numDirLights;
 		GLint uniform_hdr_dirLightDirs;
 		GLint uniform_hdr_dirLightColors;

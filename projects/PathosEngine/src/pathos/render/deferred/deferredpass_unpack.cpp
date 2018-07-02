@@ -10,15 +10,16 @@ using std::min;
 #include <iostream>
 #endif
 
-#define DOF 1
+#define DOF 0
 
 namespace pathos {
 
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack(
-		GLuint gbuffer_tex0, GLuint gbuffer_tex1, unsigned int width, unsigned int height)
-		: gbuffer_tex0(gbuffer_tex0), gbuffer_tex1(gbuffer_tex1)
+		GLuint gbuffer_tex0, GLuint gbuffer_tex1, GLuint gbuffer_tex2,
+		unsigned int width, unsigned int height)
+		: gbuffer_tex0(gbuffer_tex0), gbuffer_tex1(gbuffer_tex1), gbuffer_tex2(gbuffer_tex2)
 	{
 		// fullscreen quad
 		quad = new PlaneGeometry(2.0f, 2.0f);
@@ -109,8 +110,9 @@ void main() {
 		fs.loadSource("blur_pass.glsl");
 		program_blur = pathos::createProgram(shaders);
 
-#define GET_UNIFORM(z) { uniform_hdr_##z = glGetUniformLocation(program, #z); assert(uniform_hdr_##z != -1); }
+#define GET_UNIFORM(z) { uniform_hdr_##z = glGetUniformLocation(program_hdr, #z); assert(uniform_hdr_##z != -1); }
 		GET_UNIFORM(eyeDirection);
+		GET_UNIFORM(eyePosition);
 		GET_UNIFORM(numDirLights);
 		GET_UNIFORM(dirLightDirs);
 		GET_UNIFORM(dirLightColors);
@@ -183,6 +185,7 @@ void main() {
 			static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			glClearBufferfv(GL_COLOR, 0, zero);
 			glClearBufferfv(GL_COLOR, 1, zero);
+			glClearBufferfv(GL_COLOR, 2, zero);
 		} else {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
@@ -209,6 +212,9 @@ void main() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex1);
 
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
+
 		// uniform: light
 		uploadDirectionalLightUniform(scene, MAX_DIRECTIONAL_LIGHTS, false);
 		uploadPointLightUniform(scene, MAX_POINT_LIGHTS, false);
@@ -231,7 +237,7 @@ void main() {
 	void MeshDeferredRenderPass_Unpack::renderHDR(Scene* scene, Camera* camera) {
 		// prepare god ray image
 		godRay->render(scene, camera);
-
+		
 		// bind
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 		glUseProgram(program_hdr);
@@ -243,13 +249,19 @@ void main() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex1);
 
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
+
 		// uniform: light
 		uploadDirectionalLightUniform(scene, MAX_DIRECTIONAL_LIGHTS, true);
 		uploadPointLightUniform(scene, MAX_POINT_LIGHTS, true);
 
 		// uniform: camera
-		const glm::vec3& eye = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		glUniform3fv(uniform_hdr_eyeDirection, 1, &eye[0]);
+		const glm::vec3& eyeDir = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
+		glUniform3fv(uniform_hdr_eyeDirection, 1, &eyeDir[0]);
+
+		const glm::vec3& eyePos = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+		glUniform3fv(uniform_hdr_eyePosition, 1, &eyePos[0]);
 
 		glDisable(GL_DEPTH_TEST);
 

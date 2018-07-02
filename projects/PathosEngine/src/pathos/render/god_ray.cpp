@@ -15,6 +15,7 @@ namespace pathos {
 	}
 
 	GodRay::~GodRay() {
+		glDeleteVertexArrays(1, &vao_dummy);
 		glDeleteFramebuffers(2, fbo);
 		glDeleteTextures(2, textures);
 		glDeleteProgram(program_silhouette);
@@ -26,6 +27,7 @@ namespace pathos {
 		height = height_;
 		createFBO();
 		createShaders();
+		glGenVertexArrays(1, &vao_dummy);
 	}
 
 	void GodRay::createFBO() {
@@ -43,7 +45,7 @@ namespace pathos {
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 #if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for god ray" << std::endl;
+			std::cerr << "Cannot create a framebuffer for god ray source" << std::endl;
 #endif
 			assert(0);
 		}
@@ -57,7 +59,7 @@ namespace pathos {
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 #if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for god ray" << std::endl;
+			std::cerr << "Cannot create a framebuffer for god ray result" << std::endl;
 #endif
 			assert(0);
 		}
@@ -155,7 +157,8 @@ void main() {
 		// bind
 		static GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		static GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		static GLfloat opaque_white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		static GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
+
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
 		glClearBufferfv(GL_COLOR, 0, transparent_black);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
@@ -183,14 +186,17 @@ void main() {
 		lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
 		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f - 0.05f };
 
+		glBindVertexArray(vao_dummy);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 		glUseProgram(program_godRay);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textures[GOD_RAY_SOURCE]);
 		glUniform2fv(uniform_lightPos, 1, lightPos_2d);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
 
 		// unbind
+		glBindVertexArray(0);
 		glUseProgram(0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}

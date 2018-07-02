@@ -31,9 +31,9 @@ namespace pathos {
 		void createGBuffer();
 		void destroyGBuffer();
 		GLuint fbo; // g-buffer
-		GLuint fbo_attachment[3]; // textures attached to g-buffer (0, 1 for color. 2 for depth/stencil)
+		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)
 		GLsizei width, height; // fbo texture size
-		GLenum draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		GLenum draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
 		// invoked by render()
 		void clearGBuffer();
@@ -53,12 +53,14 @@ namespace pathos {
 		void renderFlatTexture(Mesh*, MeshGeometry*, TextureMaterial*);
 		void renderWireframe(Mesh*, MeshGeometry*, WireframeMaterial*);
 		void renderBumpTexture(Mesh*, MeshGeometry*, BumpTextureMaterial*);
+		void renderPBR(Mesh*, MeshGeometry*, PBRTextureMaterial*);
 
 		// deferred render passes
 		MeshDeferredRenderPass_Pack_SolidColor* pack_colorPass = nullptr;
 		MeshDeferredRenderPass_Pack_FlatTexture* pack_texture = nullptr;
 		MeshDeferredRenderPass_Pack_Wireframe* pack_wireframe = nullptr;
 		MeshDeferredRenderPass_Pack_BumpTexture* pack_bumptexture = nullptr;
+		MeshDeferredRenderPass_Pack_PBR* pack_pbr = nullptr;
 		MeshDeferredRenderPass_Unpack* unpack_pass = nullptr;
 
 	};
