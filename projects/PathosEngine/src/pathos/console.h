@@ -1,15 +1,5 @@
 #pragma once
 
-/*
-dir2 / foo2.h.
-A blank line
-C system files.
-C++ system files.
-A blank line
-Other libraries' .h files.
-Your project's .h files.
-*/
-
 #include <stdint.h>
 #include <memory>
 #include <string>

@@ -2,6 +2,7 @@
 #include <time.h>
 
 #include "pathos/engine.h"
+#include "pathos/console.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
@@ -32,6 +33,9 @@ const bool USE_HDR = true;
 const unsigned int NUM_POINT_LIGHTS = 2;
 const unsigned int NUM_BALLS = 10;
 
+// Console window
+ConsoleWindow* g_Console = nullptr;
+
 // Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
@@ -56,6 +60,15 @@ void setupScene();
 void render();
 void keyDown(unsigned char ascii, int x, int y) {}
 
+void keyPress(unsigned char ascii) {
+	// backtick
+	if (ascii == 0x60) {
+		g_Console->toggle();
+	} else if (g_Console->isVisible()) {
+		g_Console->onKeyPress(ascii);
+	}
+}
+
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
@@ -64,11 +77,21 @@ int main(int argc, char** argv) {
 	conf.title = WINDOW_TITLE;
 	conf.render = render;
 	conf.keyDown = keyDown;
+	conf.keyPress = keyPress;
 	Engine::init(&argc, argv, conf);
 
 	ResourceFinder::get().add("../");
 	ResourceFinder::get().add("../../");
 	ResourceFinder::get().add("../../shaders/");
+
+	// console
+	g_Console = new ConsoleWindow;
+	if (g_Console->initialize(WINDOW_WIDTH, 400) == false) {
+		std::cerr << "Failed to initialize console window" << std::endl;
+		delete g_Console;
+		g_Console = nullptr;
+	}
+	g_Console->addLine(L"Built-in debug console. Press ` to toggle.");
 
 	// camera
 	float aspect_ratio = static_cast<float>(conf.width) / static_cast<float>(conf.height);
@@ -174,10 +197,10 @@ void setupScene() {
 	// create geometries
 	//---------------------------------------------------------------------------------------
 	
-	auto geom_sphere_big = new SphereGeometry(15.0f, 30);
-	auto geom_sphere = new SphereGeometry(5.0f, 30);
-	auto geom_plane = new PlaneGeometry(10.f, 10.f);
-	auto geom_cube = new CubeGeometry(glm::vec3(5.0f));
+	auto geom_sphere_big	= new SphereGeometry(15.0f, 30);
+	auto geom_sphere		= new SphereGeometry(5.0f, 30);
+	auto geom_plane			= new PlaneGeometry(10.f, 10.f);
+	auto geom_cube			= new CubeGeometry(glm::vec3(5.0f));
 
 	geom_sphere->calculateTangentBasis();
 	geom_sphere_big->calculateTangentBasis();
@@ -235,14 +258,16 @@ void prepareProfiler() {
 }
 
 void render() {
-	float speedX = 0.5f, speedY = 0.5f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
+	if (g_Console->isVisible() == false) {
+		float speedX = 0.5f, speedY = 0.5f;
+		float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
+		float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
+		float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
+		float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 
 	/*
 	model->getTransform().appendMove(0, 20, 0);
@@ -279,4 +304,8 @@ void render() {
 	normRenderer->render(model, cam);
 	normRenderer->render(model2, cam);
 #endif
+
+	if (g_Console) {
+		g_Console->render();
+	}
 }

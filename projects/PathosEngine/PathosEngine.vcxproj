@@ -177,6 +177,7 @@
   <ItemGroup>
     <ClCompile Include="src\gl_core_4_3.c" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
+    <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\core.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\light.cpp" />
@@ -231,6 +232,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\camera\camera.h" />
+    <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\core.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light.h" />

@@ -1,9 +1,8 @@
 #include <iostream>
 
-#include "console.h"
-
 #include "glm/gtx/transform.hpp"
 #include "pathos/engine.h"
+#include "pathos/console.h"
 #include "pathos/render/render_forward.h"
 #include "pathos/render/envmap.h"
 #include "pathos/mesh/mesh.h"
@@ -90,7 +89,7 @@ int main(int argc, char** argv) {
 		delete g_Console;
 		g_Console = nullptr;
 	}
-	label0 = g_Console->addLine(L"Making built-in debug console. Press ` to toggle.");
+	label0 = g_Console->addLine(L"Built-in debug console. Press ` to toggle.");
 
 	// camera
 	float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
