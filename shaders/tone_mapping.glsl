@@ -4,7 +4,8 @@ layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;
 layout (binding = 2) uniform sampler2D god_ray;
 
-uniform float exposure = 3.0; // TODO: set this in application-side
+// cvar: r.tonemapping.exposure
+uniform float exposure = 3.0;
 
 out vec4 color;
 

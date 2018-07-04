@@ -32,7 +32,8 @@ namespace pathos {
 
 	protected:
 		GLuint program = 0; // shader program (original LDR rendering)
-		GLuint program_hdr = 0, program_tone_mapping = 0; // HDR rendering
+		GLuint program_hdr = 0; // HDR rendering
+		GLuint program_tone_mapping = 0;
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 
@@ -54,6 +55,9 @@ namespace pathos {
 		GLint uniform_hdr_numPointLights;
 		GLint uniform_hdr_pointLightPos;
 		GLint uniform_hdr_pointLightColors;
+
+		// program_tone_mapping
+		GLint uniform_tone_mapping_exposure;
 
 		// program_blur
 		GLint uniform_blur_horizontal;

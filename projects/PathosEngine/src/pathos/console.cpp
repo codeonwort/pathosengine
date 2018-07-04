@@ -81,6 +81,13 @@ namespace pathos {
 		}
 	}
 
+	Label* ConsoleWindow::addLine(const char* text) {
+		int size = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, NULL);
+		std::vector<wchar_t> buffer(size, 0);
+		MultiByteToWideChar(CP_ACP, 0, text, strlen(text)+1, buffer.data(), size);
+		return addLine(buffer.data());
+	}
+
 	Label* ConsoleWindow::addLine(const wchar_t* text) {
 		if (wcslen(text) == 0) {
 			return nullptr;
@@ -103,7 +110,40 @@ namespace pathos {
 			}
 		}
 
+		evaluate(text);
+
 		return label;
+	}
+
+	void ConsoleWindow::evaluate(const wchar_t* text) {
+		int size = WideCharToMultiByte(CP_ACP, 0, text, -1, NULL, 0, NULL, NULL);
+		std::vector<char> buffer(size, 0);
+		WideCharToMultiByte(CP_ACP, 0, text, -1, buffer.data(), size, NULL, NULL);
+		std::string command(buffer.data());
+
+		// is it just a cvar name?
+		if (auto cvar = ConsoleVariableManager::find(command.data())) {
+			cvar->print(this);
+		}
+	}
+
+	///////////////////////////////////////////////////////////
+	// ConsoleVariable
+
+	std::vector<ConsoleVariableBase*> ConsoleVariableManager::registry;
+
+	ConsoleVariableBase* ConsoleVariableManager::find(const char* name) {
+		for (auto it = registry.begin(); it != registry.end(); ++it) {
+			ConsoleVariableBase* cvar = *it;
+			if(_strcmpi(cvar->name.data(), name) == 0) {
+				return cvar;
+			}
+		}
+		return nullptr;
+	}
+
+	ConsoleVariableBase::ConsoleVariableBase() {
+		ConsoleVariableManager::registry.push_back(this);
 	}
 
 }

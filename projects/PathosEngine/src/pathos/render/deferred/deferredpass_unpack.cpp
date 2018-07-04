@@ -1,5 +1,6 @@
 #include "deferredpass_unpack.h"
 #include "pathos/engine.h"
+#include "pathos/console.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/depth_of_field.h"
 
@@ -13,6 +14,8 @@ using std::min;
 #define DOF 0
 
 namespace pathos {
+
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 3.0, "exposure parameter of tone mapping pass");
 
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
@@ -105,6 +108,8 @@ void main() {
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
 		program_tone_mapping = pathos::createProgram(shaders);
+		uniform_tone_mapping_exposure = glGetUniformLocation(program_tone_mapping, "exposure");
+		assert(uniform_tone_mapping_exposure != -1);
 
 		// blur pass
 		fs.loadSource("blur_pass.glsl");
@@ -294,6 +299,7 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 		glUseProgram(program_tone_mapping);
+		glUniform1f(uniform_tone_mapping_exposure, cvar_tonemapping_exposure.getValue());
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[0]);
 		glActiveTexture(GL_TEXTURE1);
