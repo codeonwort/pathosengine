@@ -121,9 +121,17 @@ namespace pathos {
 		WideCharToMultiByte(CP_ACP, 0, text, -1, buffer.data(), size, NULL, NULL);
 		std::string command(buffer.data());
 
+		auto ix = command.find(' ');
+		std::string header = ix == string::npos ? command : command.substr(0, ix);
+
 		// is it just a cvar name?
-		if (auto cvar = ConsoleVariableManager::find(command.data())) {
-			cvar->print(this);
+		if (auto cvar = ConsoleVariableManager::find(header.data())) {
+			std::string msg = command.substr(ix + 1);
+			if (ix == string::npos) {
+				cvar->print(this);
+			} else {
+				cvar->parse(msg.data(), this);
+			}
 		}
 	}
 

@@ -57,6 +57,7 @@ namespace pathos {
 		friend class ConsoleVariableManager;
 	public:
 		virtual void print(ConsoleWindow* window) const = 0;
+		virtual void parse(const char* msg, ConsoleWindow* window) = 0;
 		virtual int getInt() const = 0;
 		virtual float getFloat() const = 0;
 	protected:
@@ -76,6 +77,7 @@ namespace pathos {
 		T getValue() const { return value; }
 		void setValue(T newValue) { value = newValue; }
 		virtual void print(ConsoleWindow* window) const override {}
+		virtual void parse(const char* msg, ConsoleWindow* window) override {}
 		virtual int getInt() const override { return static_cast<int>(value); }
 		virtual float getFloat() const override { return static_cast<float>(value); }
 	private:
@@ -95,6 +97,25 @@ namespace pathos {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %d", value);
 		window->addLine(buffer);
+	}
+
+	template<>
+	virtual void ConsoleVariable<float>::parse(const char* msg, ConsoleWindow* window) override {
+		float newValue;
+		if (sscanf_s(msg, "%f", &newValue) == 1) {
+			setValue(newValue);
+		} else {
+			window->addLine(L"Failed to set: not a float value.");
+		}
+	}
+	template<>
+	virtual void ConsoleVariable<int>::parse(const char* msg, ConsoleWindow* window) override {
+		int newValue;
+		if (sscanf_s(msg, "%d", &newValue) == 1) {
+			setValue(newValue);
+		} else {
+			window->addLine(L"Failed to set: not an integer value.");
+		}
 	}
 
 }
