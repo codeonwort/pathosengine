@@ -84,7 +84,7 @@ namespace pathos {
 	Label* ConsoleWindow::addLine(const char* text) {
 		int size = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, NULL);
 		std::vector<wchar_t> buffer(size, 0);
-		MultiByteToWideChar(CP_ACP, 0, text, strlen(text)+1, buffer.data(), size);
+		MultiByteToWideChar(CP_ACP, 0, text, static_cast<int>(strlen(text) + 1), buffer.data(), size);
 		return addLine(buffer.data());
 	}
 

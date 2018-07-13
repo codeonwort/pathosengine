@@ -181,10 +181,10 @@ void main() {
 
 		// light scattering pass
 		auto lightPos = scene->godRaySource->getTransform().getPosition();
-		const auto lightMVP = camera->getViewProjectionMatrix() * scene->godRaySource->getTransform().getMatrix();
+		const auto lightMVP = camera->getViewProjectionMatrix();
 		auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
 		lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
-		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f - 0.05f };
+		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
 
 		glBindVertexArray(vao_dummy);
 

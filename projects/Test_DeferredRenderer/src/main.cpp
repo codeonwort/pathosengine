@@ -24,8 +24,6 @@ using namespace pathos;
 // Rendering configurations
 const int WINDOW_WIDTH = 1920;
 const int WINDOW_HEIGHT = 1080;
-//const int WINDOW_WIDTH = 800;
-//const int WINDOW_HEIGHT = 600;
 const char* WINDOW_TITLE = "Test: Deferred Rendering";
 const float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
@@ -132,7 +130,6 @@ void setupScene() {
 		float g = (rand() % 256) / 255.0f;
 		float b = (rand() % 256) / 255.0f;
 		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
-		r = g = b = 1.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
 

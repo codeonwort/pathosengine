@@ -11,6 +11,7 @@
 #include "skinned_mesh.h"
 
 #include <vector>
+#include <map>
 
 namespace pathos {
 
@@ -18,19 +19,23 @@ namespace pathos {
 		
 	public:
 		DAELoader();
-		DAELoader(const char* filename, unsigned int flags = aiProcessPreset_TargetRealtime_MaxQuality);
+		DAELoader(
+			const char* filename, const char* material_dir,
+			unsigned int flags = aiProcessPreset_TargetRealtime_MaxQuality,
+			bool invertWinding = false);
+
 		virtual ~DAELoader();
 
-		bool load(const char* filename, unsigned int flags);
+		bool load(const char* filename, unsigned int flags, bool invertWinding = false);
 		bool unload();
 
-		inline const std::vector<Mesh*>& getMeshes() { return meshes; }
+		inline Mesh* getMesh() const { return mesh; }
 
 	protected:
 		void loadNodes();
-		void loadAnimations();
 		void loadMaterials();
-		void loadMeshes();
+		void loadMeshes(bool invertWinding);
+		void loadAnimations();
 
 		inline glm::mat4 getGlmMat(aiMatrix4x4& m) {
 			return glm::transpose(glm::mat4(
@@ -42,8 +47,11 @@ namespace pathos {
 
 	private:
 		const aiScene* scene = nullptr;
-		std::vector<Mesh*> meshes;
+		Mesh* mesh = nullptr;
 		Node* root = nullptr;
+
+		std::string materialDir;
+		std::map<std::string, GLuint> textureMapping;
 
 	};
 

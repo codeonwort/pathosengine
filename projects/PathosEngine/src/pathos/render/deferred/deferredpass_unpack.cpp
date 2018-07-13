@@ -11,11 +11,23 @@ using std::min;
 #include <iostream>
 #endif
 
-#define DOF 0
+#define DOF 1
 
 namespace pathos {
 
 	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 3.0, "exposure parameter of tone mapping pass");
+
+	static constexpr size_t MAX_DIRECTIONAL_LIGHTS = 8;
+	static constexpr size_t MAX_POINT_LIGHTS = 16;
+	struct UBO_UnpackHDR {
+		glm::vec3 eyeDirection; float __pad0;
+		glm::vec3 eyePosition; uint32_t numDirLights;
+		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
+		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
+		uint32_t numPointLights; glm::vec3 __pad1;
+		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
+		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
+	};
 
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
@@ -34,6 +46,7 @@ namespace pathos {
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
+		glDeleteBuffers(1, &ubo_hdr);
 		glDeleteProgram(program);
 		glDeleteProgram(program_hdr);
 		glDeleteProgram(program_tone_mapping);
@@ -102,8 +115,13 @@ void main() {
 		Shader fs(GL_FRAGMENT_SHADER);
 		fs.loadSource("deferred_unpack_hdr.glsl");
 
+		// unpack hdr
 		std::vector<Shader*> shaders = { &vs, &fs };
 		program_hdr = pathos::createProgram(shaders);
+
+		glGenBuffers(1, &ubo_hdr);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(UBO_UnpackHDR), (void*)0, GL_DYNAMIC_DRAW);
 
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
@@ -115,16 +133,6 @@ void main() {
 		fs.loadSource("blur_pass.glsl");
 		program_blur = pathos::createProgram(shaders);
 
-#define GET_UNIFORM(z) { uniform_hdr_##z = glGetUniformLocation(program_hdr, #z); assert(uniform_hdr_##z != -1); }
-		GET_UNIFORM(eyeDirection);
-		GET_UNIFORM(eyePosition);
-		GET_UNIFORM(numDirLights);
-		GET_UNIFORM(dirLightDirs);
-		GET_UNIFORM(dirLightColors);
-		GET_UNIFORM(numPointLights);
-		GET_UNIFORM(pointLightPos);
-		GET_UNIFORM(pointLightColors);
-#undef GET_UNIFORM
 		uniform_blur_horizontal = glGetUniformLocation(program_blur, "horizontal");
 		assert(uniform_blur_horizontal != -1);
 	}
@@ -261,12 +269,30 @@ void main() {
 		uploadDirectionalLightUniform(scene, MAX_DIRECTIONAL_LIGHTS, true);
 		uploadPointLightUniform(scene, MAX_POINT_LIGHTS, true);
 
-		// uniform: camera
-		const glm::vec3& eyeDir = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		glUniform3fv(uniform_hdr_eyeDirection, 1, &eyeDir[0]);
+		// configure UBO
+		{
+			UBO_UnpackHDR data;
+			data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
+			data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+			data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
+			const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
+			const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
+			for (auto i = 0u; i < data.numDirLights; ++i) {
+				data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+				data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+			}
+			data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
+			buffer = scene->getPointLightPositionBuffer();
+			buffer2 = scene->getPointLightColorBuffer();
+			for (auto i = 0u; i < data.numPointLights; ++i) {
+				data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+				data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+			}
 
-		const glm::vec3& eyePos = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
-		glUniform3fv(uniform_hdr_eyePosition, 1, &eyePos[0]);
+			glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_UnpackHDR), &data);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_hdr);
+		}
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -327,15 +353,10 @@ void main() {
 		glEnable(GL_DEPTH_TEST);
 	}
 
-	void MeshDeferredRenderPass_Unpack::uploadDirectionalLightUniform(Scene* scene, unsigned int maxDirectionalLights, bool hdr) {
+	void MeshDeferredRenderPass_Unpack::uploadDirectionalLightUniform(Scene* scene, uint32_t maxDirectionalLights, bool hdr) {
 		if ((hdr && program_hdr == 0) || (!hdr && program == 0)) return;
-		unsigned int numDirLights = std::min(static_cast<unsigned int>(scene->directionalLights.size()), maxDirectionalLights);
+		uint32_t numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), maxDirectionalLights);
 		if (hdr) {
-			glUniform1ui(uniform_hdr_numDirLights, numDirLights);
-			if (numDirLights > 0) {
-				glUniform3fv(uniform_hdr_dirLightDirs, numDirLights, scene->getDirectionalLightDirectionBuffer());
-				glUniform3fv(uniform_hdr_dirLightColors, numDirLights, scene->getDirectionalLightColorBuffer());
-			}
 		} else {
 			glUniform1ui(uniform_ldr_numDirLights, numDirLights);
 			if (numDirLights > 0) {
@@ -344,15 +365,10 @@ void main() {
 			}
 		}
 	}
-	void MeshDeferredRenderPass_Unpack::uploadPointLightUniform(Scene* scene, unsigned int maxPointLights, bool hdr) {
+	void MeshDeferredRenderPass_Unpack::uploadPointLightUniform(Scene* scene, uint32_t maxPointLights, bool hdr) {
 		if ((hdr && program_hdr == 0) || (!hdr && program == 0)) return;
-		unsigned int numPointLights = std::min(static_cast<unsigned int>(scene->pointLights.size()), maxPointLights);
+		uint32_t numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), maxPointLights);
 		if (hdr) {
-			glUniform1ui(uniform_hdr_numPointLights, numPointLights);
-			if (numPointLights) {
-				glUniform3fv(uniform_hdr_pointLightPos, numPointLights, scene->getPointLightPositionBuffer());
-				glUniform3fv(uniform_hdr_pointLightColors, numPointLights, scene->getPointLightColorBuffer());
-			}
 		} else {
 			glUniform1ui(uniform_ldr_numPointLights, numPointLights);
 			if (numPointLights) {

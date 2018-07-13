@@ -7,8 +7,6 @@
 #include <set>
 #include <map>
 
-using namespace std;
-
 //#define LOAD_NORMAL_DATA
 //#define WARN_INVALID_FACE_MARTERIAL
 

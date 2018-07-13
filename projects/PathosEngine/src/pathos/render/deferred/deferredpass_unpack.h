@@ -12,8 +12,8 @@ namespace pathos {
 
 	public:
 		// maximum number of lights this renderer can handle
-		static constexpr unsigned int MAX_DIRECTIONAL_LIGHTS = 8;
-		static constexpr unsigned int MAX_POINT_LIGHTS = 24;
+		static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 8;
+		static constexpr uint32_t MAX_POINT_LIGHTS = 24;
 
 		GLuint debug_godRayTexture();
 
@@ -47,14 +47,7 @@ namespace pathos {
 		GLint uniform_ldr_pointLightColors;
 
 		// program_hdr
-		GLint uniform_hdr_eyeDirection;
-		GLint uniform_hdr_eyePosition;
-		GLint uniform_hdr_numDirLights;
-		GLint uniform_hdr_dirLightDirs;
-		GLint uniform_hdr_dirLightColors;
-		GLint uniform_hdr_numPointLights;
-		GLint uniform_hdr_pointLightPos;
-		GLint uniform_hdr_pointLightColors;
+		GLuint ubo_hdr;
 
 		// program_tone_mapping
 		GLint uniform_tone_mapping_exposure;
@@ -77,8 +70,8 @@ namespace pathos {
 		void createProgram_HDR();
 		void createResource_HDR(unsigned int width, unsigned int height);
 
-		void uploadDirectionalLightUniform(Scene*, unsigned int maxLights, bool hdr);
-		void uploadPointLightUniform(Scene*, unsigned int maxLights, bool hdr);
+		void uploadDirectionalLightUniform(Scene*, uint32_t maxLights, bool hdr);
+		void uploadPointLightUniform(Scene*, uint32_t maxLights, bool hdr);
 
 	};
 

@@ -6,10 +6,15 @@
 
 namespace pathos {
 
+	SkinnedMesh::SkinnedMesh() : Mesh() {}
+
 	SkinnedMesh::SkinnedMesh(MeshGeometry* G, MeshMaterial* M) : Mesh(G, M) {}
 
-	void SkinnedMesh::addBone(Bone&& bone) {
-		bones.push_back(bone);
+	void SkinnedMesh::addBone(uint32_t geomIndex, const Bone& bone) {
+		if (boneMapping.size() <= geomIndex) {
+			boneMapping.resize(geomIndex + 1);
+		}
+		boneMapping[geomIndex].push_back(std::move(bone));
 	}
 
 	void SkinnedMesh::addAnimation(SkeletalAnimation* animation) {
@@ -31,29 +36,37 @@ namespace pathos {
 	}
 
 	// TODO: switch to hardware skinning
-	void SkinnedMesh::setInitialPositions(std::vector<float> positions) {
-		this->positions = positions;
+	void SkinnedMesh::setInitialPositions(uint32_t geomIndex, const std::vector<float>& positions0) {
+		if (initialPositionsMapping.size() <= geomIndex) {
+			initialPositionsMapping.resize(geomIndex + 1);
+		}
+		initialPositionsMapping[geomIndex] = std::move(positions0);
 	}
+
 	void SkinnedMesh::updateSoftwareSkinning() {
 		updateGlobalTransform();
 		updateBoneTransform();
 
-		const auto G = geometries[0];
-		std::vector<float> pos(positions.size(), 0.0f);
-
-		for (auto i = 0u; i < bones.size(); ++i) {
-			const auto& bone = bones[i];
-			for (auto j = 0u; j < bone.weights.size(); ++j) {
-				auto p = 3 * bone.vertexIDs[j];
-				auto vert = glm::vec4(positions[p], positions[p + 1], positions[p + 2], 1.0f);
-				auto v = bone.weights[j] * bone.finalTransform * vert;
-				pos[p] += v.x;
-				pos[p + 1] += v.y;
-				pos[p + 2] += v.z;
+		uint32_t geomIndex = 0;
+		for (const auto G : geometries) {
+			const auto& positions = initialPositionsMapping[geomIndex];
+			std::vector<float> pos(positions.size(), 0.0f);
+			const auto& bones = boneMapping[geomIndex];
+			for (auto i = 0u; i < bones.size(); ++i) {
+				const auto& bone = bones[i];
+				for (auto j = 0u; j < bone.weights.size(); ++j) {
+					auto p = 3 * bone.vertexIDs[j];
+					auto vert = glm::vec4(positions[p], positions[p + 1], positions[p + 2], 1.0f);
+					auto v = bone.weights[j] * bone.finalTransform * vert;
+					pos[p] += v.x;
+					pos[p + 1] += v.y;
+					pos[p + 2] += v.z;
+				}
 			}
-		}
+			G->updatePositionData(&pos[0], pos.size());
 
-		G->updatePositionData(&pos[0], pos.size());
+			++geomIndex;
+		}
 	}
 	void SkinnedMesh::updateAnimation(int index, double progress) {
 		aiAnimation* anim = animations[index]->anim;
@@ -102,8 +115,10 @@ namespace pathos {
 	}
 
 	void SkinnedMesh::updateBoneTransform() {
-		for (auto& bone : bones) {
-			bone.finalTransform = nodeTransformMapping[bone.name] * bone.offset;
+		for (auto& bones : boneMapping) {
+			for (auto& bone : bones) {
+				bone.finalTransform = nodeTransformMapping[bone.name] * bone.offset;
+			}
 		}
 	}
 

@@ -16,8 +16,6 @@ namespace pathos {
 		GLint uniform_mvTransform3x3;
 		GLint uniform_mvTransform;
 		GLint uniform_mvpTransform;
-		GLint uniform_lightDirection; // in view space
-		GLint uniform_eyeDirection; // in view space
 
 	};
 

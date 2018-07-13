@@ -23,9 +23,11 @@ namespace pathos {
 	class SkinnedMesh : public Mesh {
 
 	public:
+		SkinnedMesh();
 		SkinnedMesh(MeshGeometry* G, MeshMaterial* M);
 
-		void addBone(Bone&& bone);
+		void addBone(uint32_t geomIndex, const Bone& bone);
+
 		void addAnimation(SkeletalAnimation* animation);
 		void setRoot(Node* root);
 		inline void setNodeGlobalTransform(std::string& name, glm::mat4& transform) {
@@ -33,14 +35,16 @@ namespace pathos {
 		}
 
 		// TODO: switch to hardware skinning
-		void setInitialPositions(std::vector<float> positions);
+		void setInitialPositions(uint32_t geomIndex, const std::vector<float>& positions0);
 		void updateSoftwareSkinning();
 		void updateAnimation(std::string name, double progress);
 		void updateAnimation(int index, double progress);
 		void updateGlobalTransform();
 
 	protected:
-		std::vector<Bone> bones;
+		std::vector<std::vector<Bone>> boneMapping;
+		std::vector<std::vector<float>> initialPositionsMapping;
+
 		std::vector<SkeletalAnimation*> animations;
 		std::map<std::string, Node*> nodeMapping;
 		std::map<std::string, glm::mat4> nodeTransformMapping;
@@ -48,7 +52,7 @@ namespace pathos {
 
 		// TODO: switch to hardware skinning
 		void updateBoneTransform();
-		std::vector<float> positions;
+
 		int translation_lower_bound(aiNodeAnim* channel, double time);
 		int rotation_lower_bound(aiNodeAnim* channel, double time);
 		int scale_lower_bound(aiNodeAnim* channel, double time);

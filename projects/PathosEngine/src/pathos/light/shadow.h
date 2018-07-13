@@ -50,7 +50,6 @@ namespace pathos {
 		GLint uniform_depthMVP = -1;
 		vector<GLint> textureBindings;
 
-
 		glm::mat4 view, projection; // light space transform
 	};
 

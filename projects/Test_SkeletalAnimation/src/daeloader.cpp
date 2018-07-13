@@ -3,14 +3,11 @@
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
+#include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
 
 #include <functional>
 #include <map>
-
-#if defined(_DEBUG)
-#include <iostream>
-using namespace std;
-#endif
 
 namespace pathos {
 
@@ -19,23 +16,29 @@ namespace pathos {
 
 	DAELoader::DAELoader() {}
 
-	DAELoader::DAELoader(const char* filename, unsigned int flags) {
-		load(filename, flags);
+	DAELoader::DAELoader(const char* filename, const char* material_dir, unsigned int flags, bool invertWinding) {
+		materialDir = material_dir;
+		if (materialDir[materialDir.size() - 1] != '/') materialDir += '/';
+		load(filename, flags, invertWinding);
 	}
 
 	DAELoader::~DAELoader() {
 		unload();
 	}
 
-	bool DAELoader::load(const char* filename, unsigned int flags) {
+	bool DAELoader::load(const char* filename, unsigned int flags, bool invertWinding) {
 		if (scene) abort();
-		scene = aiImportFile(filename, flags);
+
+		std::string path = ResourceFinder::get().find(filename);
+		scene = aiImportFile(path.c_str(), flags);
 		if (!scene) return false;
 
 		loadNodes();
 		loadMaterials();
-		loadMeshes();
+		loadMeshes(invertWinding);
 		loadAnimations();
+
+		// TODO: aiReleaseImport()
 
 		return true;
 	}
@@ -67,86 +70,153 @@ namespace pathos {
 	}
 
 	void DAELoader::loadMaterials() {
+		auto getMaterialTextures = [&](const aiMaterial* M, aiTextureType texType) -> void {
+			auto numTex = M->GetTextureCount(texType);
+			for (auto i = 0u; i < numTex; ++i) {
+				aiString texPath;
+				M->GetTexture(texType, i, &texPath);
+				std::string path = materialDir + texPath.C_Str();
+				path = ResourceFinder::get().find(path);
+
+				GLuint texture = pathos::loadTexture(pathos::loadImage(path.c_str()));
+				auto it = make_pair(texPath.C_Str(), texture);
+				textureMapping.insert(it);
+			}
+		};
 		for (auto i = 0u; i < scene->mNumMaterials; ++i) {
-			const auto material = scene->mMaterials[i];
+			const aiMaterial* M = scene->mMaterials[i];
+			getMaterialTextures(M, aiTextureType_DIFFUSE);
+			getMaterialTextures(M, aiTextureType_NORMALS);
 		}
 	}
 	
-	void DAELoader::loadMeshes() {
+	void DAELoader::loadMeshes(bool invertWinding) {
+		SkinnedMesh* pathosMesh = new SkinnedMesh;
+
 		for (auto i = 0u; i < scene->mNumMeshes; ++i) {
-			const auto mesh = scene->mMeshes[i];
+			const auto aiMeshIndex = i;
+			const aiMesh* ai_mesh = scene->mMeshes[i];
+			const auto N = ai_mesh->mNumVertices;
 
 			// at least positions and indices are needed
-			assert(mesh->HasPositions());
-			assert(mesh->HasFaces());
+			assert(ai_mesh->HasPositions() && ai_mesh->HasFaces());
 
-			GLfloat* vertices = reinterpret_cast<GLfloat*>(&mesh->mVertices[0]);
-			GLfloat* normals = reinterpret_cast<GLfloat*>(&mesh->mNormals[0]);
-			GLfloat* texcoords = reinterpret_cast<GLfloat*>(&mesh->mTextureCoords[0]);
-			GLfloat* tangents = reinterpret_cast<GLfloat*>(&mesh->mTangents[0]);
-			GLfloat* bitangents = reinterpret_cast<GLfloat*>(&mesh->mBitangents[0]);
+			// TODO: support other primitives
+			assert(ai_mesh->mPrimitiveTypes == aiPrimitiveType_TRIANGLE);
 
+			std::vector<GLfloat> positions(N * 3);
+			std::vector<GLfloat> normals(N * 3);
+			std::vector<GLfloat> texcoords(N * 2);
+			std::vector<GLfloat> tangents(N * 3);
+			std::vector<GLfloat> bitangents(N * 3);
+
+			// fill vertex buffer
+			auto bufferSize = sizeof(GLfloat) * 3 * N;
+			memcpy_s(positions.data(), bufferSize, reinterpret_cast<GLfloat*>(&ai_mesh->mVertices[0]), bufferSize);
+			if (ai_mesh->HasNormals()) {
+				memcpy_s(normals.data(), bufferSize, reinterpret_cast<GLfloat*>(&ai_mesh->mNormals[0]), bufferSize);
+			}
+			if (ai_mesh->HasTangentsAndBitangents()) {
+				memcpy_s(tangents.data(), bufferSize, reinterpret_cast<GLfloat*>(&ai_mesh->mTangents[0]), bufferSize);
+				memcpy_s(bitangents.data(), bufferSize, reinterpret_cast<GLfloat*>(&ai_mesh->mBitangents[0]), bufferSize);
+			}
+			if (ai_mesh->HasTextureCoords(0)) {
+				for (auto i = 0u; i < N; ++i) {
+					texcoords[i * 2 + 0] = ai_mesh->mTextureCoords[0][i].x;
+					texcoords[i * 2 + 1] = ai_mesh->mTextureCoords[0][i].y;
+				}
+			}
+
+			// fill index buffer
 			std::vector<GLuint> indices;
-			for (auto i = 0u; i < mesh->mNumFaces; ++i) {
-				const auto& face = mesh->mFaces[i];
-				assert(face.mNumIndices == 3); // TODO: support other primitives
-				indices.push_back(face.mIndices[0]);
-				indices.push_back(face.mIndices[1]);
-				indices.push_back(face.mIndices[2]);
+			if (invertWinding) {
+				for (auto i = 0u; i < ai_mesh->mNumFaces; ++i) {
+					const aiFace& face = ai_mesh->mFaces[i];
+					indices.push_back(face.mIndices[0]);
+					indices.push_back(face.mIndices[2]);
+					indices.push_back(face.mIndices[1]);
+				}
+			} else {
+				for (auto i = 0u; i < ai_mesh->mNumFaces; ++i) {
+					const aiFace& face = ai_mesh->mFaces[i];
+					indices.push_back(face.mIndices[0]);
+					indices.push_back(face.mIndices[1]);
+					indices.push_back(face.mIndices[2]);
+				}
 			}
 			
-			// construct the geometry
+			// construct geometry
 			MeshGeometry* G = new MeshGeometry;
-			if (mesh->HasPositions()) G->updatePositionData(vertices, 3 * mesh->mNumVertices);
-			if (mesh->HasNormals()) G->updateNormalData(normals, 3 * mesh->mNumVertices);
-			if (mesh->HasTextureCoords(0)) G->updateUVData(texcoords, 2 * mesh->mNumVertices);
-			if (mesh->HasTangentsAndBitangents()) {
-				G->updateTangentData(tangents, 3 * mesh->mNumVertices);
-				G->updateBitangentData(bitangents, 3 * mesh->mNumVertices);
+			if (ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);
+			if (ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);
+			if (ai_mesh->HasTextureCoords(0)) G->updateUVData(texcoords.data(), 2 * N);
+			if (ai_mesh->HasTangentsAndBitangents()) {
+				G->updateTangentData(tangents.data(), 3 * N);
+				G->updateBitangentData(bitangents.data(), 3 * N);
 			}
 			G->updateIndexData(&indices[0], indices.size());
 
-			// TODO: use correct material
-			ColorMaterial* M = new ColorMaterial;
-			M->setAmbient(1.0f, 0.0f, 0.0f);
+			// create material
+			MeshMaterial* M;
+			const aiMaterial* ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
+			bool hasDiffuseTexture = ai_material->GetTextureCount(aiTextureType_DIFFUSE) >= 1;
+			bool hasNormalTexture = ai_material->GetTextureCount(aiTextureType_NORMALS) >= 1;
+			if (hasDiffuseTexture && hasNormalTexture) {
+				aiString diffusePath, normalPath;
+				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
+				ai_material->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
+				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
+				GLuint normalTex = textureMapping.find(normalPath.C_Str())->second;
+				M = new BumpTextureMaterial(diffuseTex, normalTex);
+			} else if (hasDiffuseTexture) {
+				aiString diffusePath;
+				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
+				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
+				M = new TextureMaterial(diffuseTex);
+			} else {
+				M = new ColorMaterial;
+				static_cast<ColorMaterial*>(M)->setAmbient(1.0f, 0.0f, 0.0f);
+			}
 
-			// engine's mesh class
-			SkinnedMesh* pathosMesh = new SkinnedMesh(G, M);
+			// add GM pair to the mesh
+			pathosMesh->add(G, M);
+
+			// set initial positions
 			std::vector<float> pos;
-			pos.assign(vertices, vertices + mesh->mNumVertices * 3);
-			pathosMesh->setInitialPositions(std::move(pos));
-
-			pathosMesh->setRoot(root);
+			pos.assign(positions.data(), positions.data() + N * 3);
+			pathosMesh->setInitialPositions(aiMeshIndex, std::move(pos));
 
 			// load bones
-			if (mesh->HasBones()) {
-				for (auto i = 0u; i < mesh->mNumBones; ++i) {
+			if (ai_mesh->HasBones()) {
+				for (auto i = 0u; i < ai_mesh->mNumBones; ++i) {
 					Bone bone;
-					const auto aiBone = mesh->mBones[i];
+					const auto aiBone = ai_mesh->mBones[i];
 					bone.name = aiBone->mName.C_Str();
 					for (auto j = 0u; j < aiBone->mNumWeights; ++j) {
 						bone.vertexIDs.push_back(aiBone->mWeights[j].mVertexId);
 						bone.weights.push_back(aiBone->mWeights[j].mWeight);
 					}
 					bone.offset = getGlmMat(aiBone->mOffsetMatrix);
-					pathosMesh->addBone(std::move(bone));
+					pathosMesh->addBone(aiMeshIndex, bone);
 				}
 			}
-			// TODO: switch to hardware skinning
-			pathosMesh->updateSoftwareSkinning();
-
-			meshes.push_back(pathosMesh);
 		}
+
+		pathosMesh->setRoot(root);
+		pathosMesh->updateSoftwareSkinning();
+
+		mesh = pathosMesh;
 	}
 
 	void DAELoader::loadAnimations() {
+		SkinnedMesh* skinnedMesh = dynamic_cast<SkinnedMesh*>(mesh);
+		if (!skinnedMesh) {
+			return;
+		}
 		for (auto i = 0u; i < scene->mNumAnimations; ++i) {
 			const auto aiAnim = scene->mAnimations[i];
 			SkeletalAnimation* anim = new SkeletalAnimation(aiAnim);
-			SkinnedMesh* mesh = dynamic_cast<SkinnedMesh*>(meshes[0]);
-			if (mesh) {
-				mesh->addAnimation(anim);
-			}
+			skinnedMesh->addAnimation(anim);
 		}
 	}
 

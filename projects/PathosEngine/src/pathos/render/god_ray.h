@@ -9,7 +9,11 @@
 
 namespace pathos {
 
+	// TODO: need depth buffer
 	class GodRay {
+
+		static constexpr unsigned int GOD_RAY_SOURCE = 0;
+		static constexpr unsigned int GOD_RAY_RESULT = 1;
 
 	public:
 		GodRay(unsigned int width, unsigned int height);
@@ -27,8 +31,6 @@ namespace pathos {
 	private:
 		unsigned int width, height;
 		GLuint fbo[2], textures[2];
-		const unsigned int GOD_RAY_SOURCE = 0;
-		const unsigned int GOD_RAY_RESULT = 1;
 
 		GLuint program_silhouette;
 		GLint uniform_mvp;

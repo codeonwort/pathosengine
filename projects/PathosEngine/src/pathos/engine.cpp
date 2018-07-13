@@ -109,7 +109,6 @@ namespace pathos {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		//glEnable(GL_MULTISAMPLE);
-		//glEnable(GL_FRAMEBUFFER_SRGB);
 		std::cout << "- GL states have been initialized" << std::endl;
 
 		return true;

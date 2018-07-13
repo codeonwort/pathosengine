@@ -11,8 +11,8 @@ using namespace std;
 
 namespace pathos {
 
-	using Geometries = vector<MeshGeometry*>;
-	using Materials = vector<MeshMaterial*>;
+	using Geometries = std::vector<MeshGeometry*>;
+	using Materials = std::vector<MeshMaterial*>;
 
 	// mesh = physical presence of geometry with material
 	class Mesh : public NamedObject {
