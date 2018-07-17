@@ -68,7 +68,7 @@ namespace pathos {
 		shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
 		omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
 		for (Mesh* mesh : scene->meshes) {
-			if (mesh->getVisible() == false) continue;
+			if (mesh->visible == false) continue;
 			renderLightDepth(mesh);
 		}
 
@@ -76,7 +76,7 @@ namespace pathos {
 		// @TODO: occluder or BSP tree
 		if (scene->skybox != nullptr) render(scene->skybox);
 		for (Mesh* mesh : scene->meshes) {
-			if (mesh->getVisible() == false) continue;
+			if (mesh->visible == false) continue;
 			render(mesh);
 		}
 
@@ -89,8 +89,8 @@ namespace pathos {
 		Geometries geoms = mesh->getGeometries();
 		size_t len = geoms.size();
 
-		if (mesh->getDoubleSided()) glDisable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
+		if (mesh->doubleSided) glDisable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CW);
 
 		// shadow mapping for directional light
 		for (auto i = 0u; i < len; ++i) {
@@ -106,8 +106,8 @@ namespace pathos {
 			}
 		}
 
-		if (mesh->getDoubleSided()) glEnable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CCW);
+		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
 	void MeshForwardRenderer::render(Skybox* sky) {
@@ -123,8 +123,8 @@ namespace pathos {
 		Materials materials = mesh->getMaterials();
 		size_t len = geoms.size();
 
-		if (mesh->getDoubleSided()) glDisable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
+		if (mesh->doubleSided) glDisable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CW);
 
 		for (auto i = 0u; i < len; i++) {
 			auto G = geoms[i];
@@ -132,8 +132,8 @@ namespace pathos {
 			renderPiece(mesh, G, M);
 		}
 
-		if (mesh->getDoubleSided()) glEnable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CCW);
+		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
 	void MeshForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {

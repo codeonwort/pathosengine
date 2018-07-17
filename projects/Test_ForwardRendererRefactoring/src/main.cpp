@@ -151,7 +151,7 @@ void setupScene() {
 	// model : shadow debug
 	model_shadowdebug = new Mesh(geom_plane, material_shadowdebug);
 	model_shadowdebug->getTransform().appendMove(5, 0, 40);
-	model_shadowdebug->setDoubleSided(true);
+	model_shadowdebug->doubleSided = true;
 
 	// add them to scene
 	scene.add(model);

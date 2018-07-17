@@ -96,7 +96,7 @@ void setupModel() {
 	label = new TextMesh("default");
 	label->setText("Loading OBJ model. Please wait...", 0xff0000);
 	label->getTransform().appendScale(20);
-	label->setDoubleSided(true);
+	label->doubleSided = true;
 
 	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
 	debug->getTransform().appendMove(30, 0, 10);
@@ -126,7 +126,7 @@ void render() {
 
 		//scene.add(city);
 		cityLoader.unload();
-		label->setVisible(false);
+		label->visible = false;
 	}
 
 	float speedX = 0.1f, speedY = 0.1f;

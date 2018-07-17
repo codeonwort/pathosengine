@@ -160,7 +160,7 @@ namespace pathos {
 		}
 
 		for (Mesh* mesh : scene->meshes) {
-			if (mesh->getVisible() == false) continue;
+			if (mesh->visible == false) continue;
 			renderMeshToGBuffer(mesh);
 		}
 	}
@@ -189,8 +189,8 @@ namespace pathos {
 		Materials materials = mesh->getMaterials();
 		size_t len = geoms.size();
 
-		if (mesh->getDoubleSided()) glDisable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CW);
+		if (mesh->doubleSided) glDisable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CW);
 
 		for (auto i = 0u; i < len; i++) {
 			auto G = geoms[i];
@@ -198,8 +198,8 @@ namespace pathos {
 			renderMeshPieceToGBuffer(mesh, G, M);
 		}
 
-		if (mesh->getDoubleSided()) glEnable(GL_CULL_FACE);
-		if (mesh->getRenderInternal()) glFrontFace(GL_CCW);
+		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
+		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
 	void DeferredRenderer::renderMeshPieceToGBuffer(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {

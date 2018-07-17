@@ -109,7 +109,7 @@ void setupScene() {
 	OBJLoader obj2("models/lightbulb.obj", "models/");
 	lamp = obj2.craftMeshFromAllShapes();
 	lamp->getTransform().appendScale(4, 4, 4);
-	lamp->setDoubleSided(true);
+	lamp->doubleSided = true;
 
 	// cubemap
 	const char* cubeImgName[6] = {
@@ -165,7 +165,7 @@ void setupScene() {
 	unsigned int face = 0;
 	viewer = new Mesh(new PlaneGeometry(10, 10), new ShadowCubeTextureMaterial(omni->getDebugTexture(0), face, omni->getLightNearZ(), omni->getLightFarZ()));
 	viewer->getTransform().appendMove(10, 0, 10);
-	viewer->setDoubleSided(true);
+	viewer->doubleSided = true;
 
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), new WireframeMaterial(1, 1, 1));
 	GLfloat* lightDir = light->getDirection();

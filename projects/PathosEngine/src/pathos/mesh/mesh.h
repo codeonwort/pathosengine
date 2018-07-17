@@ -17,14 +17,11 @@ namespace pathos {
 	// mesh = physical presence of geometry with material
 	class Mesh : public NamedObject {
 
-	protected:
+	public:
+		bool castsShadow = false;
+		bool visible = true;
 		bool doubleSided = false;
 		bool renderInternal = false;
-		bool castShadow = false;
-		bool visible = true;
-		Transform transform;
-		Geometries geometries;
-		Materials materials;
 
 	public:
 		Mesh(MeshGeometry* = nullptr, MeshMaterial* = nullptr);
@@ -37,13 +34,10 @@ namespace pathos {
 
 		void setMaterial(int index, MeshMaterial* M) { materials[index] = M; }
 
-		inline bool getVisible() const { return visible; }
-		bool getDoubleSided();
-		bool getRenderInternal();
-
-		inline void setVisible(bool value) { visible = value; }
-		void setDoubleSided(bool);
-		void setRenderInternal(bool);
+	protected:
+		Transform transform;
+		Geometries geometries;
+		Materials materials;
 
 	};
 

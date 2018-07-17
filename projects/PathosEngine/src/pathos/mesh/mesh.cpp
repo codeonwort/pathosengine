@@ -9,7 +9,7 @@ namespace pathos {
 	*/
 	Mesh::Mesh(MeshGeometry* geom, MeshMaterial* mat) {
 		doubleSided = false;
-		castShadow = true;
+		castsShadow = true;
 		if (geom != nullptr || mat != nullptr){
 			geometries.push_back(geom);
 			materials.push_back(mat);
@@ -32,9 +32,5 @@ namespace pathos {
 	Transform& Mesh::getTransform() { return transform; }
 	const Geometries& Mesh::getGeometries() { return geometries; }
 	const Materials& Mesh::getMaterials() { return materials; }
-	bool Mesh::getDoubleSided() { return doubleSided; }
-	void Mesh::setDoubleSided(bool b) { doubleSided = b; }
-	bool Mesh::getRenderInternal() { return renderInternal; }
-	void Mesh::setRenderInternal(bool b) { renderInternal = b; }
 
 }
