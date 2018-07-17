@@ -24,7 +24,7 @@ namespace pathos {
 
 	void MeshDeferredRenderPass_Pack_Wireframe::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
 		static_cast<void>(scene);
-		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
+		WireframeMaterial* material = static_cast<WireframeMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
@@ -38,7 +38,7 @@ namespace pathos {
 		const glm::mat4& mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
 		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
-		glUniform3fv(uniform_diffuseColor, 1, material->getDiffuse());
+		glUniform3fv(uniform_diffuseColor, 1, material->getColor());
 
 		//--------------------------------------------------------------------------------------
 		// draw call

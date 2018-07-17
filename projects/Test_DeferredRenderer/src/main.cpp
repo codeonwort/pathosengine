@@ -1,6 +1,3 @@
-#include <iostream>
-#include <time.h>
-
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/mesh/mesh.h"
@@ -17,6 +14,8 @@
 using namespace pathos;
 
 #include <GL/glut.h>
+#include <iostream>
+#include <time.h>
 
 // Compile options
 #define USE_NORMAL_RENDERER 0
@@ -100,7 +99,7 @@ int main(int argc, char** argv) {
 	renderer = new DeferredRenderer(conf.width, conf.height);
 	renderer->setHDR(USE_HDR);
 #if USE_NORMAL_RENDERER
-	normRenderer = new NormalRenderer(0.2);
+	normRenderer = new NormalRenderer(0.2f);
 #endif
 
 
@@ -168,7 +167,7 @@ void setupScene() {
 		color->setAlpha(1.0f);
 	}
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
-	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
+	auto material_wireframe = new WireframeMaterial(1.0f, 0.0f, 1.0f, 1.0f);
 
 	// PBR material
 	PBRTextureMaterial* material_pbr;
@@ -196,7 +195,7 @@ void setupScene() {
 	
 	auto geom_sphere_big	= new SphereGeometry(15.0f, 30);
 	auto geom_sphere		= new SphereGeometry(5.0f, 30);
-	auto geom_plane			= new PlaneGeometry(10.f, 10.f);
+	auto geom_plane			= new PlaneGeometry(10.0f, 10.0f);
 	auto geom_cube			= new CubeGeometry(glm::vec3(5.0f));
 
 	geom_sphere->calculateTangentBasis();
@@ -225,7 +224,7 @@ void setupScene() {
 	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
 	//model3 = new Mesh(geom_plane, material_tex_debug);
-	model3->getTransform().appendMove(5, 30, 0);
+	model3->getTransform().appendMove(35.0f, 0.0f, 0.0f);
 
 	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
@@ -243,8 +242,7 @@ void setupScene() {
 	// add them to scene
 	scene.add(model);
 	scene.add(model2);
-	//scene.add(model3);
-	//scene.add(godRaySource);
+	scene.add(model3);
 	scene.skybox = sky;
 	scene.godRaySource = godRaySource;
 }
@@ -298,8 +296,9 @@ void render() {
 	glutSetWindowTitle(title);
 
 #if USE_NORMAL_RENDERER
-	normRenderer->render(model, cam);
-	normRenderer->render(model2, cam);
+	for (const auto mesh : scene.meshes) {
+		normRenderer->render(mesh, cam);
+	}
 #endif
 
 	if (g_Console) {

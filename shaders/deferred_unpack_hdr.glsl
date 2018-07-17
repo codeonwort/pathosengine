@@ -163,7 +163,7 @@ vec3 pbrShading(fragment_info fragment) {
 vec4 calculateShading(fragment_info fragment) {
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
 	if(fragment.material_id == 1 || fragment.material_id == 3) {
-		// old shading
+		// old shading (solidcolor or texture)
 		vec3 N = fragment.normal;
 		for(uint i = 0; i < ubo.numDirLights; ++i) {
 			vec3 L = -ubo.dirLightDirs[i];
@@ -182,6 +182,9 @@ vec4 calculateShading(fragment_info fragment) {
 			vec3 diffuse_color = ubo.pointLightColors[i] * fragment.albedo * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
+	} else if(fragment.material_id == 2) {
+		// wireframe
+		result.rgb += fragment.albedo;
 	} else if(fragment.material_id == 8) {
 		result.rgb += pbrShading(fragment);
 	} else discard;
