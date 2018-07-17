@@ -1,15 +1,16 @@
 #pragma once
 
 #include "geometry.h"
+#include <stdint.h>
 
 namespace pathos {
 
 	class PlaneGeometry : public MeshGeometry {
 	private:
 		float width, height;
-		unsigned int gridX, gridY;
+		uint32_t gridX, gridY;
 	public:
-		PlaneGeometry(float width, float height, unsigned int segW = 1, unsigned int segH = 1);
+		PlaneGeometry(float width, float height, uint32_t segW = 1, uint32_t segH = 1);
 		virtual void buildGeometry();
 	};
 

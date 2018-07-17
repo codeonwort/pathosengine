@@ -40,6 +40,7 @@ DeferredRenderer* renderer;
 NormalRenderer* normRenderer;
 
 // 3D objects
+Mesh *ground;
 Mesh *model, *model2, *model3;
 std::vector<Mesh*> balls;
 Mesh* godRaySource;
@@ -50,7 +51,7 @@ GLuint timer_query = 0;
 
 // Lights and shadow
 PointLight *plight;
-DirectionalLight *dlight;
+DirectionalLight *sunLight;
 
 void prepareProfiler();
 void setupScene();
@@ -117,14 +118,14 @@ int main(int argc, char** argv) {
 
 void setupScene() {
 	// light
-	dlight = new DirectionalLight(glm::vec3(0, -1, 0), 1.0f * glm::vec3(1.0, 1.0, 1.0));
-	scene.add(dlight);
+	sunLight = new DirectionalLight(glm::vec3(0, -1, 1), 1.0f * glm::vec3(1.0, 1.0, 1.0));
+	scene.add(sunLight);
 
 	srand((unsigned int)time(NULL));
 	for (auto i = 0u; i < NUM_POINT_LIGHTS; ++i) {
 		float x = rand() % 50 - 25.0f;
 		float y = rand() % 50 - 25.0f;
-		float z = rand() % 50 - 25.0f;
+		float z = rand() % 50 - 15.0f;
 		float r = (rand() % 256) / 255.0f;
 		float g = (rand() % 256) / 255.0f;
 		float b = (rand() % 256) / 255.0f;
@@ -196,11 +197,13 @@ void setupScene() {
 	auto geom_sphere_big	= new SphereGeometry(15.0f, 30);
 	auto geom_sphere		= new SphereGeometry(5.0f, 30);
 	auto geom_plane			= new PlaneGeometry(10.0f, 10.0f);
+	auto geom_plane_big		= new PlaneGeometry(10.0f, 10.0f, 20, 20);
 	auto geom_cube			= new CubeGeometry(glm::vec3(5.0f));
 
 	geom_sphere->calculateTangentBasis();
 	geom_sphere_big->calculateTangentBasis();
 	geom_plane->calculateTangentBasis();
+	geom_plane_big->calculateTangentBasis();
 	geom_cube->calculateTangentBasis();
 
 
@@ -210,6 +213,11 @@ void setupScene() {
 
 	// skybox
 	sky = new Skybox(cubeTexture);
+
+	ground = new Mesh(geom_plane_big, material_texture);
+	ground->getTransform().appendScale(100.0f);
+	ground->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
 
 	// model 1: flat texture
 	//model = new Mesh(geom_sphere_big, material_texture);
@@ -240,6 +248,7 @@ void setupScene() {
 	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 
 	// add them to scene
+	scene.add(ground);
 	scene.add(model);
 	scene.add(model2);
 	scene.add(model3);

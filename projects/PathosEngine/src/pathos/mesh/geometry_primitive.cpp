@@ -4,7 +4,7 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// PlaneGeometry
-	PlaneGeometry::PlaneGeometry(float width, float height, unsigned int gridX, unsigned int gridY)
+	PlaneGeometry::PlaneGeometry(float width, float height, uint32_t gridX, uint32_t gridY)
 		: width(width), height(height), gridX(gridX), gridY(gridY) {
 		buildGeometry();
 	}
@@ -20,14 +20,16 @@ namespace pathos {
 		GLfloat* normals = new GLfloat[numPos * 3];
 		GLuint* indices = new GLuint[gridX * gridY * 6];
 
-		int k = 0;
+		int32_t k = 0;
 		for (auto i = 0u; i <= gridY; i++) {
 			for (auto j = 0u; j <= gridX; j++) {
 				positions[k * 3] = x0 + segW * j;
 				positions[k * 3 + 1] = y0 + segH * i;
 				positions[k * 3 + 2] = 0.0;
-				uvs[k * 2] = (float)j / gridX;
-				uvs[k * 2 + 1] = (float)i / gridY;
+				//uvs[k * 2] = (float)j / gridX;
+				//uvs[k * 2 + 1] = (float)i / gridY;
+				uvs[k * 2] = (float)j;
+				uvs[k * 2 + 1] = (float)i;
 				normals[k * 3] = normals[k * 3 + 1] = 0.0;
 				normals[k * 3 + 2] = 1.0;
 				k++;
