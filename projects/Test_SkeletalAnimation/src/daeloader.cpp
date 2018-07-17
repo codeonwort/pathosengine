@@ -75,6 +75,10 @@ namespace pathos {
 			for (auto i = 0u; i < numTex; ++i) {
 				aiString texPath;
 				M->GetTexture(texType, i, &texPath);
+				if (textureMapping.find(texPath.C_Str()) != textureMapping.end()) {
+					// this texture was already loaded
+					continue;
+				}
 				std::string path = materialDir + texPath.C_Str();
 				path = ResourceFinder::get().find(path);
 
