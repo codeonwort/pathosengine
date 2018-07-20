@@ -17,20 +17,6 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 3.0, "exposure parameter of tone mapping pass");
 
-	static constexpr size_t MAX_DIRECTIONAL_LIGHTS = 8;
-	static constexpr size_t MAX_POINT_LIGHTS = 16;
-	struct UBO_UnpackHDR {
-		glm::mat4 view;
-		glm::mat4 viewProj;
-		glm::vec3 eyeDirection; float __pad0;
-		glm::vec3 eyePosition; uint32_t numDirLights;
-		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
-		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
-		uint32_t numPointLights; glm::vec3 __pad1;
-		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
-		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
-	};
-
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack(
@@ -48,7 +34,6 @@ namespace pathos {
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
-		glDeleteBuffers(1, &ubo_hdr);
 		glDeleteProgram(program_ldr);
 		glDeleteProgram(program_hdr);
 		glDeleteProgram(program_tone_mapping);
@@ -110,10 +95,6 @@ void main() {
 		// unpack hdr
 		std::vector<Shader*> shaders = { &vs, &fs };
 		program_hdr = pathos::createProgram(shaders);
-
-		glGenBuffers(1, &ubo_hdr);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(UBO_UnpackHDR), (void*)0, GL_DYNAMIC_DRAW);
 
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
@@ -210,30 +191,6 @@ void main() {
 		}
 	}
 
-	void MeshDeferredRenderPass_Unpack::updateUBO(Scene* scene, Camera* camera) {
-		UBO_UnpackHDR data;
-		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
-		data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
-		const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
-		const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
-		for (auto i = 0u; i < data.numDirLights; ++i) {
-			data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-			data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-		}
-		data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
-		buffer = scene->getPointLightPositionBuffer();
-		buffer2 = scene->getPointLightColorBuffer();
-		for (auto i = 0u; i < data.numPointLights; ++i) {
-			data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-			data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-		}
-
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_UnpackHDR), &data);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_hdr);
-	}
-
 	void MeshDeferredRenderPass_Unpack::render(Scene* scene, Camera* camera) {
 		glUseProgram(program_ldr);
 
@@ -246,8 +203,6 @@ void main() {
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
-
-		updateUBO(scene, camera);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -277,8 +232,6 @@ void main() {
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
-
-		updateUBO(scene, camera);
 
 		glDisable(GL_DEPTH_TEST);
 

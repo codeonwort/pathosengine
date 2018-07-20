@@ -1,6 +1,7 @@
 #include "render_deferred.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/envmap.h"
+#include <algorithm>
 
 #define ASSERT_GL_NO_ERROR 1
 
@@ -10,11 +11,27 @@
 
 namespace pathos {
 
+	static constexpr size_t MAX_DIRECTIONAL_LIGHTS = 8;
+	static constexpr size_t MAX_POINT_LIGHTS = 16;
+	struct UBO_PerFrame {
+		glm::mat4 view;
+		glm::mat4 viewProj;
+		glm::vec3 eyeDirection; float __pad0;
+		glm::vec3 eyePosition; uint32_t numDirLights;
+		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
+		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
+		uint32_t numPointLights; glm::vec3 __pad1;
+		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
+		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
+	};
+
 	DeferredRenderer::DeferredRenderer(unsigned int width, unsigned int height):width(width), height(height) {
 		createGBuffer();
 		createShaders();
+		createUBO();
 	}
 	DeferredRenderer::~DeferredRenderer() {
+		destroyUBO();
 		destroyShaders();
 		destroyGBuffer();
 	}
@@ -107,6 +124,16 @@ namespace pathos {
 		glDeleteFramebuffers(1, &fbo);
 	}
 
+	void DeferredRenderer::createUBO() {
+		glGenBuffers(1, &ubo_perFrame);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo_perFrame);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(UBO_PerFrame), (void*)0, GL_DYNAMIC_DRAW);
+	}
+
+	void DeferredRenderer::destroyUBO() {
+		glDeleteBuffers(1, &ubo_perFrame);
+	}
+
 	// MOST OUTER RENDERING FUNCTION
 	void DeferredRenderer::render(Scene* scene_, Camera* camera_) {
 		scene = scene_;
@@ -118,6 +145,9 @@ namespace pathos {
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
+
+		// update ubo_perFrame
+		updateUBO(scene, camera);
 
 		// render to fbo
 		clearGBuffer();
@@ -257,6 +287,36 @@ namespace pathos {
 	void DeferredRenderer::renderPBR(Mesh* mesh, MeshGeometry* G, PBRTextureMaterial* M) {
 		pack_pbr->setModelMatrix(mesh->getTransform().getMatrix());
 		pack_pbr->render(scene, camera, G, M);
+	}
+
+	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {
+		UBO_PerFrame data;
+
+		data.view = camera->getViewMatrix();
+		data.viewProj = camera->getViewProjectionMatrix();
+
+		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
+		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+
+		data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
+		const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
+		const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
+		for (auto i = 0u; i < data.numDirLights; ++i) {
+			data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+			data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		}
+
+		data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
+		buffer = scene->getPointLightPositionBuffer();
+		buffer2 = scene->getPointLightColorBuffer();
+		for (auto i = 0u; i < data.numPointLights; ++i) {
+			data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+			data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		}
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo_perFrame);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_PerFrame), &data);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_perFrame);
 	}
 
 }

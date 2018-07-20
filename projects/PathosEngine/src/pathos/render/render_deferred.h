@@ -30,12 +30,19 @@ namespace pathos {
 
 		void createGBuffer();
 		void destroyGBuffer();
+
+		void createUBO();
+		void destroyUBO();
+
 		GLuint fbo; // g-buffer
 		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)
 		GLsizei width, height; // fbo texture size
 		GLenum draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
+		GLuint ubo_perFrame;
+
 		// invoked by render()
+		void updateUBO(Scene* scene, Camera* camera);
 		void clearGBuffer();
 		void packGBuffer();
 		void unpackGBuffer();

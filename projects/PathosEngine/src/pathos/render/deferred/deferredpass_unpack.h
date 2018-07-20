@@ -37,9 +37,6 @@ namespace pathos {
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 
-		// program_ldr and program_hdr
-		GLuint ubo_hdr;
-
 		// program_tone_mapping
 		GLint uniform_tone_mapping_exposure;
 
@@ -62,7 +59,6 @@ namespace pathos {
 		void createProgram_LDR();
 		void createProgram_HDR();
 		void createResource_HDR(unsigned int width, unsigned int height);
-		void updateUBO(Scene* scene, Camera* camera);
 
 	};
 
