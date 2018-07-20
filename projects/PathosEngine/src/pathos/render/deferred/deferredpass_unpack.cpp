@@ -20,6 +20,8 @@ namespace pathos {
 	static constexpr size_t MAX_DIRECTIONAL_LIGHTS = 8;
 	static constexpr size_t MAX_POINT_LIGHTS = 16;
 	struct UBO_UnpackHDR {
+		glm::mat4 view;
+		glm::mat4 viewProj;
 		glm::vec3 eyeDirection; float __pad0;
 		glm::vec3 eyePosition; uint32_t numDirLights;
 		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
@@ -47,7 +49,7 @@ namespace pathos {
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
 		glDeleteBuffers(1, &ubo_hdr);
-		glDeleteProgram(program);
+		glDeleteProgram(program_ldr);
 		glDeleteProgram(program_hdr);
 		glDeleteProgram(program_tone_mapping);
 		glDeleteFramebuffers(1, &fbo_hdr);
@@ -86,17 +88,7 @@ void main() {
 		fs.loadSource("deferred_unpack_ldr.glsl");
 
 		std::vector<Shader*> shaders = { &vs, &fs };
-		program = pathos::createProgram(shaders);
-
-#define GET_UNIFORM(z) { uniform_ldr_##z = glGetUniformLocation(program, #z); assert(uniform_ldr_##z != -1); }
-		GET_UNIFORM(eyeDirection);
-		GET_UNIFORM(numDirLights);
-		GET_UNIFORM(dirLightDirs);
-		GET_UNIFORM(dirLightColors);
-		GET_UNIFORM(numPointLights);
-		GET_UNIFORM(pointLightPos);
-		GET_UNIFORM(pointLightColors);
-#undef GET_UNIFORM
+		program_ldr = pathos::createProgram(shaders);
 	}
 
 	void MeshDeferredRenderPass_Unpack::createProgram_HDR() {
@@ -193,19 +185,22 @@ void main() {
 	}
 
 	void MeshDeferredRenderPass_Unpack::bindFramebuffer(bool hdr) {
+		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		if (hdr) {
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
-			static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			glClearBufferfv(GL_COLOR, 0, zero);
 			glClearBufferfv(GL_COLOR, 1, zero);
 			glClearBufferfv(GL_COLOR, 2, zero);
 		} else {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			//glClearBufferfv(GL_COLOR, 0, zero);
 		}
+		use_hdr = hdr;
 	}
 
 	// This should be called after bindFramebuffer
 	void MeshDeferredRenderPass_Unpack::setDrawBuffers(bool both) {
+		if (!use_hdr) return;
 		if (both) {
 			GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 			glDrawBuffers(NUM_HDR_ATTACHMENTS, draw_buffers);
@@ -215,8 +210,32 @@ void main() {
 		}
 	}
 
+	void MeshDeferredRenderPass_Unpack::updateUBO(Scene* scene, Camera* camera) {
+		UBO_UnpackHDR data;
+		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
+		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+		data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
+		const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
+		const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
+		for (auto i = 0u; i < data.numDirLights; ++i) {
+			data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+			data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		}
+		data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
+		buffer = scene->getPointLightPositionBuffer();
+		buffer2 = scene->getPointLightColorBuffer();
+		for (auto i = 0u; i < data.numPointLights; ++i) {
+			data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+			data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		}
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_UnpackHDR), &data);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_hdr);
+	}
+
 	void MeshDeferredRenderPass_Unpack::render(Scene* scene, Camera* camera) {
-		glUseProgram(program);
+		glUseProgram(program_ldr);
 
 		// texture binding
 		glActiveTexture(GL_TEXTURE0);
@@ -228,13 +247,7 @@ void main() {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
 
-		// uniform: light
-		uploadDirectionalLightUniform(scene, MAX_DIRECTIONAL_LIGHTS, false);
-		uploadPointLightUniform(scene, MAX_POINT_LIGHTS, false);
-
-		// uniform: camera
-		const glm::vec3& eye = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		glUniform3fv(uniform_ldr_eyeDirection, 1, &eye[0]);
+		updateUBO(scene, camera);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -265,34 +278,7 @@ void main() {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
 
-		// uniform: light
-		uploadDirectionalLightUniform(scene, MAX_DIRECTIONAL_LIGHTS, true);
-		uploadPointLightUniform(scene, MAX_POINT_LIGHTS, true);
-
-		// configure UBO
-		{
-			UBO_UnpackHDR data;
-			data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-			data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
-			data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
-			const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
-			const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
-			for (auto i = 0u; i < data.numDirLights; ++i) {
-				data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-				data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-			}
-			data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
-			buffer = scene->getPointLightPositionBuffer();
-			buffer2 = scene->getPointLightColorBuffer();
-			for (auto i = 0u; i < data.numPointLights; ++i) {
-				data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-				data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-			}
-
-			glBindBuffer(GL_UNIFORM_BUFFER, ubo_hdr);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_UnpackHDR), &data);
-			glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_hdr);
-		}
+		updateUBO(scene, camera);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -351,31 +337,6 @@ void main() {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glEnable(GL_DEPTH_TEST);
-	}
-
-	void MeshDeferredRenderPass_Unpack::uploadDirectionalLightUniform(Scene* scene, uint32_t maxDirectionalLights, bool hdr) {
-		if ((hdr && program_hdr == 0) || (!hdr && program == 0)) return;
-		uint32_t numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), maxDirectionalLights);
-		if (hdr) {
-		} else {
-			glUniform1ui(uniform_ldr_numDirLights, numDirLights);
-			if (numDirLights > 0) {
-				glUniform3fv(uniform_ldr_dirLightDirs, numDirLights, scene->getDirectionalLightDirectionBuffer());
-				glUniform3fv(uniform_ldr_dirLightColors, numDirLights, scene->getDirectionalLightColorBuffer());
-			}
-		}
-	}
-	void MeshDeferredRenderPass_Unpack::uploadPointLightUniform(Scene* scene, uint32_t maxPointLights, bool hdr) {
-		if ((hdr && program_hdr == 0) || (!hdr && program == 0)) return;
-		uint32_t numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), maxPointLights);
-		if (hdr) {
-		} else {
-			glUniform1ui(uniform_ldr_numPointLights, numPointLights);
-			if (numPointLights) {
-				glUniform3fv(uniform_ldr_pointLightPos, numPointLights, scene->getPointLightPositionBuffer());
-				glUniform3fv(uniform_ldr_pointLightColors, numPointLights, scene->getPointLightColorBuffer());
-			}
-		}
 	}
 
 }

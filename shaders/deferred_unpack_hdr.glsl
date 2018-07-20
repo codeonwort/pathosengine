@@ -1,8 +1,6 @@
 #version 430 core
 
-// should match with MeshDeferredRenderPass_Unpack::MAX_DIRECTIONAL_LIGHTS
-#define MAX_DIRECTIONAL_LIGHTS 8
-#define MAX_POINT_LIGHTS 16
+#include "deferred_common.glsl"
 
 #define APPLY_FOG 0
 
@@ -12,20 +10,6 @@ layout (location = 1) out vec4 out_bright; // bright area only
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
-
-// in view space
-layout (std140, binding = 0) uniform UBO_UnpackHDR {
-	vec3 eyeDirection;
-	vec3 eyePosition;
-
-	uint numDirLights;
-	vec3 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];
-	vec3 dirLightColors[MAX_DIRECTIONAL_LIGHTS];
-
-	uint numPointLights;
-	vec3 pointLightPos[MAX_POINT_LIGHTS];
-	vec3 pointLightColors[MAX_POINT_LIGHTS];
-} ubo;
 
 uniform vec3 fog_color = vec3(0.7, 0.8, 0.9);
 
@@ -102,17 +86,17 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 pbrShading(fragment_info fragment) {
 	vec3 N = fragment.normal;
 	//N.y = -N.y;
-	vec3 V = normalize(ubo.eyePosition - fragment.ws_coords);
+	vec3 V = normalize(uboPerFrame.eyePosition - fragment.ws_coords);
 
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, fragment.albedo, fragment.metallic);
 
 	vec3 Lo = vec3(0.0);
 
-	for(int i=0; i<ubo.numDirLights; ++i) {
-		vec3 L = -ubo.dirLightDirs[i];
+	for(int i=0; i<uboPerFrame.numDirLights; ++i) {
+		vec3 L = -uboPerFrame.dirLightDirs[i];
 		vec3 H = normalize(V + L);
-		vec3 radiance = ubo.dirLightColors[i];
+		vec3 radiance = uboPerFrame.dirLightColors[i];
 
 		float NDF = distributionGGX(N, H, fragment.roughness);
 		float G = geometrySmith(N, V, L, fragment.roughness);
@@ -130,12 +114,12 @@ vec3 pbrShading(fragment_info fragment) {
 		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
 	}
 
-	for(int i=0; i<ubo.numPointLights; ++i) {
-		vec3 L = normalize(ubo.pointLightPos[i] - fragment.ws_coords);
+	for(int i=0; i<uboPerFrame.numPointLights; ++i) {
+		vec3 L = normalize(uboPerFrame.pointLightPos[i] - fragment.ws_coords);
 		vec3 H = normalize(V + L);
-		float distance = length(ubo.pointLightPos[i] - fragment.ws_coords);
+		float distance = length(uboPerFrame.pointLightPos[i] - fragment.ws_coords);
 		float attenuation = 1000.0 / (1000.0 + distance * distance);
-		vec3 radiance = ubo.pointLightColors[i];
+		vec3 radiance = uboPerFrame.pointLightColors[i];
 		radiance *= attenuation;
 
 		float NDF = distributionGGX(N, H, fragment.roughness);
@@ -165,21 +149,21 @@ vec4 calculateShading(fragment_info fragment) {
 	if(fragment.material_id == 1 || fragment.material_id == 3) {
 		// old shading (solidcolor or texture)
 		vec3 N = fragment.normal;
-		for(uint i = 0; i < ubo.numDirLights; ++i) {
-			vec3 L = -ubo.dirLightDirs[i];
+		for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
+			vec3 L = -uboPerFrame.dirLightDirs[i];
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 diffuse_color = ubo.dirLightColors[i] * fragment.albedo * cosTheta;
+			vec3 diffuse_color = uboPerFrame.dirLightColors[i] * fragment.albedo * cosTheta;
 			result += vec4(diffuse_color, 0.0);
 		}
-		for(uint i = 0; i < ubo.numPointLights; ++i) {
-			vec3 L = ubo.pointLightPos[i] - fragment.ws_coords;
+		for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
+			vec3 L = uboPerFrame.pointLightPos[i] - fragment.ws_coords;
 			float dist = length(L);
 			float attenuation = 500.0 / (pow(dist, 2.0) + 1.0);
 			L = normalize(L);
 			vec3 R = reflect(-L, N);
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 specular_color = ubo.pointLightColors[i] * pow(max(0.0, dot(R, -ubo.eyeDirection)), fragment.specular_power);
-			vec3 diffuse_color = ubo.pointLightColors[i] * fragment.albedo * cosTheta;
+			vec3 specular_color = uboPerFrame.pointLightColors[i] * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
+			vec3 diffuse_color = uboPerFrame.pointLightColors[i] * fragment.albedo * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
 	} else if(fragment.material_id == 2) {

@@ -21,14 +21,14 @@ using namespace pathos;
 #define USE_NORMAL_RENDERER 0
 
 // Rendering configurations
-const int WINDOW_WIDTH = 1920;
-const int WINDOW_HEIGHT = 1080;
-const char* WINDOW_TITLE = "Test: Deferred Rendering";
-const float FOV = 90.0f;
-const glm::vec3 CAMERA_POSITION = glm::vec3(0, 0, 100);
-const bool USE_HDR = true;
-const unsigned int NUM_POINT_LIGHTS = 2;
-const unsigned int NUM_BALLS = 10;
+const int			WINDOW_WIDTH		=	1920;
+const int			WINDOW_HEIGHT		=	1080;
+const char*			WINDOW_TITLE		=	"Test: Deferred Rendering";
+const float			FOV					=	90.0f;
+const glm::vec3		CAMERA_POSITION		=	glm::vec3(0, 0, 100);
+const bool			USE_HDR				=	true;
+const uint32_t		NUM_POINT_LIGHTS	=	2;
+const uint32_t		NUM_BALLS			=	10;
 
 // Console window
 ConsoleWindow* g_Console = nullptr;

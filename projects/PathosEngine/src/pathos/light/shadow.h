@@ -7,7 +7,7 @@
 #include "light.h"
 #include "shadow_omni.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
 
 // TODO: move ShadowMap to shadow_directional.h

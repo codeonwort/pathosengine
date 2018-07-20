@@ -3,7 +3,7 @@
 #include "pathos/core.h"
 #include "pathos/material/material_id.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/light/light.h"
 //#include "pathos/render/ReflectionMethod.h"

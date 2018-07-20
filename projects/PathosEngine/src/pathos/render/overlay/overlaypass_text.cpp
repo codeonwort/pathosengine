@@ -1,6 +1,6 @@
 #include "overlaypass_text.h"
 #include "pathos/overlay/label.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 
 namespace pathos {
 

@@ -2,7 +2,7 @@
 
 #include "light.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
 #include "GL/gl_core_4_3.h"
 #include <vector>

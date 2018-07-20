@@ -1,5 +1,5 @@
 #include "ansel_envmap.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "glm/gtc/constants.hpp"
 #include <string>
 #include <cassert>

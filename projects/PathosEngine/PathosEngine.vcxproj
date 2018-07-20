@@ -221,7 +221,7 @@
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
-    <ClCompile Include="src\pathos\render\shader.cpp" />
+    <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
@@ -282,11 +282,12 @@
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
-    <ClInclude Include="src\pathos\render\shader.h" />
+    <ClInclude Include="src\pathos\shader\shader.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />
     <ClInclude Include="src\pathos\util\color_conversion.h" />
+    <ClInclude Include="src\pathos\util\log.h" />
     <ClInclude Include="src\pathos\util\resource_finder.h" />
     <ClInclude Include="src\pathos\wrapper\transform.h" />
   </ItemGroup>

@@ -52,13 +52,13 @@ namespace pathos {
 		inline bool loadSource(const std::string& filepath);
 		bool compile();
 
-		const GLuint getName() { return name; }
+		const GLuint getName() { return glName; }
 		const char* getErrorLog() { return errorLog.c_str(); }
 
 	protected:
-		GLuint name;
+		GLuint glName;
 		GLenum type;
-		std::string source;
+		std::vector<std::string> source;
 		std::string errorLog;
 	};
 

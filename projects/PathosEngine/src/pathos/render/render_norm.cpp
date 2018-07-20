@@ -1,5 +1,5 @@
 #include "pathos/render/render_norm.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 
 #define DEBUG_NORMAL_RENDERER 0
 

@@ -1,5 +1,5 @@
 #include "envmap.h"
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "glm/gtx/transform.hpp"
 #include <string>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 
 class DepthOfField {
 

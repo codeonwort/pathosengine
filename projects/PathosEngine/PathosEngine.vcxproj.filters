@@ -84,9 +84,6 @@
     <ClCompile Include="src\pathos\loader\objloader.cpp">
       <Filter>소스 파일\pathos\loader</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\shader.cpp">
-      <Filter>소스 파일\pathos\render</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\text\textmesh.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -219,6 +216,9 @@
     <ClCompile Include="src\pathos\console.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\shader\shader.cpp">
+      <Filter>소스 파일\pathos\render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -253,9 +253,6 @@
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\shader.h">
       <Filter>헤더 파일\pathos\render</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\shader.h">
-      <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\textmesh.h">
       <Filter>헤더 파일</Filter>
@@ -393,6 +390,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\console.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\shader\shader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\util\log.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

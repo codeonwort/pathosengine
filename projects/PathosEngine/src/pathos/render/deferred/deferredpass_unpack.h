@@ -31,22 +31,13 @@ namespace pathos {
 		void setDrawBuffers(bool both); // enable only first buffer or both buffers
 
 	protected:
-		GLuint program = 0; // shader program (original LDR rendering)
+		GLuint program_ldr = 0; // shader program (original LDR rendering)
 		GLuint program_hdr = 0; // HDR rendering
 		GLuint program_tone_mapping = 0;
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 
-		// program
-		GLint uniform_ldr_eyeDirection;
-		GLint uniform_ldr_numDirLights;
-		GLint uniform_ldr_dirLightDirs;
-		GLint uniform_ldr_dirLightColors;
-		GLint uniform_ldr_numPointLights;
-		GLint uniform_ldr_pointLightPos;
-		GLint uniform_ldr_pointLightColors;
-
-		// program_hdr
+		// program_ldr and program_hdr
 		GLuint ubo_hdr;
 
 		// program_tone_mapping
@@ -65,13 +56,13 @@ namespace pathos {
 
 		PlaneGeometry* quad = nullptr;
 
+		bool use_hdr;
+
 		void createProgram();
 		void createProgram_LDR();
 		void createProgram_HDR();
 		void createResource_HDR(unsigned int width, unsigned int height);
-
-		void uploadDirectionalLightUniform(Scene*, uint32_t maxLights, bool hdr);
-		void uploadPointLightUniform(Scene*, uint32_t maxLights, bool hdr);
+		void updateUBO(Scene* scene, Camera* camera);
 
 	};
 

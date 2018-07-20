@@ -1,9 +1,11 @@
 // Pathos
-#include "pathos/render/shader.h"
+#include "shader.h"
 #include "pathos/util/resource_finder.h"
+#include "pathos/util/log.h"
 
 // STL & CRT
 #include <tuple>
+#include <string>
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -15,7 +17,8 @@
 #define DEBUG_SHADER_SOURCE		0
 
 // Inefficient in current design so enabling this is not recommended.
-#define CONDITIONAL_COMPILE 0
+#define CONDITIONAL_COMPILE		0
+#define PARSE_INCLUDES_IN_GLSL	1
 
 using namespace std;
 
@@ -140,16 +143,16 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
 	Shader::Shader(GLenum type) {
-		name = glCreateShader(type);
+		glName = glCreateShader(type);
 		this->type = type;
 	}
 
 	Shader::~Shader() {
-		glDeleteShader(name);
+		glDeleteShader(glName);
 	}
 
-	void Shader::setSource(const std::string& newSource) { source = newSource; }
-	void Shader::setSource(const char* newSource) { source = newSource; }
+	void Shader::setSource(const std::string& newSource) { source = { newSource }; }
+	void Shader::setSource(const char* newSource) { source = { newSource }; }
 
 	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
 	bool Shader::loadSource(const char* filepath_) {
@@ -157,11 +160,49 @@ namespace pathos {
 		assert(filepath.size() > 0);
 
 		std::ifstream file(filepath);
-		if (!file.is_open()) return false;
+		if (!file.is_open()) {
+			std_logf(LogError, "Couldn't open a shader file: %s", filepath.c_str());
+			return false;
+		}
 
-		std::ostringstream code;
-		code << file.rdbuf();
-		source = std::move(code.str());
+		std::ostringstream codestream;
+		codestream << file.rdbuf();
+		std::string fullcode = std::move(codestream.str());
+
+		source.clear();
+
+#if PARSE_INCLUDES_IN_GLSL
+		size_t find_offset = 0u;
+		while (true) {
+			size_t include_start = fullcode.find("#include", find_offset);
+			if (include_start == string::npos) {
+				break;
+			}
+
+			size_t include_end = fullcode.find_first_of('\n', include_start);
+			source.emplace_back(fullcode.substr(0, include_start));
+			std::string include_line = fullcode.substr(include_start, include_end - include_start);
+
+			size_t quote_start = include_line.find('"');
+			size_t quote_end = include_line.find('"', quote_start + 1);
+			assert(quote_start != string::npos && quote_end != string::npos);
+
+			// TODO: Support recursive #include? necessary?
+			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
+			std::string include_filepath = ResourceFinder::get().find(include_file);
+			std::ifstream subfile(include_filepath);
+			if (!subfile.is_open()) {
+				std_logf(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
+				return false;
+			}
+			std::ostringstream substream;
+			substream << subfile.rdbuf();
+			source.emplace_back(substream.str());
+
+			fullcode = fullcode.substr(include_end + 1);
+		}
+		source.emplace_back(fullcode);
+#endif
 
 		return true;
 	}
@@ -196,23 +237,25 @@ namespace pathos {
 		std::string finalSource = versionDefine + shaderDefine + tail;
 		char* src = const_cast<char*>(finalSource.c_str());
 #else
-		char* src = const_cast<char*>(source.c_str());
+		std::vector<const char*> src;
+		for (const auto& p : source) {
+			src.push_back(p.c_str());
+		}
 #endif
 
-		glShaderSource(name, 1, &src, NULL);
-		glCompileShader(name);
+		glShaderSource(glName, (GLsizei)src.size(), src.data(), NULL); // NULL means null-terminated.
+		glCompileShader(glName);
 
 		GLint success;
-		glGetShaderiv(name, GL_COMPILE_STATUS, &success);
+		glGetShaderiv(glName, GL_COMPILE_STATUS, &success);
 		if (success == GL_FALSE) {
 			GLint logSize;
-			glGetShaderiv(name, GL_INFO_LOG_LENGTH, &logSize);
+			glGetShaderiv(glName, GL_INFO_LOG_LENGTH, &logSize);
 
 			errorLog.resize(logSize);
-			glGetShaderInfoLog(name, logSize, NULL, const_cast<char*>(errorLog.c_str()));
+			glGetShaderInfoLog(glName, logSize, NULL, const_cast<char*>(errorLog.c_str()));
 #ifdef _DEBUG
-			std::cerr << "> shader compile error: " << errorLog;
-			std::cerr << source << endl;
+			std_logf(LogError, "shader compiler error: %s", errorLog);
 #endif
 			return false;
 		}

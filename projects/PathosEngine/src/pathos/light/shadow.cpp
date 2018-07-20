@@ -3,7 +3,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
 
-#include "pathos/render/shader.h"
+#include "pathos/shader/shader.h"
 #include "pathos/engine.h"
 
 #if defined(_DEBUG)
