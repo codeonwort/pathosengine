@@ -191,6 +191,10 @@ void main() {
 		}
 	}
 
+	void MeshDeferredRenderPass_Unpack::setSunDepthMap(GLuint sunDepthMapTexture) {
+		sunDepthMap = sunDepthMapTexture;
+	}
+
 	void MeshDeferredRenderPass_Unpack::render(Scene* scene, Camera* camera) {
 		glUseProgram(program_ldr);
 
@@ -203,6 +207,9 @@ void main() {
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
+
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, sunDepthMap);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -232,6 +239,9 @@ void main() {
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
+
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, sunDepthMap);
 
 		glDisable(GL_DEPTH_TEST);
 

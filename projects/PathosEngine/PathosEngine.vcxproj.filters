@@ -219,6 +219,9 @@
     <ClCompile Include="src\pathos\shader\shader.cpp">
       <Filter>소스 파일\pathos\render</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\light\shadow_directional.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -396,6 +399,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\log.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\shadow_directional.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

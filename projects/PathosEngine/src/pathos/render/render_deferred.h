@@ -3,6 +3,7 @@
 #include "deferred/deferredpass.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene.h"
+#include "pathos/light/shadow_directional.h"
 
 namespace pathos {
 
@@ -11,10 +12,9 @@ namespace pathos {
 
 	public:
 		DeferredRenderer(unsigned int width, unsigned int height);
-		virtual ~DeferredRenderer();
-
 		DeferredRenderer(const DeferredRenderer& other) = delete;
 		DeferredRenderer(DeferredRenderer&&) = delete;
+		virtual ~DeferredRenderer();
 
 		void render(Scene*, Camera*); // render the total scene
 
@@ -69,6 +69,8 @@ namespace pathos {
 		MeshDeferredRenderPass_Pack_BumpTexture* pack_bumptexture = nullptr;
 		MeshDeferredRenderPass_Pack_PBR* pack_pbr = nullptr;
 		MeshDeferredRenderPass_Unpack* unpack_pass = nullptr;
+
+		DirectionalShadowMap* sunShadowMap = nullptr;
 
 	};
 

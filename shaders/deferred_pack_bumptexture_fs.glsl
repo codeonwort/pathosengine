@@ -10,7 +10,7 @@ layout (location = 1) uniform sampler2D tex_normal;
 uniform mat3 mvTransform3x3;
 
 in VS_OUT {
-	vec3 ws_coords;
+	vec3 vs_coords;
 	vec3 normal;
 	vec3 tangent;
     vec3 bitangent;
@@ -42,7 +42,7 @@ void main() {
 	outvec0.z = packHalf2x16(normal.yz);
 	outvec0.w = fs_in.material_id;
 
-	outvec1.xyz = fs_in.ws_coords;
+	outvec1.xyz = fs_in.vs_coords;
 	outvec1.w = 128.0;
 
 	output0 = outvec0;

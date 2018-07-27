@@ -182,6 +182,7 @@
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\light.cpp" />
     <ClCompile Include="src\pathos\light\shadow.cpp" />
+    <ClCompile Include="src\pathos\light\shadow_directional.cpp" />
     <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
     <ClCompile Include="src\pathos\loader\objloader.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="src\pathos\core.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light.h" />
+    <ClInclude Include="src\pathos\light\shadow_directional.h" />
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />

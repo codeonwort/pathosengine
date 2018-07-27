@@ -24,6 +24,9 @@ namespace pathos {
 		//inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
 		//inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
 
+		// invoke before render() or renderHDR()
+		void setSunDepthMap(GLuint depthMapTexture);
+
 		void render(Scene*, Camera*); // plain LDR rendering
 		void renderHDR(Scene*, Camera*); // HDR rendering
 
@@ -47,6 +50,8 @@ namespace pathos {
 		GLuint fbo_hdr, fbo_hdr_attachment[NUM_HDR_ATTACHMENTS];
 		GLuint fbo_blur, fbo_blur_attachment;
 		GLuint fbo_tone, fbo_tone_attachment;
+
+		GLuint sunDepthMap = 0;
 
 		class GodRay* godRay = nullptr;
 		class DepthOfField* dof = nullptr;

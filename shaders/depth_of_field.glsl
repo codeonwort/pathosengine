@@ -6,7 +6,8 @@ layout (binding = 0) uniform sampler2D input_image;
 layout (location = 0) out vec4 out_color;
 
 uniform float focal_distance = 50.0;
-uniform float focal_depth = 300.0;
+uniform float focal_depth = 500.0;
+uniform float max_radius = 4.5;
 
 const ivec2 zero = ivec2(0, 0);
 
@@ -22,7 +23,7 @@ void main() {
 		m = 0.5;
 	}else{
 		m = abs(v.w - focal_distance);
-		m = 0.5 + smoothstep(0.0, focal_depth, m) * 7.5;
+		m = 0.5 + smoothstep(0.0, focal_depth, m) * max_radius;
 	}
 
 	ivec2 P0 = ivec2(C + vec2(-m, -m));

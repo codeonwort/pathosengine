@@ -12,7 +12,7 @@ namespace pathos {
 		Transform(const glm::mat4& matrix);
 		const glm::mat4& getMatrix() const;
 		inline void copyFrom(const glm::mat4& m) { matrix = m; }
-		inline glm::vec3 getPosition() { return glm::vec3(matrix[3]); }
+		inline glm::vec3 getPosition() const { return glm::vec3(matrix[3]); }
 		void identity();
 		void append(const glm::mat4& t);
 		void appendMove(const glm::vec3& movement);
@@ -27,8 +27,9 @@ namespace pathos {
 		void prependRotation(float angle, const glm::vec3& axis);
 		void prependScale(const glm::vec3& scale);
 		void prependScale(float sx, float sy, float sz);
+
 		glm::vec3 transformVector(glm::vec3);
-		glm::vec3 inverseTransformVector(glm::vec3);
+		glm::vec3 inverseTransformVector(glm::vec3) const;
 		glm::vec3 transformPoint(glm::vec3);
 		glm::vec3 inverseTransformPoint(glm::vec3);
 	};

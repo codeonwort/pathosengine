@@ -18,14 +18,23 @@ using namespace pathos;
 #include <time.h>
 
 // Compile options
-#define USE_NORMAL_RENDERER 0
+#define SMALL_WINDOW          1 // RenderDoc crashes when trying to capture a large screen :(
+#define USE_NORMAL_RENDERER   0
 
 // Rendering configurations
+#if SMALL_WINDOW
+const int			WINDOW_WIDTH		=	800;
+const int			WINDOW_HEIGHT		=	600;
+#else
 const int			WINDOW_WIDTH		=	1920;
 const int			WINDOW_HEIGHT		=	1080;
+#endif
 const char*			WINDOW_TITLE		=	"Test: Deferred Rendering";
 const float			FOV					=	90.0f;
-const glm::vec3		CAMERA_POSITION		=	glm::vec3(0, 0, 100);
+const glm::vec3		CAMERA_POSITION		=	glm::vec3(0.0f, 0.0f, 100.0f);
+const float			CAMERA_Z_NEAR		=	1.0f;
+const float			CAMERA_Z_FAR		=	1000.0f;
+const glm::vec3		SUN_DIRECTION		=	glm::vec3(0.0f, -1.0f, 0.0f);
 const bool			USE_HDR				=	true;
 const uint32_t		NUM_POINT_LIGHTS	=	2;
 const uint32_t		NUM_BALLS			=	10;
@@ -93,7 +102,7 @@ int main(int argc, char** argv) {
 
 	// camera
 	float aspect_ratio = static_cast<float>(conf.width) / static_cast<float>(conf.height);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, 1.0f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
@@ -102,7 +111,6 @@ int main(int argc, char** argv) {
 #if USE_NORMAL_RENDERER
 	normRenderer = new NormalRenderer(0.2f);
 #endif
-
 
 	// scene
 	setupScene();
@@ -118,7 +126,7 @@ int main(int argc, char** argv) {
 
 void setupScene() {
 	// light
-	sunLight = new DirectionalLight(glm::vec3(0, -1, 1), 1.0f * glm::vec3(1.0, 1.0, 1.0));
+	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
 	srand((unsigned int)time(NULL));
@@ -132,12 +140,6 @@ void setupScene() {
 		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}
-
-	/*scene.add(new DirectionalLight(glm::vec3(0, -1, 0), glm::vec3(0.1, 0, 0.1)));
-	scene.add(new DirectionalLight(glm::vec3(0.2, 0, -1), glm::vec3(0.0, 0.5, 1)));
-	scene.add(new DirectionalLight(glm::vec3(-0.5, -0.5, 0), glm::vec3(0.0, 0.3, 0.4)));
-	scene.add(new DirectionalLight(glm::vec3(0, 0.5, 0.5), glm::vec3(0.1, 0.3, 0.1)));
-	scene.add(new DirectionalLight(glm::vec3(0, 1, 1), glm::vec3(0.0, 0.3, 1)));*/
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -237,7 +239,8 @@ void setupScene() {
 	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().appendMove(0.0f, -10.0f, -15.0f * i);
+		ball->getTransform().appendScale(2.0f);
+		ball->getTransform().appendMove(0.0f, 0.0f, -30.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -284,7 +287,7 @@ void render() {
 	model2->getTransform().appendMove(60, 0, 0);
 
 	for (auto& ball : balls) {
-		ball->getTransform().prependRotation(0.002f, glm::vec3(0.0f, 1.0f, 1.0f));
+		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
 	// Start timer

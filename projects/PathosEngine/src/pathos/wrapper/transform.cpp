@@ -59,7 +59,7 @@ namespace pathos {
 	glm::vec3 Transform::transformVector(glm::vec3 v) {
 		return glm::vec3(matrix * glm::vec4(v, 0.0f));
 	}
-	glm::vec3 Transform::inverseTransformVector(glm::vec3 v) {
+	glm::vec3 Transform::inverseTransformVector(glm::vec3 v) const {
 		return glm::vec3(glm::transpose(matrix) * glm::vec4(v, 0.0f));
 	}
 

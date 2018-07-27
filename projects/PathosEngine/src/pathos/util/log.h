@@ -25,20 +25,21 @@ namespace pathos {
 	};
 
 #if ENABLE_LOGGER
-	void std_log(LogSeverity severity, const char* message) {
-		std::cout << severity_strings[(int)severity] << message << std::endl;
+	inline void std_log(LogSeverity severity, const char* message) {
+		std::cout << severity_strings[(int)severity] << message << '\n' << std::endl;
 	}
 #else
 	inline void std_log(const char*) {}
 #endif
 
 #if ENABLE_LOGGER
-	void std_logf(LogSeverity severity, const char* format...) {
+	inline void std_logf(LogSeverity severity, const char* format...) {
 		printf("%s", severity_strings[(int)severity]);
 		va_list argptr;
 		va_start(argptr, format);
 		vfprintf(stderr, format, argptr);
 		va_end(argptr);
+		puts("");
 	}
 #else
 	inline void std_lof(const char* format...) {}

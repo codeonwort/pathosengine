@@ -1,13 +1,11 @@
 #include "render_deferred.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/envmap.h"
+#include "pathos/util/log.h"
+
 #include <algorithm>
 
 #define ASSERT_GL_NO_ERROR 1
-
-#ifdef _DEBUG
-#include <iostream>
-#endif
 
 namespace pathos {
 
@@ -15,7 +13,10 @@ namespace pathos {
 	static constexpr size_t MAX_POINT_LIGHTS = 16;
 	struct UBO_PerFrame {
 		glm::mat4 view;
+		glm::mat4 inverseView;
+		glm::mat3 view3x3; float __pad_view3x3[3];
 		glm::mat4 viewProj;
+		glm::mat4 sunViewProj;
 		glm::vec3 eyeDirection; float __pad0;
 		glm::vec3 eyePosition; uint32_t numDirLights;
 		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
@@ -29,11 +30,13 @@ namespace pathos {
 		createGBuffer();
 		createShaders();
 		createUBO();
+		sunShadowMap = new DirectionalShadowMap;
 	}
 	DeferredRenderer::~DeferredRenderer() {
 		destroyUBO();
 		destroyShaders();
 		destroyGBuffer();
+		delete sunShadowMap;
 	}
 
 	void DeferredRenderer::createShaders() {
@@ -42,22 +45,9 @@ namespace pathos {
 		pack_wireframe = new MeshDeferredRenderPass_Pack_Wireframe;
 		pack_bumptexture = new MeshDeferredRenderPass_Pack_BumpTexture;
 		pack_pbr = new MeshDeferredRenderPass_Pack_PBR;
-		unpack_pass = new MeshDeferredRenderPass_Unpack(fbo_attachment[0], fbo_attachment[1], fbo_attachment[2], width, height);
-
-		/*shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
-		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
-
-		shadowTexturePass = new ShadowTexturePass;
-		cubeEnvMapPass = new CubeEnvMapPass;
-		shadowCubeTexturePass = new ShadowCubeTexturePass;
-
-		colorPass->setShadowMapping(shadowMap);
-		texturePass->setShadowMapping(shadowMap);
-		bumpTexturePass->setShadowMapping(shadowMap);
-
-		colorPass->setOmnidirectionalShadow(omniShadow);
-		texturePass->setOmnidirectionalShadow(omniShadow);
-		bumpTexturePass->setOmnidirectionalShadow(omniShadow);*/
+		unpack_pass = new MeshDeferredRenderPass_Unpack(
+			fbo_attachment[0], fbo_attachment[1], fbo_attachment[2],
+			width, height);
 	}
 	void DeferredRenderer::destroyShaders() {
 #define release(x) if(x) delete x
@@ -67,14 +57,6 @@ namespace pathos {
 		release(pack_bumptexture);
 		release(pack_pbr);
 		release(unpack_pass);
-
-		/*release(shadowMap);
-		release(omniShadow);
-
-		release(bumpTexturePass);
-		release(shadowTexturePass);
-		release(cubeEnvMapPass);
-		release(shadowCubeTexturePass);*/
 #undef release
 	}
 
@@ -111,10 +93,7 @@ namespace pathos {
 
 		// check if our framebuffer is ok
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-#if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
-#endif
-			assert(0);
+			std_log(LogFatal, "Cannot create a framebuffer for deferred renderer");
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -142,6 +121,9 @@ namespace pathos {
 #if ASSERT_GL_NO_ERROR
 		glGetError();
 #endif
+		sunShadowMap->renderShadowMap(scene, camera);
+
+		glViewport(0, 0, width, height);
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
@@ -200,6 +182,7 @@ namespace pathos {
 		unpack_pass->setDrawBuffers(false);
 		renderSkybox(scene->skybox); // actually not an unpack work, but rendering order is here...
 		unpack_pass->setDrawBuffers(true);
+		unpack_pass->setSunDepthMap(sunShadowMap->getDepthMapTexture());
 		if (useHDR) unpack_pass->renderHDR(scene, camera);
 		else unpack_pass->render(scene, camera);
 	}
@@ -293,7 +276,11 @@ namespace pathos {
 		UBO_PerFrame data;
 
 		data.view = camera->getViewMatrix();
+		data.inverseView = glm::inverse(data.view);
+		data.view3x3 = glm::mat3(data.view);
 		data.viewProj = camera->getViewProjectionMatrix();
+
+		data.sunViewProj = sunShadowMap->getViewProjection();
 
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));

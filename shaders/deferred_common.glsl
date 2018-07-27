@@ -3,10 +3,20 @@
 #define MAX_DIRECTIONAL_LIGHTS 8
 #define MAX_POINT_LIGHTS 16
 
+#define MATERIAL_ID_NONE           0
+#define MATERIAL_ID_SOLID_COLOR    1
+#define MATERIAL_ID_WIREFRAME      2
+#define MATERIAL_ID_TEXTURE        3
+#define MATERIAL_ID_PBR            8
+
 // in view space
 layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat4x4 viewTransform;
+	mat4x4 inverseViewTransform;
+	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
+
+	mat4 sunViewProjection;
 	
 	vec3 eyeDirection;
 	vec3 eyePosition;

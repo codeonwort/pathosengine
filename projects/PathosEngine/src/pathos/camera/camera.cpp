@@ -4,36 +4,57 @@
 namespace pathos {
 
 	// PerspectiveLens
-	PerspectiveLens::PerspectiveLens(float fov, float aspect, float znear, float zfar) {
-		transform = glm::perspective(glm::radians(fov), aspect, znear, zfar);
+	PerspectiveLens::PerspectiveLens(float fovY_half_degrees, float aspect_wh, float znear, float zfar) {
+		z_near = znear;
+		z_far = zfar;
+		fovY_half = glm::radians(fovY_half_degrees);
+		aspect = aspect_wh;
+		transform = glm::perspective(fovY_half, aspect, znear, zfar);
 	}
-	glm::mat4 PerspectiveLens::getProjectionMatrix() { return transform; }
+
+	glm::mat4 PerspectiveLens::getProjectionMatrix() const {
+		return transform;
+	}
 
 	// Camera
 	Camera::Camera(Lens* lens) :lens(lens), viewDirty(true) {
-		rotationX = rotationY = 0;
-		movement = glm::vec3(0, 0, 0);
+		rotationX = rotationY = 0.0f;
+		movement = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
 
-	void Camera::calculateViewMatrix() {
+	void Camera::calculateViewMatrix() const {
 		if (viewDirty){
 			transform.identity();
 			transform.appendMove(movement);
 			
-			transform.appendRotation(rotationY, glm::vec3(0, 1, 0));
-			transform.appendRotation(rotationX, glm::vec3(1, 0, 0));
+			transform.appendRotation(rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+			transform.appendRotation(rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
 			viewDirty = false;
 		}
 	}
-	glm::mat4 Camera::getViewMatrix() { calculateViewMatrix(); return transform.getMatrix(); }
-	glm::mat4 Camera::getViewProjectionMatrix() { return lens->getProjectionMatrix() * getViewMatrix(); }
-	glm::mat4 Camera::getProjectionMatrix() { return lens->getProjectionMatrix(); }
-	glm::vec3 Camera::getEyeVector() { calculateViewMatrix(); return transform.inverseTransformVector(glm::vec3(0, 0, -1)); } // eye direction in world space
-	glm::vec3 Camera::getPosition() { calculateViewMatrix(); return transform.getPosition(); }
+	glm::mat4 Camera::getViewMatrix() const {
+		calculateViewMatrix();
+		return transform.getMatrix();
+	}
+	glm::mat4 Camera::getViewProjectionMatrix() const {
+		return lens->getProjectionMatrix() * getViewMatrix();
+	}
+	glm::mat4 Camera::getProjectionMatrix() const {
+		return lens->getProjectionMatrix();
+	}
+	glm::vec3 Camera::getEyeVector() const {
+		// eye direction in world space
+		calculateViewMatrix();
+		return transform.inverseTransformVector(glm::vec3(0.0f, 0.0f, -1.0f));
+	}
+	glm::vec3 Camera::getPosition() const {
+		calculateViewMatrix();
+		return transform.getPosition();
+	}
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
 		glm::mat3 L = glm::transpose(glm::mat3(glm::lookAt(position, target, up)));
-		glm::vec3 v = glm::normalize(L * glm::vec3(0, 0, -1));
+		glm::vec3 v = glm::normalize(L * glm::vec3(0.0f, 0.0f, -1.0f));
 		rotationX = -asin(v.y);
 		rotationY = asin(v.x);
 		movement = -position;
@@ -61,6 +82,34 @@ namespace pathos {
 	void Camera::rotateX(float angleDegree) {
 		rotationX += glm::radians(angleDegree);
 		viewDirty = true;
+	}
+	
+	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum) const {
+		const glm::vec3 forward = getEyeVector();
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 right = glm::cross(forward, up);
+		up = glm::cross(right, forward);
+
+		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
+		assert(plens);
+
+		const float zn = plens->getZNear();
+		const float zf = plens->getZFar();
+		const float hh_near = zn * tanf(plens->getFovYHalf());
+		const float hw_near = hh_near * plens->getAspectRatioWH();
+		const float hh_far = zf * tanf(plens->getFovYHalf());
+		const float hw_far = hh_far * plens->getAspectRatioWH();
+
+		const glm::vec3 P0 = getPosition();
+		outFrustum.resize(8);
+		outFrustum[0] = P0 + (forward * zn) + (right * hw_near) + (up * hh_near);
+		outFrustum[1] = P0 + (forward * zn) - (right * hw_near) + (up * hh_near);
+		outFrustum[2] = P0 + (forward * zn) + (right * hw_near) - (up * hh_near);
+		outFrustum[3] = P0 + (forward * zn) - (right * hw_near) - (up * hh_near);
+		outFrustum[4] = P0 + (forward * zf) + (right * hw_far) + (up * hh_far);
+		outFrustum[5] = P0 + (forward * zf) - (right * hw_far) + (up * hh_far);
+		outFrustum[6] = P0 + (forward * zf) + (right * hw_far) - (up * hh_far);
+		outFrustum[7] = P0 + (forward * zf) - (right * hw_far) - (up * hh_far);
 	}
 
 }
