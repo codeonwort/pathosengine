@@ -67,13 +67,6 @@ namespace pathos {
 		movement -= mov;
 		viewDirty = true;
 	}
-	/*void Camera::rotate(float angleDegree, const glm::vec3& axis) {
-		glm::vec3 pos = transform.getPosition();
-		pos = transform.inverseTransformPoint(pos);
-		transform.appendMove(-pos);
-		transform.appendRotation(-glm::radians(angleDegree), axis);
-		transform.appendMove(pos);
-	}*/
 
 	void Camera::rotateY(float angleDegree) {
 		rotationY += glm::radians(angleDegree);
@@ -122,18 +115,6 @@ namespace pathos {
 			outFrustum[i * 4 + 2] = P0 + (forward * zi) + (right * hwi) - (up * hhi);
 			outFrustum[i * 4 + 3] = P0 + (forward * zi) - (right * hwi) - (up * hhi);
 		}
-
-		/*
-		outFrustum.resize(8);
-		outFrustum[0] = P0 + (forward * zn) + (right * hw_near) + (up * hh_near);
-		outFrustum[1] = P0 + (forward * zn) - (right * hw_near) + (up * hh_near);
-		outFrustum[2] = P0 + (forward * zn) + (right * hw_near) - (up * hh_near);
-		outFrustum[3] = P0 + (forward * zn) - (right * hw_near) - (up * hh_near);
-		outFrustum[4] = P0 + (forward * zf) + (right * hw_far) + (up * hh_far);
-		outFrustum[5] = P0 + (forward * zf) - (right * hw_far) + (up * hh_far);
-		outFrustum[6] = P0 + (forward * zf) + (right * hw_far) - (up * hh_far);
-		outFrustum[7] = P0 + (forward * zf) - (right * hw_far) - (up * hh_far);
-		*/
 	}
 
 }

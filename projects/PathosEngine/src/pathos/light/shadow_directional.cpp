@@ -131,48 +131,6 @@ void main() {
 			calcBounds(&frustum[0] + (i * 4));
 		}
 
-		/*
-		float minZ = std::numeric_limits<float>::max();
-		float maxZ = std::numeric_limits<float>::min();
-		float left = std::numeric_limits<float>::max();
-		float right = std::numeric_limits<float>::min();
-		float top = std::numeric_limits<float>::max();
-		float bottom = std::numeric_limits<float>::min();
-
-		glm::vec3 sun_origin(0.0f, 0.0f, 0.0f);
-		glm::vec3 sun_direction = lightDirection;
-		glm::vec3 sun_up(0.0f, 1.0f, 0.0f);
-
-		// if almost parallel, choose another random direction
-		float angle = fabs(glm::dot(sun_up, sun_direction));
-		if (angle >= 0.999f || angle <= 0.001f) {
-			sun_up = glm::vec3(0.0f, 0.0f, -1.0f);
-		}
-
-		glm::mat4 lightView = glm::lookAt(sun_origin, sun_direction, sun_up);
-
-		for (auto& fv : frustum) {
-			fv = glm::vec3(lightView * glm::vec4(fv, 1.0f));
-			if (fv.x < left) left = fv.x;
-			if (fv.x > right) right = fv.x;
-			if (fv.y < top) top = fv.y;
-			if (fv.y > bottom) bottom = fv.y;
-			if (fv.z < minZ) minZ = fv.z;
-			if (fv.z > maxZ) maxZ = fv.z;
-		}
-
-		sun_origin += sun_direction * minZ;
-		// get row of lightView
-		glm::vec3 sun_right = glm::vec3(lightView[0][0], lightView[1][0], lightView[2][0]);
-		sun_up = glm::vec3(lightView[0][1], lightView[1][1], lightView[2][1]);
-		sun_origin -= ((left + right) / 2.0f) * sun_right;
-		sun_origin -= ((top + bottom) / 2.0f) * sun_up;
-		lightView = glm::lookAt(sun_origin, sun_origin + sun_direction, sun_up);
-
-		view = lightView;
-		projection = glm::ortho(left, right, top, bottom, 0.0f, maxZ - minZ);
-		*/
-
 		// 3. render depth map
 		glUseProgram(program);
 		glEnable(GL_DEPTH_TEST);
