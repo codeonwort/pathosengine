@@ -48,7 +48,7 @@ namespace pathos {
 		void rotateX(float angleDegree);
 
 		// get vertices of camera frustum in world space
-		void getFrustum(std::vector<glm::vec3>& outFrustum) const;
+		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32_t numCascades) const;
 
 	private:
 		void calculateViewMatrix() const;

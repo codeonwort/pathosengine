@@ -9,7 +9,9 @@ namespace pathos {
 	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& lightDirection_) {
 		lightDirection = lightDirection_;
 
-		depthMapWidth = depthMapHeight = 2048;
+		numCascades = 1;
+		depthMapWidth = 2048;
+		depthMapHeight = 2048;
 
 		// create framebuffer object
 		glGenFramebuffers(1, &fbo);
@@ -20,7 +22,7 @@ namespace pathos {
 		// setup depth textures
 		glGenTextures(1, &depthTexture);
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, depthMapWidth, depthMapHeight);
+		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, numCascades * depthMapWidth, depthMapHeight);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
@@ -80,9 +82,56 @@ void main() {
 			setLightDirection(glm::vec3(sun[0], sun[1], sun[2]));
 		}
 
-		std::vector<glm::vec3> frustum;
-		camera->getFrustum(frustum);
+		auto calcBounds = [this](const glm::vec3* frustum) -> void {
+			glm::vec3 sun_origin(0.0f, 0.0f, 0.0f);
+			glm::vec3 sun_direction = lightDirection;
+			glm::vec3 sun_up(0.0f, 1.0f, 0.0f);
 
+			// if almost parallel, choose another random direction
+			float angle = fabs(glm::dot(sun_up, sun_direction));
+			if (angle >= 0.999f || angle <= 0.001f) {
+				sun_up = glm::vec3(0.0f, 0.0f, -1.0f);
+			}
+
+			glm::mat4 lightView = glm::lookAt(sun_origin, sun_direction, sun_up);
+
+			float minZ = std::numeric_limits<float>::max();
+			float maxZ = std::numeric_limits<float>::min();
+			float left = std::numeric_limits<float>::max();
+			float right = std::numeric_limits<float>::min();
+			float top = std::numeric_limits<float>::max();
+			float bottom = std::numeric_limits<float>::min();
+
+			for (int i = 0; i < 8; ++i) {
+				glm::vec3 fv = glm::vec3(lightView * glm::vec4(frustum[i], 1.0f));
+				if (fv.x < left) left = fv.x;
+				if (fv.x > right) right = fv.x;
+				if (fv.y < top) top = fv.y;
+				if (fv.y > bottom) bottom = fv.y;
+				if (fv.z < minZ) minZ = fv.z;
+				if (fv.z > maxZ) maxZ = fv.z;
+			}
+
+			sun_origin += sun_direction * minZ;
+			// get row of lightView
+			glm::vec3 sun_right = glm::vec3(lightView[0][0], lightView[1][0], lightView[2][0]);
+			sun_up = glm::vec3(lightView[0][1], lightView[1][1], lightView[2][1]);
+			sun_origin -= ((left + right) / 2.0f) * sun_right;
+			sun_origin -= ((top + bottom) / 2.0f) * sun_up;
+			lightView = glm::lookAt(sun_origin, sun_origin + sun_direction, sun_up);
+
+			glm::mat4 projection = glm::ortho(left, right, top, bottom, 0.0f, maxZ - minZ);
+			viewProjection.emplace_back(projection * lightView);
+		};
+
+		std::vector<glm::vec3> frustum;
+		camera->getFrustum(frustum, numCascades);
+		viewProjection.clear();
+		for (auto i = 0u; i < numCascades; ++i) {
+			calcBounds(&frustum[0] + (i * 4));
+		}
+
+		/*
 		float minZ = std::numeric_limits<float>::max();
 		float maxZ = std::numeric_limits<float>::min();
 		float left = std::numeric_limits<float>::max();
@@ -97,7 +146,7 @@ void main() {
 		// if almost parallel, choose another random direction
 		float angle = fabs(glm::dot(sun_up, sun_direction));
 		if (angle >= 0.999f || angle <= 0.001f) {
-			sun_up = glm::vec3(1.0f, 0.0f, 0.0f);
+			sun_up = glm::vec3(0.0f, 0.0f, -1.0f);
 		}
 
 		glm::mat4 lightView = glm::lookAt(sun_origin, sun_direction, sun_up);
@@ -122,36 +171,40 @@ void main() {
 
 		view = lightView;
 		projection = glm::ortho(left, right, top, bottom, 0.0f, maxZ - minZ);
-		viewProjection = projection * view;
+		*/
 
 		// 3. render depth map
 		glUseProgram(program);
-		glViewport(0, 0, depthMapWidth, depthMapHeight);
 		glEnable(GL_DEPTH_TEST);
 		
-		for (Mesh* mesh : scene->meshes) {
-			const auto geometries = mesh->getGeometries();
-			const auto materials = mesh->getMaterials();
-			const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
-			int ix = 0;
-			for (const auto G : geometries) {
-				glm::mat4 mvp = viewProjection * modelTransform;
-				glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
+		for (auto i = 0u; i < numCascades; ++i) {
+			glViewport(i * depthMapWidth, 0, depthMapWidth, depthMapHeight);
+			const glm::mat4& VP = viewProjection[i];
 
-				bool wasWireframe = false;
-				if (materials[ix++]->getMaterialID() == MATERIAL_ID::WIREFRAME) {
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					wasWireframe = true;
-				}
+			for (Mesh* mesh : scene->meshes) {
+				const auto geometries = mesh->getGeometries();
+				const auto materials = mesh->getMaterials();
+				const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
+				int ix = 0;
+				for (const auto G : geometries) {
+					glm::mat4 mvp = VP * modelTransform;
+					glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
 
-				G->activate_position();
-				G->activateIndexBuffer();
-				G->draw();
-				G->deactivate();
-				G->deactivateIndexBuffer();
+					bool wasWireframe = false;
+					if (materials[ix++]->getMaterialID() == MATERIAL_ID::WIREFRAME) {
+						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						wasWireframe = true;
+					}
 
-				if (wasWireframe) {
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					G->activate_position();
+					G->activateIndexBuffer();
+					G->draw();
+					G->deactivate();
+					G->deactivateIndexBuffer();
+
+					if (wasWireframe) {
+						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					}
 				}
 			}
 		}

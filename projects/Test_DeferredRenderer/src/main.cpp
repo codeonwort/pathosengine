@@ -18,7 +18,7 @@ using namespace pathos;
 #include <time.h>
 
 // Compile options
-#define SMALL_WINDOW          1 // RenderDoc crashes when trying to capture a large screen :(
+#define SMALL_WINDOW          0 // RenderDoc crashes when trying to capture a large screen :(
 #define USE_NORMAL_RENDERER   0
 
 // Rendering configurations

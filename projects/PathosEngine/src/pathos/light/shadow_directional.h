@@ -23,12 +23,15 @@ namespace pathos {
 		void renderShadowMap(const Scene* scene, const Camera* camera);
 
 		inline GLuint getDepthMapTexture() const { return depthTexture; }
-		inline glm::mat4 getViewProjection() const { return viewProjection; }
+		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjection[index]; }
 
 	private:
 		GLuint fbo;
 		GLuint depthTexture;
-		GLsizei depthMapWidth, depthMapHeight; // depth map resolution
+
+		uint32_t numCascades;
+		GLsizei depthMapWidth;
+		GLsizei depthMapHeight; // depth map resolution
 
 		GLuint program; // shadow mapping
 		GLint uniform_depthMVP = -1;
@@ -36,9 +39,9 @@ namespace pathos {
 
 		// light space transform
 		glm::vec3 lightDirection;
-		glm::mat4 view;
-		glm::mat4 projection;
-		glm::mat4 viewProjection;
+		//glm::mat4 view;
+		//glm::mat4 projection;
+		std::vector<glm::mat4> viewProjection;
 	};
 
 }

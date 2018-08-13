@@ -84,9 +84,17 @@ namespace pathos {
 		viewDirty = true;
 	}
 	
-	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum) const {
+	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32_t numCascades) const {
+		assert(numCascades >= 1);
+
 		const glm::vec3 forward = getEyeVector();
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		float theta = fabs(glm::dot(forward, up));
+		if (theta >= 0.999f || theta <= 0.001f) {
+			up = glm::vec3(0.0f, 0.0f, -1.0f);
+		}
+
 		glm::vec3 right = glm::cross(forward, up);
 		up = glm::cross(right, forward);
 
@@ -101,6 +109,21 @@ namespace pathos {
 		const float hw_far = hh_far * plens->getAspectRatioWH();
 
 		const glm::vec3 P0 = getPosition();
+
+		float zi, hwi, hhi;
+		outFrustum.resize(4 * (1 + numCascades));
+		for (uint32_t i = 0u; i <= numCascades; ++i) {
+			const float k = static_cast<float>(i) / static_cast<float>(numCascades);
+			zi = zn + (zf - zn) * k;
+			hwi = hw_near + (hw_far - hw_near) * k;
+			hhi = hh_near + (hh_far - hh_near) * k;
+			outFrustum[i * 4 + 0] = P0 + (forward * zi) + (right * hwi) + (up * hhi);
+			outFrustum[i * 4 + 1] = P0 + (forward * zi) - (right * hwi) + (up * hhi);
+			outFrustum[i * 4 + 2] = P0 + (forward * zi) + (right * hwi) - (up * hhi);
+			outFrustum[i * 4 + 3] = P0 + (forward * zi) - (right * hwi) - (up * hhi);
+		}
+
+		/*
 		outFrustum.resize(8);
 		outFrustum[0] = P0 + (forward * zn) + (right * hw_near) + (up * hh_near);
 		outFrustum[1] = P0 + (forward * zn) - (right * hw_near) + (up * hh_near);
@@ -110,6 +133,7 @@ namespace pathos {
 		outFrustum[5] = P0 + (forward * zf) - (right * hw_far) + (up * hh_far);
 		outFrustum[6] = P0 + (forward * zf) + (right * hw_far) - (up * hh_far);
 		outFrustum[7] = P0 + (forward * zf) - (right * hw_far) - (up * hh_far);
+		*/
 	}
 
 }

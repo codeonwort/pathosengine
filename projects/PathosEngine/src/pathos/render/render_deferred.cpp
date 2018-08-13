@@ -280,7 +280,7 @@ namespace pathos {
 		data.view3x3 = glm::mat3(data.view);
 		data.viewProj = camera->getViewProjectionMatrix();
 
-		data.sunViewProj = sunShadowMap->getViewProjection();
+		data.sunViewProj = sunShadowMap->getViewProjection(0);
 
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
