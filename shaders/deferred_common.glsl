@@ -15,8 +15,9 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
+	vec4 zRange;
 
-	mat4 sunViewProjection;
+	mat4 sunViewProjection[4];
 	
 	vec3 eyeDirection;
 	vec3 eyePosition;

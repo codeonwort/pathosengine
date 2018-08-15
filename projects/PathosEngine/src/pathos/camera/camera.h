@@ -16,10 +16,10 @@ namespace pathos {
 	public:
 		PerspectiveLens(float fov, float aspect, float znear, float zfar);
 		virtual glm::mat4 getProjectionMatrix() const;
-		inline const float getFovYHalf() const { return fovY_half; }
-		inline const float getAspectRatioWH() const { return aspect; }
-		inline const float getZNear() const { return z_near; }
-		inline const float getZFar() const { return z_far; }
+		inline float getFovYHalf() const { return fovY_half; }
+		inline float getAspectRatioWH() const { return aspect; }
+		inline float getZNear() const { return z_near; }
+		inline float getZFar() const { return z_far; }
 	private:
 		glm::mat4 transform;
 		float fovY_half;
@@ -38,6 +38,9 @@ namespace pathos {
 		glm::mat4 getProjectionMatrix() const;
 		glm::vec3 getEyeVector() const;
 		glm::vec3 getPosition() const;
+
+		inline float getZNear() const { return static_cast<PerspectiveLens*>(lens)->getZNear(); }
+		inline float getZFar() const { return static_cast<PerspectiveLens*>(lens)->getZFar(); }
 
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
 		void move(const glm::vec3& movement);

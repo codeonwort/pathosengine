@@ -30,7 +30,7 @@ const int			WINDOW_WIDTH		=	1920;
 const int			WINDOW_HEIGHT		=	1080;
 #endif
 const char*			WINDOW_TITLE		=	"Test: Deferred Rendering";
-const float			FOV					=	90.0f;
+const float			FOV					=	60.0f;
 const glm::vec3		CAMERA_POSITION		=	glm::vec3(0.0f, 0.0f, 100.0f);
 const float			CAMERA_Z_NEAR		=	1.0f;
 const float			CAMERA_Z_FAR		=	1000.0f;

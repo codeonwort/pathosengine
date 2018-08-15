@@ -11,7 +11,7 @@ using std::min;
 #include <iostream>
 #endif
 
-#define DOF 1
+#define DOF 0
 
 namespace pathos {
 

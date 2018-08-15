@@ -9,7 +9,7 @@ namespace pathos {
 	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& lightDirection_) {
 		lightDirection = lightDirection_;
 
-		numCascades = 1;
+		numCascades = 4;
 		depthMapWidth = 2048;
 		depthMapHeight = 2048;
 
@@ -128,7 +128,7 @@ void main() {
 		camera->getFrustum(frustum, numCascades);
 		viewProjection.clear();
 		for (auto i = 0u; i < numCascades; ++i) {
-			calcBounds(&frustum[0] + (i * 4));
+			calcBounds(&frustum[i * 4]);
 		}
 
 		// 3. render depth map

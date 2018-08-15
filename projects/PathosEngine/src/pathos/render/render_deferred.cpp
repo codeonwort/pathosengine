@@ -14,9 +14,10 @@ namespace pathos {
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
-		glm::mat3 view3x3; float __pad_view3x3[3];
+		glm::mat3 view3x3; float __pad_view3x3[3]; // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
 		glm::mat4 viewProj;
-		glm::mat4 sunViewProj;
+		glm::vec4 zRange; // (near, far, ?, ?)
+		glm::mat4 sunViewProj[4];
 		glm::vec3 eyeDirection; float __pad0;
 		glm::vec3 eyePosition; uint32_t numDirLights;
 		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
@@ -278,9 +279,14 @@ namespace pathos {
 		data.view = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
 		data.view3x3 = glm::mat3(data.view);
+		data.zRange.x = camera->getZNear();
+		data.zRange.y = camera->getZFar();
 		data.viewProj = camera->getViewProjectionMatrix();
 
-		data.sunViewProj = sunShadowMap->getViewProjection(0);
+		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
+		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
+		data.sunViewProj[2] = sunShadowMap->getViewProjection(2);
+		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));

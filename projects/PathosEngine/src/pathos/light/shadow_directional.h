@@ -39,8 +39,6 @@ namespace pathos {
 
 		// light space transform
 		glm::vec3 lightDirection;
-		//glm::mat4 view;
-		//glm::mat4 projection;
 		std::vector<glm::mat4> viewProjection;
 	};
 
