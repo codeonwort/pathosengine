@@ -278,6 +278,7 @@
     <ClInclude Include="src\pathos\render\overlay\overlaypass_base.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_standard.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_text.h" />
+    <ClInclude Include="src\pathos\render\renderer.h" />
     <ClInclude Include="src\pathos\render\render_deferred.h" />
     <ClInclude Include="src\pathos\render\render_norm.h" />
     <ClInclude Include="src\pathos\render\render_forward.h" />

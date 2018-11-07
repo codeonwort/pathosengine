@@ -24,6 +24,7 @@ namespace pathos {
 
 		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
 
+		void bindProgram();
 		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) = 0;
 
 	};

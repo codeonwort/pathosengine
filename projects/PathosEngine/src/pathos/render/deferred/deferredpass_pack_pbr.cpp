@@ -38,8 +38,6 @@ namespace pathos {
 		geometry->activate_position_uv_normal_tangent_bitangent();
 		geometry->activateIndexBuffer();
 
-		glUseProgram(program);
-
 		// uniform: transform
 		glm::mat4 mvMatrix = camera->getViewMatrix() * modelMatrix;
 		glm::mat3 mvMatrix3x3 = glm::mat3(mvMatrix);

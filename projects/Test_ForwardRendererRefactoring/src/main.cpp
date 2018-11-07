@@ -12,7 +12,6 @@
 #include "glm/gtx/transform.hpp"
 #include <iostream>
 
-using namespace std;
 using namespace pathos;
 
 // Configurations

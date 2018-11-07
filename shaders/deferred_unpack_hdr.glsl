@@ -2,7 +2,7 @@
 
 #include "deferred_common.glsl"
 
-#define APPLY_FOG     0
+#define APPLY_FOG     1
 #define APPLY_SHADOW  1
 
 layout (location = 0) out vec4 out_color;

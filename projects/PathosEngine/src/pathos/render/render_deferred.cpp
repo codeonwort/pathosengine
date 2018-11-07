@@ -41,24 +41,24 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createShaders() {
-		pack_colorPass = new MeshDeferredRenderPass_Pack_SolidColor;
-		pack_texture = new MeshDeferredRenderPass_Pack_FlatTexture;
-		pack_wireframe = new MeshDeferredRenderPass_Pack_Wireframe;
-		pack_bumptexture = new MeshDeferredRenderPass_Pack_BumpTexture;
-		pack_pbr = new MeshDeferredRenderPass_Pack_PBR;
+		for (int i = 0; i < (int)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+			pack_passes[i] = nullptr;
+		}
+		pack_passes[(int)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
+		pack_passes[(int)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
+		pack_passes[(int)MATERIAL_ID::WIREFRAME]    = new MeshDeferredRenderPass_Pack_Wireframe;
+		pack_passes[(int)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
+		pack_passes[(int)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
+
 		unpack_pass = new MeshDeferredRenderPass_Unpack(
 			fbo_attachment[0], fbo_attachment[1], fbo_attachment[2],
 			width, height);
 	}
 	void DeferredRenderer::destroyShaders() {
-#define release(x) if(x) delete x
-		release(pack_colorPass);
-		release(pack_texture);
-		release(pack_wireframe);
-		release(pack_bumptexture);
-		release(pack_pbr);
-		release(unpack_pass);
-#undef release
+		for (int i = 0; i < (int)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+			if (pack_passes[i]) delete pack_passes[i];
+		}
+		delete unpack_pass;
 	}
 
 	void DeferredRenderer::createGBuffer() {
@@ -114,7 +114,6 @@ namespace pathos {
 		glDeleteBuffers(1, &ubo_perFrame);
 	}
 
-	// MOST OUTER RENDERING FUNCTION
 	void DeferredRenderer::render(Scene* scene_, Camera* camera_) {
 		scene = scene_;
 		camera = camera_;
@@ -162,19 +161,61 @@ namespace pathos {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 		// DEBUG: assertion
-		for (Mesh* mesh : scene->meshes) {
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-			size_t len = geoms.size();
-			assert(geoms.size() == materials.size());
-			for (auto i = 0u; i < len; ++i) {
-				assert(geoms[i] != nullptr && materials[i] != nullptr);
-			}
+// 		for (Mesh* mesh : scene->meshes) {
+// 			Geometries geoms = mesh->getGeometries();
+// 			Materials materials = mesh->getMaterials();
+// 			size_t len = geoms.size();
+// 			assert(geoms.size() == materials.size());
+// 			for (auto i = 0u; i < len; ++i) {
+// 				assert(geoms[i] != nullptr && materials[i] != nullptr);
+// 			}
+// 		}
+
+		int numMaterialIDs = (int)MATERIAL_ID::NUM_MATERIAL_IDS;
+		for (int i = 0; i < numMaterialIDs; ++i) {
+			renderItems[i].clear();
 		}
 
 		for (Mesh* mesh : scene->meshes) {
 			if (mesh->visible == false) continue;
-			renderMeshToGBuffer(mesh);
+
+			Geometries geoms = mesh->getGeometries();
+			Materials materials = mesh->getMaterials();
+
+			for (auto i = 0u; i < geoms.size(); ++i) {
+				auto G = geoms[i];
+				auto M = materials[i];
+
+				int materialID = (int)M->getMaterialID();
+				assert(0 <= materialID && materialID < numMaterialIDs);
+
+				renderItems[materialID].push_back(RenderItem(mesh, G, M));
+			}
+		}
+
+		glDepthFunc(GL_LESS);
+		for (int i = 0; i < numMaterialIDs; ++i) {
+			auto pass = pack_passes[i];
+
+			if (pass == nullptr) {
+				// #todo: implement render pass
+				continue;
+			}
+
+			pass->bindProgram();
+
+			for (auto j = 0u; j < renderItems[i].size(); ++j) {
+				const RenderItem& item = renderItems[i][j];
+
+				if (item.mesh->doubleSided) glDisable(GL_CULL_FACE);
+				if (item.mesh->renderInternal) glFrontFace(GL_CW);
+
+				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
+				pass->render(scene, camera, item.geometry, item.material);
+
+				if (item.mesh->doubleSided) glEnable(GL_CULL_FACE);
+				if (item.mesh->renderInternal) glFrontFace(GL_CCW);
+			}
 		}
 	}
 
@@ -196,81 +237,6 @@ namespace pathos {
 		glm::mat4 transform = proj * view;
 		sky->activate(transform);
 		sky->render();
-	}
-
-	void DeferredRenderer::renderMeshToGBuffer(Mesh* mesh) {
-		Geometries geoms = mesh->getGeometries();
-		Materials materials = mesh->getMaterials();
-		size_t len = geoms.size();
-
-		if (mesh->doubleSided) glDisable(GL_CULL_FACE);
-		if (mesh->renderInternal) glFrontFace(GL_CW);
-
-		for (auto i = 0u; i < len; i++) {
-			auto G = geoms[i];
-			auto M = materials[i];
-			renderMeshPieceToGBuffer(mesh, G, M);
-		}
-
-		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
-		if (mesh->renderInternal) glFrontFace(GL_CCW);
-	}
-
-	void DeferredRenderer::renderMeshPieceToGBuffer(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {
-		glDepthFunc(GL_LESS);
-
-		switch (M->getMaterialID()) {
-		case MATERIAL_ID::SOLID_COLOR:
-			renderSolidColor(mesh, G, static_cast<ColorMaterial*>(M));
-			break;
-		case MATERIAL_ID::FLAT_TEXTURE:
-			renderFlatTexture(mesh, G, static_cast<TextureMaterial*>(M));
-			break;
-		case MATERIAL_ID::WIREFRAME:
-			renderWireframe(mesh, G, static_cast<WireframeMaterial*>(M));
-			break;
-		case MATERIAL_ID::BUMP_TEXTURE:
-			renderBumpTexture(mesh, G, static_cast<BumpTextureMaterial*>(M));
-			break;
-		/*case MATERIAL_ID::SHADOW_TEXTURE:
-			renderShadowTexture(mesh, G, static_cast<ShadowTextureMaterial*>(M));
-			break;
-		case MATERIAL_ID::CUBE_ENV_MAP:
-			renderCubeEnvMap(mesh, G, static_cast<CubeEnvMapMaterial*>(M));
-			break;
-		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
-			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
-			break;*/
-		case MATERIAL_ID::PBR_TEXTURE:
-			renderPBR(mesh, G, static_cast<PBRTextureMaterial*>(M));
-			break;
-		default:
-			// No render pass exists for this material id. You should not enter here.
-			assert(0);
-			break;
-		}
-	}
-
-	void DeferredRenderer::renderSolidColor(Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
-		pack_colorPass->setModelMatrix(mesh->getTransform().getMatrix());
-		pack_colorPass->render(scene, camera, G, M);
-	}
-	void DeferredRenderer::renderFlatTexture(Mesh* mesh, MeshGeometry* G, TextureMaterial* M) {
-		pack_texture->setModelMatrix(mesh->getTransform().getMatrix());
-		pack_texture->render(scene, camera, G, M);
-	}
-	void DeferredRenderer::renderWireframe(Mesh* mesh, MeshGeometry* G, WireframeMaterial* M) {
-		pack_wireframe->setModelMatrix(mesh->getTransform().getMatrix());
-		pack_wireframe->render(scene, camera, G, M);
-	}
-	void DeferredRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* G, BumpTextureMaterial* M) {
-		pack_bumptexture->setModelMatrix(mesh->getTransform().getMatrix());
-		pack_bumptexture->render(scene, camera, G, M);
-	}
-
-	void DeferredRenderer::renderPBR(Mesh* mesh, MeshGeometry* G, PBRTextureMaterial* M) {
-		pack_pbr->setModelMatrix(mesh->getTransform().getMatrix());
-		pack_pbr->render(scene, camera, G, M);
 	}
 
 	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {

@@ -404,5 +404,8 @@
     <ClInclude Include="src\pathos\light\shadow_directional.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\render\renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

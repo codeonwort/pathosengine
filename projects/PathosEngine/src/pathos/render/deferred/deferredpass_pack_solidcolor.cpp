@@ -32,8 +32,6 @@ namespace pathos {
 		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
-		glUseProgram(program);
-
 		const glm::mat4& mvMatrix = camera->getViewMatrix() * modelMatrix;
 		const glm::mat4& mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
 		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
