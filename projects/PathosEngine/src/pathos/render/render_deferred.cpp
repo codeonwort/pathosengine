@@ -9,8 +9,8 @@
 
 namespace pathos {
 
-	static constexpr size_t MAX_DIRECTIONAL_LIGHTS = 8;
-	static constexpr size_t MAX_POINT_LIGHTS = 16;
+	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 8;
+	static constexpr uint32_t MAX_POINT_LIGHTS = 16;
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;

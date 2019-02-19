@@ -158,7 +158,7 @@ namespace pathos {
 				G->updateTangentData(tangents.data(), 3 * N);
 				G->updateBitangentData(bitangents.data(), 3 * N);
 			}
-			G->updateIndexData(&indices[0], indices.size());
+			G->updateIndexData(&indices[0], (uint32_t)indices.size());
 
 			// create material
 			MeshMaterial* M;

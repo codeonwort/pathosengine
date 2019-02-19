@@ -90,7 +90,7 @@ namespace pathos {
 		}
 		std::cout << "- Font system has been initialized" << std::endl;
 		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28);
-		// ¹è´ÞÀÇ ¹ÎÁ· ÁÖ¾ÆÃ¼ [http://font.woowahan.com/jua/]
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¾ï¿½Ã¼ [http://font.woowahan.com/jua/]
 		FontManager::loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28);
 
 		// callbacks

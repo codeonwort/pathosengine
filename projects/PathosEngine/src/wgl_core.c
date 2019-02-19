@@ -300,4 +300,3 @@ int wgl_LoadFunctions(HDC hdc)
 	ProcExtsFromExtString((const char *)_ptrc_wglGetExtensionsStringARB(hdc));
 	return wgl_LOAD_SUCCEEDED;
 }
-

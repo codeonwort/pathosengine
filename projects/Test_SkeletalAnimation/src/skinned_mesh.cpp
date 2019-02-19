@@ -63,7 +63,7 @@ namespace pathos {
 					pos[p + 2] += v.z;
 				}
 			}
-			G->updatePositionData(&pos[0], pos.size());
+			G->updatePositionData(&pos[0], (uint32_t)pos.size());
 
 			++geomIndex;
 		}
