@@ -2,7 +2,6 @@
 
 // Build configurations
 #define PATHOS_MULTI_THREAD_SUPPORT 0
-#define GL_DEBUG_CONTEXT 0
 
 #if PATHOS_MULTI_THREAD_SUPPORT
 #include "GL/gl_core_4_3.h"

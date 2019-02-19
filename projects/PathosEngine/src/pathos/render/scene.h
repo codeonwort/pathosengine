@@ -1,6 +1,4 @@
 #pragma once
-#ifndef SCENE_H
-#define SCENE_H
 
 #include "pathos/light/light.h"
 #include <vector>
@@ -52,5 +50,3 @@ namespace pathos {
 	};
 
 }
-
-#endif SCENE_H

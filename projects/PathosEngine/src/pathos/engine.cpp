@@ -6,8 +6,11 @@
 #include <assert.h>
 #include <iostream>
 
-#include "FreeImage.h" // subsystem: image file loader
+#include "FreeImage.h"            // subsystem: image file loader
 #include "pathos/text/font_mgr.h" // subsystem: font manager
+
+#define GL_DEBUG_CONTEXT  0
+#define GL_ERROR_CALLBACK 1
 
 namespace pathos {
 
@@ -34,6 +37,25 @@ namespace pathos {
 
 		exit(1);
 	}
+
+#if GL_ERROR_CALLBACK
+	void glErrorCallback(
+		GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		const void* userParam)
+	{
+		fprintf_s(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+
+		if (severity == 0x9146) {
+			__debugbreak();
+		}
+	}
+#endif
 
 	EngineConfig Engine::conf;
 	const std::string Engine::version = "0.1.0";
@@ -110,6 +132,11 @@ namespace pathos {
 		glEnable(GL_CULL_FACE);
 		//glEnable(GL_MULTISAMPLE);
 		std::cout << "- GL states have been initialized" << std::endl;
+
+#if GL_ERROR_CALLBACK
+		glEnable(GL_DEBUG_OUTPUT);
+		glDebugMessageCallback(glErrorCallback, 0);
+#endif
 
 		return true;
 	}

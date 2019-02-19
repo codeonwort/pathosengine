@@ -257,20 +257,27 @@ namespace pathos {
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
 
+		const GLfloat* buffer;
+		const GLfloat* buffer2;
+
 		data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
-		const GLfloat* buffer = scene->getDirectionalLightDirectionBuffer();
-		const GLfloat* buffer2 = scene->getDirectionalLightColorBuffer();
-		for (auto i = 0u; i < data.numDirLights; ++i) {
-			data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-			data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		if (data.numDirLights > 0) {
+			buffer = scene->getDirectionalLightDirectionBuffer();
+			buffer2 = scene->getDirectionalLightColorBuffer();
+			for (auto i = 0u; i < data.numDirLights; ++i) {
+				data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+				data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+			}
 		}
 
 		data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
-		buffer = scene->getPointLightPositionBuffer();
-		buffer2 = scene->getPointLightColorBuffer();
-		for (auto i = 0u; i < data.numPointLights; ++i) {
-			data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-			data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+		if (data.numPointLights > 0) {
+			buffer = scene->getPointLightPositionBuffer();
+			buffer2 = scene->getPointLightColorBuffer();
+			for (auto i = 0u; i < data.numPointLights; ++i) {
+				data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
+				data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
+			}
 		}
 
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo_perFrame);
