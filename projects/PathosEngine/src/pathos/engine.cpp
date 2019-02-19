@@ -48,10 +48,9 @@ namespace pathos {
 		const GLchar* message,
 		const void* userParam)
 	{
-		fprintf_s(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
-
-		if (severity == 0x9146) {
+		if (severity == GL_DEBUG_SEVERITY_HIGH) {
+			fprintf_s(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+				(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
 			__debugbreak();
 		}
 	}
@@ -137,7 +136,7 @@ namespace pathos {
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(glErrorCallback, 0);
 #endif
-
+		
 		return true;
 	}
 

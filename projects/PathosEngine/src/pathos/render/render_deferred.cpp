@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-#define ASSERT_GL_NO_ERROR 1
+#define ASSERT_GL_NO_ERROR 0
 
 namespace pathos {
 
@@ -133,8 +133,8 @@ namespace pathos {
 
 		// render to fbo
 		clearGBuffer();
-		packGBuffer();
-		unpackGBuffer();
+ 		packGBuffer();
+ 		unpackGBuffer();
 
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());
@@ -161,15 +161,17 @@ namespace pathos {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 		// DEBUG: assertion
-// 		for (Mesh* mesh : scene->meshes) {
-// 			Geometries geoms = mesh->getGeometries();
-// 			Materials materials = mesh->getMaterials();
-// 			size_t len = geoms.size();
-// 			assert(geoms.size() == materials.size());
-// 			for (auto i = 0u; i < len; ++i) {
-// 				assert(geoms[i] != nullptr && materials[i] != nullptr);
-// 			}
-// 		}
+#if 0
+		for (Mesh* mesh : scene->meshes) {
+			Geometries geoms = mesh->getGeometries();
+			Materials materials = mesh->getMaterials();
+			size_t len = geoms.size();
+			assert(geoms.size() == materials.size());
+			for (auto i = 0u; i < len; ++i) {
+				assert(geoms[i] != nullptr && materials[i] != nullptr);
+			}
+		}
+#endif
 
 		int numMaterialIDs = (int)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (int i = 0; i < numMaterialIDs; ++i) {
@@ -210,8 +212,8 @@ namespace pathos {
 				if (item.mesh->doubleSided) glDisable(GL_CULL_FACE);
 				if (item.mesh->renderInternal) glFrontFace(GL_CW);
 
-				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
-				pass->render(scene, camera, item.geometry, item.material);
+ 				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
+ 				pass->render(scene, camera, item.geometry, item.material);
 
 				if (item.mesh->doubleSided) glEnable(GL_CULL_FACE);
 				if (item.mesh->renderInternal) glFrontFace(GL_CCW);

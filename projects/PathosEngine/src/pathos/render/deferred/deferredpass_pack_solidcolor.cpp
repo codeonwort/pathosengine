@@ -50,8 +50,6 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-
-		glUseProgram(0);
 	}
 
 }

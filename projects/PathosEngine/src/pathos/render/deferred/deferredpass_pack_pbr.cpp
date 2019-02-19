@@ -79,8 +79,6 @@ namespace pathos {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE0 + AO_TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_2D, 0);
-
-		glUseProgram(0);
 	}
 
 }
