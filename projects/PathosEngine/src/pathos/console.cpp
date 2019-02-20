@@ -73,12 +73,9 @@ namespace pathos {
 			input += ascii;
 		}
 
-		if (input.size() == 0) {
-			inputText->setVisible(false);
-		} else {
-			inputText->setVisible(true);
-			inputText->setText(input.data());
-		}
+		std::wstring input2 = L"> " + input;
+		inputText->setVisible(true);
+		inputText->setText(input2.data());
 	}
 
 	Label* ConsoleWindow::addLine(const char* text) {

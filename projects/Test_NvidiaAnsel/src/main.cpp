@@ -126,14 +126,16 @@ void tick() {
 		label->visible = false;
 	}
 
-	float speedX = 0.1f, speedY = 0.1f;
-	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-	float rotY = gEngine->isDown('q') ? -1.0f : gEngine->isDown('e') ? 1.0f : 0.0f;
-	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
+	if (gConsole->isVisible() == false) {
+		float speedX = 0.1f, speedY = 0.1f;
+		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		float rotY = gEngine->isDown('q') ? -1.0f : gEngine->isDown('e') ? 1.0f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 }
 
 void render() {
