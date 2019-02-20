@@ -20,6 +20,12 @@ namespace pathos {
 
 		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
 
+	private:
+		GLint uniform_mvpTransform;
+		GLint uniform_face;
+		GLint uniform_zNear;
+		GLint uniform_zFar;
+
 	};
 
 }

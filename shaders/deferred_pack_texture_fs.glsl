@@ -4,7 +4,7 @@ layout (location = 0) out uvec4 output0;
 layout (location = 1) out vec4 output1;
 layout (location = 2) out vec4 output2;
 
-uniform sampler2D tex_diffuse;
+layout (binding = 0) uniform sampler2D tex_diffuse;
 
 in VS_OUT {
 	vec3 vs_coords;

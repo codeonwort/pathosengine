@@ -198,18 +198,9 @@ void main() {
 	void MeshDeferredRenderPass_Unpack::render(Scene* scene, Camera* camera) {
 		glUseProgram(program_ldr);
 
-		// texture binding
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex0);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex1);
-
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
-
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, sunDepthMap);
+		GLuint gbuffer_textures[] = { gbuffer_tex0, gbuffer_tex1, gbuffer_tex2 };
+		glBindTextures(0, 3, gbuffer_textures);
+		glBindTextureUnit(6, sunDepthMap);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -230,18 +221,9 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
 		glUseProgram(program_hdr);
 
-		// texture binding
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex0);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex1);
-
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gbuffer_tex2);
-
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_2D, sunDepthMap);
+		GLuint gbuffer_textures[] = { gbuffer_tex0, gbuffer_tex1, gbuffer_tex2 };
+		glBindTextures(0, 3, gbuffer_textures);
+		glBindTextureUnit(6, sunDepthMap);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -257,12 +239,11 @@ void main() {
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_blur_attachment, 0);
 		glUseProgram(program_blur);
 		glUniform1i(uniform_blur_horizontal, GL_TRUE);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[1]);
+		glBindTextureUnit(0, fbo_hdr_attachment[1]);
 		quad->draw();
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment[1], 0);
 		glUniform1i(uniform_blur_horizontal, GL_FALSE);
-		glBindTexture(GL_TEXTURE_2D, fbo_blur_attachment);
+		glBindTextureUnit(0, fbo_blur_attachment);
 		quad->draw();
 
 		// tone mapping
@@ -275,12 +256,9 @@ void main() {
 #endif
 		glUseProgram(program_tone_mapping);
 		glUniform1f(uniform_tone_mapping_exposure, cvar_tonemapping_exposure.getValue());
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[0]);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, fbo_hdr_attachment[1]);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, godRay->getTexture());
+
+		GLuint gbuffer_attachments[] = { fbo_hdr_attachment[0], fbo_hdr_attachment[1], godRay->getTexture() };
+		glBindTextures(0, 3, gbuffer_attachments);
 
 		//quad->activate_position();
 		//quad->activateIndexBuffer();
@@ -292,13 +270,6 @@ void main() {
 		dof->render(fbo_tone_attachment);
 #endif
 
-		// unbind
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, 0);
 		glEnable(GL_DEPTH_TEST);
 	}
 

@@ -38,8 +38,7 @@ namespace pathos {
 		// uniform
 		glUniformMatrix4fv(uniform_transform, 1, false, &transform[0][0]);
 		glUniform4fv(uniform_color, 1, rgba);
-		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, label->getFontTexture());
+		glBindTextureUnit(TEXTURE_UNIT, label->getFontTexture());
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

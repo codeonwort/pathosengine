@@ -56,9 +56,7 @@ void main() {
 		glUseProgram(program);
 		
 		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+		glBindTextureUnit(0, textureID);
 
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_DEPTH_TEST);

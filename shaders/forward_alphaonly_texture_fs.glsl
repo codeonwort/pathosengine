@@ -1,7 +1,7 @@
 #version 430 core
 
 uniform vec3 color;
-uniform sampler2D texSampler;
+layout (binding = 0) uniform sampler2D texSampler;
 
 in VS_OUT {
     vec2 uv;

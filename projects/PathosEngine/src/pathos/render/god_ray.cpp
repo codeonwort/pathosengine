@@ -190,8 +190,7 @@ void main() {
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 		glUseProgram(program_godRay);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textures[GOD_RAY_SOURCE]);
+		glBindTextureUnit(0, textures[GOD_RAY_SOURCE]);
 		glUniform2fv(uniform_lightPos, 1, lightPos_2d);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
 

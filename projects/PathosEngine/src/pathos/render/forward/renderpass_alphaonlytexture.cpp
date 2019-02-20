@@ -38,30 +38,20 @@ namespace pathos {
 
 		glUseProgram(program);
 
-		// texture and sampler
-		glUniform1i(uniform_texSampler, TEXTURE_UNIT);
-		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getTexture());
+		// texture
+		glBindTextureUnit(TEXTURE_UNIT, material->getTexture());
 
-		// upload uniform
+		// uniform
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
 		glUniform3fv(uniform_color, 1, material->getColor());
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		geometry->draw();
 		glDisable(GL_BLEND);
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
 	}
 
 }

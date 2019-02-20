@@ -46,10 +46,8 @@ namespace pathos {
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
 
 		// uniform: texture
-		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getDiffuseTexture());
-		glActiveTexture(GL_TEXTURE0 + NORMALMAP_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getNormalMapTexture());
+		glBindTextureUnit(DIFFUSE_TEXTURE_UNIT, material->getDiffuseTexture());
+		glBindTextureUnit(NORMALMAP_TEXTURE_UNIT, material->getNormalMapTexture());
 
 		//--------------------------------------------------------------------------------------
 		// draw call
@@ -61,11 +59,6 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-
-		glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + NORMALMAP_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 }

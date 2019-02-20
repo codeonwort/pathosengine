@@ -4,11 +4,11 @@
 namespace pathos {
 
 	namespace {
-		static constexpr unsigned int ALBEDO_TEXTURE_UNIT = 0;
-		static constexpr unsigned int NORMAL_TEXTURE_UNIT = 1;
-		static constexpr unsigned int METALLIC_TEXTURE_UNIT = 2;
+		static constexpr unsigned int ALBEDO_TEXTURE_UNIT    = 0;
+		static constexpr unsigned int NORMAL_TEXTURE_UNIT    = 1;
+		static constexpr unsigned int METALLIC_TEXTURE_UNIT  = 2;
 		static constexpr unsigned int ROUGHNESS_TEXTURE_UNIT = 3;
-		static constexpr unsigned int AO_TEXTURE_UNIT = 4;
+		static constexpr unsigned int AO_TEXTURE_UNIT        = 4;
 	}
 
 	MeshDeferredRenderPass_Pack_PBR::MeshDeferredRenderPass_Pack_PBR() {
@@ -32,9 +32,7 @@ namespace pathos {
 
 	void MeshDeferredRenderPass_Pack_PBR::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
 		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(material_);
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
+
 		geometry->activate_position_uv_normal_tangent_bitangent();
 		geometry->activateIndexBuffer();
 
@@ -47,38 +45,16 @@ namespace pathos {
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
 
 		// uniform: texture
-		glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getAlbedo());
-		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getNormal());
-		glActiveTexture(GL_TEXTURE0 + METALLIC_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getMetallic());
-		glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getRoughness());
-		glActiveTexture(GL_TEXTURE0 + AO_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getAO());
+		glBindTextureUnit(ALBEDO_TEXTURE_UNIT, material->getAlbedo());
+		glBindTextureUnit(NORMAL_TEXTURE_UNIT, material->getNormal());
+		glBindTextureUnit(METALLIC_TEXTURE_UNIT, material->getMetallic());
+		glBindTextureUnit(ROUGHNESS_TEXTURE_UNIT, material->getRoughness());
+		glBindTextureUnit(AO_TEXTURE_UNIT, material->getAO());
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		geometry->draw();
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-
-		glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + NORMAL_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + METALLIC_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + AO_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 }

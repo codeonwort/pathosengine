@@ -28,9 +28,6 @@ namespace pathos {
 		static_cast<void>(scene);
 		TextureMaterial* material = static_cast<TextureMaterial*>(material_);
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		geometry->activate_position_uv_normal();
 		geometry->activateIndexBuffer();
 
@@ -41,23 +38,12 @@ namespace pathos {
 		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
 
 		// texture binding
-		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, material->getTexture());
-		glUniform1i(uniform_tex_diffuse, TEXTURE_UNIT);
+		glBindTextureUnit(TEXTURE_UNIT, material->getTexture());
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		geometry->draw();
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-
-		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 }

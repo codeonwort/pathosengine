@@ -62,9 +62,6 @@ namespace pathos {
 		static_cast<void>(scene);
 		CubeEnvMapMaterial* material = static_cast<CubeEnvMapMaterial*>(material_);
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
@@ -81,20 +78,10 @@ namespace pathos {
 
 		glm::vec3 eye = camera->getEyeVector();
 		glUniform3fv(uniform_eye, 1, &camera->getEyeVector()[0]);
+		glBindTextureUnit(CubeEnvMapPass::TEXTURE_UNIT, material->getTexture());
 
-		glUniform1i(uniform_sampler, CubeEnvMapPass::TEXTURE_UNIT);
-		glActiveTexture(GL_TEXTURE0 + CubeEnvMapPass::TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, material->getTexture());
-
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		geometry->draw();
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 		glUseProgram(0);

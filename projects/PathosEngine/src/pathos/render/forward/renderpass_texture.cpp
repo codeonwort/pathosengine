@@ -131,7 +131,6 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
-		glBindTexture(GL_TEXTURE_2D, 0);
 
 		if (shadowMapping != nullptr) {
 			shadowMapping->deactivate(program, SHADOW_MAPPING_TEXTURE_UNIT_START);

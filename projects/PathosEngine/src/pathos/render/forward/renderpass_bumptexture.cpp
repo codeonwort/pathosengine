@@ -180,11 +180,6 @@ namespace pathos {
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 
-		glActiveTexture(GL_TEXTURE0 + BumpTexturePass::DIFFUSE_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0 + BumpTexturePass::NORMALMAP_TEXTURE_UNIT);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
 		if (shadowMapping != nullptr) {
 			shadowMapping->deactivate(program, SHADOW_MAPPING_TEXTURE_UNIT_START);
 		}

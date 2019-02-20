@@ -55,8 +55,7 @@ namespace pathos {
 		
 		// apply box blur whose strength is relative to difference between pixel depth and focal depth
 		glUseProgram(program_blur);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture_subsum2D[1]);
+		glBindTextureUnit(0, texture_subsum2D[1]);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to backbuffer (assume: DOF is the final stage)
 

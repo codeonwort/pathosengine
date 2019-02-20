@@ -42,6 +42,14 @@ namespace pathos {
 #endif
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		uniform_mvpTransform   = glGetUniformLocation(program, "mvpTransform");
+		uniform_face           = glGetUniformLocation(program, "face");
+		uniform_zNear          = glGetUniformLocation(program, "zNear");
+		uniform_zFar           = glGetUniformLocation(program, "zFar");
+		assert(uniform_mvpTransform != -1);
+		assert(uniform_face != -1);
+		assert(uniform_zNear != -1);
+		assert(uniform_zFar != -1);
 	}
 
 	void ShadowCubeTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -57,7 +65,6 @@ namespace pathos {
 		glUseProgram(program);
 
 		// texture and sampler
-		glUniform1i(glGetUniformLocation(program, "texSampler"), ShadowCubeTexturePass::TEXTURE_UNIT);
 		glActiveTexture(GL_TEXTURE0 + ShadowCubeTexturePass::TEXTURE_UNIT);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, material->getTexture());
 		GLint compareMode;
@@ -65,11 +72,10 @@ namespace pathos {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
 		// upload uniform
-		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, false, glm::value_ptr(modelMatrix));
-		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
-		glUniform1ui(glGetUniformLocation(program, "face"), material->getFace());
-		glUniform1f(glGetUniformLocation(program, "zNear"), material->getZNear());
-		glUniform1f(glGetUniformLocation(program, "zFar"), material->getZFar());
+		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
+		glUniform1ui(uniform_face, material->getFace());
+		glUniform1f(uniform_zNear, material->getZNear());
+		glUniform1f(uniform_zFar, material->getZFar());
 
 		//--------------------------------------------------------------------------------------
 		// draw call
@@ -83,7 +89,6 @@ namespace pathos {
 		geometry->deactivateIndexBuffer();
 		// restore depth texture params
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, compareMode);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		glUseProgram(0);
 	}
 
