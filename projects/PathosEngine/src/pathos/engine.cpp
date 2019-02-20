@@ -1,13 +1,12 @@
 #include "pathos/engine.h"
+#include "gl_core.h"
 
-#include "GL/gl_core_4_3.h"
-//#include "GL/wgl_core.h"
-#include "GL/freeglut.h"
-#include <assert.h>
-#include <iostream>
-
+#include "GL/freeglut.h"          // subsystem: window
 #include "FreeImage.h"            // subsystem: image file loader
 #include "pathos/text/font_mgr.h" // subsystem: font manager
+
+#include <assert.h>
+#include <iostream>
 
 #define GL_DEBUG_CONTEXT  0
 #define GL_ERROR_CALLBACK 1
@@ -60,10 +59,6 @@ namespace pathos {
 	const std::string Engine::version = "0.1.0";
 	const EngineConfig& Engine::getConfig() { return Engine::conf; }
 	bool Engine::keymap[256] = { false };
-#if PATHOS_MULTI_THREAD_SUPPORT
-	HGLRC Engine::mainContext = nullptr;
-	HDC Engine::hdc = nullptr;
-#endif
 
 	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
 		std::cout << "=== Initialize pathos engine ===" << '\n';
@@ -75,7 +70,7 @@ namespace pathos {
 		glutInitErrorFunc(onGlutError);
 		glutInitWarningFunc(onGlutWarning);
 		glutInit(argcp, argv);
-		glutInitContextVersion(4, 3);
+		glutInitContextVersion(4, 6);
 		glutInitContextProfile(GLUT_CORE_PROFILE);
 #if GL_DEBUG_CONTEXT
 		glutInitContextFlags(GLUT_DEBUG);
@@ -85,20 +80,18 @@ namespace pathos {
 		static int wid = glutCreateWindow(conf.title);
 		std::cout << "- Main window has been created" << std::endl;
 
-		// GL loader
-		if (ogl_LoadFunctions() == ogl_LOAD_FAILED)
-		{
-			std::cerr << "[ERROR] Failed to initialize GL" << std::endl;
-			exit(1);
+		// gl3w
+		if (gl3wInit()) {
+			std::cerr << "failed to initialize GL3W" << std::endl;
+			return false;
 		}
+		if (!gl3wIsSupported(4, 6)) {
+			std::cerr << "GL 4.6 is not supported" << std::endl;
+			return false;
+		}
+
 		std::cout << "- GL version: " << glGetString(GL_VERSION) << std::endl;
 		std::cout << "- GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-
-		// multi-threading
-#if PATHOS_MULTI_THREAD_SUPPORT
-		hdc = wglGetCurrentDC();
-		mainContext = wglGetCurrentContext();
-#endif
 
 		// FreeImage
 		FreeImage_Initialise();
@@ -111,7 +104,7 @@ namespace pathos {
 		}
 		std::cout << "- Font system has been initialized" << std::endl;
 		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28);
-		// ����� ���� �־�ü [http://font.woowahan.com/jua/]
+		// [http://font.woowahan.com/jua/]
 		FontManager::loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28);
 
 		// callbacks

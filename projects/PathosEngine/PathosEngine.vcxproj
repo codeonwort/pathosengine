@@ -83,7 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\gl_core_4_3.c" />
+    <ClCompile Include="src\gl3w\gl3w.c" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\core.cpp" />
@@ -137,9 +137,9 @@
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
-    <ClCompile Include="src\wgl_core.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\gl_core.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\core.h" />

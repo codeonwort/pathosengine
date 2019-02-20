@@ -4,7 +4,7 @@
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
-#include "GL/gl_core_4_3.h"
+#include "gl_core.h"
 #include <vector>
 
 namespace pathos {

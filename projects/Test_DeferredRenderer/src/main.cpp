@@ -305,7 +305,9 @@ void render() {
 
 	char title[256];
 	sprintf_s(title, "%s (Elapsed: %llu ms)", WINDOW_TITLE, elapsed_ms);
-	glutSetWindowTitle(title);
+#if !(_DEBUG)
+	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
+#endif
 
 #if USE_NORMAL_RENDERER
 	for (const auto mesh : scene.meshes) {

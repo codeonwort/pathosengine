@@ -1,7 +1,7 @@
 #pragma once
 
 // OpenGL
-#include "GL/gl_core_4_3.h"
+#include "gl_core.h"
 
 // STL
 #include <string>

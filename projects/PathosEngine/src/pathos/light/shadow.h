@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include "GL/gl_core_4_3.h"
+#include "gl_core.h"
 
 #include "light.h"
 #include "shadow_omni.h"

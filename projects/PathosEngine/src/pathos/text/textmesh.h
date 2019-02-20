@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-#include "GL/gl_core_4_3.h"
+#include "gl_core.h"
 
 #include "pathos/mesh/mesh.h"
 #include "pathos/text/font_texture_cache.h"

@@ -204,12 +204,6 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\gl_core_4_3.c">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\wgl_core.c">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -220,6 +214,9 @@
       <Filter>소스 파일\pathos\render</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\light\shadow_directional.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gl3w\gl3w.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -405,6 +402,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gl_core.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,14 +1,5 @@
 #pragma once
 
-// Build configurations
-#define PATHOS_MULTI_THREAD_SUPPORT 0
-
-#if PATHOS_MULTI_THREAD_SUPPORT
-#include "GL/gl_core_4_3.h"
-#include "GL/freeglut.h"
-#include "GL/wgl_core.h"
-#endif
-
 #include <string>
 
 namespace pathos {
@@ -32,10 +23,6 @@ namespace pathos {
 		static EngineConfig conf;
 		static void render();
 		static bool keymap[256];
-#if PATHOS_MULTI_THREAD_SUPPORT
-		static HDC hdc;
-		static HGLRC mainContext;
-#endif
 
 	public:
 		static const std::string version;
@@ -52,11 +39,6 @@ namespace pathos {
 		static void keyDown(unsigned char ascii, int x, int y);
 		static void keyUp(unsigned char ascii, int x, int y);
 
-#if PATHOS_MULTI_THREAD_SUPPORT
-		static HGLRC createContext();
-		static void deleteContext(HGLRC context);
-		static inline HDC getHDC() { return hdc; }
-#endif
 	};
 
 }

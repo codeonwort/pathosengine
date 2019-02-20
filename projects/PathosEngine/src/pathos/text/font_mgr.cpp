@@ -26,7 +26,7 @@ namespace pathos {
 		}
 		FT_Int major, minor, patch;
 		FT_Library_Version(library, &major, &minor, &patch);
-		std::cout << "  - FreeType version: " << major << '.' << minor << '.' << patch << std::endl;
+		std::cout << "- FreeType version: " << major << '.' << minor << '.' << patch << std::endl;
 
 		initialized = true;
 		return initialized;

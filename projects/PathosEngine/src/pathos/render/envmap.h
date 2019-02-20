@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GL/gl_core_4_3.h"
+#include "gl_core.h"
 #include "glm/glm.hpp"
 #include "pathos/mesh/geometry_primitive.h"
 
