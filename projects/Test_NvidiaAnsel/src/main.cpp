@@ -1,5 +1,5 @@
 #include "glm/gtx/transform.hpp"
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/render/render_forward.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/camera/camera.h"
@@ -43,9 +43,8 @@ bool loaderReady = false;
 
 void setupModel();
 void setupSkybox();
+void tick();
 void render();
-
-void keyDown(unsigned char ascii, int x, int y) {}
 
 void loadTask() {
 	cityLoader.load("models/city/The_City.obj", "models/city/");
@@ -55,20 +54,15 @@ void loadTask() {
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = WINDOW_WIDTH;
-	conf.height = WINDOW_HEIGHT;
-	conf.title = "Test: Nvidia Ansel";
-	conf.render = render;
-	conf.keyDown = keyDown;
+	conf.windowWidth  = WINDOW_WIDTH;
+	conf.windowHeight = WINDOW_HEIGHT;
+	conf.title        = "Test: Nvidia Ansel";
+	conf.tick         = tick;
+	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../resources/");
-	ResourceFinder::get().add("../../shaders/");
-
 	// camera
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 1.0f, 500.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 500.f));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
@@ -81,7 +75,7 @@ int main(int argc, char** argv) {
 	//std::thread loadWorker(loadTask);
 
 	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	//loadWorker.join();
 
@@ -117,7 +111,7 @@ void setupSkybox() {
 	scene.skybox = nullptr; // use custom sky rendering
 }
 
-void render() {
+void tick() {
 	if (loaderReady) {
 		loaderReady = false;
 		city = cityLoader.craftMeshFromAllShapes();
@@ -130,14 +124,16 @@ void render() {
 	}
 
 	float speedX = 0.1f, speedY = 0.1f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
+}
 
+void render() {
 	glm::mat4& view = glm::mat4(glm::mat3(cam->getViewMatrix())); // view transform without transition
 	glm::mat4& proj = cam->getProjectionMatrix();
 	glm::mat4& transform = proj * view;

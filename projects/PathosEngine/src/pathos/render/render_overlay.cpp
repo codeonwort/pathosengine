@@ -54,9 +54,9 @@ namespace pathos {
 
 	void OverlayRenderer::calculateTransformNDC() {
 		// TODO: remove global access
-		auto& config = Engine::getConfig();
-		float width = static_cast<float>(config.width);
-		float height = static_cast<float>(config.height);
+		const auto& config = gEngine->getConfig();
+		float width = static_cast<float>(config.windowWidth);
+		float height = static_cast<float>(config.windowHeight);
 
 		toNDC.identity();
 		toNDC.appendScale(2.0f / width, -2.0f / height, 1.0f);

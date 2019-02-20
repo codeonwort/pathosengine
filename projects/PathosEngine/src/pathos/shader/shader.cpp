@@ -161,7 +161,7 @@ namespace pathos {
 
 		std::ifstream file(filepath);
 		if (!file.is_open()) {
-			std_logf(LogError, "Couldn't open a shader file: %s", filepath.c_str());
+			LOG(LogError, "Couldn't open a shader file: %s", filepath.c_str());
 			return false;
 		}
 
@@ -192,7 +192,7 @@ namespace pathos {
 			std::string include_filepath = ResourceFinder::get().find(include_file);
 			std::ifstream subfile(include_filepath);
 			if (!subfile.is_open()) {
-				std_logf(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
+				LOG(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
 				return false;
 			}
 			std::ostringstream substream;
@@ -255,7 +255,7 @@ namespace pathos {
 			errorLog.resize(logSize);
 			glGetShaderInfoLog(glName, logSize, NULL, const_cast<char*>(errorLog.c_str()));
 #ifdef _DEBUG
-			std_logf(LogError, "shader compiler error: %s", errorLog);
+			LOG(LogError, "shader compiler error: %s", errorLog);
 #endif
 			return false;
 		}

@@ -1,5 +1,5 @@
 #include "glm/gtx/transform.hpp"
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/render/render_forward.h"
 #include "pathos/render/envmap.h"
 #include "pathos/mesh/mesh.h"
@@ -36,9 +36,8 @@ bool loaderReady = false;
 
 void setupModel();
 void setupSkybox();
+void tick();
 void render();
-
-void keyDown(unsigned char ascii, int x, int y) {}
 
 void loadTask() {
 	cityLoader.load("models/city/The_City.obj", "models/city/");
@@ -48,20 +47,15 @@ void loadTask() {
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = 1600;
-	conf.height = 1200;
+	conf.windowWidth = 1600;
+	conf.windowHeight = 1200;
 	conf.title = "Test: Loading Wavefront OBJ Model";
+	conf.tick = tick;
 	conf.render = render;
-	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../resources/");
-	ResourceFinder::get().add("../../shaders/");
-
 	// camera
-	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.width) / static_cast<float>(conf.height), 0.1f, 1000.f));
+	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 1000.f));
 	cam->move(glm::vec3(0, 0, 20));
 
 	// renderer
@@ -74,7 +68,7 @@ int main(int argc, char** argv) {
 	std::thread loadWorker(loadTask);
 
 	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	loadWorker.join();
 
@@ -124,7 +118,7 @@ void setupSkybox() {
 	scene.skybox = sky;
 }
 
-void render() {
+void tick() {
 	if (loaderReady) {
 		loaderReady = false;
 		city = cityLoader.craftMeshFromAllShapes();
@@ -137,16 +131,17 @@ void render() {
 	}
 
 	float speedX = 0.1f, speedY = 0.1f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
 
 	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
+}
 
-	// skybox
+void render() {
 	renderer->render(&scene, cam);
 }

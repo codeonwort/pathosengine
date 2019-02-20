@@ -407,5 +407,8 @@
     <ClInclude Include="src\gl_core.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\core_minimal.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 #include "font_mgr.h"
-#include <iostream>
+#include "pathos/util/log.h"
 
 namespace pathos {
 
@@ -21,12 +21,12 @@ namespace pathos {
 	bool FontManager::_init() {
 		if (initialized) return true;
 		if (FT_Init_FreeType(&library)) {
-			std::cerr << "** Cannot init FreeType library **" << std::endl;
+			LOG(LogError, "Cannot init FreeType library");
 			return false;
 		}
 		FT_Int major, minor, patch;
 		FT_Library_Version(library, &major, &minor, &patch);
-		std::cout << "- FreeType version: " << major << '.' << minor << '.' << patch << std::endl;
+		LOG(LogInfo, "FreeType version: %d.%d.%d", major, minor, patch);
 
 		initialized = true;
 		return initialized;
@@ -45,7 +45,7 @@ namespace pathos {
 		}
 		// Release FreeType library
 		if (FT_Done_FreeType(library)) {
-			std::cerr << "** Error while destroying FreeType library **" << std::endl;
+			LOG(LogError, "Error while destroying FreeType library");
 			return false;
 		}
 		return true;
@@ -57,11 +57,11 @@ namespace pathos {
 		for (wchar_t x = 33; x <= 126; ++x) ary += x;
 
 		if (FT_New_Face(library, name, 0, &face)) {
-			std::cerr << "** Cannot retrieve the font face" << std::endl;
+			LOG(LogError, "Cannot retrieve font face");
 			return false;
 		}
 		if (FT_Set_Pixel_Sizes(face, 0, size)) {
-			std::cerr << "** Cannot set pixel size" << std::endl;
+			LOG(LogError, "Cannot set pixel size");
 			return false;
 		}
 
@@ -85,7 +85,7 @@ namespace pathos {
 
 	bool FontManager::_loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping) {
 		if (FT_Load_Char(face, x, FT_LOAD_RENDER)) {
-			std::cerr << "** Cannot load the character: " << x << std::endl;
+			LOG(LogError, "Cannot load a character: %wc", x);
 			return false;
 		}
 		// Each time FT_Load_Char() is called, face's glyph slot is replaced with new information.
@@ -106,11 +106,11 @@ namespace pathos {
 
 	bool FontManager::_loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) {
 		if (fontDB.find(tag) == fontDB.end()) {
-			std::cerr << "** Cannot find a font by tag:" << tag << std::endl;
+			LOG(LogError, "Cannot find a font by tag: %s", tag.data());
 			return false;
 		}
 		if (start > end) {
-			std::cerr << "** Invalid range - start is behind end" << std::endl;
+			LOG(LogError, "Invalid range - start is behind end");
 			return false;
 		}
 
@@ -118,11 +118,11 @@ namespace pathos {
 		auto glyphs = fontDB.find(tag)->second;
 
 		if (FT_New_Face(library, glyphs->filename.c_str(), 0, &face)) {
-			std::cerr << "** Cannot retrieve the font face" << std::endl;
+			LOG(LogError, "Cannot retrieve the font face");
 			return false;
 		}
 		if (FT_Set_Pixel_Sizes(face, 0, glyphs->fontSize)) {
-			std::cerr << "** Cannot set pixel size" << std::endl;
+			LOG(LogError, "Cannot set pixel size");
 			return false;
 		}
 

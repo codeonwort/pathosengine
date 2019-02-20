@@ -33,7 +33,7 @@ namespace pathos {
 		// check if our framebuffer is ok
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std_logf(LogFatal, "Cannot create a framebuffer for shadow map");
+			LOG(LogFatal, "Cannot create a framebuffer for shadow map");
 			assert(0);
 		}
 

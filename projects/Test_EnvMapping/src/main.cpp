@@ -1,5 +1,5 @@
 #include "glm/gtx/transform.hpp"
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/render/render_forward.h"
 #include "pathos/render/render_norm.h"
 #include "pathos/render/envmap.h"
@@ -43,38 +43,34 @@ PointLight *plight, *plight2;
 
 void setupScene();
 
-void render() {
+void tick() {
 	float speedX = 0.1f, speedY = 0.1f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
+}
 
+void render() {
 	renderer->render(&scene, cam);
 	normRenderer->render(teapot, cam);
 }
 
-void keyDown(unsigned char ascii, int x, int y) {}
-
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = WINDOW_WIDTH;
-	conf.height = WINDOW_HEIGHT;
-	conf.title = TITLE;
-	conf.render = render;
-	conf.keyDown = keyDown;
+	conf.windowWidth  = WINDOW_WIDTH;
+	conf.windowHeight = WINDOW_HEIGHT;
+	conf.title        = TITLE;
+	conf.tick         = tick;
+	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../shaders/");
-
 	// camera
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.width / conf.height, 0.1f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.windowWidth / conf.windowHeight, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
@@ -85,7 +81,7 @@ int main(int argc, char** argv) {
 	setupScene();
 
 	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	return 0;
 }

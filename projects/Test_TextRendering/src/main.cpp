@@ -1,7 +1,5 @@
-#include <iostream>
-
 #include "glm/gtx/transform.hpp"
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/console.h"
 #include "pathos/render/render_forward.h"
 #include "pathos/render/envmap.h"
@@ -30,9 +28,6 @@ constexpr float FOV = 90.0f;
 const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 10.0f);
 constexpr char* TITLE = "Test: Text Rendering";
 
-// Console window
-ConsoleWindow* g_Console = nullptr;
-
 // Camera, scene and renderer
 Camera* cam;
 Scene scene;
@@ -59,40 +54,21 @@ void setupOverlay();
 void setupModel();
 void setupSkybox();
 
+void tick();
 void render();
-void keyDown(unsigned char ascii, int x, int y);
-void keyPress(unsigned char ascii);
 
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = WINDOW_WIDTH;
-	conf.height = WINDOW_HEIGHT;
-	conf.title = TITLE;
-	conf.render = render;
-	conf.keyDown = keyDown;
-	conf.keyPress = keyPress;
-	if (Engine::init(&argc, argv, conf) == false) {
-		std::cerr << "Failed to initialize Pathos" << std::endl;
-		return 1;
-	}
-
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../resources/");
-	ResourceFinder::get().add("../../shaders/");
-
-	// console
-	g_Console = new ConsoleWindow;
-	if (g_Console->initialize(WINDOW_WIDTH, 400) == false) {
-		std::cerr << "Failed to initialize console window" << std::endl;
-		delete g_Console;
-		g_Console = nullptr;
-	}
-	label0 = g_Console->addLine(L"Built-in debug console. Press ` to toggle.");
+	conf.windowWidth  = WINDOW_WIDTH;
+	conf.windowHeight = WINDOW_HEIGHT;
+	conf.title        = TITLE;
+	conf.tick         = tick;
+	conf.render       = render;
+	Engine::init(&argc, argv, conf);
 
 	// camera
-	float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
@@ -106,7 +82,7 @@ int main(int argc, char** argv) {
 	setupSkybox();
 
 	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	return 0;
 }
@@ -115,16 +91,16 @@ void setupModel() {
 	plight = new PointLight(glm::vec3(5.0f, 30.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	dlight = new DirectionalLight(glm::vec3(0.1f, -1.0f, 2.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
-	//FontManager::loadAdditionalGlyphs("hangul", L'§°', L'∆R');
+	//FontManager::loadAdditionalGlyphs("hangul", L'„Ñ±', L'Ìû£');
 
 	label = new TextMesh("hangul");
-	label->setText(L"«—±€ ≈◊Ω∫∆Æ / øµæÓµµ ≥™ø¿≥™ English Text\nø©±‚∫Œ≈Õ ªı ¡Ÿ", 0xff0000);
+	label->setText(L"„ÖÅ„Ñ¥„Öá„Ñπ / Ïò§ÌîàÏßÄÏóò English Text\nÍ∞ÄÎÇòÎã§ÎùºÎßàÎ∞îÏÇ¨", 0xff0000);
 	label->getTransform().appendScale(20.0f);
 
 #if DEBUG_FONT_TEXTURE
 	debug_overlayLabel = new Mesh(
 		new PlaneGeometry(20.0f, 20.0f),
-		new AlphaOnlyTextureMaterial(label0->getFontTexture()));
+		new AlphaOnlyTextureMaterial(Label::getFontTexture()));
 #endif
 
 	scene.add(plight);
@@ -158,26 +134,26 @@ void setupOverlay() {
 	overlayRoot->addChild(rect0);
 }
 
-void render() {
+void tick() {
 	float speedX = 0.05f, speedY = 0.05f;
 	float dx = 0.0f;
 	float dz = 0.0f;
 	float rotY = 0.0f;
 	float rotX = 0.0f;
-	if (g_Console->isVisible() == false) {
-		dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-		dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-		rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-		rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	if (gConsole->isVisible() == false) {
+		dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+		rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}
 
-	static std::wstring txt = L"∞°≥™¥Ÿ∂Û∏∂πŸªÁæ∆¿⁄¬˜ƒ´∆ƒ≈∏«œ";
+	static std::wstring txt = L"Í∞ÄÎÇòÎã§ÎùºÎßàÎ∞îÏÇ¨";
 	static bool first = true;
 	if (first) {
-		//for (wchar_t x = L'∞Ì'; x <= (L'∞Ì' + 100); ++x) txt += x;
+		//for (wchar_t x = L'„Ñ±'; x <= (L'„Ñ±' + 100); ++x) txt += x;
 		first = false;
 	}
 
@@ -188,22 +164,9 @@ void render() {
 		cnt = 0;
 	}
 	//label->setText(txt, 0xff0000);
-
-	renderer->render(&scene, cam);
-	//overlayRenderer->render(overlayRoot);
-
-	if (g_Console) {
-		g_Console->render();
-	}
 }
 
-void keyDown(unsigned char ascii, int x, int y) {}
-
-void keyPress(unsigned char ascii) {
-	// backtick
-	if (ascii == 0x60) {
-		g_Console->toggle();
-	} else if (g_Console->isVisible()) {
-		g_Console->onKeyPress(ascii);
-	}
+void render() {
+	renderer->render(&scene, cam);
+	//overlayRenderer->render(overlayRoot);
 }

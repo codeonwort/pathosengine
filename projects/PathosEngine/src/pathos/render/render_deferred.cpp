@@ -94,7 +94,7 @@ namespace pathos {
 
 		// check if our framebuffer is ok
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			std_log(LogFatal, "Cannot create a framebuffer for deferred renderer");
+			LOG(LogFatal, "Cannot create a framebuffer for deferred renderer");
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

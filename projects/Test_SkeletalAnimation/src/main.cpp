@@ -1,4 +1,4 @@
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
@@ -10,7 +10,6 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
-#include <iostream>
 #include <time.h>
 
 #include "daeloader.h"
@@ -60,31 +59,26 @@ DirectionalLight *dlight;
 
 void loadDAE();
 void setupScene();
+void tick();
 void render();
-void keyDown(unsigned char ascii, int x, int y) {}
 
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.width = WINDOW_WIDTH;
-	conf.height = WINDOW_HEIGHT;
+	conf.windowWidth = WINDOW_WIDTH;
+	conf.windowHeight = WINDOW_HEIGHT;
 	conf.title = WINDOW_TITLE;
+	conf.tick = tick;
 	conf.render = render;
-	conf.keyDown = keyDown;
 	Engine::init(&argc, argv, conf);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../shaders/");
-	ResourceFinder::get().add("../../resources/");
-
 	// camera
-	const float ar = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
-	renderer = new DeferredRenderer(conf.width, conf.height);
+	renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
 	renderer->setHDR(true);
 
 #if DEBUG_NORMAL
@@ -96,7 +90,7 @@ int main(int argc, char** argv) {
 	setupScene();
 
 	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	return 0;
 }
@@ -126,7 +120,7 @@ void loadDAE() {
 		daeModel->getTransform().appendMove(0, 0, 50);
 		scene.add(daeModel);
 	} else {
-		std::cout << "Failed to load model: " << model << std::endl;
+		LOG(LogError, "Failed to load model: %s", model.c_str());
 	}
 
 #if LOAD_SECOND_DAE_MODEL
@@ -223,12 +217,12 @@ void setupScene() {
 	scene.godRaySource = model2;
 }
 
-void render() {
+void tick() {
 	float speedX = 0.5f, speedY = 0.5f;
-	float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-	float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-	float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-	float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
 	cam->rotateX(rotX);
@@ -249,7 +243,9 @@ void render() {
 	daeModel->updateSoftwareSkinning();
 	daeModel->getTransform().prependRotation(0.003f, glm::vec3(0, 1, 0));
 #endif
+}
 
+void render() {
 	renderer->render(&scene, cam);
 
 #if DEBUG_NORMAL

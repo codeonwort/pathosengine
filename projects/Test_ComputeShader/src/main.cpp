@@ -1,12 +1,10 @@
-#include "pathos/engine.h"
+#include "pathos/core_minimal.h"
 #include "pathos/camera/camera.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/render_deferred.h"
-#include "pathos/util/resource_finder.h"
 using namespace pathos;
 
-#include <iostream>
-using namespace std;
+#include <stdio.h>
 
 //-------------------------------------
 
@@ -19,33 +17,27 @@ DeferredRenderer* renderer;
 void initComputeShader();
 void initScene();
 void onRender();
-void onKeyDown(unsigned char ascii, int x, int y);
 
 //-------------------------------------
 
 int main(int argc, char** argv) {
 	EngineConfig config;
-	config.width = 800;
-	config.height = 600;
-	config.title = "Test: Compute Shader";
-	config.render = onRender;
-	config.keyDown = onKeyDown;
+	config.windowWidth  = 800;
+	config.windowHeight = 600;
+	config.title        = "Test: Compute Shader";
+	config.render       = onRender;
 	Engine::init(&argc, argv, config);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../shaders/");
-
-	float aspect = static_cast<float>(config.width) / static_cast<float>(config.height);
+	float aspect = static_cast<float>(config.windowWidth) / static_cast<float>(config.windowHeight);
 	camera = new Camera(new PerspectiveLens(45.0f, aspect, 1.0f, 500.0f));
 
-	renderer = new DeferredRenderer(config.width, config.height);
+	renderer = new DeferredRenderer(config.windowWidth, config.windowHeight);
 	renderer->setHDR(true);
 
 	initComputeShader();
 	initScene();
 
-	Engine::start();
+	gEngine->start();
 
 	return 0;
 }
@@ -68,11 +60,11 @@ void initComputeShader() {
 	//glBindImageTexture(0, tex_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F)
 	//glBindImageTexture(1, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F)
 
-	cout << endl << "===== Compute Shader Capabilities =====" << endl;
-	cout << "max work group size: (" << workGroupSizeX << ", " << workGroupSizeY << ", " << workGroupSizeZ << ")" << endl;
-	cout << "max work group invocations: " << maxInvocation << endl;
-	cout << "max shared memory (kb): " << sharedVariableLimit << endl;
-	cout << "=======================================\n" << endl;
+	LOG(LogInfo, "===== Compute Shader Capabilities =====");
+	LOG(LogInfo, "max work group size: (%d, %d, %d)", workGroupSizeX, workGroupSizeY, workGroupSizeZ);
+	LOG(LogInfo, "max work group invocations: %d", maxInvocation);
+	LOG(LogInfo, "max shared memory (kb): %d", sharedVariableLimit);
+	LOG(LogInfo, "=======================================");
 
 	/* backup
 	string cshader = R"(
@@ -162,9 +154,9 @@ void main() {
 	GLuint* subsum_result = reinterpret_cast<GLuint*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
 	for (int i = 0; i < 128; ++i) {
 		//assert(subsum_result[i] == i + 1);
-		cout << subsum_result[i] << ' ';
+		printf("%d ", subsum_result[i]);
 	}
-	cout << endl;
+	puts("");
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
@@ -175,8 +167,4 @@ void initScene() {
 
 void onRender() {
 	renderer->render(&scene, camera);
-}
-
-void onKeyDown(unsigned char ascii, int x, int y) {
-	//
 }

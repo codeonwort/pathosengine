@@ -1,5 +1,4 @@
-#include "pathos/engine.h"
-#include "pathos/console.h"
+#include "pathos/core_minimal.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
@@ -9,17 +8,15 @@
 #include "pathos/render/render_norm.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/loader/imageloader.h"
-#include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
 using namespace pathos;
 
 #include <GL/glut.h>
-#include <iostream>
 #include <time.h>
 
 // Compile options
-#define SMALL_WINDOW          0 // RenderDoc crashes when trying to capture a large screen :(
-#define USE_NORMAL_RENDERER   0
+#define SMALL_WINDOW        0 // RenderDoc crashes when trying to capture a large screen :(
+#define VISUALIZE_NORMAL    0
 
 // Rendering configurations
 #if SMALL_WINDOW
@@ -39,9 +36,6 @@ const bool			USE_HDR				=	true;
 const uint32_t		NUM_POINT_LIGHTS	=	2;
 const uint32_t		NUM_BALLS			=	10;
 
-// Console window
-ConsoleWindow* g_Console = nullptr;
-
 // Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
@@ -55,71 +49,38 @@ std::vector<Mesh*> balls;
 Mesh* godRaySource;
 Skybox* sky;
 
-// Profiler
-GLuint timer_query = 0;
-
 // Lights and shadow
 PointLight *plight;
 DirectionalLight *sunLight;
 
-void prepareProfiler();
 void setupScene();
+void tick();
 void render();
-void keyDown(unsigned char ascii, int x, int y) {}
-
-void keyPress(unsigned char ascii) {
-	// backtick
-	if (ascii == 0x60) {
-		g_Console->toggle();
-	} else if (g_Console->isVisible()) {
-		g_Console->onKeyPress(ascii);
-	}
-}
 
 int main(int argc, char** argv) {
-	// engine configuration
 	EngineConfig conf;
-	conf.width = WINDOW_WIDTH;
-	conf.height = WINDOW_HEIGHT;
-	conf.title = WINDOW_TITLE;
-	conf.render = render;
-	conf.keyDown = keyDown;
-	conf.keyPress = keyPress;
+	conf.windowWidth  = WINDOW_WIDTH;
+	conf.windowHeight = WINDOW_HEIGHT;
+	conf.title        = WINDOW_TITLE;
+	conf.tick         = tick;
+	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
-	ResourceFinder::get().add("../");
-	ResourceFinder::get().add("../../");
-	ResourceFinder::get().add("../../shaders/");
-
-	// console
-	g_Console = new ConsoleWindow;
-	if (g_Console->initialize(WINDOW_WIDTH, 400) == false) {
-		std::cerr << "Failed to initialize console window" << std::endl;
-		delete g_Console;
-		g_Console = nullptr;
-	}
-	g_Console->addLine(L"Built-in debug console. Press ` to toggle.");
-
 	// camera
-	float aspect_ratio = static_cast<float>(conf.width) / static_cast<float>(conf.height);
+	float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
-	renderer = new DeferredRenderer(conf.width, conf.height);
+	renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
 	renderer->setHDR(USE_HDR);
-#if USE_NORMAL_RENDERER
+#if VISUALIZE_NORMAL
 	normRenderer = new NormalRenderer(0.2f);
 #endif
 
-	// scene
 	setupScene();
 
-	// profiler
-	prepareProfiler();
-
-	// start the main loop
-	Engine::start();
+	gEngine->start();
 
 	return 0;
 }
@@ -213,7 +174,6 @@ void setupScene() {
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
-	// skybox
 	sky = new Skybox(cubeTexture);
 
 	ground = new Mesh(geom_plane_big, material_texture);
@@ -221,22 +181,18 @@ void setupScene() {
 	ground->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
 
-	// model 1: flat texture
 	//model = new Mesh(geom_sphere_big, material_texture);
 	model = new Mesh(geom_plane, material_bump);
 	model->getTransform().appendMove(-40.0f, 0.0f, 0.0f);
 
-	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
 	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
 
-	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
 	//model3 = new Mesh(geom_plane, material_tex_debug);
 	model3->getTransform().appendMove(35.0f, 0.0f, 0.0f);
 
-	// model: balls
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
 		ball->getTransform().appendScale(2.0f);
@@ -245,12 +201,11 @@ void setupScene() {
 		scene.add(ball);
 	}
 
-	// model: god ray source
 	godRaySource = new Mesh(geom_sphere, material_color);
 	godRaySource->getTransform().appendScale(10.0f);
 	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 
-	// add them to scene
+	// add to scene
 	scene.add(ground);
 	scene.add(model);
 	scene.add(model2);
@@ -259,28 +214,22 @@ void setupScene() {
 	scene.godRaySource = godRaySource;
 }
 
-void prepareProfiler() {
-	glGenQueries(1, &timer_query);
-	assert(timer_query != 0);
-}
-
-void render() {
-	if (g_Console->isVisible() == false) {
+void tick()
+{
+	if (gConsole->isVisible() == false) {
 		float speedX = 0.5f, speedY = 0.5f;
-		float dx = Engine::isDown('a') ? -speedX : Engine::isDown('d') ? speedX : 0.0f;
-		float dz = Engine::isDown('w') ? -speedY : Engine::isDown('s') ? speedY : 0.0f;
-		float rotY = Engine::isDown('q') ? -0.5f : Engine::isDown('e') ? 0.5f : 0.0f;
-		float rotX = Engine::isDown('z') ? -0.5f : Engine::isDown('x') ? 0.5f : 0.0f;
+		float dx   = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		float dz   = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		float rotY = gEngine->isDown('q') ? -0.5f   : gEngine->isDown('e') ? 0.5f   : 0.0f;
+		float rotX = gEngine->isDown('z') ? -0.5f   : gEngine->isDown('x') ? 0.5f   : 0.0f;
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}
-
-	/*
-	model->getTransform().appendMove(0, 20, 0);
-	model->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 0.5f, 1.0f));
-	model->getTransform().appendMove(0, -20, 0);
-	*/
+	
+	//model->getTransform().appendMove(0, 20, 0);
+	//model->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 0.5f, 1.0f));
+	//model->getTransform().appendMove(0, -20, 0);
 
 	model2->getTransform().appendMove(-60, 0, 0);
 	model2->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -290,32 +239,20 @@ void render() {
 		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
-	// Start timer
-	GLuint64 elapsed_ms;
-	GLuint64 elapsed_ns;
-	glBeginQuery(GL_TIME_ELAPSED, timer_query);
-
-	// Render
-	renderer->render(&scene, cam);
-
-	// End timer
-	glEndQuery(GL_TIME_ELAPSED);
-	glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
-	elapsed_ms = elapsed_ns / 1000000u;
-
-	char title[256];
-	sprintf_s(title, "%s (Elapsed: %llu ms)", WINDOW_TITLE, elapsed_ms);
 #if !(_DEBUG)
+	char title[256];
+	sprintf_s(title, "%s (Elapsed: %.2f ms)", WINDOW_TITLE, gEngine->getMilliseconds());
 	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
 #endif
 
-#if USE_NORMAL_RENDERER
+}
+
+void render() {
+	renderer->render(&scene, cam);
+
+#if VISUALIZE_NORMAL
 	for (const auto mesh : scene.meshes) {
 		normRenderer->render(mesh, cam);
 	}
 #endif
-
-	if (g_Console) {
-		g_Console->render();
-	}
 }

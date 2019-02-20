@@ -17,23 +17,15 @@ namespace pathos {
 	};
 
 	enum LogSeverity {
-		LogDebug = 0,
-		LogInfo = 1,
+		LogDebug   = 0,
+		LogInfo    = 1,
 		LogWarning = 2,
-		LogError = 3,
-		LogFatal = 4
+		LogError   = 3,
+		LogFatal   = 4
 	};
 
 #if ENABLE_LOGGER
-	inline void std_log(LogSeverity severity, const char* message) {
-		std::cout << severity_strings[(int)severity] << message << '\n' << std::endl;
-	}
-#else
-	inline void std_log(const char*) {}
-#endif
-
-#if ENABLE_LOGGER
-	inline void std_logf(LogSeverity severity, const char* format...) {
+	inline void LOG(LogSeverity severity, const char* format...) {
 		printf("%s", severity_strings[(int)severity]);
 		va_list argptr;
 		va_start(argptr, format);
@@ -42,7 +34,7 @@ namespace pathos {
 		puts("");
 	}
 #else
-	inline void std_lof(const char* format...) {}
+	inline void LOG(LogSeverity severity, const char* format...) {}
 #endif
 
 }

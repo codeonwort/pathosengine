@@ -131,8 +131,8 @@ void main() {
 		// restore original viewport
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		// TODO: remove the global access
-		auto config = Engine::getConfig();
-		glViewport(0, 0, config.width, config.height);
+		auto config = gEngine->getConfig();
+		glViewport(0, 0, config.windowWidth, config.windowHeight);
 	}
 
 	void OmnidirectionalShadow::activate(GLuint materialProgram, const vector<PointLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix)
