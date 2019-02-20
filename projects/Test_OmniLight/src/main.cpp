@@ -8,22 +8,19 @@
 #include "pathos/light/light.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
-#include "pathos/util/resource_finder.h"
 #include "glm/gtx/transform.hpp"
 
 using namespace std;
 using namespace pathos;
 
 // Rendering configurations
-const int WINDOW_WIDTH = 1920;
+const int WINDOW_WIDTH  = 1920;
 const int WINDOW_HEIGHT = 1080;
-const float FOV = 90.0f;
-const char* TITLE = "Test: Omnidirectional Light";
+const float FOV         = 90.0f;
+const char* TITLE       = "Test: Omnidirectional Light";
 
-// camera
+// world
 Camera* cam;
-
-// scene
 Scene scene;
 	Mesh *cube, *viewer, *shadowLight; // shadow debugger
 	Mesh *ball, *lamp; // shadow casters
@@ -54,16 +51,16 @@ void render() {
 }
 
 int main(int argc, char** argv) {
-	// init the engine
 	EngineConfig conf;
-	conf.windowWidth = WINDOW_WIDTH;
+	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
-	conf.title = TITLE;
-	conf.tick = tick;
-	conf.render = render;
+	conf.title        = TITLE;
+	conf.tick         = tick;
+	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 1000.f));
+	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	renderer = new MeshForwardRenderer;
@@ -88,22 +85,11 @@ void setupScene() {
 	//scene.add(plight2);
 	//scene.add(plight3);
 
-	// collada loader test
-	/*ColladaLoader collada("../resources/birdcage2.dae");
-	auto geoms = collada.getGeometries();
-	lamp = new Mesh(nullptr, nullptr);
-	lamp->getTransform().appendScale(0.5, 0.5, 0.5);
-	auto testColor = make_shared<ColorMaterial>(1, 1, 1, 1);
-	testColor->addLight(plight);
-	for (auto geom : geoms){
-	lamp->add(geom, testColor);
-	}*/
 	OBJLoader obj2("models/lightbulb.obj", "models/");
 	lamp = obj2.craftMeshFromAllShapes();
 	lamp->getTransform().appendScale(4, 4, 4);
 	lamp->doubleSided = true;
 
-	// cubemap
 	const char* cubeImgName[6] = {
 		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
 		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",

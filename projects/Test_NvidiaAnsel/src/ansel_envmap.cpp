@@ -6,10 +6,9 @@
 
 namespace pathos {
 
-	IcosahedronGeometry::IcosahedronGeometry(unsigned int subdivisionSteps) {
+	IcosahedronGeometry::IcosahedronGeometry(uint32_t subdivisionStep /*= 0*/) {
 		buildGeometry();
-		while (subdivisionSteps-- > 0) subdivide();
-		//buildNormalAndUV();
+		while (subdivisionStep-- > 0) subdivide();
 		uploadToGPU();
 	}
 
@@ -121,56 +120,15 @@ namespace pathos {
 		numTriangles = newNumTriangles;
 	}
 
-	/*
-	void IcosahedronGeometry::buildNormalAndUV() {
-		normalData = new GLfloat[numVertices * 3];
-		uvData = new GLfloat[numVertices * 2];
-
-		// normal: simple copy
-		memcpy(normalData, positionData, sizeof(GLfloat) * numVertices * 3);
-
-		// uv
-		const float pi_inv = glm::one_over_pi<float>();
-		for (int i = 0; i < numVertices; ++i) {
-			float x = positionData[i * 3];
-			float y = positionData[i * 3 + 1];
-			float z = positionData[i * 3 + 2];
-
-			glm::vec3 r(x, y, z);
-			float u, v;
-
-			v = r.y;
-			r.y = 0.0f;
-			if (glm::length<float>(r) <= 0.00001f) {
-				u = 0.0f;
-			} else {
-				u = glm::normalize(r).x * 0.5;
-			}
-
-			float s = (r.z >= 0.0f ? 1.0f : -1.0f) * 0.5f;
-			u = 0.75 - s * (0.5 - u);
-			v = 0.5 + 0.5 * v;
-
-			if (u > 1.0f) u -= 1.0f;
-
-			uvData[i * 2] = u;
-			uvData[i * 2 + 1] = v;
-		}
-	}
-	*/
-
 	void IcosahedronGeometry::uploadToGPU() {
 		updatePositionData(positionData, numVertices * 3);
-		//updateUVData(uvData, numVertices * 2);
-		//updateNormalData(normalData, numVertices * 3);
 		updateIndexData(indexData, numTriangles * 3);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////
 
 	AnselEnvMapping::AnselEnvMapping(GLuint textureID) :texture(textureID) {
-		//sphere = new SphereGeometry(1.0f, 50);
-		sphere = new IcosahedronGeometry(2);
+		sphere = new IcosahedronGeometry(0);
 
 		createShaderProgram();
 	}
@@ -183,32 +141,25 @@ namespace pathos {
 	}
 
 	void AnselEnvMapping::render(const glm::mat4& transform) {
-		// activate ///////////////////////////////////////////////////////
+		glUseProgram(program);
+
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_DEPTH_TEST);
-		//glCullFace(GL_FRONT);
 
 		sphere->activate_position();
 		sphere->activateIndexBuffer();
 
-		glUseProgram(program);
 		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTextureUnit(0, texture);
 
-		// draw call ///////////////////////////////////////////////////////
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		sphere->draw();
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		// deactivate ///////////////////////////////////////////////////////
 		sphere->deactivate();
 		sphere->deactivateIndexBuffer();
 
 		glDepthFunc(GL_LESS);
 		glEnable(GL_DEPTH_TEST);
-		//glCullFace(GL_BACK);
 	}
 
 	void AnselEnvMapping::createShaderProgram() {
@@ -216,17 +167,14 @@ namespace pathos {
 #version 430 core
 
 layout (location = 0) in vec3 position;
-//layout (location = 1) in vec2 uv;
 
 uniform mat4 viewProj;
 
 out VS_OUT {
-	//vec2 uv;
 	vec3 r;
 } vs_out;
 
 void main() {
-	//vs_out.uv = uv;
 	vs_out.r = position;
 	gl_Position = (viewProj * vec4(position, 1)).xyww;
 }
@@ -239,22 +187,19 @@ void main() {
 layout (binding = 0) uniform sampler2D texSampler;
 
 in VS_OUT {
-	//vec2 uv;
 	vec3 r;
 } fs_in;
 
 layout (location = 0) out vec4 out_color;
 
 void main() {
-	vec3 r = normalize(fs_in.r);
+	const float PI = 3.14159265359;
+	vec3 r0 = normalize(fs_in.r);
+	vec3 r = vec3(r0.x, r0.z, -r0.y);
 	vec2 tc;
-	tc.y = r.y; r.y = 0.0;
-	tc.x = normalize(r).x * 0.5;
-	float s = sign(r.z) * 0.5;
-	tc.s = 0.75 - s * (0.5 - tc.s);
-	tc.t = 0.5 + 0.5 * tc.t;
+	tc.x = (atan(r.y, r.x) + PI) / PI * 0.5;
+	tc.y = acos(r.z) / PI;
 	out_color = texture(texSampler, tc);
-	//out_color = texture(texSampler, fs_in.uv);
 }
 
 )";
@@ -262,6 +207,7 @@ void main() {
 		program = pathos::createProgram(vs, fs);
 		assert(program != 0);
 		uniform_transform = glGetUniformLocation(program, "viewProj");
+		assert(uniform_transform != -1);
 	}
 
 }

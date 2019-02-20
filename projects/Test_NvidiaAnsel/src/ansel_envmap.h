@@ -1,23 +1,22 @@
 #pragma once
 
 #include "gl_core.h"
-#include "pathos/mesh/geometry_primitive.h"
+#include "pathos/mesh/geometry.h"
 
 namespace pathos {
 
 	class IcosahedronGeometry : public MeshGeometry {
 
-		static constexpr unsigned int INITIAL_NUM_VERTICES = 12;
-		static constexpr unsigned int INITIAL_NUM_TRIANLGES = 20;
+		static constexpr uint32_t INITIAL_NUM_VERTICES = 12;
+		static constexpr uint32_t INITIAL_NUM_TRIANLGES = 20;
 		
 	public:
-		IcosahedronGeometry(unsigned int subdivisionStep = 0);
+		IcosahedronGeometry(uint32_t subdivisionStep = 0);
 
 	private:
 		// subroutines
 		void buildGeometry();		// initial positions and indices of icosahedron
 		void subdivide();			// subdivision step
-		//void buildNormalAndUV();	// invoked after all subdivisions
 		void uploadToGPU();			// GL calls
 
 		GLfloat* positionData;
@@ -25,8 +24,8 @@ namespace pathos {
 		GLfloat* normalData;
 		GLuint* indexData;
 
-		unsigned int numVertices;
-		unsigned int numTriangles;
+		uint32_t numVertices;
+		uint32_t numTriangles;
 		
 	};
 

@@ -8,35 +8,30 @@
 #include "pathos/loader/objloader.h"
 #include "pathos/text/textmesh.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/util/resource_finder.h"
 
 #include "ansel_envmap.h"
 
-#include <iostream>
 #include <thread>
 
-using namespace std;
 using namespace pathos;
 
-// Rendering configurations
-const int WINDOW_WIDTH = 1920;
-const int WINDOW_HEIGHT = 1080;
-const float FOV = 90.0f;
-const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 20.0f);
+#define LOAD_3D_MODEL 1
 
-// Camera, scene and renderer
+// Rendering configurations
+const int WINDOW_WIDTH          = 1920;
+const int WINDOW_HEIGHT         = 1080;
+const float FOV                 = 120.0f;
+const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 20.0f);
+
 Camera* cam;
 Scene scene;
+	AnselEnvMapping* sky;
+	Mesh *city, *city2;
+	TextMesh *label;
+	PointLight *plight, *plight2;
+	DirectionalLight *dlight;
+
 MeshForwardRenderer* renderer;
-
-// 3D objects
-Mesh *city, *city2;
-TextMesh *label;
-AnselEnvMapping* sky;
-
-// Lights and shadow
-PointLight *plight, *plight2;
-DirectionalLight *dlight;
 
 OBJLoader cityLoader;
 bool loaderReady = false;
@@ -52,7 +47,6 @@ void loadTask() {
 }
 
 int main(int argc, char** argv) {
-	// engine configuration
 	EngineConfig conf;
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
@@ -62,7 +56,8 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	// camera
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 500.f));
+	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
 	// renderer
@@ -72,12 +67,16 @@ int main(int argc, char** argv) {
 	setupModel();
 	setupSkybox();
 
-	//std::thread loadWorker(loadTask);
+#if LOAD_3D_MODEL
+	std::thread loadWorker(loadTask);
+#endif
 
 	// start the main loop
 	gEngine->start();
 
-	//loadWorker.join();
+#if LOAD_3D_MODEL
+	loadWorker.join();
+#endif
 
 	return 0;
 }
@@ -87,6 +86,7 @@ void setupModel() {
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
 
+#if LOAD_3D_MODEL
 	label = new TextMesh("default");
 	label->setText("Loading OBJ model. Please wait...", 0xff0000);
 	label->getTransform().appendScale(20);
@@ -94,18 +94,21 @@ void setupModel() {
 
 	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
 	debug->getTransform().appendMove(30, 0, 10);
+#endif
 
 	scene.add(plight);
 	scene.add(dlight);
-	//scene.add(label);
+#if LOAD_3D_MODEL
+	scene.add(label);
 	scene.add(debug);
+#endif
 
 	renderer->getShadowMap()->setProjection(glm::ortho(-200.f, 200.f, -200.f, 100.f, -200.f, 500.f));
 }
 
 void setupSkybox() {
-	auto anselImage = pathos::loadImage("ansel/dishonored.jpg");
-	//auto anselImage = pathos::loadImage("ansel/the_surge.jpg");
+	//auto anselImage = pathos::loadImage("ansel/dishonored.jpg");
+	auto anselImage = pathos::loadImage("ansel/the_surge.jpg");
 	GLuint anselTex = loadTexture(anselImage);
 	sky = new AnselEnvMapping(anselTex);
 	scene.skybox = nullptr; // use custom sky rendering
@@ -118,7 +121,7 @@ void tick() {
 		city->getTransform().appendScale(0.1f, 0.1f, 0.1f);
 		city->getTransform().appendMove(0.0f, -60.0f, 0.0f);
 
-		//scene.add(city);
+		scene.add(city);
 		cityLoader.unload();
 		label->visible = false;
 	}
@@ -126,7 +129,7 @@ void tick() {
 	float speedX = 0.1f, speedY = 0.1f;
 	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+	float rotY = gEngine->isDown('q') ? -1.0f : gEngine->isDown('e') ? 1.0f : 0.0f;
 	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
 	cam->move(glm::vec3(dx, 0, dz));
 	cam->rotateY(rotY);
