@@ -130,6 +130,7 @@
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
+    <ClCompile Include="src\pathos\render\visualize_depth.cpp" />
     <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
+    <ClInclude Include="src\pathos\render\visualize_depth.h" />
     <ClInclude Include="src\pathos\shader\shader.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />

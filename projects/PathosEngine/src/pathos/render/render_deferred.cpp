@@ -1,7 +1,9 @@
 #include "render_deferred.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/envmap.h"
+#include "pathos/console.h"
 #include "pathos/util/log.h"
+#include "visualize_depth.h"
 
 #include <algorithm>
 
@@ -53,6 +55,8 @@ namespace pathos {
 		unpack_pass = new MeshDeferredRenderPass_Unpack(
 			fbo_attachment[0], fbo_attachment[1], fbo_attachment[2],
 			width, height);
+
+		visualizeDepth = new VisualizeDepth;
 	}
 	void DeferredRenderer::destroyShaders() {
 		for (int i = 0; i < (int)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
@@ -121,6 +125,14 @@ namespace pathos {
 #if ASSERT_GL_NO_ERROR
 		glGetError();
 #endif
+
+		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
+		if (cvar_visualizeDepth->getInt() != 0) {
+			glViewport(0, 0, width, height);
+			visualizeDepth->render(scene, camera);
+			return;
+		}
+
 		sunShadowMap->renderShadowMap(scene, camera);
 
 		glViewport(0, 0, width, height);

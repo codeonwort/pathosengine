@@ -23,9 +23,7 @@ namespace pathos {
 
 		GLuint debug_godRayTexture() { return unpack_pass->debug_godRayTexture(); }
 
-	protected:
-		bool useHDR = false;
-
+	private:
 		void createShaders();
 		void destroyShaders();
 
@@ -35,6 +33,16 @@ namespace pathos {
 		void createUBO();
 		void destroyUBO();
 
+		void updateUBO(Scene* scene, Camera* camera);
+		void clearGBuffer();
+		void packGBuffer();
+		void unpackGBuffer();
+
+		void renderSkybox(Skybox*);
+
+	private:
+		bool useHDR = false;
+
 		GLuint fbo; // g-buffer
 		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)
 		GLsizei width, height; // fbo texture size
@@ -42,20 +50,14 @@ namespace pathos {
 
 		GLuint ubo_perFrame;
 
-		// invoked by render()
-		void updateUBO(Scene* scene, Camera* camera);
-		void clearGBuffer();
-		void packGBuffer();
-		void unpackGBuffer();
-		Scene* scene = nullptr; // temporary save. actually don't need
-		Camera* camera = nullptr; // temporary save. actually don't need
-
-		void renderSkybox(Skybox*);
-
 		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
-		MeshDeferredRenderPass_Unpack* unpack_pass = nullptr;
+		MeshDeferredRenderPass_Unpack* unpack_pass;
 
-		DirectionalShadowMap* sunShadowMap = nullptr;
+		class VisualizeDepth* visualizeDepth;
+		DirectionalShadowMap* sunShadowMap;
+
+		Scene* scene; // temporary save. actually don't need
+		Camera* camera; // temporary save. actually don't need
 
 	};
 

@@ -44,5 +44,7 @@
     <None Include="..\..\shaders\subsum.glsl" />
     <None Include="..\..\shaders\temp_deferred_normal_mapping.glsl" />
     <None Include="..\..\shaders\tone_mapping.glsl" />
+    <None Include="..\..\shaders\visualize_depth.fs.glsl" />
+    <None Include="..\..\shaders\visualize_depth.vs.glsl" />
   </ItemGroup>
 </Project>

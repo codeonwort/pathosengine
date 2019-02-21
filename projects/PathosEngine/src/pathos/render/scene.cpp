@@ -1,7 +1,10 @@
 #include "scene.h"
+#include "pathos/console.h"
 #include "pathos/light/light.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int> cvar_visualize_depth("r.visualize_depth", 0, "visualize the scene depth");
 
 	Scene::Scene() {}
 

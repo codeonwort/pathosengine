@@ -1,5 +1,7 @@
 #include "render_forward.h"
 
+// #todo: Need a kind of refactoring that was done in deferred renderer.
+
 namespace pathos {
 
 	MeshForwardRenderer::MeshForwardRenderer() {
@@ -13,14 +15,14 @@ namespace pathos {
 		shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
 
-		colorPass = new SolidColorPass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
-		texturePass = new FlatTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
-		bumpTexturePass = new BumpTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
-		wireframePass = new WireframePass;
-		shadowTexturePass = new ShadowTexturePass;
-		cubeEnvMapPass = new CubeEnvMapPass;
+		colorPass             = new SolidColorPass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
+		texturePass           = new FlatTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
+		bumpTexturePass       = new BumpTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
+		wireframePass         = new WireframePass;
+		shadowTexturePass     = new ShadowTexturePass;
+		cubeEnvMapPass        = new CubeEnvMapPass;
 		shadowCubeTexturePass = new ShadowCubeTexturePass;
-		alphaOnlyTexturePass = new AlphaOnlyTexturePass;
+		alphaOnlyTexturePass  = new AlphaOnlyTexturePass;
 
 		colorPass->setShadowMapping(shadowMap);
 		texturePass->setShadowMapping(shadowMap);
@@ -31,7 +33,7 @@ namespace pathos {
 		bumpTexturePass->setOmnidirectionalShadow(omniShadow);
 	}
 	void MeshForwardRenderer::destroyShaders() {
-#define release(x) if(x) delete x
+#define release(x) if(x) { delete x; }
 		release(shadowMap);
 		release(omniShadow);
 
@@ -46,11 +48,11 @@ namespace pathos {
 #undef release
 	}
 
-	// MOST OUTER RENDERING FUNCTION
-	void MeshForwardRenderer::render(Scene* scene_, Camera* camera_) {
-		scene = scene_;
-		camera = camera_;
+	void MeshForwardRenderer::render(Scene* inScene, Camera* inCamera) {
+		scene = inScene;
+		camera = inCamera;
 
+#if 0
 		// DEBUG: assertion
 		for (Mesh* mesh : scene->meshes) {
 			Geometries geoms = mesh->getGeometries();
@@ -61,6 +63,7 @@ namespace pathos {
 				assert(geoms[i] != nullptr && materials[i] != nullptr);
 			}
 		}
+#endif
 
 		scene->calculateLightBuffer();
 
@@ -72,16 +75,18 @@ namespace pathos {
 			renderLightDepth(mesh);
 		}
 
-		// currently no optimization. just render all objects.
-		// @TODO: occluder or BSP tree
-		if (scene->skybox != nullptr) render(scene->skybox);
+		if (scene->skybox != nullptr) {
+			render(scene->skybox);
+		}
+
+		// #todo: occluder or BSP tree
 		for (Mesh* mesh : scene->meshes) {
 			if (mesh->visible == false) continue;
 			render(mesh);
 		}
 
-		this->scene = nullptr;
-		this->camera = nullptr;
+		scene = nullptr;
+		camera = nullptr;
 	}
 
 	void MeshForwardRenderer::renderLightDepth(Mesh* mesh) {
@@ -182,28 +187,6 @@ namespace pathos {
 			break;
 		}
 
-		// draw reflection target
-		/*if (reflection != nullptr && (reflection->getTargets()).size() > 0) {
-		auto targets = reflection->getTargets();
-		glFrontFace(GL_CW);
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_NOTEQUAL, 0, 0xFF);
-		// impossible - target's material passes override the blend setting!
-		//glEnable(GL_BLEND);
-		//glBlendColor(0, 0, 0, 0.2);
-		//glBlendFunc(a, b);
-		for (auto i = 0; i < targets.size(); i++) {
-		if (reflection->positiveSide(modelMatrix, i)) {
-		glm::mat4 reflectionMatrix = reflection->getReflection(modelMatrix, i);
-		renderMesh(targets[i], reflectionMatrix, material->getVPTransform(), material->getEyeVector());
-		}
-		}
-		glFrontFace(GL_CCW);
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
-		//glDisable(GL_BLEND);
-		}*/
 		glDepthFunc(GL_LESS);
 	}
 
