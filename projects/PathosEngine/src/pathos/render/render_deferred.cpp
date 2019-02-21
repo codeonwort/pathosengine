@@ -114,9 +114,9 @@ namespace pathos {
 		glDeleteBuffers(1, &ubo_perFrame);
 	}
 
-	void DeferredRenderer::render(Scene* scene_, Camera* camera_) {
-		scene = scene_;
-		camera = camera_;
+	void DeferredRenderer::render(Scene* inScene, Camera* inCamera) {
+		scene = inScene;
+		camera = inCamera;
 
 #if ASSERT_GL_NO_ERROR
 		glGetError();
@@ -160,8 +160,8 @@ namespace pathos {
 	void DeferredRenderer::packGBuffer() {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-		// DEBUG: assertion
 #if 0
+		// DEBUG: assert geometries and materials
 		for (Mesh* mesh : scene->meshes) {
 			Geometries geoms = mesh->getGeometries();
 			Materials materials = mesh->getMaterials();
@@ -178,6 +178,7 @@ namespace pathos {
 			renderItems[i].clear();
 		}
 
+		// sort by materials
 		for (Mesh* mesh : scene->meshes) {
 			if (mesh->visible == false) continue;
 
@@ -282,8 +283,7 @@ namespace pathos {
 			}
 		}
 
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo_perFrame);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO_PerFrame), &data);
+		glNamedBufferSubData(ubo_perFrame, 0, sizeof(UBO_PerFrame), &data);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_perFrame);
 	}
 
