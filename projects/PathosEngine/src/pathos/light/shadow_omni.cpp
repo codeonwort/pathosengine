@@ -87,7 +87,9 @@ void main() {
 	}
 
 	void OmnidirectionalShadow::renderLightDepth(unsigned int lightIndex, PointLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
-		if (lightIndex >= maxLights) assert(0);
+		if (lightIndex >= maxLights) {
+			assert(0);
+		}
 
 		//--------------------------------------------------------------------------------------
 		// activate
@@ -104,7 +106,7 @@ void main() {
 
 		glUseProgram(program);
 
-		glm::vec3 lightPos = light->getPositionVector();
+		glm::vec3 lightPos = light->getPosition();
 		glm::vec3 directions[6] = { glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1) };
 		glm::vec3 ups[6] = { glm::vec3(0, -1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0), glm::vec3(0, -1, 0) };
 		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, lightNearZ, lightFarZ);

@@ -3,31 +3,33 @@
 
 namespace pathos {
 
+	MeshRenderPass::MeshRenderPass()
+		: program(0)
+	{
+	}
+
 	MeshRenderPass::~MeshRenderPass() {
-		if (program) glDeleteProgram(program);
+		if (program) {
+			glDeleteProgram(program);
+		}
 	}
 
-	/*void MeshRenderPass::clearCompilers() {
-		vsSource.clear();
-		fsSource.clear();
-	}
-	void MeshRenderPass::createProgram(std::string& vsCode, std::string& fsCode) {
-		if (program != 0) glDeleteProgram(program);
-		program = pathos::createProgram(vsCode, fsCode);
-	}*/
-
-	void MeshRenderPass::uploadDirectionalLightUniform(Scene* scene, unsigned int maxDirectionalLights) {
-		if (program == 0) return;
-		unsigned int numDirLights = std::min(static_cast<unsigned int>(scene->directionalLights.size()), maxDirectionalLights);
+	void MeshRenderPass::uploadDirectionalLightUniform(Scene* scene, uint32_t maxDirectionalLights) {
+		if (program == 0) {
+			return;
+		}
+		uint32_t numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), maxDirectionalLights);
 		glUniform1ui(glGetUniformLocation(program, "numDirLights"), numDirLights);
 		if (numDirLights > 0) {
 			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numDirLights, scene->getDirectionalLightDirectionBuffer());
 			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numDirLights, scene->getDirectionalLightColorBuffer());
 		}
 	}
-	void MeshRenderPass::uploadPointLightUniform(Scene* scene, unsigned int maxPointLights) {
-		if (program == 0) return;
-		unsigned int numPointLights = std::min(static_cast<unsigned int>(scene->pointLights.size()), maxPointLights);
+	void MeshRenderPass::uploadPointLightUniform(Scene* scene, uint32_t maxPointLights) {
+		if (program == 0) {
+			return;
+		}
+		uint32_t numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), maxPointLights);
 		glUniform1ui(glGetUniformLocation(program, "numPointLights"), numPointLights);
 		if (numPointLights) {
 			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, scene->getPointLightPositionBuffer());

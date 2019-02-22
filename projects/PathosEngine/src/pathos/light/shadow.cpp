@@ -101,8 +101,7 @@ void main() {
 		modelGeometry->activateIndexBuffer();
 
 		// calculate uniform value
-		GLfloat* lightDir = light->getDirection();
-		glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]);
+		glm::vec3 lightPos = -light->getDirection();
 		view = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 		//glm::mat4 projection = calculateAABB(view);

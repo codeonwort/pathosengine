@@ -1,9 +1,9 @@
 #include "renderpass_bumptexture.h"
 #include "glm/gtc/type_ptr.hpp"
 
-//#define DEBUG_BUMP_MAPPING
+#define DEBUG_BUMP_MAPPING 0
 
-#if defined(_DEBUG) && defined(DEBUG_BUMP_MAPPING)
+#if (_DEBUG && DEBUG_BUMP_MAPPING)
 #include <iostream>
 using namespace std;
 #endif
@@ -100,7 +100,7 @@ namespace pathos {
 		fsSource.mainCode("color = visibility * (final_diffuse + final_specular);");
 		//}
 
-#if defined(_DEBUG) && defined(DEBUG_BUMP_MAPPING)
+#if (_DEBUG && DEBUG_BUMP_MAPPING)
 		cout << "[" << __FILE__ << "]" << endl;
 		cout << "[Vertex Shader]" << endl << vsSource.getCode() << endl << endl;
 		cout << "[Fragment Shader]" << endl << fsSource.getCode() << endl << endl;
@@ -134,7 +134,7 @@ namespace pathos {
 		glUniformMatrix3fv(glGetUniformLocation(program, "mvTransform3x3"), 1, false, glm::value_ptr(mvTransform3x3));
 		
 		// uniform: vector
-		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(light->getPositionVector(), 1.0f));
+		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(light->getPosition(), 1.0f));
 		glm::vec3 eye_cameraspace = glm::mat3(viewTransform) * camera->getEyeVector();
 		glUniform3f(glGetUniformLocation(program, "lightPos_camera"), light_cameraspace.x, light_cameraspace.y, light_cameraspace.z);
 		glUniform3f(glGetUniformLocation(program, "eyeDir_camera"), -eye_cameraspace.x, -eye_cameraspace.y, -eye_cameraspace.z);

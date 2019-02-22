@@ -4,6 +4,24 @@
 
 namespace pathos {
 
+	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 8;
+	static constexpr uint32_t MAX_POINT_LIGHTS = 16;
+	struct UBO_PerFrame {
+		glm::mat4 view;
+		glm::mat4 inverseView;
+		glm::mat3 view3x3; float __pad_view3x3[3];        // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
+		glm::mat4 viewProj;
+		glm::vec4 zRange;                                 // (near, far, ?, ?)
+		glm::mat4 sunViewProj[4];
+		glm::vec3 eyeDirection; float __pad0;
+		glm::vec3 eyePosition; uint32_t numDirLights;
+		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];   // w components are not used
+		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
+		uint32_t numPointLights; glm::vec3 __pad1;
+		glm::vec4 pointLightPos[MAX_POINT_LIGHTS];        // w components are not used
+		glm::vec4 pointLightColors[MAX_POINT_LIGHTS];     // w components are not used
+	};
+
 	MeshForwardRenderer::MeshForwardRenderer() {
 		createShaders();
 	}

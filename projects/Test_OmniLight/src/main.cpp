@@ -146,9 +146,9 @@ void setupScene() {
 	viewer->doubleSided = true;
 
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), new WireframeMaterial(1, 1, 1));
-	GLfloat* lightDir = light->getDirection();
+	//GLfloat* lightDir = light->getDirection();
 	//glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
-	glm::vec3 lightPos = plight->getPositionVector();
+	glm::vec3 lightPos = plight->getPosition();
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
 
 	auto shadowLightColor = new ColorMaterial;

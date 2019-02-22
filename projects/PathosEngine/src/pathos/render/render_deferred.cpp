@@ -11,8 +11,10 @@
 
 namespace pathos {
 
-	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 8;
-	static constexpr uint32_t MAX_POINT_LIGHTS = 16;
+	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS        = 8;
+	static constexpr uint32_t MAX_POINT_LIGHTS              = 16;
+	static constexpr uint32_t DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
+	static constexpr uint32_t POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(glm::vec4);
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
@@ -272,27 +274,16 @@ namespace pathos {
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
 
-		const GLfloat* buffer;
-		const GLfloat* buffer2;
-
-		data.numDirLights = std::min(static_cast<uint32_t>(scene->directionalLights.size()), MAX_DIRECTIONAL_LIGHTS);
+		data.numDirLights = std::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
 		if (data.numDirLights > 0) {
-			buffer = scene->getDirectionalLightDirectionBuffer();
-			buffer2 = scene->getDirectionalLightColorBuffer();
-			for (auto i = 0u; i < data.numDirLights; ++i) {
-				data.dirLightDirs[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-				data.dirLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-			}
+			memcpy_s(&data.dirLightDirs[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightDirectionBuffer(), scene->getDirectionalLightBufferSize());
+			memcpy_s(&data.dirLightColors[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightColorBuffer(), scene->getDirectionalLightBufferSize());
 		}
 
-		data.numPointLights = std::min(static_cast<uint32_t>(scene->pointLights.size()), MAX_POINT_LIGHTS);
+		data.numPointLights = std::min(scene->numPointLights(), MAX_POINT_LIGHTS);
 		if (data.numPointLights > 0) {
-			buffer = scene->getPointLightPositionBuffer();
-			buffer2 = scene->getPointLightColorBuffer();
-			for (auto i = 0u; i < data.numPointLights; ++i) {
-				data.pointLightPos[i] = glm::vec4(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2], 0.0f);
-				data.pointLightColors[i] = glm::vec4(buffer2[i * 3], buffer2[i * 3 + 1], buffer2[i * 3 + 2], 1.0f);
-			}
+			memcpy_s(&data.pointLightPos[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightPositionBuffer(), scene->getPointLightBufferSize());
+			memcpy_s(&data.pointLightColors[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightColorBuffer(), scene->getPointLightBufferSize());
 		}
 
 		glNamedBufferSubData(ubo_perFrame, 0, sizeof(UBO_PerFrame), &data);

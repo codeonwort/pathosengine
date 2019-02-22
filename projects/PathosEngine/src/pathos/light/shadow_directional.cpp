@@ -78,8 +78,7 @@ void main() {
 
 		// 2. build projection matrix that perfectly covers camera frustum
 		if (scene->directionalLights.size() > 0) {
-			const GLfloat* sun = scene->directionalLights[0]->getDirection();
-			setLightDirection(glm::vec3(sun[0], sun[1], sun[2]));
+			setLightDirection(scene->directionalLights[0]->getDirection());
 		}
 
 		auto calcBounds = [this](const glm::vec3* frustum) -> void {

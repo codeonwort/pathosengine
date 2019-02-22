@@ -1,11 +1,12 @@
 #pragma once
 
 #include "pathos/light/light.h"
+#include "glm/glm.hpp"
 #include <vector>
 
 namespace pathos {
 
-	// Forward decl
+	// Forward declaration
 	class Mesh;
 	class DirectionalLight;
 	class PointLight;
@@ -14,16 +15,11 @@ namespace pathos {
 	// Represents a 3D scene.
 	class Scene {
 
-	protected:
-		std::vector<GLfloat> pointLightPositionBuffer;
-		std::vector<GLfloat> pointLightColorBuffer;
-		std::vector<GLfloat> directionalLightDirectionBuffer;
-		std::vector<GLfloat> directionalLightColorBuffer;
-
 	public:
 		Scene();
-		Scene(const Scene& other) = delete;
-		Scene(Scene&& other) = delete;
+		Scene(Scene&&)                 = delete;
+		Scene(const Scene&)            = delete;
+		Scene& operator=(const Scene&) = delete;
 
 		Skybox* skybox = nullptr;
 		Mesh* godRaySource = nullptr;
@@ -36,16 +32,28 @@ namespace pathos {
 		void add(std::initializer_list<Mesh*> meshes);
 		
 		inline void add(DirectionalLight* light) { directionalLights.push_back(light); }
-		inline void add(PointLight* light) { pointLights.push_back(light); }
-		inline size_t numDirectionalLights() { return directionalLights.size(); }
-		inline size_t numPointLights() { return pointLights.size(); }
+		inline void add(PointLight* light)       { pointLights.push_back(light);       }
+
+		inline uint32_t numDirectionalLights() const { return (uint32_t)directionalLights.size(); }
+		inline uint32_t numPointLights()       const { return (uint32_t)pointLights.size();       }
 
 		void calculateLightBuffer(); // in world space
 		void calculateLightBufferInViewSpace(const glm::mat4& viewMatrix);
-		inline const GLfloat* getPointLightPositionBuffer() { return &pointLightPositionBuffer[0]; }
-		inline const GLfloat* getPointLightColorBuffer() { return &pointLightColorBuffer[0]; }
-		inline const GLfloat* getDirectionalLightDirectionBuffer() { return &directionalLightDirectionBuffer[0]; }
-		inline const GLfloat* getDirectionalLightColorBuffer() { return &directionalLightColorBuffer[0]; }
+
+		inline const GLfloat* getPointLightPositionBuffer()        const { return (GLfloat*)pointLightPositionBuffer.data();        }
+		inline const GLfloat* getPointLightColorBuffer()           const { return (GLfloat*)pointLightColorBuffer.data();           }
+		inline const GLfloat* getDirectionalLightDirectionBuffer() const { return (GLfloat*)directionalLightDirectionBuffer.data(); }
+		inline const GLfloat* getDirectionalLightColorBuffer()     const { return (GLfloat*)directionalLightColorBuffer.data();     }
+
+		inline uint32_t getPointLightBufferSize()       const { return (uint32_t)(sizeof(glm::vec4) * pointLightPositionBuffer.size());        }
+		inline uint32_t getDirectionalLightBufferSize() const { return (uint32_t)(sizeof(glm::vec4) * directionalLightDirectionBuffer.size()); }
+
+	protected:
+		// w components are not used.
+		std::vector<glm::vec4> pointLightPositionBuffer;
+		std::vector<glm::vec4> pointLightColorBuffer;
+		std::vector<glm::vec4> directionalLightDirectionBuffer;
+		std::vector<glm::vec4> directionalLightColorBuffer;
 
 	};
 

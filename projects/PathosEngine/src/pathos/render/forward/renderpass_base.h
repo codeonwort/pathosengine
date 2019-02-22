@@ -9,8 +9,23 @@ namespace pathos {
 
 	class MeshRenderPass {
 
+	public:
+		MeshRenderPass();
+		virtual ~MeshRenderPass();
+
+		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
+		inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
+		inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
+
+		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) = 0;
+
 	protected:
-		GLuint program = 0; // shader program name
+		virtual void createProgram() = 0;
+
+		void uploadDirectionalLightUniform(Scene* scene, uint32_t maxCount);
+		void uploadPointLightUniform(Scene* scene, uint32_t maxCount);
+
+		GLuint program; // name of shader program
 
 		// @TODO: eliminate these?
 		glm::mat4 modelMatrix;
@@ -19,19 +34,6 @@ namespace pathos {
 
 		VertexShaderSource vsSource;
 		FragmentShaderSource fsSource;
-		
-		virtual void createProgram() = 0;
-		void uploadDirectionalLightUniform(Scene*, unsigned int);
-		void uploadPointLightUniform(Scene*, unsigned int);
-
-	public:
-		virtual ~MeshRenderPass();
-
-		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
-		inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
-		inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
-
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) = 0;
 
 	};
 
