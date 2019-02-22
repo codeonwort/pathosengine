@@ -3,10 +3,6 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-#ifdef _DEBUG
-#include <iostream>
-#endif
-
 namespace pathos {
 
 	ShadowCubeTexturePass::ShadowCubeTexturePass() {
@@ -35,13 +31,11 @@ namespace pathos {
 		fsSource.mainCode("depth = (2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear));");
 		fsSource.mainCode("color = vec4(depth, depth, depth, 1.0);");
 
-#if defined(_DEBUG) && false
-		std::cout << "=== ShadowCubeTexturePass ===" << std::endl;
-		std::cout << vsSource.getCode() << std::endl;
-		std::cout << fsSource.getCode() << std::endl;
-#endif
+		dumpShaderSource(vsSource, "renderpass_shadowcubemap.vert");
+		dumpShaderSource(fsSource, "renderpass_shadowcubemap.frag");
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+
 		uniform_mvpTransform   = glGetUniformLocation(program, "mvpTransform");
 		uniform_face           = glGetUniformLocation(program, "face");
 		uniform_zNear          = glGetUniformLocation(program, "zNear");

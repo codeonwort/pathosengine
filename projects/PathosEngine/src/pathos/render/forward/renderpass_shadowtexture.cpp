@@ -3,10 +3,6 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-#ifdef _DEBUG
-#include <iostream>
-#endif
-
 namespace pathos {
 
 	ShadowTexturePass::ShadowTexturePass() {
@@ -26,11 +22,8 @@ namespace pathos {
 		//fsSource.mainCode("depth = clamp(depth, 0.0f, 1.0f);");
 		fsSource.mainCode("color = vec4(depth, depth, depth, 1.0);");
 
-#if defined(_DEBUG) && false
-		std::cout << "=== ShadowTexturePass ===" << std::endl;
-		std::cout << vsSource.getCode() << std::endl;
-		std::cout << fsSource.getCode() << std::endl;
-#endif
+		dumpShaderSource(vsSource, "renderpass_shadowtexture.vert");
+		dumpShaderSource(fsSource, "renderpass_shadowtexture.frag");
 		
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}

@@ -16,6 +16,8 @@
 #define DEBUG_SHADER			0
 #define DEBUG_SHADER_SOURCE		0
 
+#define DUMP_SHADER_SOURCE      0
+
 // Inefficient in current design so enabling this is not recommended.
 #define CONDITIONAL_COMPILE		0
 #define PARSE_INCLUDES_IN_GLSL	1
@@ -115,6 +117,19 @@ namespace pathos {
 		delete cs;
 
 		return program;
+	}
+
+	void dumpShaderSource(ShaderSource& shader, const char* filename)
+	{
+#if DUMP_SHADER_SOURCE
+		std::fstream file;
+		file.open(filename, std::ios::out | std::ios::trunc);
+		if (file.is_open() == false) {
+			__debugbreak();
+		}
+		file << shader.getCode().data();
+		file.close();
+#endif
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -471,30 +486,6 @@ namespace pathos {
 	}
 	void FragmentShaderSource::directionalLights(unsigned int num) { numDirLights = num; }
 	void FragmentShaderSource::pointLights(unsigned int num) { numPointLights = num; }
-
-
-	/////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	TessellationControlShaderSource::TessellationControlShaderSource() {
-		shaderType = GL_TESS_CONTROL_SHADER;
-	}
-	string TessellationControlShaderSource::getCode() {
-		throw "not implemeneted";
-		return "";
-	}
-
-
-	/////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	TessellationEvaluationShaderSource::TessellationEvaluationShaderSource() {
-		shaderType = GL_TESS_EVALUATION_SHADER;
-	}
-	string TessellationEvaluationShaderSource::getCode() {
-		throw "not implemeneted";
-		return "";
-	}
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////

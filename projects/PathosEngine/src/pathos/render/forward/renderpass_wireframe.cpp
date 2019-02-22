@@ -12,7 +12,11 @@ namespace pathos {
 		fsSource.outVar("vec4", "out_color");
 		fsSource.mainCode("out_color = color;");
 
+		dumpShaderSource(vsSource, "renderpass_wireframe.vert");
+		dumpShaderSource(fsSource, "renderpass_wireframe.frag");
+
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+
 		uniform_mvp = glGetUniformLocation(program, "mvpTransform");
 		uniform_color = glGetUniformLocation(program, "color");
 	}

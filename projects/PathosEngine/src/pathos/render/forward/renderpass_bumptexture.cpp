@@ -106,6 +106,9 @@ namespace pathos {
 		cout << "[Fragment Shader]" << endl << fsSource.getCode() << endl << endl;
 #endif
 
+		dumpShaderSource(vsSource, "renderpass_bumptexture.vert");
+		dumpShaderSource(fsSource, "renderpass_bumptexture.frag");
+
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 

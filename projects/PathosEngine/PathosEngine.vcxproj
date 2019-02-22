@@ -197,6 +197,7 @@
     <ClInclude Include="src\pathos\render\scene.h" />
     <ClInclude Include="src\pathos\render\visualize_depth.h" />
     <ClInclude Include="src\pathos\shader\shader.h" />
+    <ClInclude Include="src\pathos\shader\uniform_buffer.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />
     <ClInclude Include="src\pathos\text\textmesh.h" />

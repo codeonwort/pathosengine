@@ -3,12 +3,6 @@
 #include "glm/gtc/type_ptr.hpp"
 #include <algorithm>
 
-//#define DEBUG_DEFERRED_SOLID_COLOR
-
-#if defined(_DEBUG) && defined(DEBUG_DEFERRED_SOLID_COLOR)
-#include <iostream>
-#endif
-
 namespace pathos {
 
 	SolidColorPass::SolidColorPass(unsigned int maxDirLights, unsigned int maxPointLights)
@@ -92,13 +86,8 @@ namespace pathos {
 		fsSource.mainCode("outColor.rgb = rim + ambientColor + diffuseTerm + specularTerm;");
 		fsSource.mainCode("outColor.a = materialAlpha;");
 
-#if defined(_DEBUG) && defined(DEBUG_DEFERRED_SOLID_COLOR)
-		std::cout << "=== SolidColorPass ===" << std::endl;
-		std::cout << "[Vertex Shader]" << std::endl;
-		std::cout << vsSource.getCode() << std::endl << std::endl;
-		std::cout << "[Fragment Shader]" << std::endl;
-		std::cout << fsSource.getCode() << std::endl;
-#endif
+		dumpShaderSource(vsSource, "renderpass_solidcolor.vert");
+		dumpShaderSource(fsSource, "renderpass_solidcolor.frag");
 
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}

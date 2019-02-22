@@ -52,6 +52,9 @@ namespace pathos {
 		cout << fsSource.getCode() << endl << endl;
 #endif
 
+		dumpShaderSource(vsSource, "renderpass_cubeenv.vert");
+		dumpShaderSource(fsSource, "renderpass_cubeenv.frag");
+
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 
 		uniform_eye = glGetUniformLocation(program, "eye");

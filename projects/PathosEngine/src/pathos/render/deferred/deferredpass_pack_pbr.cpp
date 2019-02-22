@@ -3,13 +3,11 @@
 
 namespace pathos {
 
-	namespace {
-		static constexpr unsigned int ALBEDO_TEXTURE_UNIT    = 0;
-		static constexpr unsigned int NORMAL_TEXTURE_UNIT    = 1;
-		static constexpr unsigned int METALLIC_TEXTURE_UNIT  = 2;
-		static constexpr unsigned int ROUGHNESS_TEXTURE_UNIT = 3;
-		static constexpr unsigned int AO_TEXTURE_UNIT        = 4;
-	}
+	static constexpr unsigned int ALBEDO_TEXTURE_UNIT    = 0;
+	static constexpr unsigned int NORMAL_TEXTURE_UNIT    = 1;
+	static constexpr unsigned int METALLIC_TEXTURE_UNIT  = 2;
+	static constexpr unsigned int ROUGHNESS_TEXTURE_UNIT = 3;
+	static constexpr unsigned int AO_TEXTURE_UNIT        = 4;
 
 	MeshDeferredRenderPass_Pack_PBR::MeshDeferredRenderPass_Pack_PBR() {
 		createProgram();
@@ -22,12 +20,6 @@ namespace pathos {
 		fs.loadSource("deferred_pack_pbr_fs.glsl");
 
 		program = pathos::createProgram(vs, fs);
-
-#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
-		GET_UNIFORM(mvTransform3x3);
-		GET_UNIFORM(mvTransform);
-		GET_UNIFORM(mvpTransform);
-#undef GET_UNIFORM
 	}
 
 	void MeshDeferredRenderPass_Pack_PBR::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -37,12 +29,11 @@ namespace pathos {
 		geometry->activateIndexBuffer();
 
 		// uniform: transform
-		glm::mat4 mvMatrix = camera->getViewMatrix() * modelMatrix;
-		glm::mat3 mvMatrix3x3 = glm::mat3(mvMatrix);
-		glm::mat4 mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
-		glUniformMatrix3fv(uniform_mvTransform3x3, 1, false, glm::value_ptr(mvMatrix3x3));
-		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
-		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
+		UBO_Deferred_Pack_PBR uboData;
+		uboData.mvMatrix    = camera->getViewMatrix() * modelMatrix;
+		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
+		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
+		ubo.update(1, uboData);
 
 		// uniform: texture
 		glBindTextureUnit(ALBEDO_TEXTURE_UNIT, material->getAlbedo());

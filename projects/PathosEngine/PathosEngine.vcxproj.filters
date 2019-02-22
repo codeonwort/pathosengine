@@ -416,5 +416,8 @@
     <ClInclude Include="src\pathos\render\visualize_depth.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\shader\uniform_buffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

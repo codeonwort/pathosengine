@@ -76,6 +76,9 @@ namespace pathos {
 		fsSource.mainCode("}");
 		//fsSource.mainCode("if (color.a <= 0.0f) discard;");
 
+		dumpShaderSource(vsSource, "renderpass_texture.vert");
+		dumpShaderSource(fsSource, "renderpass_texture.frag");
+
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 

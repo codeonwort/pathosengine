@@ -16,11 +16,14 @@ namespace pathos {
 
 	// Utilities
 	GLuint createProgram(const std::string& vsCode, const std::string& fsCode);	// only vertex and fragment shaders
-	GLuint createProgram(Shader& vs, Shader& fs);					// only vertex and fragment shaders
-	GLuint createProgram(std::vector<ShaderSource*>& sources);		// multiple shaders
-	GLuint createProgram(std::vector<Shader*>& shaders);			// multiple shaders
-	GLuint createProgram(Shader& shader);							// single shader
-	GLuint createComputeProgram(const std::string& shader_source);	// compute shader
+	GLuint createProgram(Shader& vs, Shader& fs);					            // only vertex and fragment shaders
+	GLuint createProgram(std::vector<ShaderSource*>& sources);		            // multiple shader sources #todo: remove this
+	GLuint createProgram(std::vector<Shader*>& shaders);			            // multiple shaders
+	GLuint createProgram(Shader& shader);							            // single shader
+	GLuint createComputeProgram(const std::string& shader_source);	            // compute shader
+
+	// #todo: temp
+	void dumpShaderSource(ShaderSource& shader, const char* filename);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -64,6 +67,7 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
+	// #todo: remove this and all children
 	// generates shader source codes for Shader::setSource().
 	class ShaderSource {
 	protected:
@@ -145,18 +149,6 @@ namespace pathos {
 		void mainCode(const string& code);
 		void directionalLights(unsigned int num);
 		void pointLights(unsigned int num);
-	};
-
-	class TessellationControlShaderSource : public ShaderSource {
-	public:
-		TessellationControlShaderSource();
-		virtual string getCode();
-	};
-
-	class TessellationEvaluationShaderSource : public ShaderSource {
-	public:
-		TessellationEvaluationShaderSource();
-		virtual string getCode();
 	};
 
 	class GeometryShaderSource : public ShaderSource {
