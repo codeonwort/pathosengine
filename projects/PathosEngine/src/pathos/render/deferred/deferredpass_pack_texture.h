@@ -8,13 +8,13 @@ namespace pathos {
 
 	public:
 		MeshDeferredRenderPass_Pack_FlatTexture();
+
 		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
 
 	protected:
 		virtual void createProgram() override;
 
-		GLint uniform_mvTransform;
-		GLint uniform_mvpTransform;
+		UniformBuffer ubo;
 		GLint uniform_tex_diffuse;
 
 	};

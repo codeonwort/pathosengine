@@ -3,8 +3,14 @@
 
 namespace pathos {
 
-	static constexpr unsigned int DIFFUSE_TEXTURE_UNIT = 0;
-	static constexpr unsigned int NORMALMAP_TEXTURE_UNIT = 1;
+	struct UBO_Deferred_Pack_BumpTexture {
+		glm::mat4 mvMatrix;
+		glm::mat4 mvpMatrix;
+		glm::mat3 mvMatrix3x3;
+	};
+
+	static constexpr uint32_t DIFFUSE_TEXTURE_UNIT = 0;
+	static constexpr uint32_t NORMALMAP_TEXTURE_UNIT = 1;
 
 	//static constexpr unsigned int SHADOW_MAPPING_TEXTURE_UNIT_START = 4;
 	//static constexpr unsigned int OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START = 12;
@@ -20,43 +26,26 @@ namespace pathos {
 		fs.loadSource("deferred_pack_bumptexture_fs.glsl");
 
 		program = pathos::createProgram(vs, fs);
-
-#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
-		GET_UNIFORM(mvTransform3x3);
-		GET_UNIFORM(mvTransform);
-		GET_UNIFORM(mvpTransform);
-#undef GET_UNIFORM
+		ubo.init<UBO_Deferred_Pack_BumpTexture>();
 	}
 
 	void MeshDeferredRenderPass_Pack_BumpTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
 		BumpTextureMaterial* material = static_cast<BumpTextureMaterial*>(material_);
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		geometry->activate_position_uv_normal_tangent_bitangent();
 		geometry->activateIndexBuffer();
 
-		// uniform: transform
-		glm::mat4 mvMatrix = camera->getViewMatrix() * modelMatrix;
-		glm::mat3 mvMatrix3x3 = glm::mat3(mvMatrix);
-		glm::mat4 mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
-		glUniformMatrix3fv(uniform_mvTransform3x3, 1, false, glm::value_ptr(mvMatrix3x3));
-		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
-		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
+		UBO_Deferred_Pack_BumpTexture uboData;
+		uboData.mvMatrix    = camera->getViewMatrix() * modelMatrix;
+		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
+		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
+		ubo.update(1, &uboData);
 
-		// uniform: texture
 		glBindTextureUnit(DIFFUSE_TEXTURE_UNIT, material->getDiffuseTexture());
 		glBindTextureUnit(NORMALMAP_TEXTURE_UNIT, material->getNormalMapTexture());
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		geometry->draw();
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 	}

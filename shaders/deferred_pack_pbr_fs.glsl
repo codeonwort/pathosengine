@@ -11,9 +11,9 @@ layout (binding = 3) uniform sampler2D tex_roughness;
 layout (binding = 4) uniform sampler2D tex_ao;
 
 layout (std140, binding = 1) uniform UBO_PerObject {
-	uniform mat4 mvTransform;
-	uniform mat4 mvpTransform;
-	uniform mat3 mvTransform3x3;
+	mat4 mvTransform;
+	mat4 mvpTransform;
+	mat3 mvTransform3x3;
 } uboPerObject;
 
 in VS_OUT {

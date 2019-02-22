@@ -7,7 +7,11 @@ layout (location = 2) out vec4 output2;
 layout (location = 0) uniform sampler2D tex_diffuse;
 layout (location = 1) uniform sampler2D tex_normal;
 
-uniform mat3 mvTransform3x3;
+layout (std140, binding = 1) uniform UBO_PerObject {
+	mat4 mvTransform;
+	mat4 mvpTransform;
+	mat3 mvTransform3x3;
+} uboPerObject;
 
 in VS_OUT {
 	vec3 vs_coords;
@@ -19,9 +23,9 @@ in VS_OUT {
 } fs_in;
 
 vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
-    vec3 T = mvTransform3x3 * normalize(t);
-    vec3 B = mvTransform3x3 * normalize(b);
-    vec3 N = mvTransform3x3 * normalize(n);
+    vec3 T = uboPerObject.mvTransform3x3 * normalize(t);
+    vec3 B = uboPerObject.mvTransform3x3 * normalize(b);
+    vec3 N = uboPerObject.mvTransform3x3 * normalize(n);
     mat3 TBN = mat3(T, B, N);
 
     vec3 norm = normalize(texture2D(tex_normal, uv).rgb * 2.0 - 1.0);

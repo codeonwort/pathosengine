@@ -5,6 +5,11 @@ static constexpr unsigned int TEXTURE_UNIT = 0;
 
 namespace pathos {
 
+	struct UBO_Deferred_Pack_Texture {
+		glm::mat4 mvMatrix;
+		glm::mat4 mvpMatrix;
+	};
+
 	MeshDeferredRenderPass_Pack_FlatTexture::MeshDeferredRenderPass_Pack_FlatTexture() {
 		createProgram();
 	}
@@ -16,10 +21,9 @@ namespace pathos {
 		fs.loadSource("deferred_pack_texture_fs.glsl");
 
 		program = pathos::createProgram(vs, fs);
+		ubo.init<UBO_Deferred_Pack_Texture>();
 
 #define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
-		GET_UNIFORM(mvTransform);
-		GET_UNIFORM(mvpTransform);
 		GET_UNIFORM(tex_diffuse);
 #undef GET_UNIFORM
 	}
@@ -32,10 +36,10 @@ namespace pathos {
 		geometry->activateIndexBuffer();
 
 		// uniform: transform
-		const glm::mat4& mvMatrix = camera->getViewMatrix() * modelMatrix;
-		const glm::mat4& mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
-		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
-		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
+		UBO_Deferred_Pack_Texture uboData;
+		uboData.mvMatrix = camera->getViewMatrix() * modelMatrix;
+		uboData.mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
+		ubo.update(1, &uboData);
 
 		// texture binding
 		glBindTextureUnit(TEXTURE_UNIT, material->getTexture());

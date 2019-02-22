@@ -2,6 +2,7 @@
 
 #include "renderer.h"
 #include "deferred/deferredpass.h"
+#include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene.h"
 #include "pathos/light/shadow_directional.h"
@@ -33,7 +34,6 @@ namespace pathos {
 		void destroyGBuffer();
 
 		void createUBO();
-		void destroyUBO();
 
 		void updateUBO(Scene* scene, Camera* camera);
 		void clearGBuffer();
@@ -50,7 +50,7 @@ namespace pathos {
 		GLsizei width, height; // fbo texture size
 		GLenum draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
-		GLuint ubo_perFrame;
+		UniformBuffer ubo_perFrame;
 
 		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
 		MeshDeferredRenderPass_Unpack* unpack_pass;

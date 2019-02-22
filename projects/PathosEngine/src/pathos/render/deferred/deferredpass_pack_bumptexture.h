@@ -14,9 +14,7 @@ namespace pathos {
 	protected:
 		virtual void createProgram() override;
 
-		GLint uniform_mvTransform3x3;
-		GLint uniform_mvTransform;
-		GLint uniform_mvpTransform;
+		UniformBuffer ubo;
 
 	};
 

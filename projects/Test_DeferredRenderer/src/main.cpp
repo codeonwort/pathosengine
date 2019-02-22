@@ -98,6 +98,7 @@ void setupScene() {
 		float r = (rand() % 256) / 255.0f;
 		float g = (rand() % 256) / 255.0f;
 		float b = (rand() % 256) / 255.0f;
+		r = g = b = 1.0f;
 		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
 		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
 	}

@@ -4,7 +4,11 @@ layout (location = 0) out uvec4 output0;
 layout (location = 1) out vec4 output1;
 layout (location = 2) out vec4 output2;
 
-uniform vec3 diffuseColor;
+layout (std140, binding = 1) uniform UBO_PerObject {
+	mat4 mvTransform;
+	mat4 mvpTransform;
+	vec3 diffuseColor;
+} uboPerObject;
 
 in VS_OUT {
 	vec3 vs_coords;
@@ -18,7 +22,7 @@ void main() {
 	uvec4 outvec0 = uvec4(0);
 	vec4 outvec1 = vec4(0);
 
-	vec3 color = diffuseColor;
+	vec3 color = uboPerObject.diffuseColor;
 
 	outvec0.x = packHalf2x16(color.xy);
 	outvec0.y = packHalf2x16(vec2(color.z, fs_in.normal.x));

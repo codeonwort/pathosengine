@@ -1,6 +1,12 @@
+#define DEFERRED_RENDERING 0
+
 #include "glm/gtx/transform.hpp"
 #include "pathos/core_minimal.h"
-#include "pathos/render/render_forward.h"
+#if DEFERRED_RENDERING
+	#include "pathos/render/render_deferred.h"
+#else
+	#include "pathos/render/render_forward.h"
+#endif
 #include "pathos/mesh/mesh.h"
 #include "pathos/camera/camera.h"
 #include "pathos/light/light.h"
@@ -28,10 +34,15 @@ Scene scene;
 	AnselEnvMapping* sky;
 	Mesh *city, *city2;
 	TextMesh *label;
-	PointLight *plight, *plight2;
-	DirectionalLight *dlight;
+	PointLight *pointLight1, *pointLight2;
+	DirectionalLight *dirLight;
 
-ForwardRenderer* renderer;
+
+#if DEFERRED_RENDERING
+	DeferredRenderer* renderer;
+#else
+	ForwardRenderer* renderer;
+#endif
 
 OBJLoader cityLoader;
 bool loaderReady = false;
@@ -61,7 +72,11 @@ int main(int argc, char** argv) {
 	cam->move(CAMERA_POSITION);
 
 	// renderer
+#if DEFERRED_RENDERING
+	renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+#else
 	renderer = new ForwardRenderer;
+#endif
 
 	// 3d objects
 	setupModel();
@@ -82,9 +97,9 @@ int main(int argc, char** argv) {
 }
 
 void setupModel() {
-	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
-	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
-	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
+	pointLight1 = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
+	pointLight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
+	dirLight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
 
 #if LOAD_3D_MODEL
 	label = new TextMesh("default");
@@ -92,18 +107,24 @@ void setupModel() {
 	label->getTransform().appendScale(20);
 	label->doubleSided = true;
 
-	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
-	debug->getTransform().appendMove(30, 0, 10);
+#if !DEFERRED_RENDERING
+ 	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
+ 	debug->getTransform().appendMove(30, 0, 10);
+#endif
 #endif
 
-	scene.add(plight);
-	scene.add(dlight);
+	scene.add(pointLight1);
+	scene.add(dirLight);
 #if LOAD_3D_MODEL
 	scene.add(label);
+#if !DEFERRED_RENDERING
 	scene.add(debug);
 #endif
+#endif
 
+#if !DEFERRED_RENDERING
 	renderer->getShadowMap()->setProjection(glm::ortho(-200.f, 200.f, -200.f, 100.f, -200.f, 500.f));
+#endif
 }
 
 void setupSkybox() {
@@ -127,7 +148,7 @@ void tick() {
 	}
 
 	if (gConsole->isVisible() == false) {
-		float speedX = 0.1f, speedY = 0.1f;
+		float speedX = 0.4f, speedY = 0.4f;
 		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
 		float rotY = gEngine->isDown('q') ? -1.0f : gEngine->isDown('e') ? 1.0f : 0.0f;

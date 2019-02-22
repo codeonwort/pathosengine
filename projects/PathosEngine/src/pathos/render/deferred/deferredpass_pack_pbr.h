@@ -4,12 +4,6 @@
 
 namespace pathos {
 
-	struct UBO_Deferred_Pack_PBR {
-		glm::mat4 mvMatrix;
-		glm::mat4 mvpMatrix;
-		glm::mat3 mvMatrix3x3;
-	};
-
 	class MeshDeferredRenderPass_Pack_PBR : public MeshDeferredRenderPass_Pack {
 
 	public:
@@ -20,7 +14,7 @@ namespace pathos {
 	protected:
 		virtual void createProgram() override;
 
-		UniformBuffer<UBO_Deferred_Pack_PBR> ubo;
+		UniformBuffer ubo;
 
 	};
 

@@ -38,7 +38,6 @@ namespace pathos {
 		sunShadowMap = new DirectionalShadowMap;
 	}
 	DeferredRenderer::~DeferredRenderer() {
-		destroyUBO();
 		destroyShaders();
 		destroyGBuffer();
 		delete sunShadowMap;
@@ -111,13 +110,7 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createUBO() {
-		glGenBuffers(1, &ubo_perFrame);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo_perFrame);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(UBO_PerFrame), (void*)0, GL_DYNAMIC_DRAW);
-	}
-
-	void DeferredRenderer::destroyUBO() {
-		glDeleteBuffers(1, &ubo_perFrame);
+		ubo_perFrame.init<UBO_PerFrame>();
 	}
 
 	void DeferredRenderer::render(Scene* inScene, Camera* inCamera) {
@@ -286,8 +279,7 @@ namespace pathos {
 			memcpy_s(&data.pointLightColors[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightColorBuffer(), scene->getPointLightBufferSize());
 		}
 
-		glNamedBufferSubData(ubo_perFrame, 0, sizeof(UBO_PerFrame), &data);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_perFrame);
+		ubo_perFrame.update(0, &data);
 	}
 
 }

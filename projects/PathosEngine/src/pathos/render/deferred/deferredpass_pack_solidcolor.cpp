@@ -3,6 +3,12 @@
 
 namespace pathos {
 
+	struct UBO_Deferred_Pack_SolidColor {
+		glm::mat4 mvMatrix;
+		glm::mat4 mvpMatrix;
+		glm::vec3 diffuseColor;
+	};
+
 	MeshDeferredRenderPass_Pack_SolidColor::MeshDeferredRenderPass_Pack_SolidColor() {
 		createProgram();
 	}
@@ -14,40 +20,26 @@ namespace pathos {
 		fs.loadSource("deferred_pack_solidcolor_fs.glsl");
 
 		program = pathos::createProgram(vs, fs);
-
-#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
-		GET_UNIFORM(mvTransform);
-		GET_UNIFORM(mvpTransform);
-		GET_UNIFORM(diffuseColor);
-#undef GET_UNIFORM
+		ubo.init<UBO_Deferred_Pack_SolidColor>();
 	}
 
 	void MeshDeferredRenderPass_Pack_SolidColor::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
 		static_cast<void>(scene);
 		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		geometry->activate_position_normal();
 		geometry->activateIndexBuffer();
 
-		const glm::mat4& mvMatrix = camera->getViewMatrix() * modelMatrix;
-		const glm::mat4& mvpMatrix = camera->getViewProjectionMatrix() * modelMatrix;
-		glUniformMatrix4fv(uniform_mvTransform, 1, false, glm::value_ptr(mvMatrix));
-		glUniformMatrix4fv(uniform_mvpTransform, 1, false, glm::value_ptr(mvpMatrix));
-		//glUniform3fv(uniform_ambientColor, 1, material->getAmbient());
-		glUniform3fv(uniform_diffuseColor, 1, material->getDiffuse());
-		//glUniform3fv(uniform_specularColor, 1, material->getSpecular());
+		UBO_Deferred_Pack_SolidColor uboData;
+		uboData.mvMatrix       = camera->getViewMatrix() * modelMatrix;
+		uboData.mvpMatrix      = camera->getViewProjectionMatrix() * modelMatrix;
+		uboData.diffuseColor.x = material->getDiffuse()[0];
+		uboData.diffuseColor.y = material->getDiffuse()[1];
+		uboData.diffuseColor.z = material->getDiffuse()[2];
+		ubo.update(1, &uboData);
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		geometry->draw();
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
 		geometry->deactivate();
 		geometry->deactivateIndexBuffer();
 	}

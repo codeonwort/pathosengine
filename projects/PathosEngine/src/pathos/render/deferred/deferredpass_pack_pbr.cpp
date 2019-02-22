@@ -3,6 +3,12 @@
 
 namespace pathos {
 
+	struct UBO_Deferred_Pack_PBR {
+		glm::mat4 mvMatrix;
+		glm::mat4 mvpMatrix;
+		glm::mat3 mvMatrix3x3;
+	};
+
 	static constexpr unsigned int ALBEDO_TEXTURE_UNIT    = 0;
 	static constexpr unsigned int NORMAL_TEXTURE_UNIT    = 1;
 	static constexpr unsigned int METALLIC_TEXTURE_UNIT  = 2;
@@ -20,6 +26,7 @@ namespace pathos {
 		fs.loadSource("deferred_pack_pbr_fs.glsl");
 
 		program = pathos::createProgram(vs, fs);
+		ubo.init<UBO_Deferred_Pack_PBR>();
 	}
 
 	void MeshDeferredRenderPass_Pack_PBR::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -33,7 +40,7 @@ namespace pathos {
 		uboData.mvMatrix    = camera->getViewMatrix() * modelMatrix;
 		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
 		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
-		ubo.update(1, uboData);
+		ubo.update(1, &uboData);
 
 		// uniform: texture
 		glBindTextureUnit(ALBEDO_TEXTURE_UNIT, material->getAlbedo());

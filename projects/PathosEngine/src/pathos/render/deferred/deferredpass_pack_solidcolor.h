@@ -8,14 +8,13 @@ namespace pathos {
 
 	public:
 		MeshDeferredRenderPass_Pack_SolidColor();
+
 		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
 
 	protected:
 		virtual void createProgram() override;
 
-		GLint uniform_mvTransform;
-		GLint uniform_mvpTransform;
-		GLint uniform_diffuseColor;
+		UniformBuffer ubo;
 
 	};
 
