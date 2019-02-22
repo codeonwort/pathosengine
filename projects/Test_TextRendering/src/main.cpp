@@ -31,7 +31,7 @@ constexpr char* TITLE = "Test: Text Rendering";
 // Camera, scene and renderer
 Camera* cam;
 Scene scene;
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 OverlayRenderer* overlayRenderer;
 
 // 3D objects
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 	cam->move(CAMERA_POSITION);
 
 	// renderer
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 	overlayRenderer = new OverlayRenderer;
 
 	// 3d objects

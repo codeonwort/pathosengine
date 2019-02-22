@@ -22,14 +22,14 @@ namespace pathos {
 		glm::vec4 pointLightColors[MAX_POINT_LIGHTS];     // w components are not used
 	};
 
-	MeshForwardRenderer::MeshForwardRenderer() {
+	ForwardRenderer::ForwardRenderer() {
 		createShaders();
 	}
-	MeshForwardRenderer::~MeshForwardRenderer() {
+	ForwardRenderer::~ForwardRenderer() {
 		destroyShaders();
 	}
 
-	void MeshForwardRenderer::createShaders() {
+	void ForwardRenderer::createShaders() {
 		shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
 
@@ -50,7 +50,7 @@ namespace pathos {
 		texturePass->setOmnidirectionalShadow(omniShadow);
 		bumpTexturePass->setOmnidirectionalShadow(omniShadow);
 	}
-	void MeshForwardRenderer::destroyShaders() {
+	void ForwardRenderer::destroyShaders() {
 #define release(x) if(x) { delete x; }
 		release(shadowMap);
 		release(omniShadow);
@@ -66,7 +66,7 @@ namespace pathos {
 #undef release
 	}
 
-	void MeshForwardRenderer::render(Scene* inScene, Camera* inCamera) {
+	void ForwardRenderer::render(Scene* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
@@ -107,7 +107,7 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void MeshForwardRenderer::renderLightDepth(Mesh* mesh) {
+	void ForwardRenderer::renderLightDepth(Mesh* mesh) {
 		const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
 		Geometries geoms = mesh->getGeometries();
 		size_t len = geoms.size();
@@ -133,7 +133,7 @@ namespace pathos {
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
-	void MeshForwardRenderer::render(Skybox* sky) {
+	void ForwardRenderer::render(Skybox* sky) {
 		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
 		glm::mat4 proj = camera->getProjectionMatrix();
 		glm::mat4 transform = proj * view;
@@ -141,7 +141,7 @@ namespace pathos {
 		sky->render();
 	}
 
-	void MeshForwardRenderer::render(Mesh* mesh) {
+	void ForwardRenderer::render(Mesh* mesh) {
 		Geometries geoms = mesh->getGeometries();
 		Materials materials = mesh->getMaterials();
 		size_t len = geoms.size();
@@ -159,7 +159,7 @@ namespace pathos {
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
-	void MeshForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {
+	void ForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {
 		/*
 		// fill stencil buffer for reflection
 		PlaneReflection* reflection = material->getReflectionMethod();
@@ -213,42 +213,42 @@ namespace pathos {
 	// Render logic for each material type
 	//------------------------------------------------------------------------------------------------------
 
-	void MeshForwardRenderer::renderSolidColor(Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
+	void ForwardRenderer::renderSolidColor(Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
 		colorPass->setModelMatrix(mesh->getTransform().getMatrix());
 		colorPass->render(scene, camera, G, M);
 	}
 
-	void MeshForwardRenderer::renderFlatTexture(Mesh* mesh, MeshGeometry* geom, TextureMaterial* material) {
+	void ForwardRenderer::renderFlatTexture(Mesh* mesh, MeshGeometry* geom, TextureMaterial* material) {
 		texturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		texturePass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderWireframe(Mesh* mesh, MeshGeometry* geom, WireframeMaterial* material) {
+	void ForwardRenderer::renderWireframe(Mesh* mesh, MeshGeometry* geom, WireframeMaterial* material) {
 		wireframePass->setModelMatrix(mesh->getTransform().getMatrix());
 		wireframePass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderShadowTexture(Mesh* mesh, MeshGeometry* geom, ShadowTextureMaterial* material) {
+	void ForwardRenderer::renderShadowTexture(Mesh* mesh, MeshGeometry* geom, ShadowTextureMaterial* material) {
 		shadowTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		shadowTexturePass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderCubeEnvMap(Mesh* mesh, MeshGeometry* geom, CubeEnvMapMaterial* material) {
+	void ForwardRenderer::renderCubeEnvMap(Mesh* mesh, MeshGeometry* geom, CubeEnvMapMaterial* material) {
 		cubeEnvMapPass->setModelMatrix(mesh->getTransform().getMatrix());
 		cubeEnvMapPass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
+	void ForwardRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
 		bumpTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		bumpTexturePass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderShadowCubeTexture(Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
+	void ForwardRenderer::renderShadowCubeTexture(Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
 		shadowCubeTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		shadowCubeTexturePass->render(scene, camera, geom, material);
 	}
 
-	void MeshForwardRenderer::renderAlphaOnlyTexture(Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
+	void ForwardRenderer::renderAlphaOnlyTexture(Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
 		alphaOnlyTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		alphaOnlyTexturePass->render(scene, camera, geom, material);
 	}

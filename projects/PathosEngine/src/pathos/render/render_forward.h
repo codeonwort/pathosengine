@@ -11,7 +11,7 @@
 namespace pathos {
 
 	// Forward renderer implementation
-	class MeshForwardRenderer {
+	class ForwardRenderer {
 
 	public:
 		// maximum number of lights this renderer can handle
@@ -19,10 +19,10 @@ namespace pathos {
 		static constexpr unsigned int MAX_POINT_LIGHTS = 4;
 
 	public:
-		MeshForwardRenderer();
-		MeshForwardRenderer(const MeshForwardRenderer& other) = delete;
-		MeshForwardRenderer(MeshForwardRenderer&&) = delete;
-		virtual ~MeshForwardRenderer();
+		ForwardRenderer();
+		ForwardRenderer(const ForwardRenderer& other) = delete;
+		ForwardRenderer(ForwardRenderer&&) = delete;
+		virtual ~ForwardRenderer();
 
 		void render(Scene* scene, Camera*); // render the total scene
 

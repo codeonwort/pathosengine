@@ -13,9 +13,11 @@ namespace pathos {
 
 	public:
 		DeferredRenderer(unsigned int width, unsigned int height);
-		DeferredRenderer(const DeferredRenderer& other) = delete;
-		DeferredRenderer(DeferredRenderer&&) = delete;
 		virtual ~DeferredRenderer();
+
+		DeferredRenderer(const DeferredRenderer&)            = delete;
+		DeferredRenderer(DeferredRenderer&&)                 = delete;
+		DeferredRenderer& operator=(const DeferredRenderer&) = delete;
 
 		void render(Scene*, Camera*); // render the total scene
 
@@ -53,8 +55,9 @@ namespace pathos {
 		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
 		MeshDeferredRenderPass_Unpack* unpack_pass;
 
-		class VisualizeDepth* visualizeDepth;
 		DirectionalShadowMap* sunShadowMap;
+
+		class VisualizeDepth* visualizeDepth;
 
 		Scene* scene; // temporary save. actually don't need
 		Camera* camera; // temporary save. actually don't need

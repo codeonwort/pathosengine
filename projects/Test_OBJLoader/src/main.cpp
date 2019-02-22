@@ -20,7 +20,7 @@ using namespace pathos;
 // Camera, scene and renderer
 Camera* cam;
 Scene scene;
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 
 // 3D objects
 Mesh *city, *city2;
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 	cam->move(glm::vec3(0, 0, 20));
 
 	// renderer
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 
 	// 3d objects
 	setupModel();

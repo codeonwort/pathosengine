@@ -22,7 +22,7 @@ constexpr float FOV = 90.0f;
 // Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 NormalRenderer* normRenderer;
 
 // 3D objects
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 	cam->move(glm::vec3(0.0f, 0.0f, 50.0f));
 
 	// renderer
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 	normRenderer = new NormalRenderer(0.2f);
 
 	// scene

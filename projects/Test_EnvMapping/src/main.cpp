@@ -27,7 +27,7 @@ Camera* cam;
 Scene scene;
 
 // renderers
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 NormalRenderer* normRenderer;
 
 // 3D objects
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 	cam->move(CAMERA_POSITION);
 
 	// renderer
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 	normRenderer = new NormalRenderer(5);
 
 	// 3d objects

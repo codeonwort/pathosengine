@@ -28,7 +28,7 @@ Scene scene;
 	Skybox* sky;
 
 // renderer
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 NormalRenderer* normRenderer;
 
 void setupScene();
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 	normRenderer = new NormalRenderer(0.2f);
 
 	setupScene();

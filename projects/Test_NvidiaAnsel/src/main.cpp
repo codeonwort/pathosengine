@@ -31,7 +31,7 @@ Scene scene;
 	PointLight *plight, *plight2;
 	DirectionalLight *dlight;
 
-MeshForwardRenderer* renderer;
+ForwardRenderer* renderer;
 
 OBJLoader cityLoader;
 bool loaderReady = false;
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 	cam->move(CAMERA_POSITION);
 
 	// renderer
-	renderer = new MeshForwardRenderer;
+	renderer = new ForwardRenderer;
 
 	// 3d objects
 	setupModel();

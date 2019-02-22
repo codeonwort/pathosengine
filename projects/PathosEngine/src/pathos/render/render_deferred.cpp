@@ -259,12 +259,12 @@ namespace pathos {
 	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
-		data.view = camera->getViewMatrix();
+		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
-		data.view3x3 = glm::mat3(data.view);
-		data.zRange.x = camera->getZNear();
-		data.zRange.y = camera->getZFar();
-		data.viewProj = camera->getViewProjectionMatrix();
+		data.view3x3     = glm::mat3(data.view);
+		data.zRange.x    = camera->getZNear();
+		data.zRange.y    = camera->getZFar();
+		data.viewProj    = camera->getViewProjectionMatrix();
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
@@ -272,7 +272,7 @@ namespace pathos {
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		data.eyePosition = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+		data.eyePosition  = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
 
 		data.numDirLights = std::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
 		if (data.numDirLights > 0) {
