@@ -9,19 +9,22 @@ namespace pathos {
 	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& lightDirection_) {
 		lightDirection = lightDirection_;
 
-		numCascades = 4;
-		depthMapWidth = 2048;
+		numCascades    = 4;
+		depthMapWidth  = 2048;
 		depthMapHeight = 2048;
 
 		// create framebuffer object
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glObjectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
 
 		glDrawBuffers(0, nullptr);
 
 		// setup depth textures
-		glGenTextures(1, &depthTexture);
-		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glCreateTextures(GL_TEXTURE_2D, 1, &depthTexture);
+// 		glGenTextures(1, &depthTexture);
+// 		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glObjectLabel(GL_TEXTURE, depthTexture, -1, "Tex_CascadedShadowMap");
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, numCascades * depthMapWidth, depthMapHeight);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -54,7 +57,13 @@ void main() {
 	color = vec4(gl_FragCoord.z, 0.0f, 0.0f, 1.0f);
 }
 )";
-		program = pathos::createProgram(vshader, fshader);
+
+		Shader vs(GL_VERTEX_SHADER, "VS_CascadedShadowMap");
+		Shader fs(GL_FRAGMENT_SHADER, "FS_CascadedShadowMap");
+		vs.setSource(vshader);
+		fs.setSource(fshader);
+
+		program = pathos::createProgram(vs, fs, "Program_CascadedShadowMap");
 
 		uniform_depthMVP = glGetUniformLocation(program, "depthMVP");
 		assert(uniform_depthMVP != -1);
@@ -71,6 +80,8 @@ void main() {
 	}
 
 	void DirectionalShadowMap::renderShadowMap(const Scene* scene, const Camera* camera) {
+		SCOPED_DRAW_EVENT(CascadedShadowMap);
+
 		// 1. clear depth map
 		static const GLfloat clear_depth_one[] = { 1.0f };
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);

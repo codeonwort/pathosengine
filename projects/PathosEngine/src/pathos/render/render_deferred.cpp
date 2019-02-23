@@ -151,6 +151,8 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::clearGBuffer() {
+		SCOPED_DRAW_EVENT(ClearGBuffer);
+
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
@@ -164,6 +166,8 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::packGBuffer() {
+		SCOPED_DRAW_EVENT(PackGBuffer);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 #if 0
@@ -229,6 +233,8 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::unpackGBuffer() {
+		SCOPED_DRAW_EVENT(UnpackGBuffer);
+
 		unpack_pass->bindFramebuffer(useHDR);
 		unpack_pass->setDrawBuffers(false);
 

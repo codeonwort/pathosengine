@@ -154,6 +154,8 @@ void main() {
 	}
 
 	void GodRay::render(Scene* scene, Camera* camera) {
+		SCOPED_DRAW_EVENT(GodRay);
+
 		// bind
 		static GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		static GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };

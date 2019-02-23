@@ -157,6 +157,7 @@
     <ClInclude Include="src\pathos\overlay\display_object.h" />
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
+    <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />

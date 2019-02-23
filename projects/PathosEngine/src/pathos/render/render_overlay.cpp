@@ -25,6 +25,8 @@ namespace pathos {
 	}
 
 	void OverlayRenderer::render(DisplayObject2D* root_) {
+		SCOPED_DRAW_EVENT(Overlay);
+
 		assert(root_ && root_->isRoot());
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
@@ -37,8 +39,12 @@ namespace pathos {
 	}
 
 	void OverlayRenderer::render_recurse(DisplayObject2D* object, const Transform& transformAccum) {
-		if (object->getVisible() == false) return;
+		if (object->getVisible() == false) {
+			return;
+		}
+
 		Transform accum(transformAccum.getMatrix() * object->getTransform().getMatrix());
+
 		auto brush = object->getBrush();
 		if (brush) {
 			auto renderpass = brush->configure(this, accum);

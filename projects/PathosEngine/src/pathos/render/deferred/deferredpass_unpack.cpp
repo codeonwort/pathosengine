@@ -217,54 +217,63 @@ void main() {
 		// prepare god ray image
 		godRay->render(scene, camera);
 		
-		// bind
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
-		glUseProgram(program_hdr);
+		{
+			SCOPED_DRAW_EVENT(UnpackHDR);
 
-		GLuint gbuffer_textures[] = { gbuffer_tex0, gbuffer_tex1, gbuffer_tex2 };
-		glBindTextures(0, 3, gbuffer_textures);
-		glBindTextureUnit(6, sunDepthMap);
+			// bind
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo_hdr);
+			glUseProgram(program_hdr);
 
-		glDisable(GL_DEPTH_TEST);
+			GLuint gbuffer_textures[] = { gbuffer_tex0, gbuffer_tex1, gbuffer_tex2 };
+			glBindTextures(0, 3, gbuffer_textures);
+			glBindTextureUnit(6, sunDepthMap);
 
-		// render HDR image
-		quad->activate_position();
-		quad->activateIndexBuffer();
-		quad->draw();
-		//quad->deactivate();
-		//quad->deactivateIndexBuffer();
+			glDisable(GL_DEPTH_TEST);
 
-		// blur bright area
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_blur);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_blur_attachment, 0);
-		glUseProgram(program_blur);
-		glUniform1i(uniform_blur_horizontal, GL_TRUE);
-		glBindTextureUnit(0, fbo_hdr_attachment[1]);
-		quad->draw();
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment[1], 0);
-		glUniform1i(uniform_blur_horizontal, GL_FALSE);
-		glBindTextureUnit(0, fbo_blur_attachment);
-		quad->draw();
+			// render HDR image
+			quad->activate_position();
+			quad->activateIndexBuffer();
+			quad->draw();
+			//quad->deactivate();
+			//quad->deactivateIndexBuffer();
+		}
 
-		// tone mapping
+		{
+			SCOPED_DRAW_EVENT(GlowEffect);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo_blur);
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_blur_attachment, 0);
+			glUseProgram(program_blur);
+			glUniform1i(uniform_blur_horizontal, GL_TRUE);
+			glBindTextureUnit(0, fbo_hdr_attachment[1]);
+			quad->draw();
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_hdr_attachment[1], 0);
+			glUniform1i(uniform_blur_horizontal, GL_FALSE);
+			glBindTextureUnit(0, fbo_blur_attachment);
+			quad->draw();
+		}
+
+		{
+			SCOPED_DRAW_EVENT(ToneMapping);
 #if DOF
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo_tone);
-		GLenum tone_buffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, tone_buffers);
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo_tone);
+			GLenum tone_buffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers(1, tone_buffers);
 #else
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
-		glUseProgram(program_tone_mapping);
-		glUniform1f(uniform_tone_mapping_exposure, cvar_tonemapping_exposure.getValue());
+			glUseProgram(program_tone_mapping);
+			glUniform1f(uniform_tone_mapping_exposure, cvar_tonemapping_exposure.getValue());
 
-		GLuint gbuffer_attachments[] = { fbo_hdr_attachment[0], fbo_hdr_attachment[1], godRay->getTexture() };
-		glBindTextures(0, 3, gbuffer_attachments);
+			GLuint gbuffer_attachments[] = { fbo_hdr_attachment[0], fbo_hdr_attachment[1], godRay->getTexture() };
+			glBindTextures(0, 3, gbuffer_attachments);
 
-		//quad->activate_position();
-		//quad->activateIndexBuffer();
-		quad->draw();
-		quad->deactivate();
-		quad->deactivateIndexBuffer();
+			//quad->activate_position();
+			//quad->activateIndexBuffer();
+			quad->draw();
+			quad->deactivate();
+			quad->deactivateIndexBuffer();
+		}
 
 #if DOF
 		dof->render(fbo_tone_attachment);

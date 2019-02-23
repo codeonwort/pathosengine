@@ -86,21 +86,29 @@ namespace pathos {
 		scene->calculateLightBuffer();
 
 		// ready shadow before rendering any object
-		shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
-		omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->visible == false) continue;
-			renderLightDepth(mesh);
+		{
+			SCOPED_DRAW_EVENT(ShadowMap);
+
+			shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
+			omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
+			for (Mesh* mesh : scene->meshes) {
+				if (mesh->visible == false) continue;
+				renderLightDepth(mesh);
+			}
 		}
 
 		if (scene->sky != nullptr) {
 			scene->sky->render(scene, camera);
 		}
 
-		// #todo: occluder or BSP tree
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->visible == false) continue;
-			render(mesh);
+		{
+			SCOPED_DRAW_EVENT(BasePass);
+
+			// #todo: occluder or BSP tree
+			for (Mesh* mesh : scene->meshes) {
+				if (mesh->visible == false) continue;
+				render(mesh);
+			}
 		}
 
 		scene = nullptr;

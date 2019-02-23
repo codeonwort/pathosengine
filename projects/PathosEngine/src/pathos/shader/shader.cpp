@@ -40,9 +40,13 @@ namespace pathos {
 		return program;
 	}
 
-	GLuint createProgram(Shader& vs, Shader& fs) {
+	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName) {
 		std::vector<Shader*> shaders = { &vs, &fs };
-		return createProgram(shaders);
+		GLuint program = createProgram(shaders);
+		if (debugName) {
+			glObjectLabel(GL_PROGRAM, program, -1, debugName);
+		}
+		return program;
 	}
 
 	GLuint createProgram(std::vector<ShaderSource*>& sources) {
@@ -157,9 +161,12 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	Shader::Shader(GLenum type) {
-		glName = glCreateShader(type);
-		this->type = type;
+	Shader::Shader(GLenum inType, const char* debugName) {
+		glName = glCreateShader(inType);
+		type = inType;
+		if (debugName) {
+			glObjectLabel(GL_SHADER, glName, -1, debugName);
+		}
 	}
 
 	Shader::~Shader() {

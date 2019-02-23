@@ -54,6 +54,8 @@ void main() {
 	}
 
 	void Skybox::render(const Scene* scene, const Camera* camera) {
+		SCOPED_DRAW_EVENT(Skybox);
+
 		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
 		glm::mat4 proj = camera->getProjectionMatrix();
 		glm::mat4 transform = proj * view;

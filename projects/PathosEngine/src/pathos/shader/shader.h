@@ -16,12 +16,13 @@ namespace pathos {
 
 	// Utilities
 	GLuint createProgram(const std::string& vsCode, const std::string& fsCode);	// only vertex and fragment shaders
-	GLuint createProgram(Shader& vs, Shader& fs);					            // only vertex and fragment shaders
-	GLuint createProgram(std::vector<ShaderSource*>& sources);		            // multiple shader sources #todo: remove this
-	GLuint createProgram(std::vector<Shader*>& shaders);			            // multiple shaders
-	GLuint createProgram(Shader& shader);							            // single shader
-	GLuint createComputeProgram(const std::string& shader_source);	            // compute shader
+	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName = "");   // only vertex and fragment shaders
+	GLuint createProgram(std::vector<Shader*>& shaders);                        // multiple shaders
+	GLuint createProgram(Shader& shader);                                       // single shader (for program pipeline)
+	GLuint createComputeProgram(const std::string& shader_source);              // compute shader
 
+	// #todo: remove this
+	GLuint createProgram(std::vector<ShaderSource*>& sources);                  // multiple shader sources
 	// #todo: temp
 	void dumpShaderSource(ShaderSource& shader, const char* filename);
 
@@ -46,13 +47,15 @@ namespace pathos {
 	// sources come from ShaderSource (setSource) or physical files (loadSource).
 	class Shader {
 	public:
-		Shader(GLenum type);
+		Shader(GLenum type, const char* debugName = "");
 		virtual ~Shader();
 
 		void setSource(const char* source);
 		inline void setSource(const std::string& source);
+
 		bool loadSource(const char* filepath);
 		inline bool loadSource(const std::string& filepath);
+
 		bool compile();
 
 		const GLuint getName() { return glName; }

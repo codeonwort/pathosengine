@@ -37,6 +37,8 @@ namespace pathos {
 	}
 
 	void DepthOfField::render(GLuint texture_input) {
+		SCOPED_DRAW_EVENT(DepthOfField);
+
 		//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
 		glUseProgram(program_subsum2D);
 		glBindImageTexture(0, texture_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
