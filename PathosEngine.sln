@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathosEngine", "projects\Pa
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_OBJLoader", "projects\Test_OBJLoader\Test_OBJLoader.vcxproj", "{FBAD6C42-C426-49E5-987B-53C668A588B4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_EnvMapping", "projects\Test_EnvMapping\Test_EnvMapping.vcxproj", "{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ForwardRendererRefactoring", "projects\Test_ForwardRendererRefactoring\Test_ForwardRendererRefactoring.vcxproj", "{B87A743B-1B64-4350-AE12-98BDB9EDD379}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DeferredRenderer", "projects\Test_DeferredRenderer\Test_DeferredRenderer.vcxproj", "{8FCB4198-9275-4294-9C7B-02F20BFE333B}"
@@ -49,12 +47,6 @@ Global
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|x64.ActiveCfg = Release|x64
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|x64.Build.0 = Release|x64
 		{FBAD6C42-C426-49E5-987B-53C668A588B4}.Release|x86.ActiveCfg = Release|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|x64.ActiveCfg = Debug|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|x64.Build.0 = Debug|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Debug|x86.ActiveCfg = Debug|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|x64.ActiveCfg = Release|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|x64.Build.0 = Release|x64
-		{DFD319E8-FC26-4BAA-B81C-C7745A8C938C}.Release|x86.ActiveCfg = Release|x64
 		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|x64.ActiveCfg = Debug|x64
 		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|x64.Build.0 = Debug|x64
 		{B87A743B-1B64-4350-AE12-98BDB9EDD379}.Debug|x86.ActiveCfg = Debug|x64

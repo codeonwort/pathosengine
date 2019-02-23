@@ -2,24 +2,21 @@
 #include "pathos/render_minimal.h"
 using namespace pathos;
 
-// Configurations
-constexpr int   WINDOW_WIDTH  = 2560;
-constexpr int   WINDOW_HEIGHT = 1440;
+constexpr int   WINDOW_WIDTH  = 1920;
+constexpr int   WINDOW_HEIGHT = 1080;
 constexpr char* WINDOW_TITLE  = "Test: Refactor Forward Renderer";
 constexpr float FOV           = 90.0f;
 
 Camera* cam;
 Scene scene;
-	Mesh *model, *model2, *model3;
+	Mesh *model, *model2, *model3, *model4;
 	Mesh *model_shadowdebug;
-	Skybox* sky;
 
-PointLight *plight;
-DirectionalLight *dlight;
+DirectionalLight *sunLight;
+PointLight *pointLight;
 
 void setupScene();
 void tick();
-void render();
 
 int main(int argc, char** argv) {
 	EngineConfig conf;
@@ -42,9 +39,10 @@ int main(int argc, char** argv) {
 }
 
 void setupScene() {
-	// light
-	plight = new PointLight(glm::vec3(-30, 0, 0), glm::vec3(1, 1, 1));
-	dlight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+	pointLight = new PointLight(glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
+	sunLight = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(1, 1, 1));
+	scene.add(pointLight);
+	scene.add(sunLight);
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -93,29 +91,21 @@ void setupScene() {
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
-	// skybox
-	sky = new Skybox(cubeTexture);
-
-	// model 1: solid color
 	model = new Mesh(geom_sphere_big, material_bump);
-	model->getTransform().appendMove(60, 0, 0);
+	model->getTransform().appendMove(30, 15, 0);
 
-	// model 2: flat texture
 	model2 = new Mesh(geom_sphere, material_color);
 	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
-	model2->getTransform().appendMove(30, 0, 0);
+	model2->getTransform().appendMove(10, 0, 0);
 
-	// model 3: wireframe
 	model3 = new Mesh(geom_cube, material_wireframe);
-	model3->getTransform().appendMove(60, 30, 0);
+	model3->getTransform().appendMove(30, 30, 0);
 
-	// add them to scene
-	scene.sky = sky;
-	scene.add(model);
-	scene.add(model2);
-	scene.add(model3);
-	scene.add(plight);
-	scene.add(dlight);
+	model4 = new Mesh(geom_sphere_big, material_cubemap);
+	model4->getTransform().appendMove(30, -15, 0);
+
+	scene.sky = new Skybox(cubeTexture);
+	scene.add({ model, model2, model3, model4 });
 }
 
 void tick() {
