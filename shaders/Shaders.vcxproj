@@ -114,39 +114,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="..\..\shaders\blur_pass.glsl" />
-    <None Include="..\..\shaders\deferred_common.glsl" />
-    <None Include="..\..\shaders\deferred_pack_bumptexture_fs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_bumptexture_vs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_pbr_fs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_pbr_vs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_solidcolor_fs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_solidcolor_vs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_texture_fs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_texture_vs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_wireframe_fs.glsl" />
-    <None Include="..\..\shaders\deferred_pack_wireframe_vs.glsl" />
-    <None Include="..\..\shaders\deferred_unpack_hdr.glsl" />
-    <None Include="..\..\shaders\deferred_unpack_ldr.glsl" />
-    <None Include="..\..\shaders\depth_of_field.glsl" />
-    <None Include="..\..\shaders\forward_alphaonly_texture_fs.glsl" />
-    <None Include="..\..\shaders\forward_alphaonly_texture_vs.glsl" />
-    <None Include="..\..\shaders\fullscreen_quad.glsl" />
-    <None Include="..\..\shaders\normal_visualizer.glsl" />
-    <None Include="..\..\shaders\overlay_standard_fs.glsl" />
-    <None Include="..\..\shaders\overlay_standard_vs.glsl" />
-    <None Include="..\..\shaders\overlay_text_fs.glsl" />
-    <None Include="..\..\shaders\overlay_text_vs.glsl" />
-    <None Include="..\..\shaders\raytracer.glsl" />
-    <None Include="..\..\shaders\raytracer_prepare_fs.glsl" />
-    <None Include="..\..\shaders\raytracer_prepare_vs.glsl" />
-    <None Include="..\..\shaders\subsum.glsl" />
-    <None Include="..\..\shaders\temp_deferred_normal_mapping.glsl" />
-    <None Include="..\..\shaders\tone_mapping.glsl" />
-    <None Include="..\..\shaders\visualize_depth.fs.glsl" />
-    <None Include="..\..\shaders\visualize_depth.vs.glsl" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
