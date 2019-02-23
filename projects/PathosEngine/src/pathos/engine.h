@@ -5,11 +5,22 @@
 
 namespace pathos {
 
+	class Renderer;
+	class Scene;
+	class Camera;
+
+	enum class ERendererType : uint8_t {
+		Forward,
+		Deferred
+	};
+
 	// @see Engine::init
 	struct EngineConfig {
-		int	windowWidth;						/** window width. */
-		int windowHeight;						/** window height. */
-		const char* title = "pathos engine";	/** window title. */
+		int	windowWidth;						// window width
+		int windowHeight;						// window height
+		const char* title = "pathos engine";	// window title
+
+		ERendererType rendererType = ERendererType::Forward;
 
 		void(*tick)()                           = nullptr;
 		void(*render)()                         = nullptr;
@@ -25,17 +36,32 @@ namespace pathos {
 
 		static bool init(int* argcp, char** argv, const EngineConfig& conf);
 
+	// Public API
+	public:
+		void start();
+		void stop();
+
+		void setWorld(Scene* inScene, Camera* inCamera);
+
+		const EngineConfig& getConfig() const { return conf; }
+
+		inline float getMilliseconds() const { return elapsed_ms; }
+		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
+
 	private:
 		Engine();
 		~Engine();
-		Engine(const Engine& other) = delete;
+
+		Engine(const Engine& other)            = delete;
 		Engine& operator=(const Engine& other) = delete;
 
 		bool initialize(int* argcp, char** argv, const EngineConfig& conf);
+
 		bool initializeGlut(int* argcp, char** argv);
 		bool initializeOpenGL();
 		bool initializeThirdParty();
 		bool initializeConsole();
+		bool initializeRenderer();
 
 		// glut event listeners //
 		static void onGlutIdle();
@@ -44,21 +70,17 @@ namespace pathos {
 		static void onGlutKeyDown(unsigned char ascii, int x, int y);
 		static void onGlutKeyUp(unsigned char ascii, int x, int y);
 
-	public:
-		void start();
-		void stop();
-		const EngineConfig& getConfig() const { return conf; }
-
-		inline float getMilliseconds() const { return elapsed_ms; }
-		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
-
 	private:
 		void tick();
 		void render();
 
 		EngineConfig conf;
-		bool keymap[256] = { false, };
 
+		Renderer* renderer;
+		Scene* scene;
+		Camera* camera;
+
+		bool keymap[256] = { false, };
 		GLuint timer_query;
 		float elapsed_ms;
 

@@ -1,8 +1,8 @@
-#include "ansel_envmap.h"
+#include "sky_ansel.h"
 #include "pathos/shader/shader.h"
-#include "glm/gtc/constants.hpp"
+
 #include <string>
-#include <cassert>
+#include <assert.h>
 
 namespace pathos {
 
@@ -127,21 +127,23 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	AnselEnvMapping::AnselEnvMapping(GLuint textureID) :texture(textureID) {
+	AnselSkyRendering::AnselSkyRendering(GLuint textureID) :texture(textureID) {
 		sphere = new IcosahedronGeometry(0);
 
 		createShaderProgram();
 	}
 
-	AnselEnvMapping::~AnselEnvMapping() {
+	AnselSkyRendering::~AnselSkyRendering() {
 		delete sphere;
 		sphere = nullptr;
 
 		glDeleteProgram(program);
 	}
 
-	void AnselEnvMapping::render(const glm::mat4& transform) {
-		glUseProgram(program);
+	void AnselSkyRendering::render(const Scene* scene, const Camera* camera) {
+		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4& proj = camera->getProjectionMatrix();
+		glm::mat4& transform = proj * view;
 
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_DEPTH_TEST);
@@ -149,8 +151,8 @@ namespace pathos {
 		sphere->activate_position();
 		sphere->activateIndexBuffer();
 
+		glUseProgram(program);
 		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-
 		glBindTextureUnit(0, texture);
 
 		sphere->draw();
@@ -162,7 +164,7 @@ namespace pathos {
 		glEnable(GL_DEPTH_TEST);
 	}
 
-	void AnselEnvMapping::createShaderProgram() {
+	void AnselSkyRendering::createShaderProgram() {
 		std::string vs = R"(
 #version 430 core
 

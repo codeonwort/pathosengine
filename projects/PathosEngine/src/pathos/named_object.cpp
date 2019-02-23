@@ -1,4 +1,4 @@
-#include "core.h"
+#include "named_object.h"
 
 namespace pathos {
 

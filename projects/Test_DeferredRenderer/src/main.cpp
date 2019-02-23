@@ -1,14 +1,5 @@
 #include "pathos/core_minimal.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/material/material.h"
-#include "pathos/light/light.h"
-#include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
-#include "pathos/render/render_norm.h"
-#include "pathos/render/render_deferred.h"
-#include "pathos/loader/imageloader.h"
-#include "glm/gtx/transform.hpp"
+#include "pathos/render_minimal.h"
 using namespace pathos;
 
 #include <GL/glut.h>
@@ -16,54 +7,48 @@ using namespace pathos;
 
 // Compile options
 #define SMALL_WINDOW        0 // RenderDoc crashes when trying to capture a large screen :(
-#define VISUALIZE_NORMAL    0
 
 // Rendering configurations
 #if SMALL_WINDOW
-const int			WINDOW_WIDTH		=	800;
-const int			WINDOW_HEIGHT		=	600;
+const int           WINDOW_WIDTH        =   800;
+const int           WINDOW_HEIGHT       =   600;
 #else
-const int			WINDOW_WIDTH		=	1920;
-const int			WINDOW_HEIGHT		=	1080;
+const int           WINDOW_WIDTH        =   1920;
+const int           WINDOW_HEIGHT       =   1080;
 #endif
-const char*			WINDOW_TITLE		=	"Test: Deferred Rendering";
-const float			FOV					=	60.0f;
-const glm::vec3		CAMERA_POSITION		=	glm::vec3(0.0f, 0.0f, 100.0f);
-const float			CAMERA_Z_NEAR		=	1.0f;
-const float			CAMERA_Z_FAR		=	1000.0f;
-const glm::vec3		SUN_DIRECTION		=	glm::vec3(0.0f, -1.0f, 0.0f);
-const bool			USE_HDR				=	true;
-const uint32_t		NUM_POINT_LIGHTS	=	2;
-const uint32_t		NUM_BALLS			=	10;
+const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
+const float         FOV                 =   60.0f;
+const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 0.0f, 100.0f);
+const float         CAMERA_Z_NEAR       =   1.0f;
+const float         CAMERA_Z_FAR        =   1000.0f;
+const glm::vec3     SUN_DIRECTION       =   glm::vec3(0.0f, -1.0f, 0.0f);
+const bool          USE_HDR             =   true;
+const uint32_t      NUM_POINT_LIGHTS    =   2;
+const uint32_t      NUM_BALLS           =   10;
 
 // Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
-DeferredRenderer* renderer;
-NormalRenderer* normRenderer;
-
-// 3D objects
-Mesh *ground;
-Mesh *model, *model2, *model3;
-std::vector<Mesh*> balls;
-Mesh* godRaySource;
-Skybox* sky;
+	Skybox* sky;
+	Mesh* godRaySource;
+	Mesh *ground;
+	Mesh *model, *model2, *model3;
+	std::vector<Mesh*> balls;
 
 // Lights and shadow
-PointLight *plight;
+PointLight *pointLight;
 DirectionalLight *sunLight;
 
 void setupScene();
 void tick();
-void render();
 
 int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
 	conf.title        = WINDOW_TITLE;
+	conf.rendererType = ERendererType::Deferred;
 	conf.tick         = tick;
-	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
 	// camera
@@ -71,15 +56,9 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
-	// renderer
-	renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
-	renderer->setHDR(USE_HDR);
-#if VISUALIZE_NORMAL
-	normRenderer = new NormalRenderer(0.2f);
-#endif
-
 	setupScene();
 
+	gEngine->setWorld(&scene, cam);
 	gEngine->start();
 
 	return 0;
@@ -118,8 +97,8 @@ void setupScene() {
 	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"));
 	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"));
 
-	GLuint tex_debug = renderer->debug_godRayTexture();
-	auto material_tex_debug = new TextureMaterial(tex_debug);
+// 	GLuint tex_debug = renderer->debug_godRayTexture();
+// 	auto material_tex_debug = new TextureMaterial(tex_debug);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
@@ -211,7 +190,7 @@ void setupScene() {
 	scene.add(model);
 	scene.add(model2);
 	scene.add(model3);
-	scene.skybox = sky;
+	scene.sky = sky;
 	scene.godRaySource = godRaySource;
 }
 
@@ -246,14 +225,4 @@ void tick()
 	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
 #endif
 
-}
-
-void render() {
-	renderer->render(&scene, cam);
-
-#if VISUALIZE_NORMAL
-	for (const auto mesh : scene.meshes) {
-		normRenderer->render(mesh, cam);
-	}
-#endif
 }

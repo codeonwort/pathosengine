@@ -10,7 +10,7 @@ namespace pathos {
 	class Mesh;
 	class DirectionalLight;
 	class PointLight;
-	class Skybox;
+	class SkyRendering;
 
 	// Represents a 3D scene.
 	class Scene {
@@ -21,7 +21,7 @@ namespace pathos {
 		Scene(const Scene&)            = delete;
 		Scene& operator=(const Scene&) = delete;
 
-		Skybox* skybox = nullptr;
+		SkyRendering* sky = nullptr;
 		Mesh* godRaySource = nullptr;
 		std::vector<Mesh*> meshes;
 

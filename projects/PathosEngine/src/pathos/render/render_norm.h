@@ -3,7 +3,6 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene.h"
-#include "pathos/render/envmap.h"
 
 namespace pathos {
 

@@ -16,11 +16,7 @@ namespace pathos {
 		DeferredRenderer(unsigned int width, unsigned int height);
 		virtual ~DeferredRenderer();
 
-		DeferredRenderer(const DeferredRenderer&)            = delete;
-		DeferredRenderer(DeferredRenderer&&)                 = delete;
-		DeferredRenderer& operator=(const DeferredRenderer&) = delete;
-
-		void render(Scene*, Camera*); // render the total scene
+		virtual void render(Scene*, Camera*) override;
 
 		inline void setHDR(bool value) { useHDR = value; }
 
@@ -33,17 +29,13 @@ namespace pathos {
 		void createGBuffer();
 		void destroyGBuffer();
 
-		void createUBO();
-
 		void updateUBO(Scene* scene, Camera* camera);
 		void clearGBuffer();
 		void packGBuffer();
 		void unpackGBuffer();
 
-		void renderSkybox(Skybox*);
-
 	private:
-		bool useHDR = false;
+		bool useHDR = true;
 
 		GLuint fbo; // g-buffer
 		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)

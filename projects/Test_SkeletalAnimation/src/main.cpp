@@ -1,19 +1,9 @@
 #include "pathos/core_minimal.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/material/material.h"
-#include "pathos/light/light.h"
-#include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
-#include "pathos/render/render_norm.h"
-#include "pathos/render/render_deferred.h"
-#include "pathos/loader/imageloader.h"
-#include "pathos/util/resource_finder.h"
-#include "glm/gtx/transform.hpp"
-#include <time.h>
+#include "pathos/render_minimal.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
+#include <time.h>
 
 using namespace std;
 using namespace pathos;
@@ -23,15 +13,14 @@ using namespace pathos;
 								CONFIGURATION
 
 ------------------------------------------------------------------------- */
-#define DEBUG_NORMAL 0
-#define DAE_MODEL_ID 2
+#define DAE_MODEL_ID          2
 #define LOAD_SECOND_DAE_MODEL 0
 
-constexpr int WINDOW_WIDTH = 1920;
-constexpr int WINDOW_HEIGHT = 1080;
-constexpr float FOV = 90.0f;
-const glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 100.0f);
-constexpr char* WINDOW_TITLE = "Test: Skeletal Animation";
+constexpr int WINDOW_WIDTH      = 1920;
+constexpr int WINDOW_HEIGHT     = 1080;
+constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
+constexpr float FOV             = 90.0f;
+const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
 
 /* ------------------------------------------------------------------------
 
@@ -39,57 +28,37 @@ constexpr char* WINDOW_TITLE = "Test: Skeletal Animation";
 
 ------------------------------------------------------------------------- */
 
-// Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
-DeferredRenderer* renderer;
-#if DEBUG_NORMAL
-NormalRenderer* normRenderer;
-#endif
+	Skybox* sky;
+	Mesh *model, *model2;
+	SkinnedMesh *daeModel;
+	SkinnedMesh *daeModel2;
 
-// 3D objects
-Mesh *model, *model2;
-SkinnedMesh *daeModel;
-SkinnedMesh *daeModel2;
-Skybox* sky;
-
-// Lights and shadow
 PointLight *plight;
 DirectionalLight *dlight;
 
 void loadDAE();
 void setupScene();
 void tick();
-void render();
 
 int main(int argc, char** argv) {
-	// engine configuration
 	EngineConfig conf;
-	conf.windowWidth = WINDOW_WIDTH;
+	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
-	conf.title = WINDOW_TITLE;
-	conf.tick = tick;
-	conf.render = render;
+	conf.title        = WINDOW_TITLE;
+	conf.rendererType = ERendererType::Deferred;
+	conf.tick         = tick;
 	Engine::init(&argc, argv, conf);
 
-	// camera
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
-	// renderer
-	renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
-	renderer->setHDR(true);
-
-#if DEBUG_NORMAL
-	normRenderer = new NormalRenderer(0.2f);
-#endif
-
-	// scene
 	loadDAE();
 	setupScene();
 
-	// start the main loop
+	gEngine->setWorld(&scene, cam);
 	gEngine->start();
 
 	return 0;
@@ -135,7 +104,6 @@ void loadDAE() {
 }
 
 void setupScene() {
-	// light
 	plight = new PointLight(glm::vec3(0, 0, 0), glm::vec3(1, 0, 1));
 	dlight = new DirectionalLight(glm::vec3(0, 0, -1), glm::vec3(1.0f));
 	scene.add(plight);
@@ -213,19 +181,21 @@ void setupScene() {
 
 	scene.add(model);
 	scene.add(model2);
-	scene.skybox = sky;
+	scene.sky = sky;
 	scene.godRaySource = model2;
 }
 
 void tick() {
-	float speedX = 0.5f, speedY = 0.5f;
-	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
-	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
+	if (gConsole->isVisible() == false) {
+		float speedX = 0.5f, speedY = 0.5f;
+		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 
 	model->getTransform().appendMove(0, 20, 0);
 	model->getTransform().appendRotation(0.01f, glm::vec3(0, 0.5, 1));
@@ -242,15 +212,5 @@ void tick() {
 	daeModel->updateAnimation(0, time);
 	daeModel->updateSoftwareSkinning();
 	daeModel->getTransform().prependRotation(0.003f, glm::vec3(0, 1, 0));
-#endif
-}
-
-void render() {
-	renderer->render(&scene, cam);
-
-#if DEBUG_NORMAL
-	for (const auto mesh : scene.meshes) {
-		normRenderer->render(mesh, cam);
-	}
 #endif
 }

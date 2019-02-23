@@ -1,12 +1,12 @@
 #pragma once
 
-#include "pathos/core.h"
+#include "pathos/named_object.h"
 #include "pathos/material/material_id.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/light/light.h"
-//#include "pathos/render/ReflectionMethod.h"
+
 #include "gl_core.h"
 #include <vector>
 
@@ -20,24 +20,8 @@ namespace pathos {
 		// IMPORTANT: Child classes should initialize this in their constructors
 		MATERIAL_ID materialID = MATERIAL_ID::INVALID;
 
-		//std::vector<DirectionalLight*> directionalLights;
-		//std::vector<PointLight*> pointLights;
-
 	public:
 		MATERIAL_ID getMaterialID() { return materialID; }
-
-		//PlaneReflection* getReflectionMethod();
-		//void setReflectionMethod(PlaneReflection*);
-		/*
-		void addLight(DirectionalLight* light);
-		void addLight(PointLight* light);
-		const std::vector<DirectionalLight*>& getDirectionalLights();
-		const std::vector<PointLight*>& getPointLights();
-		const std::vector<GLfloat>& getDirectionalLightDirectionBuffer() { return dirLightDirections; }
-		const std::vector<GLfloat>& getDirectionalLightColorBuffer() { return dirLightColors; }
-		const std::vector<GLfloat>& getPointLightPositionBuffer() { return pointLightPositions; }
-		const std::vector<GLfloat>& getPointLightColorBuffer() { return pointLightColors; }
-		*/
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,11 +56,9 @@ namespace pathos {
 		GLfloat specular[3];
 		bool useLighting = true;
 		bool useAlpha = false;
-		//string channelMapping;
 
 	public:
 		TextureMaterial(GLuint texture);
-		//TextureMaterial(GLuint texture, bool useAlpha = false, string channelMapping = "rgb");
 
 		inline GLuint getTexture() { return texture; }
 		inline void setTexture(GLuint _texture) { texture = _texture; }
@@ -161,6 +143,7 @@ namespace pathos {
 	};
 
 	class PBRTextureMaterial : public MeshMaterial {
+
 	public:
 		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);
 		inline GLuint getAlbedo() const { return tex_albedo; }
@@ -168,12 +151,14 @@ namespace pathos {
 		inline GLuint getMetallic() const { return tex_metallic; }
 		inline GLuint getRoughness() const { return tex_roughness; }
 		inline GLuint getAO() const { return tex_ao; }
+
 	protected:
 		GLuint tex_albedo;
 		GLuint tex_normal;
 		GLuint tex_metallic;
 		GLuint tex_roughness;
 		GLuint tex_ao;
+
 	};
 
 }

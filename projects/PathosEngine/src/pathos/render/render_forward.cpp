@@ -93,8 +93,8 @@ namespace pathos {
 			renderLightDepth(mesh);
 		}
 
-		if (scene->skybox != nullptr) {
-			render(scene->skybox);
+		if (scene->sky != nullptr) {
+			scene->sky->render(scene, camera);
 		}
 
 		// #todo: occluder or BSP tree
@@ -131,14 +131,6 @@ namespace pathos {
 
 		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
-	}
-
-	void ForwardRenderer::render(Skybox* sky) {
-		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4 proj = camera->getProjectionMatrix();
-		glm::mat4 transform = proj * view;
-		sky->activate(transform);
-		sky->render();
 	}
 
 	void ForwardRenderer::render(Mesh* mesh) {

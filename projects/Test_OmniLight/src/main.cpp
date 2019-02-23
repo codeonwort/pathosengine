@@ -1,16 +1,5 @@
 #include "pathos/core_minimal.h"
-#include "pathos/render/render_forward.h"
-#include "pathos/render/render_norm.h"
-#include "pathos/render/envmap.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/camera/camera.h"
-#include "pathos/light/light.h"
-#include "pathos/loader/imageloader.h"
-#include "pathos/loader/objloader.h"
-#include "glm/gtx/transform.hpp"
-
-using namespace std;
+#include "pathos/render_minimal.h"
 using namespace pathos;
 
 // Rendering configurations
@@ -27,27 +16,20 @@ Scene scene;
 	Mesh *plane_posX, *plane_negX, *plane_posY, *plane_negY, *plane_posZ, *plane_negZ; // shadow receivers
 	Skybox* sky;
 
-// renderer
-ForwardRenderer* renderer;
-NormalRenderer* normRenderer;
-
 void setupScene();
 
 void tick() {
-	float speedX = 0.2f, speedY = 0.2f;
-	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
-	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
+	if (gConsole->isVisible() == false) {
+		float speedX = 0.5f, speedY = 0.5f;
+		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 	lamp->getTransform().appendRotation(0.001f, glm::vec3(1.0f, 0.5f, 0.f));
-}
-
-void render() {
-	renderer->render(&scene, cam);
-	normRenderer->render(ball, cam);
 }
 
 int main(int argc, char** argv) {
@@ -55,19 +37,17 @@ int main(int argc, char** argv) {
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
 	conf.title        = TITLE;
+	conf.rendererType = ERendererType::Forward;
 	conf.tick         = tick;
-	conf.render       = render;
 	Engine::init(&argc, argv, conf);
 
 	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
-	renderer = new ForwardRenderer;
-	normRenderer = new NormalRenderer(0.2f);
-
 	setupScene();
 
+	gEngine->setWorld(&scene, cam);
 	gEngine->start();
 
 	return 0;
@@ -80,7 +60,7 @@ void setupScene() {
 	auto plight2 = new PointLight(glm::vec3(-3, 5, 2), glm::vec3(1, 0, 0));
 	auto plight3 = new PointLight(glm::vec3(2, -2, 0), glm::vec3(0, 1, 0));
 
-	scene.add(light);
+	//scene.add(light);
 	scene.add(plight);
 	//scene.add(plight2);
 	//scene.add(plight3);
@@ -99,7 +79,7 @@ void setupScene() {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
-	scene.skybox = sky;
+	scene.sky = sky;
 
 	// bump texture for planes
 	GLuint tex = loadTexture(loadImage("154.jpg"));
@@ -139,11 +119,11 @@ void setupScene() {
 	ball->getTransform().appendMove(7, 4, 0);
 
 	// omni shadow debugger
-	auto omni = renderer->getOmnidirectionalShadow();
-	unsigned int face = 0;
-	viewer = new Mesh(new PlaneGeometry(10, 10), new ShadowCubeTextureMaterial(omni->getDebugTexture(0), face, omni->getLightNearZ(), omni->getLightFarZ()));
-	viewer->getTransform().appendMove(10, 0, 10);
-	viewer->doubleSided = true;
+// 	auto omni = renderer->getOmnidirectionalShadow();
+// 	unsigned int face = 0;
+// 	viewer = new Mesh(new PlaneGeometry(10, 10), new ShadowCubeTextureMaterial(omni->getDebugTexture(0), face, omni->getLightNearZ(), omni->getLightFarZ()));
+// 	viewer->getTransform().appendMove(10, 0, 10);
+// 	viewer->doubleSided = true;
 
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), new WireframeMaterial(1, 1, 1));
 	//GLfloat* lightDir = light->getDirection();
@@ -158,10 +138,10 @@ void setupScene() {
 	shadowLight->getTransform().appendMove(lightPos);
 
 	// scene configuration
-	scene.skybox = sky;
+	scene.sky = sky;
 	scene.add(ball);
 	scene.add(lamp);
-	scene.add(viewer);
+	//scene.add(viewer);
 	//scene.add(cube); // bounding box of shadow mapping
 	scene.add(shadowLight);
 	scene.add({ plane_posX, plane_negX, plane_posY, plane_negY, plane_posZ, plane_negZ });

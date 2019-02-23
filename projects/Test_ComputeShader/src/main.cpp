@@ -1,41 +1,19 @@
 #include "pathos/core_minimal.h"
-#include "pathos/camera/camera.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/render/render_deferred.h"
+#include "pathos/shader/shader.h"
 using namespace pathos;
 
 #include <stdio.h>
 
-//-------------------------------------
-
-Camera* camera;
-Scene scene;
-DeferredRenderer* renderer;
-
-//-------------------------------------
-
 void initComputeShader();
-void initScene();
-void onRender();
-
-//-------------------------------------
 
 int main(int argc, char** argv) {
 	EngineConfig config;
 	config.windowWidth  = 800;
 	config.windowHeight = 600;
 	config.title        = "Test: Compute Shader";
-	config.render       = onRender;
 	Engine::init(&argc, argv, config);
 
-	float aspect = static_cast<float>(config.windowWidth) / static_cast<float>(config.windowHeight);
-	camera = new Camera(new PerspectiveLens(45.0f, aspect, 1.0f, 500.0f));
-
-	renderer = new DeferredRenderer(config.windowWidth, config.windowHeight);
-	renderer->setHDR(true);
-
 	initComputeShader();
-	initScene();
 
 	gEngine->start();
 
@@ -82,7 +60,7 @@ void main() {
 	*/
 
 	// test compute shader
-	string cshader = R"(
+	std::string cshader = R"(
 #version 430 core
 
 layout (local_size_x = 128) in;
@@ -158,13 +136,4 @@ void main() {
 	}
 	puts("");
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-}
-
-void initScene() {
-	auto light = new DirectionalLight(glm::vec3(1, 0, 0), glm::vec3(0.1f));
-	scene.add(light);
-}
-
-void onRender() {
-	renderer->render(&scene, camera);
 }

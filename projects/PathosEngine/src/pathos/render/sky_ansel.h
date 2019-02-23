@@ -1,7 +1,8 @@
 #pragma once
 
-#include "gl_core.h"
+#include "sky.h"
 #include "pathos/mesh/geometry.h"
+#include "gl_core.h"
 
 namespace pathos {
 
@@ -14,7 +15,6 @@ namespace pathos {
 		IcosahedronGeometry(uint32_t subdivisionStep = 0);
 
 	private:
-		// subroutines
 		void buildGeometry();		// initial positions and indices of icosahedron
 		void subdivide();			// subdivision step
 		void uploadToGPU();			// GL calls
@@ -29,22 +29,21 @@ namespace pathos {
 		
 	};
 
-	// alternative for Skybox
-	class AnselEnvMapping {
+	class AnselSkyRendering : public SkyRendering {
 		
 	public:
-		AnselEnvMapping(GLuint textureID);
-		~AnselEnvMapping();
+		AnselSkyRendering(GLuint textureID);
+		~AnselSkyRendering();
 
-		// transform: view-projection transform without camera transition
-		void render(const glm::mat4& transform);
+		void render(const Scene* scene, const Camera* camera) override;
 
 	private:
 		void createShaderProgram();
 
-		GLuint texture = 0xFFFFFFFF;
 		GLuint program = 0;
 		GLint uniform_transform = -1;
+		GLuint texture = 0;
+
 		MeshGeometry* sphere = nullptr;
 
 	};

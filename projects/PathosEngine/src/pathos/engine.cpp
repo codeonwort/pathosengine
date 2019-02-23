@@ -1,6 +1,9 @@
-#include "pathos/engine.h"
-#include "util/log.h"
+#include "engine.h"
 #include "console.h"
+#include "util/log.h"
+#include "util/resource_finder.h"
+#include "render/render_forward.h"
+#include "render/render_deferred.h"
 
 #include "GL/freeglut.h"          // subsystem: window
 #include "FreeImage.h"            // subsystem: image file loader
@@ -8,7 +11,7 @@
 
 #include <assert.h>
 #include <iostream>
-#include "util/resource_finder.h"
+#include <algorithm>
 
 #define GL_DEBUG_CONTEXT  0
 #define GL_ERROR_CALLBACK 1
@@ -63,7 +66,10 @@ namespace pathos {
 	const std::string Engine::version = "0.2.0";
 
 	Engine::Engine()
-		: timer_query(0)
+		: renderer(nullptr)
+		, scene(nullptr)
+		, camera(nullptr)
+		, timer_query(0)
 		, elapsed_ms(0)
 	{
 	}
@@ -102,6 +108,7 @@ namespace pathos {
 		BailIfFalse( initializeOpenGL()          );
 		BailIfFalse( initializeThirdParty()      );
 		BailIfFalse( initializeConsole()         );
+		BailIfFalse( initializeRenderer()        );
 #undef BailIfFalse
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
@@ -190,7 +197,7 @@ namespace pathos {
 	bool Engine::initializeConsole()
 	{
 		gConsole = new ConsoleWindow;
-		if (gConsole->initialize(conf.windowWidth, min(conf.windowHeight, 400)) == false) {
+		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, 400)) == false) {
 			LOG(LogError, "Failed to initialize console window");
 			return false;
 		}
@@ -200,20 +207,35 @@ namespace pathos {
 		return true;
 	}
 
-	/**
-	* start the main loop.
-	*/
+	bool Engine::initializeRenderer()
+	{
+		switch (conf.rendererType) {
+		case ERendererType::Forward:
+			renderer = new ForwardRenderer;
+			break;
+
+		case ERendererType::Deferred:
+			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+			break;
+		}
+
+		return renderer != nullptr;
+	}
+
 	void Engine::start() {
-		LOG(LogInfo, "- Start the main loop");
+		LOG(LogInfo, "Start the main loop");
 		glutMainLoop();
 	}
 
-	/**
-	* stop the main loop.
-	*/
 	void Engine::stop() {
 		glutLeaveMainLoop();
-		LOG(LogInfo, "- Stop the main loop");
+		LOG(LogInfo, "Stop the main loop");
+	}
+
+	void Engine::setWorld(Scene* inScene, Camera* inCamera)
+	{
+		scene = inScene;
+		camera = inCamera;
 	}
 
 	void Engine::tick()
@@ -226,10 +248,13 @@ namespace pathos {
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
 
-		// Render
-		if (conf.render != nullptr) {
-			conf.render();
+		if (renderer && scene && camera) {
+			renderer->render(scene, camera);
 		}
+		
+// 		if (conf.render != nullptr) {
+// 			conf.render();
+// 		}
 
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);

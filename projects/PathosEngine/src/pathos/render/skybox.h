@@ -1,29 +1,27 @@
 #pragma once
 
-#include "gl_core.h"
-#include "glm/glm.hpp"
+#include "sky.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "gl_core.h"
 
 namespace pathos {
 
-	// Skybox render pass
-	class Skybox {
+	class Skybox : public SkyRendering {
 
 	public:
 		Skybox(GLuint textureID);
 		~Skybox();
 
-		void activate(const glm::mat4& viewTransform);
-		void render();
+		void render(const Scene* scene, const Camera* camera) override;
 
 	private:
+		void createShader();
+
 		GLuint program;
 		GLuint textureID;
 		GLint uniform_transform = -1;
 
 		CubeGeometry* cube;
-		
-		void createShader();
 
 	};
 

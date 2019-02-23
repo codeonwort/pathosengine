@@ -1,6 +1,6 @@
 #include "render_deferred.h"
+#include "sky.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/render/envmap.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "visualize_depth.h"
@@ -31,10 +31,13 @@ namespace pathos {
 		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
 	};
 
-	DeferredRenderer::DeferredRenderer(unsigned int width, unsigned int height):width(width), height(height) {
+	DeferredRenderer::DeferredRenderer(unsigned int width, unsigned int height)
+		: width(width)
+		, height(height)
+	{
 		createGBuffer();
 		createShaders();
-		createUBO();
+		ubo_perFrame.init<UBO_PerFrame>();
 		sunShadowMap = new DirectionalShadowMap;
 	}
 	DeferredRenderer::~DeferredRenderer() {
@@ -107,10 +110,6 @@ namespace pathos {
 	void DeferredRenderer::destroyGBuffer() {
 		glDeleteTextures(4, fbo_attachment);
 		glDeleteFramebuffers(1, &fbo);
-	}
-
-	void DeferredRenderer::createUBO() {
-		ubo_perFrame.init<UBO_PerFrame>();
 	}
 
 	void DeferredRenderer::render(Scene* inScene, Camera* inCamera) {
@@ -232,23 +231,18 @@ namespace pathos {
 	void DeferredRenderer::unpackGBuffer() {
 		unpack_pass->bindFramebuffer(useHDR);
 		unpack_pass->setDrawBuffers(false);
-		renderSkybox(scene->skybox); // actually not an unpack work, but rendering order is here...
+
+		// actually not an unpack work, but rendering order is here...
+		if (scene->sky) {
+			scene->sky->render(scene, camera);
+		}
+
 		unpack_pass->setDrawBuffers(true);
 		unpack_pass->setSunDepthMap(sunShadowMap->getDepthMapTexture());
 		if (useHDR) unpack_pass->renderHDR(scene, camera);
 		else unpack_pass->render(scene, camera);
 	}
 	
-	void DeferredRenderer::renderSkybox(Skybox* sky) {
-		if (!sky) return;
-
-		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4 proj = camera->getProjectionMatrix();
-		glm::mat4 transform = proj * view;
-		sky->activate(transform);
-		sky->render();
-	}
-
 	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 

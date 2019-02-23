@@ -1,12 +1,11 @@
 #pragma once
 
-#include <stdint.h>
-#include <vector>
+#include "pathos/named_object.h"
 
 #include "gl_core.h"
-#include "glm/matrix.hpp"
 
-#include "pathos/core.h"
+#include <stdint.h>
+#include <vector>
 
 namespace pathos {
 

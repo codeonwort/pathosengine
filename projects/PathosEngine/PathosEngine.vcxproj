@@ -86,7 +86,7 @@
     <ClCompile Include="src\gl3w\gl3w.c" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
-    <ClCompile Include="src\pathos\core.cpp" />
+    <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\light.cpp" />
     <ClCompile Include="src\pathos\light\shadow.cpp" />
@@ -110,7 +110,6 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
     <ClCompile Include="src\pathos\render\depth_of_field.cpp" />
-    <ClCompile Include="src\pathos\render\envmap.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_alphaonlytexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
@@ -130,6 +129,8 @@
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
     <ClCompile Include="src\pathos\render\scene.cpp" />
+    <ClCompile Include="src\pathos\render\skybox.cpp" />
+    <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
     <ClCompile Include="src\pathos\render\visualize_depth.cpp" />
     <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
@@ -143,7 +144,7 @@
     <ClInclude Include="src\gl_core.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
-    <ClInclude Include="src\pathos\core.h" />
+    <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light.h" />
@@ -164,7 +165,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
     <ClInclude Include="src\pathos\render\depth_of_field.h" />
-    <ClInclude Include="src\pathos\render\envmap.h" />
+    <ClInclude Include="src\pathos\render\sky.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
     <ClInclude Include="src\pathos\material\material.h" />
     <ClInclude Include="src\pathos\material\material_id.h" />
@@ -195,7 +196,10 @@
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
     <ClInclude Include="src\pathos\render\scene.h" />
+    <ClInclude Include="src\pathos\render\skybox.h" />
+    <ClInclude Include="src\pathos\render\sky_ansel.h" />
     <ClInclude Include="src\pathos\render\visualize_depth.h" />
+    <ClInclude Include="src\pathos\render_minimal.h" />
     <ClInclude Include="src\pathos\shader\shader.h" />
     <ClInclude Include="src\pathos\shader\uniform_buffer.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />

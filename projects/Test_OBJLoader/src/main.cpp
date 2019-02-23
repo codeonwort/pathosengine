@@ -1,33 +1,18 @@
-#include "glm/gtx/transform.hpp"
 #include "pathos/core_minimal.h"
-#include "pathos/render/render_forward.h"
-#include "pathos/render/envmap.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/camera/camera.h"
-#include "pathos/light/light.h"
-#include "pathos/loader/imageloader.h"
-#include "pathos/loader/objloader.h"
+#include "pathos/render_minimal.h"
 #include "pathos/text/textmesh.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/util/resource_finder.h"
+using namespace pathos;
 
 #include <iostream>
 #include <thread>
-
 using namespace std;
-using namespace pathos;
 
-// Camera, scene and renderer
 Camera* cam;
 Scene scene;
-ForwardRenderer* renderer;
+	Mesh *city, *city2;
+	TextMesh *label;
+	Skybox* sky;
 
-// 3D objects
-Mesh *city, *city2;
-TextMesh *label;
-Skybox* sky;
-
-// Lights and shadow
 PointLight *plight, *plight2;
 DirectionalLight *dlight;
 
@@ -37,7 +22,6 @@ bool loaderReady = false;
 void setupModel();
 void setupSkybox();
 void tick();
-void render();
 
 void loadTask() {
 	cityLoader.load("models/city/The_City.obj", "models/city/");
@@ -47,27 +31,22 @@ void loadTask() {
 int main(int argc, char** argv) {
 	// engine configuration
 	EngineConfig conf;
-	conf.windowWidth = 1600;
+	conf.windowWidth  = 1600;
 	conf.windowHeight = 1200;
-	conf.title = "Test: Loading Wavefront OBJ Model";
-	conf.tick = tick;
-	conf.render = render;
+	conf.title        = "Test: Loading Wavefront OBJ Model";
+	conf.rendererType = ERendererType::Deferred;
+	conf.tick         = tick;
 	Engine::init(&argc, argv, conf);
 
-	// camera
 	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 1000.f));
 	cam->move(glm::vec3(0, 0, 20));
 
-	// renderer
-	renderer = new ForwardRenderer;
-
-	// 3d objects
 	setupModel();
 	setupSkybox();
 
 	std::thread loadWorker(loadTask);
 
-	// start the main loop
+	gEngine->setWorld(&scene, cam);
 	gEngine->start();
 
 	loadWorker.join();
@@ -83,25 +62,10 @@ void setupModel() {
 	label = new TextMesh("default");
 	label->setText("Loading OBJ model. Please wait...", 0xff0000);
 	label->getTransform().appendScale(20);
-	label->doubleSided = true;
-
-	/*
-	//OBJLoader city2Loader("models/teapot/teapot.obj", "models/teapot/");
-	OBJLoader city2Loader("models/street.obj", "models/");
-	city2 = city2Loader.craftMesh(0, city2Loader.numGeometries(), "city2");
-	city2->getTransform().appendScale(.2, .2, .2);
-	city2->getTransform().appendMove(0, -40, -50);
-	*/
-
-	auto debug = new Mesh(new PlaneGeometry(5, 5), new ShadowTextureMaterial(renderer->getShadowMap()->getDebugTexture(0)));
-	debug->getTransform().appendMove(30, 0, 10);
 
 	scene.add(plight);
 	scene.add(dlight);
 	scene.add(label);
-	scene.add(debug);
-
-	renderer->getShadowMap()->setProjection(glm::ortho(-200.f, 200.f, -200.f, 100.f, -200.f, 500.f));
 }
 
 void setupSkybox() {
@@ -115,7 +79,7 @@ void setupSkybox() {
 	GLuint cubeTex = loadCubemapTexture(cubeImg);
 	sky = new Skybox(cubeTex);
 
-	scene.skybox = sky;
+	scene.sky = sky;
 }
 
 void tick() {
@@ -130,18 +94,14 @@ void tick() {
 		label->visible = false;
 	}
 
-	float speedX = 0.1f, speedY = 0.1f;
-	float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-	float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-	float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
-	float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
-	cam->move(glm::vec3(dx, 0, dz));
-	cam->rotateY(rotY);
-	cam->rotateX(rotX);
-
-	//city2->getTransform().appendRotation(glm::radians(0.2), glm::vec3(0, 1, 0));
-}
-
-void render() {
-	renderer->render(&scene, cam);
+	if (gConsole->isVisible() == false) {
+		float speedX = 0.5f, speedY = 0.5f;
+		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
+		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
+		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		cam->move(glm::vec3(dx, 0, dz));
+		cam->rotateY(rotY);
+		cam->rotateX(rotX);
+	}
 }

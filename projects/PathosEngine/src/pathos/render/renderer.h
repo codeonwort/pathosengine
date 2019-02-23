@@ -5,6 +5,8 @@
 
 namespace pathos {
 
+	class Scene;
+	class Camera;
 	class Mesh;
 	class MeshGeometry;
 	class MeshMaterial;
@@ -13,6 +15,7 @@ namespace pathos {
 		Mesh*         mesh;
 		MeshGeometry* geometry;
 		MeshMaterial* material;
+
 		RenderItem(Mesh* inMesh, MeshGeometry* inGeometry, MeshMaterial* inMaterial)
 			: mesh(inMesh)
 			, geometry(inGeometry)
@@ -24,9 +27,9 @@ namespace pathos {
 		
 	public:
 		Renderer()                = default;
-		Renderer(const Renderer&) = delete;
-		Renderer(Renderer&&)      = delete;
 		virtual ~Renderer()       = default;
+
+		virtual void render(Scene* scene, Camera*) = 0;
 
 	protected:
 		std::vector<RenderItem> renderItems[(unsigned int)MATERIAL_ID::NUM_MATERIAL_IDS];

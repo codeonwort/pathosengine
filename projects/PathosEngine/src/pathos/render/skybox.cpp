@@ -1,12 +1,13 @@
-#include "envmap.h"
+#include "skybox.h"
+#include "scene.h"
+#include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
-#include "glm/gtx/transform.hpp"
 #include <string>
 
 namespace pathos {
 
 	/**
-	* @param	textureID	cubemap texture id in which cubemap images are loaded. see pathos/loader/imageloader.h -> loadCubemapTexture().
+	* @param	textureID	see pathos/loader/imageloader.h -> loadCubemapTexture().
 	*/
 	Skybox::Skybox(GLuint textureID) {
 		this->textureID = textureID;
@@ -20,7 +21,7 @@ namespace pathos {
 	}
 
 	void Skybox::createShader() {
-		string vshader = R"(#version 430 core
+		std::string vshader = R"(#version 430 core
 
 layout (location = 0) in vec3 position;
 
@@ -35,7 +36,7 @@ void main() {
 }
 )";
 
-		string fshader = R"(#version 430 core
+		std::string fshader = R"(#version 430 core
 layout (binding = 0) uniform samplerCube texCube;
 
 in VS_OUT { vec3 tc; } fs_in;
@@ -52,30 +53,29 @@ void main() {
 		}
 	}
 
-	void Skybox::activate(const glm::mat4& transform) {
-		glUseProgram(program);
-		
-		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		glBindTextureUnit(0, textureID);
+	void Skybox::render(const Scene* scene, const Camera* camera) {
+		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
+		glm::mat4 proj = camera->getProjectionMatrix();
+		glm::mat4 transform = proj * view;
 
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_FRONT);
 
+		glUseProgram(program);
+		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		glBindTextureUnit(0, textureID);
+
 		cube->activate_position();
 		cube->activateIndexBuffer();
-	}
 
-	void Skybox::render() {
 		cube->draw();
 		
-		// deactivate()
 		cube->deactivate();
 		cube->deactivateIndexBuffer();
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
 		glCullFace(GL_BACK);
-		glUseProgram(0);
 	}
 
 }

@@ -141,10 +141,9 @@ void main() {
 			for (Mesh* mesh : scene->meshes) {
 				const auto geometries = mesh->getGeometries();
 				const auto materials = mesh->getMaterials();
-				const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
 				int ix = 0;
 				for (const auto G : geometries) {
-					glm::mat4 mvp = VP * modelTransform;
+					glm::mat4 mvp = VP * mesh->getTransform().getMatrix();
 					glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
 
 					bool wasWireframe = false;

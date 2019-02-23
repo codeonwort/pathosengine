@@ -1,13 +1,11 @@
 #pragma once
 
-#include "pathos/core.h"
+#include "pathos/named_object.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
 #include "pathos/wrapper/transform.h"
-#include <vector>
-#include <memory>
 
-using namespace std;
+#include <vector>
 
 namespace pathos {
 
