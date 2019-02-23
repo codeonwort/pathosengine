@@ -6,7 +6,8 @@ using namespace pathos;
 
 #include <thread>
 
-#define LOAD_3D_MODEL         1
+#define LOAD_3D_MODEL   1
+#define USE_ANSEL_SKY   1
 
 // Rendering configurations
 const int WINDOW_WIDTH          = 1920;
@@ -17,7 +18,6 @@ const ERendererType RENDERER    = ERendererType::Forward;
 
 Camera* cam;
 Scene scene;
-	AnselSkyRendering* sky;
 	Mesh *city, *city2;
 	TextMesh *label;
 	PointLight *pointLight1, *pointLight2;
@@ -26,8 +26,8 @@ Scene scene;
 OBJLoader cityLoader;
 bool loaderReady = false;
 
-void setupModel();
-void setupSkybox();
+void setupScene();
+void setupSky();
 void tick();
 
 void loadTask() {
@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
 	cam->move(CAMERA_POSITION);
 
-	setupModel();
-	setupSkybox();
+	setupScene();
+	setupSky();
 
 #if LOAD_3D_MODEL
 	std::thread loadWorker(loadTask);
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-void setupModel() {
+void setupScene() {
 	pointLight1 = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
 	pointLight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	dirLight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
@@ -84,11 +84,24 @@ void setupModel() {
 #endif
 }
 
-void setupSkybox() {
+void setupSky() {
+#if USE_ANSEL_SKY
 	//auto anselImage = pathos::loadImage("ansel/dishonored.jpg");
 	auto anselImage = pathos::loadImage("ansel/the_surge.jpg");
 	GLuint anselTex = loadTexture(anselImage);
 	scene.sky = new AnselSkyRendering(anselTex);
+#else
+	const char* cubeImgName[6] = {
+	"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
+	"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
+	"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
+	};
+	FIBITMAP* cubeImg[6];
+	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
+	GLuint cubeTex = loadCubemapTexture(cubeImg);
+
+	scene.sky = new Skybox(cubeTex);
+#endif
 }
 
 void tick() {
