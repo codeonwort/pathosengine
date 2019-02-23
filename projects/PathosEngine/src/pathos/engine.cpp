@@ -1,9 +1,10 @@
 #include "engine.h"
 #include "console.h"
-#include "util/log.h"
-#include "util/resource_finder.h"
 #include "render/render_forward.h"
 #include "render/render_deferred.h"
+#include "util/log.h"
+#include "util/resource_finder.h"
+#include "util/renderdoc_integration.h"
 
 #include "GL/freeglut.h"          // subsystem: window
 #include "FreeImage.h"            // subsystem: image file loader
@@ -60,11 +61,26 @@ void glErrorCallback(
 
 namespace pathos {
 
-	Engine* gEngine = nullptr;
+	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
 
 	const std::string Engine::version = "0.2.0";
 
+	//////////////////////////////////////////////////////////////////////////
+	// static
+	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
+		if (gEngine) {
+			LOG(LogWarning, "The engine is already initialized");
+			return false;
+		}
+
+		gEngine = new Engine;
+		gEngine->initialize(argcp, argv, config);
+
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: renderer(nullptr)
 		, scene(nullptr)
@@ -76,18 +92,6 @@ namespace pathos {
 
 	Engine::~Engine()
 	{
-	}
-
-	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
-		if (gEngine) {
-			LOG(LogWarning, "The engine is already initialized");
-			return false;
-		}
-
-		gEngine = new Engine;
-		gEngine->initialize(argcp, argv, config);
-		
-		return true;
 	}
 
 	bool Engine::initialize(int* argcp, char** argv, const EngineConfig& config)
@@ -102,6 +106,8 @@ namespace pathos {
 		ResourceFinder::get().add("../../");
 		ResourceFinder::get().add("../../shaders/");
 		ResourceFinder::get().add("../../resources/");
+
+		RenderDocIntegration::get().findInjectedDLL();
 
 #define BailIfFalse(x) if(!(x)) { return false; }
 		BailIfFalse( initializeGlut(argcp, argv) );
@@ -230,6 +236,29 @@ namespace pathos {
 	void Engine::stop() {
 		glutLeaveMainLoop();
 		LOG(LogInfo, "Stop the main loop");
+	}
+
+	void Engine::registerExec(const char* command, ExecProc proc)
+	{
+		if (execMap.find(command) != execMap.end()) {
+			LOG(LogError, "Exec already registered: %s", command);
+			return;
+		}
+		execMap.insert(std::make_pair(command, proc));
+	}
+
+	bool Engine::execute(const std::string& command)
+	{
+		auto ix = command.find(' ');
+		std::string header = ix == string::npos ? command : command.substr(0, ix);
+
+		auto it = execMap.find(header);
+		if (it != execMap.end()) {
+			it->second(command);
+			return true;
+		}
+
+		return false;
 	}
 
 	void Engine::setWorld(Scene* inScene, Camera* inCamera)

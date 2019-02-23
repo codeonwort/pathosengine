@@ -1,4 +1,5 @@
 #include "resource_finder.h"
+#include "log.h"
 #include <assert.h>
 
 ////////////////////////////////////////////////////////
@@ -35,6 +36,7 @@ namespace pathos {
 				return fullpath;
 			}
 		}
+		LOG(LogError, "%s: not found: %s", __FUNCTION__, subpath.data());
 		return "";
 	}
 

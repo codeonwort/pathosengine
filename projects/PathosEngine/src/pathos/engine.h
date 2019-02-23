@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <string>
+#include <functional>
 #include "gl_core.h"
 
 namespace pathos {
@@ -31,6 +33,8 @@ namespace pathos {
 
 	class Engine final {
 
+		using ExecProc = std::function<void(const std::string&)>;
+
 	public:
 		static const std::string version;
 
@@ -40,6 +44,9 @@ namespace pathos {
 	public:
 		void start();
 		void stop();
+
+		void registerExec(const char* command, ExecProc proc);
+		bool execute(const std::string& command);
 
 		void setWorld(Scene* inScene, Camera* inCamera);
 
@@ -80,7 +87,10 @@ namespace pathos {
 		Scene* scene;
 		Camera* camera;
 
+		std::map<std::string, ExecProc> execMap;
+
 		bool keymap[256] = { false, };
+
 		GLuint timer_query;
 		float elapsed_ms;
 

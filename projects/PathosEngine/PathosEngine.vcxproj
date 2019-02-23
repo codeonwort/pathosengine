@@ -136,6 +136,7 @@
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
+    <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="src\pathos\overlay\display_object.h" />
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
+    <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.h" />

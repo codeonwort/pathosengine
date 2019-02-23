@@ -1,4 +1,5 @@
 #include "console.h"
+#include "engine.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/rectangle.h"
@@ -8,8 +9,8 @@
 namespace pathos {
 
 	static constexpr float LEFT_MARGIN = 10.0f;
-	static constexpr float LINE_GAP = 20.0f;
-	static constexpr size_t MAX_LINES = 18;
+	static constexpr float LINE_GAP    = 20.0f;
+	static constexpr size_t MAX_LINES  = 18;
 
 	ConsoleWindow::ConsoleWindow() {
 		initialized = false;
@@ -121,7 +122,12 @@ namespace pathos {
 		auto ix = command.find(' ');
 		std::string header = ix == string::npos ? command : command.substr(0, ix);
 
-		// is it just a cvar name?
+		// Execute registered procedure if exists
+		if(gEngine->execute(command)) {
+			return;
+		}
+
+		// Is it a cvar?
 		if (auto cvar = ConsoleVariableManager::find(header.data())) {
 			std::string msg = command.substr(ix + 1);
 			if (ix == string::npos) {
