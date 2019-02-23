@@ -1,6 +1,7 @@
 // Volumetric light scattering a.k.a. god ray
 
 #include "god_ray.h"
+#include "pathos/util/log.h"
 #include "glm/gtc/type_ptr.hpp"
 
 #if defined(_DEBUG)
@@ -44,9 +45,7 @@ namespace pathos {
 		glDrawBuffers(1, drawBuffers);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-#if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for god ray source" << std::endl;
-#endif
+			LOG(LogFatal, "Cannot create a framebuffer for god ray source");
 			assert(0);
 		}
 
@@ -58,9 +57,7 @@ namespace pathos {
 		glDrawBuffers(1, drawBuffers);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-#if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for god ray result" << std::endl;
-#endif
+			LOG(LogFatal, "Cannot create a framebuffer for god ray source");
 			assert(0);
 		}
 

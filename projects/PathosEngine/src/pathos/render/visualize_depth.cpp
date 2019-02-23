@@ -31,6 +31,8 @@ namespace pathos {
 
 	void VisualizeDepth::render(Scene* scene, Camera* camera)
 	{
+		SCOPED_DRAW_EVENT(VisualizeDepth);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
@@ -39,6 +41,7 @@ namespace pathos {
 		UBO_VisualizeDepth uboData;
 		uboData.zRange.x = camera->getZNear();
 		uboData.zRange.y = camera->getZFar();
+
 		const glm::mat4 viewProj = camera->getViewProjectionMatrix();
 
 		glUseProgram(program);

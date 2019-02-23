@@ -3,13 +3,10 @@
 #include "pathos/console.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/depth_of_field.h"
+#include "pathos/util/log.h"
 
 #include <algorithm>
 using std::min;
-
-#if defined(_DEBUG)
-#include <iostream>
-#endif
 
 #define DOF 0
 
@@ -112,11 +109,8 @@ void main() {
 
 	void MeshDeferredRenderPass_Unpack::createResource_HDR(unsigned int width, unsigned int height) {
 		auto checkCurrentFramebufferStatus = []() -> void {
-			// check if our framebuffer is ok
 			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-#if defined(_DEBUG)
-				std::cerr << "Cannot create a framebuffer for HDR" << std::endl;
-#endif
+				LOG(LogFatal, "Cannot create a framebuffer for HDR");
 				assert(0);
 			}
 		};

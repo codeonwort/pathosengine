@@ -29,9 +29,13 @@ namespace pathos {
 	 	if (dll == NULL) {
 	 		LOG(LogError, "%s: Can't find renderdoc.dll from the process", __FUNCTION__);
 
-			gEngine->registerExec("capture_frame", [](const std::string& command) {
-				RenderDocIntegration::get().findInjectedDLL();
-			});
+			static bool first = true;
+			if (first) {
+				first = false;
+				gEngine->registerExec("find_renderdoc", [](const std::string& command) {
+					RenderDocIntegration::get().findInjectedDLL();
+				});
+			}
 			LOG(LogDebug, "Run 'find_renderdoc' to find injected dll later");
 
 			return false;

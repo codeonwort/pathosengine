@@ -20,7 +20,6 @@ namespace pathos {
 
 	void Raytracer::createFBO() {
 		glGenFramebuffers(1, &fbo);
-		//
 	}
 
 	void Raytracer::destroyFBO() {

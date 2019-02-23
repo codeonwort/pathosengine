@@ -21,9 +21,8 @@ namespace pathos {
 		glDrawBuffers(0, nullptr);
 
 		// setup depth textures
-		glCreateTextures(GL_TEXTURE_2D, 1, &depthTexture);
-// 		glGenTextures(1, &depthTexture);
-// 		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glGenTextures(1, &depthTexture);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
 		glObjectLabel(GL_TEXTURE, depthTexture, -1, "Tex_CascadedShadowMap");
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, numCascades * depthMapWidth, depthMapHeight);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

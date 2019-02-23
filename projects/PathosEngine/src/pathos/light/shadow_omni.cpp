@@ -1,12 +1,9 @@
 #include "shadow_omni.h"
 #include "pathos/engine.h"
+#include "pathos/util/log.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
-
-#if defined(_DEBUG)
-#include <iostream>
-#endif
 
 namespace pathos {
 
@@ -38,9 +35,7 @@ namespace pathos {
 		// check if our framebuffer is ok
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[0], 0);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-#if defined(_DEBUG)
-			std::cerr << "[ERROR] Cannot create a framebuffer for omnidirectional shadow map" << std::endl;
-#endif
+			LOG(LogFatal, "Cannot create a framebuffer for omnidirectional shadow map");
 			assert(0);
 		}
 
