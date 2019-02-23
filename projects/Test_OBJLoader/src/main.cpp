@@ -9,17 +9,16 @@ using namespace std;
 
 Camera* cam;
 Scene scene;
+	PointLight *plight, *plight2;
+	DirectionalLight *dlight;
 	Mesh *city, *city2;
 	TextMesh *label;
 	Skybox* sky;
 
-PointLight *plight, *plight2;
-DirectionalLight *dlight;
-
 OBJLoader cityLoader;
 bool loaderReady = false;
 
-void setupModel();
+void setupScene();
 void setupSkybox();
 void tick();
 
@@ -41,8 +40,8 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(45.0f, static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight), 1.0f, 1000.f));
 	cam->move(glm::vec3(0, 0, 20));
 
-	setupModel();
 	setupSkybox();
+	setupScene();
 
 	std::thread loadWorker(loadTask);
 
@@ -54,7 +53,7 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-void setupModel() {
+void setupScene() {
 	plight = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
 	plight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
 	dlight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
