@@ -97,8 +97,8 @@ void main() {
 			glm::vec3 sun_up(0.0f, 1.0f, 0.0f);
 
 			// if almost parallel, choose another random direction
-			float angle = fabs(glm::dot(sun_up, sun_direction));
-			if (angle >= 0.999f || angle <= 0.001f) {
+			float angle = glm::dot(sun_up, sun_direction);
+			if (angle >= 0.999f || angle <= -0.999f) {
 				sun_up = glm::vec3(0.0f, 0.0f, -1.0f);
 			}
 
@@ -149,6 +149,10 @@ void main() {
 			const glm::mat4& VP = viewProjection[i];
 
 			for (Mesh* mesh : scene->meshes) {
+				if (mesh->castsShadow == false) {
+					continue;
+				}
+
 				const auto geometries = mesh->getGeometries();
 				const auto materials = mesh->getMaterials();
 				int ix = 0;
@@ -165,8 +169,6 @@ void main() {
 					G->activate_position();
 					G->activateIndexBuffer();
 					G->draw();
-					G->deactivate();
-					G->deactivateIndexBuffer();
 
 					if (wasWireframe) {
 						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

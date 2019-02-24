@@ -81,10 +81,10 @@ namespace pathos {
 		assert(numCascades >= 1);
 
 		const glm::vec3 forward = getEyeVector();
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 up(0.0f, 1.0f, 0.0f);
 
-		float theta = fabs(glm::dot(forward, up));
-		if (theta >= 0.999f || theta <= 0.001f) {
+		float theta = glm::dot(forward, up);
+		if (theta >= 0.999f || theta <= -0.999f) {
 			up = glm::vec3(0.0f, 0.0f, -1.0f);
 		}
 
@@ -93,7 +93,7 @@ namespace pathos {
 
 		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
 		assert(plens);
-
+		 
 		const float zn = plens->getZNear();
 		const float zf = plens->getZFar();
 		const float hh_near = zn * tanf(plens->getFovYHalf());

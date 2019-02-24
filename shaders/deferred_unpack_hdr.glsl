@@ -4,6 +4,7 @@
 
 #define APPLY_FOG     1
 #define APPLY_SHADOW  1
+#define SOFT_SHADOW   1
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright; // bright area only
@@ -61,23 +62,24 @@ float getShadowing(fragment_info fragment) {
 
 	int mapIx = int(vz * 4.0);
 	if(mapIx >= 4) {
-		return 0.0;
+		return 1.0;
 	}
 
-	float u0 = float(mapIx) * 0.25;
-
 	vec4 ls_coords = uboPerFrame.sunViewProjection[mapIx] * vec4(fragment.ws_coords, 1.0);
-	ls_coords.xyz = (ls_coords.xyz + vec3(1.0)) * 0.5;
 	float NdotL = dot(fragment.normal, -uboPerFrame.dirLightDirs[0]);
-	float bias = max(0.05 * (1.0 - NdotL), 0.005);
+	float bias = max(0.005 * (1.0 - NdotL), 0.005);
 	float inv_w = 1.0 / ls_coords.w;
 	ls_coords.xy = ls_coords.xy * inv_w;
 	ls_coords.z = (ls_coords.z - bias) * inv_w;
-
-	vec2 dudv = 1.0 / vec2(textureSize(sunDepthMap, 0));
-	dudv.x *= 0.25;
+	// to uv space
+	ls_coords.xyz = (ls_coords.xyz + vec3(1.0)) * 0.5;
 
 	float shadow = 0.0f;
+	float u0 = float(mapIx) * 0.25;
+
+#if SOFT_SHADOW
+	vec2 dudv = 1.0 / vec2(textureSize(sunDepthMap, 0));
+	dudv.x *= 0.25;
 	for(int x = -1; x <= 1; ++x) {
 		for(int y = -1; y <= 1; ++y) {
 			vec3 uvw = ls_coords.xyz;
@@ -87,6 +89,11 @@ float getShadowing(fragment_info fragment) {
 		}
 	}
 	shadow /= 9.0;
+#else
+	vec3 uvw = ls_coords.xyz;
+	uvw.x = u0 + 0.25 * uvw.x;
+	shadow = texture(sunDepthMap, uvw);
+#endif
 	
 	return max(0.5, shadow);
 }
