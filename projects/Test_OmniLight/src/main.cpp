@@ -23,8 +23,8 @@ void tick() {
 		float speedX = 0.5f, speedY = 0.5f;
 		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
-		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		float rotY = gEngine->isDown('q') ? -1.5f : gEngine->isDown('e') ? 1.5f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -2.0f : gEngine->isDown('x') ? 2.0f : 0.0f;
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 10000.0f));
 	cam->lookAt(glm::vec3(0, 0, 30), glm::vec3(5, 0, 0), glm::vec3(0, 1, 0));
 
 	setupScene();
@@ -54,20 +54,13 @@ int main(int argc, char** argv) {
 }
 
 void setupScene() {
-	// light and shadow
-	auto light = new DirectionalLight(glm::vec3(0, -1, -0.1));
-	auto plight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
-	auto plight2 = new PointLight(glm::vec3(-3, 5, 2), glm::vec3(1, 0, 0));
-	auto plight3 = new PointLight(glm::vec3(2, -2, 0), glm::vec3(0, 1, 0));
-
-	//scene.add(light);
-	scene.add(plight);
-	//scene.add(plight2);
-	//scene.add(plight3);
+	auto pointLight = new PointLight(glm::vec3(1, 1, 0), glm::vec3(0, 0, 1));
+	//scene.add(new DirectionalLight(glm::vec3(0, -1, -0.1)));
+	scene.add(pointLight);
 
 	OBJLoader obj2("models/lightbulb.obj", "models/");
 	lamp = obj2.craftMeshFromAllShapes();
-	lamp->getTransform().appendScale(4, 4, 4);
+	lamp->getTransform().appendScale(4.0f);
 	lamp->doubleSided = true;
 
 	const char* cubeImgName[6] = {
@@ -112,23 +105,13 @@ void setupScene() {
 	plane_negZ = new Mesh(planeGeom, mat);
 	plane_negZ->getTransform().appendMove(0, 0, -15);
 
-	// color material for ball
 	auto color = new ColorMaterial;
 
 	ball = new Mesh(new SphereGeometry(2, 40), color);
 	ball->getTransform().appendMove(7, 4, 0);
 
-	// omni shadow debugger
-// 	auto omni = renderer->getOmnidirectionalShadow();
-// 	unsigned int face = 0;
-// 	viewer = new Mesh(new PlaneGeometry(10, 10), new ShadowCubeTextureMaterial(omni->getDebugTexture(0), face, omni->getLightNearZ(), omni->getLightFarZ()));
-// 	viewer->getTransform().appendMove(10, 0, 10);
-// 	viewer->doubleSided = true;
-
 	cube = new Mesh(new CubeGeometry(glm::vec3(20, 20, 10)), new WireframeMaterial(1, 1, 1));
-	//GLfloat* lightDir = light->getDirection();
-	//glm::vec3 lightPos = glm::vec3(-lightDir[0], -lightDir[1], -lightDir[2]) * 5.0f;
-	glm::vec3 lightPos = plight->getPosition();
+	glm::vec3 lightPos = pointLight->getPosition();
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
 
 	auto shadowLightColor = new ColorMaterial;
@@ -141,8 +124,6 @@ void setupScene() {
 	scene.sky = sky;
 	scene.add(ball);
 	scene.add(lamp);
-	//scene.add(viewer);
-	//scene.add(cube); // bounding box of shadow mapping
 	scene.add(shadowLight);
 	scene.add({ plane_posX, plane_negX, plane_posY, plane_negY, plane_posZ, plane_negZ });
 }
