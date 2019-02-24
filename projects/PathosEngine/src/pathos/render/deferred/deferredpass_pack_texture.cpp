@@ -22,10 +22,6 @@ namespace pathos {
 
 		program = pathos::createProgram(vs, fs);
 		ubo.init<UBO_Deferred_Pack_Texture>();
-
-#define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
-		GET_UNIFORM(tex_diffuse);
-#undef GET_UNIFORM
 	}
 
 	void MeshDeferredRenderPass_Pack_FlatTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
@@ -45,9 +41,6 @@ namespace pathos {
 		glBindTextureUnit(TEXTURE_UNIT, material->getTexture());
 
 		geometry->draw();
-
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 	}
 
 }

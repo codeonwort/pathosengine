@@ -9,7 +9,7 @@ namespace pathos {
 		glm::mat3 mvMatrix3x3;
 	};
 
-	static constexpr uint32_t DIFFUSE_TEXTURE_UNIT = 0;
+	static constexpr uint32_t DIFFUSE_TEXTURE_UNIT   = 0;
 	static constexpr uint32_t NORMALMAP_TEXTURE_UNIT = 1;
 
 	//static constexpr unsigned int SHADOW_MAPPING_TEXTURE_UNIT_START = 4;
@@ -40,7 +40,7 @@ namespace pathos {
 		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
 		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
 		ubo.update(1, &uboData);
-
+		
 		glBindTextureUnit(DIFFUSE_TEXTURE_UNIT, material->getDiffuseTexture());
 		glBindTextureUnit(NORMALMAP_TEXTURE_UNIT, material->getNormalMapTexture());
 

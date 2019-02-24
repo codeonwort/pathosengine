@@ -1,23 +1,15 @@
 #include "pathos/loader/objloader.h"
 #include "pathos/util/resource_finder.h"
+#include "pathos/util/log.h"
 
 #include <string>
-#include <iostream>
 #include <memory>
-#include <set>
-#include <map>
 
 //#define LOAD_NORMAL_DATA
 //#define WARN_INVALID_FACE_MARTERIAL
 
 namespace pathos {
 
-	///////////////////////////////////////////////
-	// OBJLoader
-
-	/**
-	* load a .obj file
-	*/
 	void calculateNormal(const tinyobj::attrib_t& attrib, const vector<GLuint>& indices, vector<GLfloat>& normals) {
 		normals.clear();
 		auto numPos = attrib.vertices.size() / 3;
@@ -68,16 +60,16 @@ namespace pathos {
 		mtlDir = ResourceFinder::get().find(_mtlDir);
 
 		// read data using tinyobjloader
-		string err;
+		std::string err;
 		tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
 
-		std::cout << "Loading .obj file: \"" << objFile << "\"" << std::endl;
+		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
 		if (!err.empty()) {
-			std::cerr << "\tError while loading obj: " << err << std::endl;
+			LOG(LogError, "Error while loading OBJ file: %s", err.data());
 			return false;
 		}
-		std::cout << "\tnumber of shapes: " << t_shapes.size() << std::endl;
-		std::cout << "\tnumber of materials: " << t_materials.size() << std::endl;
+		LOG(LogInfo, "Number of shapes: %d", (int32_t)t_shapes.size());
+		LOG(LogInfo, "Number of materials: %d", (int32_t)t_materials.size());
 
 		// reconstruct data
 		analyzeMaterials(t_materials, materials);
@@ -95,7 +87,9 @@ namespace pathos {
 		t_attrib.vertices.clear();
 		pendingShapes.clear();
 		materials.clear();
-		for (auto& bmp : bitmapDB) FreeImage_Unload(bmp.second);
+		for (auto& bmp : bitmapDB) {
+			FreeImage_Unload(bmp.second);
+		}
 		bitmapDB.clear();
 		isPendingMaterial.clear();
 		pendingTextureData.clear();
@@ -151,7 +145,7 @@ namespace pathos {
 			const tinyobj::shape_t& src = t_shapes[i];
 			PendingShape dst;
 
-			std::cout << "analyzing shape: " << src.name << std::endl;
+			LOG(LogDebug, "Analyzing OBJ shape[%d]: %s", i, src.name.data());
 
 			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
 				int faceMaterialID = src.mesh.material_ids[f];
@@ -164,7 +158,7 @@ namespace pathos {
 			auto numMaterials = dst.materialIDs.size();
 			size_t index_offset = 0;
 
-			std::cout << "\tnumber of materials: " << numMaterials << std::endl;
+			LOG(LogDebug, "Number of materials for this shape: %d", numMaterials);
 
 			for (auto f = 0u; f < src.mesh.num_face_vertices.size(); ++f) {
 				int fv = src.mesh.num_face_vertices[f];
@@ -203,7 +197,7 @@ namespace pathos {
 
 			output.emplace_back(std::move(dst));
 
-			std::cout << "\tthis shape has been successfully parsed" << std::endl;
+			LOG(LogDebug, "Shape has been parsed");
 		}
 	}
 
@@ -215,8 +209,12 @@ namespace pathos {
 		}
 		return nullptr;
 	}
-	Mesh* OBJLoader::craftMeshFrom(uint32_t shapeIndex) { return craftMesh(shapeIndex, shapeIndex); }
-	Mesh* OBJLoader::craftMeshFromAllShapes() { return craftMesh(0, static_cast<uint32_t>(pendingShapes.size() - 1)); }
+	Mesh* OBJLoader::craftMeshFrom(uint32_t shapeIndex) {
+		return craftMesh(shapeIndex, shapeIndex);
+	}
+	Mesh* OBJLoader::craftMeshFromAllShapes() {
+		return craftMesh(0, static_cast<uint32_t>(pendingShapes.size() - 1));
+	}
 
 	Mesh* OBJLoader::craftMesh(uint32_t from, uint32_t to) {
 		assert(0 <= from && from < pendingShapes.size());
@@ -255,8 +253,10 @@ namespace pathos {
 	}
 
 	MeshMaterial* OBJLoader::getMaterial(int32_t index) {
-		assert(-1 <= index && index < (int)materials.size());
-		if (index == -1) return defaultMaterial;
+		assert(-1 <= index && index < (int32_t)materials.size());
+		if (index == -1) {
+			return defaultMaterial;
+		}
 
 		MeshMaterial* M = materials[index];
 
@@ -282,49 +282,3 @@ namespace pathos {
 	}
 
 }
-
-// template code for tinyobjloader
-#if 0
-std::string inputfile = "cornell_box.obj";
-tinyobj::attrib_t attrib;
-std::vector<tinyobj::shape_t> shapes;
-std::vector<tinyobj::material_t> materials;
-
-std::string err;
-bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, inputfile.c_str());
-
-if (!err.empty()) { // `err` may contain warning message.
-	std::cerr << err << std::endl;
-}
-
-if (!ret) {
-	exit(1);
-}
-
-// Loop over shapes
-for (size_t s = 0; s < shapes.size(); s++) {
-	// Loop over faces(polygon)
-	size_t index_offset = 0;
-	for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-		int fv = shapes[s].mesh.num_face_vertices[f];
-
-		// Loop over vertices in the face.
-		for (size_t v = 0; v < fv; v++) {
-			// access to vertex
-			tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-			float vx = attrib.vertices[3 * idx.vertex_index + 0];
-			float vy = attrib.vertices[3 * idx.vertex_index + 1];
-			float vz = attrib.vertices[3 * idx.vertex_index + 2];
-			float nx = attrib.normals[3 * idx.normal_index + 0];
-			float ny = attrib.normals[3 * idx.normal_index + 1];
-			float nz = attrib.normals[3 * idx.normal_index + 2];
-			float tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-			float ty = attrib.texcoords[2 * idx.texcoord_index + 1];
-		}
-		index_offset += fv;
-
-		// per-face material
-		shapes[s].mesh.material_ids[f];
-	}
-}
-#endif

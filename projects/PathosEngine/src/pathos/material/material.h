@@ -75,13 +75,15 @@ namespace pathos {
 	
 	class BumpTextureMaterial : public MeshMaterial {
 
-	protected:
-		GLuint diffuseTexture, normalMapTexture;
-
 	public:
 		BumpTextureMaterial(GLuint diffuseTexture, GLuint normalMapTexture);
 		inline const GLuint getDiffuseTexture() { return diffuseTexture; }
 		inline const GLuint getNormalMapTexture() { return normalMapTexture; }
+
+	protected:
+		GLuint diffuseTexture;
+		GLuint normalMapTexture;
+
 	};
 	
 	class ShadowTextureMaterial : public MeshMaterial {

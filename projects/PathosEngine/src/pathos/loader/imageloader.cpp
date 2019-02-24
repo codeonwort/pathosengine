@@ -71,6 +71,7 @@ namespace pathos {
 		if (generateMipmap) {
 			glGenerateMipmap(GL_TEXTURE_2D);
 		}
+
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		return tex_id;

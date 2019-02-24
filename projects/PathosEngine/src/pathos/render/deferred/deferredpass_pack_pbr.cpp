@@ -50,9 +50,6 @@ namespace pathos {
 		glBindTextureUnit(AO_TEXTURE_UNIT, material->getAO());
 
 		geometry->draw();
-
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 	}
 
 }

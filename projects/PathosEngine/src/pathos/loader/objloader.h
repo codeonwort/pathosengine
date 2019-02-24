@@ -1,12 +1,13 @@
 #pragma once
 
+#include "tiny_obj_loader.h"
+#include "pathos/loader/imageloader.h"
+#include "pathos/mesh/mesh.h"
+
 #include <stdint.h>
 #include <vector>
 #include <map>
 #include <set>
-#include "tiny_obj_loader.h"
-#include "pathos/loader/imageloader.h"
-#include "pathos/mesh/mesh.h"
 
 namespace pathos {
 

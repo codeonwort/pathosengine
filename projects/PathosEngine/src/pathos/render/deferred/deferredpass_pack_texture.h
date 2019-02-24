@@ -15,7 +15,6 @@ namespace pathos {
 		virtual void createProgram() override;
 
 		UniformBuffer ubo;
-		GLint uniform_tex_diffuse;
 
 	};
 

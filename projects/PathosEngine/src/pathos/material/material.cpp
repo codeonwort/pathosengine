@@ -40,8 +40,9 @@ namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// BumpTextureMaterial
-	BumpTextureMaterial::BumpTextureMaterial(GLuint diffuseTexture, GLuint normalMapTexture)
-		: diffuseTexture(diffuseTexture), normalMapTexture(normalMapTexture)
+	BumpTextureMaterial::BumpTextureMaterial(GLuint diffuse, GLuint normalMap)
+		: diffuseTexture(diffuse)
+		, normalMapTexture(normalMap)
 	{
 		materialID = MATERIAL_ID::BUMP_TEXTURE;
 	}
