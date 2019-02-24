@@ -12,7 +12,7 @@ using std::min;
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 3.0, "exposure parameter of tone mapping pass");
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 2.0, "exposure parameter of tone mapping pass");
 
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
