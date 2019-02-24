@@ -5,39 +5,27 @@ using namespace pathos;
 #include <GL/glut.h>
 #include <time.h>
 
-// Compile options
-#define SMALL_WINDOW        0 // RenderDoc crashes when trying to capture a large screen :(
-
-// Rendering configurations
-#if SMALL_WINDOW
-const int           WINDOW_WIDTH        =   800;
-const int           WINDOW_HEIGHT       =   600;
-#else
 const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
-#endif
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOV                 =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 0.0f, 100.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
-const float         CAMERA_Z_FAR        =   1000.0f;
+const float         CAMERA_Z_FAR        =   2000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::vec3(0.0f, -1.0f, 0.0f);
 const bool          USE_HDR             =   true;
 const uint32_t      NUM_POINT_LIGHTS    =   2;
 const uint32_t      NUM_BALLS           =   10;
 
-// Camera, Scene, and renderer
 Camera* cam;
 Scene scene;
-	Skybox* sky;
 	Mesh* godRaySource;
 	Mesh *ground;
 	Mesh *model, *model2, *model3;
 	std::vector<Mesh*> balls;
 
-// Lights and shadow
-PointLight *pointLight;
 DirectionalLight *sunLight;
+PointLight *pointLight;
 
 void setupScene();
 void tick();
@@ -154,12 +142,11 @@ void setupScene() {
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
-	sky = new Skybox(cubeTexture);
-
 	ground = new Mesh(geom_plane_big, material_texture);
 	ground->getTransform().appendScale(100.0f);
 	ground->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
+	ground->castsShadow = false;
 
 	//model = new Mesh(geom_sphere_big, material_texture);
 	model = new Mesh(geom_plane, material_bump);
@@ -175,8 +162,8 @@ void setupScene() {
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().appendScale(2.0f);
-		ball->getTransform().appendMove(0.0f, 0.0f, -30.0f * i);
+		ball->getTransform().appendScale(2.0f + (float)i * 0.1f);
+		ball->getTransform().appendMove((float)i * 5.0f, 0.0f, -30.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -190,14 +177,14 @@ void setupScene() {
 	scene.add(model);
 	scene.add(model2);
 	scene.add(model3);
-	scene.sky = sky;
+	scene.sky = new Skybox(cubeTexture);
 	scene.godRaySource = godRaySource;
 }
 
 void tick()
 {
 	if (gConsole->isVisible() == false) {
-		float speedX = 0.5f, speedY = 0.5f;
+		float speedX = 1.0f, speedY = 1.0f;
 		float dx   = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz   = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
 		float rotY = gEngine->isDown('q') ? -0.5f   : gEngine->isDown('e') ? 0.5f   : 0.0f;

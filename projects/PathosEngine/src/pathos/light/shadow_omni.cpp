@@ -86,9 +86,6 @@ void main() {
 			assert(0);
 		}
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		for (int i = 0; i < 6; i++) {
 			auto face = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
@@ -106,9 +103,6 @@ void main() {
 		glm::vec3 ups[6] = { glm::vec3(0, -1, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0), glm::vec3(0, -1, 0) };
 		glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)width / height, lightNearZ, lightFarZ);
 
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		for (int i = 0; i < 6; i++) {
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, depthTextures[lightIndex], 0);
 			glm::mat4 view = glm::lookAt(lightPos, lightPos + directions[i], ups[i]);
@@ -118,15 +112,9 @@ void main() {
 			modelGeometry->draw();
 		}
 
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
-		modelGeometry->deactivate();
-		modelGeometry->deactivateIndexBuffer();
-		glUseProgram(0);
-
 		// restore original viewport
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		// TODO: remove the global access
 		auto config = gEngine->getConfig();
 		glViewport(0, 0, config.windowWidth, config.windowHeight);

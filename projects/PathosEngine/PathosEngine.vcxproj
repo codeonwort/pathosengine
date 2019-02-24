@@ -145,6 +145,7 @@
     <ClInclude Include="src\gl_core.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
+    <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
     <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />

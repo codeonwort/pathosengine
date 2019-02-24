@@ -55,6 +55,10 @@ namespace pathos {
 		inline float getMilliseconds() const { return elapsed_ms; }
 		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
+	// Debug API for development
+	public:
+		inline Renderer* debug_getRenderer() const { return renderer; }
+
 	private:
 		Engine();
 		~Engine();

@@ -180,8 +180,6 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 
 		if (shadowMapping != nullptr) {
 			shadowMapping->deactivate(program, SHADOW_MAPPING_TEXTURE_UNIT_START);

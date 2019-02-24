@@ -43,9 +43,6 @@ namespace pathos {
 		geometry->draw();
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glEnable(GL_CULL_FACE);
-
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 	}
 
 }

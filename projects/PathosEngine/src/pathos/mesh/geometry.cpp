@@ -1,25 +1,26 @@
 #include "pathos/mesh/geometry.h"
+#include "pathos/util/log.h"
 #include "glm/glm.hpp"
-
-#define DEBUG_GEOMETRY
-
-#if defined(_DEBUG) && defined(DEBUG_GEOMETRY)
-#include <iostream>
-#include <sstream>
-#endif
+#include <vector>
 
 namespace pathos {
 
-	static constexpr GLuint positionLocation = 0;
-	static constexpr GLuint uvLocation = 1;
-	static constexpr GLuint normalLocation = 2;
-	static constexpr GLuint tangentLocation = 3;
+	static constexpr GLuint positionLocation  = 0;
+	static constexpr GLuint uvLocation        = 1;
+	static constexpr GLuint normalLocation    = 2;
+	static constexpr GLuint tangentLocation   = 3;
 	static constexpr GLuint bitangentLocation = 4;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
-	MeshGeometry::MeshGeometry() :drawArraysMode(false) {}
-	MeshGeometry::~MeshGeometry() { this->dispose(); }
+	MeshGeometry::MeshGeometry()
+		: drawArraysMode(false)
+	{
+	}
+
+	MeshGeometry::~MeshGeometry() {
+		dispose();
+	}
 
 	uint32_t MeshGeometry::getIndexCount() { return indexCount; }
 
@@ -100,23 +101,6 @@ namespace pathos {
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(GLuint), indexData, GL_STATIC_DRAW);
 	}
 
-	// burrow
-	void MeshGeometry::burrowPositionBuffer(const MeshGeometry* other) {
-		positionData = other->positionData;
-		positionCount = other->positionCount;
-		positionBuffer = other->positionBuffer;
-	}
-	void MeshGeometry::burrowNormalBuffer(const MeshGeometry* other) {
-		normalData = other->normalData;
-		normalCount = other->normalCount;
-		normalBuffer = other->normalBuffer;
-	}
-	void MeshGeometry::burrowUVBuffer(const MeshGeometry* other) {
-		uvData = other->uvData;
-		uvCount = other->uvCount;
-		uvBuffer = other->uvBuffer;
-	}
-
 	void MeshGeometry::activateIndexBuffer() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 	}
@@ -124,35 +108,21 @@ namespace pathos {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	/*void MeshGeometry::applyTransform(glm::mat4 &transform) {
-		// update positionData, normalData
-		//throw Exceptions::NotImplemented(__FUNCTION__);
-	}
-
-	void MeshGeometry::scale(float value) {
-		//throw Exceptions::NotImplemented(__FUNCTION__);
-	}
-	void MeshGeometry::scaleUV(float scaleU, float scaleV) {
-		//throw Exceptions::NotImplemented(__FUNCTION__);
-	}*/
-
-	// requirements: positionData and indexData should be ready.
-	// it only handles indexed vertex buffer (glDrawElements).
-	// vertex array should be supported.
+	// requirements: positionData and indexData should be available.
 	void MeshGeometry::calculateNormals() {
 		if (drawArraysMode) calculateNormals_array();
 		else calculateNormals_indexed();
 	}
 	void MeshGeometry::calculateNormals_array() {
-		if (positionCount == 0 || positionData == nullptr){
-#if defined(_DEBUG) && defined(DEBUG_GEOMETRY)
-			std::cerr << "Position data should be available to calculate normals" << std::endl;
-#endif
+		if (positionCount == 0 || positionData == nullptr) {
+			LOG(LogError, "%s: Position data should be available to calculate normals", __FUNCTION__);
 			return;
 		}
-		if (normalData) delete normalData;
+		if (normalData) {
+			delete normalData;
+		}
 		normalData = new GLfloat[positionCount];
-		auto P = positionData;
+		const GLfloat* P = positionData;
 		for (auto i = 0u; i < positionCount; i += 9){
 			auto p0 = i, p1 = i + 3, p2 = i + 6;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
@@ -165,7 +135,13 @@ namespace pathos {
 		updateNormalData(normalData, positionCount);
 	}
 	void MeshGeometry::calculateNormals_indexed() {
-		if (normalData) delete normalData;
+		if (positionCount == 0 || positionData == nullptr) {
+			LOG(LogError, "%s: Position data should be available to calculate normals", __FUNCTION__);
+			return;
+		}
+		if (normalData) {
+			delete normalData;
+		}
 		int numPos = positionCount / 3;
 		glm::vec3* accum = new glm::vec3[numPos];
 		unsigned int* counts = new unsigned int[numPos];
@@ -178,15 +154,25 @@ namespace pathos {
 		for (auto i = 0u; i < indexCount; i += 3){
 			auto i0 = indexData[i], i1 = indexData[i + 1], i2 = indexData[i + 2];
 			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
-			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
-			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
-			if (a == b) continue;
+			glm::vec3 a(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
+			glm::vec3 b(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
+			if (a == b) {
+				continue;
+			}
 			auto norm = glm::normalize(glm::cross(a, b));
 
-			accum[i0] *= counts[i0]; accum[i1] *= counts[i1]; accum[i2] *= counts[i2];
-			accum[i0] += norm; accum[i1] += norm; accum[i2] += norm;
-			counts[i0] ++; counts[i1] ++; counts[i2] ++;
-			accum[i0] /= counts[i0]; accum[i1] /= counts[i1]; accum[i2] /= counts[i2];
+			accum[i0] *= counts[i0];
+			accum[i1] *= counts[i1];
+			accum[i2] *= counts[i2];
+			accum[i0] += norm;
+			accum[i1] += norm;
+			accum[i2] += norm;
+			counts[i0] ++;
+			counts[i1] ++;
+			counts[i2] ++;
+			accum[i0] /= counts[i0];
+			accum[i1] /= counts[i1];
+			accum[i2] /= counts[i2];
 		}
 
 		GLfloat* normals = new GLfloat[positionCount];
@@ -195,18 +181,19 @@ namespace pathos {
 			normals[i * 3] = accum[i].x;
 			normals[i * 3 + 1] = accum[i].y;
 			normals[i * 3 + 2] = accum[i].z;
-			//std::cout << accum[i].x << " " << accum[i].y << " " << accum[i].z << std::endl;
 		}
 		updateNormalData(normals, positionCount);
+
 		delete accum;
 		delete counts;
 	}
 	void MeshGeometry::calculateTangentBasis() {
 		if (tangentData) delete tangentData;
 		if (bitangentData) delete bitangentData;
+
 		int numPos = positionCount / 3;
-		glm::vec3* accum = new glm::vec3[numPos]; // tangent accum
-		glm::vec3* accum2 = new glm::vec3[numPos]; // bitangent accum
+		glm::vec3* accum = new glm::vec3[numPos]; // accumulates tangents here
+		glm::vec3* accum2 = new glm::vec3[numPos]; // accumulates bitangents here
 		for (int i = 0; i < numPos; i++){
 			accum[i] = glm::vec3(0.0f);
 			accum2[i] = glm::vec3(0.0f);
@@ -221,14 +208,22 @@ namespace pathos {
 			// delta position
 			glm::vec3 dp1 = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 dp2 = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
+
 			// delta uv
 			glm::vec2 duv1 = glm::vec2(UV[uv1] - UV[uv0], UV[uv1 + 1] - UV[uv0 + 1]);
 			glm::vec2 duv2 = glm::vec2(UV[uv2] - UV[uv0], UV[uv2 + 1] - UV[uv0 + 1]);
 			float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+
 			glm::vec3 tangent = (dp1 * duv2.y - dp2 * duv1.y) * r;
 			glm::vec3 bitangent = (dp2 * duv1.x - dp1 * duv2.x) * r;
-			accum[i0] += tangent; accum[i1] += tangent; accum[i2] += tangent;
-			accum2[i0] += bitangent; accum2[i1] += bitangent; accum2[i2] += bitangent;
+
+			accum[i0] += tangent;
+			accum[i1] += tangent;
+			accum[i2] += tangent;
+
+			accum2[i0] += bitangent;
+			accum2[i1] += bitangent;
+			accum2[i2] += bitangent;
 		}
 
 		GLfloat* tangents = new GLfloat[positionCount];
@@ -243,30 +238,31 @@ namespace pathos {
 			bitangents[i * 3 + 1] = accum2[i].y;
 			bitangents[i * 3 + 2] = accum2[i].z;
 		}
+
 		updateTangentData(tangents, positionCount);
 		updateBitangentData(bitangents, positionCount);
 	}
 
 	void MeshGeometry::dispose() {
 		std::vector<GLuint> VBO;
-		if (positionBuffer != 0) VBO.push_back(positionBuffer);
-		if (uvBuffer != 0) VBO.push_back(uvBuffer);
-		if (normalBuffer != 0) VBO.push_back(normalBuffer);
-		if (tangentBuffer != 0) VBO.push_back(tangentBuffer);
+		if (positionBuffer != 0)  VBO.push_back(positionBuffer);
+		if (uvBuffer != 0)        VBO.push_back(uvBuffer);
+		if (normalBuffer != 0)    VBO.push_back(normalBuffer);
+		if (tangentBuffer != 0)   VBO.push_back(tangentBuffer);
 		if (bitangentBuffer != 0) VBO.push_back(bitangentBuffer);
-		if (indexBuffer != 0) VBO.push_back(indexBuffer);
+		if (indexBuffer != 0)     VBO.push_back(indexBuffer);
 		glDeleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
 
 		std::vector<GLuint> VAO;
-		if (vao_position != 0) VAO.push_back(vao_position);
-		if (vao_position_uv != 0) VAO.push_back(vao_position_uv);
-		if (vao_position_normal != 0) VAO.push_back(vao_position_normal);
-		if (vao_position_uv_normal != 0) VAO.push_back(vao_position_uv_normal);
+		if (vao_position != 0)                             VAO.push_back(vao_position);
+		if (vao_position_uv != 0)                          VAO.push_back(vao_position_uv);
+		if (vao_position_normal != 0)                      VAO.push_back(vao_position_normal);
+		if (vao_position_uv_normal != 0)                   VAO.push_back(vao_position_uv_normal);
 		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
 		glDeleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
 
 #if 0
-		// TODO: fix
+		// #todo: fix
 		if (positionData) { delete[] positionData; positionData = nullptr; }
 		if (indexData) { delete[] indexData; indexData = nullptr; }
 		if (normalData) { delete[] normalData; normalData = nullptr; }
@@ -306,31 +302,31 @@ namespace pathos {
 	void MeshGeometry::createVAO_position_uv() {
 		createVAO(&vao_position_uv, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
-			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE }
+			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE }
 		});
 	}
 
 	void MeshGeometry::createVAO_position_normal() {
 		createVAO(&vao_position_normal, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
-			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE }
+			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE }
 		});
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal() {
 		createVAO(&vao_position_uv_normal, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
-			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE },
-			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE }
+			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE },
+			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE }
 		});
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal_tangent_bitangent() {
 		createVAO(&vao_position_uv_normal_tangent_bitangent, {
-			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
-			{ uvBuffer, uvLocation, 2, GL_FLOAT, GL_FALSE },
-			{ normalBuffer, normalLocation, 3, GL_FLOAT, GL_FALSE },
-			{ tangentBuffer, tangentLocation, 3, GL_FLOAT, GL_FALSE },
+			{ positionBuffer,  positionLocation,  3, GL_FLOAT, GL_FALSE },
+			{ uvBuffer,        uvLocation,        2, GL_FLOAT, GL_FALSE },
+			{ normalBuffer,    normalLocation,    3, GL_FLOAT, GL_FALSE },
+			{ tangentBuffer,   tangentLocation,   3, GL_FLOAT, GL_FALSE },
 			{ bitangentBuffer, bitangentLocation, 3, GL_FLOAT, GL_FALSE }
 		});
 	}

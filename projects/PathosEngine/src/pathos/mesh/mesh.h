@@ -16,9 +16,9 @@ namespace pathos {
 	class Mesh : public NamedObject {
 
 	public:
-		bool castsShadow = false;
-		bool visible = true;
-		bool doubleSided = false;
+		bool castsShadow    = true;
+		bool visible        = true;
+		bool doubleSided    = false;
 		bool renderInternal = false;
 
 	public:

@@ -7,10 +7,11 @@ namespace pathos {
 	* each geometry is regarded as uniquely belongs to only one mesh.<br/>
 	* each material can be shared among multiple meshes.
 	*/
-	Mesh::Mesh(MeshGeometry* geom, MeshMaterial* mat) {
-		doubleSided = false;
-		castsShadow = true;
-		if (geom != nullptr || mat != nullptr){
+	Mesh::Mesh(MeshGeometry* geom, MeshMaterial* mat)
+		: doubleSided(false)
+		, castsShadow(true)
+	{
+		if (geom != nullptr || mat != nullptr) {
 			geometries.push_back(geom);
 			materials.push_back(mat);
 		}

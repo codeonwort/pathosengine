@@ -45,9 +45,6 @@ namespace pathos {
 		glBindTextureUnit(NORMALMAP_TEXTURE_UNIT, material->getNormalMapTexture());
 
 		geometry->draw();
-
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 	}
 
 }

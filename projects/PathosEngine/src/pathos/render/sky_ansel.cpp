@@ -159,9 +159,6 @@ namespace pathos {
 
 		sphere->draw();
 
-		sphere->deactivate();
-		sphere->deactivateIndexBuffer();
-
 		glDepthFunc(GL_LESS);
 		glEnable(GL_DEPTH_TEST);
 	}

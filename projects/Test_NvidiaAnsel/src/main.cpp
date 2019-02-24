@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.0f));
 	cam->move(CAMERA_POSITION);
 
 	setupScene();

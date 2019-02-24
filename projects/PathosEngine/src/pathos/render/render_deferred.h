@@ -9,9 +9,9 @@
 
 namespace pathos {
 
-	// deferred renderer implementation
 	class DeferredRenderer : public Renderer {
 
+	// Public API
 	public:
 		DeferredRenderer(unsigned int width, unsigned int height);
 		virtual ~DeferredRenderer();
@@ -20,7 +20,10 @@ namespace pathos {
 
 		inline void setHDR(bool value) { useHDR = value; }
 
-		GLuint debug_godRayTexture() { return unpack_pass->debug_godRayTexture(); }
+	// Debug API
+	public:
+		inline GLuint debug_godRayTexture() const { return unpack_pass->debug_godRayTexture(); }
+		inline DirectionalShadowMap* debug_getShadowMap() const { return sunShadowMap; }
 
 	private:
 		void createShaders();

@@ -71,8 +71,6 @@ namespace pathos {
 			geoms[i]->activate_position_normal();
 			geoms[i]->activateIndexBuffer();
 			geoms[i]->draw();
-			geoms[i]->deactivate();
-			geoms[i]->deactivateIndexBuffer();
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glEnable(GL_CULL_FACE);

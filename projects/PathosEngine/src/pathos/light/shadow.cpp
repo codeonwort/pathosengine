@@ -90,9 +90,6 @@ void main() {
 	void ShadowMap::renderLightDepth(uint32_t lightIndex, DirectionalLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) assert(0);
 
-		//--------------------------------------------------------------------------------------
-		// activate
-		//--------------------------------------------------------------------------------------
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[lightIndex], 0);
 		glViewport(0, 0, width, height);
@@ -110,20 +107,11 @@ void main() {
 		glUseProgram(program);
 		glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(depthMVP[0][0]));
 		
-		//--------------------------------------------------------------------------------------
-		// draw call
-		//--------------------------------------------------------------------------------------
 		modelGeometry->draw();
-
-		//--------------------------------------------------------------------------------------
-		// deactivate
-		//--------------------------------------------------------------------------------------
-		modelGeometry->deactivate();
-		modelGeometry->deactivateIndexBuffer();
-		glUseProgram(0);
 
 		// restore original viewport
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		// TODO: remove the global access
 		auto config = gEngine->getConfig();
 		glViewport(0, 0, config.windowWidth, config.windowHeight);

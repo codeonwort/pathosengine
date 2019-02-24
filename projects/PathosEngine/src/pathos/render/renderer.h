@@ -29,6 +29,9 @@ namespace pathos {
 		Renderer()                = default;
 		virtual ~Renderer()       = default;
 
+		Renderer(const Renderer&)            = delete;
+		Renderer& operator=(const Renderer&) = delete;
+
 		virtual void render(Scene* scene, Camera*) = 0;
 
 	protected:
