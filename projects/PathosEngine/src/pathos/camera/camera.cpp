@@ -85,7 +85,7 @@ namespace pathos {
 
 		float theta = glm::dot(forward, up);
 		if (theta >= 0.999f || theta <= -0.999f) {
-			up = glm::vec3(0.0f, 0.0f, -1.0f);
+			up = glm::vec3(1.0f, 0.0f, 0.0f);
 		}
 
 		glm::vec3 right = glm::cross(forward, up);
@@ -102,18 +102,26 @@ namespace pathos {
 		const float hw_far = hh_far * plens->getAspectRatioWH();
 
 		const glm::vec3 P0 = getPosition();
+		const glm::mat4 view = getViewMatrix();
 
 		float zi, hwi, hhi;
 		outFrustum.resize(4 * (1 + numCascades));
 		for (uint32_t i = 0u; i <= numCascades; ++i) {
-			const float k = static_cast<float>(i) / static_cast<float>(numCascades);
+			float k = static_cast<float>(i) / static_cast<float>(numCascades);
+
 			zi = zn + (zf - zn) * k;
 			hwi = hw_near + (hw_far - hw_near) * k;
 			hhi = hh_near + (hh_far - hh_near) * k;
+
 			outFrustum[i * 4 + 0] = P0 + (forward * zi) + (right * hwi) + (up * hhi);
 			outFrustum[i * 4 + 1] = P0 + (forward * zi) - (right * hwi) + (up * hhi);
 			outFrustum[i * 4 + 2] = P0 + (forward * zi) + (right * hwi) - (up * hhi);
 			outFrustum[i * 4 + 3] = P0 + (forward * zi) - (right * hwi) - (up * hhi);
+
+			outFrustum[i * 4 + 0] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 0], 1.0f));
+			outFrustum[i * 4 + 1] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 1], 1.0f));
+			outFrustum[i * 4 + 2] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 2], 1.0f));
+			outFrustum[i * 4 + 3] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 3], 1.0f));
 		}
 	}
 

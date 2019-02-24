@@ -99,7 +99,7 @@ void main() {
 			// if almost parallel, choose another random direction
 			float angle = glm::dot(sun_up, sun_direction);
 			if (angle >= 0.999f || angle <= -0.999f) {
-				sun_up = glm::vec3(0.0f, 0.0f, -1.0f);
+				sun_up = glm::vec3(1.0f, 0.0f, 0.0f);
 			}
 
 			glm::mat4 lightView = glm::lookAt(sun_origin, sun_direction, sun_up);
@@ -112,7 +112,7 @@ void main() {
 			float bottom = std::numeric_limits<float>::min();
 
 			for (int i = 0; i < 8; ++i) {
-				glm::vec3 fv = glm::vec3(lightView * glm::vec4(frustum[i], 1.0f));
+				glm::vec3 fv(lightView * glm::vec4(frustum[i], 1.0f));
 				if (fv.x < left) left = fv.x;
 				if (fv.x > right) right = fv.x;
 				if (fv.y < top) top = fv.y;

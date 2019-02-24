@@ -6,6 +6,8 @@
 #define APPLY_SHADOW  1
 #define SOFT_SHADOW   1
 
+#define DEBUG_CSM_ID  0
+
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright; // bright area only
 
@@ -56,17 +58,31 @@ void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 
 #if APPLY_SHADOW
 float getShadowing(fragment_info fragment) {
+
+#if 0
+	float vz;
+	{
+		float n = uboPerFrame.zRange.x;
+		float f = uboPerFrame.zRange.y;
+		vz = (2 * n) / (f + n - (fragment.vs_coords.z) * (f - n));
+	}
+#else
 	// linear depth in view space
 	float vz = -fragment.vs_coords.z;
 	vz = (vz - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
-
+#endif
+	
 	int mapIx = int(vz * 4.0);
 	if(mapIx >= 4) {
 		return 1.0;
 	}
+	
+#if DEBUG_CSM_ID
+	return float(mapIx) / 4.0;
+#endif
 
 	vec4 ls_coords = uboPerFrame.sunViewProjection[mapIx] * vec4(fragment.ws_coords, 1.0);
-	float NdotL = dot(fragment.normal, -uboPerFrame.dirLightDirs[0]);
+	float NdotL = max(dot(fragment.normal, -uboPerFrame.dirLightDirs[0]), 0.0);
 	float bias = max(0.005 * (1.0 - NdotL), 0.005);
 	float inv_w = 1.0 / ls_coords.w;
 	ls_coords.xy = ls_coords.xy * inv_w;
@@ -260,6 +276,10 @@ void main() {
 
 #if APPLY_FOG
 	color.rgb = applyFog(fragment, color.rgb);
+#endif
+
+#if DEBUG_CSM_ID
+	color.rgb = vec3(getShadowing(fragment));
 #endif
 
 	// output: standard shading
