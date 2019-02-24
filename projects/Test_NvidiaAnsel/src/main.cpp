@@ -12,16 +12,19 @@ using namespace pathos;
 // Rendering configurations
 const int WINDOW_WIDTH          = 1920;
 const int WINDOW_HEIGHT         = 1080;
-const float FOV                 = 120.0f;
-const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 20.0f);
-const ERendererType RENDERER    = ERendererType::Forward;
+const float FOV                 = 90.0f;
+const float NEAR_Z              = 1.0f;
+const float FAR_Z               = 10000.0f;
+const glm::vec3 CAMERA_POSITION = glm::vec3(-200.0f, 150.0f, 200.0f);
+const ERendererType RENDERER    = ERendererType::Deferred;
 
 Camera* cam;
 Scene scene;
+	DirectionalLight *dirLight;
+	PointLight *pointLight1, *pointLight2;
+	Mesh *lightMarker1, *lightMarker2;
 	Mesh *city, *city2;
 	TextMesh *label;
-	PointLight *pointLight1, *pointLight2;
-	DirectionalLight *dirLight;
 
 OBJLoader cityLoader;
 bool loaderReady = false;
@@ -32,6 +35,9 @@ void tick();
 
 void loadTask() {
 	cityLoader.load("models/city/The_City.obj", "models/city/");
+	//cityLoader.load("lighting_challenges/artStudio.obj", "lighting_challenges/");
+	//cityLoader.load("models/medieval/Medieval_City.obj", "models/medieval/");
+	//cityLoader.load("models/dragon.obj", "models/");
 	loaderReady = true;
 }
 
@@ -45,7 +51,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, 1.0f, 1000.0f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, NEAR_Z, FAR_Z));
 	cam->move(CAMERA_POSITION);
 
 	setupScene();
@@ -66,9 +72,18 @@ int main(int argc, char** argv) {
 }
 
 void setupScene() {
-	pointLight1 = new PointLight(glm::vec3(5, 30, 5), glm::vec3(1, 1, 1));
-	pointLight2 = new PointLight(glm::vec3(-15, 30, 5), glm::vec3(0, 0, 1));
-	dirLight = new DirectionalLight(glm::vec3(0.1, -1, 2), glm::vec3(1, 1, 1));
+	pointLight1 = new PointLight(glm::vec3(-1000, 100, 50), 1.0f * glm::vec3(1, 0, 0));
+	pointLight2 = new PointLight(glm::vec3(-200, 100, 50), 1.0f * glm::vec3(1, 1, 1));
+	dirLight = new DirectionalLight(glm::vec3(0, -1, -1), 1.0f * glm::vec3(1, 1, 1));
+
+	auto lightBulb = new SphereGeometry(20.0f, 10);
+	auto lightMat = new WireframeMaterial(1.0f, 1.0f, 1.0f);
+	lightMarker1 = new Mesh(lightBulb, lightMat);
+	lightMarker2 = new Mesh(lightBulb, lightMat);
+	lightMarker1->getTransform().appendMove(pointLight1->getPosition());
+	lightMarker2->getTransform().appendMove(pointLight2->getPosition());
+	scene.add(lightMarker1);
+	scene.add(lightMarker2);
 
 #if LOAD_3D_MODEL
 	label = new TextMesh("default");
@@ -78,6 +93,7 @@ void setupScene() {
 #endif
 
 	scene.add(pointLight1);
+	scene.add(pointLight2);
 	scene.add(dirLight);
 #if LOAD_3D_MODEL
 	scene.add(label);
@@ -108,8 +124,8 @@ void tick() {
 	if (loaderReady) {
 		loaderReady = false;
 		city = cityLoader.craftMeshFromAllShapes();
-		city->getTransform().appendScale(0.1f, 0.1f, 0.1f);
-		city->getTransform().appendMove(0.0f, -60.0f, 0.0f);
+		//city->getTransform().appendScale(100.0f);
+		city->getTransform().appendMove(0.0f, 0.0f, 0.0f);
 
 		scene.add(city);
 		cityLoader.unload();
@@ -117,11 +133,11 @@ void tick() {
 	}
 
 	if (gConsole->isVisible() == false) {
-		float speedX = 0.4f, speedY = 0.4f;
+		float speedX = 5.0f, speedY = 5.0f;
 		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-		float rotY = gEngine->isDown('q') ? -1.0f : gEngine->isDown('e') ? 1.0f : 0.0f;
-		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+		float rotY = gEngine->isDown('q') ? -3.0f : gEngine->isDown('e') ? 3.0f : 0.0f;
+		float rotX = gEngine->isDown('z') ? -1.5f : gEngine->isDown('x') ? 1.5f : 0.0f;
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);

@@ -29,9 +29,9 @@ void main() {
 	outvec0.z = packHalf2x16(fs_in.normal.yz);
 	outvec0.w = fs_in.material_id;
 	outvec1.xyz = fs_in.vs_coords;
-	outvec1.w = 128.0;
+	outvec1.w = 32.0;
 
 	output0 = outvec0;
 	output1 = outvec1;
-	output2 = vec4(0.0);
+	output2 = vec4(0.0, 0.0, 0.0, 0.0);
 }

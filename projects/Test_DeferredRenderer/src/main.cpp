@@ -3,7 +3,6 @@
 using namespace pathos;
 
 #include <GL/glut.h>
-#include <time.h>
 
 const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
@@ -11,10 +10,9 @@ const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOV                 =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 0.0f, 100.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
-const float         CAMERA_Z_FAR        =   2000.0f;
+const float         CAMERA_Z_FAR        =   10000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::vec3(0.0f, -1.0f, 0.0f);
 const bool          USE_HDR             =   true;
-const uint32_t      NUM_POINT_LIGHTS    =   2;
 const uint32_t      NUM_BALLS           =   10;
 
 Camera* cam;
@@ -53,22 +51,11 @@ int main(int argc, char** argv) {
 }
 
 void setupScene() {
-	// light
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
-	srand((unsigned int)time(NULL));
-	for (auto i = 0u; i < NUM_POINT_LIGHTS; ++i) {
-		float x = rand() % 50 - 25.0f;
-		float y = rand() % 50 - 25.0f;
-		float z = rand() % 50 - 15.0f;
-		float r = (rand() % 256) / 255.0f;
-		float g = (rand() % 256) / 255.0f;
-		float b = (rand() % 256) / 255.0f;
-		r = g = b = 1.0f;
-		float power = 0.1f + 0.5f * (rand() % 100) / 100.0f;
-		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
-	}
+	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 50.0f), 5.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(-70.0f, 30.0f, 50.0f), 5.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -148,9 +135,10 @@ void setupScene() {
 	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
 
-	//model = new Mesh(geom_sphere_big, material_texture);
 	model = new Mesh(geom_plane, material_bump);
-	model->getTransform().appendMove(-40.0f, 0.0f, 0.0f);
+	model->getTransform().appendScale(5.0f, 5.0f, 5.0f);
+	model->getTransform().appendRotation(glm::radians(-20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	model->getTransform().appendMove(-60.0f, 0.0f, -30.0f);
 
 	model2 = new Mesh(geom_sphere, material_color);
 	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));

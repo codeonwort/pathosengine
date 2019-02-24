@@ -250,11 +250,11 @@ vec3 pbrShading(fragment_info fragment) {
 
 vec4 calculateShading(fragment_info fragment) {
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
-	if(fragment.material_id == MATERIAL_ID_SOLID_COLOR || fragment.material_id == MATERIAL_ID_TEXTURE) {
+	if(fragment.material_id == MATERIAL_ID_TEXTURE) {
 		result.rgb += phongShading(fragment);
 	} else if(fragment.material_id == MATERIAL_ID_WIREFRAME) {
 		result.rgb += fragment.albedo;
-	} else if(fragment.material_id == MATERIAL_ID_PBR) {
+	} else if(fragment.material_id == MATERIAL_ID_SOLID_COLOR || fragment.material_id == MATERIAL_ID_PBR) {
 		result.rgb += pbrShading(fragment);
 	} else {
 		discard;
