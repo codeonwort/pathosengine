@@ -4,8 +4,8 @@ layout (location = 0) out uvec4 output0;
 layout (location = 1) out vec4 output1;
 layout (location = 2) out vec4 output2;
 
-layout (location = 0) uniform sampler2D tex_diffuse;
-layout (location = 1) uniform sampler2D tex_normal;
+layout (binding = 0) uniform sampler2D tex_diffuse;
+layout (binding = 1) uniform sampler2D tex_normal;
 
 layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;

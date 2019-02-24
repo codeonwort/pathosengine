@@ -83,7 +83,7 @@ float getShadowing(fragment_info fragment) {
 
 	vec4 ls_coords = uboPerFrame.sunViewProjection[mapIx] * vec4(fragment.ws_coords, 1.0);
 	float NdotL = max(dot(fragment.normal, -uboPerFrame.dirLightDirs[0]), 0.0);
-	float bias = max(0.005 * (1.0 - NdotL), 0.005);
+	float bias = max(0.05 * (1.0 - NdotL), 0.05);
 	float inv_w = 1.0 / ls_coords.w;
 	ls_coords.xy = ls_coords.xy * inv_w;
 	ls_coords.z = (ls_coords.z - bias) * inv_w;
@@ -115,6 +115,10 @@ float getShadowing(fragment_info fragment) {
 }
 #endif
 
+float pointLightAttenuation(float dist) {
+	return 1000.0 / (1000.0 + dist * dist);
+}
+
 vec3 phongShading(fragment_info fragment) {
 	vec3 result = vec3(0.0);
 	vec3 N = fragment.normal;
@@ -127,7 +131,8 @@ vec3 phongShading(fragment_info fragment) {
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		vec3 L = uboPerFrame.pointLightPos[i] - fragment.vs_coords;
 		float dist = length(L);
-		float attenuation = 500.0 / (pow(dist, 2.0) + 1.0);
+		//float attenuation = 5000.0 / (pow(dist, 2.0) + 1.0);
+		float attenuation = pointLightAttenuation(dist);
 		L = normalize(L);
 		vec3 R = reflect(-L, N);
 		float cosTheta = max(0.0, dot(N, L));
@@ -213,7 +218,7 @@ vec3 pbrShading(fragment_info fragment) {
 		vec3 L = normalize(uboPerFrame.pointLightPos[i] - fragment.vs_coords);
 		vec3 H = normalize(V + L);
 		float distance = length(uboPerFrame.pointLightPos[i] - fragment.vs_coords);
-		float attenuation = 1000.0 / (1000.0 + distance * distance);
+		float attenuation = pointLightAttenuation(distance);
 		vec3 radiance = uboPerFrame.pointLightColors[i];
 		radiance *= attenuation;
 
