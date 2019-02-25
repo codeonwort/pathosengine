@@ -72,11 +72,7 @@ void setupScene() {
 	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"), true, true);
 	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"), true, false);
 
-// 	GLuint tex_debug = renderer->debug_godRayTexture();
-// 	auto material_tex_debug = new TextureMaterial(tex_debug);
-
 	auto material_texture = new TextureMaterial(tex);
-	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
@@ -136,9 +132,9 @@ void setupScene() {
 	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
 
-	model = new Mesh(geom_plane, material_bump);
+	model = new Mesh(geom_plane, material_pbr);
 	model->getTransform().appendScale(5.0f, 5.0f, 5.0f);
-	model->getTransform().appendRotation(glm::radians(-20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	model->getTransform().appendRotation(glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	model->getTransform().appendMove(-60.0f, 0.0f, -30.0f);
 
 	model2 = new Mesh(geom_sphere, material_color);
@@ -146,7 +142,6 @@ void setupScene() {
 	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
 
 	model3 = new Mesh(geom_cube, material_wireframe);
-	//model3 = new Mesh(geom_plane, material_tex_debug);
 	model3->getTransform().appendMove(35.0f, 0.0f, 0.0f);
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {

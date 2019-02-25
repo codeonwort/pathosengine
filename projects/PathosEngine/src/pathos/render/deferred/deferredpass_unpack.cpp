@@ -76,7 +76,7 @@ void main() {
 		fs.loadSource("deferred_unpack_ldr.glsl");
 
 		std::vector<Shader*> shaders = { &vs, &fs };
-		program_ldr = pathos::createProgram(shaders);
+		program_ldr = pathos::createProgram(shaders, "UnpackLDR");
 	}
 
 	void MeshDeferredRenderPass_Unpack::createProgram_HDR() {
@@ -97,16 +97,16 @@ void main() {
 
 		// unpack hdr
 		std::vector<Shader*> shaders = { &vs, &fs };
-		program_hdr = pathos::createProgram(shaders);
+		program_hdr = pathos::createProgram(shaders, "UnpackHDR");
 
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
-		program_tone_mapping = pathos::createProgram(shaders);
+		program_tone_mapping = pathos::createProgram(shaders, "ToneMapping");
 		ubo_tone_mapping.init<UBO_ToneMapping>();
 
 		// blur pass
 		fs.loadSource("blur_pass.glsl");
-		program_blur = pathos::createProgram(shaders);
+		program_blur = pathos::createProgram(shaders, "BlurPass");
 
 		uniform_blur_horizontal = glGetUniformLocation(program_blur, "horizontal");
 		assert(uniform_blur_horizontal != -1);

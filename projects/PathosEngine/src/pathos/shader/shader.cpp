@@ -42,10 +42,7 @@ namespace pathos {
 
 	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName) {
 		std::vector<Shader*> shaders = { &vs, &fs };
-		GLuint program = createProgram(shaders);
-		if (debugName) {
-			glObjectLabel(GL_PROGRAM, program, -1, debugName);
-		}
+		GLuint program = createProgram(shaders, debugName);
 		return program;
 	}
 
@@ -69,24 +66,29 @@ namespace pathos {
 	}
 
 	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
-	GLuint createProgram(std::vector<Shader*>& shaders) {
-#if defined(_DEBUG) && DEBUG_SHADER
-		std::cout << std::endl << "=== start creating a shader program ===" << std::endl;
+	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName) {
+#if DEBUG_SHADER
+		LOG(LogDebug, "Create a shader program");
 #endif
 		for (Shader* shader : shaders) {
 			bool compiled = shader->compile();
 			if (!compiled) {
-#if defined(_DEBUG)
-				std::cerr << "> shader compile error: " << shader->getErrorLog() << endl;
+#if DEBUG_SHADER
+				LOG(LogError, "Shader compilation error: %s", shader->getErrorLog());
 #endif
 				break;
 			}
 		}
-#if defined(_DEBUG) && DEBUG_SHADER
-		std::cout << "> linking a program" << std::endl;
+#if DEBUG_SHADER
+		LOG(LogDebug, "Linking the program...");
 #endif
 		GLuint program = glCreateProgram();
-		for (Shader* shader : shaders) glAttachShader(program, shader->getName());
+		if (debugName) {
+			glObjectLabel(GL_PROGRAM, program, -1, debugName);
+		}
+		for (Shader* shader : shaders) {
+			glAttachShader(program, shader->getName());
+		}
 		glLinkProgram(program);
 
 		GLint isLinked = 0;
@@ -97,16 +99,18 @@ namespace pathos {
 			if (maxLength == 0) maxLength = 1000;
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-#ifdef _DEBUG
-			std::cerr << "> program link error: " << string(infoLog.begin(), infoLog.end()) << endl;
+
+#if _DEBUG
+			std::cerr << "> program link error: " << std::string(infoLog.begin(), infoLog.end()) << endl;
 			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
 			std::cerr << "> link error code: " << glGetError() << std::endl;
 			std::cerr << "> program was not created. return NULL..." << std::endl;
 #endif
+
 			glDeleteProgram(program);
 			return 0;
 		}
-#if defined(_DEBUG) && DEBUG_SHADER
+#if DEBUG_SHADER
 		std::cout << "=== finish program creation ===" << std::endl << std::endl;
 #endif
 		return program;
@@ -230,7 +234,7 @@ namespace pathos {
 	}
 
 	bool Shader::compile() {
-#if defined(_DEBUG) && DEBUG_SHADER
+#if DEBUG_SHADER
 		const char* shaderType;
 		if (type == GL_VERTEX_SHADER) shaderType = "GL_VERTEX_SHADER";
 		else if (type == GL_FRAGMENT_SHADER) shaderType = "GL_FRAGMENT_SHADER";
@@ -388,10 +392,6 @@ namespace pathos {
 		src << "}" << std::endl;
 
 		string vcode = src.str();
-#ifdef DEBUG
-		cout << endl << "vertex shader code" << endl;
-		cout << vcode << endl;
-#endif
 		return vcode;
 	}
 
@@ -443,10 +443,6 @@ namespace pathos {
 		src << "}\n";
 
 		string fcode = src.str();
-#ifdef DEBUG
-		cout << endl << "fragment shader code" << endl;
-		cout << fcode << endl;
-#endif
 		return fcode;
 	}
 	void FragmentShaderSource::textureSampler(const string& samplerName) { uniform("sampler2D", samplerName); }
@@ -581,10 +577,6 @@ namespace pathos {
 		src << "}\n";
 
 		string gcode = src.str();
-#ifdef DEBUG
-		cout << endl << "geometry shader code" << endl;
-		cout << fcode << endl;
-#endif
 		return gcode;
 	}
 
