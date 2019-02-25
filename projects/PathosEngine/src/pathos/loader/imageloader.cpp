@@ -52,20 +52,20 @@ namespace pathos {
 		glGenTextures(1, &tex_id);
 		glBindTexture(GL_TEXTURE_2D, tex_id);
 
-		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
+		unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			if (sRGB) {
-				glTexStorage2D(GL_TEXTURE_2D, 1, GL_SRGB8_ALPHA8, w, h);
+				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_SRGB8_ALPHA8, w, h);
 			} else {
-				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_RGBA8, w, h);
 			}
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		} else if (bpp == 24) {
 			if (sRGB) {
-				glTexStorage2D(GL_TEXTURE_2D, 1, GL_SRGB8, w, h);
+				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_SRGB8, w, h);
 			} else {
-				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_RGBA8, w, h);
 			}
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
