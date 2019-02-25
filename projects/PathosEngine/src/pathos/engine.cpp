@@ -167,7 +167,6 @@ namespace pathos {
 		glClearStencil(0);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
-		//glEnable(GL_MULTISAMPLE);
 
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);

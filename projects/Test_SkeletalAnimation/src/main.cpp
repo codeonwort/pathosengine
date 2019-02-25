@@ -133,8 +133,8 @@ void setupScene() {
 	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
 	GLuint cubeTexture = loadCubemapTexture(cubeImg);
 
-	GLuint tex = loadTexture(loadImage("154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"));
+	GLuint tex = loadTexture(loadImage("154.jpg"), true, true);
+	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_bump = new BumpTextureMaterial(tex, tex_norm);

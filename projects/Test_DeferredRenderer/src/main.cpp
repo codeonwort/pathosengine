@@ -69,8 +69,8 @@ void setupScene() {
 	for (int i = 0; i < 6; i++) cubeImg[i] = pathos::loadImage(cubeImgName[i]);
 	GLuint cubeTexture = pathos::loadCubemapTexture(cubeImg);
 
-	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"));
-	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"));
+	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"), true, true);
+	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"), true, false);
 
 // 	GLuint tex_debug = renderer->debug_godRayTexture();
 // 	auto material_tex_debug = new TextureMaterial(tex_debug);
@@ -91,18 +91,19 @@ void setupScene() {
 	// PBR material
 	PBRTextureMaterial* material_pbr;
 	{
+		constexpr bool sRGB = true;
 #if 1
-		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"));
-		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"));
-		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"));
-		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"));
-		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"));
+		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), true, sRGB);
+		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), true, !sRGB);
+		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), true, !sRGB);
+		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), true, !sRGB);
+		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), true, !sRGB);
 #else
-		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"));
-		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"));
-		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"));
-		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"));
-		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"));
+		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"), true, sRGB);
+		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), true, !sRGB);
+		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"), true, !sRGB);
+		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"), true, !sRGB);
+		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"), true, !sRGB);
 #endif
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}

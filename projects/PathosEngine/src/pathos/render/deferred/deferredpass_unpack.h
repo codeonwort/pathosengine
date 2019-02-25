@@ -5,6 +5,7 @@
 #include "pathos/material/material.h"
 #include "pathos/render/scene.h"
 #include "pathos/camera/camera.h"
+#include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
 
@@ -36,12 +37,11 @@ namespace pathos {
 	protected:
 		GLuint program_ldr = 0; // shader program (original LDR rendering)
 		GLuint program_hdr = 0; // HDR rendering
-		GLuint program_tone_mapping = 0;
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 
-		// program_tone_mapping
-		GLint uniform_tone_mapping_exposure;
+		GLuint program_tone_mapping = 0;
+		UniformBuffer ubo_tone_mapping;
 
 		// program_blur
 		GLint uniform_blur_horizontal;

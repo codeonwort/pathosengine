@@ -12,7 +12,13 @@ using std::min;
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 2.0, "exposure parameter of tone mapping pass");
+	struct UBO_ToneMapping {
+		float exposure;
+		float gamma;
+	};
+
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
+	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
 
 	GLuint MeshDeferredRenderPass_Unpack::debug_godRayTexture() { return godRay->getTexture(); }
 
@@ -96,8 +102,7 @@ void main() {
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
 		program_tone_mapping = pathos::createProgram(shaders);
-		uniform_tone_mapping_exposure = glGetUniformLocation(program_tone_mapping, "exposure");
-		assert(uniform_tone_mapping_exposure != -1);
+		ubo_tone_mapping.init<UBO_ToneMapping>();
 
 		// blur pass
 		fs.loadSource("blur_pass.glsl");
@@ -257,7 +262,10 @@ void main() {
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 			glUseProgram(program_tone_mapping);
-			glUniform1f(uniform_tone_mapping_exposure, cvar_tonemapping_exposure.getValue());
+			UBO_ToneMapping uboData_toneMapping;
+			uboData_toneMapping.exposure = cvar_tonemapping_exposure.getValue();
+			uboData_toneMapping.gamma = cvar_gamma.getValue();
+			ubo_tone_mapping.update(0, &uboData_toneMapping);
 
 			GLuint gbuffer_attachments[] = { fbo_hdr_attachment[0], fbo_hdr_attachment[1], godRay->getTexture() };
 			glBindTextures(0, 3, gbuffer_attachments);

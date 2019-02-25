@@ -37,7 +37,7 @@ namespace pathos {
 		return dib;
 	}
 
-	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap) {
+	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
 		int w, h;
 		unsigned char* data;
 		GLuint tex_id = 0;
@@ -55,10 +55,18 @@ namespace pathos {
 		//unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
-			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, w, h);
+			if (sRGB) {
+				glTexStorage2D(GL_TEXTURE_2D, 1, GL_SRGB8_ALPHA8, w, h);
+			} else {
+				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+			}
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		} else if (bpp == 24) {
-			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+			if (sRGB) {
+				glTexStorage2D(GL_TEXTURE_2D, 1, GL_SRGB8, w, h);
+			} else {
+				glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+			}
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
 #ifdef _DEBUG

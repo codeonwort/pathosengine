@@ -75,8 +75,8 @@ void setupScene() {
 	scene.sky = sky;
 
 	// bump texture for planes
-	GLuint tex = loadTexture(loadImage("154.jpg"));
-	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"));
+	GLuint tex = loadTexture(loadImage("154.jpg"), true, true);
+	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"), true, false);
 	auto mat = new BumpTextureMaterial(tex, tex_norm);
 
 	auto planeGeom = new PlaneGeometry(30, 30);

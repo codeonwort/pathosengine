@@ -104,7 +104,7 @@ void setupSky() {
 #if USE_ANSEL_SKY
 	//auto anselImage = pathos::loadImage("ansel/dishonored.jpg");
 	auto anselImage = pathos::loadImage("ansel/the_surge.jpg");
-	GLuint anselTex = loadTexture(anselImage);
+	GLuint anselTex = loadTexture(anselImage, true, true);
 	scene.sky = new AnselSkyRendering(anselTex);
 #else
 	const char* cubeImgName[6] = {

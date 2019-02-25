@@ -265,7 +265,9 @@ namespace pathos {
 			case MATERIAL_ID::FLAT_TEXTURE:
 				GLuint texture;
 				if (textureDB.find(index) == textureDB.end()) {
-					texture = pathos::loadTexture(pendingTextureData[index]);
+					// #todo: set sRGB=true only for diffuse texture
+					constexpr bool sRGB = true;
+					texture = pathos::loadTexture(pendingTextureData[index], true, sRGB);
 					textureDB.insert(make_pair(index, texture));
 				} else {
 					texture = textureDB[index];

@@ -82,7 +82,9 @@ namespace pathos {
 				std::string path = materialDir + texPath.C_Str();
 				path = ResourceFinder::get().find(path);
 
-				GLuint texture = pathos::loadTexture(pathos::loadImage(path.c_str()));
+				bool isSRGB = texType == aiTextureType_DIFFUSE;
+
+				GLuint texture = pathos::loadTexture(pathos::loadImage(path.c_str()), true, isSRGB);
 				auto it = make_pair(texPath.C_Str(), texture);
 				textureMapping.insert(it);
 			}
