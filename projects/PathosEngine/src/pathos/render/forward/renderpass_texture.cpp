@@ -82,7 +82,7 @@ namespace pathos {
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 
-	void FlatTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void FlatTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		TextureMaterial* material = static_cast<TextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

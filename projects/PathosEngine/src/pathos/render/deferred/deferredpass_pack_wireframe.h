@@ -9,7 +9,7 @@ namespace pathos {
 	public:
 		MeshDeferredRenderPass_Pack_Wireframe();
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	protected:
 		virtual void createProgram() override;

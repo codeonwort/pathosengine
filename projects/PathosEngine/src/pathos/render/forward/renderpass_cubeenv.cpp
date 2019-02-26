@@ -61,7 +61,7 @@ namespace pathos {
 		uniform_sampler = glGetUniformLocation(program, "tex_cubemap");
 	}
 
-	void CubeEnvMapPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void CubeEnvMapPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		CubeEnvMapMaterial* material = static_cast<CubeEnvMapMaterial*>(material_);
 

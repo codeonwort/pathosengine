@@ -12,9 +12,9 @@
 
 namespace pathos {
 
-	// Base class for all material calsses.
+	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
-	class MeshMaterial : public NamedObject {
+	class Material : public NamedObject {
 
 	protected:
 		// IMPORTANT: Child classes should initialize this in their constructors
@@ -22,12 +22,13 @@ namespace pathos {
 
 	public:
 		MATERIAL_ID getMaterialID() { return materialID; }
+
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Materials
 
-	class ColorMaterial : public MeshMaterial {
+	class ColorMaterial : public Material {
 
 	private:
 		GLfloat ambient[3], diffuse[3], specular[3], alpha;
@@ -49,7 +50,7 @@ namespace pathos {
 		inline GLuint getBlendDstFactor() const { return blendDstFactor; }
 	};
 	
-	class TextureMaterial : public MeshMaterial {
+	class TextureMaterial : public Material {
 
 	private:
 		GLuint texture;
@@ -73,7 +74,7 @@ namespace pathos {
 
 	};
 	
-	class BumpTextureMaterial : public MeshMaterial {
+	class BumpTextureMaterial : public Material {
 
 	public:
 		BumpTextureMaterial(GLuint diffuseTexture, GLuint normalMapTexture);
@@ -86,7 +87,7 @@ namespace pathos {
 
 	};
 	
-	class ShadowTextureMaterial : public MeshMaterial {
+	class ShadowTextureMaterial : public Material {
 
 	protected:
 		GLuint texture;
@@ -96,7 +97,7 @@ namespace pathos {
 		inline const GLuint getTexture() { return texture; }
 	};
 
-	class ShadowCubeTextureMaterial : public MeshMaterial {
+	class ShadowCubeTextureMaterial : public Material {
 
 	protected:
 		GLuint texture;
@@ -111,7 +112,7 @@ namespace pathos {
 		inline const GLfloat getZFar() { return zFar; }
 	};
 
-	class WireframeMaterial : public MeshMaterial {
+	class WireframeMaterial : public Material {
 
 	private:
 		GLfloat rgba[4];
@@ -121,7 +122,7 @@ namespace pathos {
 		inline const GLfloat* getColor() const { return rgba; }
 	};
 	
-	class CubeEnvMapMaterial : public MeshMaterial {
+	class CubeEnvMapMaterial : public Material {
 
 	protected:
 		GLuint texture; // cubemap texture for environmental mapping
@@ -131,7 +132,7 @@ namespace pathos {
 		inline GLuint getTexture() const { return texture; }
 	};
 
-	class AlphaOnlyTextureMaterial : public MeshMaterial {
+	class AlphaOnlyTextureMaterial : public Material {
 
 	protected:
 		GLuint texture;
@@ -144,7 +145,7 @@ namespace pathos {
 		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
 	};
 
-	class PBRTextureMaterial : public MeshMaterial {
+	class PBRTextureMaterial : public Material {
 
 	public:
 		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);

@@ -207,7 +207,7 @@ void main() {
 		glUniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
 		for (auto i = 0u; i < geoms.size(); ++i) {
 			MeshGeometry* G = geoms[i];
-			MeshMaterial* M = materials[i];
+			Material* M = materials[i];
 
 			bool wireframe = M != nullptr && M->getMaterialID() == MATERIAL_ID::WIREFRAME;
 			if (wireframe) {

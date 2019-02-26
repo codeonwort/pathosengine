@@ -23,7 +23,7 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_Wireframe>();
 	}
 
-	void MeshDeferredRenderPass_Pack_Wireframe::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void MeshDeferredRenderPass_Pack_Wireframe::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		WireframeMaterial* material = static_cast<WireframeMaterial*>(material_);
 

@@ -28,7 +28,7 @@ namespace pathos {
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 
-	void ShadowTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void ShadowTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		ShadowTextureMaterial* material = static_cast<ShadowTextureMaterial*>(material_);
 

@@ -34,7 +34,7 @@ namespace pathos {
 
 		void renderLightDepth(Mesh*);
 		void render(Mesh*); // render an individual object
-		void renderPiece(Mesh*, MeshGeometry*, MeshMaterial*); // render each piece of an object
+		void renderPiece(Mesh*, MeshGeometry*, Material*); // render each piece of an object
 
 		void renderSolidColor(Mesh*, MeshGeometry*, ColorMaterial*);
 		void renderFlatTexture(Mesh*, MeshGeometry*, TextureMaterial*);

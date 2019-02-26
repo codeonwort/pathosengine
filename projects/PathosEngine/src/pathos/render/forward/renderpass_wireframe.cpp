@@ -21,7 +21,7 @@ namespace pathos {
 		uniform_color = glGetUniformLocation(program, "color");
 	}
 
-	void WireframePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void WireframePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		WireframeMaterial* material = static_cast<WireframeMaterial*>(material_);
 

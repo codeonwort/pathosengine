@@ -112,7 +112,7 @@ namespace pathos {
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 
-	void BumpTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void BumpTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		BumpTextureMaterial* material = static_cast<BumpTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

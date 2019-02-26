@@ -10,7 +10,7 @@
 namespace pathos {
 
 	using Geometries = std::vector<MeshGeometry*>;
-	using Materials = std::vector<MeshMaterial*>;
+	using Materials = std::vector<Material*>;
 
 	// mesh = physical presence of geometry with material
 	class Mesh : public NamedObject {
@@ -22,15 +22,15 @@ namespace pathos {
 		bool renderInternal = false;
 
 	public:
-		Mesh(MeshGeometry* = nullptr, MeshMaterial* = nullptr);
+		Mesh(MeshGeometry* = nullptr, Material* = nullptr);
 		virtual ~Mesh();
-		void add(MeshGeometry*, MeshMaterial*);
+		void add(MeshGeometry*, Material*);
 
 		Transform& getTransform();
 		const Geometries& getGeometries();
 		const Materials& getMaterials();
 
-		void setMaterial(int index, MeshMaterial* M) { materials[index] = M; }
+		void setMaterial(int index, Material* M) { materials[index] = M; }
 
 	protected:
 		Transform transform;

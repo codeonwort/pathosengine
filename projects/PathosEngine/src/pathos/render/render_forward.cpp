@@ -159,7 +159,7 @@ namespace pathos {
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
-	void ForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, MeshMaterial* M) {
+	void ForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, Material* M) {
 		/*
 		// fill stencil buffer for reflection
 		PlaneReflection* reflection = material->getReflectionMethod();

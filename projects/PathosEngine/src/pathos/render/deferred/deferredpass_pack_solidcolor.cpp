@@ -23,7 +23,7 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_SolidColor>();
 	}
 
-	void MeshDeferredRenderPass_Pack_SolidColor::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void MeshDeferredRenderPass_Pack_SolidColor::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
 

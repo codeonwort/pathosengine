@@ -15,7 +15,7 @@ namespace pathos {
 		WireframePass(const WireframePass& other) = delete;
 		WireframePass(WireframePass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	};
 

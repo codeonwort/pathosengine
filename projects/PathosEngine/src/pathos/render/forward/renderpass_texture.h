@@ -21,7 +21,7 @@ namespace pathos {
 		FlatTexturePass(const FlatTexturePass& other) = delete;
 		FlatTexturePass(FlatTexturePass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	};
 

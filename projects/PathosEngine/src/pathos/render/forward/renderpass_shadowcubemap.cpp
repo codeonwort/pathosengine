@@ -46,7 +46,7 @@ namespace pathos {
 		assert(uniform_zFar != -1);
 	}
 
-	void ShadowCubeTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void ShadowCubeTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		ShadowCubeTextureMaterial* material = static_cast<ShadowCubeTextureMaterial*>(material_);
 

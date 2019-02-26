@@ -17,7 +17,7 @@ namespace pathos {
 		inline void setShadowMapping(ShadowMap* shadow) { shadowMapping = shadow; }
 		inline void setOmnidirectionalShadow(OmnidirectionalShadow* shadow) { omniShadow = shadow; }
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) = 0;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) = 0;
 
 	protected:
 		virtual void createProgram() = 0;

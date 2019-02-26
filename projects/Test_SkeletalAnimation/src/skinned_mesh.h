@@ -24,7 +24,7 @@ namespace pathos {
 
 	public:
 		SkinnedMesh();
-		SkinnedMesh(MeshGeometry* G, MeshMaterial* M);
+		SkinnedMesh(MeshGeometry* G, Material* M);
 
 		void addBone(uint32_t geomIndex, const Bone& bone);
 

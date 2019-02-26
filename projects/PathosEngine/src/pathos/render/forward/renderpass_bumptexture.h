@@ -23,7 +23,7 @@ namespace pathos {
 		BumpTexturePass(const BumpTexturePass& other) = delete;
 		BumpTexturePass(BumpTexturePass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	};
 

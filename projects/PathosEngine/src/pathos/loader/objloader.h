@@ -44,12 +44,12 @@ namespace pathos {
 		Mesh* craftMeshFrom(uint32_t shapeIndex);
 		Mesh* craftMeshFromAllShapes();
 
-		const vector<MeshMaterial*>& getMaterials() { return materials; }
+		const vector<Material*>& getMaterials() { return materials; }
 
 	protected:
-		void analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<MeshMaterial*>& output);
+		void analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output);
 		void reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& attrib, std::vector<PendingShape>& pendingShape);
-		MeshMaterial* getMaterial(int32_t index);
+		Material* getMaterial(int32_t index);
 		Mesh* craftMesh(uint32_t from, uint32_t to); // both inclusive
 
 	private:
@@ -60,7 +60,7 @@ namespace pathos {
 		tinyobj::attrib_t t_attrib;
 
 		std::vector<PendingShape> pendingShapes;
-		std::vector<MeshMaterial*> materials;
+		std::vector<Material*> materials;
 		std::map<std::string, FIBITMAP*> bitmapDB;
 		ColorMaterial* defaultMaterial = nullptr;
 

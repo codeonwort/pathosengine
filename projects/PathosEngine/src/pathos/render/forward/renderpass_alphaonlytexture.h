@@ -11,7 +11,7 @@ namespace pathos {
 		AlphaOnlyTexturePass(const AlphaOnlyTexturePass& other) = delete;
 		AlphaOnlyTexturePass(AlphaOnlyTexturePass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	private:
 		virtual void createProgram() override;

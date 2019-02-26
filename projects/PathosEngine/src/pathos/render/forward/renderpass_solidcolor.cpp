@@ -92,7 +92,7 @@ namespace pathos {
 		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
 	}
 
-	void SolidColorPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void SolidColorPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------

@@ -29,7 +29,7 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_PBR>();
 	}
 
-	void MeshDeferredRenderPass_Pack_PBR::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void MeshDeferredRenderPass_Pack_PBR::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(material_);
 
 		geometry->activate_position_uv_normal_tangent_bitangent();

@@ -9,14 +9,14 @@ namespace pathos {
 	class Camera;
 	class Mesh;
 	class MeshGeometry;
-	class MeshMaterial;
+	class Material;
 
 	struct RenderItem {
 		Mesh*         mesh;
 		MeshGeometry* geometry;
-		MeshMaterial* material;
+		Material* material;
 
-		RenderItem(Mesh* inMesh, MeshGeometry* inGeometry, MeshMaterial* inMaterial)
+		RenderItem(Mesh* inMesh, MeshGeometry* inGeometry, Material* inMaterial)
 			: mesh(inMesh)
 			, geometry(inGeometry)
 			, material(inMaterial)

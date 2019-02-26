@@ -26,7 +26,7 @@ namespace pathos {
 #undef GET_UNIFORM
 	}
 
-	void AlphaOnlyTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void AlphaOnlyTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		AlphaOnlyTextureMaterial* material = static_cast<AlphaOnlyTextureMaterial*>(material_);
 

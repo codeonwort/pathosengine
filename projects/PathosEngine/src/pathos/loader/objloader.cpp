@@ -96,12 +96,12 @@ namespace pathos {
 		textureDB.clear();
 	}
 
-	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<MeshMaterial*>& output) {
+	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output) {
 		static_cast<void>(tiny_materials);
 		static_cast<void>(output);
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t& t_mat = t_materials[i];
-			MeshMaterial* M = nullptr;
+			Material* M = nullptr;
 
 			if (t_mat.diffuse_texname.length() > 0) {
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
@@ -252,13 +252,13 @@ namespace pathos {
 		return mesh;
 	}
 
-	MeshMaterial* OBJLoader::getMaterial(int32_t index) {
+	Material* OBJLoader::getMaterial(int32_t index) {
 		assert(-1 <= index && index < (int32_t)materials.size());
 		if (index == -1) {
 			return defaultMaterial;
 		}
 
-		MeshMaterial* M = materials[index];
+		Material* M = materials[index];
 
 		if (isPendingMaterial[index]) {
 			switch (M->getMaterialID()) {

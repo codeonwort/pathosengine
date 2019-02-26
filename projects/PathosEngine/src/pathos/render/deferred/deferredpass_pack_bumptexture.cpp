@@ -29,7 +29,7 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_BumpTexture>();
 	}
 
-	void MeshDeferredRenderPass_Pack_BumpTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, MeshMaterial* material_) {
+	void MeshDeferredRenderPass_Pack_BumpTexture::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		BumpTextureMaterial* material = static_cast<BumpTextureMaterial*>(material_);
 
 		geometry->activate_position_uv_normal_tangent_bitangent();

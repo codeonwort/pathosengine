@@ -163,7 +163,7 @@ namespace pathos {
 			G->updateIndexData(&indices[0], (uint32_t)indices.size());
 
 			// create material
-			MeshMaterial* M;
+			Material* M;
 			const aiMaterial* ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
 			bool hasDiffuseTexture = ai_material->GetTextureCount(aiTextureType_DIFFUSE) >= 1;
 			bool hasNormalTexture = ai_material->GetTextureCount(aiTextureType_NORMALS) >= 1;

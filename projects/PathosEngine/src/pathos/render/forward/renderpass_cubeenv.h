@@ -18,7 +18,7 @@ namespace pathos {
 		CubeEnvMapPass(const CubeEnvMapPass& other) = delete;
 		CubeEnvMapPass(CubeEnvMapPass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, MeshMaterial*) override;
+		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
 
 	};
 
