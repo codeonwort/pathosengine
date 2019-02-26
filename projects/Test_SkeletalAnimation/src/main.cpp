@@ -13,14 +13,16 @@ using namespace pathos;
 								CONFIGURATION
 
 ------------------------------------------------------------------------- */
-#define DAE_MODEL_ID          2
-#define LOAD_SECOND_DAE_MODEL 0
+#define DAE_MODEL_ID              2
+#define LOAD_SECOND_DAE_MODEL     0
 
 constexpr int WINDOW_WIDTH      = 1920;
 constexpr int WINDOW_HEIGHT     = 1080;
 constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
 constexpr float FOV             = 90.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
+constexpr float CAMERA_Z_NEAR   = 1.0f;
+constexpr float CAMERA_Z_FAR    = 10000.0f;
 
 /* ------------------------------------------------------------------------
 
@@ -30,13 +32,11 @@ const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
 
 Camera* cam;
 Scene scene;
-	Skybox* sky;
+	DirectionalLight *dlight;
+	PointLight *plight;
 	Mesh *model, *model2;
 	SkinnedMesh *daeModel;
 	SkinnedMesh *daeModel2;
-
-PointLight *plight;
-DirectionalLight *dlight;
 
 void loadDAE();
 void setupScene();
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, 1.0f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
 	loadDAE();
@@ -110,16 +110,6 @@ void setupScene() {
 	scene.add(dlight);
 
 	srand(static_cast<unsigned int>(time(NULL)));
-	for (int i = 0; i < 10; ++i) {
-		float x = rand() % 50 - 25.0f;
-		float y = rand() % 50 - 25.0f;
-		float z = rand() % 50 - 25.0f;
-		float r = (rand() % 256) / 255.0f;
-		float g = (rand() % 256) / 255.0f;
-		float b = (rand() % 256) / 255.0f;
-		float power = 0.1f + 0.2f * (rand() % 100) / 100.0f;
-		scene.add(new PointLight(glm::vec3(x, y, z), glm::vec3(r, g, b)));
-	}
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -137,7 +127,6 @@ void setupScene() {
 	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
-	auto material_bump = new BumpTextureMaterial(tex, tex_norm);
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
@@ -167,27 +156,36 @@ void setupScene() {
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
-	// skybox
-	sky = new Skybox(cubeTexture);
+	for (int32_t i = 0; i < 4; ++i) {
+		for (int32_t j = 0; j < 4; ++j) {
+			Mesh* cube = new Mesh(geom_cube, material_color);
+			glm::vec3 p0(-50.0f, 50.0f, -50.0f);
+			float e = (rand() % 256) / 255.0f;
+			float x = (rand() % 256) / 255.0f;
+			float y = (rand() % 256) / 255.0f;
+			float z = (rand() % 256) / 255.0f;
+			cube->getTransform().appendRotation(e * 60.0f, glm::vec3(x, y, z));
+			cube->getTransform().appendMove(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
+			scene.add(cube);
+		}
+	}
 
-	// model 1: flat texture
 	model = new Mesh(geom_sphere_big, material_texture);
 	model->getTransform().appendMove(-40, 0, 0);
 
-	// model 2: solid color
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendRotation(glm::radians(-10.f), glm::vec3(0, 1, 0));
-	model2->getTransform().appendMove(50, 0, 0);
+	model2->getTransform().appendScale(10.0f);
+	model2->getTransform().appendMove(0, 50, -200);
 
 	scene.add(model);
 	scene.add(model2);
-	scene.sky = sky;
+	scene.sky = new Skybox(cubeTexture);
 	scene.godRaySource = model2;
 }
 
 void tick() {
 	if (gConsole->isVisible() == false) {
-		float speedX = 0.5f, speedY = 0.5f;
+		float speedX = 1.0f, speedY = 1.0f;
 		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
 		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
@@ -200,10 +198,6 @@ void tick() {
 	model->getTransform().appendMove(0, 20, 0);
 	model->getTransform().appendRotation(0.01f, glm::vec3(0, 0.5, 1));
 	model->getTransform().appendMove(0, -20, 0);
-
-	model2->getTransform().appendMove(-60, 0, 0);
-	model2->getTransform().appendRotation(0.01f, glm::vec3(0, 1, 0));
-	model2->getTransform().appendMove(60, 0, 0);
 
 #if DAE_MODEL_ID == 2
 	static double time = 0.0;
