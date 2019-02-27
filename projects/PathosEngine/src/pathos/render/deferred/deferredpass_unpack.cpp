@@ -12,10 +12,30 @@ using std::min;
 
 namespace pathos {
 
+	struct UBO_Unpack {
+		glm::ivec4 enabledTechniques1; // (shadow, fog, ?, ?)
+		glm::vec4 fogColor;
+		glm::vec4 fogParams;           // (bottomY, topY, ?, ?)
+		glm::vec4 bloomParams;
+	};
+
 	struct UBO_ToneMapping {
 		float exposure;
 		float gamma;
 	};
+
+	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
+	
+	static ConsoleVariable<int32_t> cvar_enable_fog("r.fog", 1, "0 = disable fog, 1 = enable fog");
+	static ConsoleVariable<float> cvar_fog_bottom("r.fog.bottom", 0.0f, "bottom Y");
+	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 200.0f, "top Y");
+	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.01f, "fog attenuation coefficient");
+
+	static ConsoleVariable<float> cvar_bloom_strength("r.bloom.strength", 4.0f, "Bloom strength");
+	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
+	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
+
+	static ConsoleVariable<int32_t> cvar_enable_dof("r.dof", 1, "0 = disable DoF, 1 = enable DoF");
 
 	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
 	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
@@ -45,10 +65,8 @@ namespace pathos {
 		glDeleteProgram(program_blur);
 		glDeleteFramebuffers(1, &fbo_blur);
 		glDeleteTextures(1, &fbo_blur_attachment);
-#if DOF
 		glDeleteFramebuffers(1, &fbo_tone);
 		glDeleteTextures(1, &fbo_tone_attachment);
-#endif
 		quad->dispose();
 		delete quad;
 		delete godRay;
@@ -98,6 +116,7 @@ void main() {
 		// unpack hdr
 		std::vector<Shader*> shaders = { &vs, &fs };
 		program_hdr = pathos::createProgram(shaders, "UnpackHDR");
+		ubo_unpack.init<UBO_Unpack>();
 
 		// tone mapping
 		fs.loadSource("tone_mapping.glsl");
@@ -148,7 +167,6 @@ void main() {
 		checkCurrentFramebufferStatus();
 
 		// tone mapping resource
-#if DOF
 		glGenFramebuffers(1, &fbo_tone);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_tone);
 		glGenTextures(1, &fbo_tone_attachment);
@@ -158,7 +176,6 @@ void main() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_tone_attachment, 0);
 		checkCurrentFramebufferStatus();
-#endif
 
 		// restore default framebuffer
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -229,12 +246,22 @@ void main() {
 
 			glDisable(GL_DEPTH_TEST);
 
+			UBO_Unpack uboData;
+			uboData.enabledTechniques1.x = cvar_enable_shadow.getInt();
+			uboData.enabledTechniques1.y = cvar_enable_fog.getInt();
+			uboData.fogColor             = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
+			uboData.fogParams.x          = cvar_fog_bottom.getFloat();
+			uboData.fogParams.y          = cvar_fog_top.getFloat();
+			uboData.fogParams.z          = cvar_fog_attenuation.getFloat();
+			uboData.bloomParams.x        = cvar_bloom_strength.getFloat();
+			uboData.bloomParams.y        = cvar_bloom_min.getFloat();
+			uboData.bloomParams.z        = cvar_bloom_max.getFloat();
+			ubo_unpack.update(1, &uboData);
+
 			// render HDR image
 			quad->activate_position();
 			quad->activateIndexBuffer();
 			quad->draw();
-			//quad->deactivate();
-			//quad->deactivateIndexBuffer();
 		}
 
 		{
@@ -254,13 +281,15 @@ void main() {
 
 		{
 			SCOPED_DRAW_EVENT(ToneMapping);
-#if DOF
-			glBindFramebuffer(GL_FRAMEBUFFER, fbo_tone);
-			GLenum tone_buffers[] = { GL_COLOR_ATTACHMENT0 };
-			glDrawBuffers(1, tone_buffers);
-#else
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#endif
+
+			if (cvar_enable_dof.getInt() != 0) {
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo_tone);
+				GLenum tone_buffers[] = { GL_COLOR_ATTACHMENT0 };
+				glDrawBuffers(1, tone_buffers);
+			} else {
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			}
+
 			glUseProgram(program_tone_mapping);
 			UBO_ToneMapping uboData_toneMapping;
 			uboData_toneMapping.exposure = cvar_tonemapping_exposure.getValue();
@@ -270,16 +299,13 @@ void main() {
 			GLuint gbuffer_attachments[] = { fbo_hdr_attachment[0], fbo_hdr_attachment[1], godRay->getTexture() };
 			glBindTextures(0, 3, gbuffer_attachments);
 
-			//quad->activate_position();
-			//quad->activateIndexBuffer();
 			quad->draw();
-			quad->deactivate();
-			quad->deactivateIndexBuffer();
 		}
 
-#if DOF
-		dof->render(fbo_tone_attachment);
-#endif
+		if (cvar_enable_dof.getInt() != 0) {
+			constexpr GLuint dofRenderTarget = 0; // default framebuffer
+			dof->render(fbo_tone_attachment, dofRenderTarget);
+		}
 
 		glEnable(GL_DEPTH_TEST);
 	}

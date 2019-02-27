@@ -115,8 +115,7 @@ void setupScene() {
 	cube->getTransform().append(glm::lookAt(lightPos, glm::vec3(0, 0, -lightPos.z), glm::vec3(0, 1, 0)));
 
 	auto shadowLightColor = new ColorMaterial;
-	shadowLightColor->setAmbient(1, 1, 0);
-	shadowLightColor->setDiffuse(0, 0, 0);
+	shadowLightColor->setAlbedo(1, 1, 0);
 	shadowLight = new Mesh(new SphereGeometry(0.3f, 20), shadowLightColor);
 	shadowLight->getTransform().appendMove(lightPos);
 

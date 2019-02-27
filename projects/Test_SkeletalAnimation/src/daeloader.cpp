@@ -181,7 +181,7 @@ namespace pathos {
 				M = new TextureMaterial(diffuseTex);
 			} else {
 				M = new ColorMaterial;
-				static_cast<ColorMaterial*>(M)->setAmbient(1.0f, 0.0f, 0.0f);
+				static_cast<ColorMaterial*>(M)->setAlbedo(1.0f, 0.0f, 0.0f);
 			}
 
 			// add GM pair to the mesh

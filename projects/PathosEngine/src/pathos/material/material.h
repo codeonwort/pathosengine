@@ -30,24 +30,32 @@ namespace pathos {
 
 	class ColorMaterial : public Material {
 
-	private:
-		GLfloat ambient[3], diffuse[3], specular[3], alpha;
-		GLuint blendSrcFactor, blendDstFactor;
-
 	public:
 		ColorMaterial();
-		void setAmbient(GLfloat r, GLfloat g, GLfloat b);
-		void setDiffuse(GLfloat r, GLfloat g, GLfloat b);
-		void setSpecular(GLfloat r, GLfloat g, GLfloat b);
-		void setAlpha(GLfloat a);
+
+		void setAlbedo(GLfloat r, GLfloat g, GLfloat b);
+		inline void setMetallic(GLfloat inMetallic)   { metallic = inMetallic; }
+		inline void setRoughness(GLfloat inRoughness) { roughness = inRoughness; }
+
+		inline void setAlpha(GLfloat a) { alpha = a; }
 		void setBlendFactor(GLuint, GLuint);
 
-		inline const GLfloat* getAmbient() const { return ambient; }
-		inline const GLfloat* getDiffuse() const { return diffuse; }
-		inline const GLfloat* getSpecular() const { return specular; }
-		inline GLfloat getAlpha() const { return alpha; }
+		inline const GLfloat* getAlbedo() const { return albedo; }
+		inline GLfloat getMetallic()      const { return metallic; }
+		inline GLfloat getRoughness()     const { return roughness; }
+
+		inline GLfloat getAlpha()         const { return alpha; }
 		inline GLuint getBlendSrcFactor() const { return blendSrcFactor; }
 		inline GLuint getBlendDstFactor() const { return blendDstFactor; }
+
+	private:
+		GLfloat albedo[3];
+		GLfloat metallic;
+		GLfloat roughness;
+		GLfloat alpha;
+		GLuint blendSrcFactor;
+		GLuint blendDstFactor;
+
 	};
 	
 	class TextureMaterial : public Material {

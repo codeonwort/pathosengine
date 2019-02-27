@@ -104,7 +104,7 @@ void loadDAE() {
 }
 
 void setupScene() {
-	plight = new PointLight(glm::vec3(0, 0, 0), glm::vec3(1, 0, 1));
+	plight = new PointLight(glm::vec3(0, 0, 0), glm::vec3(1.0f));
 	dlight = new DirectionalLight(glm::vec3(0, 0, -1), glm::vec3(1.0f));
 	scene.add(plight);
 	scene.add(dlight);
@@ -130,10 +130,9 @@ void setupScene() {
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAmbient(0.2f, 0.2f, 0.2f);
-		color->setDiffuse(1.0f, 1.0f, 1.0f);
-		color->setSpecular(1.0f, 1.0f, 1.0f);
-		color->setAlpha(1.0f);
+		color->setAlbedo(1.0f, 1.0f, 1.0f);
+		color->setMetallic(0.6f);
+		color->setRoughness(0.5f);
 	}
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
 	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
@@ -156,7 +155,7 @@ void setupScene() {
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
-	for (int32_t i = 0; i < 4; ++i) {
+	for (int32_t i = 0; i < 8; ++i) {
 		for (int32_t j = 0; j < 4; ++j) {
 			Mesh* cube = new Mesh(geom_cube, material_color);
 			glm::vec3 p0(-50.0f, 50.0f, -50.0f);

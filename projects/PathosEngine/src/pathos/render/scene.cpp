@@ -4,7 +4,7 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int> cvar_visualize_depth("r.visualize_depth", 0, "visualize the scene depth");
+	static ConsoleVariable<int32_t> cvar_visualize_depth("r.visualize_depth", 0, "visualize the scene depth");
 
 	Scene::Scene() {}
 

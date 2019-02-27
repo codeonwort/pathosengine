@@ -64,9 +64,7 @@ void setupScene() {
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAmbient(0.2f, 0.2f, 0.2f);
-		color->setDiffuse(1.0f, 1.0f, 1.0f);
-		color->setSpecular(1.0f, 1.0f, 1.0f);
+		color->setAlbedo(1.0f, 1.0f, 1.0f);
 		color->setAlpha(1.0f);
 	}
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);

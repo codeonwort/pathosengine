@@ -73,9 +73,11 @@ namespace pathos {
 		for (Shader* shader : shaders) {
 			bool compiled = shader->compile();
 			if (!compiled) {
-#if DEBUG_SHADER
-				LOG(LogError, "Shader compilation error: %s", shader->getErrorLog());
-#endif
+				if (debugName) {
+					LOG(LogError, "[%s] Shader compilation error: %s", debugName, shader->getErrorLog());
+				} else {
+					LOG(LogError, "Shader compilation error: %s", shader->getErrorLog());
+				}
 				break;
 			}
 		}

@@ -8,7 +8,8 @@ layout (location = 2) in vec3 normal;
 layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
 	mat4 mvpTransform;
-	vec3 diffuseColor;
+	vec4 albedo;
+	vec4 metal_roughness;
 } uboPerObject;
 
 out VS_OUT {

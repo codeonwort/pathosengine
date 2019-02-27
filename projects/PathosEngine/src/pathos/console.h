@@ -59,7 +59,7 @@ namespace pathos {
 	public:
 		virtual void print(ConsoleWindow* window) const = 0;
 		virtual void parse(const char* msg, ConsoleWindow* window) = 0;
-		virtual int getInt() const = 0;
+		virtual int32_t getInt() const = 0;
 		virtual float getFloat() const = 0;
 	protected:
 		ConsoleVariableBase();
@@ -79,7 +79,7 @@ namespace pathos {
 		void setValue(T newValue) { value = newValue; }
 		virtual void print(ConsoleWindow* window) const override {}
 		virtual void parse(const char* msg, ConsoleWindow* window) override {}
-		virtual int getInt() const override { return static_cast<int>(value); }
+		virtual int32_t getInt() const override { return static_cast<int32_t>(value); }
 		virtual float getFloat() const override { return static_cast<float>(value); }
 	private:
 		std::string help;
@@ -94,7 +94,7 @@ namespace pathos {
 		window->addLine(buffer);
 	}
 	template<>
-	virtual void ConsoleVariable<int>::print(ConsoleWindow* window) const override {
+	virtual void ConsoleVariable<int32_t>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %d", value);
 		window->addLine(buffer);
@@ -110,8 +110,8 @@ namespace pathos {
 		}
 	}
 	template<>
-	virtual void ConsoleVariable<int>::parse(const char* msg, ConsoleWindow* window) override {
-		int newValue;
+	virtual void ConsoleVariable<int32_t>::parse(const char* msg, ConsoleWindow* window) override {
+		int32_t newValue;
 		if (sscanf_s(msg, "%d", &newValue) == 1) {
 			setValue(newValue);
 		} else {

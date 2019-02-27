@@ -1,11 +1,24 @@
 #include "depth_of_field.h"
+#include "pathos/console.h"
+
 #include <string>
 #include <assert.h>
 
 namespace pathos {
 
-	DepthOfField::DepthOfField(unsigned int width, unsigned int height)
-		:width(width), height(height)
+	static ConsoleVariable<float> cvar_focal_distance("r.dof.focal_distance", 50.0f, "focal distance of DoF");
+	static ConsoleVariable<float> cvar_focal_depth("r.dof.focal_depth", 1000.0f, "focal depth of DoF");
+	static ConsoleVariable<float> cvar_max_radius("r.dof.max_radius", 4.5f, "max radius of DoF kernel");
+
+	struct UBO_DoF {
+		float focalDistance;
+		float focalDepth;
+		float maxRadius;
+	};
+
+	DepthOfField::DepthOfField(uint32_t width, uint32_t height)
+		: width(width)
+		, height(height)
 	{
 		glGenVertexArrays(1, &vao);
 		createFBO();
@@ -34,9 +47,10 @@ namespace pathos {
 
 		// program with vertex and fragment shaders.
 		program_blur = createBlurShader();
+		uboBlur.init<UBO_DoF>();
 	}
 
-	void DepthOfField::render(GLuint texture_input) {
+	void DepthOfField::render(GLuint texture_input, GLuint targetFBO) {
 		SCOPED_DRAW_EVENT(DepthOfField);
 
 		//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
@@ -55,11 +69,17 @@ namespace pathos {
 
 		/* texture_subsum2D[1] now holds subsum table */
 		
-		// apply box blur whose strength is relative to difference between pixel depth and focal depth
+		// apply box blur whose strength is relative to the difference between pixel depth and focal depth
 		glUseProgram(program_blur);
 		glBindTextureUnit(0, texture_subsum2D[1]);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to backbuffer (assume: DOF is the final stage)
+		UBO_DoF uboData;
+		uboData.focalDistance = cvar_focal_distance.getFloat();
+		uboData.focalDepth = cvar_focal_depth.getFloat();
+		uboData.maxRadius = cvar_max_radius.getFloat();
+		uboBlur.update(1, &uboData);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
 
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

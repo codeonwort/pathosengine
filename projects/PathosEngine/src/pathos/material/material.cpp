@@ -15,19 +15,23 @@ namespace pathos {
 	// ColorMaterial
 	ColorMaterial::ColorMaterial() {
 		materialID = MATERIAL_ID::SOLID_COLOR;
-		setAmbient(0.0f, 0.0f, 0.0f);
-		setDiffuse(0.5f, 0.5f, 0.5f);
-		setSpecular(1.0f, 1.0f, 1.0f);
+		setMetallic(0.5f);
+		setRoughness(0.1f);
+		setAlbedo(0.5f, 0.5f, 0.5f);
 		setAlpha(1.0f);
 		blendSrcFactor = GL_SRC_ALPHA;
 		blendDstFactor = GL_ONE_MINUS_SRC_ALPHA;
 	}
 
-	void ColorMaterial::setAmbient(GLfloat r, GLfloat g, GLfloat b) { ambient[0] = r; ambient[1] = g; ambient[2] = b; }
-	void ColorMaterial::setDiffuse(GLfloat r, GLfloat g, GLfloat b) { diffuse[0] = r; diffuse[1] = g; diffuse[2] = b; }
-	void ColorMaterial::setSpecular(GLfloat r, GLfloat g, GLfloat b) { specular[0] = r; specular[1] = g; specular[2] = b; }
-	void ColorMaterial::setAlpha(GLfloat a) { alpha = a; }
-	void ColorMaterial::setBlendFactor(GLuint srcFactor, GLuint dstFactor) { blendSrcFactor = srcFactor; blendDstFactor = dstFactor; }
+	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {
+		albedo[0] = r;
+		albedo[1] = g;
+		albedo[2] = b;
+	}
+	void ColorMaterial::setBlendFactor(GLuint srcFactor, GLuint dstFactor) {
+		blendSrcFactor = srcFactor;
+		blendDstFactor = dstFactor;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// TextureMaterial

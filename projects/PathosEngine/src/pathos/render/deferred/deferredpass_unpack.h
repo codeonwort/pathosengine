@@ -37,6 +37,8 @@ namespace pathos {
 	protected:
 		GLuint program_ldr = 0; // shader program (original LDR rendering)
 		GLuint program_hdr = 0; // HDR rendering
+		UniformBuffer ubo_unpack;
+
 		GLuint program_blur = 0; // gaussian blur
 		GLuint gbuffer_tex0, gbuffer_tex1, gbuffer_tex2; // packed input
 

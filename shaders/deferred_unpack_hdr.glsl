@@ -2,10 +2,7 @@
 
 #include "deferred_common.glsl"
 
-#define APPLY_FOG     1
-#define APPLY_SHADOW  1
 #define SOFT_SHADOW   1
-
 #define DEBUG_CSM_ID  0
 
 layout (location = 0) out vec4 out_color;
@@ -14,16 +11,27 @@ layout (location = 1) out vec4 out_bright; // bright area only
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
-
 layout (binding = 6) uniform sampler2DShadow sunDepthMap;
 
-uniform vec3 fog_color = vec3(0.7, 0.8, 0.9);
+layout (std140, binding = 1) uniform UBO_Unpack {
+	ivec4 enabledTechniques1;
+	vec4 fogColor;
+	vec4 fogParams;
+	vec4 bloomParams;
+} ubo;
+
+// Getters for UBO
+bool isShadowEnabled()    { return ubo.enabledTechniques1.x != 0; }
+bool isFogEnabled()       { return ubo.enabledTechniques1.y != 0; }
+vec3 getFogColor()        { return ubo.fogColor.rgb; }
+float getFogBottom()      { return ubo.fogParams.x; }
+float getFogTop()         { return ubo.fogParams.y; }
+float getFogAttenuation() { return ubo.fogParams.z; }
+float getBloomStrength()  { return ubo.bloomParams.x; }
+float getMinBloom()       { return ubo.bloomParams.y; }
+float getMaxBloom()       { return ubo.bloomParams.z; }
 
 const float PI = 3.14159265359;
-
-// bloom threshold
-const float bloom_min = 0.8;
-const float bloom_max = 1.2;
 
 struct fragment_info {
 	vec3 albedo;
@@ -56,7 +64,6 @@ void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	fragment.ao = data2.z;
 }
 
-#if APPLY_SHADOW
 float getShadowing(fragment_info fragment) {
 
 #if 0
@@ -74,7 +81,7 @@ float getShadowing(fragment_info fragment) {
 	
 	int mapIx = int(vz * 4.0);
 	if(mapIx >= 4) {
-		return 1.0;
+		return 0.0;
 	}
 	
 #if DEBUG_CSM_ID
@@ -113,7 +120,6 @@ float getShadowing(fragment_info fragment) {
 	
 	return max(0.5, shadow);
 }
-#endif
 
 float pointLightAttenuation(float dist) {
 	return 1000.0 / (1000.0 + dist * dist);
@@ -141,9 +147,9 @@ vec3 phongShading(fragment_info fragment) {
 		result += attenuation * (diffuse_color + specular_color);
 	}
 
-#if APPLY_SHADOW
-	result.rgb = result.rgb * getShadowing(fragment);
-#endif
+	if(isShadowEnabled()) {
+		result.rgb = result.rgb * getShadowing(fragment);
+	}
 
 	return result;
 }
@@ -183,7 +189,7 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-vec3 pbrShading(fragment_info fragment) {
+vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 N = fragment.normal;
 	//N.y = -N.y;
 	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
@@ -241,9 +247,9 @@ vec3 pbrShading(fragment_info fragment) {
 	vec3 ambient = vec3(0.03) * fragment.albedo * fragment.ao;
 	vec3 color = ambient + Lo;
 
-#if APPLY_SHADOW
-	color = color * getShadowing(fragment);
-#endif
+	if(isShadowEnabled()) {
+		color = color * getShadowing(fragment);
+	}
 
 	return color;
 }
@@ -255,33 +261,33 @@ vec4 calculateShading(fragment_info fragment) {
 	} else if(fragment.material_id == MATERIAL_ID_WIREFRAME) {
 		result.rgb += fragment.albedo;
 	} else if(fragment.material_id == MATERIAL_ID_SOLID_COLOR || fragment.material_id == MATERIAL_ID_PBR) {
-		result.rgb += pbrShading(fragment);
+		result.rgb += CookTorranceBRDF(fragment);
 	} else {
 		discard;
 	}
 	return result;
 }
 
-#if APPLY_FOG
+// From HLSL Development Cookbook
+// #todo: better fog implementation
 vec3 applyFog(fragment_info fragment, vec3 color) {
-	const float magic_number = 0.05; // proper physical meaning?
+	const float magic_number = getFogAttenuation(); // proper physical meaning?
 	float z = length(fragment.vs_coords) * magic_number;
-	float de = 0.025 * smoothstep(0.0, 6.0, 10.0 - fragment.ws_coords.y);
-	float di = 0.045 * smoothstep(0.0, 40.0, 20.0 - fragment.ws_coords.y);
+	float de = 0.025 * smoothstep(0.0, 6.0, getFogBottom() - fragment.ws_coords.y);
+	float di = 0.045 * smoothstep(0.0, 40.0, getFogTop() - fragment.ws_coords.y);
 	float extinction = exp(-z * de);
 	float inscattering = exp(-z * di);
-	return color * extinction + fog_color * (1.0 - inscattering);
+	return color * extinction + getFogColor() * (1.0 - inscattering);
 }
-#endif
 
 void main() {
 	fragment_info fragment;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
 	vec4 color = calculateShading(fragment);
 
-#if APPLY_FOG
-	color.rgb = applyFog(fragment, color.rgb);
-#endif
+	if(isFogEnabled()) {
+		color.rgb = applyFog(fragment, color.rgb);
+	}
 
 #if DEBUG_CSM_ID
 	color.rgb = vec3(getShadowing(fragment));
@@ -295,6 +301,6 @@ void main() {
 
 	// output: light bloom
 	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
-	color.xyz = color.xyz * 4.0 * smoothstep(bloom_min, bloom_max, Y);
+	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
 	out_bright = color;
 }

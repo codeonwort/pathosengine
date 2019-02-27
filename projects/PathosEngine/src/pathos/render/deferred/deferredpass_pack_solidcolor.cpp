@@ -6,7 +6,8 @@ namespace pathos {
 	struct UBO_Deferred_Pack_SolidColor {
 		glm::mat4 mvMatrix;
 		glm::mat4 mvpMatrix;
-		glm::vec3 diffuseColor;
+		glm::vec4 albedo;
+		glm::vec4 metallic_roughness;
 	};
 
 	MeshDeferredRenderPass_Pack_SolidColor::MeshDeferredRenderPass_Pack_SolidColor() {
@@ -31,17 +32,17 @@ namespace pathos {
 		geometry->activateIndexBuffer();
 
 		UBO_Deferred_Pack_SolidColor uboData;
-		uboData.mvMatrix       = camera->getViewMatrix() * modelMatrix;
-		uboData.mvpMatrix      = camera->getViewProjectionMatrix() * modelMatrix;
-		uboData.diffuseColor.x = material->getDiffuse()[0];
-		uboData.diffuseColor.y = material->getDiffuse()[1];
-		uboData.diffuseColor.z = material->getDiffuse()[2];
+		uboData.mvMatrix             = camera->getViewMatrix() * modelMatrix;
+		uboData.mvpMatrix            = camera->getViewProjectionMatrix() * modelMatrix;
+		uboData.albedo.x             = material->getAlbedo()[0];
+		uboData.albedo.y             = material->getAlbedo()[1];
+		uboData.albedo.z             = material->getAlbedo()[2];
+		uboData.albedo.w             = 0.0f;
+		uboData.metallic_roughness.x = material->getMetallic();
+		uboData.metallic_roughness.y = material->getRoughness();
 		ubo.update(1, &uboData);
 
 		geometry->draw();
-
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
 	}
 
 }
