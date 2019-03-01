@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+#pragma comment(lib, "freetype.lib")
+
 namespace pathos {
 
 	struct FT_GlyphCache {

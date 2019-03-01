@@ -17,6 +17,9 @@
 #define GL_DEBUG_CONTEXT  0
 #define GL_ERROR_CALLBACK 1
 
+#pragma comment(lib, "freeglut.lib")
+#pragma comment(lib, "FreeImage.lib")
+
 static void onGlutError(const char *fmt, va_list ap) {
 	fprintf(stderr, "onGlutError:");
 	vfprintf(stderr, fmt, ap);

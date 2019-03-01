@@ -18,7 +18,6 @@
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\binaries</AdditionalLibraryDirectories>
-      <AdditionalDependencies>freeglut.lib;FreeImage.lib;freetype.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

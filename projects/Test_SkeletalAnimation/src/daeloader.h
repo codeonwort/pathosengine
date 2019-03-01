@@ -13,6 +13,8 @@
 #include <vector>
 #include <map>
 
+#pragma comment(lib, "assimp-vc140-mt.lib")
+
 namespace pathos {
 
 	class DAELoader {
