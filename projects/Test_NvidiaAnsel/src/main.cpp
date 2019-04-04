@@ -12,7 +12,7 @@ using namespace pathos;
 // Rendering configurations
 const int WINDOW_WIDTH          = 1920;
 const int WINDOW_HEIGHT         = 1080;
-const float FOV                 = 90.0f;
+const float FOV                 = 60.0f;
 const float NEAR_Z              = 1.0f;
 const float FAR_Z               = 10000.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(-200.0f, 150.0f, 200.0f);
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float aspectRatio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspectRatio, NEAR_Z, FAR_Z));
+	cam = new Camera(new PerspectiveLens(FOV, aspectRatio, NEAR_Z, FAR_Z));
 	cam->move(CAMERA_POSITION);
 
 	setupScene();

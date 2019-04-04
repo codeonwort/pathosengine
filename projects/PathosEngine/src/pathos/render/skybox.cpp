@@ -7,10 +7,10 @@
 namespace pathos {
 
 	/**
-	* @param	textureID	see pathos/loader/imageloader.h -> loadCubemapTexture().
+	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
 	*/
-	Skybox::Skybox(GLuint textureID) {
-		this->textureID = textureID;
+	Skybox::Skybox(GLuint inTextureID) {
+		textureID = inTextureID;
 		createShader();
 		cube = new CubeGeometry(glm::vec3(1.0f));
 	}

@@ -20,7 +20,8 @@ namespace pathos {
 		glm::mat4 inverseView;
 		glm::mat3 view3x3; float __pad_view3x3[3]; // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
 		glm::mat4 viewProj;
-		glm::vec4 zRange; // (near, far, ?, ?)
+		glm::vec4 screenResolution;
+		glm::vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		glm::mat4 sunViewProj[4];
 		glm::vec3 eyeDirection; float __pad0;
 		glm::vec3 eyePosition; uint32_t numDirLights;
@@ -252,11 +253,16 @@ namespace pathos {
 	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
+		data.screenResolution.x = (float)width;
+		data.screenResolution.y = (float)height;
+
 		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
 		data.view3x3     = glm::mat3(data.view);
 		data.zRange.x    = camera->getZNear();
 		data.zRange.y    = camera->getZFar();
+		data.zRange.z    = camera->getFovYRadians();
+		data.zRange.w    = camera->getAspectRatio();
 		data.viewProj    = camera->getViewProjectionMatrix();
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);

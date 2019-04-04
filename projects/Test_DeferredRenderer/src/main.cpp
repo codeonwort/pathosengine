@@ -1,5 +1,6 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
+#include "pathos/render/atmosphere.h"
 using namespace pathos;
 
 #include <GL/glut.h>
@@ -7,23 +8,22 @@ using namespace pathos;
 const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
-const float         FOV                 =   60.0f;
+const float         FOVY                =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 0.0f, 100.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
 const float         CAMERA_Z_FAR        =   2000.0f;
-const glm::vec3     SUN_DIRECTION       =   glm::vec3(0.0f, -1.0f, 0.0f);
+const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 const bool          USE_HDR             =   true;
 const uint32_t      NUM_BALLS           =   10;
 
 Camera* cam;
 Scene scene;
+	DirectionalLight *sunLight;
+	PointLight *pointLight;
 	Mesh* godRaySource;
 	Mesh *ground;
 	Mesh *model, *model2, *model3;
 	std::vector<Mesh*> balls;
-
-DirectionalLight *sunLight;
-PointLight *pointLight;
 
 void setupScene();
 void tick();
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
 	// camera
 	float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
+	cam = new Camera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
 	setupScene();
@@ -160,6 +160,7 @@ void setupScene() {
 	scene.add(model2);
 	scene.add(model3);
 	scene.sky = new Skybox(cubeTexture);
+	scene.sky = new AtmosphereScattering;
 	scene.godRaySource = godRaySource;
 }
 

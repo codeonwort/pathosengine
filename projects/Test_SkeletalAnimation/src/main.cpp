@@ -19,7 +19,7 @@ using namespace pathos;
 constexpr int WINDOW_WIDTH      = 1920;
 constexpr int WINDOW_HEIGHT     = 1080;
 constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
-constexpr float FOV             = 90.0f;
+constexpr float FOVY            = 60.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
 constexpr float CAMERA_Z_NEAR   = 1.0f;
 constexpr float CAMERA_Z_FAR    = 10000.0f;
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 	Engine::init(&argc, argv, conf);
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
+	cam = new Camera(new PerspectiveLens(FOVY, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
 	loadDAE();

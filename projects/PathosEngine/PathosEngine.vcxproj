@@ -102,6 +102,7 @@
     <ClCompile Include="src\pathos\overlay\display_object.cpp" />
     <ClCompile Include="src\pathos\overlay\label.cpp" />
     <ClCompile Include="src\pathos\overlay\rectangle.cpp" />
+    <ClCompile Include="src\pathos\render\atmosphere.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\pathos\overlay\display_object.h" />
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
+    <ClInclude Include="src\pathos\render\atmosphere.h" />
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />

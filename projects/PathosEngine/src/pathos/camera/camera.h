@@ -14,9 +14,9 @@ namespace pathos {
 
 	class PerspectiveLens : public Lens {
 	public:
-		PerspectiveLens(float fov, float aspect, float znear, float zfar);
+		PerspectiveLens(float fovY_degrees, float aspectRatio, float znear, float zfar);
 		virtual glm::mat4 getProjectionMatrix() const;
-		inline float getFovYHalf() const { return fovY_half; }
+		inline float getFovY() const { return fovY_half; }
 		inline float getAspectRatioWH() const { return aspect; }
 		inline float getZNear() const { return z_near; }
 		inline float getZFar() const { return z_far; }
@@ -41,6 +41,8 @@ namespace pathos {
 
 		inline float getZNear() const { return static_cast<PerspectiveLens*>(lens)->getZNear(); }
 		inline float getZFar() const { return static_cast<PerspectiveLens*>(lens)->getZFar(); }
+		inline float getFovYRadians() const { return static_cast<PerspectiveLens*>(lens)->getFovY(); }
+		inline float getAspectRatio() const { return static_cast<PerspectiveLens*>(lens)->getAspectRatioWH(); }
 
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
 		void move(const glm::vec3& movement);
@@ -52,6 +54,8 @@ namespace pathos {
 
 		// get vertices of camera frustum in world space
 		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32_t numCascades) const;
+
+		inline Lens* getLens() const { return lens; }
 
 	private:
 		void calculateViewMatrix() const;

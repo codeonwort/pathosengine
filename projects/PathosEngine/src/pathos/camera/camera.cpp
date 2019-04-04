@@ -4,10 +4,10 @@
 namespace pathos {
 
 	// PerspectiveLens
-	PerspectiveLens::PerspectiveLens(float fovY_half_degrees, float aspect_wh, float znear, float zfar) {
+	PerspectiveLens::PerspectiveLens(float fovY_degrees, float aspect_wh, float znear, float zfar) {
 		z_near = znear;
 		z_far = zfar;
-		fovY_half = glm::radians(fovY_half_degrees);
+		fovY_half = glm::radians(fovY_degrees);
 		aspect = aspect_wh;
 		transform = glm::perspective(fovY_half, aspect, znear, zfar);
 	}
@@ -96,9 +96,9 @@ namespace pathos {
 		 
 		const float zn = plens->getZNear();
 		const float zf = plens->getZFar();
-		const float hh_near = zn * tanf(plens->getFovYHalf());
+		const float hh_near = zn * tanf(plens->getFovY() * 0.5f);
 		const float hw_near = hh_near * plens->getAspectRatioWH();
-		const float hh_far = zf * tanf(plens->getFovYHalf());
+		const float hh_far = zf * tanf(plens->getFovY() * 0.5f);
 		const float hw_far = hh_far * plens->getAspectRatioWH();
 
 		const glm::vec3 P0 = getPosition();

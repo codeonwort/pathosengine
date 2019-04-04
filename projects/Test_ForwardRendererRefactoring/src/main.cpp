@@ -5,7 +5,7 @@ using namespace pathos;
 constexpr int   WINDOW_WIDTH  = 1920;
 constexpr int   WINDOW_HEIGHT = 1080;
 constexpr char* WINDOW_TITLE  = "Test: Refactor Forward Renderer";
-constexpr float FOV           = 90.0f;
+constexpr float FOVY          = 60.0f;
 
 Camera* cam;
 Scene scene;
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 	conf.tick         = tick;
 	Engine::init(&argc, argv, conf);
 
-	cam = new Camera(new PerspectiveLens(FOV / 2.0f, (float)conf.windowWidth / conf.windowHeight, 1.0f, 1000.f));
+	cam = new Camera(new PerspectiveLens(FOVY, (float)conf.windowWidth / conf.windowHeight, 1.0f, 1000.f));
 	cam->move(glm::vec3(0.0f, 0.0f, 50.0f));
 
 	setupScene();
