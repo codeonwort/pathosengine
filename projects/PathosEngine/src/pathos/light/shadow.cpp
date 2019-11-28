@@ -1,14 +1,11 @@
 #include "shadow.h"
 
-#include "glm/glm.hpp"
-#include "glm/gtx/transform.hpp"
-
 #include "pathos/shader/shader.h"
 #include "pathos/engine.h"
+#include "pathos/util/log.h"
 
-#if defined(_DEBUG)
-#include <iostream>
-#endif
+#include "glm/glm.hpp"
+#include "glm/gtx/transform.hpp"
 
 namespace pathos {
 
@@ -39,7 +36,7 @@ namespace pathos {
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[0], 0);
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 #if defined(_DEBUG)
-			std::cerr << "Cannot create a framebuffer for shadow map" << std::endl;
+			LOG(LogError, "%s: Validation failed for framebuffer", __FUNCTION__);
 #endif
 			assert(0);
 		}

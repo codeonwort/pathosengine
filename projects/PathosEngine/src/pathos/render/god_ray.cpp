@@ -5,8 +5,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #if defined(_DEBUG)
-#include <iostream>
-#include <cassert>
+#include <assert.h>
 #endif
 
 namespace pathos {

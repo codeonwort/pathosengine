@@ -1,13 +1,6 @@
 #include "pathos/render/render_norm.h"
 #include "pathos/shader/shader.h"
 
-#define DEBUG_NORMAL_RENDERER 0
-
-#if defined(_DEBUG) && DEBUG_NORMAL_RENDERER
-#include <iostream>
-using namespace std;
-#endif
-
 namespace pathos {
 
 	NormalRenderer::NormalRenderer(float normLen): normalLength(normLen) {
@@ -41,12 +34,6 @@ namespace pathos {
 		fs->mainCode("color = vec4(1, 0, 0, 1);");
 		//Shader* f = new Shader(GL_FRAGMENT_SHADER);
 		//f->setSource(fs->getCode());
-
-#if defined(_DEBUG) && DEBUG_NORMAL_RENDERER
-		cout << endl << vs->getCode() << endl << endl;
-		cout << endl << gs->getCode() << endl << endl;
-		cout << endl << fs->getCode() << endl << endl;
-#endif
 
 		program = createProgram(shaders);
 

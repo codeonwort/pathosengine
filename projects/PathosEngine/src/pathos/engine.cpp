@@ -10,9 +10,8 @@
 #include "FreeImage.h"            // subsystem: image file loader
 #include "pathos/text/font_mgr.h" // subsystem: font manager
 
-#include <assert.h>
-#include <iostream>
 #include <algorithm>
+#include <assert.h>
 
 #define GL_DEBUG_CONTEXT  0
 #define GL_ERROR_CALLBACK 1

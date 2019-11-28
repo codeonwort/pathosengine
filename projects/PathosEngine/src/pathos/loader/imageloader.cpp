@@ -1,10 +1,11 @@
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
-#include <iostream>
+
 #include <algorithm>
 #include <assert.h>
 
-#define DEBUG_IMAGE_LOADER 0
+#define DEBUG_IMAGE_LOADER 1
 
 namespace pathos {
 
@@ -13,24 +14,24 @@ namespace pathos {
 		assert(path.size() != 0);
 
 #if DEBUG_IMAGE_LOADER
-		std::cout << "- load an image: " << path << std::endl;
+		LOG(LogDebug, "load image: %s", path.c_str());
 #endif
 
 		FIBITMAP *img = NULL, *dib = NULL;
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
 		img = FreeImage_Load(fif, path.c_str(), 0);
 		if (!img) {
-			std::cerr << "Error loading: " << path << std::endl;
+			LOG(LogError, "Error while loading: %s", path.c_str());
 		}
 		unsigned int bpp = FreeImage_GetBPP(img);
 		dib = FreeImage_ConvertTo32Bits(img);
 		/*
 		if (bpp == 32) {
 			//
-		}else if (bpp == 24) {
+		} else if (bpp == 24) {
 			dib = FreeImage_ConvertTo24Bits(img);
-		}else {
-			std::cerr << "loadImage(" << filename_ << "): An image with unexpected BPP " << bpp << std::endl;
+		} else {
+			LOG(LogError, "Unexpected BPP of %d: %s", bpp, filename_);
 		}
 		*/
 		FreeImage_Unload(img);
@@ -46,7 +47,7 @@ namespace pathos {
 		w = FreeImage_GetWidth(dib);
 		h = FreeImage_GetHeight(dib);
 #if DEBUG_IMAGE_LOADER
-		std::cout << "- create a texture (width=" << w << ", height=" << h << ")" << std::endl;
+		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 #endif
 
 		glGenTextures(1, &tex_id);
@@ -70,7 +71,7 @@ namespace pathos {
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
 #ifdef _DEBUG
-			std::cerr << "pathos::loadTexture(): An image with unexpected BPP " << bpp << std::endl;
+			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 #endif
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glDeleteTextures(1, &tex_id);
@@ -98,7 +99,7 @@ namespace pathos {
 		int w = FreeImage_GetWidth(dib[0]);
 		int h = FreeImage_GetHeight(dib[0]);
 		if (w != h){
-			std::cerr << "cubemap texture must have same length of width and height" << std::endl;
+			LOG(LogError, "%s: Cubemap texture must have same width and height", __FUNCTION__);
 			return 0;
 		}
 
@@ -114,7 +115,7 @@ namespace pathos {
 		if (bpp == 32 || bpp == 24) {
 			glTexStorage2D(GL_TEXTURE_CUBE_MAP, 1, GL_RGBA32F, w, h);
 		} else {
-			std::cerr << "loadCubemapTexture(): An image with unexpected BPP " << bpp << std::endl;
+			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			return 0;
 		}
 

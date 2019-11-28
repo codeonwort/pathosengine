@@ -3,11 +3,6 @@
 
 //#define DEBUG_CUBE_ENV_MAPPING
 
-#if defined(_DEBUG) && defined(DEBUG_CUBE_ENV_MAPPING)
-#include <iostream>
-using namespace std;
-#endif
-
 namespace pathos {
 
 	CubeEnvMapPass::CubeEnvMapPass() {

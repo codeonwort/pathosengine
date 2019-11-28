@@ -13,8 +13,8 @@
 #include <assert.h>
 
 // on/off console output
-#define DEBUG_SHADER			0
-#define DEBUG_SHADER_SOURCE		0
+#define DEBUG_SHADER			1
+#define DEBUG_SHADER_SOURCE		1
 
 #define DUMP_SHADER_SOURCE      0
 
@@ -103,17 +103,18 @@ namespace pathos {
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
 
 #if _DEBUG
-			std::cerr << "> program link error: " << std::string(infoLog.begin(), infoLog.end()) << endl;
+			std::string infoLogStr(infoLog.begin(), infoLog.end());
+			LOG(LogError, "program link error: %s", infoLogStr.c_str());
 			//for (ShaderSource* it : shaders) cout << it->getCode() << endl;
-			std::cerr << "> link error code: " << glGetError() << std::endl;
-			std::cerr << "> program was not created. return NULL..." << std::endl;
+			LOG(LogError, "link error code: %d", glGetError());
+			LOG(LogError, "program was not create, return NULL");
 #endif
 
 			glDeleteProgram(program);
 			return 0;
 		}
 #if DEBUG_SHADER
-		std::cout << "=== finish program creation ===" << std::endl << std::endl;
+		LOG(LogDebug, "=== finish program creation ===");
 #endif
 		return program;
 	}
@@ -245,11 +246,18 @@ namespace pathos {
 		else if (type == GL_TESS_EVALUATION_SHADER) shaderType = "GL_TESS_EVALUATION_SHADER";
 		else if (type == GL_COMPUTE_SHADER) shaderType = "GL_COMPUTE_SHADER";
 		else shaderType = "<unknown shader type>";
-		std::cout << "> trying to compile a " << shaderType << " shader" << std::endl;
-#if DEBUG_SHADER_SOURCE
-		std::cout << source << std::endl;
+		LOG(LogDebug, "Trying to compille a %s", shaderType);
+
+	#if DEBUG_SHADER_SOURCE
+		std::string source_dump;
+		for (const std::string& item : source) source_dump += item;
+
+		ShaderLogFile.write(shaderType);
+		ShaderLogFile.write(source_dump.c_str());
+	#endif
+
 #endif
-#endif
+
 #if CONDITIONAL_COMPILE
 		char* shaderDefine = "";
 		if (type == GL_VERTEX_SHADER) shaderDefine = "#define GL_VERTEX_SHADER 1\n";

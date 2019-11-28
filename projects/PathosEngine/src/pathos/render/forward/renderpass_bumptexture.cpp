@@ -3,11 +3,6 @@
 
 #define DEBUG_BUMP_MAPPING 0
 
-#if (_DEBUG && DEBUG_BUMP_MAPPING)
-#include <iostream>
-using namespace std;
-#endif
-
 namespace pathos {
 
 	BumpTexturePass::BumpTexturePass(unsigned int maxDirLights, unsigned int maxPointLights)
