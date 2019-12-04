@@ -83,6 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\gl3w\gl3w.c" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
@@ -124,7 +125,9 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp" />
+    <ClCompile Include="src\pathos\render\render_command_list.cpp" />
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
+    <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_norm.cpp" />
     <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
@@ -146,6 +149,9 @@
     <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\badger\assertion\assertion.h" />
+    <ClInclude Include="src\badger\memory\mem_alloc.h" />
+    <ClInclude Include="src\badger\types\int_types.h" />
     <ClInclude Include="src\gl_core.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
@@ -163,6 +169,11 @@
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
     <ClInclude Include="src\pathos\render\atmosphere.h" />
+    <ClInclude Include="src\pathos\render\render_commands.generated.h" />
+    <ClInclude Include="src\pathos\render\render_commands.h" />
+    <ClInclude Include="src\pathos\render\render_command_list.generated.h" />
+    <ClInclude Include="src\pathos\render\render_command_list.h" />
+    <ClInclude Include="src\pathos\render\render_device.h" />
     <ClInclude Include="src\pathos\util\file_system.h" />
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />

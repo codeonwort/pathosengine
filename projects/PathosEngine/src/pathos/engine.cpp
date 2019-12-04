@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "console.h"
+#include "render/render_device.h"
 #include "render/render_forward.h"
 #include "render/render_deferred.h"
 #include "util/log.h"
@@ -13,6 +14,7 @@
 #include <algorithm>
 #include <assert.h>
 
+// #todo-renderdevice: move to render device
 #define GL_DEBUG_CONTEXT  0
 #define GL_ERROR_CALLBACK 1
 
@@ -130,7 +132,7 @@ namespace pathos {
 		glutInitErrorFunc(onGlutError);
 		glutInitWarningFunc(onGlutWarning);
 		glutInit(argcp, argv);
-		glutInitContextVersion(4, 6);
+		glutInitContextVersion(REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION);
 		glutInitContextProfile(GLUT_CORE_PROFILE);
 #if GL_DEBUG_CONTEXT
 		glutInitContextFlags(GLUT_DEBUG);
@@ -154,33 +156,28 @@ namespace pathos {
 
 	bool Engine::initializeOpenGL()
 	{
-		if (gl3wInit()) {
-			LOG(LogError, "Failed to initialize GL3W");
-			return false;
-		}
-		if (!gl3wIsSupported(4, 6)) {
-			LOG(LogError, "GL 4.6 is not supported");
-			return false;
-		}
+		render_device = new OpenGLDevice;
+		bool validDevice = render_device->initialize();
 
 		// render state
-		glClearColor(0, 0, 0, 0);
+		// #todo-renderstate: should be configured each frame
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(1.0f);
 		glClearStencil(0);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
+		// #todo-renderdevice: move to render device
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(glErrorCallback, 0);
 #endif
 
+		// #todo-renderdevice: through render device and command list
 		glGenQueries(1, &timer_query);
 		assert(timer_query != 0);
 
-		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));
-		LOG(LogInfo, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-		return true;
+		return validDevice;
 	}
 
 	bool Engine::initializeThirdParty()
@@ -305,6 +302,7 @@ namespace pathos {
 	}
 
 	void Engine::onGlutDisplay() {
+		// #todo-renderstate: move glClear() into renderer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		gEngine->render();
 		glutSwapBuffers();
@@ -335,6 +333,9 @@ namespace pathos {
 		if (callback != nullptr) callback(ascii, x, y);
 	}
 
-	void Engine::onGlutReshape(int w, int h) { glViewport(0, 0, w, h); }
+	void Engine::onGlutReshape(int w, int h) {
+		// #todo-renderstate: should be configured in renderer each frame
+		glViewport(0, 0, w, h);
+	}
 
 }

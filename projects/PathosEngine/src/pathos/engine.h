@@ -87,6 +87,7 @@ namespace pathos {
 
 		EngineConfig conf;
 
+		class OpenGLDevice* render_device;
 		Renderer* renderer;
 		Scene* scene;
 		Camera* camera;
