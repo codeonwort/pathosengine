@@ -40,6 +40,7 @@ namespace pathos {
 	private:
 		bool useHDR = true;
 
+		// #todo-renderer: Manage render targets in separate structure
 		GLuint fbo; // g-buffer
 		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)
 		GLsizei width, height; // fbo texture size

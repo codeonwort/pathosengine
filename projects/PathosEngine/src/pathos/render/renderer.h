@@ -14,7 +14,7 @@ namespace pathos {
 	struct RenderItem {
 		Mesh*         mesh;
 		MeshGeometry* geometry;
-		Material* material;
+		Material*     material;
 
 		RenderItem(Mesh* inMesh, MeshGeometry* inGeometry, Material* inMaterial)
 			: mesh(inMesh)

@@ -302,8 +302,6 @@ namespace pathos {
 	}
 
 	void Engine::onGlutDisplay() {
-		// #todo-renderstate: move glClear() into renderer
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		gEngine->render();
 		glutSwapBuffers();
 		glutPostRedisplay();

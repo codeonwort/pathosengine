@@ -1,5 +1,7 @@
 #pragma once
 
+#include "badger/types/int_types.h"
+
 #include <map>
 #include <string>
 #include <functional>
@@ -11,18 +13,26 @@ namespace pathos {
 	class Scene;
 	class Camera;
 
-	enum class ERendererType : uint8_t {
+	enum class ERendererType : uint8 {
 		Forward,
 		Deferred
 	};
 
 	// @see Engine::init
 	struct EngineConfig {
-		int	windowWidth;						// window width
-		int windowHeight;						// window height
-		const char* title = "pathos engine";	// window title
+		EngineConfig()
+			: windowWidth(1920)
+			, windowHeight(1080)
+			, title("pathos engine")
+			, rendererType(ERendererType::Forward)
+		{
+		}
 
-		ERendererType rendererType = ERendererType::Forward;
+		int windowWidth;
+		int windowHeight;
+		const char* title;
+
+		ERendererType rendererType;
 
 		void(*tick)()                           = nullptr;
 		void(*render)()                         = nullptr;
@@ -63,8 +73,8 @@ namespace pathos {
 		Engine();
 		~Engine();
 
-		Engine(const Engine& other)            = delete;
-		Engine& operator=(const Engine& other) = delete;
+		Engine(const Engine&)            = delete;
+		Engine& operator=(const Engine&) = delete;
 
 		bool initialize(int* argcp, char** argv, const EngineConfig& conf);
 

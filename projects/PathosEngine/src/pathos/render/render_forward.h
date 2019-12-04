@@ -64,6 +64,8 @@ namespace pathos {
 		Scene* scene = nullptr;
 		Camera* camera = nullptr;
 
+		// #todo-renderer: offscreen rendertargets
+
 	};
 
 }

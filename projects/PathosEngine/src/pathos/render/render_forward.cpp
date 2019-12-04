@@ -83,6 +83,10 @@ namespace pathos {
 		}
 #endif
 
+		// #todo-renderer: Resize render targets if window size had been changed
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 		scene->calculateLightBuffer();
 
 		// ready shadow before rendering any object
@@ -104,7 +108,7 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(BasePass);
 
-			// #todo: occluder or BSP tree
+			// #todo-occlusion: occluder or BSP tree
 			for (Mesh* mesh : scene->meshes) {
 				if (mesh->visible == false) continue;
 				render(mesh);

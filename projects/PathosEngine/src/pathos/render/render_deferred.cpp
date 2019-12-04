@@ -121,6 +121,10 @@ namespace pathos {
 		glGetError();
 #endif
 
+		// #todo-renderer: Resize render targets if window size had been changed
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth->getInt() != 0) {
 			glViewport(0, 0, width, height);
