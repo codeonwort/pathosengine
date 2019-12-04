@@ -18,6 +18,8 @@ namespace pathos {
 
 		void reset();
 
+		void execute();
+
 	private:
 		RenderCommandBase* getNextPacket();
 

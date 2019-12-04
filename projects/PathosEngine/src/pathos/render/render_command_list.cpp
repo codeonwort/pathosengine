@@ -9,6 +9,14 @@ namespace pathos {
 		commands.clear();
 	}
 
+	void RenderCommandList::execute()
+	{
+		for (RenderCommandBase* __restrict cmd : commands)
+		{
+			cmd->pfn_execute((RenderCommandBase*)cmd);
+		}
+	}
+
 	RenderCommandBase* RenderCommandList::getNextPacket()
 	{
 		RenderCommandBase* packet = (RenderCommandBase*)commands_alloc.alloc(sizeof(RenderCommandPacketUnion));
