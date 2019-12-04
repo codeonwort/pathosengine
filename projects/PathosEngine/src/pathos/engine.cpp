@@ -267,21 +267,26 @@ namespace pathos {
 
 	void Engine::tick()
 	{
+		// #todo-tick: add option to limit fps
 		auto callback = Engine::conf.tick;
-		if (callback != nullptr) callback();
+		if (callback != nullptr) {
+			callback();
+		}
 	}
 
 	void Engine::render() {
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
 
+		gRenderDevice->getImmediateCommandList().execute();
+
+		// #todo-command-list: deferred command lists here
+
 		if (renderer && scene && camera) {
 			renderer->render(scene, camera);
 		}
-		
-// 		if (conf.render != nullptr) {
-// 			conf.render();
-// 		}
+
+		gRenderDevice->getImmediateCommandList().reset();
 
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);

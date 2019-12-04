@@ -30,6 +30,9 @@ namespace pathos {
 			return false;
 		}
 
+		// Create immediate command list
+		immediate_command_list = std::make_unique<RenderCommandList>();
+
 		// #todo-renderdevice: move from engine.cpp
 
 		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));

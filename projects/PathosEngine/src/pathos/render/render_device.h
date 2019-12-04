@@ -1,5 +1,10 @@
 #pragma once
 
+#include "render_command_list.h"
+
+#include <functional>
+#include <memory>
+
 // Device API wrapper
 
 #define REQUIRED_GL_MAJOR_VERSION 4
@@ -18,8 +23,18 @@ namespace pathos {
 
 		bool initialize();
 
+		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
+
+	private:
+		std::unique_ptr<RenderCommandList> immediate_command_list;
+
 	};
 
 	extern OpenGLDevice* gRenderDevice;
+
+	// For game thread
+	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
+		lambda(gRenderDevice->getImmediateCommandList());
+	}
 
 }

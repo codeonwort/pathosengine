@@ -11,8 +11,8 @@ namespace pathos {
 	class RenderCommandList {
 		
 	public:
-		RenderCommandList()
-			: commands_alloc(StackAllocator(RENDER_COMMAND_LIST_MAX_MEMORY))
+		RenderCommandList(uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY)
+			: commands_alloc(StackAllocator(commandAllocBytes))
 		{
 		}
 
