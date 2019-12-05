@@ -16,9 +16,9 @@ namespace pathos {
 		{
 		}
 
-		void reset();
+		void clearAllCommands();
 
-		void execute();
+		void executeAllCommands();
 
 	private:
 		RenderCommandBase* getNextPacket();

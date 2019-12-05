@@ -278,7 +278,7 @@ namespace pathos {
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
 
-		gRenderDevice->getImmediateCommandList().execute();
+		gRenderDevice->getImmediateCommandList().executeAllCommands();
 
 		// #todo-command-list: deferred command lists here
 
@@ -286,7 +286,7 @@ namespace pathos {
 			renderer->render(scene, camera);
 		}
 
-		gRenderDevice->getImmediateCommandList().reset();
+		gRenderDevice->getImmediateCommandList().clearAllCommands();
 
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);

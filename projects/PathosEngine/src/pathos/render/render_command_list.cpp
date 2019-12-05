@@ -3,13 +3,13 @@
 
 namespace pathos {
 
-	void RenderCommandList::reset()
+	void RenderCommandList::clearAllCommands()
 	{
 		commands_alloc.clear();
 		commands.clear();
 	}
 
-	void RenderCommandList::execute()
+	void RenderCommandList::executeAllCommands()
 	{
 		for (RenderCommandBase* __restrict cmd : commands)
 		{
