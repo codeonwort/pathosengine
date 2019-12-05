@@ -249,6 +249,9 @@
     <ClCompile Include="src\pathos\render\render_command_list.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\render\scene_render_targets.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -495,6 +498,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\render_command_list.generated.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\scene_render_targets.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
