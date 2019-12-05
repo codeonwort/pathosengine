@@ -23,7 +23,7 @@ namespace pathos {
 		ForwardRenderer();
 		virtual ~ForwardRenderer();
 
-		virtual void render(Scene* scene, Camera*) override;
+		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera*) override;
 
 		inline ShadowMap* getShadowMap() { return shadowMap; }
 		inline OmnidirectionalShadow* getOmnidirectionalShadow() { return omniShadow; }

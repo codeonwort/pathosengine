@@ -1,6 +1,8 @@
 #pragma once
 
+#include "pathos/render/render_command_list.h"
 #include "pathos/material/material_id.h"
+
 #include <vector>
 
 namespace pathos {
@@ -32,7 +34,7 @@ namespace pathos {
 		Renderer(const Renderer&)            = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		virtual void render(Scene* scene, Camera*) = 0;
+		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera*) = 0;
 
 	protected:
 		std::vector<RenderItem> renderItems[(unsigned int)MATERIAL_ID::NUM_MATERIAL_IDS];

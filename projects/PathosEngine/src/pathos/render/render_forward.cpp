@@ -66,7 +66,7 @@ namespace pathos {
 #undef release
 	}
 
-	void ForwardRenderer::render(Scene* inScene, Camera* inCamera) {
+	void ForwardRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
@@ -176,7 +176,7 @@ namespace pathos {
 		// run each pass
 		glDepthFunc(GL_LEQUAL);
 
-		// TODO: convert it to array access
+		// TODO: convert to array access
 		// leave it like this until all material id are verified
 		switch (M->getMaterialID()) {
 		case MATERIAL_ID::SOLID_COLOR:

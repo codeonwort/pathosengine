@@ -16,7 +16,7 @@ namespace pathos {
 		DeferredRenderer(unsigned int width, unsigned int height);
 		virtual ~DeferredRenderer();
 
-		virtual void render(Scene*, Camera*) override;
+		virtual void render(RenderCommandList& cmdList, Scene*, Camera*) override;
 
 		inline void setHDR(bool value) { useHDR = value; }
 

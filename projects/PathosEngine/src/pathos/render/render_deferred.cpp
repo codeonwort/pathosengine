@@ -48,7 +48,7 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createShaders() {
-		for (int i = 0; i < (int)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			pack_passes[i] = nullptr;
 		}
 		pack_passes[(int)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
@@ -64,7 +64,7 @@ namespace pathos {
 		visualizeDepth = new VisualizeDepth;
 	}
 	void DeferredRenderer::destroyShaders() {
-		for (int i = 0; i < (int)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			if (pack_passes[i]) delete pack_passes[i];
 		}
 		delete unpack_pass;
@@ -113,7 +113,7 @@ namespace pathos {
 		glDeleteFramebuffers(1, &fbo);
 	}
 
-	void DeferredRenderer::render(Scene* inScene, Camera* inCamera) {
+	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
@@ -188,8 +188,8 @@ namespace pathos {
 		}
 #endif
 
-		int numMaterialIDs = (int)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (int i = 0; i < numMaterialIDs; ++i) {
+		uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
+		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			renderItems[i].clear();
 		}
 
@@ -212,7 +212,7 @@ namespace pathos {
 		}
 
 		glDepthFunc(GL_LESS);
-		for (int i = 0; i < numMaterialIDs; ++i) {
+		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			auto pass = pack_passes[i];
 
 			if (pass == nullptr) {
