@@ -35,7 +35,7 @@ namespace pathos {
 		AnselSkyRendering(GLuint textureID);
 		~AnselSkyRendering();
 
-		void render(const Scene* scene, const Camera* camera) override;
+		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
 	private:
 		void createShaderProgram();

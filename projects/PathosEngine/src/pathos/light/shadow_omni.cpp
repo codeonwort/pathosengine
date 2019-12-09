@@ -56,7 +56,7 @@ void main() {
 	color = vec4(gl_FragCoord.z, 0, 0, 1);
 }
 )";
-		program = pathos::createProgram(vshader, fshader);
+		program = pathos::createProgram(vshader, fshader, "OmnidirectionalShadowMapping");
 		uniform_depthMVP = glGetUniformLocation(program, "depthMVP");
 		assert(uniform_depthMVP != -1);
 	}
@@ -81,7 +81,7 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void OmnidirectionalShadow::renderLightDepth(unsigned int lightIndex, PointLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
+	void OmnidirectionalShadow::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, PointLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) {
 			assert(0);
 		}
@@ -93,8 +93,8 @@ void main() {
 		}
 		glViewport(0, 0, width, height);
 
-		modelGeometry->activate_position();
-		modelGeometry->activateIndexBuffer();
+		mesh->activate_position(cmdList);
+		mesh->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -109,7 +109,7 @@ void main() {
 			glm::mat4 depthMVP = projection * view * modelMatrix;
 			glUniformMatrix4fv(glGetUniformLocation(program, "depthMVP"), 1, GL_FALSE, &(depthMVP[0][0]));
 			// draw call
-			modelGeometry->draw();
+			mesh->drawPrimitive(cmdList);
 		}
 
 		// restore original viewport

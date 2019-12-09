@@ -1,8 +1,6 @@
 #include "depth_of_field.h"
+#include "scene_render_targets.h"
 #include "pathos/console.h"
-
-#include <string>
-#include <assert.h>
 
 namespace pathos {
 
@@ -16,32 +14,17 @@ namespace pathos {
 		float maxRadius;
 	};
 
-	DepthOfField::DepthOfField(uint32_t width, uint32_t height)
-		: width(width)
-		, height(height)
-	{
-		glGenVertexArrays(1, &vao);
-		createFBO();
-		createShaders();
+	DepthOfField::DepthOfField() {
 	}
 
 	DepthOfField::~DepthOfField() {
-		glDeleteVertexArrays(1, &vao);
-		glDeleteTextures(2, texture_subsum2D);
-		glDeleteProgram(program_subsum2D);
-		glDeleteProgram(program_blur);
+		CHECK(destroyed);
 	}
 
-	void DepthOfField::createFBO() {
-		glGenTextures(2, texture_subsum2D);
+	void DepthOfField::initializeResources(RenderCommandList& cmdList)
+	{
+		cmdList.createVertexArrays(1, &vao);
 
-		glBindTexture(GL_TEXTURE_2D, texture_subsum2D[0]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, height, width);
-		glBindTexture(GL_TEXTURE_2D, texture_subsum2D[1]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
-	}
-
-	void DepthOfField::createShaders() {
 		// compute program. output is transposed.
 		program_subsum2D = createSubsumShader();
 
@@ -50,59 +33,73 @@ namespace pathos {
 		uboBlur.init<UBO_DoF>();
 	}
 
-	void DepthOfField::render(GLuint texture_input, GLuint targetFBO) {
+	void DepthOfField::destroyResources(RenderCommandList& cmdList)
+	{
+		if (!destroyed) {
+			cmdList.deleteVertexArrays(1, &vao);
+			cmdList.deleteProgram(program_subsum2D);
+			cmdList.deleteProgram(program_blur);
+		}
+		destroyed = true;
+	}
+
+	void DepthOfField::render(RenderCommandList& cmdList, GLuint texture_input, GLuint targetFBO) {
 		SCOPED_DRAW_EVENT(DepthOfField);
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
-		glUseProgram(program_subsum2D);
-		glBindImageTexture(0, texture_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-		glBindImageTexture(1, texture_subsum2D[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glDispatchCompute(height, 1, 1);
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		cmdList.useProgram(program_subsum2D);
+		cmdList.bindImageTexture(0, texture_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-		//glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
-		glBindImageTexture(0, texture_subsum2D[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-		glBindImageTexture(1, texture_subsum2D[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glDispatchCompute(width, 1, 1);
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		//glBindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // TODO: needed?
+		//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
+		cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
 
-		/* texture_subsum2D[1] now holds subsum table */
+		/* sceneContext.dofSubsum1 now holds subsum table */
 		
 		// apply box blur whose strength is relative to the difference between pixel depth and focal depth
-		glUseProgram(program_blur);
-		glBindTextureUnit(0, texture_subsum2D[1]);
+		cmdList.useProgram(program_blur);
+		cmdList.bindTextureUnit(0, sceneContext.dofSubsum1);
 
 		UBO_DoF uboData;
 		uboData.focalDistance = cvar_focal_distance.getFloat();
 		uboData.focalDepth = cvar_focal_depth.getFloat();
 		uboData.maxRadius = cvar_max_radius.getFloat();
-		uboBlur.update(1, &uboData);
+		uboBlur.update(cmdList, 1, &uboData);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
 
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
+		cmdList.bindVertexArray(vao);
+		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		cmdList.bindVertexArray(0);
 	}
 
 	GLuint DepthOfField::createSubsumShader() {
-		Shader cs(GL_COMPUTE_SHADER);
+		Shader cs(GL_COMPUTE_SHADER, "CS_DoF_Subsum");
 		cs.loadSource("subsum.glsl");
 
-		GLuint program = pathos::createProgram(cs);
-		assert(program);
+		GLuint program = pathos::createProgram(cs, "DoF_Subsum");
+		CHECK(program);
+
 		return program;
 	}
 
 	GLuint DepthOfField::createBlurShader() {
-		Shader vs(GL_VERTEX_SHADER);
-		Shader fs(GL_FRAGMENT_SHADER);
+		Shader vs(GL_VERTEX_SHADER, "VS_DoF_Blur");
+		Shader fs(GL_FRAGMENT_SHADER, "FS_DoF_Blur");
 		vs.loadSource("fullscreen_quad.glsl");
 		fs.loadSource("depth_of_field.glsl");
 
-		GLuint program = pathos::createProgram(vs, fs);
-		assert(program);
+		GLuint program = pathos::createProgram(vs, fs, "DoF_Blur");
+		CHECK(program);
+
 		return program;
 	}
 

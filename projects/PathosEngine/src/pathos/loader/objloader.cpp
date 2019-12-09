@@ -242,7 +242,7 @@ namespace pathos {
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(true);
 				geom->updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
-				geom->updateNormalData(&normals[0], static_cast<uint32_t>(normals.size()));
+				geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
 				if (texcoords.size() > 0) geom->updateUVData(&texcoords[0], static_cast<uint32_t>(texcoords.size()));
 				geom->updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
 				mesh->add(geom, getMaterial(materialID));

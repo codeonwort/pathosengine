@@ -4,15 +4,23 @@
 
 namespace pathos {
 	
-	// #todo-scene-textures: Use this struct in forward/deferred renderers
+	// #todo-scene-textures: Use this struct in forward renderer
 	// Textures for scene rendering
 	struct SceneRenderTargets {
+
+	private:
+		bool destroyed = false;
 
 	public:
 		uint32 sceneWidth;
 		uint32 sceneHeight;
 
-		GLuint sceneColor;
+		uint32 numCascades = 4;
+		uint32 csmWidth = 2048;
+		uint32 csmHeight = 2048;
+
+		GLuint sceneFinal; // Final texture rendered on the screen
+		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneDepth;
 		GLuint cascadedShadowMap;
 
@@ -21,6 +29,21 @@ namespace pathos {
 		GLuint gbufferA;
 		GLuint gbufferB;
 		GLuint gbufferC;
+
+		// post processing: god ray
+		GLuint godRaySource;
+		GLuint godRayResult;
+
+		// post processing: depth of field
+		GLuint dofSubsum0;
+		GLuint dofSubsum1;
+
+		// post processing: bloom
+		GLuint sceneBloom;
+		GLuint sceneBloomTemp;
+
+		// post processing: tone mapping
+		GLuint toneMappingResult;
 
 	public:
 		SceneRenderTargets();

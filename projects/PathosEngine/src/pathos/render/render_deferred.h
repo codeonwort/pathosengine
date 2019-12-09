@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer.h"
+#include "scene_render_targets.h"
 #include "deferred/deferredpass.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
@@ -11,40 +12,34 @@ namespace pathos {
 
 	class DeferredRenderer : public Renderer {
 
-	// Public API
 	public:
-		DeferredRenderer(unsigned int width, unsigned int height);
+		DeferredRenderer(uint32 width, uint32 height);
 		virtual ~DeferredRenderer();
 
+		virtual void initializeResources(RenderCommandList& cmdList) override;
+		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void render(RenderCommandList& cmdList, Scene*, Camera*) override;
 
 		inline void setHDR(bool value) { useHDR = value; }
-
-	// Debug API
-	public:
-		inline GLuint debug_godRayTexture() const { return unpack_pass->debug_godRayTexture(); }
-		inline DirectionalShadowMap* debug_getShadowMap() const { return sunShadowMap; }
 
 	private:
 		void createShaders();
 		void destroyShaders();
 
-		void createGBuffer();
-		void destroyGBuffer();
+		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
+		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
-		void updateUBO(Scene* scene, Camera* camera);
-		void clearGBuffer();
-		void packGBuffer();
-		void unpackGBuffer();
+		void updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void clearGBuffer(RenderCommandList& cmdList);
+		void packGBuffer(RenderCommandList& cmdList);
+		void unpackGBuffer(RenderCommandList& cmdList);
 
 	private:
 		bool useHDR = true;
+		bool destroyed = false;
 
-		// #todo-renderer: Manage render targets in separate structure
-		GLuint fbo; // g-buffer
-		GLuint fbo_attachment[4]; // textures attached to g-buffer (0, 1, 2 for color. 3 for depth/stencil)
-		GLsizei width, height; // fbo texture size
-		GLenum draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		SceneRenderTargets sceneRenderTargets;
+		GLuint gbufferFBO = 0;
 
 		UniformBuffer ubo_perFrame;
 
@@ -55,8 +50,11 @@ namespace pathos {
 
 		class VisualizeDepth* visualizeDepth;
 
-		Scene* scene; // temporary save. actually don't need
-		Camera* camera; // temporary save. actually don't need
+		// temporary save
+		Scene* scene; 
+		Camera* camera;
+		uint32 sceneWidth;
+		uint32 sceneHeight;
 
 	};
 

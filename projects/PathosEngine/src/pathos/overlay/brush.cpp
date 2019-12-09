@@ -19,8 +19,8 @@ namespace pathos {
 		rgb[3] = 1.0f;
 	}
 
-	OverlayPass* SolidColorBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
-		auto program = renderer->getStandardProgram();
+	class OverlayPass* SolidColorBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
+		OverlayPass_Standard* program = renderer->getStandardProgram();
 		program->setUniform_color(rgb);
 		return program;
 	}
@@ -39,8 +39,8 @@ namespace pathos {
 		rgb[3] = 1.0f;
 	}
 
-	OverlayPass* TextBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
-		auto program = renderer->getTextProgram();
+	class OverlayPass* TextBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
+		OverlayPass_Text* program = renderer->getTextProgram();
 		program->setUniform_color(rgb);
 		return program;
 	}

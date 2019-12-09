@@ -1,5 +1,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/log.h"
+
+#include "badger/assertion/assertion.h"
 #include "glm/glm.hpp"
 #include <vector>
 
@@ -24,19 +26,19 @@ namespace pathos {
 
 	uint32_t MeshGeometry::getIndexCount() { return indexCount; }
 
-	void MeshGeometry::draw() {
+	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList) {
 		if (drawArraysMode){
-			glDrawArrays(GL_TRIANGLES, 0, positionCount);
+			cmdList.drawArrays(GL_TRIANGLES, 0, positionCount);
 		}else{
-			glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)0);
+			cmdList.drawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)0);
 		}
 	}
 
-#define DEFINE_ACTIVATE_VAO(combination)                       \
-	void MeshGeometry::activate_##combination() {              \
-		if(vao_##combination == 0) createVAO_##combination();  \
-		glBindVertexArray(vao_##combination);                  \
-	}
+#define DEFINE_ACTIVATE_VAO(combination)                                    \
+	void MeshGeometry::activate_##combination(RenderCommandList& cmdList) { \
+		if(vao_##combination == 0) createVAO_##combination();				\
+		cmdList.bindVertexArray(vao_##combination);							\
+	}																		
 	DEFINE_ACTIVATE_VAO(position)
 	DEFINE_ACTIVATE_VAO(position_uv)
 	DEFINE_ACTIVATE_VAO(position_normal)
@@ -44,8 +46,8 @@ namespace pathos {
 	DEFINE_ACTIVATE_VAO(position_uv_normal_tangent_bitangent)
 #undef DEFINE_ACTIVATE_VAO
 	
-	void MeshGeometry::deactivate() {
-		glBindVertexArray(0);
+	void MeshGeometry::deactivate(RenderCommandList& cmdList) {
+		cmdList.bindVertexArray(0);
 	}
 	
 	void MeshGeometry::updatePositionData(GLfloat* data, uint32_t length) {
@@ -66,7 +68,8 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), uvData, GL_STATIC_DRAW);
 	}
-	void MeshGeometry::updateNormalData(GLfloat* data, uint32_t length) {
+	void MeshGeometry::updateNormalData(GLfloat* data, uint32_t length)
+	{
 		normalData = data;
 		normalCount = length;
 		if (!normalBuffer) {
@@ -75,6 +78,7 @@ namespace pathos {
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 		glBufferData(GL_ARRAY_BUFFER, length * sizeof(GLfloat), normalData, GL_STATIC_DRAW);
 	}
+
 	void MeshGeometry::updateTangentData(GLfloat* data, uint32_t length) {
 		tangentData = data;
 		if (!tangentBuffer){
@@ -101,11 +105,11 @@ namespace pathos {
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(GLuint), indexData, GL_STATIC_DRAW);
 	}
 
-	void MeshGeometry::activateIndexBuffer() {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+	void MeshGeometry::activateIndexBuffer(RenderCommandList& cmdList) {
+		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 	}
-	void MeshGeometry::deactivateIndexBuffer() {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	void MeshGeometry::deactivateIndexBuffer(RenderCommandList& cmdList) {
+		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
 	// requirements: positionData and indexData should be available.
@@ -184,8 +188,8 @@ namespace pathos {
 		}
 		updateNormalData(normals, positionCount);
 
-		delete accum;
-		delete counts;
+		delete[] accum;
+		delete[] counts;
 	}
 	void MeshGeometry::calculateTangentBasis() {
 		if (tangentData) delete tangentData;
@@ -280,15 +284,16 @@ namespace pathos {
 		GLboolean normalized;
 	};
 
-	static void createVAO(GLuint* vao, const std::vector<VAOElement>& descs) {
-		assert(*vao == 0);
+	static void createVAO(GLuint* vao, const std::vector<VAOElement>& descs, const char* debugLabel) {
+		CHECK(*vao == 0);
 		glGenVertexArrays(1, vao);
-		assert(*vao != 0);
+		CHECK(*vao != 0);
 		glBindVertexArray(*vao);
 		for (const VAOElement& desc : descs) {
 			glBindBuffer(GL_ARRAY_BUFFER, desc.buffer);
 			glVertexAttribPointer(desc.index, desc.size, desc.type, desc.normalized, 0, (void*)0);
 			glEnableVertexAttribArray(desc.index);
+			glObjectLabel(GL_VERTEX_ARRAY, *vao, -1, debugLabel);
 		}
 		glBindVertexArray(0);
 	}
@@ -296,21 +301,21 @@ namespace pathos {
 	void MeshGeometry::createVAO_position() {
 		createVAO(&vao_position, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE }
-		});
+		}, "VAO_position");
 	}
 
 	void MeshGeometry::createVAO_position_uv() {
 		createVAO(&vao_position_uv, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
 			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE }
-		});
+		}, "VAO_position_uv");
 	}
 
 	void MeshGeometry::createVAO_position_normal() {
 		createVAO(&vao_position_normal, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
 			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE }
-		});
+		}, "VAO_position_normal");
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal() {
@@ -318,7 +323,7 @@ namespace pathos {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE },
 			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE },
 			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE }
-		});
+		}, "VAO_position_uv_normal");
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal_tangent_bitangent() {
@@ -328,7 +333,7 @@ namespace pathos {
 			{ normalBuffer,    normalLocation,    3, GL_FLOAT, GL_FALSE },
 			{ tangentBuffer,   tangentLocation,   3, GL_FLOAT, GL_FALSE },
 			{ bitangentBuffer, bitangentLocation, 3, GL_FLOAT, GL_FALSE }
-		});
+		}, "VAO_position_uv_normal_tangent_bitangent");
 	}
 
 }

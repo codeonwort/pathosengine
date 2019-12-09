@@ -12,7 +12,7 @@ namespace pathos {
 		Skybox(GLuint textureID);
 		~Skybox();
 
-		void render(const Scene* scene, const Camera* camera) override;
+		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
 	private:
 		void createShader();

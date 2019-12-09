@@ -76,8 +76,10 @@ void setupScene() {
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(1.0f, 1.0f, 1.0f);
+		color->setAlbedo(5.0f, 1.0f, 1.0f);
 		color->setAlpha(1.0f);
+		color->setMetallic(0.1f);
+		color->setRoughness(1.0f);
 	}
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
 	auto material_wireframe = new WireframeMaterial(1.0f, 0.0f, 1.0f, 1.0f);
@@ -134,6 +136,7 @@ void setupScene() {
 	model->getTransform().appendScale(5.0f, 5.0f, 5.0f);
 	model->getTransform().appendRotation(glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	model->getTransform().appendMove(-60.0f, 0.0f, -30.0f);
+	model->doubleSided = true;
 
 	model2 = new Mesh(geom_sphere, material_color);
 	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -160,7 +163,7 @@ void setupScene() {
 	scene.add(model2);
 	scene.add(model3);
 	scene.sky = new Skybox(cubeTexture);
-	scene.sky = new AtmosphereScattering;
+	//scene.sky = new AtmosphereScattering;
 	scene.godRaySource = godRaySource;
 }
 

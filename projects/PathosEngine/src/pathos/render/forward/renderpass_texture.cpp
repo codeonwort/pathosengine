@@ -79,17 +79,17 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_texture.vert");
 		dumpShaderSource(fsSource, "renderpass_texture.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_Texture");
 	}
 
-	void FlatTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void FlatTexturePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		TextureMaterial* material = static_cast<TextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_uv_normal();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_uv_normal(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -126,14 +126,14 @@ namespace pathos {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 		glDisable(GL_BLEND);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 
 		if (shadowMapping != nullptr) {
 			shadowMapping->deactivate(program, SHADOW_MAPPING_TEXTURE_UNIT_START);

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "pathos/render/render_command_list.h"
+
+
 // compile-time string hash
 // https://stackoverflow.com/questions/2111667/compile-time-string-hashing
 
@@ -70,14 +73,29 @@ struct MM<size, size, dummy> {
 // This don't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-struct DebugGroupMarker {
-	DebugGroupMarker(const char* eventName) {
-		uint32_t id = COMPILE_TIME_CRC32_STR(eventName);
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, -1, eventName);
-	}
-	~DebugGroupMarker() {
-		glPopDebugGroup();
-	}
-};
+namespace pathos {
 
-#define SCOPED_DRAW_EVENT(EventName) DebugGroupMarker DebugGroup_##EventName(#EventName);
+	struct DebugGroupMarker {
+		DebugGroupMarker(class RenderCommandList* cmdList, const char* eventName);
+		~DebugGroupMarker();
+	private:
+		class RenderCommandList* command_list;
+	};
+
+	struct DebugGroupMarker_DEPRECATED {
+		DebugGroupMarker_DEPRECATED(const char* eventName) {
+			uint32_t id = COMPILE_TIME_CRC32_STR(eventName);
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, -1, eventName);
+		}
+		~DebugGroupMarker_DEPRECATED() {
+			glPopDebugGroup();
+		}
+	};
+
+}
+
+// Assumes 'RenderCommandList& cmdList' is defined in the caller
+#define SCOPED_DRAW_EVENT(EventName) pathos::DebugGroupMarker DebugGroup_##EventName(&cmdList, #EventName);
+
+// #todo: Remove this
+#define DEPRECATED_SCOPED_DRAW_EVENT(EventName) pathos::DebugGroupMarker_DEPRECATED DebugGroup_##EventName(#EventName);

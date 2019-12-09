@@ -1,5 +1,7 @@
 #pragma once
 
+#include "render/render_command_list.h"
+
 #include <stdint.h>
 #include <memory>
 #include <string>
@@ -16,9 +18,9 @@ namespace pathos {
 		ConsoleWindow& operator=(const ConsoleWindow&) = delete;
 		~ConsoleWindow();
 
-		bool initialize(uint16_t width, uint16_t height);
+		bool initialize(uint16 width, uint16 height);
 
-		void render();
+		void renderConsoleWindow(RenderCommandList& cmdList);
 		void toggle();
 
 		bool isVisible() const;
@@ -33,8 +35,8 @@ namespace pathos {
 
 		bool initialized;
 		bool visible;
-		uint16_t windowWidth;
-		uint16_t windowHeight;
+		uint16 windowWidth;
+		uint16 windowHeight;
 
 		class OverlayRenderer* renderer;
 		class DisplayObject2D* root;

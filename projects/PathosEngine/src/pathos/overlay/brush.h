@@ -4,10 +4,12 @@
 
 namespace pathos {
 
+	class OverlayRenderer;
+
 	// Base class
 	class Brush {
 	public:
-		virtual class OverlayPass* configure(class OverlayRenderer*, const Transform& transformAccum) = 0;
+		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) = 0;
 	};
 
 	// Fill the object with a solid color
@@ -15,7 +17,7 @@ namespace pathos {
 	public:
 		SolidColorBrush(float r, float g, float b);
 		SolidColorBrush(uint32_t rgb);
-		virtual class OverlayPass* configure(class OverlayRenderer*, const Transform& transformAccum) override;
+		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
 		float rgb[4];
 	};
@@ -24,7 +26,7 @@ namespace pathos {
 	// TODO: use texture as brush
 	class ImageBrush : public Brush {
 	public:
-		virtual class OverlayPass* configure(class OverlayRenderer*, const Transform& transformAccum) override;
+		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	};
 	*/
 
@@ -33,7 +35,7 @@ namespace pathos {
 	public:
 		TextBrush(float r, float g, float b);
 		TextBrush(uint32_t rgb);
-		virtual class OverlayPass* configure(class OverlayRenderer*, const Transform& transformAccum) override;
+		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
 		float rgb[4];
 	};

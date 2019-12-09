@@ -14,10 +14,6 @@
 #include <algorithm>
 #include <assert.h>
 
-// #todo-renderdevice: move to render device
-#define GL_DEBUG_CONTEXT  0
-#define GL_ERROR_CALLBACK 1
-
 #pragma comment(lib, "freeglut.lib")
 #pragma comment(lib, "FreeImage.lib")
 
@@ -44,24 +40,6 @@ static void onGlutWarning(const char *fmt, va_list ap) {
 
 	exit(1);
 }
-
-#if GL_ERROR_CALLBACK
-void glErrorCallback(
-	GLenum source,
-	GLenum type,
-	GLuint id,
-	GLenum severity,
-	GLsizei length,
-	const GLchar* message,
-	const void* userParam)
-{
-	if (severity == GL_DEBUG_SEVERITY_HIGH) {
-		fprintf_s(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
-		__debugbreak();
-	}
-}
-#endif
 
 namespace pathos {
 
@@ -137,7 +115,7 @@ namespace pathos {
 #if GL_DEBUG_CONTEXT
 		glutInitContextFlags(GLUT_DEBUG);
 #endif
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE);
+		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(conf.windowWidth, conf.windowHeight);
 		glutCreateWindow(conf.title);
 
@@ -159,23 +137,8 @@ namespace pathos {
 		render_device = new OpenGLDevice;
 		bool validDevice = render_device->initialize();
 
-		// render state
-		// #todo-renderstate: should be configured each frame
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClearDepth(1.0f);
-		glClearStencil(0);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-
-		// #todo-renderdevice: move to render device
-#if GL_ERROR_CALLBACK
-		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageCallback(glErrorCallback, 0);
-#endif
-
-		// #todo-renderdevice: through render device and command list
 		glGenQueries(1, &timer_query);
-		assert(timer_query != 0);
+		CHECK(timer_query != 0);
 
 		return validDevice;
 	}
@@ -221,6 +184,11 @@ namespace pathos {
 		case ERendererType::Deferred:
 			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
 			break;
+		}
+
+		if(renderer) {
+			renderer->initializeResources(render_device->getImmediateCommandList());
+			render_device->getImmediateCommandList().flushAllCommands();
 		}
 
 		return renderer != nullptr;
@@ -280,24 +248,22 @@ namespace pathos {
 
 		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 
-		// #todo-command-list: deferred command lists here
+		// #todo-cmd-list: deferred command lists here
 
 		// Renderer adds more immediate commands
 		if (renderer && scene && camera) {
 			renderer->render(immediateContext, scene, camera);
+			immediateContext.flushAllCommands();
 		}
-
-		immediateContext.executeAllCommands();
-
-		// Reset immediate context always for now
-		immediateContext.clearAllCommands();
 
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
 		elapsed_ms = (float)elapsed_ns / 1000000.0f;
 
+		// #todo-console: Fix
 		if (gConsole) {
-			gConsole->render();
+			gConsole->renderConsoleWindow(immediateContext);
+			immediateContext.flushAllCommands();
 		}
 	}
 
@@ -341,8 +307,8 @@ namespace pathos {
 	}
 
 	void Engine::onGlutReshape(int w, int h) {
-		// #todo-renderstate: should be configured in renderer each frame
-		glViewport(0, 0, w, h);
+		// Will be handled by renderer
+		// glViewport(0, 0, w, h);
 	}
 
 }

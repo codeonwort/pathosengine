@@ -58,11 +58,11 @@ void main() {
 	color = vec4(gl_FragCoord.z, 0.0f, 0.0f, 1.0f);
 }
 )";
-		program = pathos::createProgram(vshader, fshader);
+		program = pathos::createProgram(vshader, fshader, "ShadowMap");
 		uniform_depthMVP = glGetUniformLocation(program, "depthMVP");
 		assert(uniform_depthMVP != -1);
 
-		// @TODO: random values... how to adjust this automatically?
+		// #todo-shadow: random values... how to adjust this automatically?
 		projection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, -100.0f, 100.0f);
 	}
 
@@ -84,15 +84,15 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void ShadowMap::renderLightDepth(uint32_t lightIndex, DirectionalLight* light, MeshGeometry* modelGeometry, const glm::mat4& modelMatrix) {
+	void ShadowMap::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) assert(0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[lightIndex], 0);
-		glViewport(0, 0, width, height);
+		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		cmdList.framebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextures[lightIndex], 0);
+		cmdList.viewport(0, 0, width, height);
 
-		modelGeometry->activate_position();
-		modelGeometry->activateIndexBuffer();
+		mesh->activate_position(cmdList);
+		mesh->activateIndexBuffer(cmdList);
 
 		// calculate uniform value
 		glm::vec3 lightPos = -light->getDirection();
@@ -101,17 +101,10 @@ void main() {
 		//glm::mat4 projection = calculateAABB(view);
 		glm::mat4 depthMVP = projection * view * modelMatrix;
 
-		glUseProgram(program);
-		glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(depthMVP[0][0]));
+		cmdList.useProgram(program);
+		cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(depthMVP[0][0]));
 		
-		modelGeometry->draw();
-
-		// restore original viewport
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// TODO: remove the global access
-		auto config = gEngine->getConfig();
-		glViewport(0, 0, config.windowWidth, config.windowHeight);
+		mesh->drawPrimitive(cmdList);
 	}
 
 	void ShadowMap::activate(GLuint materialProgram, const vector<DirectionalLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix) {

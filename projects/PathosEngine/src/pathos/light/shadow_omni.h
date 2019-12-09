@@ -22,7 +22,7 @@ namespace pathos {
 		virtual ~OmnidirectionalShadow();
 
 		void clearLightDepths(unsigned int numLights);
-		void renderLightDepth(unsigned int lightIndex, PointLight* light, MeshGeometry*, const glm::mat4& modelMatrix);
+		void renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, PointLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix);
 
 		// add shadow algorithm to the shadow castee's program
 		void activate(GLuint materialPassProgram, const vector<PointLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix);

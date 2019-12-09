@@ -14,10 +14,12 @@ namespace pathos {
 	public:
 		virtual ~MeshDeferredRenderPass_Pack();
 
+		// #todo-renderer: Remove this stupid function
 		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
 
-		void bindProgram();
-		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) = 0;
+		void bindProgram(RenderCommandList& cmdList);
+
+		virtual void render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) = 0;
 
 	protected:
 		virtual void createProgram() = 0;

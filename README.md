@@ -2,6 +2,8 @@
 ## What is this
 OpenGL rendering library (for 3d graphics study)
 
+Caution: Under heavy refactoring to utilize render command list. Forward renderer is broken, even test projects for forward rendering will not be compiled.
+
 * IDE: Visual Studio 2019, Visual Studio Code
 * Language: C++
 * GL version: OpenGL 4.6 Core Profile

@@ -8,12 +8,13 @@ enum class MATERIAL_ID : uint8 {
 	SOLID_COLOR            = 0,
 	FLAT_TEXTURE           = 1,
 	WIREFRAME              = 2,
-	SHADOW_TEXTURE         = 3,
+	SHADOW_TEXTURE         = 3, // #todo-material: Remove this, because it can be debugged with RenderDoc.
 	CUBE_ENV_MAP           = 4,
 	BUMP_TEXTURE           = 5,
-	CUBEMAP_SHADOW_TEXTURE = 6,
+	CUBEMAP_SHADOW_TEXTURE = 6, // #todo-material: Remove this, because it can be debugged with RenderDoc.
 	ALPHA_ONLY_TEXTURE     = 7,
 	PBR_TEXTURE            = 8,
+
 	NUM_MATERIAL_IDS       = 9,
 	INVALID                = 0xff,
 };

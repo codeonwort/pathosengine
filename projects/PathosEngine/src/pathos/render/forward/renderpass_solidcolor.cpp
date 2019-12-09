@@ -89,17 +89,17 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_solidcolor.vert");
 		dumpShaderSource(fsSource, "renderpass_solidcolor.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_SolidColor");
 	}
 
-	void SolidColorPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void SolidColorPass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_normal();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_normal(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -127,13 +127,13 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// draw call
 		//--------------------------------------------------------------------------------------
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 		glDisable(GL_BLEND);
 
 		if (shadowMapping != nullptr) {

@@ -35,34 +35,34 @@ namespace pathos {
 		//Shader* f = new Shader(GL_FRAGMENT_SHADER);
 		//f->setSource(fs->getCode());
 
-		program = createProgram(shaders);
+		program = createProgram(shaders, "RenderNormal");
 
 		delete vs;
 		delete gs;
 		delete fs;
 	}
 
-	void NormalRenderer::render(Mesh* mesh, Camera* camera) {
-		glm::mat4 model = mesh->getTransform().getMatrix();
-		glm::mat4 mvp = camera->getViewProjectionMatrix() * model;
+	void NormalRenderer::render(RenderCommandList& cmdList, Mesh* inMesh, Camera* inCamera) {
+		glm::mat4 model = inMesh->getTransform().getMatrix();
+		glm::mat4 mvp = inCamera->getViewProjectionMatrix() * model;
 
-		glUseProgram(program);
-		glUniform1f(glGetUniformLocation(program, "normalLength"), normalLength);
-		glUniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, GL_FALSE, &model[0][0]);
-		glUniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, GL_FALSE, &mvp[0][0]);
+		cmdList.useProgram(program);
+		cmdList.uniform1f(glGetUniformLocation(program, "normalLength"), normalLength);
+		cmdList.uniformMatrix4fv(glGetUniformLocation(program, "modelTransform"), 1, GL_FALSE, &model[0][0]);
+		cmdList.uniformMatrix4fv(glGetUniformLocation(program, "mvpTransform"), 1, GL_FALSE, &mvp[0][0]);
 
 		//glDisable(GL_CULL_FACE);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		Geometries geoms = mesh->getGeometries();
+		cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		Geometries geoms = inMesh->getGeometries();
 		for (auto i = 0u; i < geoms.size(); i++){
-			geoms[i]->activate_position_normal();
-			geoms[i]->activateIndexBuffer();
-			geoms[i]->draw();
+			geoms[i]->activate_position_normal(cmdList);
+			geoms[i]->activateIndexBuffer(cmdList);
+			geoms[i]->drawPrimitive(cmdList);
 		}
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glEnable(GL_CULL_FACE);
 
-		glUseProgram(0);
+		cmdList.useProgram(0);
 	}
 
 }

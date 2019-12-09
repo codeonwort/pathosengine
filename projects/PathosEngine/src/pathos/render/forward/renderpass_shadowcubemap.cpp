@@ -34,7 +34,7 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_shadowcubemap.vert");
 		dumpShaderSource(fsSource, "renderpass_shadowcubemap.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_ShadowCubemap");
 
 		uniform_mvpTransform   = glGetUniformLocation(program, "mvpTransform");
 		uniform_face           = glGetUniformLocation(program, "face");
@@ -46,15 +46,15 @@ namespace pathos {
 		assert(uniform_zFar != -1);
 	}
 
-	void ShadowCubeTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void ShadowCubeTexturePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		ShadowCubeTextureMaterial* material = static_cast<ShadowCubeTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_uv();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_uv(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -74,13 +74,13 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// draw call
 		//--------------------------------------------------------------------------------------
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 		// restore depth texture params
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, compareMode);
 		glUseProgram(0);

@@ -142,6 +142,7 @@
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
     <ClCompile Include="src\pathos\util\file_system.cpp" />
+    <ClCompile Include="src\pathos\util\gl_debug_group.cpp" />
     <ClCompile Include="src\pathos\util\log.cpp" />
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />

@@ -29,7 +29,7 @@ namespace pathos {
 		virtual ~ShadowMap();
 
 		void clearLightDepths(uint32_t numLights);
-		void renderLightDepth(uint32_t lightIndex, DirectionalLight* light, MeshGeometry*, const glm::mat4& modelMatrix);
+		void renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix);
 
 		inline void setProjection(glm::mat4& newProjection) { projection = newProjection; }
 

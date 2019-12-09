@@ -14,7 +14,7 @@ namespace pathos {
 		AtmosphereScattering();
 		~AtmosphereScattering();
 
-		virtual void render(const Scene* scene, const Camera* camera) override;
+		virtual void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
 	private:
 		GLuint program;

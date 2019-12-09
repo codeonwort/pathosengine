@@ -50,18 +50,18 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_cubeenv.vert");
 		dumpShaderSource(fsSource, "renderpass_cubeenv.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_CubeEnv");
 
 		uniform_eye = glGetUniformLocation(program, "eye");
 		uniform_sampler = glGetUniformLocation(program, "tex_cubemap");
 	}
 
-	void CubeEnvMapPass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void CubeEnvMapPass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		CubeEnvMapMaterial* material = static_cast<CubeEnvMapMaterial*>(material_);
 
-		geometry->activate_position_normal();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_normal(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -78,10 +78,10 @@ namespace pathos {
 		glUniform3fv(uniform_eye, 1, &camera->getEyeVector()[0]);
 		glBindTextureUnit(CubeEnvMapPass::TEXTURE_UNIT, material->getTexture());
 
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 		glUseProgram(0);
 	}
 

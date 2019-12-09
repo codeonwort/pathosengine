@@ -3,6 +3,7 @@
 #define MAX_DIRECTIONAL_LIGHTS 8
 #define MAX_POINT_LIGHTS 16
 
+// This don't need to match with material_id.h
 #define MATERIAL_ID_NONE           0
 #define MATERIAL_ID_SOLID_COLOR    1
 #define MATERIAL_ID_WIREFRAME      2

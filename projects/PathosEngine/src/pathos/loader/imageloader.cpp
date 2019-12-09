@@ -2,8 +2,8 @@
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 
+#include "badger/assertion/assertion.h"
 #include <algorithm>
-#include <assert.h>
 
 #define DEBUG_IMAGE_LOADER 1
 
@@ -11,7 +11,7 @@ namespace pathos {
 
 	FIBITMAP* loadImage(const char* filename_) {
 		std::string path = ResourceFinder::get().find(filename_);
-		assert(path.size() != 0);
+		CHECK(path.size() != 0);
 
 #if DEBUG_IMAGE_LOADER
 		LOG(LogDebug, "load image: %s", path.c_str());
@@ -25,7 +25,7 @@ namespace pathos {
 		}
 		unsigned int bpp = FreeImage_GetBPP(img);
 		dib = FreeImage_ConvertTo32Bits(img);
-		/*
+		/* 
 		if (bpp == 32) {
 			//
 		} else if (bpp == 24) {
@@ -50,44 +50,40 @@ namespace pathos {
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 #endif
 
-		glGenTextures(1, &tex_id);
-		glBindTexture(GL_TEXTURE_2D, tex_id);
+		glCreateTextures(GL_TEXTURE_2D, 1, &tex_id);
 
-		unsigned int numMipmaps = static_cast<unsigned int>(floor(log2(std::max(w, h))) + 1);
+		uint32 maxLOD = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			if (sRGB) {
-				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_SRGB8_ALPHA8, w, h);
+				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8_ALPHA8, w, h);
 			} else {
-				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
 			}
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		} else if (bpp == 24) {
 			if (sRGB) {
-				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_SRGB8, w, h);
+				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8, w, h);
 			} else {
-				glTexStorage2D(GL_TEXTURE_2D, numMipmaps, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
 			}
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
+			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
 #ifdef _DEBUG
 			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 #endif
-			glBindTexture(GL_TEXTURE_2D, 0);
 			glDeleteTextures(1, &tex_id);
 			return 0;
 		}
 		if (generateMipmap) {
-			glGenerateMipmap(GL_TEXTURE_2D);
+			glGenerateTextureMipmap(tex_id);
 		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
 
 		return tex_id;
 	}
 
 	/**
-	* generate cubemap texture from six faces.<br/>
+	* Generates cubemap texture from six faces.<br/>
 	* image order: positiveX, negativeX, positiveY, negativeY, positiveZ, negativeZ<br/>
 	* this function regards all width and height values are same as those of the first image.
 	* requirements<br/>
@@ -104,16 +100,16 @@ namespace pathos {
 		}
 
 		GLuint tex_id;
-		glGenTextures(1, &tex_id);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, tex_id);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
+		glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 		unsigned int bpp = FreeImage_GetBPP(dib[0]);
 		if (bpp == 32 || bpp == 24) {
-			glTexStorage2D(GL_TEXTURE_CUBE_MAP, 1, GL_RGBA32F, w, h);
+			uint32 maxLOD = generateMipmap ? static_cast<uint32>(floor(log2(std::max(w, h))) + 1) : 0;
+			glTextureStorage2D(tex_id, maxLOD, GL_RGBA32F, w, h);
 		} else {
 			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			return 0;
@@ -123,14 +119,14 @@ namespace pathos {
 		//int mapping[6] = { 0, 1, 2, 3, 4, 5 };
 		for (int i = 0; i < 6; i++){
 			unsigned char* data = FreeImage_GetBits(dib[i]);
-			if (bpp == 32) {
-				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, 0,0,w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
-			}else if (bpp == 24) {
-				glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + mapping[i], 0, 0,0,w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
-			}
+			GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
+			glTextureSubImage3D(tex_id, 0,
+				0, 0, mapping[i],
+				w, h, 1,
+				format, GL_UNSIGNED_BYTE, data);
 		}
 		if (generateMipmap) {
-			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+			glGenerateTextureMipmap(tex_id);
 		}
 
 		return tex_id;

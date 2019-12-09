@@ -23,6 +23,8 @@ namespace pathos {
 		ForwardRenderer();
 		virtual ~ForwardRenderer();
 
+		virtual void initializeResources(RenderCommandList& cmdList) override;
+		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera*) override;
 
 		inline ShadowMap* getShadowMap() { return shadowMap; }
@@ -32,18 +34,18 @@ namespace pathos {
 		void createShaders();
 		void destroyShaders();
 
-		void renderLightDepth(Mesh*);
-		void render(Mesh*); // render an individual object
-		void renderPiece(Mesh*, MeshGeometry*, Material*); // render each piece of an object
+		void renderLightDepth(RenderCommandList& cmdList, Mesh* mesh);
+		void renderMesh(RenderCommandList& cmdList, Mesh* mesh); // render an individual object
+		void renderPiece(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, Material* M); // render each piece of an object
 
-		void renderSolidColor(Mesh*, MeshGeometry*, ColorMaterial*);
-		void renderFlatTexture(Mesh*, MeshGeometry*, TextureMaterial*);
-		void renderBumpTexture(Mesh*, MeshGeometry*, BumpTextureMaterial*);
-		void renderShadowTexture(Mesh*, MeshGeometry*, ShadowTextureMaterial*);
-		void renderWireframe(Mesh*, MeshGeometry*, WireframeMaterial*);
-		void renderCubeEnvMap(Mesh*, MeshGeometry*, CubeEnvMapMaterial*);
-		void renderShadowCubeTexture(Mesh*, MeshGeometry*, ShadowCubeTextureMaterial*);
-		void renderAlphaOnlyTexture(Mesh*, MeshGeometry*, AlphaOnlyTextureMaterial*);
+		void renderSolidColor(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ColorMaterial* M);
+		void renderFlatTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, TextureMaterial* M);
+		void renderBumpTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, BumpTextureMaterial*);
+		void renderShadowTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowTextureMaterial* M);
+		void renderWireframe(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, WireframeMaterial* M);
+		void renderCubeEnvMap(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, CubeEnvMapMaterial* M);
+		void renderShadowCubeTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowCubeTextureMaterial* M);
+		void renderAlphaOnlyTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, AlphaOnlyTextureMaterial* M);
 
 	private:
 		// material render passes

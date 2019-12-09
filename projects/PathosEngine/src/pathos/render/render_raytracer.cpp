@@ -33,11 +33,11 @@ namespace pathos {
 
 		vs.loadSource("raytracer_prepare_vs.glsl");
 		fs.loadSource("raytracer_prepare_fs.glsl");
-		program_prepare = pathos::createProgram(vs, fs);
+		program_prepare = pathos::createProgram(vs, fs, "Raytracer_Prepare");
 
 		vs.loadSource("fullscreen_quad.glsl");
 		fs.loadSource("raytracer.glsl");
-		program_raytracer = pathos::createProgram(vs, fs);
+		program_raytracer = pathos::createProgram(vs, fs, "Raytracer_Execution");
 	}
 
 	void Raytracer::destroyShaders() {

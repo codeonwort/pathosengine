@@ -15,21 +15,21 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Pack_SolidColor::createProgram() {
-		Shader vs(GL_VERTEX_SHADER);
-		Shader fs(GL_FRAGMENT_SHADER);
+		Shader vs(GL_VERTEX_SHADER, "VS_Deferred_Pack_SolidColor");
+		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Pack_SolidColor");
 		vs.loadSource("deferred_pack_solidcolor_vs.glsl");
 		fs.loadSource("deferred_pack_solidcolor_fs.glsl");
 
-		program = pathos::createProgram(vs, fs);
+		program = pathos::createProgram(vs, fs, "Deferred_Pack_SolidColor");
 		ubo.init<UBO_Deferred_Pack_SolidColor>();
 	}
 
-	void MeshDeferredRenderPass_Pack_SolidColor::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void MeshDeferredRenderPass_Pack_SolidColor::render(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* inMaterial) {
 		static_cast<void>(scene);
-		ColorMaterial* material = static_cast<ColorMaterial*>(material_);
+		ColorMaterial* material = static_cast<ColorMaterial*>(inMaterial);
 
-		geometry->activate_position_normal();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_normal(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		UBO_Deferred_Pack_SolidColor uboData;
 		uboData.mvMatrix             = camera->getViewMatrix() * modelMatrix;
@@ -40,9 +40,9 @@ namespace pathos {
 		uboData.albedo.w             = 0.0f;
 		uboData.metallic_roughness.x = material->getMetallic();
 		uboData.metallic_roughness.y = material->getRoughness();
-		ubo.update(1, &uboData);
+		ubo.update(cmdList, 1, &uboData);
 
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 	}
 
 }

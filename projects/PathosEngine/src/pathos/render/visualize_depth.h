@@ -11,7 +11,7 @@ namespace pathos {
 		VisualizeDepth();
 		~VisualizeDepth();
 
-		void render(Scene* scene, Camera* camera);
+		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
 	private:
 		GLuint program;

@@ -9,7 +9,7 @@ namespace pathos {
 	public:
 		MeshDeferredRenderPass_Pack_PBR();
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
+		virtual void render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) override;
 
 	protected:
 		virtual void createProgram() override;

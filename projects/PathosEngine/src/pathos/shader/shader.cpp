@@ -13,8 +13,8 @@
 #include <assert.h>
 
 // on/off console output
-#define DEBUG_SHADER			1
-#define DEBUG_SHADER_SOURCE		1
+#define DEBUG_SHADER			0
+#define DEBUG_SHADER_SOURCE		0
 
 #define DUMP_SHADER_SOURCE      0
 
@@ -26,14 +26,14 @@ using namespace std;
 
 namespace pathos {
 
-	GLuint createProgram(const std::string& vsCode, const std::string& fsCode) {
+	GLuint createProgram(const std::string& vsCode, const std::string& fsCode, const char* debugName) {
 		Shader* vshader = new Shader(GL_VERTEX_SHADER);
 		Shader* fshader = new Shader(GL_FRAGMENT_SHADER);
 		vshader->setSource(vsCode);
 		fshader->setSource(fsCode);
 		std::vector<Shader*> shaders = { vshader, fshader };
 
-		GLuint program = createProgram(shaders);
+		GLuint program = createProgram(shaders, debugName);
 		delete vshader;
 		delete fshader;
 
@@ -46,7 +46,7 @@ namespace pathos {
 		return program;
 	}
 
-	GLuint createProgram(std::vector<ShaderSource*>& sources) {
+	GLuint createProgram(std::vector<ShaderSource*>& sources, const char* debugName) {
 		vector<Shader*> shaders(sources.size(), nullptr);
 		for (size_t i = 0; i < sources.size(); ++i) {
 			ShaderSource* it = sources[i];
@@ -54,21 +54,21 @@ namespace pathos {
 			shader->setSource(it->getCode());
 		}
 
-		GLuint program = createProgram(shaders);
+		GLuint program = createProgram(shaders, debugName);
 		for (Shader* shader : shaders) delete shader;
 
 		return program;
 	}
 
-	GLuint createProgram(Shader& shader) {
+	GLuint createProgram(Shader& shader, const char* debugName) {
 		std::vector<Shader*> shaders{ &shader };
-		return createProgram(shaders);
+		return createProgram(shaders, debugName);
 	}
 
 	// CAUTION: This function does not deallocate Shader objects. Delete them yourself!
 	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName) {
 #if DEBUG_SHADER
-		LOG(LogDebug, "Create a shader program");
+		LOG(LogDebug, "Create a shader program (debugName=%s)", debugName);
 #endif
 		for (Shader* shader : shaders) {
 			bool compiled = shader->compile();
@@ -98,7 +98,7 @@ namespace pathos {
 		if (isLinked == GL_FALSE) {
 			GLint maxLength = 0;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-			if (maxLength == 0) maxLength = 1000;
+			if (maxLength == 0) maxLength = 1024;
 			vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
 
@@ -114,17 +114,17 @@ namespace pathos {
 			return 0;
 		}
 #if DEBUG_SHADER
-		LOG(LogDebug, "=== finish program creation ===");
+		LOG(LogDebug, "> Finish shader program=%d debugName=%s", program, debugName);
 #endif
 		return program;
 	}
 
-	GLuint createComputeProgram(const std::string& shader_source) {
+	GLuint createComputeProgram(const std::string& shader_source, const char* debugName) {
 		Shader* cs = new Shader(GL_COMPUTE_SHADER);
 		cs->setSource(shader_source);
 		std::vector<Shader*> shaders = { cs };
 
-		GLuint program = createProgram(shaders);
+		GLuint program = createProgram(shaders, debugName);
 		delete cs;
 
 		return program;

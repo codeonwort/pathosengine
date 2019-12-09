@@ -25,7 +25,7 @@ namespace pathos {
 
 layout (location = 0) in vec3 position;
 
-uniform mat4 viewProj;
+layout (location = 0) uniform mat4 viewProj;
 
 out VS_OUT { vec3 tc; } vs_out;
 
@@ -47,35 +47,33 @@ void main() {
   color = texture(texCube, fs_in.tc);
 }
 )";
-		program = createProgram(vshader, fshader);
-		if (program != 0) {
-			uniform_transform = glGetUniformLocation(program, "viewProj");
-		}
+		program = createProgram(vshader, fshader, "Skybox");
+		uniform_transform = 0;
 	}
 
-	void Skybox::render(const Scene* scene, const Camera* camera) {
+	void Skybox::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(Skybox);
 
 		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
 		glm::mat4 proj = camera->getProjectionMatrix();
 		glm::mat4 transform = proj * view;
 
-		glDepthFunc(GL_LEQUAL);
-		glDisable(GL_DEPTH_TEST);
-		glCullFace(GL_FRONT);
+		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
 
-		glUseProgram(program);
-		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		glBindTextureUnit(0, textureID);
+		cmdList.useProgram(program);
+		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		cmdList.bindTextureUnit(0, textureID);
 
-		cube->activate_position();
-		cube->activateIndexBuffer();
+		cube->activate_position(cmdList);
+		cube->activateIndexBuffer(cmdList);
 
-		cube->draw();
+		cube->drawPrimitive(cmdList);
 		
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
-		glCullFace(GL_BACK);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LESS);
+		cmdList.cullFace(GL_BACK);
 	}
 
 }

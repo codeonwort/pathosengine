@@ -2,89 +2,34 @@
 #include "pathos/util/log.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/render/scene_render_targets.h"
+
+#include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
 
-	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& lightDirection_) {
-		lightDirection = lightDirection_;
-
-		numCascades    = 4;
-		depthMapWidth  = 2048;
-		depthMapHeight = 2048;
-
-		// create framebuffer object
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glObjectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
-
-		glDrawBuffers(0, nullptr);
-
-		// setup depth textures
-		glGenTextures(1, &depthTexture);
-		glBindTexture(GL_TEXTURE_2D, depthTexture);
-		glObjectLabel(GL_TEXTURE, depthTexture, -1, "Tex_CascadedShadowMap");
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, numCascades * depthMapWidth, depthMapHeight);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// check if our framebuffer is ok
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			LOG(LogFatal, "Cannot create a framebuffer for shadow map");
-			assert(0);
-		}
-
-		// return to default framebuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// create shadow program
-		string vshader = R"(#version 430 core
-layout (location = 0) in vec3 position;
-uniform mat4 depthMVP;
-void main() {
-	gl_Position = depthMVP * vec4(position, 1.0f);
-}
-)";
-		string fshader = R"(#version 430 core
-out vec4 color;
-void main() {
-	color = vec4(gl_FragCoord.z, 0.0f, 0.0f, 1.0f);
-}
-)";
-
-		Shader vs(GL_VERTEX_SHADER, "VS_CascadedShadowMap");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_CascadedShadowMap");
-		vs.setSource(vshader);
-		fs.setSource(fshader);
-
-		program = pathos::createProgram(vs, fs, "Program_CascadedShadowMap");
-
-		uniform_depthMVP = glGetUniformLocation(program, "depthMVP");
-		assert(uniform_depthMVP != -1);
+	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& inLightDirection) {
+		lightDirection = inLightDirection;
 	}
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
-		glDeleteTextures(1, &depthTexture);
-		glDeleteFramebuffers(1, &fbo);
-		glDeleteProgram(program);
+		CHECK(destroyed);
 	}
 
 	void DirectionalShadowMap::setLightDirection(const glm::vec3& direction) {
 		lightDirection = direction;
 	}
 
-	void DirectionalShadowMap::renderShadowMap(const Scene* scene, const Camera* camera) {
+	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		// 1. clear depth map
 		static const GLfloat clear_depth_one[] = { 1.0f };
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearBufferfv(GL_DEPTH, 0, clear_depth_one);
+		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 
 		// 2. build projection matrix that perfectly covers camera frustum
 		if (scene->directionalLights.size() > 0) {
@@ -134,18 +79,18 @@ void main() {
 		};
 
 		std::vector<glm::vec3> frustum;
-		camera->getFrustum(frustum, numCascades);
+		camera->getFrustum(frustum, sceneContext.numCascades);
 		viewProjection.clear();
-		for (auto i = 0u; i < numCascades; ++i) {
+		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
 			calcBounds(&frustum[i * 4]);
 		}
 
 		// 3. render depth map
-		glUseProgram(program);
-		glEnable(GL_DEPTH_TEST);
+		cmdList.useProgram(program);
+		cmdList.enable(GL_DEPTH_TEST);
 		
-		for (auto i = 0u; i < numCascades; ++i) {
-			glViewport(i * depthMapWidth, 0, depthMapWidth, depthMapHeight);
+		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
+			cmdList.viewport(i * sceneContext.csmWidth, 0, sceneContext.csmWidth, sceneContext.csmHeight);
 			const glm::mat4& VP = viewProjection[i];
 
 			for (Mesh* mesh : scene->meshes) {
@@ -158,24 +103,79 @@ void main() {
 				int ix = 0;
 				for (const auto G : geometries) {
 					glm::mat4 mvp = VP * mesh->getTransform().getMatrix();
-					glUniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
+					cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
 
 					bool wasWireframe = false;
 					if (materials[ix++]->getMaterialID() == MATERIAL_ID::WIREFRAME) {
-						glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+						cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 						wasWireframe = true;
 					}
 
-					G->activate_position();
-					G->activateIndexBuffer();
-					G->draw();
+					G->activate_position(cmdList);
+					G->activateIndexBuffer(cmdList);
+					G->drawPrimitive(cmdList);
 
 					if (wasWireframe) {
-						glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+						cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					}
 				}
 			}
 		}
+	}
+
+	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)
+	{
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		// create framebuffer object
+		cmdList.createFramebuffers(1, &fbo);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
+		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0);
+		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
+		
+		GLenum fboCompleteness;
+		cmdList.checkNamedFramebufferStatus(fbo, GL_FRAMEBUFFER, &fboCompleteness);
+
+		// #todo-cmd-list: fboCompleteness is a local variable, can't be used like this
+		// Maybe it should be allocated and returned by the command list (something like cmdList->allocVolatileVariable<GLenum>())
+		//cmdList.registerHook([](void* argument) -> void {
+		//	GLenum completeness = *(GLenum*)argument;
+		//	CHECK(completeness == GL_FRAMEBUFFER_COMPLETE);
+		//}, &fboCompleteness);
+		cmdList.flushAllCommands();
+		CHECK(fboCompleteness == GL_FRAMEBUFFER_COMPLETE);
+
+		// create shadow program
+		string vshader = R"(#version 430 core
+layout (location = 0) in vec3 position;
+layout (location = 0) uniform mat4 depthMVP;
+void main() {
+	gl_Position = depthMVP * vec4(position, 1.0f);
+}
+)";
+		string fshader = R"(#version 430 core
+out vec4 color;
+void main() {
+	color = vec4(gl_FragCoord.z, 0.0f, 0.0f, 1.0f);
+}
+)";
+
+		Shader vs(GL_VERTEX_SHADER, "VS_CascadedShadowMap");
+		Shader fs(GL_FRAGMENT_SHADER, "FS_CascadedShadowMap");
+		vs.setSource(vshader);
+		fs.setSource(fshader);
+
+		program = pathos::createProgram(vs, fs, "Program_CascadedShadowMap");
+		uniform_depthMVP = 0;
+	}
+
+	void DirectionalShadowMap::destroyResources(RenderCommandList& cmdList)
+	{
+		if (!destroyed) {
+			cmdList.deleteFramebuffers(1, &fbo);
+			cmdList.deleteProgram(program);
+		}
+		destroyed = true;
 	}
 
 }

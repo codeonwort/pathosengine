@@ -2,8 +2,8 @@
 
 namespace pathos {
 
-	Rectangle::Rectangle(float _width, float _height) {
-		setSize(_width, _height);
+	Rectangle::Rectangle(float inWidth, float inHeight) {
+		setSize(inWidth, inHeight);
 		geom = new PlaneGeometry(1.0f, 1.0f);
 	}
 
@@ -11,10 +11,10 @@ namespace pathos {
 		delete geom;
 	}
 
-	void Rectangle::setSize(float _width, float _height) {
-		assert(_width >= 0.0f && _height >= 0.0f);
-		width = _width;
-		height = _height;
+	void Rectangle::setSize(float inWidth, float inHeight) {
+		assert(inWidth >= 0.0f && inHeight >= 0.0f);
+		width = inWidth;
+		height = inHeight;
 	}
 
 	void Rectangle::updateTransform() {

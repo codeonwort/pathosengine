@@ -16,7 +16,7 @@ namespace pathos {
 		Shader fs(GL_FRAGMENT_SHADER);
 		vs.loadSource("visualize_depth.vs.glsl");
 		fs.loadSource("visualize_depth.fs.glsl");
-		program = pathos::createProgram(vs, fs);
+		program = pathos::createProgram(vs, fs, "VisualizeDepth");
 
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -29,14 +29,14 @@ namespace pathos {
 		glDeleteBuffers(1, &ubo);
 	}
 
-	void VisualizeDepth::render(Scene* scene, Camera* camera)
+	void VisualizeDepth::render(RenderCommandList& cmdList, Scene* scene, Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(VisualizeDepth);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
+		cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
+		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LESS);
 
 		UBO_VisualizeDepth uboData;
 		uboData.zRange.x = camera->getZNear();
@@ -44,18 +44,18 @@ namespace pathos {
 
 		const glm::mat4 viewProj = camera->getViewProjectionMatrix();
 
-		glUseProgram(program);
+		cmdList.useProgram(program);
 
 		for (Mesh* mesh : scene->meshes) {
 			const glm::mat4 model = mesh->getTransform().getMatrix();
 			uboData.mvp = viewProj * model;
-			glNamedBufferSubData(ubo, 0, sizeof(UBO_VisualizeDepth), &uboData);
-			glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+			cmdList.namedBufferSubData(ubo, 0, sizeof(UBO_VisualizeDepth), &uboData);
+			cmdList.bindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
 
 			for (MeshGeometry* geometry : mesh->getGeometries()) {
-				geometry->activate_position();
-				geometry->activateIndexBuffer();
-				geometry->draw();
+				geometry->activate_position(cmdList);
+				geometry->activateIndexBuffer(cmdList);
+				geometry->drawPrimitive(cmdList);
 			}
 		}
 	}

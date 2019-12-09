@@ -20,7 +20,7 @@ namespace pathos {
 		SolidColorPass(const SolidColorPass& other) = delete;
 		SolidColorPass(SolidColorPass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
+		virtual void renderMeshPass(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) override;
 
 	};
 

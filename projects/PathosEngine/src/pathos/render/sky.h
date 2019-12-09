@@ -11,7 +11,7 @@ namespace pathos {
 		SkyRendering()          = default;
 		virtual ~SkyRendering() = default;
 
-		virtual void render(const Scene* scene, const Camera* camera) = 0;
+		virtual void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) = 0;
 
 	};
 

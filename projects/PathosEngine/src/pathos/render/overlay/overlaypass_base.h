@@ -12,7 +12,7 @@ namespace pathos {
 	public:
 		virtual ~OverlayPass();
 
-		virtual void render(DisplayObject2D* object, const Transform& transformAccum) = 0;
+		virtual void renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) = 0;
 
 	protected:
 		GLuint program = 0;

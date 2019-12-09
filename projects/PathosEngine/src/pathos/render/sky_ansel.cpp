@@ -140,27 +140,27 @@ namespace pathos {
 		glDeleteProgram(program);
 	}
 
-	void AnselSkyRendering::render(const Scene* scene, const Camera* camera) {
+	void AnselSkyRendering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(AnselSkyRendering);
 
 		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
 		glm::mat4& proj = camera->getProjectionMatrix();
 		glm::mat4& transform = proj * view;
 
-		glDepthFunc(GL_LEQUAL);
-		glDisable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.disable(GL_DEPTH_TEST);
 
-		sphere->activate_position();
-		sphere->activateIndexBuffer();
+		sphere->activate_position(cmdList);
+		sphere->activateIndexBuffer(cmdList);
 
-		glUseProgram(program);
-		glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		glBindTextureUnit(0, texture);
+		cmdList.useProgram(program);
+		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		cmdList.bindTextureUnit(0, texture);
 
-		sphere->draw();
+		sphere->drawPrimitive(cmdList);
 
-		glDepthFunc(GL_LESS);
-		glEnable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LESS);
+		cmdList.enable(GL_DEPTH_TEST);
 	}
 
 	void AnselSkyRendering::createShaderProgram() {
@@ -169,7 +169,7 @@ namespace pathos {
 
 layout (location = 0) in vec3 position;
 
-uniform mat4 viewProj;
+layout (location = 0) uniform mat4 viewProj;
 
 out VS_OUT {
 	vec3 r;
@@ -205,10 +205,8 @@ void main() {
 
 )";
 
-		program = pathos::createProgram(vs, fs);
-		assert(program != 0);
-		uniform_transform = glGetUniformLocation(program, "viewProj");
-		assert(uniform_transform != -1);
+		program = pathos::createProgram(vs, fs, "SkyAnsel");
+		uniform_transform = 0;
 	}
 
 }

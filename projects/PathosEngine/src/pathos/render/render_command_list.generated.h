@@ -644,10 +644,11 @@ void deleteTextures(
 	GLsizei n,
 	const GLuint *textures)
 {
-	RenderCommand_deleteTextures* __restrict packet = (RenderCommand_deleteTextures*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
-	packet->n = n;
-	packet->textures = textures;
+	//RenderCommand_deleteTextures* __restrict packet = (RenderCommand_deleteTextures*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
+	//packet->n = n;
+	//packet->textures = textures;
+	glDeleteTextures(n, textures);
 }
 void genTextures(
 	GLsizei n,
@@ -1026,10 +1027,11 @@ void deleteQueries(
 	GLsizei n,
 	const GLuint *ids)
 {
-	RenderCommand_deleteQueries* __restrict packet = (RenderCommand_deleteQueries*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteQueries::execute);
-	packet->n = n;
-	packet->ids = ids;
+	//RenderCommand_deleteQueries* __restrict packet = (RenderCommand_deleteQueries*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteQueries::execute);
+	//packet->n = n;
+	//packet->ids = ids;
+	glDeleteQueries(n, ids);
 }
 GLboolean isQuery(
 	GLuint id)
@@ -1100,10 +1102,11 @@ void deleteBuffers(
 	GLsizei n,
 	const GLuint *buffers)
 {
-	RenderCommand_deleteBuffers* __restrict packet = (RenderCommand_deleteBuffers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteBuffers::execute);
-	packet->n = n;
-	packet->buffers = buffers;
+	//RenderCommand_deleteBuffers* __restrict packet = (RenderCommand_deleteBuffers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteBuffers::execute);
+	//packet->n = n;
+	//packet->buffers = buffers;
+	glDeleteBuffers(n, buffers);
 }
 void genBuffers(
 	GLsizei n,
@@ -1294,16 +1297,18 @@ GLuint createShader(
 void deleteProgram(
 	GLuint program)
 {
-	RenderCommand_deleteProgram* __restrict packet = (RenderCommand_deleteProgram*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteProgram::execute);
-	packet->program = program;
+	//RenderCommand_deleteProgram* __restrict packet = (RenderCommand_deleteProgram*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteProgram::execute);
+	//packet->program = program;
+	glDeleteProgram(program);
 }
 void deleteShader(
 	GLuint shader)
 {
-	RenderCommand_deleteShader* __restrict packet = (RenderCommand_deleteShader*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteShader::execute);
-	packet->shader = shader;
+	//RenderCommand_deleteShader* __restrict packet = (RenderCommand_deleteShader*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteShader::execute);
+	//packet->shader = shader;
+	glDeleteShader(shader);
 }
 void detachShader(
 	GLuint program,
@@ -1670,7 +1675,7 @@ void uniform1fv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform1fv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * sizeof(GLfloat), value);
 }
 void uniform2fv(
 	GLint location,
@@ -1681,7 +1686,7 @@ void uniform2fv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform2fv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 2 * sizeof(GLfloat), value);
 }
 void uniform3fv(
 	GLint location,
@@ -1692,7 +1697,7 @@ void uniform3fv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform3fv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 3 * sizeof(GLfloat), value);
 }
 void uniform4fv(
 	GLint location,
@@ -1703,7 +1708,7 @@ void uniform4fv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform4fv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 4 * sizeof(GLfloat), value);
 }
 void uniform1iv(
 	GLint location,
@@ -1714,7 +1719,7 @@ void uniform1iv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform1iv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * sizeof(GLint), value);
 }
 void uniform2iv(
 	GLint location,
@@ -1725,7 +1730,7 @@ void uniform2iv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform2iv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 2 * sizeof(GLint), value);
 }
 void uniform3iv(
 	GLint location,
@@ -1736,7 +1741,7 @@ void uniform3iv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform3iv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 3 * sizeof(GLint), value);
 }
 void uniform4iv(
 	GLint location,
@@ -1747,7 +1752,7 @@ void uniform4iv(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_uniform4iv::execute);
 	packet->location = location;
 	packet->count = count;
-	packet->value = value;
+	packet->value = storeParameter(count * 4 * sizeof(GLint), value);
 }
 void uniformMatrix2fv(
 	GLint location,
@@ -1760,7 +1765,7 @@ void uniformMatrix2fv(
 	packet->location = location;
 	packet->count = count;
 	packet->transpose = transpose;
-	packet->value = value;
+	packet->value = storeParameter(count * 4 * sizeof(GLfloat), value);
 }
 void uniformMatrix3fv(
 	GLint location,
@@ -1773,7 +1778,7 @@ void uniformMatrix3fv(
 	packet->location = location;
 	packet->count = count;
 	packet->transpose = transpose;
-	packet->value = value;
+	packet->value = storeParameter(count * 12 * sizeof(GLfloat), value);
 }
 void uniformMatrix4fv(
 	GLint location,
@@ -1786,7 +1791,7 @@ void uniformMatrix4fv(
 	packet->location = location;
 	packet->count = count;
 	packet->transpose = transpose;
-	packet->value = value;
+	packet->value = storeParameter(count * 16 * sizeof(GLfloat), value);
 }
 void validateProgram(
 	GLuint program)
@@ -2956,10 +2961,11 @@ void deleteFramebuffers(
 	GLsizei n,
 	const GLuint *framebuffers)
 {
-	RenderCommand_deleteFramebuffers* __restrict packet = (RenderCommand_deleteFramebuffers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteFramebuffers::execute);
-	packet->n = n;
-	packet->framebuffers = framebuffers;
+	//RenderCommand_deleteFramebuffers* __restrict packet = (RenderCommand_deleteFramebuffers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteFramebuffers::execute);
+	//packet->n = n;
+	//packet->framebuffers = framebuffers;
+	glDeleteFramebuffers(n, framebuffers);
 }
 void genFramebuffers(
 	GLsizei n,
@@ -3147,10 +3153,11 @@ void deleteVertexArrays(
 	GLsizei n,
 	const GLuint *arrays)
 {
-	RenderCommand_deleteVertexArrays* __restrict packet = (RenderCommand_deleteVertexArrays*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteVertexArrays::execute);
-	packet->n = n;
-	packet->arrays = arrays;
+	//RenderCommand_deleteVertexArrays* __restrict packet = (RenderCommand_deleteVertexArrays*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteVertexArrays::execute);
+	//packet->n = n;
+	//packet->arrays = arrays;
+	glDeleteVertexArrays(n, arrays);
 }
 void genVertexArrays(
 	GLsizei n,
@@ -6334,7 +6341,7 @@ void bindBuffersBase(
 	packet->target = target;
 	packet->first = first;
 	packet->count = count;
-	packet->buffers = buffers;
+	packet->buffers = storeParameter(count * sizeof(GLuint), buffers);
 }
 void bindBuffersRange(
 	GLenum target,
@@ -6362,7 +6369,7 @@ void bindTextures(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_bindTextures::execute);
 	packet->first = first;
 	packet->count = count;
-	packet->textures = textures;
+	packet->textures = storeParameter(count * sizeof(GLuint), textures);
 }
 void bindSamplers(
 	GLuint first,
@@ -6373,7 +6380,7 @@ void bindSamplers(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_bindSamplers::execute);
 	packet->first = first;
 	packet->count = count;
-	packet->samplers = samplers;
+	packet->samplers = storeParameter(count * sizeof(GLuint), samplers);
 }
 void bindImageTextures(
 	GLuint first,
@@ -6384,7 +6391,7 @@ void bindImageTextures(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_bindImageTextures::execute);
 	packet->first = first;
 	packet->count = count;
-	packet->textures = textures;
+	packet->textures = storeParameter(count * sizeof(GLuint), textures);
 }
 void bindVertexBuffers(
 	GLuint first,
@@ -6397,9 +6404,9 @@ void bindVertexBuffers(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_bindVertexBuffers::execute);
 	packet->first = first;
 	packet->count = count;
-	packet->buffers = buffers;
-	packet->offsets = offsets;
-	packet->strides = strides;
+	packet->buffers = storeParameter(count * sizeof(GLuint), buffers);
+	packet->offsets = storeParameter(count * sizeof(GLintptr), offsets);
+	packet->strides = storeParameter(count * sizeof(GLsizei), strides);
 }
 void clipControl(
 	GLenum origin,
@@ -6414,10 +6421,13 @@ void createTransformFeedbacks(
 	GLsizei n,
 	GLuint *ids)
 {
-	RenderCommand_createTransformFeedbacks* __restrict packet = (RenderCommand_createTransformFeedbacks*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTransformFeedbacks::execute);
-	packet->n = n;
-	packet->ids = ids;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createTransformFeedbacks* __restrict packet = (RenderCommand_createTransformFeedbacks*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTransformFeedbacks::execute);
+	//packet->n = n;
+	//packet->ids = ids;
+	glCreateTransformFeedbacks(n, ids);
 }
 void transformFeedbackBufferBase(
 	GLuint xfb,
@@ -6486,10 +6496,13 @@ void createBuffers(
 	GLsizei n,
 	GLuint *buffers)
 {
-	RenderCommand_createBuffers* __restrict packet = (RenderCommand_createBuffers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createBuffers::execute);
-	packet->n = n;
-	packet->buffers = buffers;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createBuffers* __restrict packet = (RenderCommand_createBuffers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createBuffers::execute);
+	//packet->n = n;
+	//packet->buffers = buffers;
+	glCreateBuffers(n, buffers);
 }
 void namedBufferStorage(
 	GLuint buffer,
@@ -6514,7 +6527,7 @@ void namedBufferData(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_namedBufferData::execute);
 	packet->buffer = buffer;
 	packet->size = size;
-	packet->data = data;
+	packet->data = storeParameter(size, data);
 	packet->usage = usage;
 }
 void namedBufferSubData(
@@ -6528,7 +6541,7 @@ void namedBufferSubData(
 	packet->buffer = buffer;
 	packet->offset = offset;
 	packet->size = size;
-	packet->data = data;
+	packet->data = storeParameter(size, data);
 }
 void copyNamedBufferSubData(
 	GLuint readBuffer,
@@ -6665,14 +6678,18 @@ void getNamedBufferSubData(
 	packet->size = size;
 	packet->data = data;
 }
+
 void createFramebuffers(
 	GLsizei n,
 	GLuint *framebuffers)
 {
-	RenderCommand_createFramebuffers* __restrict packet = (RenderCommand_createFramebuffers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createFramebuffers::execute);
-	packet->n = n;
-	packet->framebuffers = framebuffers;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createFramebuffers* __restrict packet = (RenderCommand_createFramebuffers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createFramebuffers::execute);
+	//packet->n = n;
+	//packet->framebuffers = framebuffers;
+	glCreateFramebuffers(n, framebuffers);
 }
 void namedFramebufferRenderbuffer(
 	GLuint framebuffer,
@@ -6744,7 +6761,7 @@ void namedFramebufferDrawBuffers(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_namedFramebufferDrawBuffers::execute);
 	packet->framebuffer = framebuffer;
 	packet->n = n;
-	packet->bufs = bufs;
+	packet->bufs = (n == 0) ? bufs : storeParameter(n * sizeof(GLenum), bufs);
 }
 void namedFramebufferReadBuffer(
 	GLuint framebuffer,
@@ -6868,14 +6885,16 @@ void blitNamedFramebuffer(
 	packet->mask = mask;
 	packet->filter = filter;
 }
-GLenum checkNamedFramebufferStatus(
+void checkNamedFramebufferStatus(
 	GLuint framebuffer,
-	GLenum target)
+	GLenum target,
+	GLenum* glReturnValue)
 {
 	RenderCommand_checkNamedFramebufferStatus* __restrict packet = (RenderCommand_checkNamedFramebufferStatus*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_checkNamedFramebufferStatus::execute);
 	packet->framebuffer = framebuffer;
 	packet->target = target;
+	packet->return_value = glReturnValue;
 }
 void getNamedFramebufferParameteriv(
 	GLuint framebuffer,
@@ -6905,10 +6924,13 @@ void createRenderbuffers(
 	GLsizei n,
 	GLuint *renderbuffers)
 {
-	RenderCommand_createRenderbuffers* __restrict packet = (RenderCommand_createRenderbuffers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createRenderbuffers::execute);
-	packet->n = n;
-	packet->renderbuffers = renderbuffers;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createRenderbuffers* __restrict packet = (RenderCommand_createRenderbuffers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createRenderbuffers::execute);
+	//packet->n = n;
+	//packet->renderbuffers = renderbuffers;
+	glCreateRenderbuffers(n, renderbuffers);
 }
 void namedRenderbufferStorage(
 	GLuint renderbuffer,
@@ -6954,11 +6976,14 @@ void createTextures(
 	GLsizei n,
 	GLuint *textures)
 {
-	RenderCommand_createTextures* __restrict packet = (RenderCommand_createTextures*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTextures::execute);
-	packet->target = target;
-	packet->n = n;
-	packet->textures = textures;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createTextures* __restrict packet = (RenderCommand_createTextures*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTextures::execute);
+	//packet->target = target;
+	//packet->n = n;
+	//packet->textures = textures;
+	glCreateTextures(target, n, textures);
 }
 void textureBuffer(
 	GLuint texture,
@@ -7452,10 +7477,13 @@ void createVertexArrays(
 	GLsizei n,
 	GLuint *arrays)
 {
-	RenderCommand_createVertexArrays* __restrict packet = (RenderCommand_createVertexArrays*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createVertexArrays::execute);
-	packet->n = n;
-	packet->arrays = arrays;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createVertexArrays* __restrict packet = (RenderCommand_createVertexArrays*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createVertexArrays::execute);
+	//packet->n = n;
+	//packet->arrays = arrays;
+	glCreateVertexArrays(n, arrays);
 }
 void disableVertexArrayAttrib(
 	GLuint vaobj,
@@ -7626,30 +7654,39 @@ void createSamplers(
 	GLsizei n,
 	GLuint *samplers)
 {
-	RenderCommand_createSamplers* __restrict packet = (RenderCommand_createSamplers*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createSamplers::execute);
-	packet->n = n;
-	packet->samplers = samplers;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createSamplers* __restrict packet = (RenderCommand_createSamplers*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createSamplers::execute);
+	//packet->n = n;
+	//packet->samplers = samplers;
+	glCreateSamplers(n, samplers);
 }
 void createProgramPipelines(
 	GLsizei n,
 	GLuint *pipelines)
 {
-	RenderCommand_createProgramPipelines* __restrict packet = (RenderCommand_createProgramPipelines*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createProgramPipelines::execute);
-	packet->n = n;
-	packet->pipelines = pipelines;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createProgramPipelines* __restrict packet = (RenderCommand_createProgramPipelines*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createProgramPipelines::execute);
+	//packet->n = n;
+	//packet->pipelines = pipelines;
+	glCreateProgramPipelines(n, pipelines);
 }
 void createQueries(
 	GLenum target,
 	GLsizei n,
 	GLuint *ids)
 {
-	RenderCommand_createQueries* __restrict packet = (RenderCommand_createQueries*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createQueries::execute);
-	packet->target = target;
-	packet->n = n;
-	packet->ids = ids;
+	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
+	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
+	//RenderCommand_createQueries* __restrict packet = (RenderCommand_createQueries*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createQueries::execute);
+	//packet->target = target;
+	//packet->n = n;
+	//packet->ids = ids;
+	glCreateQueries(target, n, ids);
 }
 void getQueryBufferObjecti64v(
 	GLuint id,

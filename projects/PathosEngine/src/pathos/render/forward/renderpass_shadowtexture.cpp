@@ -25,18 +25,18 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_shadowtexture.vert");
 		dumpShaderSource(fsSource, "renderpass_shadowtexture.frag");
 		
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_ShadowTexture");
 	}
 
-	void ShadowTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void ShadowTexturePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		ShadowTextureMaterial* material = static_cast<ShadowTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_uv();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_uv(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -55,13 +55,13 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// draw call
 		//--------------------------------------------------------------------------------------
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 		// restore depth texture params
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, compareMode);
 		glBindTexture(GL_TEXTURE_2D, 0);

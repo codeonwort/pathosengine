@@ -14,7 +14,7 @@ namespace pathos {
 		vs.loadSource("fullscreen_quad.glsl");
 		fs.loadSource("atmosphere.glsl");
 
-		program = pathos::createProgram(vs, fs);
+		program = pathos::createProgram(vs, fs, "AtmosphereScattering");
 		ubo.init<UBO_Atmosphere>();
 
 		glGenVertexArrays(1, &vao);
@@ -26,24 +26,24 @@ namespace pathos {
 		glDeleteProgram(program);
 	}
 
-	void AtmosphereScattering::render(const Scene* scene, const Camera* camera)
+	void AtmosphereScattering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(AtmosphereScattering);
 
-		glUseProgram(program);
+		cmdList.useProgram(program);
 
-		glDepthFunc(GL_LEQUAL);
+		cmdList.depthFunc(GL_LEQUAL);
 
 		UBO_Atmosphere uboData;
 		uboData.sunParams.x = 5.0f;
 		uboData.sunParams.y = 13.61839144264511f;
-		ubo.update(1, &uboData);
+		ubo.update(cmdList, 1, &uboData);
 
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
+		cmdList.bindVertexArray(vao);
+		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		cmdList.bindVertexArray(0);
 
-		glDepthFunc(GL_LESS);
+		cmdList.depthFunc(GL_LESS);
 	}
 
 }

@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
 	EngineConfig config;
 	config.windowWidth  = 800;
 	config.windowHeight = 600;
+	config.rendererType = ERendererType::Deferred;
 	config.title        = "Test: Compute Shader";
 	Engine::init(&argc, argv, config);
 
@@ -103,8 +104,8 @@ void main() {
 	output_data[id * 2 + 1] = shared_data[id * 2 + 1];
 }
 )";
-	GLuint computeProgram = pathos::createComputeProgram(cshader);
-	assert(computeProgram);
+	GLuint computeProgram = pathos::createComputeProgram(cshader, "CS_Test");
+	CHECK(computeProgram);
 
 	// test data
 	std::vector<GLuint> subsum_data(128, 1);

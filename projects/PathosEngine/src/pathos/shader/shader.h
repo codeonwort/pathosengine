@@ -15,14 +15,14 @@ namespace pathos {
 	class Shader;
 
 	// Utilities
-	GLuint createProgram(const std::string& vsCode, const std::string& fsCode);      // only vertex and fragment shaders
-	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName = "");        // only vertex and fragment shaders
-	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName = ""); // multiple shaders
-	GLuint createProgram(Shader& shader);                                            // single shader (for program pipeline)
-	GLuint createComputeProgram(const std::string& shader_source);                   // compute shader
+	GLuint createProgram(const std::string& vsCode, const std::string& fsCode, const char* debugName);     // only vertex and fragment shaders
+	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName);                                   // only vertex and fragment shaders
+	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName);                            // multiple shaders
+	GLuint createProgram(Shader& shader, const char* debugName);                                           // single shader (for program pipeline)
+	GLuint createComputeProgram(const std::string& shader_source, const char* debugName);                  // compute shader
 
 	// #todo: remove this
-	GLuint createProgram(std::vector<ShaderSource*>& sources);                       // multiple shader sources
+	GLuint createProgram(std::vector<ShaderSource*>& sources, const char* debugName);                      // multiple shader sources
 	// #todo: temp
 	void dumpShaderSource(ShaderSource& shader, const char* filename);
 

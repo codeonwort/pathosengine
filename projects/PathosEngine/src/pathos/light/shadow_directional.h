@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdint.h>
 #include <vector>
 #include "gl_core.h"
 
@@ -15,23 +14,25 @@ namespace pathos {
 
 	public:
 		DirectionalShadowMap(const glm::vec3& lightDirection = glm::vec3(0.0f, -1.0f, 0.0f));
-		DirectionalShadowMap(const DirectionalShadowMap& other) = delete;
-		DirectionalShadowMap(DirectionalShadowMap&& other) = delete;
 		virtual ~DirectionalShadowMap();
 
-		void setLightDirection(const glm::vec3& direction);
-		void renderShadowMap(const Scene* scene, const Camera* camera);
+		DirectionalShadowMap(const DirectionalShadowMap&) = delete;
+		DirectionalShadowMap& operator=(DirectionalShadowMap&) = delete;
 
-		inline GLuint getDepthMapTexture() const { return depthTexture; }
+		void initializeResources(RenderCommandList& cmdList);
+		void destroyResources(RenderCommandList& cmdList);
+
+		void setLightDirection(const glm::vec3& direction);
+		
+		void renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
+
 		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjection[index]; }
 
-	private:
-		GLuint fbo;
-		GLuint depthTexture;
 
-		uint32_t numCascades;
-		GLsizei depthMapWidth;
-		GLsizei depthMapHeight; // depth map resolution
+	private:
+		bool destroyed = false;
+
+		GLuint fbo;
 
 		GLuint program; // shadow mapping
 		GLint uniform_depthMVP = -1;

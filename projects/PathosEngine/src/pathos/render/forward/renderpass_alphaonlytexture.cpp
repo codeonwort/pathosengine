@@ -17,7 +17,7 @@ namespace pathos {
 		vs.loadSource("forward_alphaonly_texture_vs.glsl");
 		fs.loadSource("forward_alphaonly_texture_fs.glsl");
 
-		program = pathos::createProgram(vs, fs);
+		program = pathos::createProgram(vs, fs, "ForwardPass_AlphaOnlyTexture");
 
 #define GET_UNIFORM(z) { uniform_##z = glGetUniformLocation(program, #z); assert(uniform_##z != -1); }
 		GET_UNIFORM(mvpTransform);
@@ -26,15 +26,15 @@ namespace pathos {
 #undef GET_UNIFORM
 	}
 
-	void AlphaOnlyTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void AlphaOnlyTexturePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		AlphaOnlyTextureMaterial* material = static_cast<AlphaOnlyTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_uv();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_uv(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -47,7 +47,7 @@ namespace pathos {
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
 		glDisable(GL_BLEND);
 	}

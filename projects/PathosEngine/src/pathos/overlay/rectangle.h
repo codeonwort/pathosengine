@@ -8,15 +8,16 @@ namespace pathos {
 	class Rectangle : public DisplayObject2D {
 
 	public:
-		Rectangle(float width, float height);
+		Rectangle(float inWidth, float inHeight);
 		virtual ~Rectangle();
 
-		void setSize(float width, float height);
+		void setSize(float inWidth, float inHeight);
 
 		virtual MeshGeometry* getGeometry() override { return geom; }
 
 	protected:
-		float width, height;
+		float width;
+		float height;
 		PlaneGeometry *geom = nullptr;
 
 		virtual void updateTransform() override;

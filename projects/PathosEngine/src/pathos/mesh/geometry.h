@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/named_object.h"
+#include "pathos/render/render_command_list.h"
 #include "gl_core.h"
 
 #include <stdint.h>
@@ -17,7 +18,9 @@ namespace pathos {
 		MeshGeometry& operator=(const MeshGeometry&) = delete;
 
 		void setDrawArraysMode(bool value) { drawArraysMode = value; }
-		void draw();
+
+		// #todo-draw-prim: Remove this and call cmdList.drawElements() directly
+		void drawPrimitive(RenderCommandList& cmdList);
 
 		uint32_t getIndexCount();
 
@@ -31,15 +34,15 @@ namespace pathos {
 		void calculateNormals();
 		void calculateTangentBasis();
 
-		void activate_position();
-		void activate_position_uv();
-		void activate_position_normal();
-		void activate_position_uv_normal();
-		void activate_position_uv_normal_tangent_bitangent();
-		void deactivate();
+		void activate_position(RenderCommandList& cmdList);
+		void activate_position_uv(RenderCommandList& cmdList);
+		void activate_position_normal(RenderCommandList& cmdList);
+		void activate_position_uv_normal(RenderCommandList& cmdList);
+		void activate_position_uv_normal_tangent_bitangent(RenderCommandList& cmdList);
+		void deactivate(RenderCommandList& cmdList);
 
-		void activateIndexBuffer();
-		void deactivateIndexBuffer();
+		void activateIndexBuffer(RenderCommandList& cmdList);
+		void deactivateIndexBuffer(RenderCommandList& cmdList);
 
 		void dispose();
 

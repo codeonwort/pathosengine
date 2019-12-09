@@ -104,17 +104,17 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_bumptexture.vert");
 		dumpShaderSource(fsSource, "renderpass_bumptexture.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_BumpTexture");
 	}
 
-	void BumpTexturePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void BumpTexturePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		BumpTextureMaterial* material = static_cast<BumpTextureMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position_uv_normal_tangent_bitangent();
-		geometry->activateIndexBuffer();
+		geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		PointLight* light = scene->pointLights[0];
 
@@ -170,7 +170,7 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		// draw call
 		//--------------------------------------------------------------------------------------
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate

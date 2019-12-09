@@ -59,8 +59,10 @@ void main() {
 	imageStore(output_image, P.yx + ivec2(0, 1), vec4(shared_data[id * 2 + 1]));
 }
 )";
-	GLuint program = pathos::createComputeProgram(src);
-	assert(program);
+
+	GLuint program = pathos::createComputeProgram(src, "CS_Subsum");
+	CHECK(program);
+
 	return program;
 }
 
@@ -119,7 +121,8 @@ void main() {
 }
 )";
 
-	GLuint program = pathos::createProgram(vs, fs);
-	assert(program);
+	GLuint program = pathos::createProgram(vs, fs, "Blur");
+	CHECK(program);
+
 	return program;
 }

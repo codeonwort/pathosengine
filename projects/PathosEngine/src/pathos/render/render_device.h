@@ -10,6 +10,9 @@
 #define REQUIRED_GL_MAJOR_VERSION 4
 #define REQUIRED_GL_MINOR_VERSION 6
 
+#define GL_DEBUG_CONTEXT  0
+#define GL_ERROR_CALLBACK 1
+
 namespace pathos {
 
 	class OpenGLDevice {

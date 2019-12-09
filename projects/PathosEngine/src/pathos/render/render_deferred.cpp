@@ -1,9 +1,11 @@
 #include "render_deferred.h"
 #include "sky.h"
+#include "visualize_depth.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
-#include "visualize_depth.h"
+
+#include "badger/assertion/assertion.h"
 
 #include <algorithm>
 
@@ -32,85 +34,91 @@ namespace pathos {
 		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
 	};
 
-	DeferredRenderer::DeferredRenderer(unsigned int width, unsigned int height)
-		: width(width)
-		, height(height)
+	DeferredRenderer::DeferredRenderer(uint32 width, uint32 height)
+		: sceneWidth(width)
+		, sceneHeight(height)
 	{
-		createGBuffer();
+		CHECK(width > 0 && height > 0);
+
 		createShaders();
 		ubo_perFrame.init<UBO_PerFrame>();
 		sunShadowMap = new DirectionalShadowMap;
+
+		sceneRenderTargets.useGBuffer = true;
 	}
+
 	DeferredRenderer::~DeferredRenderer() {
-		destroyShaders();
-		destroyGBuffer();
-		delete sunShadowMap;
+		CHECK(destroyed);
+	}
+
+	void DeferredRenderer::initializeResources(RenderCommandList& cmdList) {
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
+		cmdList.flushAllCommands();
+		cmdList.sceneRenderTargets = &sceneRenderTargets;
+
+		sunShadowMap->initializeResources(cmdList);
+		unpack_pass->initializeResources(cmdList);
+	}
+
+	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
+		if (!destroyed) {
+			destroyShaders();
+			destroySceneRenderTargets(cmdList);
+			sunShadowMap->destroyResources(cmdList);
+			delete sunShadowMap;
+			unpack_pass->destroyResources(cmdList);
+		}
+		destroyed = true;
 	}
 
 	void DeferredRenderer::createShaders() {
 		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			pack_passes[i] = nullptr;
 		}
-		pack_passes[(int)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
-		pack_passes[(int)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
-		pack_passes[(int)MATERIAL_ID::WIREFRAME]    = new MeshDeferredRenderPass_Pack_Wireframe;
-		pack_passes[(int)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
-		pack_passes[(int)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
+		pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
+		pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
+		pack_passes[(uint8)MATERIAL_ID::WIREFRAME]    = new MeshDeferredRenderPass_Pack_Wireframe;
+		pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
+		pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
 
-		unpack_pass = new MeshDeferredRenderPass_Unpack(
-			fbo_attachment[0], fbo_attachment[1], fbo_attachment[2],
-			width, height);
+		unpack_pass = new MeshDeferredRenderPass_Unpack;
 
 		visualizeDepth = new VisualizeDepth;
 	}
+
 	void DeferredRenderer::destroyShaders() {
 		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			if (pack_passes[i]) delete pack_passes[i];
+			if (pack_passes[i]) {
+				delete pack_passes[i];
+			}
 		}
 		delete unpack_pass;
 	}
 
-	void DeferredRenderer::createGBuffer() {
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
 
-		glGenTextures(4, fbo_attachment);
+		if (gbufferFBO == 0) {
+			GLenum gbuffer_draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+			cmdList.createFramebuffers(1, &gbufferFBO);
+			cmdList.objectLabel(GL_FRAMEBUFFER, gbufferFBO, -1, "FBO_gbuffer");
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets.gbufferA, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets.gbufferB, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets.gbufferC, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
+			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
 
-		glBindTexture(GL_TEXTURE_2D, fbo_attachment[0]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI, width, height);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glBindTexture(GL_TEXTURE_2D, fbo_attachment[1]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glBindTexture(GL_TEXTURE_2D, fbo_attachment[2]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glBindTexture(GL_TEXTURE_2D, fbo_attachment[3]);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_attachment[0], 0);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_attachment[1], 0);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, fbo_attachment[2], 0);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_attachment[3], 0);
-
-		glDrawBuffers(3, draw_buffers);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			LOG(LogFatal, "Cannot create a framebuffer for deferred renderer");
-			assert(0);
+			GLenum framebufferCompleteness = 0;
+			cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
+			// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
+			cmdList.flushAllCommands();
+			CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
 		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void DeferredRenderer::destroyGBuffer() {
-		glDeleteTextures(4, fbo_attachment);
-		glDeleteFramebuffers(1, &fbo);
+
+	void DeferredRenderer::destroySceneRenderTargets(RenderCommandList& cmdList) {
+		sceneRenderTargets.freeSceneTextures(cmdList);
+		cmdList.deleteFramebuffers(1, &gbufferFBO);
 	}
 
 	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
@@ -121,31 +129,49 @@ namespace pathos {
 		glGetError();
 #endif
 
-		// #todo-renderer: Resize render targets if window size had been changed
+		cmdList.sceneRenderTargets = &sceneRenderTargets;
+		reallocateSceneRenderTargets(cmdList);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
+		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth->getInt() != 0) {
-			glViewport(0, 0, width, height);
-			visualizeDepth->render(scene, camera);
+			cmdList.viewport(0, 0, sceneWidth, sceneHeight);
+
+			visualizeDepth->render(cmdList, scene, camera);
+
 			return;
 		}
 
-		sunShadowMap->renderShadowMap(scene, camera);
+		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
-		glViewport(0, 0, width, height);
+		sunShadowMap->renderShadowMap(cmdList, scene, camera);
+
+		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
 
-		// update ubo_perFrame
-		updateUBO(scene, camera);
+		{
+			SCOPED_DRAW_EVENT(ClearBackbuffer);
 
-		// render to fbo
-		clearGBuffer();
- 		packGBuffer();
- 		unpackGBuffer();
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			cmdList.clearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			cmdList.clearDepth(1.0f);
+			cmdList.clearStencil(0);
+			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
+		// update ubo_perFrame
+		updateSceneUniformBuffer(cmdList, scene, camera);
+
+		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
+
+		// Render gbuffer
+		clearGBuffer(cmdList);
+ 		packGBuffer(cmdList);
+ 		unpackGBuffer(cmdList);
 
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());
@@ -155,28 +181,24 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void DeferredRenderer::clearGBuffer() {
+	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(ClearGBuffer);
 
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearBufferuiv(GL_COLOR, 0, zero_ui);
-		glClearBufferfv(GL_COLOR, 1, zero);
-		glClearBufferfv(GL_COLOR, 2, zero);
-		glClearBufferfv(GL_DEPTH, 0, one);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
+		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, one);
 	}
 
-	void DeferredRenderer::packGBuffer() {
+	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(PackGBuffer);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-#if 0
-		// DEBUG: assert geometries and materials
+#if 0 // DEBUG: assert geometries and materials
 		for (Mesh* mesh : scene->meshes) {
 			Geometries geoms = mesh->getGeometries();
 			Materials materials = mesh->getMaterials();
@@ -205,60 +227,69 @@ namespace pathos {
 				auto M = materials[i];
 
 				int materialID = (int)M->getMaterialID();
-				assert(0 <= materialID && materialID < numMaterialIDs);
+				CHECK(0 <= materialID && materialID < numMaterialIDs);
 
 				renderItems[materialID].push_back(RenderItem(mesh, G, M));
 			}
 		}
 
-		glDepthFunc(GL_LESS);
+		// Set render state
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
+		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
+		cmdList.depthFunc(GL_LESS);
+		cmdList.enable(GL_DEPTH_TEST);
+
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			auto pass = pack_passes[i];
+			MeshDeferredRenderPass_Pack* const pass = pack_passes[i];
 
 			if (pass == nullptr) {
 				// #todo: implement render pass
 				continue;
 			}
 
-			pass->bindProgram();
+			pass->bindProgram(cmdList);
 
 			for (auto j = 0u; j < renderItems[i].size(); ++j) {
 				const RenderItem& item = renderItems[i][j];
 
-				if (item.mesh->doubleSided) glDisable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) glFrontFace(GL_CW);
+				// #todo-renderer: Batching by same state
+				if (item.mesh->doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (item.mesh->renderInternal) cmdList.frontFace(GL_CW);
 
  				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
- 				pass->render(scene, camera, item.geometry, item.material);
+ 				pass->render(cmdList, scene, camera, item.geometry, item.material);
 
-				if (item.mesh->doubleSided) glEnable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) glFrontFace(GL_CCW);
+				// #todo-renderer: Batching by same state
+				if (item.mesh->doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (item.mesh->renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
 	}
 
-	void DeferredRenderer::unpackGBuffer() {
+	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(UnpackGBuffer);
 
-		unpack_pass->bindFramebuffer(useHDR);
-		unpack_pass->setDrawBuffers(false);
+		unpack_pass->bindFramebuffer(cmdList, useHDR);
 
 		// actually not an unpack work, but rendering order is here...
 		if (scene->sky) {
-			scene->sky->render(scene, camera);
+			scene->sky->render(cmdList, scene, camera);
 		}
 
-		unpack_pass->setDrawBuffers(true);
-		unpack_pass->setSunDepthMap(sunShadowMap->getDepthMapTexture());
-		if (useHDR) unpack_pass->renderHDR(scene, camera);
-		else unpack_pass->render(scene, camera);
+		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
+
+		if (useHDR) {
+			unpack_pass->renderHDR(cmdList, scene, camera);
+		} else {
+			unpack_pass->renderLDR(cmdList, scene, camera);
+		}
 	}
 	
-	void DeferredRenderer::updateUBO(Scene* scene, Camera* camera) {
+	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
-		data.screenResolution.x = (float)width;
-		data.screenResolution.y = (float)height;
+		data.screenResolution.x = (float)sceneWidth;
+		data.screenResolution.y = (float)sceneHeight;
 
 		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
@@ -289,7 +320,7 @@ namespace pathos {
 			memcpy_s(&data.pointLightColors[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightColorBuffer(), scene->getPointLightBufferSize());
 		}
 
-		ubo_perFrame.update(0, &data);
+		ubo_perFrame.update(cmdList, 0, &data);
 	}
 
 }

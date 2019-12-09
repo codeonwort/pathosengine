@@ -8,27 +8,25 @@ namespace pathos {
 	class DepthOfField {
 
 	public:
-		DepthOfField(uint32_t width, uint32_t height);
+		DepthOfField();
 		~DepthOfField();
 
+		void initializeResources(RenderCommandList& cmdList);
+		void destroyResources(RenderCommandList& cmdList);
+
 		// texture_input should contain rasterized image at level 0
-		void render(GLuint texture_input, GLuint targetFBO);
+		void render(RenderCommandList& cmdList, GLuint texture_input, GLuint targetFBO);
 
 	private:
-		void createFBO();
-		void createShaders();
 		GLuint createSubsumShader();
 		GLuint createBlurShader();
 
-		GLuint vao;
-		GLuint fbo;
-		GLuint texture_subsum2D[2];
-		GLuint program_subsum2D;
-		GLuint program_blur;
+		GLuint vao = 0;
+		GLuint program_subsum2D = 0;
+		GLuint program_blur = 0;
 		UniformBuffer uboBlur;
 
-		uint32_t width;
-		uint32_t height;
+		bool destroyed = false;
 
 	};
 

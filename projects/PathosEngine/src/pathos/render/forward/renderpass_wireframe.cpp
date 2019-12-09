@@ -15,21 +15,21 @@ namespace pathos {
 		dumpShaderSource(vsSource, "renderpass_wireframe.vert");
 		dumpShaderSource(fsSource, "renderpass_wireframe.frag");
 
-		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode());
+		program = pathos::createProgram(vsSource.getCode(), fsSource.getCode(), "ForwardPass_Wireframe");
 
 		uniform_mvp = glGetUniformLocation(program, "mvpTransform");
 		uniform_color = glGetUniformLocation(program, "color");
 	}
 
-	void WireframePass::render(Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void WireframePass::renderMeshPass(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		static_cast<void>(scene);
 		WireframeMaterial* material = static_cast<WireframeMaterial*>(material_);
 
 		//--------------------------------------------------------------------------------------
 		// activate
 		//--------------------------------------------------------------------------------------
-		geometry->activate_position();
-		geometry->activateIndexBuffer();
+		geometry->activate_position(cmdList);
+		geometry->activateIndexBuffer(cmdList);
 
 		glUseProgram(program);
 
@@ -45,15 +45,15 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		glDisable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		geometry->draw();
+		geometry->drawPrimitive(cmdList);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glEnable(GL_CULL_FACE);
 
 		//--------------------------------------------------------------------------------------
 		// deactivate
 		//--------------------------------------------------------------------------------------
-		geometry->deactivate();
-		geometry->deactivateIndexBuffer();
+		geometry->deactivate(cmdList);
+		geometry->deactivateIndexBuffer(cmdList);
 		glDisable(GL_BLEND);
 
 		glUseProgram(0);

@@ -1,8 +1,11 @@
 #include "render_overlay.h"
 #include "pathos/engine.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/render/overlay/overlaypass.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/brush.h"
+
+#include "badger/assertion/assertion.h"
 
 namespace pathos {
 
@@ -24,21 +27,32 @@ namespace pathos {
 #undef release
 	}
 
-	void OverlayRenderer::render(DisplayObject2D* root_) {
+	void OverlayRenderer::renderOverlay(RenderCommandList& cmdList, class DisplayObject2D* inRoot) {
 		SCOPED_DRAW_EVENT(Overlay);
 
-		assert(root_ && root_->isRoot());
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		calculateTransformNDC();
-		root = root_;
-		render_recurse(root, toNDC);
+		CHECK(cmdList.sceneRenderTargets);
+		const uint32 sceneWidth = cmdList.sceneRenderTargets->sceneWidth;
+		const uint32 sceneHeight = cmdList.sceneRenderTargets->sceneHeight;
+
+		root = inRoot;
+		CHECK(root && root->isRoot());
+
+		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
+		cmdList.disable(GL_CULL_FACE);
+		cmdList.disable(GL_DEPTH_TEST);
+
+		CHECK(cmdList.sceneRenderTargets);
+		calculateTransformNDC(sceneWidth, sceneHeight);
+
+		render_recurse(cmdList, root, toNDC);
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.enable(GL_CULL_FACE);
+
 		root = nullptr;
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
 	}
 
-	void OverlayRenderer::render_recurse(DisplayObject2D* object, const Transform& transformAccum) {
+	void OverlayRenderer::render_recurse(RenderCommandList& cmdList, class DisplayObject2D* object, const Transform& transformAccum) {
 		if (object->getVisible() == false) {
 			return;
 		}
@@ -49,23 +63,18 @@ namespace pathos {
 		if (brush) {
 			auto renderpass = brush->configure(this, accum);
 			if (object->getGeometry() != nullptr) {
-				renderpass->render(object, accum);
+				renderpass->renderOverlay(cmdList, object, accum);
 			}
 		}
 		
 		for (DisplayObject2D* child : object->getChildren()) {
-			render_recurse(child, accum);
+			render_recurse(cmdList, child, accum);
 		}
 	}
 
-	void OverlayRenderer::calculateTransformNDC() {
-		// TODO: remove global access
-		const auto& config = gEngine->getConfig();
-		float width = static_cast<float>(config.windowWidth);
-		float height = static_cast<float>(config.windowHeight);
-
+	void OverlayRenderer::calculateTransformNDC(uint16 sceneWidth, uint16 sceneHeight) {
 		toNDC.identity();
-		toNDC.appendScale(2.0f / width, -2.0f / height, 1.0f);
+		toNDC.appendScale(2.0f / sceneWidth, -2.0f / sceneHeight, 1.0f);
 		toNDC.appendMove(-1.0f, 1.0f, 0.0f);
 	}
 

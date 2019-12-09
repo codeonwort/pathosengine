@@ -26,7 +26,7 @@ namespace pathos {
 		if (background) delete background;
 	}
 
-	bool ConsoleWindow::initialize(uint16_t width, uint16_t height) {
+	bool ConsoleWindow::initialize(uint16 width, uint16 height) {
 		windowWidth = width;
 		windowHeight = height;
 		
@@ -46,9 +46,9 @@ namespace pathos {
 		return initialized;
 	}
 
-	void ConsoleWindow::render() {
+	void ConsoleWindow::renderConsoleWindow(RenderCommandList& cmdList) {
 		if (visible) {
-			renderer->render(root);
+			renderer->renderOverlay(cmdList, root);
 		}
 	}
 

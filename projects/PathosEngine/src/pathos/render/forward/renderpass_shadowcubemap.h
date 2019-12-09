@@ -18,7 +18,7 @@ namespace pathos {
 		ShadowCubeTexturePass(const ShadowCubeTexturePass& other) = delete;
 		ShadowCubeTexturePass(ShadowCubeTexturePass&& other) = delete;
 
-		virtual void render(Scene*, Camera*, MeshGeometry*, Material*) override;
+		virtual void renderMeshPass(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) override;
 
 	private:
 		GLint uniform_mvpTransform;

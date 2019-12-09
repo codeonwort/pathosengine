@@ -29,6 +29,16 @@ namespace pathos {
 		destroyShaders();
 	}
 
+	void ForwardRenderer::initializeResources(RenderCommandList& cmdList)
+	{
+		// #todo-forward
+	}
+
+	void ForwardRenderer::releaseResources(RenderCommandList& cmdList)
+	{
+		// #todo-forward
+	}
+
 	void ForwardRenderer::createShaders() {
 		shadowMap = new ShadowMap(MAX_DIRECTIONAL_LIGHTS);
 		omniShadow = new OmnidirectionalShadow(MAX_POINT_LIGHTS);
@@ -85,7 +95,7 @@ namespace pathos {
 
 		// #todo-renderer: Resize render targets if window size had been changed
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		scene->calculateLightBuffer();
 
@@ -97,12 +107,12 @@ namespace pathos {
 			omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
 			for (Mesh* mesh : scene->meshes) {
 				if (mesh->visible == false) continue;
-				renderLightDepth(mesh);
+				renderLightDepth(cmdList,mesh);
 			}
 		}
 
 		if (scene->sky != nullptr) {
-			scene->sky->render(scene, camera);
+			scene->sky->render(cmdList, inScene, inCamera);
 		}
 
 		{
@@ -111,7 +121,7 @@ namespace pathos {
 			// #todo-occlusion: occluder or BSP tree
 			for (Mesh* mesh : scene->meshes) {
 				if (mesh->visible == false) continue;
-				render(mesh);
+				renderMesh(cmdList, mesh);
 			}
 		}
 
@@ -119,7 +129,7 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void ForwardRenderer::renderLightDepth(Mesh* mesh) {
+	void ForwardRenderer::renderLightDepth(RenderCommandList& cmdList, Mesh* mesh) {
 		const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
 		Geometries geoms = mesh->getGeometries();
 		size_t len = geoms.size();
@@ -130,14 +140,14 @@ namespace pathos {
 		// shadow mapping for directional light
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numDirectionalLights(); ++light) {
-				shadowMap->renderLightDepth(light, scene->directionalLights[light], geoms[i], modelTransform);
+				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights[light], geoms[i], modelTransform);
 			}
 		}
 
 		// omnidirectional shadow for point light
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numPointLights(); ++light) {
-				omniShadow->renderLightDepth(light, scene->pointLights[light], geoms[i], modelTransform);
+				omniShadow->renderLightDepth(cmdList, light, scene->pointLights[light], geoms[i], modelTransform);
 			}
 		}
 
@@ -145,7 +155,7 @@ namespace pathos {
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
-	void ForwardRenderer::render(Mesh* mesh) {
+	void ForwardRenderer::renderMesh(RenderCommandList& cmdList, Mesh* mesh) {
 		Geometries geoms = mesh->getGeometries();
 		Materials materials = mesh->getMaterials();
 		size_t len = geoms.size();
@@ -156,14 +166,14 @@ namespace pathos {
 		for (auto i = 0u; i < len; i++) {
 			auto G = geoms[i];
 			auto M = materials[i];
-			renderPiece(mesh, G, M);
+			renderPiece(cmdList, mesh, G, M);
 		}
 
 		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
 	}
 
-	void ForwardRenderer::renderPiece(Mesh* mesh, MeshGeometry* G, Material* M) {
+	void ForwardRenderer::renderPiece(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, Material* M) {
 		/*
 		// fill stencil buffer for reflection
 		PlaneReflection* reflection = material->getReflectionMethod();
@@ -180,28 +190,28 @@ namespace pathos {
 		// leave it like this until all material id are verified
 		switch (M->getMaterialID()) {
 		case MATERIAL_ID::SOLID_COLOR:
-			renderSolidColor(mesh, G, static_cast<ColorMaterial*>(M));
+			renderSolidColor(cmdList, mesh, G, static_cast<ColorMaterial*>(M));
 			break;
 		case MATERIAL_ID::FLAT_TEXTURE:
-			renderFlatTexture(mesh, G, static_cast<TextureMaterial*>(M));
+			renderFlatTexture(cmdList, mesh, G, static_cast<TextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::WIREFRAME:
-			renderWireframe(mesh, G, static_cast<WireframeMaterial*>(M));
+			renderWireframe(cmdList, mesh, G, static_cast<WireframeMaterial*>(M));
 			break;
 		case MATERIAL_ID::SHADOW_TEXTURE:
-			renderShadowTexture(mesh, G, static_cast<ShadowTextureMaterial*>(M));
+			renderShadowTexture(cmdList, mesh, G, static_cast<ShadowTextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::CUBE_ENV_MAP:
-			renderCubeEnvMap(mesh, G, static_cast<CubeEnvMapMaterial*>(M));
+			renderCubeEnvMap(cmdList, mesh, G, static_cast<CubeEnvMapMaterial*>(M));
 			break;
 		case MATERIAL_ID::BUMP_TEXTURE:
-			renderBumpTexture(mesh, G, static_cast<BumpTextureMaterial*>(M));
+			renderBumpTexture(cmdList, mesh, G, static_cast<BumpTextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
-			renderShadowCubeTexture(mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
+			renderShadowCubeTexture(cmdList, mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::ALPHA_ONLY_TEXTURE:
-			renderAlphaOnlyTexture(mesh, G, static_cast<AlphaOnlyTextureMaterial*>(M));
+			renderAlphaOnlyTexture(cmdList, mesh, G, static_cast<AlphaOnlyTextureMaterial*>(M));
 			break;
 		default:
 			// no render pass exists for this material id. should not be here...
@@ -217,44 +227,44 @@ namespace pathos {
 	// Render logic for each material type
 	//------------------------------------------------------------------------------------------------------
 
-	void ForwardRenderer::renderSolidColor(Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
+	void ForwardRenderer::renderSolidColor(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
 		colorPass->setModelMatrix(mesh->getTransform().getMatrix());
-		colorPass->render(scene, camera, G, M);
+		colorPass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderFlatTexture(Mesh* mesh, MeshGeometry* geom, TextureMaterial* material) {
+	void ForwardRenderer::renderFlatTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, TextureMaterial* M) {
 		texturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		texturePass->render(scene, camera, geom, material);
+		texturePass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderWireframe(Mesh* mesh, MeshGeometry* geom, WireframeMaterial* material) {
+	void ForwardRenderer::renderWireframe(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, WireframeMaterial* M) {
 		wireframePass->setModelMatrix(mesh->getTransform().getMatrix());
-		wireframePass->render(scene, camera, geom, material);
+		wireframePass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderShadowTexture(Mesh* mesh, MeshGeometry* geom, ShadowTextureMaterial* material) {
+	void ForwardRenderer::renderShadowTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowTextureMaterial* M) {
 		shadowTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		shadowTexturePass->render(scene, camera, geom, material);
+		shadowTexturePass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderCubeEnvMap(Mesh* mesh, MeshGeometry* geom, CubeEnvMapMaterial* material) {
+	void ForwardRenderer::renderCubeEnvMap(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, CubeEnvMapMaterial* M) {
 		cubeEnvMapPass->setModelMatrix(mesh->getTransform().getMatrix());
-		cubeEnvMapPass->render(scene, camera, geom, material);
+		cubeEnvMapPass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderBumpTexture(Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
+	void ForwardRenderer::renderBumpTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
 		bumpTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		bumpTexturePass->render(scene, camera, geom, material);
+		bumpTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
 	}
 
-	void ForwardRenderer::renderShadowCubeTexture(Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
+	void ForwardRenderer::renderShadowCubeTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
 		shadowCubeTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		shadowCubeTexturePass->render(scene, camera, geom, material);
+		shadowCubeTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
 	}
 
-	void ForwardRenderer::renderAlphaOnlyTexture(Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
+	void ForwardRenderer::renderAlphaOnlyTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
 		alphaOnlyTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		alphaOnlyTexturePass->render(scene, camera, geom, material);
+		alphaOnlyTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
 	}
 
 }

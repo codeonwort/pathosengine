@@ -8021,12 +8021,14 @@ struct RenderCommand_blitNamedFramebuffer : public RenderCommandBase {
 struct RenderCommand_checkNamedFramebufferStatus : public RenderCommandBase {
 	GLuint framebuffer;
 	GLenum target;
+	GLenum* return_value;
 
-	static void APIENTRY execute(const RenderCommand_checkNamedFramebufferStatus* __restrict params) {
-		glCheckNamedFramebufferStatus(
+	static void APIENTRY execute(RenderCommand_checkNamedFramebufferStatus* __restrict params) {
+		GLenum return_value = glCheckNamedFramebufferStatus(
 			params->framebuffer,
 			params->target
 		);
+		*(params->return_value) = return_value;
 	}
 };
 struct RenderCommand_getNamedFramebufferParameteriv : public RenderCommandBase {

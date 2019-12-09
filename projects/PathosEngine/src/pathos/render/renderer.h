@@ -34,6 +34,8 @@ namespace pathos {
 		Renderer(const Renderer&)            = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
+		virtual void initializeResources(RenderCommandList& cmdList) = 0;
+		virtual void releaseResources(RenderCommandList& cmdList) = 0;
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera*) = 0;
 
 	protected:
