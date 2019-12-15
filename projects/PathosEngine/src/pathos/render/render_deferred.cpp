@@ -1,6 +1,9 @@
 #include "render_deferred.h"
+
 #include "sky.h"
+#include "god_ray.h"
 #include "visualize_depth.h"
+#include "postprocessing/bloom.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
@@ -40,11 +43,14 @@ namespace pathos {
 	{
 		CHECK(width > 0 && height > 0);
 
+		sceneRenderTargets.useGBuffer = true;
+
 		createShaders();
 		ubo_perFrame.init<UBO_PerFrame>();
-		sunShadowMap = new DirectionalShadowMap;
 
-		sceneRenderTargets.useGBuffer = true;
+		sunShadowMap = std::make_unique<DirectionalShadowMap>();
+		godRay = std::make_unique<GodRay>();
+		bloomPass = std::make_unique<BloomPass>();
 	}
 
 	DeferredRenderer::~DeferredRenderer() {
@@ -57,7 +63,11 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 
 		sunShadowMap->initializeResources(cmdList);
+
 		unpack_pass->initializeResources(cmdList);
+
+		godRay->initializeResources(cmdList);
+		bloomPass->initializeResources(cmdList);
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
@@ -65,8 +75,9 @@ namespace pathos {
 			destroyShaders();
 			destroySceneRenderTargets(cmdList);
 			sunShadowMap->destroyResources(cmdList);
-			delete sunShadowMap;
 			unpack_pass->destroyResources(cmdList);
+			godRay->releaseResources(cmdList);
+			bloomPass->releaseResources(cmdList);
 		}
 		destroyed = true;
 	}
@@ -168,10 +179,29 @@ namespace pathos {
 
 		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
+		// prepare god ray image
+		godRay->renderGodRay(cmdList, scene, camera);
+
 		// Render gbuffer
 		clearGBuffer(cmdList);
  		packGBuffer(cmdList);
  		unpackGBuffer(cmdList);
+
+		// #todo-post-processing: Move god ray from unpack pass to here
+		// input: static meshes
+		// output: god ray texture
+
+		// #todo-post-processing: Move bloom from unpack pass to here
+		// input: bright pixels in gbuffer
+		// output: bloom texture
+
+		// #todo-post-processing: Move tone mapping from unpack pass to here
+		// input: scene color, bloom, god ray
+		// output: scene final
+
+		// #todo-post-processing: Move depth of field from unpack pass to here
+		// input: scene final
+		// output: scene final with DoF
 
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());

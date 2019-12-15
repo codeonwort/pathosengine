@@ -45,7 +45,6 @@ namespace pathos {
 		GLuint fbo_blur;
 		GLuint fbo_tone;
 
-		class GodRay* godRay = nullptr;
 		class DepthOfField* dof = nullptr;
 
 		PlaneGeometry* quad = nullptr;

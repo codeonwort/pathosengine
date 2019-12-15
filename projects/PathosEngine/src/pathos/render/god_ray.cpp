@@ -1,8 +1,7 @@
-// Volumetric light scattering a.k.a. god ray
-
 #include "god_ray.h"
 #include "scene_render_targets.h"
 #include "pathos/util/log.h"
+
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -13,22 +12,24 @@ namespace pathos {
 	}
 
 	GodRay::~GodRay() {
-		// Must call destroy()
 		CHECK(destroyed);
 	}
 
-	void GodRay::initialize(RenderCommandList& cmdList) {
+	void GodRay::initializeResources(RenderCommandList& cmdList) {
 		createFBO(cmdList);
 		createShaders(cmdList);
 		cmdList.genVertexArrays(1, &vao_dummy);
 	}
 
-	void GodRay::destroy(RenderCommandList& cmdList)
+	void GodRay::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteVertexArrays(1, &vao_dummy);
-		cmdList.deleteFramebuffers(2, fbo);
-		cmdList.deleteProgram(program_silhouette);
-		cmdList.deleteProgram(program_godRay);
+		if (!destroyed) {
+			cmdList.deleteVertexArrays(1, &vao_dummy);
+			cmdList.deleteFramebuffers(2, fbo);
+			cmdList.deleteProgram(program_silhouette);
+			cmdList.deleteProgram(program_godRay);
+		}
+		destroyed = true;
 	}
 
 	void GodRay::createFBO(RenderCommandList& cmdList) {
@@ -36,6 +37,8 @@ namespace pathos {
 
 		// generate fbo and textures
 		cmdList.createFramebuffers(2, fbo);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "GodRaySource");
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "GodRayResult");
 
 		GLenum fboCompleteness0;
 		GLenum fboCompleteness1;
@@ -145,32 +148,42 @@ void main() {
 		uniform_lightPos = 0;
 	}
 
-	void GodRay::render(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(GodRay);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		// bind
-		static GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-		static GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		static GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
+		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
+		GLfloat depth_clear[] = { 1.0f };
 
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
+		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_DEPTH, 0, depth_clear);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
+		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_DEPTH, 0, depth_clear);
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LEQUAL);
 
 		// special case: no light source
 		if (scene->godRaySource == nullptr) {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			return;
 		}
 
 		// render
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
-		cmdList.useProgram(program_silhouette);
-		renderSilhouette(cmdList, camera, scene->godRaySource, opaque_white);
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh == scene->godRaySource) continue;
-			renderSilhouette(cmdList, camera, mesh, opaque_black);
+		{
+			SCOPED_DRAW_EVENT(RenderSilhouette);
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
+			cmdList.useProgram(program_silhouette);
+			renderSilhouette(cmdList, camera, scene->godRaySource, opaque_white);
+			for (Mesh* mesh : scene->meshes) {
+				if (mesh == scene->godRaySource) continue;
+				renderSilhouette(cmdList, camera, mesh, opaque_black);
+			}
 		}
 
 		// light scattering pass
@@ -198,8 +211,10 @@ void main() {
 		const auto modelMatrix = mesh->getTransform().getMatrix();
 		const auto geoms = mesh->getGeometries();
 		const auto materials = mesh->getMaterials();
+
 		cmdList.uniform3fv(uniform_color, 1, color);
 		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
+
 		for (auto i = 0u; i < geoms.size(); ++i) {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];

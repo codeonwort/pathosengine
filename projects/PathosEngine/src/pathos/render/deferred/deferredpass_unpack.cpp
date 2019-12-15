@@ -2,8 +2,8 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/render/god_ray.h"
-#include "pathos/render/depth_of_field.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
@@ -45,7 +45,6 @@ namespace pathos {
 
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack() {
 		// post processing
-		godRay = new GodRay;
 		dof = new DepthOfField;
 	}
 
@@ -59,7 +58,6 @@ namespace pathos {
 		createProgram_LDR();
 		createProgram_HDR();
 		createResource_HDR(cmdList);
-		godRay->initialize(cmdList);
 		dof->initializeResources(cmdList);
 	}
 
@@ -73,10 +71,8 @@ namespace pathos {
 			cmdList.deleteFramebuffers(1, &fbo_blur);
 			cmdList.deleteFramebuffers(1, &fbo_tone);
 			quad->dispose();
-			godRay->destroy(cmdList);
-			dof->destroyResources(cmdList);
+			dof->releaseResources(cmdList);
 			delete quad;
-			delete godRay;
 			delete dof;
 		}
 		destroyed = true;
@@ -206,13 +202,6 @@ void main() {
 	void MeshDeferredRenderPass_Unpack::renderHDR(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
-		// prepare god ray image
-		godRay->render(cmdList, scene, camera);
-
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-		
 		{
 			SCOPED_DRAW_EVENT(UnpackHDR);
 
@@ -297,9 +286,10 @@ void main() {
 
 		if (cvar_enable_dof.getInt() != 0) {
 			constexpr GLuint dofRenderTarget = 0; // default framebuffer
-			dof->render(cmdList, sceneContext.toneMappingResult, dofRenderTarget);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			// #todo-post-processing
+			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
+			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
+			dof->renderPostProcess(cmdList, quad);
 		}
 
 		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging

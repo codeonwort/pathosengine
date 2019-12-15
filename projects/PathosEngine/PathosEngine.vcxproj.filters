@@ -150,9 +150,6 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\god_ray.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\text\font_mgr.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -175,9 +172,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\render\depth_of_field.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\resource_finder.cpp">
@@ -253,6 +247,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\gl_debug_group.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\postprocessing\bloom.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\postprocessing\depth_of_field.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\god_ray.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -362,9 +368,6 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\god_ray.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\text\font_mgr.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -390,9 +393,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_standard.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\depth_of_field.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\resource_finder.h">
@@ -504,6 +504,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_render_targets.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\postprocessing\bloom.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\postprocessing\post_process.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\god_ray.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

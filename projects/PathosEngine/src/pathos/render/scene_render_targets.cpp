@@ -72,8 +72,8 @@ namespace pathos {
 		}
 
 		// god ray
-		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRaySource");
-		reallocTexture2D(godRayResult, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResult");
+		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth, sceneHeight, "godRaySource");
+		reallocTexture2D(godRayResult, GL_RGBA32F, sceneWidth, sceneHeight, "godRayResult");
 
 		// depth of field
 		reallocTexture2D(dofSubsum0, GL_RGBA32F, sceneHeight, sceneWidth, "depthOfField_subsum0");

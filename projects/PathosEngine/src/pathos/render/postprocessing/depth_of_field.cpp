@@ -1,5 +1,5 @@
 #include "depth_of_field.h"
-#include "scene_render_targets.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 
 namespace pathos {
@@ -14,16 +14,14 @@ namespace pathos {
 		float maxRadius;
 	};
 
-	DepthOfField::DepthOfField() {
-	}
-
-	DepthOfField::~DepthOfField() {
-		CHECK(destroyed);
-	}
-
 	void DepthOfField::initializeResources(RenderCommandList& cmdList)
 	{
 		cmdList.createVertexArrays(1, &vao);
+
+		cmdList.createFramebuffers(1, &fbo);
+		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
+		// Can't check now
+		// checkFramebufferStatus(cmdList);
 
 		// compute program. output is transposed.
 		program_subsum2D = createSubsumShader();
@@ -33,24 +31,31 @@ namespace pathos {
 		uboBlur.init<UBO_DoF>();
 	}
 
-	void DepthOfField::destroyResources(RenderCommandList& cmdList)
+	void DepthOfField::releaseResources(RenderCommandList& cmdList)
 	{
-		if (!destroyed) {
-			cmdList.deleteVertexArrays(1, &vao);
-			cmdList.deleteProgram(program_subsum2D);
-			cmdList.deleteProgram(program_blur);
-		}
-		destroyed = true;
+		cmdList.deleteVertexArrays(1, &vao);
+		cmdList.deleteFramebuffers(1, &fbo);
+		cmdList.deleteProgram(program_subsum2D);
+		cmdList.deleteProgram(program_blur);
+
+		markDestroyed();
 	}
 
-	void DepthOfField::render(RenderCommandList& cmdList, GLuint texture_input, GLuint targetFBO) {
+	void DepthOfField::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(DepthOfField);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
+		// #todo-post-processing
+		//GLuint input0 = getInput(EPostProcessInput::PPI_0);
+		//GLuint output0 = getOutput(EPostProcessOutput::PPO_0);
+
+		GLuint input0 = sceneContext.toneMappingResult;
+		GLuint output0 = 0; // backbuffer
+
 		//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
 		cmdList.useProgram(program_subsum2D);
-		cmdList.bindImageTexture(0, texture_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+		cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 		cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -74,7 +79,12 @@ namespace pathos {
 		uboData.maxRadius = cvar_max_radius.getFloat();
 		uboBlur.update(cmdList, 1, &uboData);
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
+		if (output0 == 0) {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+		}
 
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);

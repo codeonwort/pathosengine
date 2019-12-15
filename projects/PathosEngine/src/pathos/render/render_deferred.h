@@ -8,6 +8,8 @@
 #include "pathos/render/scene.h"
 #include "pathos/light/shadow_directional.h"
 
+#include <memory>
+
 namespace pathos {
 
 	class DeferredRenderer : public Renderer {
@@ -35,8 +37,9 @@ namespace pathos {
 		void unpackGBuffer(RenderCommandList& cmdList);
 
 	private:
-		bool useHDR = true;
 		bool destroyed = false;
+
+		bool useHDR = true;
 
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
@@ -46,9 +49,13 @@ namespace pathos {
 		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
 		MeshDeferredRenderPass_Unpack* unpack_pass;
 
-		DirectionalShadowMap* sunShadowMap;
+		std::unique_ptr<DirectionalShadowMap> sunShadowMap;
 
 		class VisualizeDepth* visualizeDepth;
+
+		// post-processing
+		std::unique_ptr<class GodRay> godRay;
+		std::unique_ptr<class BloomPass> bloomPass;
 
 		// temporary save
 		Scene* scene; 

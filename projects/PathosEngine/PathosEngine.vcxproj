@@ -111,7 +111,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
-    <ClCompile Include="src\pathos\render\depth_of_field.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\depth_of_field.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_alphaonlytexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
@@ -125,6 +125,8 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\bloom.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp" />
     <ClCompile Include="src\pathos\render\render_command_list.cpp" />
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
     <ClCompile Include="src\pathos\render\render_device.cpp" />
@@ -171,6 +173,8 @@
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
     <ClInclude Include="src\pathos\render\atmosphere.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\bloom.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\post_process.h" />
     <ClInclude Include="src\pathos\render\render_commands.generated.h" />
     <ClInclude Include="src\pathos\render\render_commands.h" />
     <ClInclude Include="src\pathos\render\render_command_list.generated.h" />
@@ -188,7 +192,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
-    <ClInclude Include="src\pathos\render\depth_of_field.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\sky.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
     <ClInclude Include="src\pathos\material\material.h" />

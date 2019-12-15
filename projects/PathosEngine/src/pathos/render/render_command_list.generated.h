@@ -1458,10 +1458,11 @@ GLint getUniformLocation(
 	GLuint program,
 	const GLchar *name)
 {
-	RenderCommand_getUniformLocation* __restrict packet = (RenderCommand_getUniformLocation*)getNextPacket();
-	packet->pfn_execute = PFN_EXECUTE(RenderCommand_getUniformLocation::execute);
-	packet->program = program;
-	packet->name = name;
+	//RenderCommand_getUniformLocation* __restrict packet = (RenderCommand_getUniformLocation*)getNextPacket();
+	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_getUniformLocation::execute);
+	//packet->program = program;
+	//packet->name = name;
+	return glGetUniformLocation(program, name);
 }
 void getUniformfv(
 	GLuint program,
@@ -6808,12 +6809,14 @@ void clearNamedFramebufferiv(
 	GLint drawbuffer,
 	const GLint *value)
 {
+	GLint numComponents = (buffer == GL_STENCIL) ? 1 : 4;
+
 	RenderCommand_clearNamedFramebufferiv* __restrict packet = (RenderCommand_clearNamedFramebufferiv*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_clearNamedFramebufferiv::execute);
 	packet->framebuffer = framebuffer;
 	packet->buffer = buffer;
 	packet->drawbuffer = drawbuffer;
-	packet->value = value;
+	packet->value = storeParameter(sizeof(GLint) * numComponents, value);
 }
 void clearNamedFramebufferuiv(
 	GLuint framebuffer,
@@ -6826,7 +6829,7 @@ void clearNamedFramebufferuiv(
 	packet->framebuffer = framebuffer;
 	packet->buffer = buffer;
 	packet->drawbuffer = drawbuffer;
-	packet->value = value;
+	packet->value = storeParameter(sizeof(GLfloat) * 4, value);
 }
 void clearNamedFramebufferfv(
 	GLuint framebuffer,
@@ -6834,12 +6837,14 @@ void clearNamedFramebufferfv(
 	GLint drawbuffer,
 	const GLfloat *value)
 {
+	GLuint numComponents = (buffer == GL_DEPTH) ? 1 : 4;
+
 	RenderCommand_clearNamedFramebufferfv* __restrict packet = (RenderCommand_clearNamedFramebufferfv*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_clearNamedFramebufferfv::execute);
 	packet->framebuffer = framebuffer;
 	packet->buffer = buffer;
 	packet->drawbuffer = drawbuffer;
-	packet->value = value;
+	packet->value = storeParameter(sizeof(GLfloat) * numComponents, value);
 }
 void clearNamedFramebufferfi(
 	GLuint framebuffer,

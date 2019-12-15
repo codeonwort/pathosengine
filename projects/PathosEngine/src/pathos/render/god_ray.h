@@ -10,7 +10,7 @@
 namespace pathos {
 
 	// TODO: need depth buffer
-	class GodRay {
+	class GodRay final {
 
 		static constexpr uint32 GOD_RAY_SOURCE = 0;
 		static constexpr uint32 GOD_RAY_RESULT = 1;
@@ -19,13 +19,15 @@ namespace pathos {
 		GodRay();
 		~GodRay();
 
-		void initialize(RenderCommandList& cmdList);
-		void destroy(RenderCommandList& cmdList);
+		void initializeResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void createFBO(RenderCommandList& cmdList);
 		void createShaders(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+
+	private:
 		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color);
 
 	private:
@@ -33,7 +35,7 @@ namespace pathos {
 
 		GLuint fbo[2] = { 0, 0 };
 
-		GLuint program_silhouette;
+		GLuint program_silhouette = 0;
 		GLint uniform_mvp;
 		GLint uniform_color;
 		
