@@ -56,6 +56,10 @@ namespace pathos {
 		// post-processing
 		std::unique_ptr<class GodRay> godRay;
 		std::unique_ptr<class BloomPass> bloomPass;
+		std::unique_ptr<class ToneMapping> toneMapping;
+		std::unique_ptr<class DepthOfField> depthOfField;
+
+		std::unique_ptr<class PlaneGeometry> fullscreenQuad;
 
 		// temporary save
 		Scene* scene; 

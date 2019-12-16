@@ -4,17 +4,21 @@
 #include "god_ray.h"
 #include "visualize_depth.h"
 #include "postprocessing/bloom.h"
+#include "postprocessing/tone_mapping.h"
+#include "postprocessing/depth_of_field.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
-
 #include <algorithm>
+
 
 #define ASSERT_GL_NO_ERROR 0
 
 namespace pathos {
+
+	static ConsoleVariable<int32_t> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 
 	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS        = 8;
 	static constexpr uint32_t MAX_POINT_LIGHTS              = 16;
@@ -51,6 +55,8 @@ namespace pathos {
 		sunShadowMap = std::make_unique<DirectionalShadowMap>();
 		godRay = std::make_unique<GodRay>();
 		bloomPass = std::make_unique<BloomPass>();
+		toneMapping = std::make_unique<ToneMapping>();
+		depthOfField = std::make_unique<DepthOfField>();
 	}
 
 	DeferredRenderer::~DeferredRenderer() {
@@ -66,18 +72,29 @@ namespace pathos {
 
 		unpack_pass->initializeResources(cmdList);
 
+		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
+
 		godRay->initializeResources(cmdList);
 		bloomPass->initializeResources(cmdList);
+		toneMapping->initializeResources(cmdList);
+		depthOfField->initializeResources(cmdList);
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			destroyShaders();
 			destroySceneRenderTargets(cmdList);
+
 			sunShadowMap->destroyResources(cmdList);
 			unpack_pass->destroyResources(cmdList);
+
 			godRay->releaseResources(cmdList);
 			bloomPass->releaseResources(cmdList);
+			toneMapping->releaseResources(cmdList);
+			depthOfField->releaseResources(cmdList);
+
+			cmdList.flushAllCommands();
+			fullscreenQuad->dispose();
 		}
 		destroyed = true;
 	}
@@ -143,8 +160,6 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth->getInt() != 0) {
@@ -155,11 +170,7 @@ namespace pathos {
 			return;
 		}
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
 		sunShadowMap->renderShadowMap(cmdList, scene, camera);
-
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
 		// ready scene for rendering
 		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
@@ -179,7 +190,9 @@ namespace pathos {
 
 		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 
-		// prepare god ray image
+		// GodRay
+		// input: static meshes
+		// output: god ray texture
 		godRay->renderGodRay(cmdList, scene, camera);
 
 		// Render gbuffer
@@ -187,21 +200,23 @@ namespace pathos {
  		packGBuffer(cmdList);
  		unpackGBuffer(cmdList);
 
-		// #todo-post-processing: Move god ray from unpack pass to here
-		// input: static meshes
-		// output: god ray texture
-
 		// #todo-post-processing: Move bloom from unpack pass to here
 		// input: bright pixels in gbuffer
 		// output: bloom texture
 
-		// #todo-post-processing: Move tone mapping from unpack pass to here
 		// input: scene color, bloom, god ray
 		// output: scene final
+		toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-		// #todo-post-processing: Move depth of field from unpack pass to here
 		// input: scene final
 		// output: scene final with DoF
+		if (cvar_enable_dof.getInt() != 0) {
+			constexpr GLuint dofRenderTarget = 0; // default framebuffer
+			// #todo-post-processing: set input and output
+			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
+			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
+			depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+		}
 
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());

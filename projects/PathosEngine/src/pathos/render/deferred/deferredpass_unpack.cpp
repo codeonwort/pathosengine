@@ -1,17 +1,10 @@
 #include "deferredpass_unpack.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
-#include "pathos/render/god_ray.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
-#include <algorithm>
-
-using std::min;
-
-#define DOF 0
 
 namespace pathos {
 
@@ -20,11 +13,6 @@ namespace pathos {
 		glm::vec4 fogColor;
 		glm::vec4 fogParams;           // (bottomY, topY, ?, ?)
 		glm::vec4 bloomParams;
-	};
-
-	struct UBO_ToneMapping {
-		float exposure;
-		float gamma;
 	};
 
 	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
@@ -38,14 +26,7 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
 	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
 
-	static ConsoleVariable<int32_t> cvar_enable_dof("r.dof", 1, "0 = disable DoF, 1 = enable DoF");
-
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
-	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
-
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack() {
-		// post processing
-		dof = new DepthOfField;
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
@@ -58,22 +39,17 @@ namespace pathos {
 		createProgram_LDR();
 		createProgram_HDR();
 		createResource_HDR(cmdList);
-		dof->initializeResources(cmdList);
 	}
 
 	void MeshDeferredRenderPass_Unpack::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			cmdList.deleteProgram(program_ldr);
 			cmdList.deleteProgram(program_hdr);
-			cmdList.deleteProgram(program_tone_mapping);
 			cmdList.deleteProgram(program_blur);
 			cmdList.deleteFramebuffers(1, &fbo_hdr);
 			cmdList.deleteFramebuffers(1, &fbo_blur);
-			cmdList.deleteFramebuffers(1, &fbo_tone);
 			quad->dispose();
-			dof->releaseResources(cmdList);
 			delete quad;
-			delete dof;
 		}
 		destroyed = true;
 	}
@@ -118,11 +94,6 @@ void main() {
 		program_hdr = pathos::createProgram(shaders, "UnpackHDR");
 		ubo_unpack.init<UBO_Unpack>();
 
-		// tone mapping
-		fs.loadSource("tone_mapping.glsl");
-		program_tone_mapping = pathos::createProgram(shaders, "ToneMapping");
-		ubo_tone_mapping.init<UBO_ToneMapping>();
-
 		// blur pass
 		fs.loadSource("blur_pass.glsl");
 		program_blur = pathos::createProgram(shaders, "BlurPass");
@@ -156,12 +127,6 @@ void main() {
 		cmdList.namedFramebufferTexture(fbo_blur, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo_blur, GL_COLOR_ATTACHMENT0);
 		checkFramebufferStatus(fbo_blur);
-
-		// tone mapping resource
-		cmdList.createFramebuffers(1, &fbo_tone);
-		cmdList.namedFramebufferTexture(fbo_tone, GL_COLOR_ATTACHMENT0, sceneContext.toneMappingResult, 0);
-		cmdList.namedFramebufferDrawBuffer(fbo_tone, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(fbo_tone);
 	}
 
 	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList, bool hdr) {
@@ -235,8 +200,6 @@ void main() {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		}
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
 		{
 			SCOPED_DRAW_EVENT(BloomPass);
 
@@ -256,43 +219,6 @@ void main() {
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		}
-
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
-		{
-			SCOPED_DRAW_EVENT(ToneMapping);
-
-			if (cvar_enable_dof.getInt() != 0) {
-				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_tone);
-			} else {
-				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			}
-
-			cmdList.useProgram(program_tone_mapping);
-			UBO_ToneMapping uboData_toneMapping;
-			uboData_toneMapping.exposure = cvar_tonemapping_exposure.getValue();
-			uboData_toneMapping.gamma = cvar_gamma.getValue();
-			ubo_tone_mapping.update(cmdList, 0, &uboData_toneMapping);
-
-			GLuint tonemapping_attachments[] = { sceneContext.sceneColor, sceneContext.sceneBloom, sceneContext.godRayResult };
-			cmdList.bindTextures(0, 3, tonemapping_attachments);
-
-			quad->drawPrimitive(cmdList);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
-
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
-		if (cvar_enable_dof.getInt() != 0) {
-			constexpr GLuint dofRenderTarget = 0; // default framebuffer
-			// #todo-post-processing
-			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
-			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
-			dof->renderPostProcess(cmdList, quad);
-		}
-
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
 	}
 
 }

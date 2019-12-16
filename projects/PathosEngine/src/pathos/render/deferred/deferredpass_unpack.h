@@ -34,18 +34,12 @@ namespace pathos {
 
 		GLuint program_blur = 0; // gaussian blur
 
-		GLuint program_tone_mapping = 0;
-		UniformBuffer ubo_tone_mapping;
-
 		// program_blur
 		GLint uniform_blur_horizontal = 0;
 
 		static constexpr uint32 NUM_HDR_ATTACHMENTS = 2;
 		GLuint fbo_hdr;
 		GLuint fbo_blur;
-		GLuint fbo_tone;
-
-		class DepthOfField* dof = nullptr;
 
 		PlaneGeometry* quad = nullptr;
 
