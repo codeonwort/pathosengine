@@ -155,6 +155,16 @@ namespace pathos {
 			}
 		}
 
+		for (size_t i = 0u; i < numVertices * 3; i += 3) {
+			float nx = normals[i + 0];
+			float ny = normals[i + 1];
+			float nz = normals[i + 2];
+			float inv_len = 1.0f / ::sqrtf(nx * nx + ny * ny + nz * nz);
+			normals[i + 0] *= inv_len;
+			normals[i + 1] *= inv_len;
+			normals[i + 2] *= inv_len;
+		}
+
 		updatePositionData(positions, numVertices * 3);
 		updateUVData(uvs, numVertices * 2);
 		updateNormalData(normals, numVertices * 3);
