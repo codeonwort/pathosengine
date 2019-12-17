@@ -88,8 +88,7 @@ namespace pathos {
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		// tone mapping
-		cmdList.createTextures(GL_TEXTURE_2D, 1, &toneMappingResult);
-		cmdList.textureStorage2D(toneMappingResult, 1, GL_RGBA32F, sceneWidth, sceneHeight);
+		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
 		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}

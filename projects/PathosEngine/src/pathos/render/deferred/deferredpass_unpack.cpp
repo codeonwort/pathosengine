@@ -26,7 +26,10 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
 	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
 
-	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack() {
+	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack()
+		: use_hdr(true)
+		, fbo_hdr(0xffffffff)
+	{
 	}
 
 	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
@@ -45,9 +48,7 @@ namespace pathos {
 		if (!destroyed) {
 			cmdList.deleteProgram(program_ldr);
 			cmdList.deleteProgram(program_hdr);
-			cmdList.deleteProgram(program_blur);
 			cmdList.deleteFramebuffers(1, &fbo_hdr);
-			cmdList.deleteFramebuffers(1, &fbo_blur);
 			quad->dispose();
 			delete quad;
 		}
@@ -69,8 +70,7 @@ void main() {
 		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Unpack_LDR");
 		fs.loadSource("deferred_unpack_ldr.glsl");
 
-		std::vector<Shader*> shaders = { &vs, &fs };
-		program_ldr = pathos::createProgram(shaders, "UnpackLDR");
+		program_ldr = pathos::createProgram(vs, fs, "UnpackLDR");
 	}
 
 	void MeshDeferredRenderPass_Unpack::createProgram_HDR() {
@@ -89,14 +89,8 @@ void main() {
 		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Unpack_HDR");
 		fs.loadSource("deferred_unpack_hdr.glsl");
 
-		// unpack hdr
-		std::vector<Shader*> shaders = { &vs, &fs };
-		program_hdr = pathos::createProgram(shaders, "UnpackHDR");
+		program_hdr = pathos::createProgram(vs, fs, "UnpackHDR");
 		ubo_unpack.init<UBO_Unpack>();
-
-		// blur pass
-		fs.loadSource("blur_pass.glsl");
-		program_blur = pathos::createProgram(shaders, "BlurPass");
 	}
 
 	void MeshDeferredRenderPass_Unpack::createResource_HDR(RenderCommandList& cmdList) {
@@ -120,13 +114,6 @@ void main() {
 		cmdList.namedFramebufferTexture(fbo_hdr, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 		cmdList.namedFramebufferDrawBuffers(fbo_hdr, 2, hdr_draw_buffers);
 		checkFramebufferStatus(fbo_hdr);
-
-		// blur resource
-		cmdList.createFramebuffers(1, &fbo_blur);
-		// #todo-framebuffer: This is set twice each with different texture. Any performance issue? Maybe I need two FBOs?
-		cmdList.namedFramebufferTexture(fbo_blur, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
-		cmdList.namedFramebufferDrawBuffer(fbo_blur, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(fbo_blur);
 	}
 
 	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList, bool hdr) {
@@ -163,62 +150,38 @@ void main() {
 		cmdList.enable(GL_DEPTH_TEST);
 	}
 
-	// #todo-post-processing: Extract post-processing passes out of this function
 	void MeshDeferredRenderPass_Unpack::renderHDR(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+		SCOPED_DRAW_EVENT(UnpackHDR);
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		{
-			SCOPED_DRAW_EVENT(UnpackHDR);
+		cmdList.useProgram(program_hdr);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_hdr);
 
-			// bind
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_hdr);
-			cmdList.useProgram(program_hdr);
+		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
+		cmdList.bindTextures(0, 3, gbuffer_textures);
+		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
 
-			GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
-			cmdList.bindTextures(0, 3, gbuffer_textures);
-			cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
+		cmdList.disable(GL_DEPTH_TEST);
 
-			cmdList.disable(GL_DEPTH_TEST);
+		UBO_Unpack uboData;
+		uboData.enabledTechniques1.x = cvar_enable_shadow.getInt();
+		uboData.enabledTechniques1.y = cvar_enable_fog.getInt();
+		uboData.fogColor             = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
+		uboData.fogParams.x          = cvar_fog_bottom.getFloat();
+		uboData.fogParams.y          = cvar_fog_top.getFloat();
+		uboData.fogParams.z          = cvar_fog_attenuation.getFloat();
+		uboData.bloomParams.x        = cvar_bloom_strength.getFloat();
+		uboData.bloomParams.y        = cvar_bloom_min.getFloat();
+		uboData.bloomParams.z        = cvar_bloom_max.getFloat();
+		ubo_unpack.update(cmdList, 1, &uboData);
 
-			UBO_Unpack uboData;
-			uboData.enabledTechniques1.x = cvar_enable_shadow.getInt();
-			uboData.enabledTechniques1.y = cvar_enable_fog.getInt();
-			uboData.fogColor             = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
-			uboData.fogParams.x          = cvar_fog_bottom.getFloat();
-			uboData.fogParams.y          = cvar_fog_top.getFloat();
-			uboData.fogParams.z          = cvar_fog_attenuation.getFloat();
-			uboData.bloomParams.x        = cvar_bloom_strength.getFloat();
-			uboData.bloomParams.y        = cvar_bloom_min.getFloat();
-			uboData.bloomParams.z        = cvar_bloom_max.getFloat();
-			ubo_unpack.update(cmdList, 1, &uboData);
+		// render HDR image
+		quad->activate_position(cmdList);
+		quad->activateIndexBuffer(cmdList);
+		quad->drawPrimitive(cmdList);
 
-			// render HDR image
-			quad->activate_position(cmdList);
-			quad->activateIndexBuffer(cmdList);
-			quad->drawPrimitive(cmdList);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
-
-		{
-			SCOPED_DRAW_EVENT(BloomPass);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_blur);
-			cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
-			cmdList.useProgram(program_blur);
-			cmdList.uniform1i(uniform_blur_horizontal, GL_TRUE);
-			cmdList.bindTextureUnit(0, sceneContext.sceneBloom);
-			quad->drawPrimitive(cmdList);
-			cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
-
-			cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloom, 0);
-			cmdList.uniform1i(uniform_blur_horizontal, GL_FALSE);
-			cmdList.bindTextureUnit(0, sceneContext.sceneBloomTemp);
-			quad->drawPrimitive(cmdList);
-			cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 
 }

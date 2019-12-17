@@ -6,6 +6,7 @@ namespace pathos {
 	struct UBO_Deferred_Pack_SolidColor {
 		glm::mat4 mvMatrix;
 		glm::mat4 mvpMatrix;
+		glm::mat3 mvMatrix3x3; float __pad[3];
 		glm::vec4 albedo;
 		glm::vec4 metallic_roughness;
 	};
@@ -34,6 +35,7 @@ namespace pathos {
 		UBO_Deferred_Pack_SolidColor uboData;
 		uboData.mvMatrix             = camera->getViewMatrix() * modelMatrix;
 		uboData.mvpMatrix            = camera->getViewProjectionMatrix() * modelMatrix;
+		uboData.mvMatrix3x3          = glm::mat3(uboData.mvMatrix);
 		uboData.albedo.x             = material->getAlbedo()[0];
 		uboData.albedo.y             = material->getAlbedo()[1];
 		uboData.albedo.z             = material->getAlbedo()[2];

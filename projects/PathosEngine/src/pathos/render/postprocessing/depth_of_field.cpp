@@ -53,42 +53,51 @@ namespace pathos {
 		GLuint input0 = sceneContext.toneMappingResult;
 		GLuint output0 = 0; // backbuffer
 
-		//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
-		cmdList.useProgram(program_subsum2D);
-		cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-		cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		{
+			SCOPED_DRAW_EVENT(Subsum);
 
-		//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
-		cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-		cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
+			//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
+			cmdList.useProgram(program_subsum2D);
+			cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+			//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
+			cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
+		}
 
 		/* sceneContext.dofSubsum1 now holds subsum table */
 		
-		// apply box blur whose strength is relative to the difference between pixel depth and focal depth
-		cmdList.useProgram(program_blur);
-		cmdList.bindTextureUnit(0, sceneContext.dofSubsum1);
+		{
+			SCOPED_DRAW_EVENT(Blur);
 
-		UBO_DoF uboData;
-		uboData.focalDistance = cvar_focal_distance.getFloat();
-		uboData.focalDepth = cvar_focal_depth.getFloat();
-		uboData.maxRadius = cvar_max_radius.getFloat();
-		uboBlur.update(cmdList, 1, &uboData);
+			// apply box blur whose strength is relative to the difference between pixel depth and focal depth
+			cmdList.useProgram(program_blur);
+			cmdList.bindTextureUnit(0, sceneContext.dofSubsum1);
 
-		if (output0 == 0) {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		} else {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+			UBO_DoF uboData;
+			uboData.focalDistance = cvar_focal_distance.getFloat();
+			uboData.focalDepth = cvar_focal_depth.getFloat();
+			uboData.maxRadius = cvar_max_radius.getFloat();
+			uboBlur.update(cmdList, 1, &uboData);
+
+			if (output0 == 0) {
+				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			}
+			else {
+				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+			}
+
+			cmdList.bindVertexArray(vao);
+			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			cmdList.bindVertexArray(0);
 		}
-
-		cmdList.bindVertexArray(vao);
-		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		cmdList.bindVertexArray(0);
 	}
 
 	GLuint DepthOfField::createSubsumShader() {

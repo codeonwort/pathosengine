@@ -49,19 +49,20 @@ void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	uvec4 data0 = texelFetch(gbuf0, coord, 0);
 	vec4 data1 = texelFetch(gbuf1, coord, 0);
 	vec4 data2 = texelFetch(gbuf2, coord, 0);
-	vec2 temp = unpackHalf2x16(data0.y);
 
-	fragment.albedo = vec3(unpackHalf2x16(data0.x), temp.x);
-	fragment.normal = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
-	fragment.material_id = data0.w;
+	vec2 temp = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
 
-	fragment.vs_coords = data1.xyz;
-	fragment.ws_coords = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
+	fragment.albedo         = vec3(unpackHalf2x16(data0.x), temp.x);
+	fragment.normal         = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
+	fragment.material_id    = data0.w;
+
+	fragment.vs_coords      = data1.xyz;
+	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
 	fragment.specular_power = data1.w;
 
-	fragment.metallic = data2.x;
-	fragment.roughness = data2.y;
-	fragment.ao = data2.z;
+	fragment.metallic       = data2.x;
+	fragment.roughness      = data2.y;
+	fragment.ao             = data2.z;
 }
 
 float getShadowing(fragment_info fragment) {
@@ -195,8 +196,8 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
 
 	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, fragment.albedo, fragment.metallic);
-
+	F0 = mix(F0, min(fragment.albedo, vec3(1.0)), fragment.metallic);
+	
 	vec3 Lo = vec3(0.0);
 
 	for(int i=0; i<uboPerFrame.numDirLights; ++i) {
@@ -257,11 +258,11 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 vec4 calculateShading(fragment_info fragment) {
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
 	if(fragment.material_id == MATERIAL_ID_TEXTURE) {
-		result.rgb += phongShading(fragment);
+		result.rgb = phongShading(fragment);
 	} else if(fragment.material_id == MATERIAL_ID_WIREFRAME) {
-		result.rgb += fragment.albedo;
+		result.rgb = fragment.albedo;
 	} else if(fragment.material_id == MATERIAL_ID_SOLID_COLOR || fragment.material_id == MATERIAL_ID_PBR) {
-		result.rgb += CookTorranceBRDF(fragment);
+		result.rgb = CookTorranceBRDF(fragment);
 	} else {
 		discard;
 	}

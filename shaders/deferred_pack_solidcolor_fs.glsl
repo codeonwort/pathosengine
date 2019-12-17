@@ -7,6 +7,7 @@ layout (location = 2) out vec4 output2;  // (metallic, roughness, ao, ?)
 layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
 	mat4 mvpTransform;
+	mat3 mvTransform3x3;
 	vec4 albedo;
 	vec4 metal_roughness;
 } uboPerObject;
@@ -22,6 +23,7 @@ in VS_OUT {
 void main() {
 	uvec4 outvec0 = uvec4(0);
 	vec4 outvec1 = vec4(0);
+	vec4 outvec2 = vec4(0);
 
 	vec3 albedo = uboPerObject.albedo.xyz;
 
@@ -29,10 +31,15 @@ void main() {
 	outvec0.y = packHalf2x16(vec2(albedo.z, fs_in.normal.x));
 	outvec0.z = packHalf2x16(fs_in.normal.yz);
 	outvec0.w = fs_in.material_id;
+
 	outvec1.xyz = fs_in.vs_coords;
-	outvec1.w = 32.0;
+	outvec1.w = 128.0;
+
+	outvec2.x = uboPerObject.metal_roughness.x;
+	outvec2.y = uboPerObject.metal_roughness.y;
+	outvec2.z = 1.0;
 
 	output0 = outvec0;
 	output1 = outvec1;
-	output2 = vec4(uboPerObject.metal_roughness.x, uboPerObject.metal_roughness.y, 0.0, 0.0);
+	output2 = outvec2;
 }

@@ -22,16 +22,15 @@ uniform float max_radius = 4.5;
 const ivec2 zero = ivec2(0, 0);
 
 void main() {
-	vec2 s = 1.0 / textureSize(input_image, 0);
 	vec2 C = gl_FragCoord.xy;
 
 	vec4 v = texelFetch(input_image, ivec2(gl_FragCoord.xy), 0);
 
 	float m; // radius of filter kernel
 
-	if(v.w == 0.0){
+	if (v.w == 0.0) {
 		m = 0.5;
-	}else{
+	} else {
 		m = abs(v.w - getFocalDistance());
 		m = 0.5 + smoothstep(0.0, getFocalDepth(), m) * getMaxRadius();
 	}

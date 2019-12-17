@@ -27,29 +27,21 @@ namespace pathos {
 		void renderLDR(RenderCommandList& cmdList, Scene* scene, Camera* camera); // plain LDR rendering
 		void renderHDR(RenderCommandList& cmdList, Scene* scene, Camera* camera); // HDR rendering
 
-	protected:
-		GLuint program_ldr = 0; // shader program (original LDR rendering)
-		GLuint program_hdr = 0; // HDR rendering
-		UniformBuffer ubo_unpack;
-
-		GLuint program_blur = 0; // gaussian blur
-
-		// program_blur
-		GLint uniform_blur_horizontal = 0;
-
-		static constexpr uint32 NUM_HDR_ATTACHMENTS = 2;
-		GLuint fbo_hdr;
-		GLuint fbo_blur;
-
-		PlaneGeometry* quad = nullptr;
-
-		bool use_hdr;
-
+	private:
 		void createProgram_LDR();
 		void createProgram_HDR();
 		void createResource_HDR(RenderCommandList& cmdList);
 
 	private:
+		bool use_hdr;
+
+		GLuint program_ldr = 0; // shader program (original LDR rendering)
+		GLuint program_hdr = 0; // HDR rendering
+		GLuint fbo_hdr;
+		UniformBuffer ubo_unpack;
+
+		PlaneGeometry* quad = nullptr;
+
 		bool destroyed = false;
 
 	};

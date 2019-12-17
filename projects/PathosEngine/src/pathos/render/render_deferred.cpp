@@ -33,10 +33,10 @@ namespace pathos {
 		glm::vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		glm::mat4 sunViewProj[4];
 		glm::vec3 eyeDirection; float __pad0;
-		glm::vec3 eyePosition; uint32_t numDirLights;
+		glm::vec3 eyePosition; uint32 numDirLights;
 		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
 		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
-		uint32_t numPointLights; glm::vec3 __pad1;
+		uint32    numPointLights; glm::vec3 __pad1;
 		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
 		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
 	};
@@ -200,9 +200,9 @@ namespace pathos {
  		packGBuffer(cmdList);
  		unpackGBuffer(cmdList);
 
-		// #todo-post-processing: Move bloom from unpack pass to here
 		// input: bright pixels in gbuffer
 		// output: bloom texture
+		bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
 
 		// input: scene color, bloom, god ray
 		// output: scene final
@@ -212,7 +212,6 @@ namespace pathos {
 		// output: scene final with DoF
 		if (cvar_enable_dof.getInt() != 0) {
 			constexpr GLuint dofRenderTarget = 0; // default framebuffer
-			// #todo-post-processing: set input and output
 			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
 			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
 			depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
@@ -292,7 +291,11 @@ namespace pathos {
 				continue;
 			}
 
-			pass->bindProgram(cmdList);
+			{
+				SCOPED_DRAW_EVENT(BindMaterialProgram);
+
+				pass->bindProgram(cmdList);
+			}
 
 			for (auto j = 0u; j < renderItems[i].size(); ++j) {
 				const RenderItem& item = renderItems[i][j];
