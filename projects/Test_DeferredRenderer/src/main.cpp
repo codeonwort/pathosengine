@@ -3,7 +3,6 @@
 #include "pathos/render/atmosphere.h"
 using namespace pathos;
 
-#include <GL/glut.h>
 
 const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
@@ -16,6 +15,7 @@ const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f
 const bool          USE_HDR             =   true;
 const uint32_t      NUM_BALLS           =   10;
 
+// World
 Camera* cam;
 Scene scene;
 	DirectionalLight *sunLight;
