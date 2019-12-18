@@ -50,6 +50,17 @@ namespace pathos {
 		Shader(GLenum type, const char* debugName = "");
 		virtual ~Shader();
 
+		/** Should be called before loadSource() */
+		inline void addDefine(const char* define)
+		{
+			defines.push_back(define);
+		}
+		/** Should be called before loadSource() */
+		inline void addDefine(const std::string& define)
+		{
+			defines.emplace_back(define);
+		}
+
 		void setSource(const char* source);
 		inline void setSource(const std::string& source);
 
@@ -64,6 +75,7 @@ namespace pathos {
 	protected:
 		GLuint glName;
 		GLenum type;
+		std::vector<std::string> defines;
 		std::vector<std::string> source;
 		std::string errorLog;
 	};

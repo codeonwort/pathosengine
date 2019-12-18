@@ -22,6 +22,7 @@
 #define CONDITIONAL_COMPILE		0
 #define PARSE_INCLUDES_IN_GLSL	1
 
+
 using namespace std;
 
 namespace pathos {
@@ -198,11 +199,32 @@ namespace pathos {
 		codestream << file.rdbuf();
 		std::string fullcode = std::move(codestream.str());
 
+		{
+			size_t version_start = fullcode.find("#version");
+			CHECK(version_start != string::npos);
+
+			size_t version_end = fullcode.find_first_of('\n', version_start);
+
+			// Add defines
+			if (defines.size() > 0) {
+				codestream.clear();
+				codestream.str("");
+				// Put #version back
+				codestream << fullcode.substr(version_start, version_end - version_start + 1);
+				for (const std::string& def : defines) {
+					codestream << "#define " << def << '\n';
+				}
+				codestream << fullcode.substr(version_end + 1);
+				fullcode = std::move(codestream.str());
+			}
+		}
+
 		source.clear();
 
 #if PARSE_INCLUDES_IN_GLSL
 		size_t find_offset = 0u;
 		while (true) {
+			// #todo-shader: Need to skip '#include' in comments!!!
 			size_t include_start = fullcode.find("#include", find_offset);
 			if (include_start == string::npos) {
 				break;
@@ -216,7 +238,7 @@ namespace pathos {
 			size_t quote_end = include_line.find('"', quote_start + 1);
 			assert(quote_start != string::npos && quote_end != string::npos);
 
-			// TODO: Support recursive #include? necessary?
+			// #todo-shader: Support recursive include?
 			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
 			std::string include_filepath = ResourceFinder::get().find(include_file);
 			std::ifstream subfile(include_filepath);

@@ -6,6 +6,7 @@
 #include "postprocessing/bloom.h"
 #include "postprocessing/tone_mapping.h"
 #include "postprocessing/depth_of_field.h"
+#include "postprocessing/anti_aliasing_fxaa.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
@@ -18,12 +19,13 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32_t> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
+	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
+	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
-	static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS        = 8;
-	static constexpr uint32_t MAX_POINT_LIGHTS              = 16;
-	static constexpr uint32_t DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
-	static constexpr uint32_t POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(glm::vec4);
+	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 8;
+	static constexpr uint32 MAX_POINT_LIGHTS              = 16;
+	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
+	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(glm::vec4);
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
@@ -44,6 +46,7 @@ namespace pathos {
 	DeferredRenderer::DeferredRenderer(uint32 width, uint32 height)
 		: sceneWidth(width)
 		, sceneHeight(height)
+		, antiAliasing(EAntiAliasingMethod::FXAA)
 	{
 		CHECK(width > 0 && height > 0);
 
@@ -56,6 +59,7 @@ namespace pathos {
 		godRay = std::make_unique<GodRay>();
 		bloomPass = std::make_unique<BloomPass>();
 		toneMapping = std::make_unique<ToneMapping>();
+		fxaa = std::make_unique<FXAA>();
 		depthOfField = std::make_unique<DepthOfField>();
 	}
 
@@ -77,6 +81,7 @@ namespace pathos {
 		godRay->initializeResources(cmdList);
 		bloomPass->initializeResources(cmdList);
 		toneMapping->initializeResources(cmdList);
+		fxaa->initializeResources(cmdList);
 		depthOfField->initializeResources(cmdList);
 	}
 
@@ -91,6 +96,7 @@ namespace pathos {
 			godRay->releaseResources(cmdList);
 			bloomPass->releaseResources(cmdList);
 			toneMapping->releaseResources(cmdList);
+			fxaa->releaseResources(cmdList);
 			depthOfField->releaseResources(cmdList);
 
 			cmdList.flushAllCommands();
@@ -207,6 +213,20 @@ namespace pathos {
 		// input: scene color, bloom, god ray
 		// output: scene final
 		toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+
+		antiAliasing = (EAntiAliasingMethod)std::max(0, std::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+		switch (antiAliasing) {
+			case EAntiAliasingMethod::NoAA:
+				// Do nothing
+				break;
+
+			case EAntiAliasingMethod::FXAA:
+				fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+				break;
+
+			default:
+				break;
+		}
 
 		// input: scene final
 		// output: scene final with DoF

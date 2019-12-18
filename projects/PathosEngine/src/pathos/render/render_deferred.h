@@ -3,6 +3,7 @@
 #include "renderer.h"
 #include "scene_render_targets.h"
 #include "deferred/deferredpass.h"
+#include "postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene.h"
@@ -39,6 +40,7 @@ namespace pathos {
 	private:
 		bool destroyed = false;
 
+		EAntiAliasingMethod antiAliasing;
 		bool useHDR = true;
 
 		SceneRenderTargets sceneRenderTargets;
@@ -57,6 +59,7 @@ namespace pathos {
 		std::unique_ptr<class GodRay> godRay;
 		std::unique_ptr<class BloomPass> bloomPass;
 		std::unique_ptr<class ToneMapping> toneMapping;
+		std::unique_ptr<class FXAA> fxaa;
 		std::unique_ptr<class DepthOfField> depthOfField;
 
 		std::unique_ptr<class PlaneGeometry> fullscreenQuad;
