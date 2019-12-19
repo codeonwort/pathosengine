@@ -1,12 +1,11 @@
 #version 430 core
 
 #include "nvidia_fxaa.glsl"
+#include "deferred_common.glsl"
 
 layout (binding = 0) uniform sampler2D sceneColor;
 
 in vec2 uv;
-
-uniform vec2 uniform_inv_size;
 
 uniform FxaaFloat2 fxaaQualityRcpFrame;
 uniform FxaaFloat4 fxaaConsoleRcpFrameOpt;
@@ -23,8 +22,10 @@ uniform FxaaFloat4 fxaaConsole360ConstDir;
 out vec4 out_color;
 
 void main() {
-	vec2 pos = uv + 0.5 * uniform_inv_size;
-	vec4 consolePosPos = vec4(uv.x, uv.y, uv.x + uniform_inv_size.x, uv.y + uniform_inv_size.y);
+	vec2 inv_size = uboPerFrame.screenResolution.zw;
+
+	vec2 pos = uv + 0.5 * inv_size;
+	vec4 consolePosPos = vec4(uv.x, uv.y, uv.x + inv_size.x, uv.y + inv_size.y);
 
 	out_color = FxaaPixelShader(
 		pos, consolePosPos,

@@ -16,7 +16,6 @@ namespace pathos {
 		GLuint fbo = 0;
 
 		// pixel shader parameters
-		GLint uniform_inv_size;
 		GLint fxaaQualityRcpFrame;
 		GLint fxaaConsoleRcpFrameOpt;
 		GLint fxaaConsoleRcpFrameOpt2;

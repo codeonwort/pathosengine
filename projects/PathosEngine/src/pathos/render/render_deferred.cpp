@@ -31,7 +31,7 @@ namespace pathos {
 		glm::mat4 inverseView;
 		glm::mat3 view3x3; float __pad_view3x3[3]; // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
 		glm::mat4 viewProj;
-		glm::vec4 screenResolution;
+		glm::vec4 screenResolution; // (w, h, 1/w, 1/h)
 		glm::vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		glm::mat4 sunViewProj[4];
 		glm::vec3 eyeDirection; float __pad0;
@@ -358,6 +358,8 @@ namespace pathos {
 
 		data.screenResolution.x = (float)sceneWidth;
 		data.screenResolution.y = (float)sceneHeight;
+		data.screenResolution.z = 1.0f / data.screenResolution.x;
+		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
 		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);

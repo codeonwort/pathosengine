@@ -31,12 +31,12 @@ void main() {
 		fs.addDefine("FXAA_PC 1");
 		fs.addDefine("FXAA_GLSL_130 1");
 		fs.addDefine("FXAA_GREEN_AS_LUMA 1");
+		fs.addDefine("FXAA_QUALITY__PRESET 23");
 		fs.loadSource("fxaa_fs.glsl");
 
 		program = pathos::createProgram(vs, fs, "FXAA");
 
 #define GET_UNIFORM(uniform) { uniform = cmdList.getUniformLocation(program, #uniform); }
-		GET_UNIFORM(uniform_inv_size           );
 		GET_UNIFORM(fxaaQualityRcpFrame        );
 		GET_UNIFORM(fxaaConsoleRcpFrameOpt     );
 		GET_UNIFORM(fxaaConsoleRcpFrameOpt2    );
@@ -89,7 +89,6 @@ void main() {
 
 		cmdList.useProgram(program);
 
-		cmdList.uniform2f(uniform_inv_size, inv_size.x, inv_size.y);
 		cmdList.uniform2f(fxaaQualityRcpFrame        , inv_size.x, inv_size.y);
 		cmdList.uniform4f(fxaaConsoleRcpFrameOpt	 , sharp_param.x, sharp_param.y, sharp_param.z, sharp_param.w);
 		cmdList.uniform4f(fxaaConsoleRcpFrameOpt2	 , sharp2_param.x, sharp2_param.y, sharp2_param.z, sharp2_param.w);

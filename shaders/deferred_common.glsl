@@ -17,7 +17,7 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
 
-	vec4 screenResolution;
+	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange;
 
 	mat4 sunViewProjection[4];
