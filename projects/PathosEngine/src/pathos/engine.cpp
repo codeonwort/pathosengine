@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "engine_version.h"
 #include "console.h"
 #include "render/render_device.h"
 #include "render/render_forward.h"
@@ -46,8 +47,6 @@ namespace pathos {
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
 
-	const std::string Engine::version = "0.2.0";
-
 	//////////////////////////////////////////////////////////////////////////
 	// static
 	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
@@ -82,7 +81,7 @@ namespace pathos {
 
 		LOG(LogInfo, "");
 		LOG(LogInfo, "===      Initialize PATHOS      ===");
-		LOG(LogInfo, "Engine version: %s", Engine::version.data());
+		LOG(LogInfo, "Engine version: %d.%d.%d", PATHOS_MAJOR_VERSION, PATHOS_MINOR_VERSION, PATHOS_PATCH_VERSION);
 
 		ResourceFinder::get().add("../");
 		ResourceFinder::get().add("../../");

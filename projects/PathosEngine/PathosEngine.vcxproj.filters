@@ -533,5 +533,8 @@
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\engine_version.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -46,8 +46,6 @@ namespace pathos {
 		using ExecProc = std::function<void(const std::string&)>;
 
 	public:
-		static const std::string version;
-
 		static bool init(int* argcp, char** argv, const EngineConfig& conf);
 
 	// Public API
@@ -63,11 +61,9 @@ namespace pathos {
 		const EngineConfig& getConfig() const { return conf; }
 
 		inline float getMilliseconds() const { return elapsed_ms; }
-		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
-	// Debug API for development
-	public:
-		inline Renderer* debug_getRenderer() const { return renderer; }
+		// #todo-input: Make an input manager
+		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
 	private:
 		Engine();
