@@ -74,6 +74,7 @@ namespace pathos {
 
 		bool initialize(int* argcp, char** argv, const EngineConfig& conf);
 
+		// #todo-glut: Abstract window system - don't use glut directly
 		bool initializeGlut(int* argcp, char** argv);
 		bool initializeOpenGL();
 		bool initializeThirdParty();
