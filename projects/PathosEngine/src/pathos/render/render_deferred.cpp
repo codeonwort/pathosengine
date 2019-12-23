@@ -3,6 +3,7 @@
 #include "sky.h"
 #include "god_ray.h"
 #include "visualize_depth.h"
+#include "postprocessing/ssao.h"
 #include "postprocessing/bloom.h"
 #include "postprocessing/tone_mapping.h"
 #include "postprocessing/depth_of_field.h"
@@ -42,6 +43,7 @@ namespace pathos {
 		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
 		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
 	};
+	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
 	DeferredRenderer::DeferredRenderer(uint32 width, uint32 height)
 		: sceneWidth(width)
@@ -57,6 +59,7 @@ namespace pathos {
 
 		sunShadowMap = std::make_unique<DirectionalShadowMap>();
 		godRay = std::make_unique<GodRay>();
+		ssao = std::make_unique<SSAO>();
 		bloomPass = std::make_unique<BloomPass>();
 		toneMapping = std::make_unique<ToneMapping>();
 		fxaa = std::make_unique<FXAA>();
@@ -79,6 +82,7 @@ namespace pathos {
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
 
 		godRay->initializeResources(cmdList);
+		ssao->initializeResources(cmdList);
 		bloomPass->initializeResources(cmdList);
 		toneMapping->initializeResources(cmdList);
 		fxaa->initializeResources(cmdList);
@@ -94,6 +98,7 @@ namespace pathos {
 			unpack_pass->destroyResources(cmdList);
 
 			godRay->releaseResources(cmdList);
+			ssao->releaseResources(cmdList);
 			bloomPass->releaseResources(cmdList);
 			toneMapping->releaseResources(cmdList);
 			fxaa->releaseResources(cmdList);
@@ -201,9 +206,12 @@ namespace pathos {
 		// output: god ray texture
 		godRay->renderGodRay(cmdList, scene, camera);
 
-		// Render gbuffer
 		clearGBuffer(cmdList);
+
  		packGBuffer(cmdList);
+
+		ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+
  		unpackGBuffer(cmdList);
 
 		// input: bright pixels in gbuffer
@@ -390,7 +398,7 @@ namespace pathos {
 			memcpy_s(&data.pointLightColors[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightColorBuffer(), scene->getPointLightBufferSize());
 		}
 
-		ubo_perFrame.update(cmdList, 0, &data);
+		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 	}
 
 }

@@ -90,6 +90,8 @@ namespace pathos {
 		cmdList.enable(GL_DEPTH_TEST);
 		
 		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
+			SCOPED_DRAW_EVENT(RenderCascade);
+
 			cmdList.viewport(i * sceneContext.csmWidth, 0, sceneContext.csmWidth, sceneContext.csmHeight);
 			const glm::mat4& VP = viewProjection[i];
 

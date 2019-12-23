@@ -3,6 +3,8 @@
 #include "pathos/render/atmosphere.h"
 using namespace pathos;
 
+#include <thread>
+
 
 const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
@@ -19,7 +21,6 @@ const uint32_t      NUM_BALLS           =   10;
 Camera* cam;
 Scene scene;
 	DirectionalLight *sunLight;
-	PointLight *pointLight;
 	Mesh* godRaySource;
 	Mesh *ground;
 	Mesh *model, *model2, *model3;
@@ -27,6 +28,14 @@ Scene scene;
 
 void setupScene();
 void tick();
+
+OBJLoader houseLoader;
+bool asyncLoadComplete = false;
+void asyncLoadTask() {
+	bool loaded = houseLoader.load("models/small_colonial_house/houseSF.obj", "models/small_colonial_house/");
+	CHECK(loaded);
+	asyncLoadComplete = true;
+}
 
 int main(int argc, char** argv) {
 	EngineConfig conf;
@@ -42,10 +51,14 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
+	std::thread asyncLoadWorker(asyncLoadTask);
+
 	setupScene();
 
 	gEngine->setWorld(&scene, cam);
 	gEngine->start();
+
+	asyncLoadWorker.join();
 
 	return 0;
 }
@@ -54,8 +67,8 @@ void setupScene() {
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
-	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 50.0f), 5.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
-	scene.add(new PointLight(glm::vec3(-30.0f, 30.0f, 50.0f), 15.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(20.0f, 30.0f, 50.0f), 5.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(-50.0f, 30.0f, 50.0f), 15.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -135,7 +148,7 @@ void setupScene() {
 	model = new Mesh(geom_plane, material_pbr);
 	model->getTransform().appendScale(5.0f, 5.0f, 5.0f);
 	model->getTransform().appendRotation(glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	model->getTransform().appendMove(-60.0f, 0.0f, -30.0f);
+	model->getTransform().appendMove(-120.0f, 0.0f, -30.0f);
 	model->doubleSided = true;
 
 	model2 = new Mesh(geom_sphere, material_color);
@@ -170,6 +183,23 @@ void setupScene() {
 
 void tick()
 {
+	if(asyncLoadComplete) {
+		asyncLoadComplete = false;
+		ColorMaterial* house_material = new ColorMaterial;
+		house_material->setAlbedo(1.0f, 1.0f, 1.0f);
+		house_material->setMetallic(0.0f);
+		house_material->setRoughness(0.0f);
+		Mesh* house = houseLoader.craftMeshFromAllShapes();
+		for (int32 i = 0; i < (int32)house->getMaterials().size(); ++i) {
+			house->setMaterial(i, house_material);
+		}
+		house->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		house->getTransform().appendMove(-5.0f, -3.0f, -5.0f);
+		house->getTransform().appendScale(10.0f);
+		scene.add(house);
+		houseLoader.unload();
+	}
+
 	if (gConsole->isVisible() == false) {
 		float speedX = 1.0f, speedY = 1.0f;
 		float dx   = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;

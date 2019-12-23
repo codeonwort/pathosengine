@@ -128,6 +128,7 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\bloom.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\ssao.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\tone_mapping.cpp" />
     <ClCompile Include="src\pathos\render\render_command_list.cpp" />
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.h" />
     <ClInclude Include="src\pathos\render\postprocessing\bloom.h" />
     <ClInclude Include="src\pathos\render\postprocessing\post_process.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\ssao.h" />
     <ClInclude Include="src\pathos\render\postprocessing\tone_mapping.h" />
     <ClInclude Include="src\pathos\render\render_commands.generated.h" />
     <ClInclude Include="src\pathos\render\render_commands.h" />

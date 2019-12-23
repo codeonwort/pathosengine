@@ -61,12 +61,14 @@ namespace pathos {
 
 		// read data using tinyobjloader
 		std::string err;
-		tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
+		bool loaded = tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
 
 		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
 		if (!err.empty()) {
 			LOG(LogError, "Error while loading OBJ file: %s", err.data());
-			return false;
+			if (!loaded) {
+				return false;
+			}
 		}
 		LOG(LogInfo, "Number of shapes: %d", (int32_t)t_shapes.size());
 		LOG(LogInfo, "Number of materials: %d", (int32_t)t_materials.size());
@@ -99,6 +101,7 @@ namespace pathos {
 	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output) {
 		static_cast<void>(tiny_materials);
 		static_cast<void>(output);
+
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t& t_mat = t_materials[i];
 			Material* M = nullptr;
@@ -234,6 +237,7 @@ namespace pathos {
 				auto& normals = shape.normals[materialID];
 				auto& texcoords = shape.texcoords[materialID];
 				auto& indices = shape.indices[materialID];
+
 #ifdef LOAD_NORMAL_DATA
 				if (normals.size() < positions.size()) calculateNormal(t_attrib, indices, normals);
 #else
@@ -243,7 +247,9 @@ namespace pathos {
 				geom->setDrawArraysMode(true);
 				geom->updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
 				geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
-				if (texcoords.size() > 0) geom->updateUVData(&texcoords[0], static_cast<uint32_t>(texcoords.size()));
+				if (texcoords.size() > 0) {
+					geom->updateUVData(&texcoords[0], static_cast<uint32_t>(texcoords.size()));
+				}
 				geom->updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
 				mesh->add(geom, getMaterial(materialID));
 			}

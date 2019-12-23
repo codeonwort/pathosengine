@@ -57,6 +57,7 @@ namespace pathos {
 
 		// post-processing
 		std::unique_ptr<class GodRay> godRay;
+		std::unique_ptr<class SSAO> ssao;
 		std::unique_ptr<class BloomPass> bloomPass;
 		std::unique_ptr<class ToneMapping> toneMapping;
 		std::unique_ptr<class FXAA> fxaa;

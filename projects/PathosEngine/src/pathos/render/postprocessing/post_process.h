@@ -22,6 +22,8 @@ namespace pathos {
 		PPO_3 = 3
 	};
 
+	// I'll not distinguish post processing and screen-space techniques here
+	// All of them are subclasses of PostProcess
 	class PostProcess {
 		
 	public:

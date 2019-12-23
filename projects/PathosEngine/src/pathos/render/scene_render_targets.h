@@ -45,6 +45,11 @@ namespace pathos {
 		// post processing: tone mapping
 		GLuint toneMappingResult;
 
+		// post processing: ssao
+		GLuint ssaoHalfNormalAndDepth;
+		GLuint ssaoMap;
+		GLuint ssaoMapTemp;
+
 	public:
 		SceneRenderTargets();
 		~SceneRenderTargets();

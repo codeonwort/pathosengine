@@ -91,6 +91,11 @@ namespace pathos {
 		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
 		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		// ssao
+		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "ssaoHalfNormalAndDepth");
+		reallocTexture2D(ssaoMap, GL_R32F, sceneWidth / 2, sceneHeight / 2, "ssaoMap");
+		reallocTexture2D(ssaoMapTemp, GL_R32F, sceneWidth / 2, sceneHeight / 2, "ssaoMapTemp");
 	}
 
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)
@@ -110,6 +115,9 @@ namespace pathos {
 		safe_release(sceneBloom);
 		safe_release(sceneBloomTemp);
 		safe_release(toneMappingResult);
+		safe_release(ssaoHalfNormalAndDepth);
+		safe_release(ssaoMap);
+		safe_release(ssaoMapTemp);
 #undef safe_release
 
 		destroyed = true;
