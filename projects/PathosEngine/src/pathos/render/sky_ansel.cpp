@@ -192,6 +192,7 @@ in VS_OUT {
 } fs_in;
 
 layout (location = 0) out vec4 out_color;
+layout (location = 1) out vec4 out_bright;
 
 void main() {
 	const float PI = 3.14159265359;
@@ -201,6 +202,7 @@ void main() {
 	tc.x = (atan(r.y, r.x) + PI) / PI * 0.5;
 	tc.y = acos(r.z) / PI;
 	out_color = texture(texSampler, tc);
+	out_bright = vec4(0.0);
 }
 
 )";

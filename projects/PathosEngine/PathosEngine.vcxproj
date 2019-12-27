@@ -83,6 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\gl3w\gl3w.c" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\badger\assertion\assertion.h" />
+    <ClInclude Include="src\badger\math\random.h" />
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
     <ClInclude Include="src\badger\types\int_types.h" />
     <ClInclude Include="src\gl_core.h" />

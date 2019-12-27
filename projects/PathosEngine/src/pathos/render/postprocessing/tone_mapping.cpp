@@ -5,7 +5,7 @@
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
 	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList)

@@ -2,7 +2,8 @@
 
 #include "deferred_common.glsl"
 
-layout (location = 0) out vec4 color;
+layout (location = 0) out vec4 out_color;
+layout (location = 1) out vec4 out_bright;
 
 layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
 	vec4 sunParams;
@@ -240,5 +241,6 @@ void main() {
 
 	vec3 sunDir = uboPerFrame.dirLightDirs[0];
     
-    color = vec4(scene(eye_ray, sunDir), 1.0);
+    out_color = vec4(scene(eye_ray, sunDir), 1.0);
+    out_bright = vec4(0.0);
 }

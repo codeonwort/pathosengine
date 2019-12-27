@@ -162,7 +162,7 @@ void setupScene() {
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
 		ball->getTransform().appendScale(2.0f + (float)i * 0.1f);
-		ball->getTransform().appendMove((float)i * 5.0f, 0.0f, -30.0f * i);
+		ball->getTransform().appendMove((float)i * 5.0f, -15.0f, -30.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}

@@ -270,6 +270,9 @@
     <ClCompile Include="src\pathos\render\postprocessing\ssao.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\badger\math\random.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -540,6 +543,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\ssao.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\badger\math\random.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

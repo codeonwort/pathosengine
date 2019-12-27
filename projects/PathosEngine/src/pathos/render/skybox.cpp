@@ -41,10 +41,12 @@ layout (binding = 0) uniform samplerCube texCube;
 
 in VS_OUT { vec3 tc; } fs_in;
 
-layout (location = 0) out vec4 color;
+layout (location = 0) out vec4 out_color;
+layout (location = 1) out vec4 out_bright;
 
 void main() {
-  color = texture(texCube, fs_in.tc);
+  out_color = texture(texCube, fs_in.tc);
+  out_bright = vec4(0.0);
 }
 )";
 		program = createProgram(vshader, fshader, "Skybox");

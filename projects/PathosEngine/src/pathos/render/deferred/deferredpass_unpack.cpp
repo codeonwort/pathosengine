@@ -78,8 +78,15 @@ void main() {
 #version 430 core
 
 layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 uv;
+
+out VS_OUT {
+	vec2 screenUV;
+} vs_out;
+
 void main() {
 	gl_Position = vec4(position, 1.0);
+	vs_out.screenUV = uv;
 }
 )";
 		
@@ -160,6 +167,8 @@ void main() {
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);
+		// #todo-binding: Why did I bind csm at 6??? Let's bind ssao at 5 for now...
+		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
 
 		cmdList.disable(GL_DEPTH_TEST);
@@ -177,7 +186,7 @@ void main() {
 		ubo_unpack.update(cmdList, 1, &uboData);
 
 		// render HDR image
-		quad->activate_position(cmdList);
+		quad->activate_position_uv(cmdList);
 		quad->activateIndexBuffer(cmdList);
 		quad->drawPrimitive(cmdList);
 

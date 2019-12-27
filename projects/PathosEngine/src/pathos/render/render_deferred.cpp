@@ -32,6 +32,7 @@ namespace pathos {
 		glm::mat4 inverseView;
 		glm::mat3 view3x3; float __pad_view3x3[3]; // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
 		glm::mat4 viewProj;
+		glm::vec4 projParams;
 		glm::vec4 screenResolution; // (w, h, 1/w, 1/h)
 		glm::vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		glm::mat4 sunViewProj[4];
@@ -199,8 +200,6 @@ namespace pathos {
 		// update ubo_perFrame
 		updateSceneUniformBuffer(cmdList, scene, camera);
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
@@ -352,8 +351,6 @@ namespace pathos {
 			scene->sky->render(cmdList, scene, camera);
 		}
 
-		//cmdList.flushAllCommands(); // #todo-renderdoc: debugging
-
 		if (useHDR) {
 			unpack_pass->renderHDR(cmdList, scene, camera);
 		} else {
@@ -363,6 +360,8 @@ namespace pathos {
 	
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
+
+		const glm::mat4& projMatrix = camera->getProjectionMatrix();
 
 		data.screenResolution.x = (float)sceneWidth;
 		data.screenResolution.y = (float)sceneHeight;
@@ -377,6 +376,7 @@ namespace pathos {
 		data.zRange.z    = camera->getFovYRadians();
 		data.zRange.w    = camera->getAspectRatio();
 		data.viewProj    = camera->getViewProjectionMatrix();
+		data.projParams  = glm::vec4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);

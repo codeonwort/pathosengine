@@ -11,7 +11,10 @@ layout (binding = 1, rgba32f) writeonly uniform image2D output_image;
 
 void main() {
 	uint id = gl_LocalInvocationID.x;
-	uint rd_id, wr_id, mask;
+	uint rd_id;
+	uint wr_id;
+	uint mask;
+
 	ivec2 P0 = ivec2(id * 2, gl_WorkGroupID.x);
 	ivec2 P1 = ivec2(id * 2 + 1, gl_WorkGroupID.x);
 
@@ -25,6 +28,7 @@ void main() {
 	shared_data[P1.x] = i1.rgb;
 
 	barrier();
+	memoryBarrierShared();
 
 	for(step = 0; step < steps ; step++){
 		mask = (1 << step) - 1;
@@ -34,8 +38,10 @@ void main() {
 		shared_data[wr_id] += shared_data[rd_id];
 
 		barrier();
+		memoryBarrierShared();
 	}
 
+	// #todo-dof: Sometimes NaN is stored in the output
 	imageStore(output_image, P0.yx, vec4(shared_data[P0.x], i0.a));
 	imageStore(output_image, P1.yx, vec4(shared_data[P1.x], i1.a));
 }

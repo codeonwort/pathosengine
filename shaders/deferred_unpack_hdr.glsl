@@ -11,7 +11,12 @@ layout (location = 1) out vec4 out_bright; // bright area only
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
+layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DShadow sunDepthMap;
+
+in VS_OUT {
+	vec2 screenUV;
+} fs_in;
 
 layout (std140, binding = 1) uniform UBO_Unpack {
 	ivec4 enabledTechniques1;
@@ -152,6 +157,9 @@ vec3 phongShading(fragment_info fragment) {
 		result.rgb = result.rgb * getShadowing(fragment);
 	}
 
+	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
+	result.rgb *= ssao;
+
 	return result;
 }
 
@@ -246,13 +254,16 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	}
 
 	vec3 ambient = vec3(0.03) * fragment.albedo * fragment.ao;
-	vec3 color = ambient + Lo;
+	vec3 finalColor = ambient + Lo;
+
+	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
+	finalColor *= ssao;
 
 	if(isShadowEnabled()) {
-		color = color * getShadowing(fragment);
+		finalColor = finalColor * getShadowing(fragment);
 	}
 
-	return color;
+	return finalColor;
 }
 
 vec4 calculateShading(fragment_info fragment) {
