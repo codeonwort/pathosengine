@@ -25,7 +25,9 @@ namespace pathos {
 			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
-			if (a == b) continue;
+			if (a == b) {
+				continue;
+			}
 			//auto norm = glm::normalize(glm::cross(a, b));
 			auto norm = glm::cross(a, b);
 
@@ -42,8 +44,8 @@ namespace pathos {
 			normals.push_back(accum[indices[i]].y);
 			normals.push_back(accum[indices[i]].z);
 		}
-		delete accum;
-		delete counts;
+		delete[] accum;
+		delete[] counts;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +54,7 @@ namespace pathos {
 
 	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) {
 		bool ok = load(objFile, mtlDir);
-		assert(ok);
+		CHECK(ok);
 	}
 
 	bool OBJLoader::load(const char* _objFile, const char* _mtlDir) {
@@ -70,8 +72,8 @@ namespace pathos {
 				return false;
 			}
 		}
-		LOG(LogInfo, "Number of shapes: %d", (int32_t)t_shapes.size());
-		LOG(LogInfo, "Number of materials: %d", (int32_t)t_materials.size());
+		LOG(LogInfo, "Number of shapes: %d", (int32)t_shapes.size());
+		LOG(LogInfo, "Number of materials: %d", (int32)t_materials.size());
 
 		// reconstruct data
 		analyzeMaterials(t_materials, materials);
