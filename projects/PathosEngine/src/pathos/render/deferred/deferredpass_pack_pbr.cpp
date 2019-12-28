@@ -6,7 +6,7 @@ namespace pathos {
 	struct UBO_Deferred_Pack_PBR {
 		glm::mat4 mvMatrix;
 		glm::mat4 mvpMatrix;
-		glm::mat3 mvMatrix3x3;
+		glm::mat3x4 mvMatrix3x3;
 	};
 
 	static constexpr uint32 ALBEDO_TEXTURE_UNIT    = 0;
@@ -39,7 +39,7 @@ namespace pathos {
 		UBO_Deferred_Pack_PBR uboData;
 		uboData.mvMatrix    = camera->getViewMatrix() * modelMatrix;
 		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
-		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
+		uboData.mvMatrix3x3 = glm::mat3x4(uboData.mvMatrix);
 		ubo.update(cmdList, 1, &uboData);
 
 		// uniform: texture

@@ -30,7 +30,7 @@ namespace pathos {
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
-		glm::mat3 view3x3; float __pad_view3x3[3]; // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
+		glm::mat3x4 view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
 		glm::mat4 viewProj;
 		glm::vec4 projParams;
 		glm::vec4 screenResolution; // (w, h, 1/w, 1/h)
@@ -370,7 +370,7 @@ namespace pathos {
 
 		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
-		data.view3x3     = glm::mat3(data.view);
+		data.view3x3     = glm::mat3x4(data.view);
 		data.zRange.x    = camera->getZNear();
 		data.zRange.y    = camera->getZFar();
 		data.zRange.z    = camera->getFovYRadians();

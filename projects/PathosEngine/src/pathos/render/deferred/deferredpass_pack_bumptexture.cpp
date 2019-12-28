@@ -6,7 +6,7 @@ namespace pathos {
 	struct UBO_Deferred_Pack_BumpTexture {
 		glm::mat4 mvMatrix;
 		glm::mat4 mvpMatrix;
-		glm::mat3 mvMatrix3x3;
+		glm::mat3x4 mvMatrix3x3;
 	};
 
 	static constexpr uint32_t DIFFUSE_TEXTURE_UNIT   = 0;
@@ -38,7 +38,7 @@ namespace pathos {
 		UBO_Deferred_Pack_BumpTexture uboData;
 		uboData.mvMatrix    = camera->getViewMatrix() * modelMatrix;
 		uboData.mvpMatrix   = camera->getViewProjectionMatrix() * modelMatrix;
-		uboData.mvMatrix3x3 = glm::mat3(uboData.mvMatrix);
+		uboData.mvMatrix3x3 = glm::mat3x4(uboData.mvMatrix);
 		ubo.update(cmdList, 1, &uboData);
 		
 		cmdList.bindTextureUnit(DIFFUSE_TEXTURE_UNIT, material->getDiffuseTexture());

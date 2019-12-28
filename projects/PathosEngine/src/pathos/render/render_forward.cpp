@@ -9,7 +9,7 @@ namespace pathos {
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
-		glm::mat3 view3x3; float __pad_view3x3[3];        // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3)
+		glm::mat3 view3x3; float __pad_view3x3[3];        // (mat3 9-byte) + (pad 3-byte) = (12-byte in glsl mat3) // #todo-forward: This is wrong. Use glm::mat3x4
 		glm::mat4 viewProj;
 		glm::vec4 zRange;                                 // (near, far, ?, ?)
 		glm::mat4 sunViewProj[4];
