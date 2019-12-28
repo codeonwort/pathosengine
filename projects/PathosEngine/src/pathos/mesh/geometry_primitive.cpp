@@ -108,8 +108,9 @@ namespace pathos {
 		buildGeometry();
 	}
 	void SphereGeometry::buildGeometry() {
-		unsigned int numVertices = division*division;
-		unsigned int numTriangles = division*(division - 1) * 2;
+		uint32 numVertices = division * division;
+		uint32 numTriangles = division * (division - 1) * 2;
+
 		// ccw winding
 		GLfloat* positions = new GLfloat[numVertices * 3];
 		GLfloat* uvs = new GLfloat[numVertices * 2];
@@ -121,29 +122,35 @@ namespace pathos {
 		float theta, phi;
 		float x, y, z;
 		int k = 0;
+
 		for (size_t i = 0; i < division; i++) {
 			phi = pi_2 - pi * (float)(i) / (division - 1);
 			for (size_t j = 0; j < division; j++) {
 				theta = pi2 * (float)j / (division - 1);
-				x = radius * cos(phi) * cos(theta);
-				y = radius * cos(phi) * sin(theta);
-				z = radius * sin(phi);
-				positions[3 * k] = normals[3 * k] = x;
-				positions[3 * k + 1] = normals[3 * k + 1] = y;
-				positions[3 * k + 2] = normals[3 * k + 2] = z;
+				x = cos(phi) * cos(theta);
+				y = cos(phi) * sin(theta);
+				z = sin(phi);
+
+				positions[3 * k + 0] = radius * x;
+				positions[3 * k + 1] = radius * y;
+				positions[3 * k + 2] = radius * z;
+
+				normals[3 * k + 0] = x;
+				normals[3 * k + 1] = y;
+				normals[3 * k + 2] = z;
+
 				uvs[2 * k] = theta / pi2;
 				uvs[2 * k + 1] = (phi + pi_2) / pi;
 				if (i != division - 1) {
 					if (j != division - 1) {
-						indices[6 * k] = k;
+						indices[6 * k + 0] = k;
 						indices[6 * k + 1] = k + division;
 						indices[6 * k + 2] = k + division + 1;
 						indices[6 * k + 3] = k;
 						indices[6 * k + 4] = k + division + 1;
 						indices[6 * k + 5] = k + 1;
-					}
-					else {
-						indices[6 * k] = k;
+					} else {
+						indices[6 * k + 0] = k;
 						indices[6 * k + 1] = k + division;
 						indices[6 * k + 2] = k + 1;
 						indices[6 * k + 3] = k;
@@ -153,16 +160,6 @@ namespace pathos {
 				}
 				k++;
 			}
-		}
-
-		for (size_t i = 0u; i < numVertices * 3; i += 3) {
-			float nx = normals[i + 0];
-			float ny = normals[i + 1];
-			float nz = normals[i + 2];
-			float inv_len = 1.0f / ::sqrtf(nx * nx + ny * ny + nz * nz);
-			normals[i + 0] *= inv_len;
-			normals[i + 1] *= inv_len;
-			normals[i + 2] *= inv_len;
 		}
 
 		updatePositionData(positions, numVertices * 3);
