@@ -87,7 +87,9 @@ namespace pathos {
 
 		// 3. render depth map
 		cmdList.useProgram(program);
+		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthFunc(GL_LESS);
 		
 		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
 			SCOPED_DRAW_EVENT(RenderCascade);
@@ -123,6 +125,8 @@ namespace pathos {
 				}
 			}
 		}
+
+		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 	}
 
 	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)

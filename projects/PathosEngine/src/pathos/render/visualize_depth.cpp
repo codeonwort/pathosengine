@@ -36,7 +36,7 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_LESS);
+		cmdList.depthFunc(GL_GREATER);
 
 		UBO_VisualizeDepth uboData;
 		uboData.zRange.x = camera->getZNear();

@@ -56,19 +56,16 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(Subsum);
 
-			//GLuint num_groups = (unsigned int)(ceil((float)width / 1024));
 			cmdList.useProgram(program_subsum2D);
 			cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 			cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
 			cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 			cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 			cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			//cmdList.bindImageTexture(1, NULL, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F); // #todo: needed?
 		}
 
 		/* sceneContext.dofSubsum1 now holds subsum table */

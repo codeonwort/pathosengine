@@ -147,7 +147,7 @@ namespace pathos {
 		glm::mat4& proj = camera->getProjectionMatrix();
 		glm::mat4& transform = proj * view;
 
-		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.depthFunc(GL_GREATER);
 		cmdList.disable(GL_DEPTH_TEST);
 
 		sphere->activate_position(cmdList);
@@ -158,9 +158,6 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, texture);
 
 		sphere->drawPrimitive(cmdList);
-
-		cmdList.depthFunc(GL_LESS);
-		cmdList.enable(GL_DEPTH_TEST);
 	}
 
 	void AnselSkyRendering::createShaderProgram() {

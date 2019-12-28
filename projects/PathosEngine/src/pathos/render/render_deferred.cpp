@@ -172,6 +172,9 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
+		// Reverse-Z
+		glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth->getInt() != 0) {
@@ -192,7 +195,7 @@ namespace pathos {
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			cmdList.clearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			cmdList.clearDepth(1.0f);
+			cmdList.clearDepth(0.0f); // zero for Reverse-Z
 			cmdList.clearStencil(0);
 			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
@@ -258,12 +261,13 @@ namespace pathos {
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
+		static const GLfloat zero_depth[] = { 0.0f };
 		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, one);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
 	}
 
 	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
@@ -307,7 +311,7 @@ namespace pathos {
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
-		cmdList.depthFunc(GL_LESS);
+		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {

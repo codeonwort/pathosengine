@@ -32,7 +32,7 @@ namespace pathos {
 
 		cmdList.useProgram(program);
 
-		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.depthFunc(GL_GEQUAL);
 
 		UBO_Atmosphere uboData;
 		uboData.sunParams.x = 5.0f;
@@ -42,8 +42,6 @@ namespace pathos {
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		cmdList.bindVertexArray(0);
-
-		cmdList.depthFunc(GL_LESS);
 	}
 
 }

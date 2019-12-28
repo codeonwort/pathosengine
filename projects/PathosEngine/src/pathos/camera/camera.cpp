@@ -9,7 +9,17 @@ namespace pathos {
 		z_far = zfar;
 		fovY_half = glm::radians(fovY_degrees);
 		aspect = aspect_wh;
+
+#if 1 // Reverse-Z
+		float f = 1.0f / tan(glm::radians(fovY_degrees) / 2.0f);
+		transform = glm::mat4(
+			f / aspect, 0.0f, 0.0f, 0.0f,
+			0.0f, f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, -1.0f,
+			0.0f, 0.0f, z_near, 0.0f);
+#else
 		transform = glm::perspective(fovY_half, aspect, znear, zfar);
+#endif
 	}
 
 	glm::mat4 PerspectiveLens::getProjectionMatrix() const {

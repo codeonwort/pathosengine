@@ -60,7 +60,7 @@ void main() {
 		glm::mat4 proj = camera->getProjectionMatrix();
 		glm::mat4 transform = proj * view;
 
-		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.depthFunc(GL_GEQUAL);
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_FRONT);
 
@@ -74,7 +74,6 @@ void main() {
 		cube->drawPrimitive(cmdList);
 		
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_LESS);
 		cmdList.cullFace(GL_BACK);
 	}
 

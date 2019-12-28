@@ -122,11 +122,13 @@ namespace pathos {
 				pendingTextureData.insert(make_pair(static_cast<int32_t>(i), bmp));
 			} else {
 				ColorMaterial* solidColor = new ColorMaterial;
-// 				solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
-// 				solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
+				// #todo-loader: What to do with ambient and specular
+ 				//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
+ 				//solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
 				solidColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
 				solidColor->setMetallic(t_mat.metallic);
 				solidColor->setRoughness(t_mat.roughness);
+				// #todo-loader: Parse emission and transmittance
 				solidColor->setAlpha(1.0f);
 				M = solidColor;
 				isPendingMaterial.push_back(false);
