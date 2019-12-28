@@ -26,9 +26,9 @@ in VS_OUT {
 } fs_in;
 
 vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
-    vec3 T = uboPerObject.mvTransform3x3 * normalize(t);
-    vec3 B = uboPerObject.mvTransform3x3 * normalize(b);
-    vec3 N = uboPerObject.mvTransform3x3 * normalize(n);
+    vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
+    vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
+    vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
     mat3 TBN = mat3(T, B, N);
 
     vec3 norm = normalize(texture2D(tex_normal, uv).rgb * 2.0 - 1.0);
