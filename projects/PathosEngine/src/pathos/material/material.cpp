@@ -1,15 +1,6 @@
 #include "pathos/material/material.h"
 
 namespace pathos {
-
-	/*
-	PlaneReflection* MeshMaterial::getReflectionMethod() { return reflectionMethod; }
-	void MeshMaterial::setReflectionMethod(PlaneReflection* pr) {
-		reflectionMethod = pr;
-		pr->setReflector(owner);
-		programDirty = true;
-	}
-	*/
 	
 	////////////////////////////////////////////////////////////////////////////////////
 	// ColorMaterial
@@ -19,18 +10,12 @@ namespace pathos {
 		setRoughness(0.1f);
 		setAlbedo(0.5f, 0.5f, 0.5f);
 		setAlpha(1.0f);
-		blendSrcFactor = GL_SRC_ALPHA;
-		blendDstFactor = GL_ONE_MINUS_SRC_ALPHA;
 	}
 
 	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {
 		albedo[0] = r;
 		albedo[1] = g;
 		albedo[2] = b;
-	}
-	void ColorMaterial::setBlendFactor(GLuint srcFactor, GLuint dstFactor) {
-		blendSrcFactor = srcFactor;
-		blendDstFactor = dstFactor;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////

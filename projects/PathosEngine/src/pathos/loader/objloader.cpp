@@ -5,8 +5,8 @@
 #include <string>
 #include <memory>
 
-//#define LOAD_NORMAL_DATA
-//#define WARN_INVALID_FACE_MARTERIAL
+#define LOAD_NORMAL_DATA            0
+#define WARN_INVALID_FACE_MARTERIAL 0
 
 namespace pathos {
 
@@ -101,15 +101,13 @@ namespace pathos {
 	}
 
 	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output) {
-		static_cast<void>(tiny_materials);
-		static_cast<void>(output);
-
 		for (size_t i = 0; i < t_materials.size(); i++) {
 			tinyobj::material_t& t_mat = t_materials[i];
 			Material* M = nullptr;
 
 			if (t_mat.diffuse_texname.length() > 0) {
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
+
 				FIBITMAP* bmp;
 				if (bitmapDB.find(image_path) == bitmapDB.end()) {
 					bmp = loadImage(image_path.c_str());
@@ -117,11 +115,13 @@ namespace pathos {
 				} else {
 					bmp = bitmapDB[image_path];
 				}
+
 				M = new TextureMaterial(0); // pending request
 				isPendingMaterial.push_back(true);
-				pendingTextureData.insert(make_pair(static_cast<int32_t>(i), bmp));
+				pendingTextureData.insert(make_pair(static_cast<int32>(i), PendingTexture(bmp, true)));
 			} else {
 				ColorMaterial* solidColor = new ColorMaterial;
+				
 				// #todo-loader: What to do with ambient and specular
  				//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
  				//solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
@@ -130,6 +130,7 @@ namespace pathos {
 				solidColor->setRoughness(t_mat.roughness);
 				// #todo-loader: Parse emission and transmittance
 				solidColor->setAlpha(1.0f);
+
 				M = solidColor;
 				isPendingMaterial.push_back(false);
 			}
@@ -141,9 +142,8 @@ namespace pathos {
 		// used for shapes whose material id is invalid
 		defaultMaterial = new ColorMaterial;
 		ColorMaterial* M = defaultMaterial;
-		M->setAlbedo(0.5f, 0.5f, 0.5f);
+		M->setAlbedo(0.0f, 1.0f, 0.0f);
 		M->setAlpha(1.0f);
-		materials.push_back(M);
 	}
 
 	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& attrib, std::vector<PendingShape>& output) {
@@ -156,8 +156,8 @@ namespace pathos {
 
 			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
 				int faceMaterialID = src.mesh.material_ids[f];
-#ifdef WARN_INVALID_FACE_MARTERIAL
-				assert(faceMaterialID >= 0); // invalid material id
+#if WARN_INVALID_FACE_MARTERIAL
+				CHECK(faceMaterialID >= 0); // invalid material id
 #endif
 				dst.materialIDs.insert(faceMaterialID);
 			}
@@ -179,7 +179,7 @@ namespace pathos {
 					dst.positions[materialID].push_back(vx);
 					dst.positions[materialID].push_back(vy);
 					dst.positions[materialID].push_back(vz);
-#ifdef LOAD_NORMAL_DATA
+#if LOAD_NORMAL_DATA
 					// normal data
 					if (idx.normal_index >= 0) {
 						float nx = attrib.normals[3 * idx.normal_index + 0];
@@ -211,22 +211,22 @@ namespace pathos {
 	Mesh* OBJLoader::craftMeshFrom(const string& shapeName) {
 		for (size_t i = 0; i < t_shapes.size(); ++i) {
 			if (t_shapes[i].name == shapeName) {
-				return craftMeshFrom(static_cast<uint32_t>(i));
+				return craftMeshFrom(static_cast<uint32>(i));
 			}
 		}
 		return nullptr;
 	}
-	Mesh* OBJLoader::craftMeshFrom(uint32_t shapeIndex) {
+	Mesh* OBJLoader::craftMeshFrom(uint32 shapeIndex) {
 		return craftMesh(shapeIndex, shapeIndex);
 	}
 	Mesh* OBJLoader::craftMeshFromAllShapes() {
-		return craftMesh(0, static_cast<uint32_t>(pendingShapes.size() - 1));
+		return craftMesh(0, static_cast<uint32>(pendingShapes.size() - 1));
 	}
 
-	Mesh* OBJLoader::craftMesh(uint32_t from, uint32_t to) {
-		assert(0 <= from && from < pendingShapes.size());
-		assert(0 <= to && to < pendingShapes.size());
-		assert(from <= to);
+	Mesh* OBJLoader::craftMesh(uint32 from, uint32 to) {
+		CHECK(0 <= from && from < pendingShapes.size());
+		CHECK(0 <= to && to < pendingShapes.size());
+		CHECK(from <= to);
 
 		Mesh* mesh = new Mesh;
 
@@ -234,27 +234,27 @@ namespace pathos {
 			PendingShape& shape = pendingShapes[i];
 
 			for (auto materialID : shape.materialIDs) {
-#ifdef WARN_INVALID_FACE_MARTERIAL
-				assert(materialID >= 0);
+#if WARN_INVALID_FACE_MARTERIAL
+				CHECK(materialID >= 0);
 #endif
 				auto& positions = shape.positions[materialID];
 				auto& normals = shape.normals[materialID];
 				auto& texcoords = shape.texcoords[materialID];
 				auto& indices = shape.indices[materialID];
 
-#ifdef LOAD_NORMAL_DATA
+#if LOAD_NORMAL_DATA
 				if (normals.size() < positions.size()) calculateNormal(t_attrib, indices, normals);
 #else
 				calculateNormal(t_attrib, indices, normals);
 #endif
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(true);
-				geom->updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
+				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
 				if (texcoords.size() > 0) {
-					geom->updateUVData(&texcoords[0], static_cast<uint32_t>(texcoords.size()));
+					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				}
-				geom->updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
+				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
 				mesh->add(geom, getMaterial(materialID));
 			}
 		}
@@ -262,8 +262,8 @@ namespace pathos {
 		return mesh;
 	}
 
-	Material* OBJLoader::getMaterial(int32_t index) {
-		assert(-1 <= index && index < (int32_t)materials.size());
+	Material* OBJLoader::getMaterial(int32 index) {
+		CHECK(-1 <= index && index < (int32)materials.size());
 		if (index == -1) {
 			return defaultMaterial;
 		}
@@ -275,9 +275,9 @@ namespace pathos {
 			case MATERIAL_ID::FLAT_TEXTURE:
 				GLuint texture;
 				if (textureDB.find(index) == textureDB.end()) {
-					// #todo: set sRGB=true only for diffuse texture
-					constexpr bool sRGB = true;
-					texture = pathos::loadTexture(pendingTextureData[index], true, sRGB);
+					constexpr bool generateMipmap = true;
+					const PendingTexture& pendingTexture = pendingTextureData[index];
+					texture = pathos::loadTexture(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
 					textureDB.insert(make_pair(index, texture));
 				} else {
 					texture = textureDB[index];
@@ -286,7 +286,7 @@ namespace pathos {
 				break;
 			default:
 				// no impl for a pending material. find out what's missing!
-				assert(0);
+				CHECK(0);
 			}
 		}
 

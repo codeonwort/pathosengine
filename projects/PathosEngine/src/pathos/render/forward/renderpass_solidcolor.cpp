@@ -121,9 +121,6 @@ namespace pathos {
 			omniShadow->activate(program, scene->pointLights, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
 		}
 
-		glEnable(GL_BLEND);
-		glBlendFunc(material->getBlendSrcFactor(), material->getBlendDstFactor());
-
 		//--------------------------------------------------------------------------------------
 		// draw call
 		//--------------------------------------------------------------------------------------
@@ -134,7 +131,6 @@ namespace pathos {
 		//--------------------------------------------------------------------------------------
 		geometry->deactivate(cmdList);
 		geometry->deactivateIndexBuffer(cmdList);
-		glDisable(GL_BLEND);
 
 		if (shadowMapping != nullptr) {
 			shadowMapping->deactivate(program, SHADOW_MAPPING_TEXTURE_UNIT_START);

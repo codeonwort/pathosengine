@@ -29,6 +29,7 @@ namespace pathos {
 	// Materials
 
 	// #todo-material: Support emissive and translucent
+	// Opaque solid color
 	class ColorMaterial : public Material {
 
 	public:
@@ -39,15 +40,12 @@ namespace pathos {
 		inline void setRoughness(GLfloat inRoughness) { roughness = inRoughness; }
 
 		inline void setAlpha(GLfloat a) { alpha = a; }
-		void setBlendFactor(GLuint, GLuint);
 
 		inline const GLfloat* getAlbedo() const { return albedo; }
 		inline GLfloat getMetallic()      const { return metallic; }
 		inline GLfloat getRoughness()     const { return roughness; }
 
 		inline GLfloat getAlpha()         const { return alpha; }
-		inline GLuint getBlendSrcFactor() const { return blendSrcFactor; }
-		inline GLuint getBlendDstFactor() const { return blendDstFactor; }
 
 	private:
 		GLfloat albedo[3];
@@ -95,31 +93,6 @@ namespace pathos {
 		GLuint normalMapTexture;
 
 	};
-	
-	class ShadowTextureMaterial : public Material {
-
-	protected:
-		GLuint texture;
-
-	public:
-		ShadowTextureMaterial(GLuint texture);
-		inline const GLuint getTexture() { return texture; }
-	};
-
-	class ShadowCubeTextureMaterial : public Material {
-
-	protected:
-		GLuint texture;
-		unsigned int face;
-		GLfloat zNear, zFar;
-
-	public:
-		ShadowCubeTextureMaterial(GLuint depthCubemapTexture, unsigned int face, GLfloat zNear, GLfloat zFar);
-		inline const GLuint getTexture() { return texture; }
-		inline const GLuint getFace() { return face; }
-		inline const GLfloat getZNear() { return zNear; }
-		inline const GLfloat getZFar() { return zFar; }
-	};
 
 	class WireframeMaterial : public Material {
 
@@ -154,6 +127,7 @@ namespace pathos {
 		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
 	};
 
+	// Cook-Torrance BRDF
 	class PBRTextureMaterial : public Material {
 
 	public:
@@ -171,6 +145,34 @@ namespace pathos {
 		GLuint tex_roughness;
 		GLuint tex_ao;
 
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// #todo-deprecated: Remove these materials
+
+	class ShadowTextureMaterial : public Material {
+
+	protected:
+		GLuint texture;
+
+	public:
+		ShadowTextureMaterial(GLuint texture);
+		inline const GLuint getTexture() { return texture; }
+	};
+
+	class ShadowCubeTextureMaterial : public Material {
+
+	protected:
+		GLuint texture;
+		unsigned int face;
+		GLfloat zNear, zFar;
+
+	public:
+		ShadowCubeTextureMaterial(GLuint depthCubemapTexture, unsigned int face, GLfloat zNear, GLfloat zFar);
+		inline const GLuint getTexture() { return texture; }
+		inline const GLuint getFace() { return face; }
+		inline const GLfloat getZNear() { return zNear; }
+		inline const GLfloat getZFar() { return zFar; }
 	};
 
 }

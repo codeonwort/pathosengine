@@ -4,7 +4,6 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/mesh/mesh.h"
 
-#include <stdint.h>
 #include <vector>
 #include <map>
 #include <set>
@@ -12,15 +11,22 @@
 namespace pathos {
 
 	struct PendingTexture {
-		std::string name;
+		PendingTexture() = default;
+		PendingTexture(FIBITMAP* inRawData, bool inSRGB)
+			: rawData(inRawData)
+			, sRGB(inSRGB)
+		{
+		}
+		FIBITMAP* rawData;
+		bool sRGB;
 	};
 
 	struct PendingShape {
-		std::map<int32_t, std::vector<GLfloat>> positions;
-		std::map<int32_t, std::vector<GLfloat>> normals;
-		std::map<int32_t, std::vector<GLfloat>> texcoords;
-		std::map<int32_t, std::vector<GLuint>> indices;
-		std::set<int32_t> materialIDs;
+		std::map<int32, std::vector<GLfloat>> positions;
+		std::map<int32, std::vector<GLfloat>> normals;
+		std::map<int32, std::vector<GLfloat>> texcoords;
+		std::map<int32, std::vector<GLuint>> indices;
+		std::set<int32> materialIDs;
 	};
 
 	// Wavefront OBJ
@@ -36,12 +42,12 @@ namespace pathos {
 		bool load(const char* objFile, const char* mtlDir);
 		void unload();
 
-		inline uint32_t numShapes() const { return static_cast<uint32_t>(pendingShapes.size()); }
-		inline const string& getShapeName(uint32_t index) const { return t_shapes[index].name; }
+		inline uint32 numShapes() const { return static_cast<uint32>(pendingShapes.size()); }
+		inline const string& getShapeName(uint32 index) const { return t_shapes[index].name; }
 		
 		// CAUTION: should be called within main thread
 		Mesh* craftMeshFrom(const string& shapeName);
-		Mesh* craftMeshFrom(uint32_t shapeIndex);
+		Mesh* craftMeshFrom(uint32 shapeIndex);
 		Mesh* craftMeshFromAllShapes();
 
 		const vector<Material*>& getMaterials() { return materials; }
@@ -49,11 +55,14 @@ namespace pathos {
 	protected:
 		void analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output);
 		void reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& attrib, std::vector<PendingShape>& pendingShape);
-		Material* getMaterial(int32_t index);
-		Mesh* craftMesh(uint32_t from, uint32_t to); // both inclusive
+		Material* getMaterial(int32 index);
+		Mesh* craftMesh(uint32 from, uint32 to); // both inclusive
 
 	private:
 		std::string mtlDir;
+
+		// Fallback material if there's no matching material for that within .mtl
+		ColorMaterial* defaultMaterial = nullptr;
 
 		std::vector<tinyobj::shape_t> t_shapes;
 		std::vector<tinyobj::material_t> t_materials;
@@ -62,11 +71,10 @@ namespace pathos {
 		std::vector<PendingShape> pendingShapes;
 		std::vector<Material*> materials;
 		std::map<std::string, FIBITMAP*> bitmapDB;
-		ColorMaterial* defaultMaterial = nullptr;
 
 		std::vector<bool> isPendingMaterial;
-		std::map<int32_t, FIBITMAP*> pendingTextureData;
-		std::map<int32_t, GLuint> textureDB;
+		std::map<int32, PendingTexture> pendingTextureData;
+		std::map<int32, GLuint> textureDB;
 
 	};
 
