@@ -16,27 +16,26 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		checkFramebufferStatus(cmdList, fbo);
 
-		std::string vshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-void main() {
-	gl_Position = vec4(position, 1.0);
-}
-)";
 		Shader vs(GL_VERTEX_SHADER, "VS_Bloom");
-		vs.setSource(vshader);
-
-		Shader fs(GL_FRAGMENT_SHADER, "FS_Bloom");
-		fs.loadSource("deferred_unpack_hdr.glsl");
-
-		program = pathos::createProgram(vs, fs, "BlurPass");
-		uniform_blur_horizontal = glGetUniformLocation(program, "horizontal");
+		vs.loadSource("fullscreen_quad.glsl");
+		{
+			Shader fs(GL_FRAGMENT_SHADER, "FS_Bloom");
+			fs.addDefine("HORIZONTAL 1");
+			fs.loadSource("two_pass_gaussian_blur.glsl");
+			program = pathos::createProgram(vs, fs, "BlurPass_Horizontal");
+		}
+		{
+			Shader fs(GL_FRAGMENT_SHADER, "FS_Bloom");
+			fs.addDefine("HORIZONTAL 0");
+			fs.loadSource("two_pass_gaussian_blur.glsl");
+			program2 = pathos::createProgram(vs, fs, "BlurPass_Vertical");
+		}
 	}
 
 	void BloomPass::releaseResources(RenderCommandList& cmdList)
 	{
 		cmdList.deleteProgram(program);
+		cmdList.deleteProgram(program2);
 		cmdList.deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
@@ -48,23 +47,20 @@ void main() {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		cmdList.useProgram(program);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		// #todo-bloom: Use PPI_0 and PPI_1
+		cmdList.useProgram(program);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
-		cmdList.uniform1i(uniform_blur_horizontal, GL_TRUE);
 		cmdList.bindTextureUnit(0, sceneContext.sceneBloom);
 		fullscreenQuad->drawPrimitive(cmdList);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
 
+		cmdList.useProgram(program2);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloom, 0);
-		cmdList.uniform1i(uniform_blur_horizontal, GL_FALSE);
 		cmdList.bindTextureUnit(0, sceneContext.sceneBloomTemp);
 		fullscreenQuad->drawPrimitive(cmdList);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 
 }
