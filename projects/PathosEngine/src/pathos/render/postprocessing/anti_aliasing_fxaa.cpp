@@ -1,4 +1,5 @@
 #include "anti_aliasing_fxaa.h"
+#include "pathos/console.h"
 #include "pathos/shader/shader.h"
 #include "pathos/render/scene_render_targets.h"
 
@@ -101,7 +102,14 @@ void main() {
 		cmdList.uniform1f(fxaaConsoleEdgeThresholdMin, console_edge_threshold_min);
 		cmdList.uniform4f(fxaaConsole360ConstDir	 , 1.0f, -1.0f, 0.25f, -0.25f);
 
-		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		//cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		ConsoleVariableBase* cvar_dof = ConsoleVariableManager::find("r.dof.enable");
+		if (cvar_dof && cvar_dof->getInt() != 0) {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		} else {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+
 		cmdList.textureParameteri(sceneContext.toneMappingResult, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneContext.toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.bindTextureUnit(0, sceneContext.toneMappingResult);

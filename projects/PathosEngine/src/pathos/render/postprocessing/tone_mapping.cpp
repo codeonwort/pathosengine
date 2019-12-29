@@ -12,19 +12,9 @@ namespace pathos {
 	{
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		std::string vshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-void main() {
-	gl_Position = vec4(position, 1.0);
-}
-)";
-
 		Shader vs(GL_VERTEX_SHADER, "VS_ToneMapping");
-		vs.setSource(vshader);
-
 		Shader fs(GL_FRAGMENT_SHADER, "FS_ToneMapping");
+		vs.loadSource("fullscreen_quad.glsl");
 		fs.loadSource("tone_mapping.glsl");
 
 		program = pathos::createProgram(vs, fs, "ToneMapping");
@@ -49,12 +39,7 @@ void main() {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		ConsoleVariableBase* cvar_dof = ConsoleVariableManager::find("r.dof.enable");
-		if(cvar_dof && cvar_dof->getInt() != 0) {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		} else {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		cmdList.useProgram(program);
 
