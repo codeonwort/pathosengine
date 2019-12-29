@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DeferredRenderer", "pr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_SkeletalAnimation", "projects\Test_SkeletalAnimation\Test_SkeletalAnimation.vcxproj", "{21FB9607-AA39-4F30-931E-3A5F5736465F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_NvidiaAnsel", "projects\Test_NvidiaAnsel\Test_NvidiaAnsel.vcxproj", "{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ComputeShader", "projects\Test_ComputeShader\Test_ComputeShader.vcxproj", "{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThirdParty", "thirdparty\ThirdParty.vcxproj", "{D9296D9D-A2DC-4F52-8CDB-2E4E83A4A08F}"
@@ -35,10 +33,6 @@ Global
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|x64.Build.0 = Debug|x64
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.ActiveCfg = Release|x64
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.Build.0 = Release|x64
-		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|x64.ActiveCfg = Debug|x64
-		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Debug|x64.Build.0 = Debug|x64
-		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|x64.ActiveCfg = Release|x64
-		{D0332B2B-E2C4-4AF8-B76B-A216DC339B04}.Release|x64.Build.0 = Release|x64
 		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Debug|x64.ActiveCfg = Debug|x64
 		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Debug|x64.Build.0 = Debug|x64
 		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Release|x64.ActiveCfg = Release|x64
