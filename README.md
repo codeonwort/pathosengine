@@ -2,14 +2,15 @@
 ## What is this
 OpenGL rendering library (for 3d graphics study)
 
-Caution: Under heavy refactoring to utilize render command list. Forward renderer is broken, even test projects for forward rendering will not be compiled.
-
 * IDE: Visual Studio 2019, Visual Studio Code
 * Language: C++
 * GL version: OpenGL 4.6 Core Profile
 
+I'm doing heavy refactoring (rather remake to say) and feature development. Forward rendering is broken but on low priority.
+Test projects for forward rendering will not be compiled or crashed at launch.
+
 ## Third-party Libraries
-* OpenGL        : glm, gl3w
+* OpenGL        : glm, glLoadGen
 * Window system : freeglut
 * Image         : freeimage
 * Font          : freetype
