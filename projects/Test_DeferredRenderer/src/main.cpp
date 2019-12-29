@@ -10,8 +10,8 @@ const int           WINDOW_WIDTH        =   1920;
 const int           WINDOW_HEIGHT       =   1080;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
-const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 0.0f, 100.0f);
-const float         CAMERA_Z_NEAR       =   1.0f;
+const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
+const float         CAMERA_Z_NEAR       =   0.01f;
 const float         CAMERA_Z_FAR        =   2000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 const bool          USE_HDR             =   true;
@@ -22,8 +22,7 @@ Camera* cam;
 Scene scene;
 	DirectionalLight *sunLight;
 	Mesh* godRaySource;
-	Mesh *ground;
-	Mesh *model, *model2, *model3;
+	Mesh* ground;
 	std::vector<Mesh*> balls;
 
 void setupScene();
@@ -32,7 +31,8 @@ void tick();
 OBJLoader houseLoader;
 bool asyncLoadComplete = false;
 void asyncLoadTask() {
-	bool loaded = houseLoader.load("models/small_colonial_house/houseSF.obj", "models/small_colonial_house/");
+	//bool loaded = houseLoader.load("models/small_colonial_house/houseSF.obj", "models/small_colonial_house/");
+	bool loaded = houseLoader.load("models/fireplace_room/fireplace_room.obj", "models/fireplace_room/");
 	CHECK(loaded);
 	asyncLoadComplete = true;
 }
@@ -67,8 +67,8 @@ void setupScene() {
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
-	scene.add(new PointLight(glm::vec3(20.0f, 30.0f, 50.0f), 5.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
-	scene.add(new PointLight(glm::vec3(-50.0f, 30.0f, 50.0f), 15.0f * glm::vec3(1.0f, 1.0f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(-50.0f, 30.0f, 150.0f), 5.0f * glm::vec3(0.2f, 1.0f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f)));
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -89,13 +89,12 @@ void setupScene() {
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(4.0f, 0.0f, 0.0f);
+		color->setAlbedo(2.0f, 0.2f, 0.2f);
 		color->setAlpha(1.0f);
-		color->setMetallic(0.5f);
+		color->setMetallic(0.2f);
 		color->setRoughness(0.1f);
 	}
 	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
-	auto material_wireframe = new WireframeMaterial(1.0f, 0.0f, 1.0f, 1.0f);
 
 	// PBR material
 	PBRTextureMaterial* material_pbr;
@@ -145,24 +144,10 @@ void setupScene() {
 	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
 
-	model = new Mesh(geom_plane, material_pbr);
-	model->getTransform().appendScale(5.0f, 5.0f, 5.0f);
-	model->getTransform().appendRotation(glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	model->getTransform().appendMove(-120.0f, 0.0f, -30.0f);
-	model->doubleSided = true;
-
-	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendScale(3.0f);
-	model2->getTransform().appendRotation(glm::radians(-10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	model2->getTransform().appendMove(50.0f, 0.0f, 0.0f);
-
-	model3 = new Mesh(geom_cube, material_wireframe);
-	model3->getTransform().appendMove(35.0f, 0.0f, 0.0f);
-
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
 		ball->getTransform().appendScale(2.0f + (float)i * 0.1f);
-		ball->getTransform().appendMove((float)i * 5.0f, -15.0f, -30.0f * i);
+		ball->getTransform().appendMove(-200.0f + (float)i * 5.0f, -15.0f, 50.0f -30.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -173,9 +158,6 @@ void setupScene() {
 
 	// add to scene
 	scene.add(ground);
-	scene.add(model);
-	scene.add(model2);
-	scene.add(model3);
 	scene.sky = new Skybox(cubeTexture);
 	//scene.sky = new AtmosphereScattering;
 	scene.godRaySource = godRaySource;
@@ -185,17 +167,12 @@ void tick()
 {
 	if(asyncLoadComplete) {
 		asyncLoadComplete = false;
-		ColorMaterial* house_material = new ColorMaterial;
-		house_material->setAlbedo(1.0f, 1.0f, 1.0f);
-		house_material->setMetallic(0.0f);
-		house_material->setRoughness(0.0f);
+
 		Mesh* house = houseLoader.craftMeshFromAllShapes();
-		for (int32 i = 0; i < (int32)house->getMaterials().size(); ++i) {
-			house->setMaterial(i, house_material);
-		}
 		house->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		house->getTransform().appendMove(-5.0f, -3.0f, -5.0f);
-		house->getTransform().appendScale(10.0f);
+		house->getTransform().appendScale(50.0f);
+		house->getTransform().appendMove(-100.0f, -10.0f, 0.0f);
+
 		scene.add(house);
 		houseLoader.unload();
 	}
@@ -210,23 +187,15 @@ void tick()
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}
-	
-	//model->getTransform().appendMove(0, 20, 0);
-	//model->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 0.5f, 1.0f));
-	//model->getTransform().appendMove(0, -20, 0);
-
-	model2->getTransform().appendMove(-60, 0, 0);
-	model2->getTransform().appendRotation(0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
-	model2->getTransform().appendMove(60, 0, 0);
 
 	for (auto& ball : balls) {
 		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
-#if !(_DEBUG)
-	char title[256];
-	sprintf_s(title, "%s (Elapsed: %.2f ms)", WINDOW_TITLE, gEngine->getMilliseconds());
-	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
-#endif
+//#if !(_DEBUG)
+//	char title[256];
+//	sprintf_s(title, "%s (Elapsed: %.2f ms)", WINDOW_TITLE, gEngine->getMilliseconds());
+//	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
+//#endif
 
 }
