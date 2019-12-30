@@ -139,6 +139,31 @@ namespace pathos {
 		glGenQueries(1, &timer_query);
 		CHECK(timer_query != 0);
 
+		{
+			GLuint systemTextures[4];
+			glCreateTextures(GL_TEXTURE_2D, 4, systemTextures);
+
+			texture2D_black = systemTextures[0];
+			texture2D_white = systemTextures[1];
+			texture2D_grey  = systemTextures[2];
+			texture2D_blue  = systemTextures[3];
+
+			glTextureStorage2D(texture2D_black, 1, GL_RGBA8, 1, 1);
+			glTextureStorage2D(texture2D_white, 1, GL_RGBA8, 1, 1);
+			glTextureStorage2D(texture2D_grey,  1, GL_RGBA8, 1, 1);
+			glTextureStorage2D(texture2D_blue,  1, GL_RGBA8, 1, 1);
+
+			GLubyte black[4] = { 0, 0, 0, 0 };
+			GLubyte white[4] = { 0xff, 0xff, 0xff, 0xff };
+			GLubyte grey[4]  = { 0x7f, 0x7f, 0x7f, 0x7f };
+			GLubyte blue[4]  = { 0x00, 0x00, 0xff, 0xff };
+
+			glClearTexImage(texture2D_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
+			glClearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
+			glClearTexImage(texture2D_grey,  0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
+			glClearTexImage(texture2D_blue,  0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+		}
+
 		return validDevice;
 	}
 

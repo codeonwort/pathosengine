@@ -29,7 +29,7 @@ namespace pathos {
 	// Materials
 
 	// #todo-material: Support emissive and translucent
-	// Opaque solid color
+	// Opaque solid color, rendered in gbuffer pass
 	class ColorMaterial : public Material {
 
 	public:
@@ -39,22 +39,41 @@ namespace pathos {
 		inline void setMetallic(GLfloat inMetallic)   { metallic = inMetallic; }
 		inline void setRoughness(GLfloat inRoughness) { roughness = inRoughness; }
 
-		inline void setAlpha(GLfloat a) { alpha = a; }
-
 		inline const GLfloat* getAlbedo() const { return albedo; }
 		inline GLfloat getMetallic()      const { return metallic; }
 		inline GLfloat getRoughness()     const { return roughness; }
-
-		inline GLfloat getAlpha()         const { return alpha; }
 
 	private:
 		GLfloat albedo[3];
 		GLfloat metallic;
 		GLfloat roughness;
-		GLfloat alpha;
-		GLuint blendSrcFactor;
-		GLuint blendDstFactor;
 
+	};
+
+	// Rendered in translucency pass
+	class TranslucentColorMaterial : public Material {
+	
+	public:
+		TranslucentColorMaterial() {
+			materialID = MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
+			setAlbedo(1.0f, 1.0f, 1.0f);
+			metallic = 0.5f;
+			roughness = 0.1f;
+			opacity = 0.5f;
+		}
+	
+		inline void setAlbedo(GLfloat r, GLfloat g, GLfloat b) { albedo[0] = r; albedo[1] = g; albedo[2] = b; }
+		inline void setAlbedo(glm::vec3 rgb)                   { albedo[0] = rgb.x; albedo[1] = rgb.y; albedo[2] = rgb.z; }
+		inline void setMetallic(GLfloat inMetallic)            { metallic = inMetallic; }
+		inline void setRoughness(GLfloat inRoughness)          { roughness = inRoughness; }
+		inline void setOpacity(GLfloat inOpacity)              { opacity = inOpacity; }
+	
+	private:
+		GLfloat albedo[3];
+		GLfloat metallic;
+		GLfloat roughness;
+		GLfloat opacity;
+	
 	};
 	
 	class TextureMaterial : public Material {
@@ -132,11 +151,16 @@ namespace pathos {
 
 	public:
 		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);
-		inline GLuint getAlbedo() const { return tex_albedo; }
-		inline GLuint getNormal() const { return tex_normal; }
-		inline GLuint getMetallic() const { return tex_metallic; }
+		inline GLuint getAlbedo()    const { return tex_albedo;    }
+		inline GLuint getNormal()    const { return tex_normal;    }
+		inline GLuint getMetallic()  const { return tex_metallic;  }
 		inline GLuint getRoughness() const { return tex_roughness; }
-		inline GLuint getAO() const { return tex_ao; }
+		inline GLuint getAO()        const { return tex_ao;        }
+		inline void setAlbedo(GLuint inTexture)    { tex_albedo = inTexture;    }
+		inline void setNormal(GLuint inTexture)    { tex_normal = inTexture;    }
+		inline void setMetallic(GLuint inTexture)  { tex_metallic = inTexture;  }
+		inline void setRoughness(GLuint inTexture) { tex_roughness = inTexture; }
+		inline void setAO(GLuint inTexture)        { tex_ao = inTexture;        }
 
 	protected:
 		GLuint tex_albedo;

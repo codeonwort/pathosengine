@@ -65,6 +65,11 @@ namespace pathos {
 		// #todo-input: Make an input manager
 		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
+		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
+		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
+		inline GLuint getSystemTexture2DGrey()  const { return texture2D_grey;  }
+		inline GLuint getSystemTexture2DBlue()  const { return texture2D_blue;  }
+
 	private:
 		Engine();
 		~Engine();
@@ -105,6 +110,12 @@ namespace pathos {
 
 		GLuint timer_query;
 		float elapsed_ms;
+
+		// System textures
+		GLuint texture2D_black = 0;
+		GLuint texture2D_white = 0;
+		GLuint texture2D_grey  = 0;
+		GLuint texture2D_blue  = 0;
 
 	};
 

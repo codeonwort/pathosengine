@@ -208,7 +208,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	
 	vec3 Lo = vec3(0.0);
 
-	for(int i=0; i<uboPerFrame.numDirLights; ++i) {
+	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
 		vec3 L = -uboPerFrame.dirLightDirs[i];
 		vec3 H = normalize(V + L);
 		vec3 radiance = uboPerFrame.dirLightColors[i];
@@ -229,7 +229,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
 	}
 
-	for(int i=0; i<uboPerFrame.numPointLights; ++i) {
+	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		vec3 L = normalize(uboPerFrame.pointLightPos[i] - fragment.vs_coords);
 		vec3 H = normalize(V + L);
 		float distance = length(uboPerFrame.pointLightPos[i] - fragment.vs_coords);

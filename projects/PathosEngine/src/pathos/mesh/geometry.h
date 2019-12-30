@@ -57,12 +57,12 @@ namespace pathos {
 		void calculateNormals_indexed();
 
 	private:
-		GLfloat* positionData  = nullptr;
-		GLfloat* uvData        = nullptr;
-		GLfloat* normalData    = nullptr;
-		GLfloat* tangentData   = nullptr;
-		GLfloat* bitangentData = nullptr;
-		GLuint* indexData      = nullptr;
+		std::vector<GLfloat> positionData;
+		std::vector<GLfloat> uvData;
+		std::vector<GLfloat> normalData;
+		std::vector<GLfloat> tangentData;
+		std::vector<GLfloat> bitangentData;
+		std::vector<GLuint>  indexData;
 
 		GLuint positionBuffer  = 0;
 		GLuint uvBuffer        = 0;
@@ -80,10 +80,10 @@ namespace pathos {
 		GLuint vao_position_uv_normal_tangent_bitangent = 0;
 
 		// they are array lengths, not actual counts!
-		uint32_t positionCount = 0;
-		uint32_t uvCount       = 0;
-		uint32_t normalCount   = 0;
-		uint32_t indexCount    = 0;
+		uint32 positionCount = 0;
+		uint32 uvCount       = 0;
+		uint32 normalCount   = 0;
+		uint32 indexCount    = 0;
 
 		bool drawArraysMode; // use glDrawArrays() if true. use glDrawElements() if false. (default: false)
 	};

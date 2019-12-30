@@ -1,51 +1,49 @@
+#include "pathos/engine.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
-#include <string>
-#include <memory>
-
 #define LOAD_NORMAL_DATA            0
 #define WARN_INVALID_FACE_MARTERIAL 0
+#define LOAD_AS_PBR_TEXTURE         1
+
+static constexpr float TRANSLUCENT_THRESHOLD = 0.999f;
 
 namespace pathos {
 
-	void calculateNormal(const tinyobj::attrib_t& attrib, const vector<GLuint>& indices, vector<GLfloat>& normals) {
-		normals.clear();
-		auto numPos = attrib.vertices.size() / 3;
-		glm::vec3* accum = new glm::vec3[numPos];
-		unsigned int* counts = new unsigned int[numPos];
-		for (auto i = 0u; i < numPos; i++) {
-			accum[i] = glm::vec3(0.0f);
-			counts[i] = 0;
-		}
-		const auto& P = attrib.vertices;
-		for (auto i = 0u; i < indices.size(); i += 3) {
-			auto i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
-			auto p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
+	void calculateNormal(const std::vector<GLfloat>& positions, const std::vector<GLuint>& indices, std::vector<GLfloat>& outNormals) {
+		outNormals.clear();
+
+		uint32 numPos = (uint32)(positions.size() / 3);
+		std::vector<glm::vec3> accum(numPos, glm::vec3(0.0f));
+		std::vector<uint32> counts(numPos, 0);
+
+		const std::vector<float>& P = positions;
+
+		for (size_t i = 0u; i < indices.size(); i += 3) {
+			GLuint i0 = indices[i + 0], i1 = indices[i + 1], i2 = indices[i + 2];
+			GLuint p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
 			if (a == b) {
 				continue;
 			}
 			//auto norm = glm::normalize(glm::cross(a, b));
-			auto norm = glm::cross(a, b);
+			glm::vec3 norm = glm::cross(a, b);
 
 			accum[i0] *= counts[i0]; accum[i1] *= counts[i1]; accum[i2] *= counts[i2];
 			accum[i0] += norm; accum[i1] += norm; accum[i2] += norm;
 			counts[i0] ++; counts[i1] ++; counts[i2] ++;
 			accum[i0] /= counts[i0]; accum[i1] /= counts[i1]; accum[i2] /= counts[i2];
 		}
-		for (auto i = 0u; i < numPos; i++) {
+		for (uint32 i = 0u; i < numPos; i++) {
 			accum[i] = glm::normalize(accum[i]);
 		}
-		for (auto i = 0u; i < indices.size(); i++) {
-			normals.push_back(accum[indices[i]].x);
-			normals.push_back(accum[indices[i]].y);
-			normals.push_back(accum[indices[i]].z);
+		for (uint32 i = 0u; i < indices.size(); i++) {
+			outNormals.push_back(accum[indices[i]].x);
+			outNormals.push_back(accum[indices[i]].y);
+			outNormals.push_back(accum[indices[i]].z);
 		}
-		delete[] accum;
-		delete[] counts;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,9 +103,9 @@ namespace pathos {
 			tinyobj::material_t& t_mat = t_materials[i];
 			Material* M = nullptr;
 
-			if (t_mat.diffuse_texname.length() > 0) {
+			if (t_mat.diffuse_texname.length() > 0)
+			{
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
-
 				FIBITMAP* bmp;
 				if (bitmapDB.find(image_path) == bitmapDB.end()) {
 					bmp = loadImage(image_path.c_str());
@@ -116,10 +114,37 @@ namespace pathos {
 					bmp = bitmapDB[image_path];
 				}
 
-				M = new TextureMaterial(0); // pending request
+				// pending request
+#if LOAD_AS_PBR_TEXTURE
+				M = new PBRTextureMaterial(
+					0,
+					gEngine->getSystemTexture2DBlue(),   // #todo-loader: Parse normal texture
+					gEngine->getSystemTexture2DGrey(),   // #todo-loader: Parse metallic texture
+					gEngine->getSystemTexture2DBlack(),  // #todo-loader: Parse roughness texture
+					gEngine->getSystemTexture2DWhite()); // #todo-loader: Parse AO texture
+#else
+				M = new TextureMaterial(0);
+#endif
+
 				isPendingMaterial.push_back(true);
 				pendingTextureData.insert(make_pair(static_cast<int32>(i), PendingTexture(bmp, true)));
-			} else {
+			}
+			else if (t_mat.dissolve < TRANSLUCENT_THRESHOLD
+				|| t_mat.transmittance[0] < TRANSLUCENT_THRESHOLD
+				|| t_mat.transmittance[1] < TRANSLUCENT_THRESHOLD
+				|| t_mat.transmittance[2] < TRANSLUCENT_THRESHOLD)
+			{
+				TranslucentColorMaterial* translucentColor = new TranslucentColorMaterial;
+				translucentColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
+				translucentColor->setMetallic(t_mat.metallic);
+				translucentColor->setRoughness(t_mat.roughness);
+				translucentColor->setOpacity(t_mat.dissolve);
+				
+				M = translucentColor;
+				isPendingMaterial.push_back(false);
+			}
+			else
+			{
 				ColorMaterial* solidColor = new ColorMaterial;
 				
 				// #todo-loader: What to do with ambient and specular
@@ -128,8 +153,7 @@ namespace pathos {
 				solidColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
 				solidColor->setMetallic(t_mat.metallic);
 				solidColor->setRoughness(t_mat.roughness);
-				// #todo-loader: Parse emission and transmittance
-				solidColor->setAlpha(1.0f);
+				// #todo-loader: Parse emission
 
 				M = solidColor;
 				isPendingMaterial.push_back(false);
@@ -143,11 +167,11 @@ namespace pathos {
 		defaultMaterial = new ColorMaterial;
 		ColorMaterial* M = defaultMaterial;
 		M->setAlbedo(0.0f, 1.0f, 0.0f);
-		M->setAlpha(1.0f);
 	}
 
-	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& attrib, std::vector<PendingShape>& output) {
-		output.clear();
+	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& tiny_attrib, std::vector<PendingShape>& outPendingShapes) {
+		outPendingShapes.clear();
+
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
 			const tinyobj::shape_t& src = t_shapes[i];
 			PendingShape dst;
@@ -155,36 +179,37 @@ namespace pathos {
 			LOG(LogDebug, "Analyzing OBJ shape[%d]: %s", i, src.name.data());
 
 			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
-				int faceMaterialID = src.mesh.material_ids[f];
+				int32 faceMaterialID = (int32)(src.mesh.material_ids[f]);
 #if WARN_INVALID_FACE_MARTERIAL
 				CHECK(faceMaterialID >= 0); // invalid material id
 #endif
 				dst.materialIDs.insert(faceMaterialID);
 			}
 
-			auto numMaterials = dst.materialIDs.size();
+			size_t numMaterials = dst.materialIDs.size();
 			size_t index_offset = 0;
 
 			LOG(LogDebug, "Number of materials for this shape: %d", numMaterials);
 
-			for (auto f = 0u; f < src.mesh.num_face_vertices.size(); ++f) {
-				int fv = src.mesh.num_face_vertices[f];
-				int materialID = src.mesh.material_ids[f];
-				for (auto v = 0; v < fv; ++v) {
+			for (size_t f = 0u; f < src.mesh.num_face_vertices.size(); ++f) {
+				int32 fv = src.mesh.num_face_vertices[f];
+				CHECK(fv == 3);
+				int32 materialID = src.mesh.material_ids[f];
+				for (int32 v = 0; v < fv; ++v) {
 					tinyobj::index_t idx = src.mesh.indices[index_offset + v];
 					// position data
-					float vx = attrib.vertices[3 * idx.vertex_index + 0];
-					float vy = attrib.vertices[3 * idx.vertex_index + 1];
-					float vz = attrib.vertices[3 * idx.vertex_index + 2];
+					float vx = tiny_attrib.vertices[3 * idx.vertex_index + 0];
+					float vy = tiny_attrib.vertices[3 * idx.vertex_index + 1];
+					float vz = tiny_attrib.vertices[3 * idx.vertex_index + 2];
 					dst.positions[materialID].push_back(vx);
 					dst.positions[materialID].push_back(vy);
 					dst.positions[materialID].push_back(vz);
 #if LOAD_NORMAL_DATA
 					// normal data
 					if (idx.normal_index >= 0) {
-						float nx = attrib.normals[3 * idx.normal_index + 0];
-						float ny = attrib.normals[3 * idx.normal_index + 1];
-						float nz = attrib.normals[3 * idx.normal_index + 2];
+						float nx = tiny_attrib.normals[3 * idx.normal_index + 0];
+						float ny = tiny_attrib.normals[3 * idx.normal_index + 1];
+						float nz = tiny_attrib.normals[3 * idx.normal_index + 2];
 						dst.normals[materialID].push_back(nx);
 						dst.normals[materialID].push_back(ny);
 						dst.normals[materialID].push_back(nz);
@@ -192,17 +217,24 @@ namespace pathos {
 #endif // LOAD_NORMAL_DATA
 					// texcoord data
 					if (idx.texcoord_index >= 0) {
-						float u = attrib.texcoords[2 * idx.texcoord_index + 0];
-						float v = attrib.texcoords[2 * idx.texcoord_index + 1];
+						float u = tiny_attrib.texcoords[2 * idx.texcoord_index + 0];
+						float v = tiny_attrib.texcoords[2 * idx.texcoord_index + 1];
 						dst.texcoords[materialID].push_back(u);
 						dst.texcoords[materialID].push_back(v);
 					}
-					dst.indices[materialID].push_back(idx.vertex_index);
+
+					//dst.indices[materialID].push_back(idx.vertex_index);
+					if (dst.indices[materialID].size() == 0) {
+						dst.indices[materialID].push_back(0);
+					} else {
+						GLuint lastIx = dst.indices[materialID].back();
+						dst.indices[materialID].push_back(lastIx + 1);
+					}
 				}
 				index_offset += fv;
 			}
 
-			output.emplace_back(std::move(dst));
+			outPendingShapes.emplace_back(std::move(dst));
 
 			LOG(LogDebug, "Shape has been parsed");
 		}
@@ -245,7 +277,7 @@ namespace pathos {
 #if LOAD_NORMAL_DATA
 				if (normals.size() < positions.size()) calculateNormal(t_attrib, indices, normals);
 #else
-				calculateNormal(t_attrib, indices, normals);
+				calculateNormal(positions, indices, normals);
 #endif
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(true);
@@ -255,6 +287,9 @@ namespace pathos {
 					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				}
 				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
+#if LOAD_AS_PBR_TEXTURE
+				geom->calculateTangentBasis();
+#endif
 				mesh->add(geom, getMaterial(materialID));
 			}
 		}
@@ -271,8 +306,13 @@ namespace pathos {
 		Material* M = materials[index];
 
 		if (isPendingMaterial[index]) {
-			switch (M->getMaterialID()) {
+			switch (M->getMaterialID())
+			{
+#if LOAD_AS_PBR_TEXTURE
+			case MATERIAL_ID::PBR_TEXTURE:
+#else
 			case MATERIAL_ID::FLAT_TEXTURE:
+#endif
 				GLuint texture;
 				if (textureDB.find(index) == textureDB.end()) {
 					constexpr bool generateMipmap = true;
@@ -282,8 +322,13 @@ namespace pathos {
 				} else {
 					texture = textureDB[index];
 				}
+#if LOAD_AS_PBR_TEXTURE
+				static_cast<PBRTextureMaterial*>(M)->setAlbedo(texture);
+#else
 				static_cast<TextureMaterial*>(M)->setTexture(texture);
+#endif
 				break;
+
 			default:
 				// no impl for a pending material. find out what's missing!
 				CHECK(0);

@@ -9,7 +9,6 @@ namespace pathos {
 		setMetallic(0.5f);
 		setRoughness(0.1f);
 		setAlbedo(0.5f, 0.5f, 0.5f);
-		setAlpha(1.0f);
 	}
 
 	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {

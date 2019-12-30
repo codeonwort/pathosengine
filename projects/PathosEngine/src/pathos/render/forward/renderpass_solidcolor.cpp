@@ -110,7 +110,6 @@ namespace pathos {
 		//glUniform3fv(glGetUniformLocation(program, "specularColor"), 1, material->getSpecular());
 		glm::vec3 eye = camera->getEyeVector();
 		glUniform3f(glGetUniformLocation(program, "eye"), -eye.x, -eye.y, -eye.z);
-		glUniform1f(glGetUniformLocation(program, "materialAlpha"), material->getAlpha());
 
 		uploadDirectionalLightUniform(scene, maxDirectionalLights);
 		uploadPointLightUniform(scene, maxPointLights);

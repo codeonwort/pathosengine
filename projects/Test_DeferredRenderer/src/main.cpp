@@ -90,7 +90,6 @@ void setupScene() {
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
 		color->setAlbedo(2.0f, 0.2f, 0.2f);
-		color->setAlpha(1.0f);
 		color->setMetallic(0.2f);
 		color->setRoughness(0.1f);
 	}
