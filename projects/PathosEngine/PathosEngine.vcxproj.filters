@@ -554,5 +554,8 @@
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\render\postprocessing\ssr.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

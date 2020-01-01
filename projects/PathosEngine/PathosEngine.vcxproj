@@ -186,6 +186,7 @@
     <ClInclude Include="src\pathos\render\postprocessing\bloom.h" />
     <ClInclude Include="src\pathos\render\postprocessing\post_process.h" />
     <ClInclude Include="src\pathos\render\postprocessing\ssao.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\ssr.h" />
     <ClInclude Include="src\pathos\render\postprocessing\tone_mapping.h" />
     <ClInclude Include="src\pathos\render\render_commands.generated.h" />
     <ClInclude Include="src\pathos\render\render_commands.h" />

@@ -29,7 +29,7 @@ void main() {
 	vs_out.vs_coords   = (uboPerObject.mvTransform * vec4(position, 1.0)).xyz;
 	vs_out.normal      = normal;
 	vs_out.tangent     = tangent;
-    vs_out.bitangent   = bitangent;
+	vs_out.bitangent   = bitangent;
 	vs_out.texcoord    = uv;
 
 	gl_Position = uboPerObject.mvpTransform * vec4(position, 1.0);

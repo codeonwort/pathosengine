@@ -3,6 +3,32 @@
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
+#include <unordered_map>
+#include <type_traits>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
+struct MetaVertex {
+	glm::vec3 position;
+	glm::vec2 texcoord;
+
+	MetaVertex() = default;
+
+	bool operator==(const MetaVertex& other) const {
+		return position == other.position && texcoord == other.texcoord;
+	}
+};
+
+namespace std {
+	template<> struct std::hash<MetaVertex> {
+		size_t operator()(MetaVertex const& vertex) const {
+			return
+				((std::hash<glm::vec3>()(vertex.position) >> 1) ^
+				(std::hash<glm::vec2>()(vertex.texcoord) << 1));
+		}
+	};
+}
+
 #define LOAD_NORMAL_DATA            0
 #define WARN_INVALID_FACE_MARTERIAL 0
 #define LOAD_AS_PBR_TEXTURE         1
@@ -26,23 +52,34 @@ namespace pathos {
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
 			if (a == b) {
-				continue;
+				// #todo-loader: Well... we have a problem.
+				a = glm::vec3(1.0f, 0.0f, 0.0f);
+				b = glm::vec3(0.0f, 1.0f, 0.0f);
 			}
 			//auto norm = glm::normalize(glm::cross(a, b));
 			glm::vec3 norm = glm::cross(a, b);
 
-			accum[i0] *= counts[i0]; accum[i1] *= counts[i1]; accum[i2] *= counts[i2];
-			accum[i0] += norm; accum[i1] += norm; accum[i2] += norm;
-			counts[i0] ++; counts[i1] ++; counts[i2] ++;
-			accum[i0] /= counts[i0]; accum[i1] /= counts[i1]; accum[i2] /= counts[i2];
+			accum[i0] *= counts[i0];
+			accum[i1] *= counts[i1];
+			accum[i2] *= counts[i2];
+
+			accum[i0] += norm;
+			accum[i1] += norm;
+			accum[i2] += norm;
+
+			counts[i0] ++;
+			counts[i1] ++;
+			counts[i2] ++;
+
+			accum[i0] /= counts[i0];
+			accum[i1] /= counts[i1];
+			accum[i2] /= counts[i2];
 		}
-		for (uint32 i = 0u; i < numPos; i++) {
-			accum[i] = glm::normalize(accum[i]);
-		}
-		for (uint32 i = 0u; i < indices.size(); i++) {
-			outNormals.push_back(accum[indices[i]].x);
-			outNormals.push_back(accum[indices[i]].y);
-			outNormals.push_back(accum[indices[i]].z);
+		for (uint32 i = 0u; i < accum.size(); i++) {
+			glm::vec3 N = glm::normalize(accum[i]);
+			outNormals.push_back(N.x);
+			outNormals.push_back(N.y);
+			outNormals.push_back(N.z);
 		}
 	}
 
@@ -175,12 +212,19 @@ namespace pathos {
 
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
 			const tinyobj::shape_t& src = t_shapes[i];
+			const tinyobj::mesh_t& srcMesh = src.mesh;
 			PendingShape dst;
+
+			// Vertex deduplication: https://vulkan-tutorial.com/Loading_models
+			// int32 = face material id
+			// uint32 = vertex index
+			std::map<int32, std::unordered_map<MetaVertex, uint32>> uniqueVertices;
+			std::map<int32, std::vector<MetaVertex>> metaVertices;
 
 			LOG(LogDebug, "Analyzing OBJ shape[%d]: %s", i, src.name.data());
 
-			for (size_t f = 0; f < src.mesh.num_face_vertices.size(); ++f) {
-				int32 faceMaterialID = (int32)(src.mesh.material_ids[f]);
+			for (size_t f = 0; f < srcMesh.num_face_vertices.size(); ++f) {
+				int32 faceMaterialID = (int32)(srcMesh.material_ids[f]);
 #if WARN_INVALID_FACE_MARTERIAL
 				CHECK(faceMaterialID >= 0); // invalid material id
 #endif
@@ -192,19 +236,49 @@ namespace pathos {
 
 			LOG(LogDebug, "Number of materials for this shape: %d", numMaterials);
 
-			for (size_t f = 0u; f < src.mesh.num_face_vertices.size(); ++f) {
-				int32 fv = src.mesh.num_face_vertices[f];
+			for (size_t f = 0u; f < srcMesh.num_face_vertices.size(); ++f) {
+				int32 fv = srcMesh.num_face_vertices[f];
 				CHECK(fv == 3);
-				int32 materialID = src.mesh.material_ids[f];
+
+				int32 materialID = srcMesh.material_ids[f];
+
+				std::vector<GLfloat>& positionBuffer = dst.positions[materialID];
+				std::vector<GLfloat>& texcoordBuffer = dst.texcoords[materialID];
+				std::vector<GLuint>& indexBuffer = dst.indices[materialID];
+
 				for (int32 v = 0; v < fv; ++v) {
-					tinyobj::index_t idx = src.mesh.indices[index_offset + v];
+					tinyobj::index_t idx = srcMesh.indices[index_offset + v];
+
 					// position data
-					float vx = tiny_attrib.vertices[3 * idx.vertex_index + 0];
-					float vy = tiny_attrib.vertices[3 * idx.vertex_index + 1];
-					float vz = tiny_attrib.vertices[3 * idx.vertex_index + 2];
-					dst.positions[materialID].push_back(vx);
-					dst.positions[materialID].push_back(vy);
-					dst.positions[materialID].push_back(vz);
+					float posX = tiny_attrib.vertices[3 * idx.vertex_index + 0];
+					float posY = tiny_attrib.vertices[3 * idx.vertex_index + 1];
+					float posZ = tiny_attrib.vertices[3 * idx.vertex_index + 2];
+
+					// texcoord data
+					float texU = 0.0f;
+					float texV = 0.0f;
+					if (idx.texcoord_index >= 0) {
+						texU = tiny_attrib.texcoords[2 * idx.texcoord_index + 0];
+						texV = tiny_attrib.texcoords[2 * idx.texcoord_index + 1];
+					}
+
+					MetaVertex metaV;
+					metaV.position = glm::vec3(posX, posY, posZ);
+					metaV.texcoord = glm::vec2(texU, texV);
+
+					if (uniqueVertices[materialID].count(metaV) == 0) {
+						uniqueVertices[materialID][metaV] = static_cast<uint32>(metaVertices[materialID].size());
+						metaVertices[materialID].push_back(metaV);
+
+						positionBuffer.push_back(posX);
+						positionBuffer.push_back(posY);
+						positionBuffer.push_back(posZ);
+						texcoordBuffer.push_back(texU);
+						texcoordBuffer.push_back(texV);
+					}
+
+					indexBuffer.push_back(uniqueVertices[materialID][metaV]);
+
 #if LOAD_NORMAL_DATA
 					// normal data
 					if (idx.normal_index >= 0) {
@@ -216,21 +290,13 @@ namespace pathos {
 						dst.normals[materialID].push_back(nz);
 					}
 #endif // LOAD_NORMAL_DATA
-					// texcoord data
-					if (idx.texcoord_index >= 0) {
-						float u = tiny_attrib.texcoords[2 * idx.texcoord_index + 0];
-						float v = tiny_attrib.texcoords[2 * idx.texcoord_index + 1];
-						dst.texcoords[materialID].push_back(u);
-						dst.texcoords[materialID].push_back(v);
-					}
 
-					//dst.indices[materialID].push_back(idx.vertex_index);
-					if (dst.indices[materialID].size() == 0) {
-						dst.indices[materialID].push_back(0);
-					} else {
-						GLuint lastIx = dst.indices[materialID].back();
-						dst.indices[materialID].push_back(lastIx + 1);
-					}
+					//if (dst.indices[materialID].size() == 0) {
+					//	dst.indices[materialID].push_back(0);
+					//} else {
+					//	GLuint lastIx = dst.indices[materialID].back();
+					//	dst.indices[materialID].push_back(lastIx + 1);
+					//}
 				}
 				index_offset += fv;
 			}
@@ -281,7 +347,7 @@ namespace pathos {
 				calculateNormal(positions, indices, normals);
 #endif
 				MeshGeometry* geom = new MeshGeometry;
-				geom->setDrawArraysMode(true);
+				geom->setDrawArraysMode(false);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
 				if (texcoords.size() > 0) {
