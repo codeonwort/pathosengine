@@ -14,7 +14,7 @@ namespace pathos {
 	public:
 		virtual ~MeshDeferredRenderPass_Pack();
 
-		// #todo-renderer: Remove this stupid function
+		// #todo-refactoring: Remove this stupid function
 		inline void setModelMatrix(const glm::mat4& newModelMatrix) { modelMatrix = newModelMatrix; }
 
 		void bindProgram(RenderCommandList& cmdList);
@@ -26,7 +26,7 @@ namespace pathos {
 
 		GLuint program = 0; // shader program name
 
-		// @TODO: eliminate this?
+		// #todo-refactoring: eliminate this
 		glm::mat4 modelMatrix;
 
 	};

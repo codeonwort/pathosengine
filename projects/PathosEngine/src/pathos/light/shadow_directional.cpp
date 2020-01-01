@@ -81,7 +81,7 @@ namespace pathos {
 		std::vector<glm::vec3> frustum;
 		camera->getFrustum(frustum, sceneContext.numCascades);
 		viewProjection.clear();
-		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
+		for (uint32 i = 0u; i < sceneContext.numCascades; ++i) {
 			calcBounds(&frustum[i * 4]);
 		}
 
@@ -91,7 +91,7 @@ namespace pathos {
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_LESS);
 		
-		for (auto i = 0u; i < sceneContext.numCascades; ++i) {
+		for (uint32 i = 0u; i < sceneContext.numCascades; ++i) {
 			SCOPED_DRAW_EVENT(RenderCascade);
 
 			cmdList.viewport(i * sceneContext.csmWidth, 0, sceneContext.csmWidth, sceneContext.csmHeight);

@@ -139,6 +139,7 @@ namespace pathos {
 				translucentColor->setMetallic(t_mat.metallic);
 				translucentColor->setRoughness(t_mat.roughness);
 				translucentColor->setOpacity(t_mat.dissolve);
+				translucentColor->setTransmittance(glm::vec3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
 				
 				M = translucentColor;
 				isPendingMaterial.push_back(false);

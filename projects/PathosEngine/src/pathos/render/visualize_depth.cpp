@@ -1,4 +1,5 @@
 #include "visualize_depth.h"
+#include "scene_render_targets.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/shader/shader.h"
@@ -32,6 +33,10 @@ namespace pathos {
 	void VisualizeDepth::render(RenderCommandList& cmdList, Scene* scene, Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(VisualizeDepth);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

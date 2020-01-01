@@ -1,6 +1,7 @@
 #version 430 core
 
 #include "deferred_common.glsl"
+#include "brdf.glsl"
 
 #define SOFT_SHADOW   1
 #define DEBUG_CSM_ID  0
@@ -36,7 +37,10 @@ float getBloomStrength()  { return ubo.bloomParams.x; }
 float getMinBloom()       { return ubo.bloomParams.y; }
 float getMaxBloom()       { return ubo.bloomParams.z; }
 
-const float PI = 3.14159265359;
+// #todo-light: Parametrize this in application
+float pointLightAttenuation(float dist) {
+	return 1000.0 / (1000.0 + dist * dist);
+}
 
 struct fragment_info {
 	vec3 albedo;
@@ -127,10 +131,6 @@ float getShadowing(fragment_info fragment) {
 	return max(0.5, shadow);
 }
 
-float pointLightAttenuation(float dist) {
-	return 1000.0 / (1000.0 + dist * dist);
-}
-
 vec3 phongShading(fragment_info fragment) {
 	vec3 result = vec3(0.0);
 	vec3 N = fragment.normal;
@@ -143,7 +143,6 @@ vec3 phongShading(fragment_info fragment) {
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		vec3 L = uboPerFrame.pointLightPos[i] - fragment.vs_coords;
 		float dist = length(L);
-		//float attenuation = 5000.0 / (pow(dist, 2.0) + 1.0);
 		float attenuation = pointLightAttenuation(dist);
 		L = normalize(L);
 		vec3 R = reflect(-L, N);
@@ -163,44 +162,8 @@ vec3 phongShading(fragment_info fragment) {
 	return result;
 }
 
-vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}
-
-float distributionGGX(vec3 N, vec3 H, float roughness) {
-    float a      = roughness*roughness;
-    float a2     = a*a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-	
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-	
-    return num / denom;
-}
-
-float geometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-	
-    return num / denom;
-}
-float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = geometrySchlickGGX(NdotV, roughness);
-    float ggx1  = geometrySchlickGGX(NdotL, roughness);
-	
-    return ggx1 * ggx2;
-}
-
 vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 N = fragment.normal;
-	//N.y = -N.y;
 	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
 
 	vec3 F0 = vec3(0.04);
@@ -308,6 +271,7 @@ void main() {
 	// output: standard shading
 	out_color = color;
 
+	// #todo-shader: Write real opacity. Output this value in another place.
 	// for depth-of-field. continue to blur_pass.glsl
 	out_color.a = -fragment.vs_coords.z;
 

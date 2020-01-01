@@ -3,6 +3,7 @@
 #include "sky.h"
 #include "god_ray.h"
 #include "visualize_depth.h"
+#include "forward/translucency_rendering.h"
 #include "postprocessing/ssao.h"
 #include "postprocessing/bloom.h"
 #include "postprocessing/tone_mapping.h"
@@ -77,8 +78,8 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 
 		sunShadowMap->initializeResources(cmdList);
-
 		unpack_pass->initializeResources(cmdList);
+		translucency_pass->initializeResources(cmdList);
 
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
 
@@ -97,6 +98,7 @@ namespace pathos {
 
 			sunShadowMap->destroyResources(cmdList);
 			unpack_pass->destroyResources(cmdList);
+			translucency_pass->releaseResources(cmdList);
 
 			godRay->releaseResources(cmdList);
 			ssao->releaseResources(cmdList);
@@ -122,6 +124,8 @@ namespace pathos {
 		pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
 
 		unpack_pass = new MeshDeferredRenderPass_Unpack;
+
+		translucency_pass = std::make_unique<TranslucencyRendering>();
 
 		visualizeDepth = new VisualizeDepth;
 	}
@@ -172,16 +176,15 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
+		collectRenderItems();
+
 		// Reverse-Z
-		glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth->getInt() != 0) {
-			cmdList.viewport(0, 0, sceneWidth, sceneHeight);
-
 			visualizeDepth->render(cmdList, scene, camera);
-
 			return;
 		}
 
@@ -215,6 +218,15 @@ namespace pathos {
 		ssao->renderPostProcess(cmdList, fullscreenQuad.get());
 
  		unpackGBuffer(cmdList);
+
+		// Translucency pass
+		renderTranslucency(cmdList);
+
+		//////////////////////////////////////////////////////////////////////////
+		// Post-processing
+
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
 
 		// input: bright pixels in gbuffer
 		// output: bloom texture
@@ -273,52 +285,23 @@ namespace pathos {
 	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(PackGBuffer);
 
-#if 0 // DEBUG: assert geometries and materials
-		for (Mesh* mesh : scene->meshes) {
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-			size_t len = geoms.size();
-			assert(geoms.size() == materials.size());
-			for (auto i = 0u; i < len; ++i) {
-				assert(geoms[i] != nullptr && materials[i] != nullptr);
-			}
-		}
-#endif
-
-		uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			renderItems[i].clear();
-		}
-
-		// sort by materials
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->visible == false) continue;
-
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-
-			for (auto i = 0u; i < geoms.size(); ++i) {
-				auto G = geoms[i];
-				auto M = materials[i];
-
-				int materialID = (int)M->getMaterialID();
-				CHECK(0 <= materialID && materialID < numMaterialIDs);
-
-				renderItems[materialID].push_back(RenderItem(mesh, G, M));
-			}
-		}
-
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 
+		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			MeshDeferredRenderPass_Pack* const pass = pack_passes[i];
 
 			if (pass == nullptr) {
 				// #todo: implement render pass
+				continue;
+			}
+
+			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+				// Translucency is not rendered in gbuffer pass
 				continue;
 			}
 
@@ -362,6 +345,16 @@ namespace pathos {
 		}
 	}
 	
+	// #todo-translucency: Implement
+	void DeferredRenderer::renderTranslucency(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(Translucency);
+
+		uint8 materialID = (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
+		const std::vector<RenderItem>& meshBatches = renderItems[materialID];
+
+		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
+	}
+
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
@@ -403,6 +396,45 @@ namespace pathos {
 		}
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
+	}
+
+	void DeferredRenderer::collectRenderItems()
+	{
+#if 0 // DEBUG: assert geometries and materials
+		for (Mesh* mesh : scene->meshes) {
+			Geometries geoms = mesh->getGeometries();
+			Materials materials = mesh->getMaterials();
+			size_t len = geoms.size();
+			assert(geoms.size() == materials.size());
+			for (auto i = 0u; i < len; ++i) {
+				assert(geoms[i] != nullptr && materials[i] != nullptr);
+			}
+		}
+#endif
+
+		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
+		for (uint8 i = 0; i < numMaterialIDs; ++i) {
+			renderItems[i].clear();
+		}
+
+		// sort by materials
+		for (Mesh* mesh : scene->meshes) {
+			if (mesh->visible == false) continue;
+
+			Geometries geoms = mesh->getGeometries();
+			Materials materials = mesh->getMaterials();
+
+			for (size_t i = 0u; i < geoms.size(); ++i) {
+				MeshGeometry* G = geoms[i];
+				Material* M = materials[i];
+
+				uint8 materialID = (uint8)M->getMaterialID();
+				CHECK(0 <= materialID && materialID < numMaterialIDs);
+
+				RenderItem meshBatch(mesh, G, M);
+				renderItems[materialID].emplace_back(meshBatch);
+			}
+		}
 	}
 
 }

@@ -61,18 +61,26 @@ namespace pathos {
 			roughness = 0.1f;
 			opacity = 0.5f;
 		}
+
+		inline glm::vec3 getAlbedo() const        { return albedo; }
+		inline float getMetallic() const          { return metallic; }
+		inline float getRoughness() const         { return roughness; }
+		inline float getOpacity() const           { return opacity; }
+		inline glm::vec3 getTransmittance() const { return transmittance; }
 	
-		inline void setAlbedo(GLfloat r, GLfloat g, GLfloat b) { albedo[0] = r; albedo[1] = g; albedo[2] = b; }
-		inline void setAlbedo(glm::vec3 rgb)                   { albedo[0] = rgb.x; albedo[1] = rgb.y; albedo[2] = rgb.z; }
-		inline void setMetallic(GLfloat inMetallic)            { metallic = inMetallic; }
-		inline void setRoughness(GLfloat inRoughness)          { roughness = inRoughness; }
-		inline void setOpacity(GLfloat inOpacity)              { opacity = inOpacity; }
+		inline void setAlbedo(GLfloat r, GLfloat g, GLfloat b)         { albedo.x = r; albedo.y = g; albedo.z = b; }
+		inline void setAlbedo(const glm::vec3& rgb)                    { albedo = rgb; }
+		inline void setMetallic(GLfloat inMetallic)                    { metallic = inMetallic; }
+		inline void setRoughness(GLfloat inRoughness)                  { roughness = inRoughness; }
+		inline void setOpacity(GLfloat inOpacity)                      { opacity = inOpacity; }
+		inline void setTransmittance(const glm::vec3& inTransmittance) { transmittance = inTransmittance; }
 	
 	private:
-		GLfloat albedo[3];
+		glm::vec3 albedo;
 		GLfloat metallic;
 		GLfloat roughness;
 		GLfloat opacity;
+		glm::vec3 transmittance;
 	
 	};
 	

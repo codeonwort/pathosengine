@@ -33,9 +33,14 @@ namespace pathos {
 		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+
+		void collectRenderItems();
+
 		void clearGBuffer(RenderCommandList& cmdList);
 		void packGBuffer(RenderCommandList& cmdList);
 		void unpackGBuffer(RenderCommandList& cmdList);
+
+		void renderTranslucency(RenderCommandList& cmdList);
 
 	private:
 		bool destroyed = false;
@@ -50,6 +55,7 @@ namespace pathos {
 
 		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
 		MeshDeferredRenderPass_Unpack* unpack_pass;
+		std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
 		std::unique_ptr<DirectionalShadowMap> sunShadowMap;
 

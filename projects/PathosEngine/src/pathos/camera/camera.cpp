@@ -118,8 +118,11 @@ namespace pathos {
 		outFrustum.resize(4 * (1 + numCascades));
 		for (uint32_t i = 0u; i <= numCascades; ++i) {
 			float k = static_cast<float>(i) / static_cast<float>(numCascades);
+			// #todo-shadow: Needs exponential division. Close view needs far more precision than just 1/n range of depths.
+			k = powf(k, 1.2f);
 
 			zi = zn + (zf - zn) * k;
+
 			hwi = hw_near + (hw_far - hw_near) * k;
 			hhi = hh_near + (hh_far - hh_near) * k;
 
