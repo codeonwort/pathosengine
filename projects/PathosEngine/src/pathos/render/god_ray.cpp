@@ -1,5 +1,6 @@
 #include "god_ray.h"
 #include "scene_render_targets.h"
+#include "pathos/console.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
@@ -7,6 +8,8 @@
 
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
 
 	GodRay::GodRay() {
 	}
@@ -28,6 +31,8 @@ namespace pathos {
 			cmdList.deleteFramebuffers(2, fbo);
 			cmdList.deleteProgram(program_silhouette);
 			cmdList.deleteProgram(program_godRay);
+			cmdList.deleteProgram(program_blur1);
+			cmdList.deleteProgram(program_blur2);
 		}
 		destroyed = true;
 	}
@@ -43,12 +48,12 @@ namespace pathos {
 		GLenum fboCompleteness0;
 		GLenum fboCompleteness1;
 
-		// pass 1
+		// Silhoutte pass
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0);
 		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_SOURCE], GL_DRAW_FRAMEBUFFER, &fboCompleteness0);
 
-		// pass 2
+		// Light scattering pass
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0);
 		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_RESULT], GL_DRAW_FRAMEBUFFER, &fboCompleteness1);
@@ -63,6 +68,14 @@ namespace pathos {
 			LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_RESULT]");
 			CHECK(0);
 		}
+
+		cmdList.createFramebuffers(1, &fboBlur1);
+		cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
+		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
+
+		cmdList.createFramebuffers(1, &fboBlur2);
+		cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
 	void GodRay::createShaders(RenderCommandList& cmdList) {
@@ -100,55 +113,38 @@ void main() {
 
 		/////////////////////////////////////////////////////////////////////////////////
 		// program - god ray
-		vshader = R"(
-#version 430 core
+		{
+			Shader vs(GL_VERTEX_SHADER, "GodRay_VS");
+			Shader fs(GL_FRAGMENT_SHADER, "GodRay_FS");
+			vs.loadSource("fullscreen_quad.glsl");
+			fs.loadSource("god_ray_fs.glsl");
 
-out vec2 uv;
+			program_godRay = pathos::createProgram(vs, fs, "GodRay");
+			uniform_lightPos = 0;
+		}
 
-void main() {
-	const vec3[4] vertices = vec3[4](vec3(-1,-1,1), vec3(1,-1,1), vec3(-1,1,1), vec3(1,1,1));
-	const vec2[4] uvs = vec2[4](vec2(0,0), vec2(1,0), vec2(0,1), vec2(1,1));
-
-	uv = uvs[gl_VertexID];
-	gl_Position = vec4(vertices[gl_VertexID], 1.0);
-}
-)";
-
-		fshader = R"(
-#version 430 core
-
-in vec2 uv;
-
-layout (binding = 0) uniform sampler2D src;
-
-layout (location = 0) uniform vec2 lightPos = vec2(0.5, 0.5);
-
-const float alphaDecay = 0.95;
-const float density = 1.1;
-const int NUM_SAMPLES = 100;
-
-out vec4 out_color;
-
-void main() {
-	vec2 delta = (uv - lightPos) * (1.0 / (density * NUM_SAMPLES));
-	vec2 pos = uv;
-	vec4 result = vec4(0.0);
-	float alpha = 1.0;
-
-	for(int i = 0; i < NUM_SAMPLES; ++i) {
-		pos -= delta;
-		result += alpha * texture2D(src, pos);
-		alpha *= alphaDecay;
-	}
-	out_color = result;
-}
-)";
-		
-		program_godRay = pathos::createProgram(vshader, fshader, "GodRay");
-		uniform_lightPos = 0;
+		// program - bilateral sampling
+		{
+			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_1");
+			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_1");
+			fs_blur.addDefine("HORIZONTAL 1");
+			fs_blur.addDefine("KERNEL_SIZE 7");
+			vs_blur.loadSource("fullscreen_quad.glsl");
+			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
+			program_blur1 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_1");
+		}
+		{
+			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_2");
+			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_2");
+			fs_blur.addDefine("HORIZONTAL 0");
+			fs_blur.addDefine("KERNEL_SIZE 7");
+			vs_blur.loadSource("fullscreen_quad.glsl");
+			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
+			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_2");
+		}
 	}
 
-	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(GodRay);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -164,7 +160,7 @@ void main() {
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_DEPTH, 0, depth_clear);
 
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_LEQUAL);
 
@@ -173,7 +169,7 @@ void main() {
 			return;
 		}
 
-		// render
+		// render silhouettes
 		{
 			SCOPED_DRAW_EVENT(RenderSilhouette);
 
@@ -181,30 +177,54 @@ void main() {
 			cmdList.useProgram(program_silhouette);
 			renderSilhouette(cmdList, camera, scene->godRaySource, opaque_white);
 			for (Mesh* mesh : scene->meshes) {
-				if (mesh == scene->godRaySource) continue;
+				if (mesh == scene->godRaySource) {
+					continue;
+				}
 				renderSilhouette(cmdList, camera, mesh, opaque_black);
 			}
 		}
 
 		// light scattering pass
-		auto lightPos = scene->godRaySource->getTransform().getPosition();
-		const auto lightMVP = camera->getViewProjectionMatrix();
-		auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
-		lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
-		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
+		{
+			SCOPED_DRAW_EVENT(LightScattering);
 
-		cmdList.bindVertexArray(vao_dummy);
+			glm::vec3 lightPos = scene->godRaySource->getTransform().getPosition();
+			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
+			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
+			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
+			GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
-		cmdList.useProgram(program_godRay);
-		cmdList.bindTextureUnit(0, sceneContext.godRaySource);
-		cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
-		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
+			cmdList.bindVertexArray(vao_dummy);
 
-		// unbind
-		cmdList.bindVertexArray(0);
-		cmdList.useProgram(0);
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
+			cmdList.useProgram(program_godRay);
+			cmdList.bindTextureUnit(0, sceneContext.godRaySource);
+			cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
+			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
+
+			// unbind
+			cmdList.bindVertexArray(0);
+			cmdList.useProgram(0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		}
+
+		// Bilateral sampling
+		if (cvar_godray_upsampling.getInt() != 0)
+		{
+			SCOPED_DRAW_EVENT(BilateralSampling);
+
+			cmdList.useProgram(program_blur1);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			cmdList.useProgram(program_blur2);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
+			fullscreenQuad->drawPrimitive(cmdList);
+		}
 	}
 
 	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color) {
@@ -218,6 +238,11 @@ void main() {
 		for (auto i = 0u; i < geoms.size(); ++i) {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
+
+			// #todo-godray: Ignore translucent materials for now
+			if (M != nullptr && M->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+				continue;
+			}
 
 			bool wireframe = M != nullptr && M->getMaterialID() == MATERIAL_ID::WIREFRAME;
 			if (wireframe) {
