@@ -1,4 +1,4 @@
-// Volumetric light scattering a.k.a. god ray
+// Light shaft a.k.a. god ray
 
 #pragma once
 

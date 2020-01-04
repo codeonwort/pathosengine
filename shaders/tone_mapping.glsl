@@ -9,13 +9,18 @@ layout (std140, binding = 0) uniform UBO_ToneMapping {
 	float gamma;       // cvar: r.gamma
 } ubo;
 
+in VS_OUT {
+	vec2 uv;
+} fs_in;
+
 out vec4 color;
 
 void main() {
-	ivec2 uv = ivec2(gl_FragCoord.xy);
-	vec4 c = texelFetch(hdr_image, uv, 0);
-	c.xyz += texelFetch(hdr_bloom, uv, 0).xyz;
-	c.xyz += texelFetch(god_ray, uv, 0).xyz;
+	ivec2 texelXY = ivec2(gl_FragCoord.xy);
+
+	vec4 c = texelFetch(hdr_image, texelXY, 0);
+	c.xyz += texelFetch(hdr_bloom, texelXY, 0).xyz;
+	c.xyz += texture(god_ray, fs_in.uv).xyz;
 
 	// tone mapping
 	c.rgb = vec3(1.0) - exp(-c.rgb * ubo.exposure);

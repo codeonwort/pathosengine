@@ -164,7 +164,7 @@ void main() {
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_DEPTH, 0, depth_clear);
 
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_LEQUAL);
 
