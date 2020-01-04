@@ -11,11 +11,6 @@ namespace pathos {
 
 	static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
 
-	struct UBO_GodRay_Bilateral {
-		GLfloat kernel[16];
-		GLfloat bZ; GLfloat __pad[3];
-	};
-
 	GodRay::GodRay() {
 	}
 
