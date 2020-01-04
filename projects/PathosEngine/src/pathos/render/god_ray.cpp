@@ -36,7 +36,8 @@ namespace pathos {
 			cmdList.deleteFramebuffers(2, fbo);
 			cmdList.deleteProgram(program_silhouette);
 			cmdList.deleteProgram(program_godRay);
-			cmdList.deleteProgram(program_bilateral);
+			cmdList.deleteProgram(program_blur1);
+			cmdList.deleteProgram(program_blur2);
 		}
 		destroyed = true;
 	}
@@ -52,12 +53,12 @@ namespace pathos {
 		GLenum fboCompleteness0;
 		GLenum fboCompleteness1;
 
-		// pass 1
+		// Silhoutte pass
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0);
 		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_SOURCE], GL_DRAW_FRAMEBUFFER, &fboCompleteness0);
 
-		// pass 2
+		// Light scattering pass
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0);
 		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_RESULT], GL_DRAW_FRAMEBUFFER, &fboCompleteness1);
@@ -72,6 +73,14 @@ namespace pathos {
 			LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_RESULT]");
 			CHECK(0);
 		}
+
+		cmdList.createFramebuffers(1, &fboBlur1);
+		cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
+		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
+
+		cmdList.createFramebuffers(1, &fboBlur2);
+		cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
 	void GodRay::createShaders(RenderCommandList& cmdList) {
@@ -121,15 +130,26 @@ void main() {
 
 		// program - bilateral sampling
 		{
-			Shader cs(GL_COMPUTE_SHADER, "GodRay_CS_BilateralSampling");
-			cs.loadSource("bilateral_sampling.glsl");
-			program_bilateral = pathos::createProgram(cs, "GodRay_BilateralSampling");
-
-			ubo_bilateral.init<UBO_GodRay_Bilateral>();
+			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_1");
+			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_1");
+			fs_blur.addDefine("HORIZONTAL 1");
+			fs_blur.addDefine("KERNEL_SIZE 7");
+			vs_blur.loadSource("fullscreen_quad.glsl");
+			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
+			program_blur1 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_1");
+		}
+		{
+			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_2");
+			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_2");
+			fs_blur.addDefine("HORIZONTAL 0");
+			fs_blur.addDefine("KERNEL_SIZE 7");
+			vs_blur.loadSource("fullscreen_quad.glsl");
+			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
+			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_2");
 		}
 	}
 
-	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(GodRay);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -198,26 +218,17 @@ void main() {
 		{
 			SCOPED_DRAW_EVENT(BilateralSampling);
 
-			auto normpdf = [](float x, float sigma) -> float {
-				return 0.39894f * expf(-0.5f * x * x / (sigma * sigma)) / sigma;
-			};
-			constexpr float SIGMA = 100.0f;
-			constexpr float BSIGMA = 10.0f;
+			cmdList.useProgram(program_blur1);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
 
-			UBO_GodRay_Bilateral uboData;
-			for (int32 i = 0; i <= 7; ++i) {
-				uboData.kernel[7 - i] = uboData.kernel[7 + i] = normpdf((float)i, SIGMA);
-			}
-			uboData.bZ = 1.0f / normpdf(0.0f, BSIGMA);
-			ubo_bilateral.update(cmdList, 1, &uboData);
-
-			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 8.0f);
-			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 8.0f);
-			cmdList.useProgram(program_bilateral);
-			cmdList.bindImageTexture(0, sceneContext.godRayResult, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(1, sceneContext.godRayResultFiltered, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
-			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			cmdList.useProgram(program_blur2);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
+			fullscreenQuad->drawPrimitive(cmdList);
 		}
 	}
 

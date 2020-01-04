@@ -209,7 +209,7 @@ namespace pathos {
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
-		godRay->renderGodRay(cmdList, scene, camera);
+		godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
 
 		clearGBuffer(cmdList);
 

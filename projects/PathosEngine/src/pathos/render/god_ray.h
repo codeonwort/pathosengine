@@ -26,7 +26,7 @@ namespace pathos {
 		void createFBO(RenderCommandList& cmdList);
 		void createShaders(RenderCommandList& cmdList);
 
-		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad);
 
 	private:
 		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color);
@@ -43,8 +43,10 @@ namespace pathos {
 		GLuint program_godRay = 0;
 		GLint uniform_lightPos;
 
-		GLuint program_bilateral = 0;
-		UniformBuffer ubo_bilateral;
+		GLuint fboBlur1 = 0xffffffff;
+		GLuint fboBlur2 = 0xffffffff;
+		GLuint program_blur1 = 0;
+		GLuint program_blur2 = 0;
 
 		GLuint vao_dummy;
 
