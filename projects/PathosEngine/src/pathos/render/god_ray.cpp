@@ -100,52 +100,15 @@ void main() {
 
 		/////////////////////////////////////////////////////////////////////////////////
 		// program - god ray
-		vshader = R"(
-#version 430 core
+		{
+			Shader vs(GL_VERTEX_SHADER, "GodRay_VS");
+			Shader fs(GL_FRAGMENT_SHADER, "GodRay_FS");
+			vs.loadSource("fullscreen_quad.glsl");
+			fs.loadSource("god_ray_fs.glsl");
 
-out vec2 uv;
-
-void main() {
-	const vec3[4] vertices = vec3[4](vec3(-1,-1,1), vec3(1,-1,1), vec3(-1,1,1), vec3(1,1,1));
-	const vec2[4] uvs = vec2[4](vec2(0,0), vec2(1,0), vec2(0,1), vec2(1,1));
-
-	uv = uvs[gl_VertexID];
-	gl_Position = vec4(vertices[gl_VertexID], 1.0);
-}
-)";
-
-		fshader = R"(
-#version 430 core
-
-in vec2 uv;
-
-layout (binding = 0) uniform sampler2D src;
-
-layout (location = 0) uniform vec2 lightPos = vec2(0.5, 0.5);
-
-const float alphaDecay = 0.95;
-const float density = 1.1;
-const int NUM_SAMPLES = 100;
-
-out vec4 out_color;
-
-void main() {
-	vec2 delta = (uv - lightPos) * (1.0 / (density * NUM_SAMPLES));
-	vec2 pos = uv;
-	vec4 result = vec4(0.0);
-	float alpha = 1.0;
-
-	for(int i = 0; i < NUM_SAMPLES; ++i) {
-		pos -= delta;
-		result += alpha * texture2D(src, pos);
-		alpha *= alphaDecay;
-	}
-	out_color = result;
-}
-)";
-		
-		program_godRay = pathos::createProgram(vshader, fshader, "GodRay");
-		uniform_lightPos = 0;
+			program_godRay = pathos::createProgram(vs, fs, "GodRay");
+			uniform_lightPos = 0;
+		}
 	}
 
 	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
