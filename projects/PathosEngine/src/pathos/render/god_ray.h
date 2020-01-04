@@ -5,6 +5,7 @@
 #include "pathos/render/scene.h"
 #include "pathos/camera/camera.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/shader/uniform_buffer.h"
 #include "gl_core.h"
 
 namespace pathos {
@@ -39,8 +40,11 @@ namespace pathos {
 		GLint uniform_mvp;
 		GLint uniform_color;
 		
-		GLuint program_godRay;
+		GLuint program_godRay = 0;
 		GLint uniform_lightPos;
+
+		GLuint program_bilateral = 0;
+		UniformBuffer ubo_bilateral;
 
 		GLuint vao_dummy;
 

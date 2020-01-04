@@ -33,6 +33,7 @@ namespace pathos {
 		// post processing: god ray
 		GLuint godRaySource;
 		GLuint godRayResult;
+		GLuint godRayResultFiltered;
 
 		// post processing: depth of field
 		GLuint dofSubsum0;

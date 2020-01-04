@@ -48,7 +48,13 @@ namespace pathos {
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 0, &uboData);
 
-		GLuint tonemapping_attachments[] = { sceneContext.sceneColor, sceneContext.sceneBloom, sceneContext.godRayResult };
+		GLuint godRayTexture = sceneContext.godRayResult;
+		ConsoleVariableBase* godray_upsampling = ConsoleVariableManager::find("r.godray.upsampling");
+		if (godray_upsampling && godray_upsampling->getInt() != 0) {
+			godRayTexture = sceneContext.godRayResultFiltered;
+		}
+
+		GLuint tonemapping_attachments[] = { sceneContext.sceneColor, sceneContext.sceneBloom, godRayTexture };
 		cmdList.bindTextures(0, 3, tonemapping_attachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);

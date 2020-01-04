@@ -1,5 +1,6 @@
 #include "god_ray.h"
 #include "scene_render_targets.h"
+#include "pathos/console.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
@@ -7,6 +8,13 @@
 
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
+
+	struct UBO_GodRay_Bilateral {
+		GLfloat kernel[16];
+		GLfloat bZ; GLfloat __pad[3];
+	};
 
 	GodRay::GodRay() {
 	}
@@ -28,6 +36,7 @@ namespace pathos {
 			cmdList.deleteFramebuffers(2, fbo);
 			cmdList.deleteProgram(program_silhouette);
 			cmdList.deleteProgram(program_godRay);
+			cmdList.deleteProgram(program_bilateral);
 		}
 		destroyed = true;
 	}
@@ -109,6 +118,15 @@ void main() {
 			program_godRay = pathos::createProgram(vs, fs, "GodRay");
 			uniform_lightPos = 0;
 		}
+
+		// program - bilateral sampling
+		{
+			Shader cs(GL_COMPUTE_SHADER, "GodRay_CS_BilateralSampling");
+			cs.loadSource("bilateral_sampling.glsl");
+			program_bilateral = pathos::createProgram(cs, "GodRay_BilateralSampling");
+
+			ubo_bilateral.init<UBO_GodRay_Bilateral>();
+		}
 	}
 
 	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
@@ -136,7 +154,7 @@ void main() {
 			return;
 		}
 
-		// render
+		// render silhouettes
 		{
 			SCOPED_DRAW_EVENT(RenderSilhouette);
 
@@ -144,30 +162,63 @@ void main() {
 			cmdList.useProgram(program_silhouette);
 			renderSilhouette(cmdList, camera, scene->godRaySource, opaque_white);
 			for (Mesh* mesh : scene->meshes) {
-				if (mesh == scene->godRaySource) continue;
+				if (mesh == scene->godRaySource) {
+					continue;
+				}
 				renderSilhouette(cmdList, camera, mesh, opaque_black);
 			}
 		}
 
 		// light scattering pass
-		auto lightPos = scene->godRaySource->getTransform().getPosition();
-		const auto lightMVP = camera->getViewProjectionMatrix();
-		auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
-		lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
-		GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
+		{
+			SCOPED_DRAW_EVENT(LightScattering);
 
-		cmdList.bindVertexArray(vao_dummy);
+			glm::vec3 lightPos = scene->godRaySource->getTransform().getPosition();
+			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
+			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
+			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
+			GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
-		cmdList.useProgram(program_godRay);
-		cmdList.bindTextureUnit(0, sceneContext.godRaySource);
-		cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
-		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
+			cmdList.bindVertexArray(vao_dummy);
 
-		// unbind
-		cmdList.bindVertexArray(0);
-		cmdList.useProgram(0);
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
+			cmdList.useProgram(program_godRay);
+			cmdList.bindTextureUnit(0, sceneContext.godRaySource);
+			cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
+			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
+
+			// unbind
+			cmdList.bindVertexArray(0);
+			cmdList.useProgram(0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		}
+
+		// Bilateral sampling
+		if (cvar_godray_upsampling.getInt() != 0)
+		{
+			SCOPED_DRAW_EVENT(BilateralSampling);
+
+			auto normpdf = [](float x, float sigma) -> float {
+				return 0.39894f * expf(-0.5f * x * x / (sigma * sigma)) / sigma;
+			};
+			constexpr float SIGMA = 100.0f;
+			constexpr float BSIGMA = 10.0f;
+
+			UBO_GodRay_Bilateral uboData;
+			for (int32 i = 0; i <= 7; ++i) {
+				uboData.kernel[7 - i] = uboData.kernel[7 + i] = normpdf((float)i, SIGMA);
+			}
+			uboData.bZ = 1.0f / normpdf(0.0f, BSIGMA);
+			ubo_bilateral.update(cmdList, 1, &uboData);
+
+			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 8.0f);
+			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 8.0f);
+			cmdList.useProgram(program_bilateral);
+			cmdList.bindImageTexture(0, sceneContext.godRayResult, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(1, sceneContext.godRayResultFiltered, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		}
 	}
 
 	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color) {
@@ -181,6 +232,11 @@ void main() {
 		for (auto i = 0u; i < geoms.size(); ++i) {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
+
+			// #todo-godray: Ignore translucent materials for now
+			if (M != nullptr && M->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+				continue;
+			}
 
 			bool wireframe = M != nullptr && M->getMaterialID() == MATERIAL_ID::WIREFRAME;
 			if (wireframe) {
