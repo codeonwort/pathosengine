@@ -12,6 +12,8 @@ namespace pathos {
 		Skybox(GLuint textureID);
 		~Skybox();
 
+		void setLOD(float inLOD);
+
 		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
 	private:
@@ -20,8 +22,10 @@ namespace pathos {
 		GLuint program;
 		GLuint textureID;
 		GLint uniform_transform = -1;
+		GLint uniform_lod = -1;
 
 		CubeGeometry* cube;
+		float lod;
 
 	};
 

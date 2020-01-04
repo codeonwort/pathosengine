@@ -1,8 +1,11 @@
 #include "skybox.h"
 #include "scene.h"
+#include "pathos/console.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
+
 #include <string>
+#include <algorithm>
 
 namespace pathos {
 
@@ -13,11 +16,16 @@ namespace pathos {
 		textureID = inTextureID;
 		createShader();
 		cube = new CubeGeometry(glm::vec3(1.0f));
+		lod = 0.0f;
 	}
 
 	Skybox::~Skybox() {
 		glDeleteProgram(program);
 		delete cube;
+	}
+
+	void Skybox::setLOD(float inLOD) {
+		lod = std::max(0.0f, inLOD);
 	}
 
 	void Skybox::createShader() {
@@ -39,18 +47,21 @@ void main() {
 		std::string fshader = R"(#version 430 core
 layout (binding = 0) uniform samplerCube texCube;
 
+layout (location = 1) uniform float skyTextureLOD;
+
 in VS_OUT { vec3 tc; } fs_in;
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
 
 void main() {
-  out_color = texture(texCube, fs_in.tc);
+  out_color = textureLod(texCube, fs_in.tc, skyTextureLOD);
   out_bright = vec4(0.0);
 }
 )";
 		program = createProgram(vshader, fshader, "Skybox");
-		uniform_transform = 0;
+		uniform_transform = glGetUniformLocation(program, "viewProj");
+		uniform_lod = glGetUniformLocation(program, "skyTextureLOD");
 	}
 
 	void Skybox::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
@@ -66,6 +77,7 @@ void main() {
 
 		cmdList.useProgram(program);
 		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		cmdList.uniform1f(uniform_lod, lod);
 		cmdList.bindTextureUnit(0, textureID);
 
 		cube->activate_position(cmdList);

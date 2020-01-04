@@ -80,7 +80,7 @@ void setupScene() {
 	};
 	FIBITMAP* cubeImg[6];
 	for (int i = 0; i < 6; i++) cubeImg[i] = pathos::loadImage(cubeImgName[i]);
-	GLuint cubeTexture = pathos::loadCubemapTexture(cubeImg);
+	GLuint cubeTexture = pathos::loadCubemapTexture(cubeImg, true);
 
 	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"), true, true);
 	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"), true, false);
@@ -155,9 +155,12 @@ void setupScene() {
 	godRaySource->getTransform().appendScale(10.0f);
 	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
 
+	Skybox* skybox = new Skybox(cubeTexture);
+	skybox->setLOD(1.0f);
+
 	// add to scene
 	scene.add(ground);
-	scene.sky = new Skybox(cubeTexture);
+	scene.sky = skybox;
 	//scene.sky = new AtmosphereScattering;
 	scene.godRaySource = godRaySource;
 }

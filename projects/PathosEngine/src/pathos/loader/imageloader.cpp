@@ -101,7 +101,7 @@ namespace pathos {
 
 		GLuint tex_id;
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
-		glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -109,7 +109,7 @@ namespace pathos {
 		unsigned int bpp = FreeImage_GetBPP(dib[0]);
 		if (bpp == 32 || bpp == 24) {
 			uint32 maxLOD = generateMipmap ? static_cast<uint32>(floor(log2(std::max(w, h))) + 1) : 0;
-			glTextureStorage2D(tex_id, maxLOD, GL_RGBA32F, w, h);
+			glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
 		} else {
 			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			return 0;
