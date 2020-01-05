@@ -2,6 +2,8 @@
 
 #include "deferred_common.glsl"
 
+#define AVERAGE_SAMPLES 0
+
 layout (local_size_x = 64) in;
 
 layout (binding = 0, rgba32ui) readonly uniform uimage2D gbufferA;
@@ -16,6 +18,7 @@ void main() {
 
 	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
 
+#if AVERAGE_SAMPLES
 	float maxDepth = -1.0 / 0.0;
 	vec3 averageNormal = vec3(0.0); // in view space
 
@@ -41,5 +44,18 @@ void main() {
 	}
 
 	vec4 nd = vec4( averageNormal, maxDepth );
+#else
+	ivec2 fullResTexel = currentTexel * 2;
+
+	float d = -imageLoad(gbufferB, fullResTexel).z;
+
+	uvec4 gbuffer = imageLoad(gbufferA, fullResTexel);
+	vec2 temp = unpackHalf2x16(gbuffer.y);
+	vec2 temp2 = unpackHalf2x16(gbuffer.z);
+	vec3 n = normalize(vec3(temp.y, temp2.x, temp2.y));
+
+	vec4 nd = vec4(n, d);
+#endif // AVERAGE_SAMPLES
+
 	imageStore(outHalfNormalAndDepth, currentTexel, nd);
 }
