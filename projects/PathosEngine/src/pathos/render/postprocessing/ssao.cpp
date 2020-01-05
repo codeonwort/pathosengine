@@ -12,7 +12,7 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_ssao_radius("r.ssao.radius", 0.1f, "Radius of sample space");
 	static ConsoleVariable<int32> cvar_ssao_enable("r.ssao.enable", 1, "Enable SSAO");
-	static ConsoleVariable<int32> cvar_ssao_point_count("r.ssao.pointCount", 64, "Determines sample count for occlusion calculation");
+	static ConsoleVariable<int32> cvar_ssao_point_count("r.ssao.pointCount", 32, "Determines sample count for occlusion calculation");
 	static ConsoleVariable<int32> cvar_ssao_randomize_points("r.ssao.randomizePoints", 1, "Randomize sample points");
 
 	struct UBO_SSAO {
@@ -94,7 +94,7 @@ namespace pathos {
 
 			cmdList.bindImageTexture(0, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
 			cmdList.bindImageTexture(1, sceneContext.gbufferB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(2, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(2, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			cmdList.dispatchCompute(workGroupsX, sceneContext.sceneHeight / 2, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
@@ -125,8 +125,8 @@ namespace pathos {
 			}
 			uboRandom.update(cmdList, UBO_SSAO_RANDOM_BINDING_POINT, &randomData);
 
-			cmdList.bindImageTexture(0, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(1, sceneContext.ssaoMap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+			cmdList.bindImageTexture(0, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+			cmdList.bindImageTexture(1, sceneContext.ssaoMap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
 			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}

@@ -6,7 +6,7 @@ layout (local_size_x = 64) in;
 
 layout (binding = 0, rgba32ui) readonly uniform uimage2D gbufferA;
 layout (binding = 1, rgba32f) readonly uniform image2D gbufferB;
-layout (binding = 2, rgba32f) writeonly uniform image2D outHalfNormalAndDepth;
+layout (binding = 2, rgba16f) writeonly uniform image2D outHalfNormalAndDepth;
 
 void main() {
 	ivec2 sceneSize = imageSize(gbufferA);

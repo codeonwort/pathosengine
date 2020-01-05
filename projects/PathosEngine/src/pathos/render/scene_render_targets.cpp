@@ -97,9 +97,9 @@ namespace pathos {
 		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		// ssao
-		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "ssaoHalfNormalAndDepth");
-		reallocTexture2D(ssaoMap, GL_R32F, sceneWidth / 2, sceneHeight / 2, "ssaoMap");
-		reallocTexture2D(ssaoMapTemp, GL_R32F, sceneWidth / 2, sceneHeight / 2, "ssaoMapTemp");
+		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, "ssaoHalfNormalAndDepth");
+		reallocTexture2D(ssaoMap, GL_R16F, sceneWidth / 2, sceneHeight / 2, "ssaoMap");
+		reallocTexture2D(ssaoMapTemp, GL_R16F, sceneWidth / 2, sceneHeight / 2, "ssaoMapTemp");
 	}
 
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)

@@ -10,8 +10,8 @@ layout (local_size_x = 16, local_size_y = 16) in;
 shared vec4 shared_samples[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 #endif
 
-layout (binding = 0, rgba32f) readonly uniform image2D halfNormalAndDepth;
-layout (binding = 1, r32f) writeonly uniform image2D ssaoMap;
+layout (binding = 0, rgba16f) readonly uniform image2D halfNormalAndDepth;
+layout (binding = 1, r16f) writeonly uniform image2D ssaoMap;
 
 layout (std140, binding = 1) uniform UBO_SSAO {
 	float ssaoRadius;
