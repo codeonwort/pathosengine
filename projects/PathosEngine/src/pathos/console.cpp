@@ -93,7 +93,7 @@ namespace pathos {
 
 		Label* label = new Label(text);
 		label->setX(LEFT_MARGIN);
-		label->setY(textList.size() * LINE_GAP);
+		label->setY((textList.size() + 1) * LINE_GAP);
 
 		textList.push_back(label);
 		root->addChild(label);

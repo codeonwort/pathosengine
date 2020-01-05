@@ -8,39 +8,13 @@
 #include "util/resource_finder.h"
 #include "util/renderdoc_integration.h"
 
-#include "GL/freeglut.h"          // subsystem: window
-#include "FreeImage.h"            // subsystem: image file loader
-#include "pathos/text/font_mgr.h" // subsystem: font manager
+#include "FreeImage.h"             // subsystem: image file loader
+#include "pathos/text/font_mgr.h"  // subsystem: font manager
+#include "pathos/gui/gui_window.h" // subsystem: gui
 
 #include <algorithm>
-#include <assert.h>
 
-#pragma comment(lib, "freeglut.lib")
 #pragma comment(lib, "FreeImage.lib")
-
-static void onGlutError(const char *fmt, va_list ap) {
-	fprintf(stderr, "onGlutError:");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-
-	/* deInitialize the freeglut state */
-	fprintf(stderr, "onGlutError: Calling glutExit()\n");
-	glutExit();
-
-	exit(1);
-}
-
-static void onGlutWarning(const char *fmt, va_list ap) {
-	fprintf(stderr, "onGlutWarning:");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-
-	/* deInitialize the freeglut state */
-	fprintf(stderr, "onGlutWarning: Calling glutExit()\n");
-	glutExit();
-
-	exit(1);
-}
 
 namespace pathos {
 
@@ -49,14 +23,14 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////
 	// static
-	bool Engine::init(int* argcp, char** argv, const EngineConfig& config) {
+	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
 		if (gEngine) {
 			LOG(LogWarning, "The engine is already initialized");
 			return false;
 		}
 
 		gEngine = new Engine;
-		gEngine->initialize(argcp, argv, config);
+		gEngine->initialize(argc, argv, config);
 
 		return true;
 	}
@@ -75,7 +49,7 @@ namespace pathos {
 	{
 	}
 
-	bool Engine::initialize(int* argcp, char** argv, const EngineConfig& config)
+	bool Engine::initialize(int argc, char** argv, const EngineConfig& config)
 	{
 		conf = config;
 
@@ -91,11 +65,11 @@ namespace pathos {
 		RenderDocIntegration::get().findInjectedDLL();
 
 #define BailIfFalse(x) if(!(x)) { return false; }
-		BailIfFalse( initializeGlut(argcp, argv) );
-		BailIfFalse( initializeOpenGL()          );
-		BailIfFalse( initializeThirdParty()      );
-		BailIfFalse( initializeConsole()         );
-		BailIfFalse( initializeRenderer()        );
+		BailIfFalse( initializeMainWindow(argc, argv) );
+		BailIfFalse( initializeOpenGL()               );
+		BailIfFalse( initializeThirdParty()           );
+		BailIfFalse( initializeConsole()              );
+		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
@@ -104,28 +78,27 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeGlut(int* argcp, char** argv)
+	bool Engine::initializeMainWindow(int argc, char** argv)
 	{
-		glutInitErrorFunc(onGlutError);
-		glutInitWarningFunc(onGlutWarning);
-		glutInit(argcp, argv);
-		glutInitContextVersion(REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION);
-		glutInitContextProfile(GLUT_CORE_PROFILE);
-#if GL_DEBUG_CONTEXT
-		glutInitContextFlags(GLUT_DEBUG);
-#endif
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
-		glutInitWindowSize(conf.windowWidth, conf.windowHeight);
-		glutCreateWindow(conf.title);
+		GUIWindowCreateParams createParams;
+		createParams.argc = argc;
+		createParams.argv = argv;
+		createParams.width = conf.windowWidth;
+		createParams.height = conf.windowHeight;
+		createParams.fullscreen = false;
+		createParams.title = conf.title;
+		createParams.glMajorVersion = REQUIRED_GL_MAJOR_VERSION;
+		createParams.glMinorVersion = REQUIRED_GL_MINOR_VERSION;
+		createParams.glDebugContext = GL_DEBUG_CONTEXT;
 
-		// callbacks
-		glutIdleFunc(Engine::onGlutIdle);
-		glutDisplayFunc(Engine::onGlutDisplay);
-		glutReshapeFunc(Engine::onGlutReshape);
-		glutKeyboardFunc(Engine::onGlutKeyDown);
-		glutKeyboardUpFunc(Engine::onGlutKeyUp);
-		//glutSpecialFunc(Engine::specialKeyboardCallback);
-		//glutSpecialUpFunc(Engine::specialKeyboardUpCallback);
+		createParams.onIdle    = Engine::onIdle;
+		createParams.onDisplay = Engine::onMainWindowDisplay;
+		createParams.onKeyDown = Engine::onKeyDown;
+		createParams.onKeyUp   = Engine::onKeyUp;
+		createParams.onReshape = Engine::onMainWindowReshape;
+
+		mainWindow = std::make_unique<GUIWindow>();
+		mainWindow->create(createParams);
 
 		LOG(LogInfo, "Main window has been created");
 		return true;
@@ -219,13 +192,11 @@ namespace pathos {
 	}
 
 	void Engine::start() {
-		LOG(LogInfo, "Start the main loop");
-		glutMainLoop();
+		mainWindow->startMainLoop();
 	}
 
 	void Engine::stop() {
-		glutLeaveMainLoop();
-		LOG(LogInfo, "Stop the main loop");
+		mainWindow->stopMainLoop();
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
@@ -292,25 +263,26 @@ namespace pathos {
 	}
 
 	/////////////////////////////////////////////////////////////////////
-	// glut callback functions
+	// GUI callback functions
 	/////////////////////////////////////////////////////////////////////
 
-	void Engine::onGlutIdle()
+	void Engine::onIdle()
 	{
 		gEngine->tick();
 	}
 
-	void Engine::onGlutDisplay() {
+	void Engine::onMainWindowDisplay() {
 		gEngine->render();
-		glutSwapBuffers();
-		glutPostRedisplay();
 	}
 
-	void Engine::onGlutKeyDown(unsigned char ascii, int x, int y) {
+	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {
 		if (gEngine->keymap[ascii] == false) {
 			gEngine->keymap[ascii] = true;
+
 			auto press_callback = gEngine->conf.keyPress;
-			if (press_callback != nullptr) press_callback(ascii);
+			if (press_callback != nullptr) {
+				press_callback(ascii);
+			}
 		}
 
 		// backtick
@@ -320,19 +292,21 @@ namespace pathos {
 			gConsole->onKeyPress(ascii);
 		} else {
 			auto callback = gEngine->conf.keyDown;
-			if (callback != nullptr) callback(ascii, x, y);
+			if (callback != nullptr) {
+				callback(ascii, mouseX, mouseY);
+			}
 		}
 	}
 
-	void Engine::onGlutKeyUp(unsigned char ascii, int x, int y) {
+	void Engine::onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY) {
 		gEngine->keymap[ascii] = false;
+
 		auto callback = gEngine->conf.keyUp;
-		if (callback != nullptr) callback(ascii, x, y);
+		if (callback != nullptr) {
+			callback(ascii, mouseX, mouseY);
+		}
 	}
 
-	void Engine::onGlutReshape(int w, int h) {
-		// Will be handled by renderer
-		// glViewport(0, 0, w, h);
-	}
+	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }
 
 }

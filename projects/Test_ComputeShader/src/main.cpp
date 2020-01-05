@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 	config.windowHeight = 600;
 	config.rendererType = ERendererType::Deferred;
 	config.title        = "Test: Compute Shader";
-	Engine::init(&argc, argv, config);
+	Engine::init(argc, argv, config);
 
 	initComputeShader();
 

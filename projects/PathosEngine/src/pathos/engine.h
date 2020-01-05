@@ -3,6 +3,7 @@
 #include "badger/types/int_types.h"
 
 #include <map>
+#include <memory>
 #include <string>
 #include <functional>
 #include "gl_core.h"
@@ -24,21 +25,21 @@ namespace pathos {
 			: windowWidth(1920)
 			, windowHeight(1080)
 			, title("pathos engine")
-			, rendererType(ERendererType::Forward)
+			, rendererType(ERendererType::Deferred)
 		{
 		}
 
-		int windowWidth;
-		int windowHeight;
+		int32 windowWidth;
+		int32 windowHeight;
 		const char* title;
 
 		ERendererType rendererType;
 
-		void(*tick)()                           = nullptr;
-		void(*render)()                         = nullptr;
-		void(*keyDown)(unsigned char, int, int) = nullptr;
-		void(*keyUp)(unsigned char, int, int)   = nullptr;
-		void(*keyPress)(unsigned char)          = nullptr;
+		void(*tick)()                       = nullptr;
+		void(*render)()                     = nullptr;
+		void(*keyDown)(uint8, int32, int32) = nullptr;
+		void(*keyUp)(uint8, int32, int32)   = nullptr;
+		void(*keyPress)(uint8)              = nullptr;
 	};
 
 	class Engine final {
@@ -46,7 +47,7 @@ namespace pathos {
 		using ExecProc = std::function<void(const std::string&)>;
 
 	public:
-		static bool init(int* argcp, char** argv, const EngineConfig& conf);
+		static bool init(int argc, char** argv, const EngineConfig& conf);
 
 	// Public API
 	public:
@@ -77,21 +78,21 @@ namespace pathos {
 		Engine(const Engine&)            = delete;
 		Engine& operator=(const Engine&) = delete;
 
-		bool initialize(int* argcp, char** argv, const EngineConfig& conf);
+		bool initialize(int argcp, char** argv, const EngineConfig& conf);
 
 		// #todo-glut: Abstract window system - don't use glut directly
-		bool initializeGlut(int* argcp, char** argv);
+		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeOpenGL();
 		bool initializeThirdParty();
 		bool initializeConsole();
 		bool initializeRenderer();
 
 		// glut event listeners //
-		static void onGlutIdle();
-		static void onGlutDisplay();
-		static void onGlutReshape(int w, int h);
-		static void onGlutKeyDown(unsigned char ascii, int x, int y);
-		static void onGlutKeyUp(unsigned char ascii, int x, int y);
+		static void onIdle();
+		static void onMainWindowDisplay();
+		static void onMainWindowReshape(int32 newWidth, int32 newHeight);
+		static void onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY);
+		static void onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY);
 
 	private:
 		void tick();
@@ -116,6 +117,8 @@ namespace pathos {
 		GLuint texture2D_white = 0;
 		GLuint texture2D_grey  = 0;
 		GLuint texture2D_blue  = 0;
+
+		std::unique_ptr<class GUIWindow> mainWindow;
 
 	};
 
