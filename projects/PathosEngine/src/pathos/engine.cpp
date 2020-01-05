@@ -81,12 +81,14 @@ namespace pathos {
 	bool Engine::initializeMainWindow(int argc, char** argv)
 	{
 		GUIWindowCreateParams createParams;
-		createParams.argc = argc;
-		createParams.argv = argv;
-		createParams.width = conf.windowWidth;
-		createParams.height = conf.windowHeight;
-		createParams.fullscreen = false;
-		createParams.title = conf.title;
+		createParams.argc           = argc;
+		createParams.argv           = argv;
+
+		createParams.width          = conf.windowWidth;
+		createParams.height         = conf.windowHeight;
+		createParams.fullscreen     = conf.fullscreen;
+		createParams.title          = conf.title;
+
 		createParams.glMajorVersion = REQUIRED_GL_MAJOR_VERSION;
 		createParams.glMinorVersion = REQUIRED_GL_MINOR_VERSION;
 		createParams.glDebugContext = GL_DEBUG_CONTEXT;

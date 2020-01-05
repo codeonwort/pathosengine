@@ -8,6 +8,7 @@ using namespace pathos;
 
 const int32         WINDOW_WIDTH        =   1920;
 const int32         WINDOW_HEIGHT       =   1080;
+const bool          WINDOW_FULLSCREEN   =   false;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
@@ -41,6 +42,7 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
+	conf.fullscreen   = WINDOW_FULLSCREEN;
 	conf.title        = WINDOW_TITLE;
 	conf.rendererType = ERendererType::Deferred;
 	conf.tick         = tick;

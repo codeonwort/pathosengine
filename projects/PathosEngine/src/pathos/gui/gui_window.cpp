@@ -121,6 +121,10 @@ namespace pathos {
 
 		nativeHandle = glutCreateWindow(title);
 
+		if (bFullscreen) {
+			glutFullScreen();
+		}
+
 		glutIdleFunc(onGlutIdle);
 		glutDisplayFunc(onGlutDisplay);
 		glutReshapeFunc(onGlutReshape);

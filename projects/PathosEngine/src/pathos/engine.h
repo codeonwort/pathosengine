@@ -24,6 +24,7 @@ namespace pathos {
 		EngineConfig()
 			: windowWidth(1920)
 			, windowHeight(1080)
+			, fullscreen(false)
 			, title("pathos engine")
 			, rendererType(ERendererType::Deferred)
 		{
@@ -31,6 +32,7 @@ namespace pathos {
 
 		int32 windowWidth;
 		int32 windowHeight;
+		bool fullscreen;
 		const char* title;
 
 		ERendererType rendererType;
