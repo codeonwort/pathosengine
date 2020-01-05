@@ -6,8 +6,9 @@ using namespace pathos;
 #include <thread>
 
 
-const int           WINDOW_WIDTH        =   1920;
-const int           WINDOW_HEIGHT       =   1080;
+const int32         WINDOW_WIDTH        =   1920;
+const int32         WINDOW_HEIGHT       =   1080;
+const bool          WINDOW_FULLSCREEN   =   false;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
@@ -15,7 +16,7 @@ const float         CAMERA_Z_NEAR       =   0.01f;
 const float         CAMERA_Z_FAR        =   2000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 const bool          USE_HDR             =   true;
-const uint32_t      NUM_BALLS           =   10;
+const uint32        NUM_BALLS           =   10;
 
 // World
 Camera* cam;
@@ -41,10 +42,11 @@ int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
+	conf.fullscreen   = WINDOW_FULLSCREEN;
 	conf.title        = WINDOW_TITLE;
 	conf.rendererType = ERendererType::Deferred;
 	conf.tick         = tick;
-	Engine::init(&argc, argv, conf);
+	Engine::init(argc, argv, conf);
 
 	// camera
 	float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);

@@ -16,8 +16,8 @@ using namespace pathos;
 #define DAE_MODEL_ID              2
 #define LOAD_SECOND_DAE_MODEL     0
 
-constexpr int WINDOW_WIDTH      = 1920;
-constexpr int WINDOW_HEIGHT     = 1080;
+constexpr int32 WINDOW_WIDTH    = 1920;
+constexpr int32 WINDOW_HEIGHT   = 1080;
 constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
 constexpr float FOVY            = 60.0f;
 const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 	conf.title        = WINDOW_TITLE;
 	conf.rendererType = ERendererType::Deferred;
 	conf.tick         = tick;
-	Engine::init(&argc, argv, conf);
+	Engine::init(argc, argv, conf);
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
