@@ -102,7 +102,8 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(AO);
 
-			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 64.0f);
+			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 16.0f);
+			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 16.0f);
 
 			cmdList.useProgram(program_ao);
 
@@ -126,7 +127,7 @@ namespace pathos {
 
 			cmdList.bindImageTexture(0, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 			cmdList.bindImageTexture(1, sceneContext.ssaoMap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-			cmdList.dispatchCompute(workGroupsX, sceneContext.sceneHeight / 2, 1);
+			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 
