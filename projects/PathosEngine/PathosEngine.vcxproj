@@ -89,6 +89,7 @@
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\gui\gui_window.cpp" />
+    <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\light.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="src\pathos\engine_version.h" />
     <ClInclude Include="src\pathos\gui\gui_window.h" />
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
+    <ClInclude Include="src\pathos\mesh\model_transform.h" />
     <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />

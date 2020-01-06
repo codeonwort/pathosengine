@@ -140,22 +140,22 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 
 	ground = new Mesh(geom_plane_big, material_texture);
-	ground->getTransform().appendScale(100.0f);
-	ground->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ground->getTransform().appendMove(0.0f, -30.0f, 0.0f);
+	ground->getTransform().setScale(100.0f);
+	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().appendScale(2.0f + (float)i * 0.1f);
-		ball->getTransform().appendMove(-200.0f + (float)i * 5.0f, -15.0f, 50.0f -30.0f * i);
+		ball->getTransform().setScale(2.0f + (float)i * 0.1f);
+		ball->getTransform().setLocation(-200.0f + (float)i * 5.0f, -15.0f, 50.0f -30.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
 
 	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().appendScale(10.0f);
-	godRaySource->getTransform().appendMove(0.0f, 300.0f, -500.0f);
+	godRaySource->getTransform().setScale(10.0f);
+	godRaySource->getTransform().setLocation(0.0f, 300.0f, -500.0f);
 
 	Skybox* skybox = new Skybox(cubeTexture);
 	skybox->setLOD(1.0f);
@@ -173,16 +173,16 @@ void tick()
 		asyncLoadComplete = false;
 
 		Mesh* house = houseLoader.craftMeshFromAllShapes();
-		house->getTransform().appendRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		house->getTransform().appendScale(50.0f);
-		house->getTransform().appendMove(-100.0f, -10.0f, 0.0f);
+		house->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		house->getTransform().setScale(50.0f);
+		house->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
 
 		scene.add(house);
 		houseLoader.unload();
 	}
 
 	if (gConsole->isVisible() == false) {
-		float speedX = 1.0f, speedY = 1.0f;
+		float speedX = 1.5f, speedY = 1.2f;
 		float dx   = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
 		float dz   = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
 		float rotY = gEngine->isDown('q') ? -0.5f   : gEngine->isDown('e') ? 0.5f   : 0.0f;
@@ -193,7 +193,7 @@ void tick()
 	}
 
 	for (auto& ball : balls) {
-		ball->getTransform().prependRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
+		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
 //#if !(_DEBUG)

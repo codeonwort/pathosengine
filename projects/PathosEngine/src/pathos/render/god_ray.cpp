@@ -188,7 +188,7 @@ void main() {
 		{
 			SCOPED_DRAW_EVENT(LightScattering);
 
-			glm::vec3 lightPos = scene->godRaySource->getTransform().getPosition();
+			glm::vec3 lightPos = scene->godRaySource->getTransform().getLocation();
 			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
 			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
 			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;

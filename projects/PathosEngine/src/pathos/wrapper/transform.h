@@ -4,6 +4,7 @@
 
 namespace pathos {
 
+	// #todo-deprecated: Remove this
 	class Transform {
 	protected:
 		glm::mat4 matrix;

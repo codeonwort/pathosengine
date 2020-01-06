@@ -2,8 +2,8 @@
 
 #include "pathos/named_object.h"
 #include "pathos/mesh/geometry.h"
+#include "pathos/mesh/model_transform.h"
 #include "pathos/material/material.h"
-#include "pathos/wrapper/transform.h"
 
 #include <vector>
 
@@ -26,14 +26,14 @@ namespace pathos {
 		virtual ~Mesh();
 		void add(MeshGeometry*, Material*);
 
-		Transform& getTransform();
+		ModelTransform& getTransform();
 		const Geometries& getGeometries();
 		const Materials& getMaterials();
 
 		void setMaterial(int index, Material* M) { materials[index] = M; }
 
 	protected:
-		Transform transform;
+		ModelTransform transform;
 		Geometries geometries;
 		Materials materials;
 

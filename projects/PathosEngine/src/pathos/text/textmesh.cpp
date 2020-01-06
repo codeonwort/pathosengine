@@ -42,7 +42,7 @@ namespace pathos {
 		static_cast<AlphaOnlyTextureMaterial*>(materials[0])->setColor(r, g, b);
 
 		transform.identity();
-		transform.appendScale(glm::vec3(1.0f, -1.0f, 1.0f));
+		transform.setScale(glm::vec3(1.0f, -1.0f, 1.0f));
 	}
 
 	void TextMesh::configureGeometry(const std::wstring& newText) {

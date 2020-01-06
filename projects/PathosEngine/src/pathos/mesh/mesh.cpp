@@ -30,7 +30,7 @@ namespace pathos {
 		materials.push_back(M);
 	}
 
-	Transform& Mesh::getTransform() { return transform; }
+	ModelTransform& Mesh::getTransform() { return transform; }
 	const Geometries& Mesh::getGeometries() { return geometries; }
 	const Materials& Mesh::getMaterials() { return materials; }
 
