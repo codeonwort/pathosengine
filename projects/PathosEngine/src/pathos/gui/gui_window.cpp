@@ -105,7 +105,7 @@ namespace pathos {
 
 		// Silently fix values
 		windowWidth = std::max(400, windowWidth);
-		windowHeight = std::max(300, windowWidth);
+		windowHeight = std::max(300, windowHeight);
 		if (title == nullptr) title = "title here";
 
 		glutInitErrorFunc(onGlutError);
