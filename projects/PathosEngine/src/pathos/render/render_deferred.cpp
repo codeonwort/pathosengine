@@ -24,8 +24,8 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 0, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
-	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 8;
-	static constexpr uint32 MAX_POINT_LIGHTS              = 16;
+	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
+	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
 	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(glm::vec4);
 	struct UBO_PerFrame {

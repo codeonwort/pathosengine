@@ -53,13 +53,22 @@ namespace pathos {
 			cmdList.bindTexture(GL_TEXTURE_2D, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
+		auto reallocTexture2DArray = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, uint32 numLayers, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			cmdList.createTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
+			cmdList.textureStorage3D(texture, 1, format, width, height, numLayers);
+			cmdList.bindTexture(GL_TEXTURE_2D_ARRAY, texture);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
 
 		reallocTexture2D(sceneFinal, GL_RGBA32F, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, GL_RGBA32F, sceneWidth, sceneHeight, "sceneColor");
 		reallocTexture2D(sceneDepth, GL_DEPTH24_STENCIL8, sceneWidth, sceneHeight, "sceneDepth");
 
 		// CSM
-		reallocTexture2D(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth * numCascades, csmHeight, "cascadedShadowMap");
+		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);

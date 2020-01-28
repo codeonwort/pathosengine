@@ -1,4 +1,5 @@
 #include "pathos/camera/camera.h"
+#include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
@@ -59,7 +60,7 @@ namespace pathos {
 	}
 	glm::vec3 Camera::getPosition() const {
 		calculateViewMatrix();
-		return transform.getPosition();
+		return -transform.getPosition();
 	}
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
@@ -87,14 +88,14 @@ namespace pathos {
 		viewDirty = true;
 	}
 	
-	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32_t numCascades) const {
-		assert(numCascades >= 1);
+	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const {
+		CHECK(numCascades >= 1);
 
 		const glm::vec3 forward = getEyeVector();
 		glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 		float theta = glm::dot(forward, up);
-		if (theta >= 0.999f || theta <= -0.999f) {
+		if (fabs(theta) >= 0.999f) {
 			up = glm::vec3(1.0f, 0.0f, 0.0f);
 		}
 
@@ -102,8 +103,8 @@ namespace pathos {
 		up = glm::cross(right, forward);
 
 		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
-		assert(plens);
-		 
+		CHECK(plens);
+		
 		const float zn = plens->getZNear();
 		const float zf = plens->getZFar();
 		const float hh_near = zn * tanf(plens->getFovY() * 0.5f);
@@ -116,25 +117,25 @@ namespace pathos {
 
 		float zi, hwi, hhi;
 		outFrustum.resize(4 * (1 + numCascades));
-		for (uint32_t i = 0u; i <= numCascades; ++i) {
+		for (uint32 i = 0u; i <= numCascades; ++i) {
 			float k = static_cast<float>(i) / static_cast<float>(numCascades);
 			// #todo-shadow: Needs exponential division. Close view needs far more precision than just 1/n range of depths.
-			k = powf(k, 1.2f);
+			//k = powf(k, 3.0f);
 
 			zi = zn + (zf - zn) * k;
 
 			hwi = hw_near + (hw_far - hw_near) * k;
 			hhi = hh_near + (hh_far - hh_near) * k;
 
-			outFrustum[i * 4 + 0] = P0 + (forward * zi) + (right * hwi) + (up * hhi);
-			outFrustum[i * 4 + 1] = P0 + (forward * zi) - (right * hwi) + (up * hhi);
-			outFrustum[i * 4 + 2] = P0 + (forward * zi) + (right * hwi) - (up * hhi);
-			outFrustum[i * 4 + 3] = P0 + (forward * zi) - (right * hwi) - (up * hhi);
+			outFrustum[i * 4 + 0] = (forward * zi) + (right * hwi) + (up * hhi);
+			outFrustum[i * 4 + 1] = (forward * zi) - (right * hwi) + (up * hhi);
+			outFrustum[i * 4 + 2] = (forward * zi) + (right * hwi) - (up * hhi);
+			outFrustum[i * 4 + 3] = (forward * zi) - (right * hwi) - (up * hhi);
 
-			outFrustum[i * 4 + 0] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 0], 1.0f));
-			outFrustum[i * 4 + 1] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 1], 1.0f));
-			outFrustum[i * 4 + 2] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 2], 1.0f));
-			outFrustum[i * 4 + 3] = glm::vec3(view * glm::vec4(outFrustum[i * 4 + 3], 1.0f));
+			outFrustum[i * 4 + 0] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 0], 0.0f));
+			outFrustum[i * 4 + 1] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 1], 0.0f));
+			outFrustum[i * 4 + 2] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 2], 0.0f));
+			outFrustum[i * 4 + 3] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 3], 0.0f));
 		}
 	}
 

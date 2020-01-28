@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "badger/types/int_types.h"
 #include "pathos/wrapper/transform.h"
 
 #include <vector>
@@ -53,7 +54,7 @@ namespace pathos {
 		void rotateX(float angleDegree);
 
 		// get vertices of camera frustum in world space
-		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32_t numCascades) const;
+		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const;
 
 		inline Lens* getLens() const { return lens; }
 

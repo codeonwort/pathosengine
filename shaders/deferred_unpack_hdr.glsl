@@ -13,7 +13,7 @@ layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
-layout (binding = 6) uniform sampler2DShadow sunDepthMap;
+layout (binding = 6) uniform sampler2DArrayShadow csm;
 
 in VS_OUT {
 	vec2 screenUV;
@@ -89,43 +89,39 @@ float getShadowing(fragment_info fragment) {
 	vz = (vz - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 #endif
 	
-	int mapIx = int(vz * 4.0);
-	if(mapIx >= 4) {
+	int csmLayer = int(vz * 4.0);
+	if(csmLayer >= 4) {
 		return 0.0;
 	}
 	
 #if DEBUG_CSM_ID
-	return float(mapIx) / 4.0;
+	return float(csmLayer) / 4.0;
 #endif
 
-	vec4 ls_coords = uboPerFrame.sunViewProjection[mapIx] * vec4(fragment.ws_coords, 1.0);
+	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(fragment.ws_coords, 1.0);
 	float NdotL = max(dot(fragment.normal, -uboPerFrame.dirLightDirs[0]), 0.0);
 	float bias = max(0.05 * (1.0 - NdotL), 0.05);
 	float inv_w = 1.0 / ls_coords.w;
-	ls_coords.xy = ls_coords.xy * inv_w;
-	ls_coords.z = (ls_coords.z - bias) * inv_w;
+	ls_coords.xyz = ls_coords.xyz * inv_w;
+	ls_coords.z -= bias;
 	// to uv space
 	ls_coords.xyz = (ls_coords.xyz + vec3(1.0)) * 0.5;
 
-	float shadow = 0.0f;
-	float u0 = float(mapIx) * 0.25;
+	float shadow = 0.0;
 
 #if SOFT_SHADOW
-	vec2 dudv = 1.0 / vec2(textureSize(sunDepthMap, 0));
-	dudv.x *= 0.25;
+	vec2 dudv = 1.0 / vec2(textureSize(csm, 0));
 	for(int x = -1; x <= 1; ++x) {
 		for(int y = -1; y <= 1; ++y) {
-			vec3 uvw = ls_coords.xyz;
-			uvw.x = u0 + 0.25 * uvw.x;
-			uvw.xy += dudv * vec2(x, y);
-			shadow += texture(sunDepthMap, uvw);
+			vec4 shadowSamplePos = vec4(ls_coords.xy, float(csmLayer), ls_coords.z);
+			shadowSamplePos.xy += dudv * vec2(x, y);
+			shadow += texture(csm, shadowSamplePos);
 		}
 	}
 	shadow /= 9.0;
 #else
-	vec3 uvw = ls_coords.xyz;
-	uvw.x = u0 + 0.25 * uvw.x;
-	shadow = texture(sunDepthMap, uvw);
+	vec4 shadowSamplePos = vec4(ls_coords.xy, float(csmLayer), ls_coords.z);
+	shadow = texture(csm, shadowSamplePos);
 #endif
 	
 	return max(0.5, shadow);

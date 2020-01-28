@@ -1,7 +1,7 @@
 
 // should match with MeshDeferredRenderPass_Unpack::MAX_DIRECTIONAL_LIGHTS
-#define MAX_DIRECTIONAL_LIGHTS 8
-#define MAX_POINT_LIGHTS 16
+#define MAX_DIRECTIONAL_LIGHTS     4
+#define MAX_POINT_LIGHTS           8
 
 // This don't need to match with material_id.h
 #define MATERIAL_ID_NONE           0

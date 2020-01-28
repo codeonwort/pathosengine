@@ -5,8 +5,7 @@
 
 namespace pathos {
 
-	// Written for debugging.
-	// Does not support UVs and normals.
+	// Written for debugging. Does not support UVs and normals.
 	class ProceduralGeometry : public MeshGeometry {
 		
 	public:
@@ -15,12 +14,14 @@ namespace pathos {
 
 		void clear() {
 			positions.clear();
+			uvs.clear();
 			indices.clear();
 		}
+
 		void upload() {
-			updatePositionData((GLfloat*)positions.data(), (uint32_t)(positions.size() * 3));
-			updateUVData((GLfloat*)uvs.data(), (uint32_t)(uvs.size() * 2));
-			updateIndexData((GLuint*)indices.data(), (uint32_t)indices.size());
+			updatePositionData((GLfloat*)positions.data(), (uint32)(positions.size() * 3));
+			updateUVData((GLfloat*)uvs.data(), (uint32)(uvs.size() * 2));
+			updateIndexData((GLuint*)indices.data(), (uint32)indices.size());
 		}
 
 		void addTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
@@ -32,7 +33,7 @@ namespace pathos {
 			uvs.push_back(glm::vec2(0.0f));
 			uvs.push_back(glm::vec2(0.0f));
 
-			uint32_t i = (uint32_t)indices.size();
+			uint32 i = (uint32)indices.size();
 			indices.push_back(i);
 			indices.push_back(i + 1);
 			indices.push_back(i + 2);
@@ -46,7 +47,7 @@ namespace pathos {
 	private:
 		std::vector<glm::vec3> positions;
 		std::vector<glm::vec2> uvs;
-		std::vector<uint32_t> indices;
+		std::vector<uint32> indices;
 
 	};
 

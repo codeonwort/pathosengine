@@ -200,6 +200,7 @@
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\util\file_system.h" />
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
+    <ClInclude Include="src\pathos\util\math_lib.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />

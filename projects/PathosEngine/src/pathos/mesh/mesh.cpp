@@ -2,30 +2,30 @@
 
 namespace pathos {
 
-	/**
-	* constructor.<br/>
-	* each geometry is regarded as uniquely belongs to only one mesh.<br/>
-	* each material can be shared among multiple meshes.
-	*/
 	Mesh::Mesh(MeshGeometry* geom, Material* mat)
 		: doubleSided(false)
 		, castsShadow(true)
 	{
-		if (geom != nullptr || mat != nullptr) {
+		bool bothNull = geom == nullptr && mat == nullptr;
+		bool bothValid = geom != nullptr && mat != nullptr;
+			
+		// Only 'both null' or 'both not null' are allowed
+		CHECK(bothNull || bothValid);
+
+		if (bothValid)
+		{
 			geometries.push_back(geom);
 			materials.push_back(mat);
 		}
 	}
 
-	/**
-	* deconstructor.<br/>
-	* it deallocates all geometries it owns. don't share one geometry among two or more meshes!
-	*/
 	Mesh::~Mesh() {
 		for (auto geom : geometries) if(geom != nullptr) delete geom;
 	}
 
 	void Mesh::add(MeshGeometry* G, Material* M) {
+		CHECK(G != nullptr && M != nullptr);
+
 		geometries.push_back(G);
 		materials.push_back(M);
 	}

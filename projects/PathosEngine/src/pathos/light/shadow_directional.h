@@ -1,15 +1,15 @@
 #pragma once
 
-#include <vector>
 #include "gl_core.h"
-
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene.h"
+
+#include <vector>
 
 namespace pathos {
 
 	// Shadow mapping by directional light. (usually Sun)
-	// It's prepass prior to any shading works, so can be used in both forward and deferred renderers.
+	// It's prepass prior to any material shading, so can be used in both forward and deferred renderers.
 	class DirectionalShadowMap {
 
 	public:
@@ -26,21 +26,36 @@ namespace pathos {
 		
 		void renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
 
-		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjection[index]; }
+		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjectionMatrices[index]; }
 
+	private:
+		struct CSM_MeshBatch {
+			CSM_MeshBatch(class MeshGeometry* inGeometry, const glm::mat4& inModelMatrix)
+				: geometry(inGeometry)
+				, modelMatrix(inModelMatrix)
+			{
+			}
+			class MeshGeometry* geometry;
+			glm::mat4 modelMatrix;
+		};
+		void collectMeshBatches(const Scene* scene, std::vector<CSM_MeshBatch>& outMeshBatches, std::vector<CSM_MeshBatch>& outWireframeBatches);
+
+		// Update viewProjectionMatrices
+		void calculateBounds(const Camera& camera, uint32 numCascades);
 
 	private:
 		bool destroyed = false;
 
-		GLuint fbo;
+		GLuint fbo = 0xffffffff;
 
-		GLuint program; // shadow mapping
+		GLuint program = 0xffffffff; // shadow mapping
 		GLint uniform_depthMVP = -1;
 		std::vector<GLint> textureBindings;
 
 		// light space transform
 		glm::vec3 lightDirection;
-		std::vector<glm::mat4> viewProjection;
+		std::vector<glm::mat4> viewProjectionMatrices;
+
 	};
 
 }

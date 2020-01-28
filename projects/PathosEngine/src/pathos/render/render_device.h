@@ -36,8 +36,10 @@ namespace pathos {
 	extern OpenGLDevice* gRenderDevice;
 
 	// For game thread
+	// #todo-renderdevice: command list should store this lambda
 	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		lambda(gRenderDevice->getImmediateCommandList());
+		//lambda(gRenderDevice->getImmediateCommandList());
+		CHECK(0);
 	}
 
 }

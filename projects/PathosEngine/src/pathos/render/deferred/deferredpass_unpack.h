@@ -12,11 +12,6 @@ namespace pathos {
 	class MeshDeferredRenderPass_Unpack {
 
 	public:
-		// maximum number of lights this renderer can handle
-		static constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 8;
-		static constexpr uint32_t MAX_POINT_LIGHTS = 24;
-
-	public:
 		MeshDeferredRenderPass_Unpack();
 		~MeshDeferredRenderPass_Unpack();
 

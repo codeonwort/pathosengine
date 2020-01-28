@@ -22,15 +22,16 @@ namespace pathos {
 		bool renderInternal = false;
 
 	public:
-		Mesh(MeshGeometry* = nullptr, Material* = nullptr);
+		Mesh(MeshGeometry* geometry = nullptr, Material* material = nullptr);
 		virtual ~Mesh();
-		void add(MeshGeometry*, Material*);
+
+		void add(MeshGeometry* geometry, Material* material);
 
 		ModelTransform& getTransform();
 		const Geometries& getGeometries();
 		const Materials& getMaterials();
 
-		void setMaterial(int index, Material* M) { materials[index] = M; }
+		void setMaterial(int32 index, Material* M) { materials[index] = M; }
 
 	protected:
 		ModelTransform transform;
