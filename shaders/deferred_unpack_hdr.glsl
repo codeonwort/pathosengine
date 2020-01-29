@@ -1,6 +1,7 @@
 #version 430 core
 
 #include "deferred_common.glsl"
+#include "shadow_mapping.glsl"
 #include "brdf.glsl"
 
 #define SOFT_SHADOW   1
@@ -70,56 +71,12 @@ void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 }
 
 float getShadowing(fragment_info fragment) {
-
-#if 0
-	float vz;
-	{
-		float n = uboPerFrame.zRange.x;
-		float f = uboPerFrame.zRange.y;
-		vz = (2 * n) / (f + n - (fragment.vs_coords.z) * (f - n));
-	}
-#else
-	// linear depth in view space
-	float vz = -fragment.vs_coords.z;
-	vz = (vz - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
-#endif
+	ShadowQuery query;
+	query.vPos    = fragment.vs_coords;
+	query.wPos    = fragment.ws_coords;
+	query.vNormal = fragment.normal;
 	
-	int csmLayer = int(vz * 4.0);
-	if(csmLayer >= 4) {
-		return 0.0;
-	}
-	
-#if DEBUG_CSM_ID
-	return float(csmLayer) / 4.0;
-#endif
-
-	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(fragment.ws_coords, 1.0);
-	float NdotL = max(dot(fragment.normal, -uboPerFrame.dirLightDirs[0]), 0.0);
-	float bias = max(0.05 * (1.0 - NdotL), 0.05);
-	float inv_w = 1.0 / ls_coords.w;
-	ls_coords.xyz = ls_coords.xyz * inv_w;
-	ls_coords.z -= bias;
-	// to uv space
-	ls_coords.xyz = (ls_coords.xyz + vec3(1.0)) * 0.5;
-
-	float shadow = 0.0;
-
-#if SOFT_SHADOW
-	vec2 dudv = 1.0 / vec2(textureSize(csm, 0));
-	for(int x = -1; x <= 1; ++x) {
-		for(int y = -1; y <= 1; ++y) {
-			vec4 shadowSamplePos = vec4(ls_coords.xy, float(csmLayer), ls_coords.z);
-			shadowSamplePos.xy += dudv * vec2(x, y);
-			shadow += texture(csm, shadowSamplePos);
-		}
-	}
-	shadow /= 9.0;
-#else
-	vec4 shadowSamplePos = vec4(ls_coords.xy, float(csmLayer), ls_coords.z);
-	shadow = texture(csm, shadowSamplePos);
-#endif
-	
-	return max(0.5, shadow);
+	return getShadowingFactor(csm, query);
 }
 
 vec3 phongShading(fragment_info fragment) {

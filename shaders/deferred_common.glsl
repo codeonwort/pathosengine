@@ -32,7 +32,7 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 
-	mat4 sunViewProjection[4];
+	mat4x4 sunViewProjection[4];
 	
 	vec3 eyeDirection;
 	vec3 eyePosition;

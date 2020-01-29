@@ -19,8 +19,8 @@ const bool          WINDOW_FULLSCREEN   =   false;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
-const float         CAMERA_Z_NEAR       =   0.01f;
-const float         CAMERA_Z_FAR        =   2000.0f;
+const float         CAMERA_Z_NEAR       =   1.0f;
+const float         CAMERA_Z_FAR        =   5000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 const bool          USE_HDR             =   true;
 const uint32        NUM_BALLS           =   10;
@@ -314,7 +314,7 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 
 	ground = new Mesh(geom_plane_big, material_texture);
-	ground->getTransform().setScale(100.0f);
+	ground->getTransform().setScale(1000.0f);
 	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
