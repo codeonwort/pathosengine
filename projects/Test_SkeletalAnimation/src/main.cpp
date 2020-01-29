@@ -1,5 +1,6 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
+#include "pathos/input/input_manager.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
@@ -38,6 +39,7 @@ Scene scene;
 	SkinnedMesh *daeModel;
 	SkinnedMesh *daeModel2;
 
+void setupInput();
 void loadDAE();
 void setupScene();
 void tick(float deltaSeconds);
@@ -51,6 +53,8 @@ int main(int argc, char** argv) {
 	conf.tick         = tick;
 	Engine::init(argc, argv, conf);
 
+	setupInput();
+
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
@@ -62,6 +66,31 @@ int main(int argc, char** argv) {
 	gEngine->start();
 
 	return 0;
+}
+
+void setupInput()
+{
+	AxisBinding moveForward;
+	moveForward.addInput(InputConstants::KEYBOARD_W, 1.0f);
+	moveForward.addInput(InputConstants::KEYBOARD_S, -1.0f);
+
+	AxisBinding moveRight;
+	moveRight.addInput(InputConstants::KEYBOARD_D, 1.0f);
+	moveRight.addInput(InputConstants::KEYBOARD_A, -1.0f);
+
+	AxisBinding rotateYaw;
+	rotateYaw.addInput(InputConstants::KEYBOARD_Q, -1.0f);
+	rotateYaw.addInput(InputConstants::KEYBOARD_E, 1.0f);
+
+	AxisBinding rotatePitch;
+	rotatePitch.addInput(InputConstants::KEYBOARD_Z, -1.0f);
+	rotatePitch.addInput(InputConstants::KEYBOARD_X, 1.0f);
+
+	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	inputManager->bindAxis("moveForward", moveForward);
+	inputManager->bindAxis("moveRight", moveRight);
+	inputManager->bindAxis("rotateYaw", rotateYaw);
+	inputManager->bindAxis("rotatePitch", rotatePitch);
 }
 
 void loadDAE() {
@@ -183,12 +212,20 @@ void setupScene() {
 }
 
 void tick(float deltaSeconds) {
-	if (gConsole->isVisible() == false) {
-		float speedX = 1.0f, speedY = 1.0f;
-		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-		float dz = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-		float rotY = gEngine->isDown('q') ? -0.5f : gEngine->isDown('e') ? 0.5f : 0.0f;
-		float rotX = gEngine->isDown('z') ? -0.5f : gEngine->isDown('x') ? 0.5f : 0.0f;
+	{
+		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
+
+		// movement per seconds
+		const float speedX = 400.0f * deltaSeconds;
+		const float speedY = -200.0f * deltaSeconds;
+		const float rotateY = 120.0f * deltaSeconds;
+		const float rotateX = 120.0f * deltaSeconds;
+
+		float dx = input->getAxis("moveRight") * speedX;
+		float dz = input->getAxis("moveForward") * speedY;
+		float rotY = input->getAxis("rotateYaw") * rotateY;
+		float rotX = input->getAxis("rotatePitch") * rotateX;
+
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
