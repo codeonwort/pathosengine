@@ -12,9 +12,9 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
+#include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
-#include <algorithm>
 
 
 #define ASSERT_GL_NO_ERROR 0
@@ -27,7 +27,7 @@ namespace pathos {
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
-	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(glm::vec4);
+	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(PointLightProxy);
 	struct UBO_PerFrame {
 		glm::mat4 view;
 		glm::mat4 inverseView;
@@ -42,8 +42,7 @@ namespace pathos {
 		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
 		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
 		uint32    numPointLights; glm::vec3 __pad1;
-		glm::vec4 pointLightPos[MAX_POINT_LIGHTS]; // w components are not used
-		glm::vec4 pointLightColors[MAX_POINT_LIGHTS]; // w components are not used
+		PointLightProxy pointLights[MAX_POINT_LIGHTS];
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
@@ -236,7 +235,7 @@ namespace pathos {
 		// output: scene final
 		toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-		antiAliasing = (EAntiAliasingMethod)std::max(0, std::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+		antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
 		switch (antiAliasing) {
 			case EAntiAliasingMethod::NoAA:
 				// Do nothing
@@ -383,16 +382,15 @@ namespace pathos {
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition  = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
 
-		data.numDirLights = std::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
+		data.numDirLights = pathos::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
 		if (data.numDirLights > 0) {
 			memcpy_s(&data.dirLightDirs[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightDirectionBuffer(), scene->getDirectionalLightBufferSize());
 			memcpy_s(&data.dirLightColors[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightColorBuffer(), scene->getDirectionalLightBufferSize());
 		}
 
-		data.numPointLights = std::min(scene->numPointLights(), MAX_POINT_LIGHTS);
+		data.numPointLights = pathos::min(scene->numPointLights(), MAX_POINT_LIGHTS);
 		if (data.numPointLights > 0) {
-			memcpy_s(&data.pointLightPos[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightPositionBuffer(), scene->getPointLightBufferSize());
-			memcpy_s(&data.pointLightColors[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightColorBuffer(), scene->getPointLightBufferSize());
+			memcpy_s(&data.pointLights[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightBuffer(), scene->getPointLightBufferSize());
 		}
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);

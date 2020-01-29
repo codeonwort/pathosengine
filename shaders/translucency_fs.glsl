@@ -22,10 +22,6 @@ in VS_OUT {
 	vec2 texcoord;
 } fs_in;
 
-float pointLightAttenuation(float dist) {
-	return 1000.0 / (1000.0 + dist * dist);
-}
-
 void main() {
 	//vec3 albedo        = uboPerObject.albedo.rgb;
 	//float metallic     = uboPerObject.metallic_roughness.x;
@@ -77,12 +73,13 @@ void main() {
 
 	// Point lights
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
-		vec3 L = normalize(uboPerFrame.pointLightPos[i] - vs_coords);
+		PointLight pointLight = uboPerFrame.pointLights[i];
+
+		vec3 L = normalize(pointLight.position - vs_coords);
 		vec3 H = normalize(V + L);
-		float distance = length(uboPerFrame.pointLightPos[i] - vs_coords);
-		float attenuation = pointLightAttenuation(distance);
-		vec3 radiance = uboPerFrame.pointLightColors[i];
-		radiance *= attenuation;
+
+		float distance = length(pointLight.position - vs_coords);
+		vec3 radiance = pointLight.intensity * pointLightAttenuation(pointLight, distance);
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);

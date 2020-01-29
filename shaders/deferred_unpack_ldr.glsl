@@ -72,23 +72,28 @@ float getShadowing(fragment_info fragment) {
 
 vec4 calculateShading(fragment_info fragment) {
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
+
 	if(fragment.material_id != 0){
 		vec3 N = fragment.normal;
+
 		for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
 			vec3 L = -uboPerFrame.dirLightDirs[i];
 			float cosTheta = max(0.0, dot(N, L));
 			vec3 diffuse_color = uboPerFrame.dirLightColors[i] * fragment.color * cosTheta;
 			result += vec4(diffuse_color, 0.0);
 		}
+
 		for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
-			vec3 L = uboPerFrame.pointLightPos[i] - fragment.vs_coords;
+			PointLight pointLight = uboPerFrame.pointLights[i];
+
+			vec3 L = pointLight.position - fragment.vs_coords;
 			float dist = length(L);
-			float attenuation = 500.0 / (pow(dist, 2.0) + 1.0);
+			float attenuation = pointLightAttenuation(pointLight, dist);
 			L = normalize(L);
 			vec3 R = reflect(-L, N);
 			float cosTheta = max(0.0, dot(N, L));
-			vec3 specular_color = uboPerFrame.pointLightColors[i] * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
-			vec3 diffuse_color = uboPerFrame.pointLightColors[i] * fragment.color * cosTheta;
+			vec3 specular_color = pointLight.intensity * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
+			vec3 diffuse_color = pointLight.intensity * fragment.color * cosTheta;
 			result += vec4(attenuation * (diffuse_color + specular_color), 0.0);
 		}
 	} else {

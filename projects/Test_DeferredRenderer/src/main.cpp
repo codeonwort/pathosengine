@@ -241,8 +241,10 @@ void setupScene() {
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
-	scene.add(new PointLight(glm::vec3(-50.0f, 30.0f, 150.0f), 5.0f * glm::vec3(0.2f, 1.0f, 1.0f)));
-	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f)));
+	scene.add(new PointLight(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 1.0f, 1.0f), 100.0f, 0.001f));
+	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f), 100.0f, 0.001f));
+	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
+	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
 
 	//---------------------------------------------------------------------------------------
 	// create materials

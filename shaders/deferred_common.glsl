@@ -10,6 +10,17 @@
 #define MATERIAL_ID_TEXTURE        3
 #define MATERIAL_ID_PBR            8
 
+struct PointLight {
+	vec3 position;
+	float attenuationRadius;
+	vec3 intensity;
+	float falloffExponent;
+};
+
+float pointLightAttenuation(PointLight L, float d) {
+	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
+}
+
 // in view space
 layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat4x4 viewTransform;
@@ -31,6 +42,5 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	vec3 dirLightColors[MAX_DIRECTIONAL_LIGHTS];
 
 	uint numPointLights;
-	vec3 pointLightPos[MAX_POINT_LIGHTS];
-	vec3 pointLightColors[MAX_POINT_LIGHTS];
+	PointLight pointLights[MAX_POINT_LIGHTS];
 } uboPerFrame;
