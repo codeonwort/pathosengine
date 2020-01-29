@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
+#include "badger/system/stopwatch.h"
 
 #include <map>
 #include <memory>
@@ -37,7 +38,7 @@ namespace pathos {
 
 		ERendererType rendererType;
 
-		void(*tick)()                       = nullptr;
+		void(*tick)(float deltaSeconds)     = nullptr;
 		void(*render)()                     = nullptr;
 		void(*keyDown)(uint8, int32, int32) = nullptr;
 		void(*keyUp)(uint8, int32, int32)   = nullptr;
@@ -63,6 +64,7 @@ namespace pathos {
 
 		const EngineConfig& getConfig() const { return conf; }
 
+		// Estimated time of rendering work
 		inline float getMilliseconds() const { return elapsed_ms; }
 
 		// #todo-input: Make an input manager
@@ -110,6 +112,8 @@ namespace pathos {
 		std::map<std::string, ExecProc> execMap;
 
 		bool keymap[256] = { false, };
+
+		Stopwatch stopwatch_gameThread;
 
 		GLuint timer_query;
 		float elapsed_ms;

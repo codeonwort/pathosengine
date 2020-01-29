@@ -194,6 +194,7 @@ namespace pathos {
 	}
 
 	void Engine::start() {
+		stopwatch_gameThread.start();
 		mainWindow->startMainLoop();
 	}
 
@@ -233,10 +234,14 @@ namespace pathos {
 	void Engine::tick()
 	{
 		// #todo-tick: add option to limit fps
+		float deltaSeconds = stopwatch_gameThread.stop();
+
 		auto callback = Engine::conf.tick;
 		if (callback != nullptr) {
-			callback();
+			callback(deltaSeconds);
 		}
+
+		stopwatch_gameThread.start();
 	}
 
 	void Engine::render() {
