@@ -40,7 +40,7 @@ Scene scene;
 
 void loadDAE();
 void setupScene();
-void tick();
+void tick(float deltaSeconds);
 
 int main(int argc, char** argv) {
 	EngineConfig conf;
@@ -81,12 +81,12 @@ void loadDAE() {
 	DAELoader loader(model.c_str(), dir.c_str(), aiProcessPreset_TargetRealtime_MaxQuality, invertWinding);
 	if (loader.getMesh()) {
 		daeModel = dynamic_cast<SkinnedMesh*>(loader.getMesh());
-		daeModel->getTransform().appendScale(10.0f);
+		daeModel->getTransform().setScale(10.0f);
 #if DAE_MODEL_ID == 2
-		daeModel->getTransform().appendScale(0.3f);
-		daeModel->getTransform().appendRotation(glm::radians(90.0f), glm::vec3(0, 1, 0));
+		daeModel->getTransform().setScale(5.0f);
+		daeModel->getTransform().setRotation(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
-		daeModel->getTransform().appendMove(0, 0, 50);
+		daeModel->getTransform().setLocation(0.0f, 0.0f, 0.0f);
 		scene.add(daeModel);
 	} else {
 		LOG(LogError, "Failed to load model: %s", model.c_str());
@@ -163,18 +163,18 @@ void setupScene() {
 			float x = (rand() % 256) / 255.0f;
 			float y = (rand() % 256) / 255.0f;
 			float z = (rand() % 256) / 255.0f;
-			cube->getTransform().appendRotation(e * 60.0f, glm::vec3(x, y, z));
-			cube->getTransform().appendMove(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
+			cube->getTransform().setRotation(e * 60.0f, glm::vec3(x, y, z));
+			cube->getTransform().setLocation(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
 			scene.add(cube);
 		}
 	}
 
 	model = new Mesh(geom_sphere_big, material_texture);
-	model->getTransform().appendMove(-40, 0, 0);
+	model->getTransform().setLocation(-40, 0, 0);
 
 	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().appendScale(10.0f);
-	model2->getTransform().appendMove(0, 50, -200);
+	model2->getTransform().setScale(10.0f);
+	model2->getTransform().setLocation(0, 50, -200);
 
 	scene.add(model);
 	scene.add(model2);
@@ -182,7 +182,7 @@ void setupScene() {
 	scene.godRaySource = model2;
 }
 
-void tick() {
+void tick(float deltaSeconds) {
 	if (gConsole->isVisible() == false) {
 		float speedX = 1.0f, speedY = 1.0f;
 		float dx = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
@@ -194,16 +194,15 @@ void tick() {
 		cam->rotateX(rotX);
 	}
 
-	model->getTransform().appendMove(0, 20, 0);
-	model->getTransform().appendRotation(0.01f, glm::vec3(0, 0.5, 1));
-	model->getTransform().appendMove(0, -20, 0);
+	model->getTransform().setLocation(0, 20, 0);
+	model->getTransform().setRotation(0.01f, glm::vec3(0, 0.5, 1));
+	model->getTransform().setLocation(0, -20, 0);
 
 #if DAE_MODEL_ID == 2
 	static double time = 0.0;
-	time += 0.01;
+	time += deltaSeconds;
 	if (time > 1.0) time = 0.0;
 	daeModel->updateAnimation(0, time);
 	daeModel->updateSoftwareSkinning();
-	daeModel->getTransform().prependRotation(0.003f, glm::vec3(0, 1, 0));
 #endif
 }
