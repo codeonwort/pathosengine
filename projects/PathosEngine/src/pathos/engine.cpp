@@ -37,9 +37,9 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
-		: renderer(nullptr)
-		, scene(nullptr)
+		: scene(nullptr)
 		, camera(nullptr)
+		, renderer(nullptr)
 		, timer_query(0)
 		, elapsed_ms(0)
 	{
