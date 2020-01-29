@@ -111,9 +111,6 @@
     <ClCompile Include="src\pathos\light\shadow.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\forward\renderpass_shadowtexture.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\render_norm.cpp">
       <Filter>소스 파일\pathos\render</Filter>
     </ClCompile>
@@ -124,9 +121,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\light\shadow_omni.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\render\forward\renderpass_shadowcubemap.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\render_deferred.cpp">

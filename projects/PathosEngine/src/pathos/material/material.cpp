@@ -36,20 +36,6 @@ namespace pathos {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////
-	// ShadowTextureMaterial
-	ShadowTextureMaterial::ShadowTextureMaterial(GLuint texture) :texture(texture) {
-		materialID = MATERIAL_ID::SHADOW_TEXTURE;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
-	// ShadowCubeTextureMaterial
-	ShadowCubeTextureMaterial::ShadowCubeTextureMaterial(GLuint texture, unsigned int face, GLfloat zNear, GLfloat zFar)
-		: texture(texture), face(face), zNear(zNear), zFar(zFar)
-	{
-		materialID = MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
 	// WireframeMaterial
 	WireframeMaterial::WireframeMaterial(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
 		materialID = MATERIAL_ID::WIREFRAME;

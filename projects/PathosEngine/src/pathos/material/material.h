@@ -179,32 +179,4 @@ namespace pathos {
 
 	};
 
-	//////////////////////////////////////////////////////////////////////////
-	// #todo-deprecated: Remove these materials
-
-	class ShadowTextureMaterial : public Material {
-
-	protected:
-		GLuint texture;
-
-	public:
-		ShadowTextureMaterial(GLuint texture);
-		inline const GLuint getTexture() { return texture; }
-	};
-
-	class ShadowCubeTextureMaterial : public Material {
-
-	protected:
-		GLuint texture;
-		unsigned int face;
-		GLfloat zNear, zFar;
-
-	public:
-		ShadowCubeTextureMaterial(GLuint depthCubemapTexture, unsigned int face, GLfloat zNear, GLfloat zFar);
-		inline const GLuint getTexture() { return texture; }
-		inline const GLuint getFace() { return face; }
-		inline const GLfloat getZNear() { return zNear; }
-		inline const GLfloat getZFar() { return zFar; }
-	};
-
 }

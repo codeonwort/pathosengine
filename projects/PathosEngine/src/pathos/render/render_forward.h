@@ -41,10 +41,8 @@ namespace pathos {
 		void renderSolidColor(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ColorMaterial* M);
 		void renderFlatTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, TextureMaterial* M);
 		void renderBumpTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, BumpTextureMaterial*);
-		void renderShadowTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowTextureMaterial* M);
 		void renderWireframe(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, WireframeMaterial* M);
 		void renderCubeEnvMap(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, CubeEnvMapMaterial* M);
-		void renderShadowCubeTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowCubeTextureMaterial* M);
 		void renderAlphaOnlyTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, AlphaOnlyTextureMaterial* M);
 
 	private:
@@ -52,10 +50,8 @@ namespace pathos {
 		SolidColorPass* colorPass                    = nullptr;
 		FlatTexturePass* texturePass                 = nullptr;
 		BumpTexturePass* bumpTexturePass             = nullptr;
-		ShadowTexturePass* shadowTexturePass         = nullptr;
 		WireframePass* wireframePass                 = nullptr;
 		CubeEnvMapPass* cubeEnvMapPass               = nullptr;
-		ShadowCubeTexturePass* shadowCubeTexturePass = nullptr;
 		AlphaOnlyTexturePass* alphaOnlyTexturePass   = nullptr;
 
 		// shadow method

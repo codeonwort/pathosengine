@@ -123,8 +123,6 @@
     <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_cubeenv.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_shadowcubemap.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_shadowtexture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_solidcolor.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp" />
     <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp" />

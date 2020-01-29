@@ -47,9 +47,7 @@ namespace pathos {
 		texturePass           = new FlatTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
 		bumpTexturePass       = new BumpTexturePass(MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS);
 		wireframePass         = new WireframePass;
-		shadowTexturePass     = new ShadowTexturePass;
 		cubeEnvMapPass        = new CubeEnvMapPass;
-		shadowCubeTexturePass = new ShadowCubeTexturePass;
 		alphaOnlyTexturePass  = new AlphaOnlyTexturePass;
 
 		colorPass->setShadowMapping(shadowMap);
@@ -68,10 +66,8 @@ namespace pathos {
 		release(colorPass);
 		release(texturePass);
 		release(bumpTexturePass);
-		release(shadowTexturePass);
 		release(wireframePass);
 		release(cubeEnvMapPass);
-		release(shadowCubeTexturePass);
 		release(alphaOnlyTexturePass);
 #undef release
 	}
@@ -198,17 +194,11 @@ namespace pathos {
 		case MATERIAL_ID::WIREFRAME:
 			renderWireframe(cmdList, mesh, G, static_cast<WireframeMaterial*>(M));
 			break;
-		case MATERIAL_ID::SHADOW_TEXTURE:
-			renderShadowTexture(cmdList, mesh, G, static_cast<ShadowTextureMaterial*>(M));
-			break;
 		case MATERIAL_ID::CUBE_ENV_MAP:
 			renderCubeEnvMap(cmdList, mesh, G, static_cast<CubeEnvMapMaterial*>(M));
 			break;
 		case MATERIAL_ID::BUMP_TEXTURE:
 			renderBumpTexture(cmdList, mesh, G, static_cast<BumpTextureMaterial*>(M));
-			break;
-		case MATERIAL_ID::CUBEMAP_SHADOW_TEXTURE:
-			renderShadowCubeTexture(cmdList, mesh, G, static_cast<ShadowCubeTextureMaterial*>(M));
 			break;
 		case MATERIAL_ID::ALPHA_ONLY_TEXTURE:
 			renderAlphaOnlyTexture(cmdList, mesh, G, static_cast<AlphaOnlyTextureMaterial*>(M));
@@ -242,11 +232,6 @@ namespace pathos {
 		wireframePass->renderMeshPass(cmdList, scene, camera, G, M);
 	}
 
-	void ForwardRenderer::renderShadowTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ShadowTextureMaterial* M) {
-		shadowTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		shadowTexturePass->renderMeshPass(cmdList, scene, camera, G, M);
-	}
-
 	void ForwardRenderer::renderCubeEnvMap(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, CubeEnvMapMaterial* M) {
 		cubeEnvMapPass->setModelMatrix(mesh->getTransform().getMatrix());
 		cubeEnvMapPass->renderMeshPass(cmdList, scene, camera, G, M);
@@ -255,11 +240,6 @@ namespace pathos {
 	void ForwardRenderer::renderBumpTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
 		bumpTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		bumpTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
-	}
-
-	void ForwardRenderer::renderShadowCubeTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, ShadowCubeTextureMaterial* material) {
-		shadowCubeTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
-		shadowCubeTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
 	}
 
 	void ForwardRenderer::renderAlphaOnlyTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
