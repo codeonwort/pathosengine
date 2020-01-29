@@ -45,6 +45,13 @@ namespace pathos {
 
 	};
 
+	struct DirectionalLightProxy {
+		glm::vec3 direction;
+		float     padding0;
+		glm::vec3 intensity;
+		float     padding1;
+	};
+
 	class DirectionalLight {
 
 	public:
@@ -53,10 +60,18 @@ namespace pathos {
 			, color(inColor)
 		{
 		}
-		inline const glm::vec3& getDirection() const { return direction; }
-		inline const glm::vec3& getColor()     const { return color;     }
 
-	private:
+		DirectionalLightProxy getProxy() const {
+			DirectionalLightProxy proxy;
+			proxy.direction = direction;
+			proxy.padding0  = 0.0f;
+			proxy.intensity = color;
+			proxy.padding1  = 0.0f;
+
+			return proxy;
+		}
+
+	public:
 		glm::vec3 direction;
 		glm::vec3 color;
 

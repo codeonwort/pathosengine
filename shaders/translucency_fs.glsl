@@ -32,7 +32,7 @@ void main() {
 	vec3 vs_coords = fs_in.vs_coords;
 
 	vec3 N = normalize(fs_in.normal);
-	vec3 L = -uboPerFrame.dirLightDirs[0];
+	vec3 L = -uboPerFrame.directionalLights[0].direction;
 	vec3 V = normalize(uboPerFrame.eyePosition - vs_coords);
 	vec3 H = normalize(V + L);
 
@@ -51,9 +51,11 @@ void main() {
 	
 	// Directional lights
 	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
-		vec3 L = -uboPerFrame.dirLightDirs[i];
+		DirectionalLight dirLight = uboPerFrame.directionalLights[i];
+
+		vec3 L = -dirLight.direction;
 		vec3 H = normalize(V + L);
-		vec3 radiance = uboPerFrame.dirLightColors[i];
+		vec3 radiance = dirLight.intensity;
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);

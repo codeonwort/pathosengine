@@ -11,10 +11,17 @@
 #define MATERIAL_ID_PBR            8
 
 struct PointLight {
-	vec3 position;
+	vec3  position;
 	float attenuationRadius;
-	vec3 intensity;
+	vec3  intensity;
 	float falloffExponent;
+};
+
+struct DirectionalLight {
+	vec3  direction;
+	float padding0;
+	vec3  intensity;
+	float padding1;
 };
 
 float pointLightAttenuation(PointLight L, float d) {
@@ -38,8 +45,7 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	vec3 eyePosition;
 
 	uint numDirLights;
-	vec3 dirLightDirs[MAX_DIRECTIONAL_LIGHTS];
-	vec3 dirLightColors[MAX_DIRECTIONAL_LIGHTS];
+	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
 
 	uint numPointLights;
 	PointLight pointLights[MAX_POINT_LIGHTS];

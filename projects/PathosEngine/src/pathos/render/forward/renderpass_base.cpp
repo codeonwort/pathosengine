@@ -18,12 +18,13 @@ namespace pathos {
 		if (program == 0) {
 			return;
 		}
-		uint32 numDirLights = std::min(static_cast<uint32>(scene->directionalLights.size()), maxDirectionalLights);
-		glUniform1ui(glGetUniformLocation(program, "numDirLights"), numDirLights);
-		if (numDirLights > 0) {
-			glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numDirLights, scene->getDirectionalLightDirectionBuffer());
-			glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numDirLights, scene->getDirectionalLightColorBuffer());
-		}
+		// #todo-forward-rendering: Fix
+		//uint32 numDirLights = std::min(static_cast<uint32>(scene->directionalLights.size()), maxDirectionalLights);
+		//glUniform1ui(glGetUniformLocation(program, "numDirLights"), numDirLights);
+		//if (numDirLights > 0) {
+		//	glUniform3fv(glGetUniformLocation(program, "dirLightDirs"), numDirLights, scene->getDirectionalLightDirectionBuffer());
+		//	glUniform3fv(glGetUniformLocation(program, "dirLightColors"), numDirLights, scene->getDirectionalLightColorBuffer());
+		//}
 	}
 	void MeshRenderPass::uploadPointLightUniform(Scene* scene, uint32 maxPointLights) {
 		CHECK(0);

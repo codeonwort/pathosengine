@@ -95,7 +95,7 @@ void main() {
 		mesh->activateIndexBuffer(cmdList);
 
 		// calculate uniform value
-		glm::vec3 lightPos = -light->getDirection();
+		glm::vec3 lightPos = -(light->direction);
 		view = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 		//glm::mat4 projection = calculateAABB(view);

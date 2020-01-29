@@ -26,23 +26,32 @@ namespace pathos {
 
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
-	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(glm::vec4);
+	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(DirectionalLightProxy);
 	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(PointLightProxy);
 	struct UBO_PerFrame {
-		glm::mat4 view;
-		glm::mat4 inverseView;
-		glm::mat3x4 view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
-		glm::mat4 viewProj;
-		glm::vec4 projParams;
-		glm::vec4 screenResolution; // (w, h, 1/w, 1/h)
-		glm::vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-		glm::mat4 sunViewProj[4];
-		glm::vec3 eyeDirection; float __pad0;
-		glm::vec3 eyePosition; uint32 numDirLights;
-		glm::vec4 dirLightDirs[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
-		glm::vec4 dirLightColors[MAX_DIRECTIONAL_LIGHTS]; // w components are not used
-		uint32    numPointLights; glm::vec3 __pad1;
-		PointLightProxy pointLights[MAX_POINT_LIGHTS];
+		glm::mat4             view;
+		glm::mat4             inverseView;
+		glm::mat3x4           view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
+		glm::mat4             viewProj;
+
+		glm::vec4             projParams;
+		glm::vec4             screenResolution; // (w, h, 1/w, 1/h)
+		glm::vec4             zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+
+		glm::mat4             sunViewProj[4];
+
+		glm::vec3             eyeDirection;
+		float                 __pad0;
+
+		glm::vec3             eyePosition;
+		uint32                numDirLights;
+
+		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
+
+		uint32                numPointLights;
+		glm::vec3             __pad1;
+
+		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
@@ -380,8 +389,7 @@ namespace pathos {
 
 		data.numDirLights = pathos::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
 		if (data.numDirLights > 0) {
-			memcpy_s(&data.dirLightDirs[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightDirectionBuffer(), scene->getDirectionalLightBufferSize());
-			memcpy_s(&data.dirLightColors[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightColorBuffer(), scene->getDirectionalLightBufferSize());
+			memcpy_s(&data.directionalLights[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightBuffer(), scene->getDirectionalLightBufferSize());
 		}
 
 		data.numPointLights = pathos::min(scene->numPointLights(), MAX_POINT_LIGHTS);

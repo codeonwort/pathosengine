@@ -16,11 +16,9 @@ namespace pathos {
 		}
 
 		const uint32 numDirs = (uint32)directionalLights.size();
-		directionalLightDirectionBuffer.resize(numDirs);
-		directionalLightColorBuffer.resize(numDirs);
+		directionalLightBuffer.resize(numDirs);
 		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightDirectionBuffer[i] = glm::vec4(directionalLights[i]->getDirection(), 0.0f);
-			directionalLightColorBuffer[i]     = glm::vec4(directionalLights[i]->getColor(), 0.0f);
+			directionalLightBuffer[i] = directionalLights[i]->getProxy();
 		}
 	}
 
@@ -33,11 +31,10 @@ namespace pathos {
 		}
 
 		const uint32 numDirs = (uint32)directionalLights.size();
-		directionalLightDirectionBuffer.resize(numDirs);
-		directionalLightColorBuffer.resize(numDirs);
+		directionalLightBuffer.resize(numDirs);
 		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightDirectionBuffer[i] = viewMatrix * glm::vec4(directionalLights[i]->getDirection(), 0.0f);
-			directionalLightColorBuffer[i]     = glm::vec4(directionalLights[i]->getColor(), 0.0f);
+			directionalLightBuffer[i] = directionalLights[i]->getProxy();
+			directionalLightBuffer[i].direction = glm::vec3(viewMatrix * glm::vec4(directionalLightBuffer[i].direction, 0.0f));
 		}
 	}
 

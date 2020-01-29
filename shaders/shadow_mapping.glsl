@@ -18,7 +18,7 @@ struct ShadowQuery {
 };
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
-	vec3 vSun = uboPerFrame.dirLightDirs[0];
+	vec3 vSun = uboPerFrame.directionalLights[0].direction;
 	float linearZ = (-query.vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 
 	int csmLayer = int(linearZ * NUM_CASCADES);

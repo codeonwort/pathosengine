@@ -84,9 +84,11 @@ vec3 phongShading(fragment_info fragment) {
 	vec3 N = fragment.normal;
 
 	for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
-		vec3 L = -uboPerFrame.dirLightDirs[i];
+		DirectionalLight light = uboPerFrame.directionalLights[i];
+
+		vec3 L = -light.direction;
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 diffuse_color = uboPerFrame.dirLightColors[i] * fragment.albedo * cosTheta;
+		vec3 diffuse_color = light.intensity * (fragment.albedo * cosTheta);
 		result += diffuse_color;
 	}
 
@@ -124,9 +126,11 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 Lo = vec3(0.0);
 
 	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
-		vec3 L = -uboPerFrame.dirLightDirs[i];
+		DirectionalLight light = uboPerFrame.directionalLights[i];
+
+		vec3 L = -light.direction;
 		vec3 H = normalize(V + L);
-		vec3 radiance = uboPerFrame.dirLightColors[i];
+		vec3 radiance = light.intensity;
 
 		float NDF = distributionGGX(N, H, fragment.roughness);
 		float G = geometrySmith(N, V, L, fragment.roughness);

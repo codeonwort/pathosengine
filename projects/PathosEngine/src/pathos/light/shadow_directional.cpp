@@ -30,7 +30,7 @@ namespace pathos {
 
 		// 1. Build projection matrices that perfectly cover each camera frustum
 		if (scene->directionalLights.size() > 0) {
-			setLightDirection(scene->directionalLights[0]->getDirection());
+			setLightDirection(scene->directionalLights[0]->direction);
 		}
 		calculateBounds(*camera, sceneContext.numCascades);
 

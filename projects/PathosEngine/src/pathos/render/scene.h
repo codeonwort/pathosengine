@@ -43,14 +43,12 @@ namespace pathos {
 		inline const GLfloat* getPointLightBuffer() const { return (GLfloat*)pointLightBuffer.data(); }
 		inline uint32 getPointLightBufferSize() const { return (uint32)(sizeof(PointLightProxy) * pointLightBuffer.size()); }
 
-		inline const GLfloat* getDirectionalLightDirectionBuffer() const { return (GLfloat*)directionalLightDirectionBuffer.data(); }
-		inline const GLfloat* getDirectionalLightColorBuffer() const { return (GLfloat*)directionalLightColorBuffer.data(); }
-		inline uint32 getDirectionalLightBufferSize() const { return (uint32)(sizeof(glm::vec4) * directionalLightDirectionBuffer.size()); }
+		inline const GLfloat* getDirectionalLightBuffer() const { return (GLfloat*)directionalLightBuffer.data(); }
+		inline uint32 getDirectionalLightBufferSize() const { return (uint32)(sizeof(DirectionalLightProxy) * directionalLightBuffer.size()); }
 
 	protected:
 		std::vector<PointLightProxy> pointLightBuffer;
-		std::vector<glm::vec4> directionalLightDirectionBuffer;
-		std::vector<glm::vec4> directionalLightColorBuffer;
+		std::vector<DirectionalLightProxy> directionalLightBuffer;
 
 	};
 
