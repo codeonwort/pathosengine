@@ -102,10 +102,11 @@ namespace pathos {
 		void tick();
 		void render();
 
+	// Game thread
+	private:
 		EngineConfig conf;
+		Stopwatch stopwatch_gameThread;
 
-		class OpenGLDevice* render_device;
-		Renderer* renderer;
 		Scene* scene;
 		Camera* camera;
 
@@ -113,7 +114,12 @@ namespace pathos {
 
 		bool keymap[256] = { false, };
 
-		Stopwatch stopwatch_gameThread;
+		std::unique_ptr<class GUIWindow> mainWindow;
+
+	// Render thread
+	private:
+		class OpenGLDevice* render_device;
+		Renderer* renderer;
 
 		GLuint timer_query;
 		float elapsed_ms;
@@ -123,8 +129,6 @@ namespace pathos {
 		GLuint texture2D_white = 0;
 		GLuint texture2D_grey  = 0;
 		GLuint texture2D_blue  = 0;
-
-		std::unique_ptr<class GUIWindow> mainWindow;
 
 	};
 
