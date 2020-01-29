@@ -15,7 +15,7 @@
 
 namespace pathos {
 
-	// shadow mapping by directional light
+	// #todo-shadow: This is deprecated. @see DirectionalShadowMap
 	class ShadowMap {
 
 	public:

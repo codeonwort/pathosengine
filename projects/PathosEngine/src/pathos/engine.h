@@ -68,7 +68,6 @@ namespace pathos {
 		// Estimated time of rendering work
 		inline float getMilliseconds() const { return elapsed_ms; }
 
-		// #todo-input: Make an input manager
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
 
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }

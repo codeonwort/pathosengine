@@ -273,7 +273,6 @@ namespace pathos {
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
 		elapsed_ms = (float)elapsed_ns / 1000000.0f;
 
-		// #todo-console: Fix
 		if (gConsole) {
 			gConsole->renderConsoleWindow(immediateContext);
 			immediateContext.flushAllCommands();

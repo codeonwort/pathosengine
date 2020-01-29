@@ -11,7 +11,6 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		cmdList.createFramebuffers(1, &fbo);
-		// #todo-framebuffer: This is set twice each with different texture. Any performance issue? Maybe I need two FBOs?
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		checkFramebufferStatus(cmdList, fbo);
