@@ -294,15 +294,6 @@ namespace pathos {
 	}
 
 	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {
-		if (gEngine->keymap[ascii] == false) {
-			gEngine->keymap[ascii] = true;
-
-			auto press_callback = gEngine->conf.keyPress;
-			if (press_callback != nullptr) {
-				press_callback(ascii);
-			}
-		}
-
 		// backtick
 		if (ascii == 0x60) {
 			gConsole->toggle();
@@ -310,23 +301,11 @@ namespace pathos {
 			gConsole->onKeyPress(ascii);
 		} else {
 			gEngine->inputSystem->processRawKeyDown(ascii);
-
-			auto callback = gEngine->conf.keyDown;
-			if (callback != nullptr) {
-				callback(ascii, mouseX, mouseY);
-			}
 		}
 	}
 
 	void Engine::onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY) {
 		gEngine->inputSystem->processRawKeyUp(ascii);
-
-		gEngine->keymap[ascii] = false;
-
-		auto callback = gEngine->conf.keyUp;
-		if (callback != nullptr) {
-			callback(ascii, mouseX, mouseY);
-		}
 	}
 
 	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }

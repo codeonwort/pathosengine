@@ -44,9 +44,6 @@ namespace pathos {
 
 		void(*tick)(float deltaSeconds)     = nullptr;
 		void(*render)()                     = nullptr;
-		void(*keyDown)(uint8, int32, int32) = nullptr;
-		void(*keyUp)(uint8, int32, int32)   = nullptr;
-		void(*keyPress)(uint8)              = nullptr;
 	};
 
 	class Engine final {
@@ -73,7 +70,6 @@ namespace pathos {
 
 		// #todo-input: Make an input manager
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
-		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
 		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
@@ -118,7 +114,6 @@ namespace pathos {
 		std::map<std::string, ExecProc> execMap;
 
 		std::unique_ptr<class InputSystem> inputSystem;
-		bool keymap[256] = { false, };
 
 		std::unique_ptr<class GUIWindow> mainWindow;
 
