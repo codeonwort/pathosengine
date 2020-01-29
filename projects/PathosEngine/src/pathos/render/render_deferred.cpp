@@ -330,18 +330,14 @@ namespace pathos {
 	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(UnpackGBuffer);
 
-		unpack_pass->bindFramebuffer(cmdList, useHDR);
+		unpack_pass->bindFramebuffer(cmdList);
 
 		// actually not an unpack work, but rendering order is here...
 		if (scene->sky) {
 			scene->sky->render(cmdList, scene, camera);
 		}
 
-		if (useHDR) {
-			unpack_pass->renderHDR(cmdList, scene, camera);
-		} else {
-			unpack_pass->renderLDR(cmdList, scene, camera);
-		}
+		unpack_pass->render(cmdList, scene, camera);
 	}
 	
 	// #todo-translucency: Implement

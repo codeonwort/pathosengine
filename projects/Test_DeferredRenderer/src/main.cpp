@@ -22,7 +22,6 @@ const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
 const float         CAMERA_Z_FAR        =   5000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
-const bool          USE_HDR             =   true;
 const uint32        NUM_BALLS           =   10;
 
 // World

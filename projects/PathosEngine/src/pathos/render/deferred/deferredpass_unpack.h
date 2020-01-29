@@ -18,21 +18,19 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void bindFramebuffer(RenderCommandList& cmdList, bool hdr); // call this before render() or renderHDR()
-		void renderLDR(RenderCommandList& cmdList, Scene* scene, Camera* camera); // plain LDR rendering
-		void renderHDR(RenderCommandList& cmdList, Scene* scene, Camera* camera); // HDR rendering
+		// Call before render()
+		void bindFramebuffer(RenderCommandList& cmdList);
+
+		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
 	private:
-		void createProgram_LDR();
-		void createProgram_HDR();
-		void createResource_HDR(RenderCommandList& cmdList);
+		void createProgram();
+		void createResource(RenderCommandList& cmdList);
 
 	private:
-		bool use_hdr;
 
-		GLuint program_ldr = 0; // shader program (original LDR rendering)
-		GLuint program_hdr = 0; // HDR rendering
-		GLuint fbo_hdr;
+		GLuint program = 0;
+		GLuint fbo;
 		UniformBuffer ubo_unpack;
 
 		PlaneGeometry* quad = nullptr;

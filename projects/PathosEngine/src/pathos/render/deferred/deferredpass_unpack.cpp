@@ -27,8 +27,7 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
 
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack()
-		: use_hdr(true)
-		, fbo_hdr(0xffffffff)
+		: fbo(0xffffffff)
 	{
 	}
 
@@ -39,41 +38,21 @@ namespace pathos {
 	void MeshDeferredRenderPass_Unpack::initializeResources(RenderCommandList& cmdList) {
 		// fullscreen quad
 		quad = new PlaneGeometry(2.0f, 2.0f);
-		createProgram_LDR();
-		createProgram_HDR();
-		createResource_HDR(cmdList);
+		createProgram();
+		createResource(cmdList);
 	}
 
 	void MeshDeferredRenderPass_Unpack::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			cmdList.deleteProgram(program_ldr);
-			cmdList.deleteProgram(program_hdr);
-			cmdList.deleteFramebuffers(1, &fbo_hdr);
+			cmdList.deleteProgram(program);
+			cmdList.deleteFramebuffers(1, &fbo);
 			quad->dispose();
 			delete quad;
 		}
 		destroyed = true;
 	}
 
-	void MeshDeferredRenderPass_Unpack::createProgram_LDR() {
-		string vshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-void main() {
-	gl_Position = vec4(position, 1.0);
-}
-)";
-		Shader vs(GL_VERTEX_SHADER, "VS_Deferred_Unpack_LDR");
-		vs.setSource(vshader);
-
-		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Unpack_LDR");
-		fs.loadSource("deferred_unpack_ldr.glsl");
-
-		program_ldr = pathos::createProgram(vs, fs, "UnpackLDR");
-	}
-
-	void MeshDeferredRenderPass_Unpack::createProgram_HDR() {
+	void MeshDeferredRenderPass_Unpack::createProgram() {
 		std::string vshader = R"(
 #version 430 core
 
@@ -90,17 +69,17 @@ void main() {
 }
 )";
 		
-		Shader vs(GL_VERTEX_SHADER, "VS_Deferred_Unpack_HDR");
+		Shader vs(GL_VERTEX_SHADER, "VS_GBuffer_Unpack");
 		vs.setSource(vshader);
 
-		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Unpack_HDR");
-		fs.loadSource("deferred_unpack_hdr.glsl");
+		Shader fs(GL_FRAGMENT_SHADER, "FS_GBuffer_Unpack");
+		fs.loadSource("deferred_unpack.glsl");
 
-		program_hdr = pathos::createProgram(vs, fs, "UnpackHDR");
+		program = pathos::createProgram(vs, fs, "UnpackGBuffer");
 		ubo_unpack.init<UBO_Unpack>();
 	}
 
-	void MeshDeferredRenderPass_Unpack::createResource_HDR(RenderCommandList& cmdList) {
+	void MeshDeferredRenderPass_Unpack::createResource(RenderCommandList& cmdList) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		auto checkFramebufferStatus = [&cmdList](GLuint fbo) -> void {
@@ -116,54 +95,29 @@ void main() {
 
 		// hdr resource
 		GLenum hdr_draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		cmdList.createFramebuffers(1, &fbo_hdr);
-		cmdList.namedFramebufferTexture(fbo_hdr, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo_hdr, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
-		cmdList.namedFramebufferDrawBuffers(fbo_hdr, 2, hdr_draw_buffers);
-		checkFramebufferStatus(fbo_hdr);
+		cmdList.createFramebuffers(1, &fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
+		cmdList.namedFramebufferDrawBuffers(fbo, 2, hdr_draw_buffers);
+		checkFramebufferStatus(fbo);
 	}
 
-	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList, bool hdr) {
+	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList) {
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		if (hdr) {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_hdr);
-			cmdList.clearBufferfv(GL_COLOR, 0, zero);
-			cmdList.clearBufferfv(GL_COLOR, 1, zero);
-			cmdList.clearBufferfv(GL_COLOR, 2, zero);
-		} else {
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			//cmdList.clearBufferfv(GL_COLOR, 0, zero);
-		}
-		use_hdr = hdr;
+		
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.clearBufferfv(GL_COLOR, 0, zero);
+		cmdList.clearBufferfv(GL_COLOR, 1, zero);
+		cmdList.clearBufferfv(GL_COLOR, 2, zero);
 	}
 
-	void MeshDeferredRenderPass_Unpack::renderLDR(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		cmdList.useProgram(program_ldr);
-
-		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
-		cmdList.bindTextures(0, 3, gbuffer_textures);
-		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
-
-		cmdList.disable(GL_DEPTH_TEST);
-
-		quad->activate_position(cmdList);
-		quad->activateIndexBuffer(cmdList);
-		quad->drawPrimitive(cmdList);
-		quad->deactivate(cmdList);
-		quad->deactivateIndexBuffer(cmdList);
-
-		cmdList.enable(GL_DEPTH_TEST);
-	}
-
-	void MeshDeferredRenderPass_Unpack::renderHDR(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(UnpackHDR);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		cmdList.useProgram(program_hdr);
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_hdr);
+		cmdList.useProgram(program);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);
@@ -185,7 +139,6 @@ void main() {
 		uboData.bloomParams.z        = cvar_bloom_max.getFloat();
 		ubo_unpack.update(cmdList, 1, &uboData);
 
-		// render HDR image
 		quad->activate_position_uv(cmdList);
 		quad->activateIndexBuffer(cmdList);
 		quad->drawPrimitive(cmdList);

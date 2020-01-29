@@ -21,9 +21,7 @@ namespace pathos {
 
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;
-		virtual void render(RenderCommandList& cmdList, Scene*, Camera*) override;
-
-		inline void setHDR(bool value) { useHDR = value; }
+		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
 
 	private:
 		void createShaders();
@@ -46,7 +44,6 @@ namespace pathos {
 		bool destroyed = false;
 
 		EAntiAliasingMethod antiAliasing;
-		bool useHDR = true;
 
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
