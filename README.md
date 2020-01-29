@@ -25,7 +25,7 @@ OpenGL rendering library (for 3d graphics study)
 
 ## Sample Images
 
-![SampleImage](https://user-images.githubusercontent.com/11644393/71560001-a0913f80-2aa7-11ea-86c6-a1b45fea5765.jpg)
+![McGuireFireplaceRoom](https://user-images.githubusercontent.com/11644393/73363954-02360b00-42ed-11ea-8f2b-3184ff567848.jpg)
 
 ![OmnidirectionalShadowMapping](https://cloud.githubusercontent.com/assets/11644393/15381530/30adbcc2-1dbb-11e6-9286-13c0f82e6f92.jpg)
 
