@@ -14,7 +14,7 @@ using namespace pathos;
 
 const int32         WINDOW_WIDTH        =   1920;
 const int32         WINDOW_HEIGHT       =   1080;
-const bool          WINDOW_FULLSCREEN   =   false;
+const bool          WINDOW_FULLSCREEN   =   true;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
 const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
@@ -37,7 +37,7 @@ Scene scene;
 
 void setupCSMDebugger();
 void setupScene();
-void tick();
+void tick(float deltaSeconds);
 
 OBJLoader houseLoader;
 bool asyncLoadComplete = false;
@@ -310,7 +310,7 @@ void setupScene() {
 	scene.godRaySource = godRaySource;
 }
 
-void tick()
+void tick(float deltaSeconds)
 {
 	if(asyncLoadComplete) {
 		asyncLoadComplete = false;
@@ -325,17 +325,25 @@ void tick()
 	}
 
 	if (gConsole->isVisible() == false) {
-		float speedX = 5.0f, speedY = 3.0f;
-		float dx   = gEngine->isDown('a') ? -speedX : gEngine->isDown('d') ? speedX : 0.0f;
-		float dz   = gEngine->isDown('w') ? -speedY : gEngine->isDown('s') ? speedY : 0.0f;
-		float rotY = gEngine->isDown('q') ? -0.5f   : gEngine->isDown('e') ? 0.5f   : 0.0f;
-		float rotX = gEngine->isDown('z') ? -0.5f   : gEngine->isDown('x') ? 0.5f   : 0.0f;
+		// movement per seconds
+		const float speedX = 400.0f * deltaSeconds;
+		const float speedY = 200.0f * deltaSeconds;
+		const float rotateY = 120.0f * deltaSeconds;
+		const float rotateX = 120.0f * deltaSeconds;
+
+		float dx   = gEngine->isDown('a') ? -speedX  : gEngine->isDown('d') ? speedX  : 0.0f;
+		float dz   = gEngine->isDown('w') ? -speedY  : gEngine->isDown('s') ? speedY  : 0.0f;
+		float rotY = gEngine->isDown('q') ? -rotateY : gEngine->isDown('e') ? rotateY : 0.0f;
+		float rotX = gEngine->isDown('z') ? -rotateX : gEngine->isDown('x') ? rotateX : 0.0f;
+
 		cam->move(glm::vec3(dx, 0, dz));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
+
+		LOG(LogDebug, "%f", deltaSeconds);
 	}
 
-	for (auto& ball : balls) {
+	for (Mesh* ball : balls) {
 		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
