@@ -8,9 +8,10 @@
 #include "util/resource_finder.h"
 #include "util/renderdoc_integration.h"
 
-#include "FreeImage.h"             // subsystem: image file loader
-#include "pathos/text/font_mgr.h"  // subsystem: font manager
-#include "pathos/gui/gui_window.h" // subsystem: gui
+#include "FreeImage.h"                 // subsystem: image file loader
+#include "pathos/text/font_mgr.h"      // subsystem: font manager
+#include "pathos/gui/gui_window.h"     // subsystem: gui
+#include "pathos/input/input_system.h" // subsystem: input
 
 #include <algorithm>
 
@@ -66,6 +67,7 @@ namespace pathos {
 
 #define BailIfFalse(x) if(!(x)) { return false; }
 		BailIfFalse( initializeMainWindow(argc, argv) );
+		BailIfFalse( initializeInput()                );
 		BailIfFalse( initializeOpenGL()               );
 		BailIfFalse( initializeThirdParty()           );
 		BailIfFalse( initializeConsole()              );
@@ -103,6 +105,13 @@ namespace pathos {
 		mainWindow->create(createParams);
 
 		LOG(LogInfo, "Main window has been created");
+		return true;
+	}
+
+	bool Engine::initializeInput()
+	{
+		inputSystem = std::make_unique<InputSystem>();
+
 		return true;
 	}
 
@@ -236,6 +245,8 @@ namespace pathos {
 		// #todo-tick: add option to limit fps
 		float deltaSeconds = stopwatch_gameThread.stop();
 
+		inputSystem->tick();
+
 		auto callback = Engine::conf.tick;
 		if (callback != nullptr) {
 			callback(deltaSeconds);
@@ -298,6 +309,8 @@ namespace pathos {
 		} else if (gConsole->isVisible()) {
 			gConsole->onKeyPress(ascii);
 		} else {
+			gEngine->inputSystem->processRawKeyDown(ascii);
+
 			auto callback = gEngine->conf.keyDown;
 			if (callback != nullptr) {
 				callback(ascii, mouseX, mouseY);
@@ -306,6 +319,8 @@ namespace pathos {
 	}
 
 	void Engine::onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY) {
+		gEngine->inputSystem->processRawKeyUp(ascii);
+
 		gEngine->keymap[ascii] = false;
 
 		auto callback = gEngine->conf.keyUp;

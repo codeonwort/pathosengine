@@ -3,7 +3,10 @@
 #include "badger/types/int_types.h"
 #include "badger/system/stopwatch.h"
 
+#include "pathos/input/input_system.h"
+
 #include <map>
+#include <list>
 #include <memory>
 #include <string>
 #include <functional>
@@ -14,6 +17,7 @@ namespace pathos {
 	class Renderer;
 	class Scene;
 	class Camera;
+	class InputSystem;
 
 	enum class ERendererType : uint8 {
 		Forward,
@@ -68,6 +72,7 @@ namespace pathos {
 		inline float getMilliseconds() const { return elapsed_ms; }
 
 		// #todo-input: Make an input manager
+		InputSystem* getInputSystem() const { return inputSystem.get(); }
 		inline bool isDown(unsigned char ascii) { return keymap[ascii]; }
 
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
@@ -84,8 +89,8 @@ namespace pathos {
 
 		bool initialize(int argcp, char** argv, const EngineConfig& conf);
 
-		// #todo-glut: Abstract window system - don't use glut directly
 		bool initializeMainWindow(int argcp, char** argv);
+		bool initializeInput();
 		bool initializeOpenGL();
 		bool initializeThirdParty();
 		bool initializeConsole();
@@ -112,6 +117,7 @@ namespace pathos {
 
 		std::map<std::string, ExecProc> execMap;
 
+		std::unique_ptr<class InputSystem> inputSystem;
 		bool keymap[256] = { false, };
 
 		std::unique_ptr<class GUIWindow> mainWindow;
