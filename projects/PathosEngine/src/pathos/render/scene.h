@@ -34,24 +34,21 @@ namespace pathos {
 		inline void add(DirectionalLight* light) { directionalLights.push_back(light); }
 		inline void add(PointLight* light)       { pointLights.push_back(light);       }
 
-		inline uint32_t numDirectionalLights() const { return (uint32_t)directionalLights.size(); }
-		inline uint32_t numPointLights()       const { return (uint32_t)pointLights.size();       }
+		inline uint32 numDirectionalLights() const { return (uint32)directionalLights.size(); }
+		inline uint32 numPointLights()       const { return (uint32)pointLights.size();       }
 
 		void calculateLightBuffer(); // in world space
 		void calculateLightBufferInViewSpace(const glm::mat4& viewMatrix);
 
-		inline const GLfloat* getPointLightPositionBuffer()        const { return (GLfloat*)pointLightPositionBuffer.data();        }
-		inline const GLfloat* getPointLightColorBuffer()           const { return (GLfloat*)pointLightColorBuffer.data();           }
-		inline const GLfloat* getDirectionalLightDirectionBuffer() const { return (GLfloat*)directionalLightDirectionBuffer.data(); }
-		inline const GLfloat* getDirectionalLightColorBuffer()     const { return (GLfloat*)directionalLightColorBuffer.data();     }
+		inline const GLfloat* getPointLightBuffer() const { return (GLfloat*)pointLightBuffer.data(); }
+		inline uint32 getPointLightBufferSize() const { return (uint32)(sizeof(PointLightProxy) * pointLightBuffer.size()); }
 
-		inline uint32_t getPointLightBufferSize()       const { return (uint32_t)(sizeof(glm::vec4) * pointLightPositionBuffer.size());        }
-		inline uint32_t getDirectionalLightBufferSize() const { return (uint32_t)(sizeof(glm::vec4) * directionalLightDirectionBuffer.size()); }
+		inline const GLfloat* getDirectionalLightDirectionBuffer() const { return (GLfloat*)directionalLightDirectionBuffer.data(); }
+		inline const GLfloat* getDirectionalLightColorBuffer() const { return (GLfloat*)directionalLightColorBuffer.data(); }
+		inline uint32 getDirectionalLightBufferSize() const { return (uint32)(sizeof(glm::vec4) * directionalLightDirectionBuffer.size()); }
 
 	protected:
-		// w components are not used.
-		std::vector<glm::vec4> pointLightPositionBuffer;
-		std::vector<glm::vec4> pointLightColorBuffer;
+		std::vector<PointLightProxy> pointLightBuffer;
 		std::vector<glm::vec4> directionalLightDirectionBuffer;
 		std::vector<glm::vec4> directionalLightColorBuffer;
 

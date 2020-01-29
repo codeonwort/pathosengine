@@ -37,11 +37,6 @@ float getBloomStrength()  { return ubo.bloomParams.x; }
 float getMinBloom()       { return ubo.bloomParams.y; }
 float getMaxBloom()       { return ubo.bloomParams.z; }
 
-// #todo-light: Parametrize this in application
-float pointLightAttenuation(float dist) {
-	return 1000.0 / (1000.0 + dist * dist);
-}
-
 struct fragment_info {
 	vec3 albedo;
 	vec3 normal;
@@ -130,21 +125,25 @@ float getShadowing(fragment_info fragment) {
 vec3 phongShading(fragment_info fragment) {
 	vec3 result = vec3(0.0);
 	vec3 N = fragment.normal;
+
 	for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
 		vec3 L = -uboPerFrame.dirLightDirs[i];
 		float cosTheta = max(0.0, dot(N, L));
 		vec3 diffuse_color = uboPerFrame.dirLightColors[i] * fragment.albedo * cosTheta;
 		result += diffuse_color;
 	}
+
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
-		vec3 L = uboPerFrame.pointLightPos[i] - fragment.vs_coords;
+		PointLight light = uboPerFrame.pointLights[i];
+
+		vec3 L = light.position - fragment.vs_coords;
 		float dist = length(L);
-		float attenuation = pointLightAttenuation(dist);
+		float attenuation = pointLightAttenuation(light, dist);
 		L = normalize(L);
 		vec3 R = reflect(-L, N);
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 specular_color = uboPerFrame.pointLightColors[i] * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
-		vec3 diffuse_color = uboPerFrame.pointLightColors[i] * fragment.albedo * cosTheta;
+		vec3 specular_color = light.intensity * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
+		vec3 diffuse_color = light.intensity * fragment.albedo * cosTheta;
 		result += attenuation * (diffuse_color + specular_color);
 	}
 
@@ -189,11 +188,13 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	}
 
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
-		vec3 L = normalize(uboPerFrame.pointLightPos[i] - fragment.vs_coords);
+		PointLight light = uboPerFrame.pointLights[i];
+
+		vec3 L = normalize(light.position - fragment.vs_coords);
 		vec3 H = normalize(V + L);
-		float distance = length(uboPerFrame.pointLightPos[i] - fragment.vs_coords);
-		float attenuation = pointLightAttenuation(distance);
-		vec3 radiance = uboPerFrame.pointLightColors[i];
+		float distance = length(light.position - fragment.vs_coords);
+		float attenuation = pointLightAttenuation(light, distance);
+		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 
 		float NDF = distributionGGX(N, H, fragment.roughness);

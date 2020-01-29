@@ -132,7 +132,7 @@ namespace pathos {
 		glUniformMatrix3fv(glGetUniformLocation(program, "mvTransform3x3"), 1, false, glm::value_ptr(mvTransform3x3));
 		
 		// uniform: vector
-		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(light->getPosition(), 1.0f));
+		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(light->position, 1.0f));
 		glm::vec3 eye_cameraspace = glm::mat3(viewTransform) * camera->getEyeVector();
 		glUniform3f(glGetUniformLocation(program, "lightPos_camera"), light_cameraspace.x, light_cameraspace.y, light_cameraspace.z);
 		glUniform3f(glGetUniformLocation(program, "eyeDir_camera"), -eye_cameraspace.x, -eye_cameraspace.y, -eye_cameraspace.z);
