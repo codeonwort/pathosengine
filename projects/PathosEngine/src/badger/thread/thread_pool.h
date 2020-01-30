@@ -67,24 +67,25 @@ public:
 	ThreadPool(const ThreadPool&) = delete;
 	ThreadPool& operator=(const ThreadPool&) = delete;
 
-	void StartService(uint32 numWorkerThreads);
+	// Create worker threads.
+	void Start(uint32 numWorkerThreads);
 
 	// Discard pending works and destroy this thread pool. Call WaitForAllWorks() first if you want to process all pending works.
-	void StopService();
+	void Stop();
 
 	// #todo-thread-pool: Implement a mechanism to cancel active works.
 	//void CancelActiveWorks();
 
 	// [Blocking operation] Waits for active works to finish.
-	void WaitForActiveWorks();
+	//void WaitForActiveWorks();
 
 	// [Blocking operation] Waits for all works to finish.
 	void WaitForAllWorks();
 
-	// OK to call this before StartService() to avoid redundant lock/unlock. Never use this after StartService().
+	// OK to call this before Start() to avoid redundant lock/unlock. Never use this after Start().
 	void AddWorkUnsafe(const ThreadPoolWork& workItem);
 
-	// OK to call anytime, but you must use this after StartService().
+	// OK to call anytime, but you must use this after Start().
 	void AddWorkSafe(const ThreadPoolWork& workItem);
 
 	// CAUTION: Do not call directly. This is public just for worker threads.

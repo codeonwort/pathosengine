@@ -19,6 +19,7 @@ static void* PooledThreadMain(void* _param)
 
 		if (!hasWork)
 		{
+			// #todo-thread-pool: cond_var could be unblocked spuriously (https://en.cppreference.com/w/cpp/thread/condition_variable/wait)
 			std::unique_lock<std::mutex> cvLock(pool->worker_mutex);
 			pool->cond_var.wait(cvLock);
 		}
@@ -35,50 +36,65 @@ static void* PooledThreadMain(void* _param)
 	return 0;
 }
 
-void ThreadPool::StartService(uint32 numWorkerThreads)
+void ThreadPool::Start(uint32 numWorkerThreads)
 {
 	CHECK(state == ThreadPoolState::NotStarted);
 	CHECK(numWorkerThreads <= 256); // you sure it's not underflowed?
+
+	if (state != ThreadPoolState::NotStarted)
+	{
+		return;
+	}
 
 	state = ThreadPoolState::Active;
 
 	threads.resize(numWorkerThreads);
 	threadParams.resize(numWorkerThreads);
 
-	for (int32 i = 0; i < numWorkerThreads; ++i)
+	for (uint32 i = 0; i < numWorkerThreads; ++i)
 	{
 		threadParams[i].threadID = i;
 		threadParams[i].pool = this;
 	}
 
-	for (int32 i = 0; i < numWorkerThreads; ++i)
+	for (uint32 i = 0; i < numWorkerThreads; ++i)
 	{
 		threads[i] = std::thread(PooledThreadMain, (void*)&threadParams[i]);
 	}
 }
 
-void ThreadPool::StopService()
+void ThreadPool::Stop()
 {
+	CHECK(state == ThreadPoolState::Active);
+
 	if (state != ThreadPoolState::Active)
 	{
 		return;
 	}
 
-	state = ThreadPoolState::PendingKill;
+	// Remove pending works
+	{
+		queueLock.lock();
+		while (!queue.empty())
+		{
+			queue.pop();
+		}
+		queueLock.unlock();
+	}
 
+	// Wait for active works
+	state = ThreadPoolState::PendingKill;
 	cond_var.notify_all();
-	WaitForActiveWorks();
+	WaitForAllWorks();
 
 	state = ThreadPoolState::Destroyed;
 }
 
-void ThreadPool::WaitForActiveWorks()
-{
-}
-
 void ThreadPool::WaitForAllWorks()
 {
-	if (state != ThreadPoolState::Active)
+	CHECK(state == ThreadPoolState::Active || state == ThreadPoolState::PendingKill);
+
+	if (state != ThreadPoolState::Active && state != ThreadPoolState::PendingKill)
 	{
 		return;
 	}
@@ -86,7 +102,10 @@ void ThreadPool::WaitForAllWorks()
 	int32 n = (int32)threads.size();
 	for (int32 i = 0; i < n; ++i)
 	{
-		threads[i].join();
+		if (threads[i].joinable())
+		{
+			threads[i].join();
+		}
 	}
 }
 
@@ -98,20 +117,18 @@ void ThreadPool::AddWorkUnsafe(const ThreadPoolWork& workItem)
 void ThreadPool::AddWorkSafe(const ThreadPoolWork& workItem)
 {
 	queueLock.lock();
-
 	queue.push(workItem);
-
 	queueLock.unlock();
 }
 
 bool ThreadPool::Internal_PopWork(ThreadPoolWork& work)
 {
-	bool ret = true;
-
 	queueLock.lock();
 
 	if (queue.empty())
 	{
+		queueLock.unlock();
+
 		return false;
 	}
 	else
@@ -122,5 +139,5 @@ bool ThreadPool::Internal_PopWork(ThreadPoolWork& work)
 
 	queueLock.unlock();
 
-	return ret;
+	return true;
 }

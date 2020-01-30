@@ -45,9 +45,13 @@ namespace pathos {
 		inline uint32 numShapes() const { return static_cast<uint32>(pendingShapes.size()); }
 		inline const string& getShapeName(uint32 index) const { return t_shapes[index].name; }
 		
-		// CAUTION: should be called within main thread
+		// CAUTION: Must be called in render thread
 		Mesh* craftMeshFrom(const string& shapeName);
+
+		// CAUTION: Must be called in render thread
 		Mesh* craftMeshFrom(uint32 shapeIndex);
+
+		// CAUTION: Must be called in render thread
 		Mesh* craftMeshFromAllShapes();
 
 		const vector<Material*>& getMaterials() { return materials; }
