@@ -13,6 +13,8 @@ OpenGL rendering library (for 3d graphics study)
 * Font          : freetype
 * 3D model      : tinyobjloader, assimp
 
+note: Requires Visual C++ 2013 Redistributable Package because I used pre-built binaries. This limitation may be removed in future.
+
 ## Features
 * Render command list
 * PBR materials
