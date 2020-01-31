@@ -8,12 +8,11 @@
 #include "util/resource_finder.h"
 #include "util/renderdoc_integration.h"
 
-#include "FreeImage.h"                 // subsystem: image file loader
-#include "pathos/text/font_mgr.h"      // subsystem: font manager
-#include "pathos/gui/gui_window.h"     // subsystem: gui
-#include "pathos/input/input_system.h" // subsystem: input
-
-#include <algorithm>
+#include "FreeImage.h"                    // subsystem: image file loader
+#include "pathos/text/font_mgr.h"         // subsystem: font manager
+#include "pathos/gui/gui_window.h"        // subsystem: gui
+#include "pathos/input/input_system.h"    // subsystem: input
+#include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
 
 #pragma comment(lib, "FreeImage.lib")
 
@@ -68,6 +67,7 @@ namespace pathos {
 #define BailIfFalse(x) if(!(x)) { return false; }
 		BailIfFalse( initializeMainWindow(argc, argv) );
 		BailIfFalse( initializeInput()                );
+		BailIfFalse( initializeAssetStreamer()        );
 		BailIfFalse( initializeOpenGL()               );
 		BailIfFalse( initializeThirdParty()           );
 		BailIfFalse( initializeConsole()              );
@@ -111,6 +111,14 @@ namespace pathos {
 	bool Engine::initializeInput()
 	{
 		inputSystem = std::make_unique<InputSystem>();
+
+		return true;
+	}
+
+	bool Engine::initializeAssetStreamer()
+	{
+		assetStreamer = std::make_unique<AssetStreamer>();
+		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
 
 		return true;
 	}
@@ -209,6 +217,8 @@ namespace pathos {
 
 	void Engine::stop() {
 		mainWindow->stopMainLoop();
+
+		assetStreamer->destroy();
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
