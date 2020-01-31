@@ -24,6 +24,7 @@ note: Requires Visual C++ 2013 Redistributable Package because I used pre-built 
 * Tone mapping
 * FXAA
 * Screen-space ambient occlusion
+* Asynchronous asset loader
 
 ## Sample Images
 
