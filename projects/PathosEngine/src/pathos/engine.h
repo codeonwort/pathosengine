@@ -18,6 +18,7 @@ namespace pathos {
 	class Scene;
 	class Camera;
 	class InputSystem;
+	class AssetStreamer;
 
 	enum class ERendererType : uint8 {
 		Forward,
@@ -32,6 +33,7 @@ namespace pathos {
 			, fullscreen(false)
 			, title("pathos engine")
 			, rendererType(ERendererType::Deferred)
+			, numWorkersForAssetStreamer(2)
 		{
 		}
 
@@ -41,6 +43,8 @@ namespace pathos {
 		const char* title;
 
 		ERendererType rendererType;
+
+		uint32 numWorkersForAssetStreamer;
 
 		void(*tick)(float deltaSeconds)     = nullptr;
 		void(*render)()                     = nullptr;
@@ -70,6 +74,8 @@ namespace pathos {
 
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
 
+		AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
+
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
 		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
 		inline GLuint getSystemTexture2DGrey()  const { return texture2D_grey;  }
@@ -86,6 +92,7 @@ namespace pathos {
 
 		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeInput();
+		bool initializeAssetStreamer();
 		bool initializeOpenGL();
 		bool initializeThirdParty();
 		bool initializeConsole();
@@ -129,6 +136,10 @@ namespace pathos {
 		GLuint texture2D_white = 0;
 		GLuint texture2D_grey  = 0;
 		GLuint texture2D_blue  = 0;
+
+	// Utility thread
+	private:
+		std::unique_ptr<class AssetStreamer> assetStreamer;
 
 	};
 
