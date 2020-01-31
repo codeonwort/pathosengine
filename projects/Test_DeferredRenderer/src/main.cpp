@@ -2,10 +2,8 @@
 #include "pathos/render_minimal.h"
 #include "pathos/render/atmosphere.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/loader/asset_streamer.h"
 using namespace pathos;
-
-#include <thread>
-#include <algorithm>
 
 #define VISUALIZE_CSM_FRUSTUM 0
 
@@ -30,6 +28,7 @@ Scene scene;
 	DirectionalLight* sunLight;
 	Mesh* godRaySource;
 	Mesh* ground;
+	Mesh* objModel;
 	std::vector<Mesh*> balls;
 #if VISUALIZE_CSM_FRUSTUM
 	Mesh* csmDebugger;
@@ -40,13 +39,13 @@ void setupCSMDebugger();
 void setupScene();
 void tick(float deltaSeconds);
 
-OBJLoader houseLoader;
-bool asyncLoadComplete = false;
-void asyncLoadTask() {
-	//bool loaded = houseLoader.load("models/small_colonial_house/houseSF.obj", "models/small_colonial_house/");
-	bool loaded = houseLoader.load("models/fireplace_room/fireplace_room.obj", "models/fireplace_room/");
-	CHECK(loaded);
-	asyncLoadComplete = true;
+void onLoadWavefrontOBJ(OBJLoader* loader) {
+	objModel = loader->craftMeshFromAllShapes();
+	objModel->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	objModel->getTransform().setScale(50.0f);
+	objModel->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
+
+	scene.add(objModel);
 }
 
 int main(int argc, char** argv) {
@@ -66,7 +65,7 @@ int main(int argc, char** argv) {
 	cam = new Camera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 	cam->move(CAMERA_POSITION);
 
-	std::thread asyncLoadWorker(asyncLoadTask);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ("models/fireplace_room/fireplace_room.obj", "models/fireplace_room/", onLoadWavefrontOBJ);
 
 #if VISUALIZE_CSM_FRUSTUM
 	setupCSMDebugger();
@@ -74,9 +73,8 @@ int main(int argc, char** argv) {
 	setupScene();
 
 	gEngine->setWorld(&scene, cam);
-	gEngine->start();
 
-	asyncLoadWorker.join();
+	gEngine->start();
 
 	return 0;
 }
@@ -342,18 +340,6 @@ void setupScene() {
 
 void tick(float deltaSeconds)
 {
-	if(asyncLoadComplete) {
-		asyncLoadComplete = false;
-
-		Mesh* house = houseLoader.craftMeshFromAllShapes();
-		house->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		house->getTransform().setScale(50.0f);
-		house->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
-
-		scene.add(house);
-		houseLoader.unload();
-	}
-
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 

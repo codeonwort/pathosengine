@@ -3,21 +3,29 @@
 
 namespace pathos {
 
+	static constexpr uint32 OBJ_POOL_SIZE = 32;
+
 	void loadWavefrontOBJ(const WorkItemParam* param)
 	{
 		AssetLoadInfo_WavefrontOBJ* arg = (AssetLoadInfo_WavefrontOBJ*)param->arg;
+		AssetStreamer* streamer = arg->streamer;
 
-		OBJLoader loader(arg->filepath, arg->mtlDir);
+		OBJLoader* loader = streamer->objLoaderAllocator.alloc();
+		CHECK(loader);
 
-		arg->handler(&loader);
+		arg->loader = loader;
+		loader->load(arg->filepath, arg->mtlDir);
 
-		arg->streamer->objAllocator.dealloc(arg);
+		streamer->mutex_loadedOBJs.lock();
+		streamer->loadedOBJs.push_back(arg);
+		streamer->mutex_loadedOBJs.unlock();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	AssetStreamer::AssetStreamer()
-		: objAllocator(PoolAllocator<AssetLoadInfo_WavefrontOBJ>(32))
+		: objAllocator(PoolAllocator<AssetLoadInfo_WavefrontOBJ>(OBJ_POOL_SIZE))
+		, objLoaderAllocator(PoolAllocator<OBJLoader>(OBJ_POOL_SIZE))
 	{
 	}
 
@@ -38,6 +46,8 @@ namespace pathos {
 	void AssetStreamer::enqueueWavefrontOBJ(const char* inFilepath, const char* inMtlDir, WavefrontOBJHandler handler)
 	{
 		AssetLoadInfo_WavefrontOBJ* arg = objAllocator.alloc();
+		CHECK(arg);
+
 		arg->streamer = this;
 		arg->filepath = inFilepath;
 		arg->mtlDir = inMtlDir;
@@ -48,6 +58,22 @@ namespace pathos {
 		work.routine = loadWavefrontOBJ;
 
 		threadPool.AddWorkSafe(work);
+	}
+
+	void AssetStreamer::renderThread_flushLoadedAssets()
+	{
+		std::vector<AssetLoadInfo_WavefrontOBJ*> tempLoadedOBJs;
+
+		// Handlers can take long time, so clone the array and release the mutex
+		mutex_loadedOBJs.lock();
+		tempLoadedOBJs = loadedOBJs;
+		loadedOBJs.clear();
+		mutex_loadedOBJs.unlock();
+
+		for (AssetLoadInfo_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
+			assetInfo->handler(assetInfo->loader);
+			assetInfo->streamer->objAllocator.dealloc(assetInfo);
+		}
 	}
 
 }

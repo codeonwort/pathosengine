@@ -118,7 +118,6 @@ namespace pathos {
 	bool Engine::initializeAssetStreamer()
 	{
 		assetStreamer = std::make_unique<AssetStreamer>();
-		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
 
 		return true;
 	}
@@ -212,6 +211,7 @@ namespace pathos {
 
 	void Engine::start() {
 		stopwatch_gameThread.start();
+		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
 		mainWindow->startMainLoop();
 	}
 
@@ -268,6 +268,8 @@ namespace pathos {
 	void Engine::render() {
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
+
+		assetStreamer->renderThread_flushLoadedAssets();
 
 		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 

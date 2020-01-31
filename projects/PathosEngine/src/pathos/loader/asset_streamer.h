@@ -6,6 +6,8 @@
 #include "badger/memory/mem_alloc.h"
 #include "badger/thread/thread_pool.h"
 
+#include <list>
+#include <mutex>
 #include <functional>
 
 namespace pathos {
@@ -13,11 +15,12 @@ namespace pathos {
 	class AssetStreamer;
 	class OBJLoader;
 	
-	using WavefrontOBJHandler = std::function<void(OBJLoader * objLoader)>;
+	using WavefrontOBJHandler = std::function<void(OBJLoader* objLoader)>;
 
 	struct AssetLoadInfo_WavefrontOBJ
 	{
 		AssetStreamer* streamer;
+		OBJLoader* loader;
 
 		const char* filepath;
 		const char* mtlDir;
@@ -36,6 +39,9 @@ namespace pathos {
 
 		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler);
 
+		// Should be called in render thread
+		void renderThread_flushLoadedAssets();
+
 		// #todo-asset-streamer
 		//void enqueueColladaDAE();
 		//void enqueueImage();
@@ -44,6 +50,10 @@ namespace pathos {
 	public:
 		ThreadPool threadPool;
 		PoolAllocator<AssetLoadInfo_WavefrontOBJ> objAllocator;
+		PoolAllocator<OBJLoader> objLoaderAllocator;
+
+		std::vector<AssetLoadInfo_WavefrontOBJ*> loadedOBJs;
+		std::mutex mutex_loadedOBJs;
 
 	};
 
