@@ -236,5 +236,7 @@ void main() {
 	// output: light bloom
 	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
 	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
-	out_bright = color;
+
+	// #todo-bloom: NaN in what condition?
+	out_bright = max(color, vec4(0.0));
 }
