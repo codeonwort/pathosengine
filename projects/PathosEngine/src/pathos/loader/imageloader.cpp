@@ -172,6 +172,8 @@ namespace pathos {
 
 	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/)
 	{
+		static int32 label_counter = 0;
+
 		GLuint texture;
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 		glTextureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
@@ -180,6 +182,11 @@ namespace pathos {
 		glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		char label[256];
+		sprintf_s(label, "Texture HDR %d", label_counter);
+		glObjectLabel(GL_TEXTURE, texture, -1, label);
+		label_counter += 1;
 
 		if(deleteBlobData) {
 			stbi_image_free(metadata.data);
