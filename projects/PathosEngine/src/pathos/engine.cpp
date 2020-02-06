@@ -8,13 +8,11 @@
 #include "util/resource_finder.h"
 #include "util/renderdoc_integration.h"
 
-#include "FreeImage.h"                    // subsystem: image file loader
+#include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
-
-#pragma comment(lib, "FreeImage.lib")
 
 namespace pathos {
 
@@ -69,7 +67,8 @@ namespace pathos {
 		BailIfFalse( initializeInput()                );
 		BailIfFalse( initializeAssetStreamer()        );
 		BailIfFalse( initializeOpenGL()               );
-		BailIfFalse( initializeThirdParty()           );
+		BailIfFalse( initializeImageLibrary()         );
+		BailIfFalse( initializeFontSystem()           );
 		BailIfFalse( initializeConsole()              );
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
@@ -158,13 +157,15 @@ namespace pathos {
 		return validDevice;
 	}
 
-	bool Engine::initializeThirdParty()
+	bool Engine::initializeImageLibrary()
 	{
-		// FreeImage
-		FreeImage_Initialise();
-		LOG(LogInfo, "FreeImage has been initialized");
+		pathos::initializeImageLibrary();
 
-		// font manager
+		return true;
+	}
+
+	bool Engine::initializeFontSystem()
+	{
 		if (FontManager::init() == false) {
 			LOG(LogError, "[ERROR] Failed to initialize font manager");
 			return false;
@@ -219,6 +220,7 @@ namespace pathos {
 		mainWindow->stopMainLoop();
 
 		assetStreamer->destroy();
+		pathos::destroyImageLibrary();
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)

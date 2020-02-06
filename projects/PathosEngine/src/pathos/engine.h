@@ -94,7 +94,8 @@ namespace pathos {
 		bool initializeInput();
 		bool initializeAssetStreamer();
 		bool initializeOpenGL();
-		bool initializeThirdParty();
+		bool initializeImageLibrary();
+		bool initializeFontSystem();
 		bool initializeConsole();
 		bool initializeRenderer();
 
