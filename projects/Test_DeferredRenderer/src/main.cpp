@@ -235,6 +235,9 @@ void setupCSMDebugger()
 }
 
 void setupScene() {
+	//---------------------------------------------------------------------------------------
+	// lighting
+	//---------------------------------------------------------------------------------------
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
@@ -242,6 +245,8 @@ void setupScene() {
 	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f), 100.0f, 0.001f));
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
+
+	scene.irradianceMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Env.hdr"));
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -315,11 +320,12 @@ void setupScene() {
 	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
+	scene.add(ground);
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().setScale(2.0f + (float)i * 0.1f);
-		ball->getTransform().setLocation(-200.0f + (float)i * 5.0f, -15.0f, 50.0f -30.0f * i);
+		ball->getTransform().setScale(5.0f + (float)i * 1.0f);
+		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -327,15 +333,18 @@ void setupScene() {
 	godRaySource = new Mesh(geom_sphere, material_color);
 	godRaySource->getTransform().setScale(10.0f);
 	godRaySource->getTransform().setLocation(0.0f, 300.0f, -500.0f);
+	scene.godRaySource = godRaySource;
 
+	//---------------------------------------------------------------------------------------
+	// sky
+	//---------------------------------------------------------------------------------------
 	Skybox* skybox = new Skybox(cubeTexture);
 	skybox->setLOD(1.0f);
+	//scene.sky = skybox;
 
-	// add to scene
-	scene.add(ground);
-	scene.sky = skybox;
 	//scene.sky = new AtmosphereScattering;
-	scene.godRaySource = godRaySource;
+
+	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
 }
 
 void tick(float deltaSeconds)

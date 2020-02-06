@@ -17,16 +17,8 @@ namespace pathos {
 
 	public:
 		Scene();
-		Scene(Scene&&)                 = delete;
 		Scene(const Scene&)            = delete;
 		Scene& operator=(const Scene&) = delete;
-
-		SkyRendering* sky = nullptr;
-		Mesh* godRaySource = nullptr;
-		std::vector<Mesh*> meshes;
-
-		std::vector<DirectionalLight*> directionalLights;
-		std::vector<PointLight*> pointLights;
 
 		inline void add(Mesh* mesh) { meshes.push_back(mesh); }
 		void add(std::initializer_list<Mesh*> meshes);
@@ -45,6 +37,15 @@ namespace pathos {
 
 		inline const GLfloat* getDirectionalLightBuffer() const { return (GLfloat*)directionalLightBuffer.data(); }
 		inline uint32 getDirectionalLightBufferSize() const { return (uint32)(sizeof(DirectionalLightProxy) * directionalLightBuffer.size()); }
+
+	public:
+		SkyRendering* sky = nullptr;
+		Mesh* godRaySource = nullptr;
+		std::vector<Mesh*> meshes;
+
+		std::vector<DirectionalLight*> directionalLights;
+		std::vector<PointLight*> pointLights;
+		GLuint irradianceMap = 0;
 
 	protected:
 		std::vector<PointLightProxy> pointLightBuffer;

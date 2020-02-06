@@ -50,3 +50,12 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	uint numPointLights;
 	PointLight pointLights[MAX_POINT_LIGHTS];
 } uboPerFrame;
+
+// https://learnopengl.com/PBR/IBL/Diffuse-irradiance
+vec2 CubeToEquirectangular(vec3 v)
+{
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= vec2(0.1591, 0.3183); // inverse atan
+    uv += 0.5;
+    return uv;
+}

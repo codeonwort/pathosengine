@@ -121,9 +121,9 @@ void main() {
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);
-		// #todo-binding: Why did I bind csm at 6??? Let's bind ssao at 5 for now...
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
+		cmdList.bindTextureUnit(7, scene->irradianceMap);
 
 		cmdList.disable(GL_DEPTH_TEST);
 
