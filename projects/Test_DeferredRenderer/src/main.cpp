@@ -3,6 +3,7 @@
 #include "pathos/render/atmosphere.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/loader/asset_streamer.h"
+#include "pathos/render/irradiance_baker.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -33,6 +34,9 @@ Scene scene;
 #if VISUALIZE_CSM_FRUSTUM
 	Mesh* csmDebugger;
 #endif
+
+GLuint irradiance;
+GLuint cubemap = 0;
 
 void setupInput();
 void setupCSMDebugger();
@@ -248,6 +252,10 @@ void setupScene() {
 
 	scene.irradianceMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Env.hdr"));
 
+	irradiance = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	//GLuint cubemap = IrradianceBaker::bakeCubemap(irradiance, 512);
+	//glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
+
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
@@ -320,7 +328,7 @@ void setupScene() {
 	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
-	scene.add(ground);
+	//scene.add(ground);
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
@@ -345,10 +353,15 @@ void setupScene() {
 	//scene.sky = new AtmosphereScattering;
 
 	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+	//GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	//scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 }
 
 void tick(float deltaSeconds)
 {
+	cubemap = IrradianceBaker::bakeCubemap(irradiance, 512, cubemap);
+	glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
+
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 

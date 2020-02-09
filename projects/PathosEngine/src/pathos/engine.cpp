@@ -20,6 +20,9 @@ namespace pathos {
 	ConsoleWindow* gConsole = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////
+	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderInitRoutines;
+	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderDestroyRoutines;
+
 	// static
 	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
 		if (gEngine) {
@@ -33,10 +36,19 @@ namespace pathos {
 		return true;
 	}
 
+	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
+	{
+		globalRenderInitRoutines.push_back(initRoutine);
+		if (destroyRoutine) {
+			globalRenderDestroyRoutines.push_back(destroyRoutine);
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: scene(nullptr)
 		, camera(nullptr)
+		, render_device(nullptr)
 		, renderer(nullptr)
 		, timer_query(0)
 		, elapsed_ms(0)
@@ -152,6 +164,15 @@ namespace pathos {
 			glClearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
 			glClearTexImage(texture2D_grey,  0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
 			glClearTexImage(texture2D_blue,  0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+
+			glObjectLabel(GL_TEXTURE, texture2D_black, -1, "system texture 2D (black)");
+			glObjectLabel(GL_TEXTURE, texture2D_white, -1, "system texture 2D (white)");
+			glObjectLabel(GL_TEXTURE, texture2D_grey, -1, "system texture 2D (grey)");
+			glObjectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
+		}
+
+		for(GlobalRenderRoutine routine : globalRenderInitRoutines) {
+			routine(render_device);
 		}
 
 		return validDevice;
@@ -221,6 +242,10 @@ namespace pathos {
 
 		assetStreamer->destroy();
 		pathos::destroyImageLibrary();
+
+		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
+			routine(render_device);
+		}
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
