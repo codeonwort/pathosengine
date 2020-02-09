@@ -35,9 +35,6 @@ Scene scene;
 	Mesh* csmDebugger;
 #endif
 
-GLuint irradiance;
-GLuint cubemap = 0;
-
 void setupInput();
 void setupCSMDebugger();
 void setupScene();
@@ -252,9 +249,19 @@ void setupScene() {
 
 	scene.irradianceMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Env.hdr"));
 
-	irradiance = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	//GLuint cubemap = IrradianceBaker::bakeCubemap(irradiance, 512);
-	//glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
+	// #todo-temp: debug code
+	{
+		GLuint irradiance = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+
+		GLuint cubemap = IrradianceBaker::bakeCubemap(irradiance, 512);
+		glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
+
+		GLuint irradianceCubemap_ref = IrradianceBaker::bakeCubemap(scene.irradianceMap, 32);
+		glObjectLabel(GL_TEXTURE, irradianceCubemap_ref, -1, "Irradiance Map - reference");
+
+		GLuint irradianceCubemap = IrradianceBaker::bakeIrradianceMap(cubemap, 32, false);
+		glObjectLabel(GL_TEXTURE, irradianceCubemap, -1, "Irradiance Map - mine");
+	}
 
 	//---------------------------------------------------------------------------------------
 	// create materials
@@ -359,9 +366,6 @@ void setupScene() {
 
 void tick(float deltaSeconds)
 {
-	cubemap = IrradianceBaker::bakeCubemap(irradiance, 512, cubemap);
-	glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
-
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 
