@@ -247,20 +247,13 @@ void setupScene() {
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
 
-	scene.irradianceMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Env.hdr"));
-
-	// #todo-temp: debug code
+	// diffuse irradiance
 	{
-		GLuint irradiance = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-
-		GLuint cubemap = IrradianceBaker::bakeCubemap(irradiance, 512);
-		glObjectLabel(GL_TEXTURE, cubemap, -1, "HDRI cubemap");
-
-		GLuint irradianceCubemap_ref = IrradianceBaker::bakeCubemap(scene.irradianceMap, 32);
-		glObjectLabel(GL_TEXTURE, irradianceCubemap_ref, -1, "Irradiance Map - reference");
-
-		GLuint irradianceCubemap = IrradianceBaker::bakeIrradianceMap(cubemap, 32, false);
-		glObjectLabel(GL_TEXTURE, irradianceCubemap, -1, "Irradiance Map - mine");
+		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+		GLuint cubemap = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
+		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemap, 32, true);
+		glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
+		scene.irradianceMap = irradianceMap;
 	}
 
 	//---------------------------------------------------------------------------------------

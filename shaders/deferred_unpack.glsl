@@ -15,7 +15,7 @@ layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
-layout (binding = 7) uniform sampler2D irradianceMap;
+layout (binding = 7) uniform samplerCube irradianceMap;
 
 in VS_OUT {
 	vec2 screenUV;
@@ -179,7 +179,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 	vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
 	vec3 kD = 1.0 - kS;
-	vec3 irradiance = texture(irradianceMap, CubeToEquirectangular(N)).rgb;
+	vec3 irradiance = texture(irradianceMap, N).rgb; // #todo-irradiance: I doubt sampling direction isn't ok...
 	vec3 diffuse    = irradiance * albedo;
 	vec3 ambient    = (kD * diffuse) * fragment.ao;
 
