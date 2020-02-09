@@ -15,6 +15,7 @@ layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
+layout (binding = 7) uniform samplerCube irradianceMap;
 
 in VS_OUT {
 	vec2 screenUV;
@@ -119,9 +120,11 @@ vec3 phongShading(fragment_info fragment) {
 vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 N = fragment.normal;
 	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
+	vec3 albedo = fragment.albedo;
+	float roughness = fragment.roughness;
 
 	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, min(fragment.albedo, vec3(1.0)), fragment.metallic);
+	F0 = mix(F0, min(albedo, vec3(1.0)), fragment.metallic);
 	
 	vec3 Lo = vec3(0.0);
 
@@ -132,8 +135,8 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 H = normalize(V + L);
 		vec3 radiance = light.intensity;
 
-		float NDF = distributionGGX(N, H, fragment.roughness);
-		float G = geometrySmith(N, V, L, fragment.roughness);
+		float NDF = distributionGGX(N, H, roughness);
+		float G = geometrySmith(N, V, L, roughness);
 		vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
 		vec3 kS = F;
@@ -145,7 +148,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 specular = num / max(denom, 0.001);
 
 		float NdotL = max(dot(N, L), 0.0);
-		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
@@ -158,8 +161,8 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 
-		float NDF = distributionGGX(N, H, fragment.roughness);
-		float G = geometrySmith(N, V, L, fragment.roughness);
+		float NDF = distributionGGX(N, H, roughness);
+		float G = geometrySmith(N, V, L, roughness);
 		vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
 		vec3 kS = F;
@@ -171,10 +174,15 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 specular = num / max(denom, 0.001);
 
 		float NdotL = max(dot(N, L), 0.0);
-		Lo += (kD * fragment.albedo / PI + specular) * radiance * NdotL;
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 ambient = vec3(0.03) * fragment.albedo * fragment.ao;
+	vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+	vec3 kD = 1.0 - kS;
+	vec3 irradiance = texture(irradianceMap, N).rgb; // #todo-irradiance: I doubt sampling direction isn't ok...
+	vec3 diffuse    = irradiance * albedo;
+	vec3 ambient    = (kD * diffuse) * fragment.ao;
+
 	vec3 finalColor = ambient + Lo;
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;

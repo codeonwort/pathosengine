@@ -54,16 +54,6 @@ namespace pathos {
 		updateUVData(uvs, numPos * 2);
 		updateNormalData(normals, numPos * 3);
 		updateIndexData(indices, gridX * gridY * 6);
-
-		/*float hw = width / 2, hh = height / 2;
-		GLfloat* positionData = new GLfloat[12]{ -hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0 };
-		GLfloat* uvData = new GLfloat[8]{ 0.0f,0.0f, 1.0f,0.0f, 1.0f,1.0f, 0.0f,1.0f };
-		GLfloat* normalData = new GLfloat[12]{ 0.0f,0,1, 0,0,1, 0,0,1, 0,0,1 };
-		GLuint* indexData = new GLuint[6]{ 0,1,2, 0,2,3 };
-		updatePositionData(positionData, 12);
-		updateUVData(uvData, 8);
-		updateNormalData(normalData, 12);
-		updateIndexData(indexData, 6);*/
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +64,7 @@ namespace pathos {
 	void CubeGeometry::buildGeometry() {
 		float hx = halfSize.x, hy = halfSize.y, hz = halfSize.z;
 		// ccw winding
-		GLfloat* positions = new GLfloat[24]{
+		GLfloat positions[24] = {
 			hx, hy, hz,
 			hx, -hy, hz,
 			-hx, -hy, hz,
@@ -84,8 +74,8 @@ namespace pathos {
 			-hx, -hy, -hz,
 			-hx, hy, -hz
 		};
-		GLfloat* uvs = new GLfloat[16]{ 1,1, 1,0, 0,0, 0,1, 1,1, 1,0, 0,0, 0,1 };
-		GLfloat* normals = new GLfloat[24]{
+		GLfloat uvs[16] = { 1,1, 1,0, 0,0, 0,1, 1,1, 1,0, 0,0, 0,1 };
+		GLfloat normals[24] = {
 			1, 1, 1,
 			1, -1, 1,
 			-1, -1, 1,
@@ -94,7 +84,7 @@ namespace pathos {
 			1, -1, -1,
 			-1, -1, -1,
 			-1, 1, -1 };
-		GLuint* indices = new GLuint[36]{ 0,2,1, 0,3,2, 4,1,5, 4,0,1, 4,3,0, 4,7,3, 3,6,2, 3,7,6, 7,5,6, 7,4,5, 1,6,5, 1,2,6 };
+		GLuint indices[36] = { 0,2,1, 0,3,2, 4,1,5, 4,0,1, 4,3,0, 4,7,3, 3,6,2, 3,7,6, 7,5,6, 7,4,5, 1,6,5, 1,2,6 };
 
 		updatePositionData(positions, 24);
 		updateUVData(uvs, 16);

@@ -8,13 +8,11 @@
 #include "util/resource_finder.h"
 #include "util/renderdoc_integration.h"
 
-#include "FreeImage.h"                    // subsystem: image file loader
+#include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
-
-#pragma comment(lib, "FreeImage.lib")
 
 namespace pathos {
 
@@ -22,6 +20,9 @@ namespace pathos {
 	ConsoleWindow* gConsole = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////
+	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderInitRoutines;
+	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderDestroyRoutines;
+
 	// static
 	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
 		if (gEngine) {
@@ -35,10 +36,19 @@ namespace pathos {
 		return true;
 	}
 
+	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
+	{
+		globalRenderInitRoutines.push_back(initRoutine);
+		if (destroyRoutine) {
+			globalRenderDestroyRoutines.push_back(destroyRoutine);
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: scene(nullptr)
 		, camera(nullptr)
+		, render_device(nullptr)
 		, renderer(nullptr)
 		, timer_query(0)
 		, elapsed_ms(0)
@@ -69,7 +79,8 @@ namespace pathos {
 		BailIfFalse( initializeInput()                );
 		BailIfFalse( initializeAssetStreamer()        );
 		BailIfFalse( initializeOpenGL()               );
-		BailIfFalse( initializeThirdParty()           );
+		BailIfFalse( initializeImageLibrary()         );
+		BailIfFalse( initializeFontSystem()           );
 		BailIfFalse( initializeConsole()              );
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
@@ -153,18 +164,29 @@ namespace pathos {
 			glClearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
 			glClearTexImage(texture2D_grey,  0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
 			glClearTexImage(texture2D_blue,  0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+
+			glObjectLabel(GL_TEXTURE, texture2D_black, -1, "system texture 2D (black)");
+			glObjectLabel(GL_TEXTURE, texture2D_white, -1, "system texture 2D (white)");
+			glObjectLabel(GL_TEXTURE, texture2D_grey, -1, "system texture 2D (grey)");
+			glObjectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
+		}
+
+		for(GlobalRenderRoutine routine : globalRenderInitRoutines) {
+			routine(render_device);
 		}
 
 		return validDevice;
 	}
 
-	bool Engine::initializeThirdParty()
+	bool Engine::initializeImageLibrary()
 	{
-		// FreeImage
-		FreeImage_Initialise();
-		LOG(LogInfo, "FreeImage has been initialized");
+		pathos::initializeImageLibrary();
 
-		// font manager
+		return true;
+	}
+
+	bool Engine::initializeFontSystem()
+	{
 		if (FontManager::init() == false) {
 			LOG(LogError, "[ERROR] Failed to initialize font manager");
 			return false;
@@ -219,6 +241,11 @@ namespace pathos {
 		mainWindow->stopMainLoop();
 
 		assetStreamer->destroy();
+		pathos::destroyImageLibrary();
+
+		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
+			routine(render_device);
+		}
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)

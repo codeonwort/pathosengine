@@ -53,9 +53,19 @@ namespace pathos {
 	class Engine final {
 
 		using ExecProc = std::function<void(const std::string&)>;
+		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
 
+	// Static members
 	public:
 		static bool init(int argc, char** argv, const EngineConfig& conf);
+
+		// [INTERNAL USE ONLY]
+		// Given routine is called right after the render device is initialized.
+		// Use for initialization of global resources.
+		static void internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine);
+
+		static std::vector<GlobalRenderRoutine> globalRenderInitRoutines;
+		static std::vector<GlobalRenderRoutine> globalRenderDestroyRoutines;
 
 	// Public API
 	public:
@@ -94,7 +104,8 @@ namespace pathos {
 		bool initializeInput();
 		bool initializeAssetStreamer();
 		bool initializeOpenGL();
-		bool initializeThirdParty();
+		bool initializeImageLibrary();
+		bool initializeFontSystem();
 		bool initializeConsole();
 		bool initializeRenderer();
 

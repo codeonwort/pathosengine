@@ -5,9 +5,27 @@
 #include "badger/assertion/assertion.h"
 #include <algorithm>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#pragma comment(lib, "FreeImage.lib")
+
 #define DEBUG_IMAGE_LOADER 1
 
 namespace pathos {
+
+	void initializeImageLibrary()
+	{
+		FreeImage_Initialise();
+		LOG(LogInfo, "[ThirdParty] FreeImage %d.%d", FREEIMAGE_MAJOR_VERSION, FREEIMAGE_MINOR_VERSION);
+
+		stbi_set_flip_vertically_on_load(true);
+	}
+
+	void destroyImageLibrary()
+	{
+		FreeImage_DeInitialise();
+	}
 
 	FIBITMAP* loadImage(const char* filename_) {
 		std::string path = ResourceFinder::get().find(filename_);
@@ -130,6 +148,56 @@ namespace pathos {
 		}
 
 		return tex_id;
+	}
+
+	HDRImageMetadata loadHDRImage(const char* inFilename)
+	{
+		std::string path = ResourceFinder::get().find(inFilename);
+		CHECK(path.size() != 0);
+
+		int width, height, nrComponents;
+		float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
+
+#if DEBUG_IMAGE_LOADER
+		LOG(LogDebug, "loadHDRImage: %s (%dx%d)", path.c_str(), width, height);
+#endif
+
+		HDRImageMetadata metadata;
+		metadata.data = data;
+		metadata.width = width;
+		metadata.height = height;
+
+		return metadata;
+	}
+
+	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/)
+	{
+		static int32 label_counter = 0;
+
+		GLuint texture;
+		glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+		glTextureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
+		glTextureSubImage2D(texture, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
+		glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		char label[256];
+		sprintf_s(label, "Texture HDR %d", label_counter);
+		glObjectLabel(GL_TEXTURE, texture, -1, label);
+		label_counter += 1;
+
+		if(deleteBlobData) {
+			stbi_image_free(metadata.data);
+		}
+
+		return texture;
+	}
+
+	void unloadHDRImage(const HDRImageMetadata& metadata)
+	{
+		stbi_image_free(metadata.data);
 	}
 
 }

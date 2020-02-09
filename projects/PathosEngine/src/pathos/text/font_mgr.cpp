@@ -26,7 +26,7 @@ namespace pathos {
 		}
 		FT_Int major, minor, patch;
 		FT_Library_Version(library, &major, &minor, &patch);
-		LOG(LogInfo, "FreeType version: %d.%d.%d", major, minor, patch);
+		LOG(LogInfo, "[ThirdParty] FreeType : %d.%d.%d", major, minor, patch);
 
 		initialized = true;
 		return initialized;
@@ -45,7 +45,7 @@ namespace pathos {
 		}
 		// Release FreeType library
 		if (FT_Done_FreeType(library)) {
-			LOG(LogError, "Error while destroying FreeType library");
+			LOG(LogError, "[ThirdParty] Error while destroying FreeType library");
 			return false;
 		}
 		return true;

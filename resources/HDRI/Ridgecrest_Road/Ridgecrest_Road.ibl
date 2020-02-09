@@ -1,0 +1,45 @@
+[Header]
+ICOfile = "Ridgecrest_Road_Thumb.jpg"
+PREVIEWfile = "Ridgecrest_Road_preview.jpg"
+Name = "Ridgecrest Road"
+Author = "Blochi"
+Location = "California"
+Comment = "High noon on a lonesome desert road, outdoors, direct sunshine"
+GEOlat = 35.545705768843156
+GEOlong = -117.69464492797852
+Link = "http://www.hdrlabs.com/sibl/archive.html"
+Date = "2006:08:12"
+Time = "12:10:00"
+Height = 1.5
+
+[Background]
+BGfile = "Ridgecrest_Road_4k_Bg.jpg"
+BGmap = 1
+BGu = 0.000000
+BGv = 0.000000
+BGheight = 2048
+
+[Enviroment]
+EVfile = "Ridgecrest_Road_Env.hdr"
+EVmap = 1
+EVu = 0.000000
+EVv = 0.000000
+EVheight = 180
+EVmulti = 1.000000
+EVgamma = 1.800000
+
+[Reflection]
+REFfile = "Ridgecrest_Road_Ref.hdr"
+REFmap = 1
+REFu = 0.000000
+REFv = 0.000000
+REFheight = 1024
+REFmulti = 1.000000
+REFgamma = 1.800000
+
+[Sun]
+SUNcolor = 255,255,255
+SUNmulti = 1.200000
+SUNu = 0.348633
+SUNv = 0.188477
+
