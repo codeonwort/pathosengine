@@ -110,7 +110,7 @@ namespace pathos {
 		return irradianceMap;
 	}
 
-	GLuint IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size) {
+	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels) {
 		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 		SCOPED_DRAW_EVENT(PrefilteredEnvMap);
 
@@ -164,7 +164,8 @@ namespace pathos {
 
 		cmdList.flushAllCommands();
 
-		return envMap;
+		outEnvMap = envMap;
+		outMipLevels = maxMipLevels;
 	}
 
 	GLuint IrradianceBaker::bakeBRDFIntegrationMap(uint32 size) {

@@ -15,7 +15,9 @@ layout (binding = 1) uniform sampler2D gbuf1;
 layout (binding = 2) uniform sampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
-layout (binding = 7) uniform samplerCube irradianceMap;
+layout (binding = 7) uniform samplerCube irradianceMap;    // for Diffuse IBL
+layout (binding = 8) uniform samplerCube prefilterEnvMap;  // for Specular IBL
+layout (binding = 9) uniform sampler2D brdfIntegrationMap; // for Specular IBL
 
 in VS_OUT {
 	vec2 screenUV;
@@ -26,6 +28,7 @@ layout (std140, binding = 1) uniform UBO_Unpack {
 	vec4 fogColor;
 	vec4 fogParams;
 	vec4 bloomParams;
+	float prefilterEnvMapMaxLOD;
 } ubo;
 
 // Getters for UBO
@@ -49,6 +52,8 @@ struct fragment_info {
 	float metallic;
 	float roughness;
 	float ao;
+
+	vec3 ws_normal;
 };
 
 void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
@@ -69,6 +74,8 @@ void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	fragment.metallic       = data2.x;
 	fragment.roughness      = data2.y;
 	fragment.ao             = data2.z;
+
+	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
 }
 
 float getShadowing(fragment_info fragment) {
@@ -120,11 +127,18 @@ vec3 phongShading(fragment_info fragment) {
 vec3 CookTorranceBRDF(fragment_info fragment) {
 	vec3 N = fragment.normal;
 	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
+
+	vec3 N_world = fragment.ws_normal;
+	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - fragment.ws_coords);
+	vec3 R = reflect(-V_world, N_world);
+
 	vec3 albedo = fragment.albedo;
+	float metallic = fragment.metallic;
 	float roughness = fragment.roughness;
+	float ao = fragment.ao;
 
 	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, min(albedo, vec3(1.0)), fragment.metallic);
+	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
 	
 	vec3 Lo = vec3(0.0);
 
@@ -141,7 +155,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 		vec3 kS = F;
 		vec3 kD = vec3(1.0) - kS;
-		kD *= 1.0 - fragment.metallic;
+		kD *= 1.0 - metallic;
 
 		vec3 num = NDF * G * F;
 		float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
@@ -167,7 +181,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 		vec3 kS = F;
 		vec3 kD = vec3(1.0) - kS;
-		kD *= 1.0 - fragment.metallic;
+		kD *= 1.0 - metallic;
 
 		vec3 num = NDF * G * F;
 		float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
@@ -177,11 +191,19 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+	vec3 kS = fresnelSchlickRoughness(max(dot(N, V_world), 0.0), F0, roughness);
 	vec3 kD = 1.0 - kS;
-	vec3 irradiance = texture(irradianceMap, N).rgb; // #todo-irradiance: I doubt sampling direction isn't ok...
+	kD *= 1.0 - metallic;
+
+	// #todo-ibl: Needs N in world space :(
+	vec3 irradiance = texture(irradianceMap, N_world).rgb;
 	vec3 diffuse    = irradiance * albedo;
-	vec3 ambient    = (kD * diffuse) * fragment.ao;
+
+	vec3 prefilteredColor = textureLod(prefilterEnvMap, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
+	vec2 envBRDF  = texture(brdfIntegrationMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
+	vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
+
+	vec3 ambient    = (kD * diffuse + specular) * ao;
 
 	vec3 finalColor = ambient + Lo;
 

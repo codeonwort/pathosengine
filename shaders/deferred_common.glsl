@@ -43,6 +43,7 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	
 	vec3 eyeDirection;
 	vec3 eyePosition;
+	vec3 ws_eyePosition;
 
 	uint numDirLights;
 	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];

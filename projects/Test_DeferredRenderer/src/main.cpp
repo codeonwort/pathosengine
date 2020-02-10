@@ -260,8 +260,12 @@ void setupScene() {
 
 		// specular IBL
 		{
-			GLuint prefilteredEnvMap = IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128);
+			GLuint prefilteredEnvMap;
+			uint32 mipLevels;
+			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
 			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+			scene.prefilterEnvMap = prefilteredEnvMap;
+			scene.prefilterEnvMapMipLevels = mipLevels;
 		}
 	}
 
@@ -340,7 +344,14 @@ void setupScene() {
 	//scene.add(ground);
 
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
-		Mesh* ball = new Mesh(geom_sphere, material_pbr);
+		ColorMaterial* ball_material = new ColorMaterial;
+		ball_material->setAlbedo(1.0f, 0.1f, 0.1f);
+		//ball_material->setMetallic((float)i / (float)NUM_BALLS);
+		ball_material->setMetallic(0.0f);
+		ball_material->setRoughness(0.1f);
+
+		//Mesh* ball = new Mesh(geom_sphere, material_pbr);
+		Mesh* ball = new Mesh(geom_sphere, ball_material);
 		ball->getTransform().setScale(5.0f + (float)i * 1.0f);
 		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
 		balls.push_back(ball);
