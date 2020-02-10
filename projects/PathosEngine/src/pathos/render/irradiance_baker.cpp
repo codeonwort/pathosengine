@@ -11,7 +11,10 @@ namespace pathos {
 	GLuint IrradianceBaker::diffuseIrradianceShader = 0xffffffff;
 	GLuint IrradianceBaker::prefilterEnvMapShader = 0xffffffff;
 	GLuint IrradianceBaker::BRDFIntegrationMapShader = 0xffffffff;
+	GLuint IrradianceBaker::internal_BRDFIntegrationMap = 0xffffffff;
+	GLuint IrradianceBaker::dummyVAO = 0;
 	GLuint IrradianceBaker::dummyFBO = 0;
+	PlaneGeometry* IrradianceBaker::fullscreenQuad = nullptr;
 	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
 	glm::mat4 IrradianceBaker::cubeTransforms[6];
 
@@ -164,14 +167,46 @@ namespace pathos {
 		return envMap;
 	}
 
-	static void createIrradianceBakerResources(OpenGLDevice* renderDevice) {
+	GLuint IrradianceBaker::bakeBRDFIntegrationMap(uint32 size) {
+		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
+
+		const GLuint fbo = IrradianceBaker::dummyFBO;
+
+		GLuint brdfLUT;
+		cmdList.createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
+
+		cmdList.viewport(0, 0, size, size);
+		cmdList.useProgram(BRDFIntegrationMapShader);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
+
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+
+		cmdList.flushAllCommands();
+
+		return brdfLUT;
+	}
+
+	void IrradianceBaker::internal_createIrradianceBakerResources(OpenGLDevice* renderDevice) {
 		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
+
+		// Dummy VAO
+		cmdList.createVertexArrays(1, &IrradianceBaker::dummyVAO);
 
 		// Dummy FBO
 		cmdList.createFramebuffers(1, &IrradianceBaker::dummyFBO);
 		cmdList.namedFramebufferDrawBuffer(IrradianceBaker::dummyFBO, GL_COLOR_ATTACHMENT0);
 
-		// Dummy cube
+		// Dummy meshes
+		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
 
 		glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -232,23 +267,45 @@ namespace pathos {
 			IrradianceBaker::prefilterEnvMapShader = pathos::createProgram(vs, fs, "PrefilterEnvMap");
 		}
 
+		// BRDF integration map
+		{
+			Shader vs(GL_VERTEX_SHADER, "BRDFIntegrationMap_VS");
+			Shader fs(GL_FRAGMENT_SHADER, "BRDFIntegrationMap_FS");
+
+			fs.addDefine("FRAGMENT_SHADER 1");
+			fs.addDefine("BRDF_INTEGRATION 1");
+
+			vs.loadSource("fullscreen_quad.glsl");
+			fs.loadSource("specular_ibl.glsl");
+
+			IrradianceBaker::BRDFIntegrationMapShader = pathos::createProgram(vs, fs, "BRDFIntegrationMap");
+
+			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap(512);
+			cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
+		}
+
 		cmdList.flushAllCommands();
 	}
 
-	static void destroyIrradianceBakerResources(OpenGLDevice* renderDevice) {
+	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice) {
 		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
 
+		cmdList.deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
 		cmdList.deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
 		cmdList.deleteProgram(IrradianceBaker::equirectangularToCubemap);
 		cmdList.deleteProgram(IrradianceBaker::diffuseIrradianceShader);
+		cmdList.deleteProgram(IrradianceBaker::prefilterEnvMapShader);
+		cmdList.deleteProgram(IrradianceBaker::BRDFIntegrationMapShader);
+		cmdList.deleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
 
+		delete IrradianceBaker::fullscreenQuad;
 		delete IrradianceBaker::dummyCube;
 	}
 
 	// #todo-misc: Define a macro for static initialization
 	static struct InitIrradianceBaker_0xDEADBEEF {
 		InitIrradianceBaker_0xDEADBEEF() {
-			Engine::internal_registerGlobalRenderRoutine(createIrradianceBakerResources, destroyIrradianceBakerResources);
+			Engine::internal_registerGlobalRenderRoutine(IrradianceBaker::internal_createIrradianceBakerResources, IrradianceBaker::internal_destroyIrradianceBakerResources);
 		}
 	} _init_irradiance_baker_0xDEADBEEF;
 
