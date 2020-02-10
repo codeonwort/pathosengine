@@ -247,13 +247,22 @@ void setupScene() {
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
 
-	// diffuse irradiance
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-		GLuint cubemap = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
-		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemap, 32, true);
-		glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
-		scene.irradianceMap = irradianceMap;
+		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
+
+		// diffuse irradiance
+		{
+			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
+			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
+			scene.irradianceMap = irradianceMap;
+		}
+
+		// specular IBL
+		{
+			GLuint prefilteredEnvMap = IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128);
+			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+		}
 	}
 
 	//---------------------------------------------------------------------------------------
