@@ -46,6 +46,13 @@ void onLoadWavefrontOBJ(OBJLoader* loader) {
 	objModel->getTransform().setScale(50.0f);
 	objModel->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
 
+	for(Material* M : objModel->getMaterials()) {
+		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
+		if(CM) {
+			CM->setRoughness(1.0f);
+		}
+	}
+
 	scene.add(objModel);
 }
 
@@ -346,7 +353,6 @@ void setupScene() {
 	for (auto i = 0u; i < NUM_BALLS; ++i) {
 		ColorMaterial* ball_material = new ColorMaterial;
 		ball_material->setAlbedo(1.0f, 0.1f, 0.1f);
-		//ball_material->setMetallic((float)i / (float)NUM_BALLS);
 		ball_material->setMetallic(0.0f);
 		ball_material->setRoughness(0.1f);
 

@@ -191,11 +191,12 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 kS = fresnelSchlickRoughness(max(dot(N, V_world), 0.0), F0, roughness);
+	vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+
+	vec3 kS = F;
 	vec3 kD = 1.0 - kS;
 	kD *= 1.0 - metallic;
 
-	// #todo-ibl: Needs N in world space :(
 	vec3 irradiance = texture(irradianceMap, N_world).rgb;
 	vec3 diffuse    = irradiance * albedo;
 
