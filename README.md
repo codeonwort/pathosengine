@@ -9,7 +9,7 @@ OpenGL rendering library (for 3d graphics study)
 ## Third-party Libraries
 * OpenGL        : glm, glLoadGen
 * Window system : freeglut
-* Image         : freeimage
+* Image         : freeimage, stb_image
 * Font          : freetype
 * 3D model      : tinyobjloader, assimp
 
