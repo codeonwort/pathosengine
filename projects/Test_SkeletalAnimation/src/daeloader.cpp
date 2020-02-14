@@ -84,8 +84,8 @@ namespace pathos {
 
 				bool isSRGB = texType == aiTextureType_DIFFUSE;
 
-				GLuint texture = pathos::loadTexture(pathos::loadImage(path.c_str()), true, isSRGB);
-				auto it = make_pair(texPath.C_Str(), texture);
+				GLuint texture = pathos::createTextureFromBitmap(pathos::loadImage(path.c_str()), true, isSRGB);
+				auto it = std::make_pair(texPath.C_Str(), texture);
 				textureMapping.insert(it);
 			}
 		};

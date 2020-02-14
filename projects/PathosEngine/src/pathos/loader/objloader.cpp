@@ -384,7 +384,7 @@ namespace pathos {
 				if (textureDB.find(index) == textureDB.end()) {
 					constexpr bool generateMipmap = true;
 					const PendingTexture& pendingTexture = pendingTextureData[index];
-					texture = pathos::loadTexture(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
+					texture = pathos::createTextureFromBitmap(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
 					textureDB.insert(make_pair(index, texture));
 				} else {
 					texture = textureDB[index];

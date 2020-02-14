@@ -15,9 +15,9 @@ namespace pathos {
 	};
 
 	// Load bitmap images by FreeImage
-	FIBITMAP* loadImage(const char* filename);
-	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap, bool sRGB);
-	GLuint loadCubemapTexture(FIBITMAP* dib[], bool generateMipmap = true);
+	FIBITMAP* loadImage(const char* inFilename);
+	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB);
+	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap = true);
 
 	// Load HDR image by stb_image
 	HDRImageMetadata loadHDRImage(const char* inFilename);

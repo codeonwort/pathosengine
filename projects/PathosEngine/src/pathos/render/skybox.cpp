@@ -39,7 +39,6 @@ out VS_OUT { vec3 tc; } vs_out;
 
 void main() {
   vs_out.tc = position;
-  vs_out.tc.y *= -1;
   gl_Position = (viewProj * vec4(position, 1)).xyww;
 }
 )";

@@ -27,8 +27,8 @@ namespace pathos {
 		FreeImage_DeInitialise();
 	}
 
-	FIBITMAP* loadImage(const char* filename_) {
-		std::string path = ResourceFinder::get().find(filename_);
+	FIBITMAP* loadImage(const char* inFilename) {
+		std::string path = ResourceFinder::get().find(inFilename);
 		CHECK(path.size() != 0);
 
 #if DEBUG_IMAGE_LOADER
@@ -56,7 +56,7 @@ namespace pathos {
 		return dib;
 	}
 
-	GLuint loadTexture(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
+	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
 		int w, h;
 		unsigned char* data;
 		GLuint tex_id = 0;
@@ -109,7 +109,7 @@ namespace pathos {
 	* <li> width and height must be same</li>
 	* <li> all images have same bpp (24-bit or 32-bit)</li></ul>
 	*/
-	GLuint loadCubemapTexture(FIBITMAP* dib[], bool generateMipmap) {
+	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap) {
 		int w = FreeImage_GetWidth(dib[0]);
 		int h = FreeImage_GetHeight(dib[0]);
 		if (w != h){
@@ -133,16 +133,15 @@ namespace pathos {
 			return 0;
 		}
 
-		int mapping[6] = { 0, 1, 3, 2, 4, 5 };
-		//int mapping[6] = { 0, 1, 2, 3, 4, 5 };
-		for (int i = 0; i < 6; i++){
-			unsigned char* data = FreeImage_GetBits(dib[i]);
+		for (int32 i = 0; i < 6; i++) {
+			uint8* data = FreeImage_GetBits(dib[i]);
 			GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
 			glTextureSubImage3D(tex_id, 0,
-				0, 0, mapping[i],
+				0, 0, i,
 				w, h, 1,
 				format, GL_UNSIGNED_BYTE, data);
 		}
+
 		if (generateMipmap) {
 			glGenerateTextureMipmap(tex_id);
 		}
