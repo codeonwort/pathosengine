@@ -25,6 +25,7 @@ in VS_OUT {
 	flat uint material_id;
 } fs_in;
 
+// Returns normal vector in view space
 vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
     vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
     vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
@@ -32,7 +33,7 @@ vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
     mat3 TBN = mat3(T, B, N);
 
     vec3 norm = normalize(texture2D(tex_normal, uv).rgb * 2.0 - 1.0);
-    norm = TBN * norm; // into view space
+    norm = TBN * norm;
 
     return norm;
 }
