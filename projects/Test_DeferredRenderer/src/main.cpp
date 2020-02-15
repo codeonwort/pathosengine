@@ -272,6 +272,7 @@ void setupScene() {
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
 			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+
 			scene.prefilterEnvMap = prefilteredEnvMap;
 			scene.prefilterEnvMapMipLevels = mipLevels;
 		}
@@ -361,18 +362,24 @@ void setupScene() {
 	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
-	//scene.add(ground);
+	scene.add(ground);
 
-	for (auto i = 0u; i < NUM_BALLS; ++i) {
-		ColorMaterial* ball_material = new ColorMaterial;
-		ball_material->setAlbedo(1.0f, 0.1f, 0.1f);
-		ball_material->setMetallic(0.0f);
-		ball_material->setRoughness(0.1f);
-
-		//Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		Mesh* ball = new Mesh(geom_cube, ball_material);
-		ball->getTransform().setScale(5.0f + (float)i * 1.0f);
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
+		Mesh* ball = new Mesh(geom_sphere, material_pbr);
+		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
 		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
+		balls.push_back(ball);
+		scene.add(ball);
+	}
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
+		ColorMaterial* ball_material = new ColorMaterial;
+		ball_material->setAlbedo(0.5f, 0.3f, 0.3f);
+		ball_material->setMetallic(0.2f);
+		ball_material->setRoughness((float)i / NUM_BALLS);
+
+		Mesh* ball = new Mesh(geom_cube, ball_material);
+		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
+		ball->getTransform().setLocation(-550.0f, 50.0f, 300.0f - 100.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -385,15 +392,16 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// sky
 	//---------------------------------------------------------------------------------------
-	Skybox* skybox = new Skybox(cubeTexture);
-	skybox->setLOD(1.0f);
-	scene.sky = skybox;
+	//Skybox* skybox = new Skybox(cubeTexture);
+	//skybox->setLOD(1.0f);
+	//scene.sky = skybox;
 
 	//scene.sky = new AtmosphereScattering;
 
 	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
-	//GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	//scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 }
 
 void tick(float deltaSeconds)

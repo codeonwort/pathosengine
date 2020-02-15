@@ -215,11 +215,6 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		finalColor = finalColor * getShadowing(fragment);
 	}
 
-	// #debug-specular-ibl
-	//R = reflect(-V_world, N_world);
-	////finalColor = textureLod(prefilterEnvMap, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
-	//finalColor = textureLod(prefilterEnvMap, R, 0).rgb;
-
 	return finalColor;
 }
 
