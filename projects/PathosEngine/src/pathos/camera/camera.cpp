@@ -1,6 +1,7 @@
 #include "pathos/camera/camera.h"
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include "../util/log.h"
 
 namespace pathos {
 
@@ -59,8 +60,7 @@ namespace pathos {
 		return transform.inverseTransformVector(glm::vec3(0.0f, 0.0f, -1.0f));
 	}
 	glm::vec3 Camera::getPosition() const {
-		calculateViewMatrix();
-		return -transform.getPosition();
+		return -movement;
 	}
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
@@ -99,7 +99,7 @@ namespace pathos {
 			up = glm::vec3(1.0f, 0.0f, 0.0f);
 		}
 
-		glm::vec3 right = glm::cross(forward, up);
+		glm::vec3 right = glm::normalize(glm::cross(forward, up));
 		up = glm::cross(right, forward);
 
 		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);

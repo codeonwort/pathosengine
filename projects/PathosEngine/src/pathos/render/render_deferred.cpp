@@ -44,12 +44,15 @@ namespace pathos {
 		float                 __pad0;
 
 		glm::vec3             eyePosition;
+		float                 __pad1;
+
+		glm::vec3             ws_eyePosition;
 		uint32                numDirLights;
 
 		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
 
 		uint32                numPointLights;
-		glm::vec3             __pad1;
+		glm::vec3             __pad2;
 
 		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
@@ -387,6 +390,8 @@ namespace pathos {
 
 		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
 		data.eyePosition  = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+
+		data.ws_eyePosition = camera->getPosition();
 
 		data.numDirLights = pathos::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
 		if (data.numDirLights > 0) {

@@ -2,7 +2,9 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/irradiance_baker.h"
 #include "pathos/util/log.h"
+#include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -13,6 +15,7 @@ namespace pathos {
 		glm::vec4 fogColor;
 		glm::vec4 fogParams;           // (bottomY, topY, ?, ?)
 		glm::vec4 bloomParams;
+		float prefilterEnvMapMaxLOD;
 	};
 
 	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
@@ -124,19 +127,22 @@ void main() {
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
 		cmdList.bindTextureUnit(7, scene->irradianceMap);
+		cmdList.bindTextureUnit(8, scene->prefilterEnvMap);
+		cmdList.bindTextureUnit(9, IrradianceBaker::getBRDFIntegrationMap_512());
 
 		cmdList.disable(GL_DEPTH_TEST);
 
 		UBO_Unpack uboData;
-		uboData.enabledTechniques1.x = cvar_enable_shadow.getInt();
-		uboData.enabledTechniques1.y = cvar_enable_fog.getInt();
-		uboData.fogColor             = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
-		uboData.fogParams.x          = cvar_fog_bottom.getFloat();
-		uboData.fogParams.y          = cvar_fog_top.getFloat();
-		uboData.fogParams.z          = cvar_fog_attenuation.getFloat();
-		uboData.bloomParams.x        = cvar_bloom_strength.getFloat();
-		uboData.bloomParams.y        = cvar_bloom_min.getFloat();
-		uboData.bloomParams.z        = cvar_bloom_max.getFloat();
+		uboData.enabledTechniques1.x  = cvar_enable_shadow.getInt();
+		uboData.enabledTechniques1.y  = cvar_enable_fog.getInt();
+		uboData.fogColor              = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
+		uboData.fogParams.x           = cvar_fog_bottom.getFloat();
+		uboData.fogParams.y           = cvar_fog_top.getFloat();
+		uboData.fogParams.z           = cvar_fog_attenuation.getFloat();
+		uboData.bloomParams.x         = cvar_bloom_strength.getFloat();
+		uboData.bloomParams.y         = cvar_bloom_min.getFloat();
+		uboData.bloomParams.z         = cvar_bloom_max.getFloat();
+		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
 		ubo_unpack.update(cmdList, 1, &uboData);
 
 		quad->activate_position_uv(cmdList);

@@ -7,6 +7,7 @@
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
+#define DEBUG_SKYBOX          0
 
 #if VISUALIZE_CSM_FRUSTUM
 #include "pathos/mesh/geometry_procedural.h"
@@ -45,6 +46,13 @@ void onLoadWavefrontOBJ(OBJLoader* loader) {
 	objModel->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	objModel->getTransform().setScale(50.0f);
 	objModel->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
+
+	for(Material* M : objModel->getMaterials()) {
+		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
+		if(CM) {
+			CM->setRoughness(1.0f);
+		}
+	}
 
 	scene.add(objModel);
 }
@@ -247,29 +255,55 @@ void setupScene() {
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
 	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
 
-	// diffuse irradiance
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-		GLuint cubemap = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
-		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemap, 32, true);
-		glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
-		scene.irradianceMap = irradianceMap;
+		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
+
+		// diffuse irradiance
+		{
+			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
+			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
+			scene.irradianceMap = irradianceMap;
+		}
+
+		// specular IBL
+		{
+			GLuint prefilteredEnvMap;
+			uint32 mipLevels;
+			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
+			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+
+			scene.prefilterEnvMap = prefilteredEnvMap;
+			scene.prefilterEnvMapMipLevels = mipLevels;
+		}
 	}
 
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	const char* cubeImgName[6] = {
+#if DEBUG_SKYBOX
+	std::array<const char*,6> cubeImgName = {
+		"resources/placeholder/cubemap_right.jpg",
+		"resources/placeholder/cubemap_left.jpg",
+		"resources/placeholder/cubemap_top.jpg",
+		"resources/placeholder/cubemap_bottom.jpg",
+		"resources/placeholder/cubemap_front.jpg",
+		"resources/placeholder/cubemap_back.jpg"
+	};
+#else
+	std::array<const char*, 6> cubeImgName = {
 		"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
 		"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
 		"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
 	};
-	FIBITMAP* cubeImg[6];
-	for (int i = 0; i < 6; i++) cubeImg[i] = pathos::loadImage(cubeImgName[i]);
-	GLuint cubeTexture = pathos::loadCubemapTexture(cubeImg, true);
+#endif
+	std::array<FIBITMAP*, 6> cubeImg;
+	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
+	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
+	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
 
-	GLuint tex = pathos::loadTexture(loadImage("resources/154.jpg"), true, true);
-	GLuint tex_norm = pathos::loadTexture(loadImage("resources/154_norm.jpg"), true, false);
+	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/154.jpg"), true, true);
+	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_color = new ColorMaterial;
@@ -286,17 +320,17 @@ void setupScene() {
 	{
 		constexpr bool sRGB = true;
 #if 1
-		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), true, !sRGB);
-		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), true, !sRGB);
-		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), true, !sRGB);
+		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), true, sRGB);
+		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), true, !sRGB);
+		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), true, !sRGB);
+		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), true, !sRGB);
+		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), true, !sRGB);
 #else
-		GLuint albedo		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), true, !sRGB);
-		GLuint metallic		= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"), true, !sRGB);
-		GLuint ao			= pathos::loadTexture(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"), true, !sRGB);
+		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"), true, sRGB);
+		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), true, !sRGB);
+		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"), true, !sRGB);
+		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"), true, !sRGB);
+		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"), true, !sRGB);
 #endif
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
@@ -328,12 +362,24 @@ void setupScene() {
 	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
 	ground->castsShadow = false;
-	//scene.add(ground);
+	scene.add(ground);
 
-	for (auto i = 0u; i < NUM_BALLS; ++i) {
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().setScale(5.0f + (float)i * 1.0f);
+		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
 		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
+		balls.push_back(ball);
+		scene.add(ball);
+	}
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
+		ColorMaterial* ball_material = new ColorMaterial;
+		ball_material->setAlbedo(0.5f, 0.3f, 0.3f);
+		ball_material->setMetallic(0.2f);
+		ball_material->setRoughness((float)i / NUM_BALLS);
+
+		Mesh* ball = new Mesh(geom_cube, ball_material);
+		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
+		ball->getTransform().setLocation(-550.0f, 50.0f, 300.0f - 100.0f * i);
 		balls.push_back(ball);
 		scene.add(ball);
 	}
@@ -346,15 +392,16 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// sky
 	//---------------------------------------------------------------------------------------
-	Skybox* skybox = new Skybox(cubeTexture);
-	skybox->setLOD(1.0f);
+	//Skybox* skybox = new Skybox(cubeTexture);
+	//skybox->setLOD(1.0f);
 	//scene.sky = skybox;
 
 	//scene.sky = new AtmosphereScattering;
 
-	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
-	//GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	//scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 }
 
 void tick(float deltaSeconds)

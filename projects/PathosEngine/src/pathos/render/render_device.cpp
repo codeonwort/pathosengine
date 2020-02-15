@@ -78,6 +78,8 @@ namespace pathos {
 		glDebugMessageCallback(glErrorCallback, 0);
 #endif
 
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));
 		LOG(LogInfo, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 

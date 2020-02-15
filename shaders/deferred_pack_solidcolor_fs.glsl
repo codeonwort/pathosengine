@@ -26,7 +26,7 @@ void main() {
 	vec4 outvec2 = vec4(0);
 
 	vec3 albedo = uboPerObject.albedo.xyz;
-	vec3 normal = fs_in.normal;
+	vec3 normal = normalize(fs_in.normal);
 
 	outvec0.x = packHalf2x16(albedo.xy);
 	outvec0.y = packHalf2x16(vec2(albedo.z, normal.x));

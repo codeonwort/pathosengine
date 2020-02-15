@@ -157,7 +157,7 @@ namespace pathos {
 					0,
 					gEngine->getSystemTexture2DBlue(),   // #todo-loader: Parse normal texture
 					gEngine->getSystemTexture2DGrey(),   // #todo-loader: Parse metallic texture
-					gEngine->getSystemTexture2DBlack(),  // #todo-loader: Parse roughness texture
+					gEngine->getSystemTexture2DWhite(),  // #todo-loader: Parse roughness texture
 					gEngine->getSystemTexture2DWhite()); // #todo-loader: Parse AO texture
 #else
 				M = new TextureMaterial(0);
@@ -384,7 +384,7 @@ namespace pathos {
 				if (textureDB.find(index) == textureDB.end()) {
 					constexpr bool generateMipmap = true;
 					const PendingTexture& pendingTexture = pendingTextureData[index];
-					texture = pathos::loadTexture(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
+					texture = pathos::createTextureFromBitmap(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
 					textureDB.insert(make_pair(index, texture));
 				} else {
 					texture = textureDB[index];

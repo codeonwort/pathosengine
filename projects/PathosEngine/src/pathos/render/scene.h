@@ -45,7 +45,11 @@ namespace pathos {
 
 		std::vector<DirectionalLight*> directionalLights;
 		std::vector<PointLight*> pointLights;
+
+		// IBL
 		GLuint irradianceMap = 0;
+		GLuint prefilterEnvMap = 0;
+		uint32 prefilterEnvMapMipLevels = 0;
 
 	protected:
 		std::vector<PointLightProxy> pointLightBuffer;

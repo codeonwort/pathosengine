@@ -21,6 +21,8 @@ namespace pathos {
 		MATERIAL_ID materialID = MATERIAL_ID::INVALID;
 
 	public:
+		virtual ~Material() = default;
+
 		MATERIAL_ID getMaterialID() { return materialID; }
 
 	};

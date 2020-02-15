@@ -14,11 +14,29 @@ namespace pathos {
 		// size    : size of the cubemap that will be returned
 		static GLuint bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap);
 
+		static void bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels);
+
+		// Default BRDF integration map of 512 size
+		static GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
+
+		static GLuint bakeBRDFIntegrationMap(uint32 size);
+
+		static void internal_createIrradianceBakerResources(class OpenGLDevice* renderDevice);
+		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice);
+
+	private:
 		static GLuint equirectangularToCubemap;
 		static GLuint diffuseIrradianceShader;
-		static GLuint dummyVAO; // #todo-deprecated: delete this
-		static GLuint dummyFBO;
+		static GLuint prefilterEnvMapShader;
+		static GLuint BRDFIntegrationMapShader;
+
+		static GLuint dummyVAO;
+		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
+		static class PlaneGeometry* fullscreenQuad;
 		static class CubeGeometry* dummyCube;
+		static glm::mat4 cubeTransforms[6];
+
+		static GLuint internal_BRDFIntegrationMap;
 
 	};
 

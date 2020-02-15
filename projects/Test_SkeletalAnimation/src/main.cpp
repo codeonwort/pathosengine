@@ -143,17 +143,17 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	const char* cubeImgName[6] = {
+	std::array<const char*,6> cubeImgName = {
 		"cubemap1/pos_x.jpg", "cubemap1/neg_x.jpg",
 		"cubemap1/pos_y.jpg", "cubemap1/neg_y.jpg",
 		"cubemap1/pos_z.jpg", "cubemap1/neg_z.jpg"
 	};
-	FIBITMAP* cubeImg[6];
-	for (int i = 0; i < 6; i++) cubeImg[i] = loadImage(cubeImgName[i]);
-	GLuint cubeTexture = loadCubemapTexture(cubeImg);
+	std::array<FIBITMAP*,6> cubeImg;
+	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
+	GLuint cubeTexture = createCubemapTextureFromBitmap(cubeImg.data());
 
-	GLuint tex = loadTexture(loadImage("154.jpg"), true, true);
-	GLuint tex_norm = loadTexture(loadImage("154_norm.jpg"), true, false);
+	GLuint tex = createTextureFromBitmap(loadImage("154.jpg"), true, true);
+	GLuint tex_norm = createTextureFromBitmap(loadImage("154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_color = new ColorMaterial;

@@ -14,7 +14,6 @@ layout (location = 0) uniform mat4 transform;
 void main() {
     local_position = position;
     gl_Position = transform * vec4(local_position, 1.0);
-    local_position.y *= -1;
 }
 #endif
 
