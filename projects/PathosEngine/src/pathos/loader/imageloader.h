@@ -3,6 +3,8 @@
 #include "gl_core.h"
 #include <FreeImage.h>
 
+#include <array>
+
 namespace pathos {
 
 	void initializeImageLibrary();
@@ -14,8 +16,19 @@ namespace pathos {
 		uint32 height;
 	};
 
+	enum class ECubemapImagePreference : uint8 {
+		HLSL, // Images are optimal for HLSL. Need to rearrange and flip the images.
+		GLSL, // It's OK to load the images as is.
+	};
+
+	// #todo-image-loader: Don't expose FIBITMAP
 	// Load bitmap images by FreeImage
-	FIBITMAP* loadImage(const char* inFilename);
+	FIBITMAP* loadImage(const char* inFilename, bool flipHorizontal = false, bool flipVertical = false);
+
+	// #todo-image-loader: Don't expose FIBITMAP
+	// Load bitmap images for cubemap. Return value is the number of faces successfully loaded.
+	int32 loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference, std::array<FIBITMAP*,6>& outImages);
+
 	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB);
 	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap = true);
 

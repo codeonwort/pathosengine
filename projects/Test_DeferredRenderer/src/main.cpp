@@ -7,7 +7,7 @@
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
-#define DEBUG_SKYBOX          1
+#define DEBUG_SKYBOX          0
 
 #if VISUALIZE_CSM_FRUSTUM
 #include "pathos/mesh/geometry_procedural.h"
@@ -281,7 +281,7 @@ void setupScene() {
 	// create materials
 	//---------------------------------------------------------------------------------------
 #if DEBUG_SKYBOX
-	const char* cubeImgName[6] = {
+	std::array<const char*,6> cubeImgName = {
 		"resources/placeholder/cubemap_right.jpg",
 		"resources/placeholder/cubemap_left.jpg",
 		"resources/placeholder/cubemap_top.jpg",
@@ -290,15 +290,15 @@ void setupScene() {
 		"resources/placeholder/cubemap_back.jpg"
 	};
 #else
-	const char* cubeImgName[6] = {
+	std::array<const char*, 6> cubeImgName = {
 		"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
 		"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
 		"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
 	};
 #endif
-	FIBITMAP* cubeImg[6];
-	for (int32 i = 0; i < 6; i++) cubeImg[i] = pathos::loadImage(cubeImgName[i]);
-	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg, true);
+	std::array<FIBITMAP*, 6> cubeImg;
+	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
+	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
 	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
 
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/154.jpg"), true, true);

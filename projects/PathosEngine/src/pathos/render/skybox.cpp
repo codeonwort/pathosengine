@@ -38,8 +38,8 @@ layout (location = 0) uniform mat4 viewProj;
 out VS_OUT { vec3 tc; } vs_out;
 
 void main() {
-  vs_out.tc = position;
-  gl_Position = (viewProj * vec4(position, 1)).xyww;
+	vs_out.tc = position;
+	gl_Position = (viewProj * vec4(position, 1)).xyww;
 }
 )";
 

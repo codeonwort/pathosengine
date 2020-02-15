@@ -3,14 +3,11 @@
 #include "pathos/util/resource_finder.h"
 
 #include "badger/assertion/assertion.h"
-#include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #pragma comment(lib, "FreeImage.lib")
-
-#define DEBUG_IMAGE_LOADER 1
 
 namespace pathos {
 
@@ -27,46 +24,65 @@ namespace pathos {
 		FreeImage_DeInitialise();
 	}
 
-	FIBITMAP* loadImage(const char* inFilename) {
+	FIBITMAP* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {
 		std::string path = ResourceFinder::get().find(inFilename);
 		CHECK(path.size() != 0);
 
-#if DEBUG_IMAGE_LOADER
 		LOG(LogDebug, "load image: %s", path.c_str());
-#endif
 
-		FIBITMAP *img = NULL, *dib = NULL;
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
-		img = FreeImage_Load(fif, path.c_str(), 0);
+		FIBITMAP* img = FreeImage_Load(fif, path.c_str(), 0);
+
 		if (!img) {
 			LOG(LogError, "Error while loading: %s", path.c_str());
+			return nullptr;
 		}
+
+		if (flipHorizontal) {
+			FreeImage_FlipHorizontal(img);
+		}
+		if (flipVertical) {
+			FreeImage_FlipVertical(img);
+		}
+
 		unsigned int bpp = FreeImage_GetBPP(img);
-		dib = FreeImage_ConvertTo32Bits(img);
-		/* 
-		if (bpp == 32) {
-			//
-		} else if (bpp == 24) {
-			dib = FreeImage_ConvertTo24Bits(img);
-		} else {
-			LOG(LogError, "Unexpected BPP of %d: %s", bpp, filename_);
+		if (bpp != 32) {
+			FIBITMAP* img32 = FreeImage_ConvertTo32Bits(img);
+			FreeImage_Unload(img);
+			return img32;
 		}
-		*/
-		FreeImage_Unload(img);
-		return dib;
+
+		return img;
+	}
+
+	int32 loadCubemapImages(const std::array<const char*, 6>& inFilenames, ECubemapImagePreference preference, std::array<FIBITMAP*, 6>& outImages) {
+		int32 ret = 0;
+		const int32 glslOrder[6] = { 0, 1, 2, 3, 5, 4 };
+
+		for (int32 i = 0; i < 6; ++i) {
+			bool flipH = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
+			bool flipV = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
+			int32 j = preference == ECubemapImagePreference::HLSL ? glslOrder[i] : i;
+			outImages[i] = loadImage(inFilenames[j], flipH, flipV);
+
+			if(outImages[i] != nullptr) {
+				ret += 1;
+			}
+		}
+
+		return ret;
 	}
 
 	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
 		int w, h;
-		unsigned char* data;
+		uint8* data;
 		GLuint tex_id = 0;
 
 		data = FreeImage_GetBits(dib);
 		w = FreeImage_GetWidth(dib);
 		h = FreeImage_GetHeight(dib);
-#if DEBUG_IMAGE_LOADER
+
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
-#endif
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &tex_id);
 
@@ -101,13 +117,11 @@ namespace pathos {
 	}
 
 	/**
-	* Generates cubemap texture from six faces.<br/>
-	* image order: positiveX, negativeX, positiveY, negativeY, positiveZ, negativeZ<br/>
-	* this function regards all width and height values are same as those of the first image.
-	* requirements<br/>
-	* <ul><li>six images must have same width and height</li>
-	* <li> width and height must be same</li>
-	* <li> all images have same bpp (24-bit or 32-bit)</li></ul>
+	* Generates cubemap texture from six faces.
+	* 
+	* Requirements
+	* - Image order: +X, -X, +Y, -Y, +Z, -Z
+	* - All images must have same width/height/bpp.
 	*/
 	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap) {
 		int w = FreeImage_GetWidth(dib[0]);
