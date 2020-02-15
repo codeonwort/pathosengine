@@ -1,7 +1,6 @@
 #include "pathos/camera/camera.h"
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include "../util/log.h"
 
 namespace pathos {
 
