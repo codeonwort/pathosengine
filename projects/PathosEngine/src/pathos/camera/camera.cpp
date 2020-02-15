@@ -99,7 +99,7 @@ namespace pathos {
 			up = glm::vec3(1.0f, 0.0f, 0.0f);
 		}
 
-		glm::vec3 right = glm::cross(forward, up);
+		glm::vec3 right = glm::normalize(glm::cross(forward, up));
 		up = glm::cross(right, forward);
 
 		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
