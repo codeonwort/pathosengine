@@ -21,9 +21,9 @@ namespace pathos {
 	GLuint createProgram(Shader& shader, const char* debugName);                                           // single shader (for program pipeline)
 	GLuint createComputeProgram(const std::string& shader_source, const char* debugName);                  // compute shader
 
-	// #todo: remove this
+	// #todo-shader: remove this
 	GLuint createProgram(std::vector<ShaderSource*>& sources, const char* debugName);                      // multiple shader sources
-	// #todo: temp
+	// #todo-shader: temp
 	void dumpShaderSource(ShaderSource& shader, const char* filename);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
