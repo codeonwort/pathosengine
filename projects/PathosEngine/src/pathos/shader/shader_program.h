@@ -41,9 +41,9 @@ namespace pathos {
 		virtual ~ShaderStage();
 
 		// This can be called multiple times for runtime shader recompilation.
-		virtual void reload() = 0;
+		virtual bool compile() = 0;
 
-		inline GLuint getShaderStage() const { return stageName; }
+		inline GLuint getGLName() const { return stageName; }
 		inline const std::string& getShaderSource() const { return shaderSource; }
 
 	private:
