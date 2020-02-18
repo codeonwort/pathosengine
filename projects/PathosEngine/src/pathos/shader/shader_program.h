@@ -21,12 +21,12 @@ namespace pathos {
 
 		void reload();
 
-		inline bool isValid() const { return programName != 0 && programName != 0xffffffff; }
-		inline GLuint getGLName() const { return programName; }
+		inline bool isValid() const { return glName != 0 && glName != 0xffffffff; }
+		inline GLuint getGLName() const { return glName; }
 
 	private:
 		const char* debugName;
-		GLuint programName;
+		GLuint glName;
 
 		std::vector<ShaderStage*> shaderStages;
 
@@ -35,22 +35,37 @@ namespace pathos {
 	// Represents one of VS, GS, TES, TCS, or FS.
 	// #todo-shader-rework: Replace pathos::Shader with this.
 	class ShaderStage {
+		friend class ShaderProgram;
 
 	public:
-		ShaderStage(GLuint inStageName, const char* inDebugName);
+		ShaderStage(GLenum inShaderType, const char* inDebugName);
 		virtual ~ShaderStage();
 
-		// This can be called multiple times for runtime shader recompilation.
-		virtual bool compile() = 0;
+		// Child classes override this method to call addDefine() and setFilepath()
+		virtual void construct() = 0;
 
-		inline GLuint getGLName() const { return stageName; }
-		inline const std::string& getShaderSource() const { return shaderSource; }
+	protected:
+		inline void addDefine(const char* define) { defines.push_back(define); }
+		inline void addDefine(const std::string& define) { defines.push_back(define); }
+		inline void setFilepath(const char* inFilepath) { filepath = inFilepath; }
 
 	private:
-		GLuint stageName;
+		bool loadSource();
+		bool tryCompile();
+		bool finishCompile();
+
+		inline GLuint getGLName() const { return glName; }
+
+	private:
+		GLenum shaderType;
 		const char* debugName;
+
+		GLuint glName;
+		GLuint pendingGLName;
 		
-		std::string shaderSource;
+		const char* filepath;
+		std::vector<std::string> defines;
+		std::vector<std::string> sourceCode;
 
 	};
 
