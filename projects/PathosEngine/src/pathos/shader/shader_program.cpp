@@ -1,7 +1,11 @@
 #include "shader_program.h"
 #include "pathos/util/log.h"
+#include "pathos/util/resource_finder.h"
 
 #include "badger/assertion/assertion.h"
+
+#include <fstream>
+#include <sstream>
 
 #define DUMP_SHADER_SOURCE 0
 
@@ -56,9 +60,7 @@ namespace pathos {
 			std::vector<GLchar> infoLog(maxLength);
 			glGetProgramInfoLog(glName, maxLength, &maxLength, infoLog.data());
 
-			LOG(LogError, "program link error: %s", infoLog.data());
-			LOG(LogError, "link error code: %d", glGetError());
-			LOG(LogError, "program was not created, return NULL");
+			LOG(LogError, "program link error(code=%d): %s", glGetError(), infoLog.data());
 
 			glDeleteProgram(glName);
 			glName = oldGLName;
@@ -98,7 +100,80 @@ namespace pathos {
 
 	bool ShaderStage::loadSource()
 	{
-		// todo
+		std::string fullFilepath = ResourceFinder::get().find(filepath);
+
+		if (fullFilepath.size() == 0) {
+			LOG(LogError, "[%s]: Couldn't find file: %s", __FUNCTION__, filepath);
+			return false;
+		}
+
+		std::ifstream fileStream(fullFilepath);
+		if (fileStream.is_open() == false) {
+			LOG(LogError, "[%s]: Couldn't open file: %s", __FUNCTION__, filepath);
+			return false;
+		}
+
+		std::ostringstream codeStream;
+		codeStream << fileStream.rdbuf();
+		std::string fullCode = std::move(codeStream.str());
+
+		size_t version_start = fullCode.find("#version");
+		if (version_start == std::string::npos) {
+			LOG(LogError, "[%s]: GLSL source file should contain '#version' statement", __FUNCTION__);
+			return false;
+		}
+
+		size_t version_end = fullCode.find_first_of('\n', version_start);
+
+		// Add defines
+		if (defines.size() > 0) {
+			codeStream.clear();
+			codeStream.str("");
+			// Put #version back
+			codeStream << fullCode.substr(version_start, version_end - version_start + 1);
+			for (const std::string& def : defines) {
+				codeStream << "#define " << def << '\n';
+			}
+			codeStream << fullCode.substr(version_end + 1);
+			fullCode = std::move(codeStream.str());
+		}
+
+		sourceCode.clear();
+
+		size_t find_offset = 0u;
+		while (true) {
+			// #todo-shader: Need to skip '#include' in comments
+			size_t include_start = fullCode.find("#include", find_offset);
+			if (include_start == std::string::npos) {
+				break;
+			}
+
+			size_t include_end = fullCode.find_first_of('\n', include_start);
+			sourceCode.emplace_back(fullCode.substr(0, include_start));
+			std::string include_line = fullCode.substr(include_start, include_end - include_start);
+
+			size_t quote_start = include_line.find('"');
+			size_t quote_end = include_line.find('"', quote_start + 1);
+			assert(quote_start != string::npos && quote_end != string::npos);
+
+			// #todo-shader: Support recursive include?
+			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
+			std::string include_filepath = ResourceFinder::get().find(include_file);
+			std::ifstream subfile(include_filepath);
+			if (!subfile.is_open()) {
+				LOG(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
+				return false;
+			}
+			std::ostringstream substream;
+			substream << subfile.rdbuf();
+			sourceCode.emplace_back(substream.str());
+
+			fullCode = fullCode.substr(include_end + 1);
+		}
+
+		sourceCode.emplace_back(fullCode);
+
+		return true;
 	}
 
 	bool ShaderStage::tryCompile()
@@ -106,6 +181,8 @@ namespace pathos {
 		if (pendingGLName != 0) {
 			glDeleteShader(pendingGLName);
 		}
+
+		loadSource();
 
 		// #todo-shader-rework: Output shader code to intermediate/shader_dump
 #if DUMP_SHADER_SOURCE
