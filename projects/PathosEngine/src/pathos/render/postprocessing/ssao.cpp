@@ -1,6 +1,7 @@
 #include "ssao.h"
 #include "pathos/console.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
 
 #include "badger/math/random.h"
@@ -21,6 +22,27 @@ namespace pathos {
 		uint32 pointCount;
 		uint32 randomizePoints; // bool in shader
 	};
+
+	class SSAO_Compute : public ShaderStage {
+		
+	public:
+		SSAO_Compute()
+			: ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute")
+		{
+			setFilepath("ssao_ao.glsl");
+		}
+
+		virtual void construct() override
+		{
+		}
+
+	};
+
+	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
+
+}
+
+namespace pathos {
 
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
@@ -105,7 +127,10 @@ namespace pathos {
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 16.0f);
 			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 16.0f);
 
-			cmdList.useProgram(program_ao);
+			// #todo-shader-rework: No, no. Macro and string hash is not the right way.
+			ShaderProgram* program_ao_test = FIND_SHADER_PROGRAM(Program_SSAO_Compute);
+			cmdList.useProgram(program_ao_test->getGLName());
+			//cmdList.useProgram(program_ao);
 
 			UBO_SSAO uboData;
 			uboData.ssaoRadius      = cvar_ssao_radius.getFloat();

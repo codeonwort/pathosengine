@@ -11,15 +11,34 @@
 
 namespace pathos {
 
+	ShaderProgram* ShaderDB::find(const char* programClassName)
+	{
+		auto it = mapping.find(COMPILE_TIME_CRC32_STR(programClassName));
+		CHECK(it != mapping.end());
+
+		ShaderProgram* program = it->second;
+		program->checkFirstLoad();
+		return program;
+	}
+
 	ShaderProgram::ShaderProgram(const char* inDebugName)
 		: debugName(inDebugName)
 		, glName(0xffffffff)
+		, firstLoad(true)
 	{
+		uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
+		ShaderDB::get().registerProgram(programHash, this);
 	}
 
 	ShaderProgram::~ShaderProgram()
 	{
 		CHECK(isValid());
+		ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
+	}
+
+	void ShaderProgram::addShaderStage(ShaderStage* shaderStage)
+	{
+		shaderStages.push_back(shaderStage);
 	}
 
 	void ShaderProgram::reload()
@@ -72,11 +91,22 @@ namespace pathos {
 		}
 	}
 
+	void ShaderProgram::checkFirstLoad()
+	{
+		if (firstLoad) {
+			firstLoad = false;
+			reload();
+		}
+	}
+
 	////////////////////////////////////////////////////////////
 
 	ShaderStage::ShaderStage(GLenum inShaderType, const char* inDebugName)
 		: shaderType(inShaderType)
 		, debugName(inDebugName)
+		, glName(0)
+		, pendingGLName(0)
+		, filepath(nullptr)
 	{
 		CHECK( inShaderType == GL_VERTEX_SHADER
 			|| inShaderType == GL_GEOMETRY_SHADER
@@ -85,21 +115,19 @@ namespace pathos {
 			|| inShaderType == GL_FRAGMENT_SHADER
 			|| inShaderType == GL_COMPUTE_SHADER);
 		CHECK(inDebugName != nullptr);
-
-		glName = glCreateShader(shaderType);
-		glObjectLabel(GL_SHADER, glName, -1, inDebugName);
-		pendingGLName = 0;
-
-		filepath = nullptr;
 	}
 
 	ShaderStage::~ShaderStage()
 	{
-		glDeleteShader(glName);
+		if (glName != 0) {
+			glDeleteShader(glName);
+		}
 	}
 
 	bool ShaderStage::loadSource()
 	{
+		CHECK(filepath != nullptr);
+
 		std::string fullFilepath = ResourceFinder::get().find(filepath);
 
 		if (fullFilepath.size() == 0) {
@@ -154,7 +182,7 @@ namespace pathos {
 
 			size_t quote_start = include_line.find('"');
 			size_t quote_end = include_line.find('"', quote_start + 1);
-			assert(quote_start != string::npos && quote_end != string::npos);
+			CHECK(quote_start != std::string::npos && quote_end != std::string::npos);
 
 			// #todo-shader: Support recursive include?
 			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
@@ -199,7 +227,7 @@ namespace pathos {
 		glCompileShader(pendingGLName);
 
 		GLint success;
-		glGetShaderiv(glName, GL_COMPILE_STATUS, &success);
+		glGetShaderiv(pendingGLName, GL_COMPILE_STATUS, &success);
 
 		if (success == GL_FALSE) {
 			GLint logSize;
@@ -229,6 +257,8 @@ namespace pathos {
 
 		glName = pendingGLName;
 		pendingGLName = 0;
+
+		glObjectLabel(GL_SHADER, glName, -1, debugName);
 
 		return true;
 	}
