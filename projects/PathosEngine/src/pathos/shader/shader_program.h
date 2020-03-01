@@ -139,6 +139,80 @@ namespace pathos {
 			: ShaderProgram(inDebugName) {}                             \
 	};                                                                  \
 
+#define DEFINE_SHADER_PROGRAM2(ShaderProgramClass, Stage1, Stage2)      \
+	class ShaderProgramClass : public ShaderProgram {                   \
+	public:                                                             \
+		static ShaderProgramClass& get() {                              \
+			static ShaderProgramClass instance(#ShaderProgramClass);    \
+			if (instance.internal_justInstantiated) {                   \
+				instance.internal_justInstantiated = false;             \
+				instance.addShaderStage(new Stage1);                    \
+				instance.addShaderStage(new Stage2);                    \
+			}                                                           \
+			instance.checkFirstLoad();                                  \
+			return instance;                                            \
+		}                                                               \
+		ShaderProgramClass(const char* inDebugName)                     \
+			: ShaderProgram(inDebugName) {}                             \
+	};                                                                  \
+
+#define DEFINE_SHADER_PROGRAM3(ShaderProgramClass, Stage1, Stage2, Stage3) \
+	class ShaderProgramClass : public ShaderProgram {                   \
+	public:                                                             \
+		static ShaderProgramClass& get() {                              \
+			static ShaderProgramClass instance(#ShaderProgramClass);    \
+			if (instance.internal_justInstantiated) {                   \
+				instance.internal_justInstantiated = false;             \
+				instance.addShaderStage(new Stage1);                    \
+				instance.addShaderStage(new Stage2);                    \
+				instance.addShaderStage(new Stage3);                    \
+			}                                                           \
+			instance.checkFirstLoad();                                  \
+			return instance;                                            \
+		}                                                               \
+		ShaderProgramClass(const char* inDebugName)                     \
+			: ShaderProgram(inDebugName) {}                             \
+	};                                                                  \
+
+#define DEFINE_SHADER_PROGRAM4(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4) \
+	class ShaderProgramClass : public ShaderProgram {                   \
+	public:                                                             \
+		static ShaderProgramClass& get() {                              \
+			static ShaderProgramClass instance(#ShaderProgramClass);    \
+			if (instance.internal_justInstantiated) {                   \
+				instance.internal_justInstantiated = false;             \
+				instance.addShaderStage(new Stage1);                    \
+				instance.addShaderStage(new Stage2);                    \
+				instance.addShaderStage(new Stage3);                    \
+				instance.addShaderStage(new Stage4);                    \
+			}                                                           \
+			instance.checkFirstLoad();                                  \
+			return instance;                                            \
+		}                                                               \
+		ShaderProgramClass(const char* inDebugName)                     \
+			: ShaderProgram(inDebugName) {}                             \
+	};                                                                  \
+
+#define DEFINE_SHADER_PROGRAM5(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4, Stage5) \
+	class ShaderProgramClass : public ShaderProgram {                   \
+	public:                                                             \
+		static ShaderProgramClass& get() {                              \
+			static ShaderProgramClass instance(#ShaderProgramClass);    \
+			if (instance.internal_justInstantiated) {                   \
+				instance.internal_justInstantiated = false;             \
+				instance.addShaderStage(new Stage1);                    \
+				instance.addShaderStage(new Stage2);                    \
+				instance.addShaderStage(new Stage3);                    \
+				instance.addShaderStage(new Stage4);                    \
+				instance.addShaderStage(new Stage5);                    \
+			}                                                           \
+			instance.checkFirstLoad();                                  \
+			return instance;                                            \
+		}                                                               \
+		ShaderProgramClass(const char* inDebugName)                     \
+			: ShaderProgram(inDebugName) {}                             \
+	};                                                                  \
+
 #define FIND_SHADER_PROGRAM(ShaderProgramClass) ShaderProgramClass::get();
 
 }
