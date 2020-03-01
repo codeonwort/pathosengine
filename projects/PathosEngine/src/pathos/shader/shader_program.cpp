@@ -11,29 +11,30 @@
 
 namespace pathos {
 
-	ShaderProgram* ShaderDB::find(const char* programClassName)
-	{
-		auto it = mapping.find(COMPILE_TIME_CRC32_STR(programClassName));
-		CHECK(it != mapping.end());
-
-		ShaderProgram* program = it->second;
-		program->checkFirstLoad();
-		return program;
-	}
+	//ShaderProgram* ShaderDB::find(const char* programClassName)
+	//{
+	//	auto it = mapping.find(COMPILE_TIME_CRC32_STR(programClassName));
+	//	CHECK(it != mapping.end());
+	//
+	//	ShaderProgram* program = it->second;
+	//	program->checkFirstLoad();
+	//	return program;
+	//}
 
 	ShaderProgram::ShaderProgram(const char* inDebugName)
 		: debugName(inDebugName)
 		, glName(0xffffffff)
 		, firstLoad(true)
+		, internal_justInstantiated(true)
 	{
-		uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
-		ShaderDB::get().registerProgram(programHash, this);
+		//uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
+		//ShaderDB::get().registerProgram(programHash, this);
 	}
 
 	ShaderProgram::~ShaderProgram()
 	{
-		CHECK(isValid());
-		ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
+		//CHECK(isValid());
+		//ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
 	}
 
 	void ShaderProgram::addShaderStage(ShaderStage* shaderStage)
