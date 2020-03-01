@@ -38,6 +38,7 @@ namespace pathos {
 
 	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
 	{
+		CHECK(initRoutine != nullptr);
 		globalRenderInitRoutines.push_back(initRoutine);
 		if (destroyRoutine) {
 			globalRenderDestroyRoutines.push_back(destroyRoutine);

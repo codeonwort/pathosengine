@@ -1,4 +1,6 @@
 #include "shader_program.h"
+#include "pathos/engine.h"
+#include "pathos/render/render_device.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 
@@ -10,6 +12,22 @@
 #define DUMP_SHADER_SOURCE 0
 
 namespace pathos {
+
+	static struct InitRecompileShaders {
+		InitRecompileShaders() {
+			Engine::internal_registerGlobalRenderRoutine(InitRecompileShaders::recompileShaders, nullptr);
+		}
+		// Dirty but works anyway
+		static void recompileShaders(OpenGLDevice* device) {
+			gEngine->registerExec("recompile_shaders", [](const std::string& command) -> void {
+				LOG(LogInfo, "Begin reloading shaders...");
+				ShaderDB::get().forEach([](ShaderProgram* program) -> void {
+					program->reload();
+				});
+				LOG(LogInfo, "End reloading shaders.");
+			});
+		}
+	} internal_recompileShaders;
 
 	//ShaderProgram* ShaderDB::find(const char* programClassName)
 	//{
@@ -27,14 +45,14 @@ namespace pathos {
 		, firstLoad(true)
 		, internal_justInstantiated(true)
 	{
-		//uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
-		//ShaderDB::get().registerProgram(programHash, this);
+		uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
+		ShaderDB::get().registerProgram(programHash, this);
 	}
 
 	ShaderProgram::~ShaderProgram()
 	{
-		//CHECK(isValid());
-		//ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
+		CHECK(isValid());
+		ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
 	}
 
 	void ShaderProgram::addShaderStage(ShaderStage* shaderStage)
@@ -42,6 +60,7 @@ namespace pathos {
 		shaderStages.push_back(shaderStage);
 	}
 
+	// #todo-shader-rework: Reload only when the source has been changed
 	void ShaderProgram::reload()
 	{
 		GLuint oldGLName = glName;

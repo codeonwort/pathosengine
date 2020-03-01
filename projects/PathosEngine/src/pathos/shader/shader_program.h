@@ -12,30 +12,36 @@ namespace pathos {
 	class ShaderProgram;
 	class ShaderStage;
 
-	// #todo-shader-rework: Maybe not needed anymore?
-	//class ShaderDB final {
-	//
-	//public:
-	//	static ShaderDB& get() {
-	//		static ShaderDB instance;
-	//		return instance;
-	//	}
-	//
-	//	void registerProgram(uint32 programHash, ShaderProgram* program) {
-	//		CHECK(mapping.find(programHash) == mapping.end());
-	//		mapping.insert(std::make_pair(programHash, program));
-	//	}
-	//
-	//	void unregisterProgram(uint32 programHash) {
-	//		mapping.erase(programHash);
-	//	}
-	//
-	//	ShaderProgram* find(const char* programClassName);
-	//
-	//private:
-	//	std::map<uint32, ShaderProgram*> mapping;
-	//
-	//};
+	// Needed to traverse shader programs for runtime reload.
+	class ShaderDB final {
+	
+	public:
+		static ShaderDB& get() {
+			static ShaderDB instance;
+			return instance;
+		}
+	
+		void registerProgram(uint32 programHash, ShaderProgram* program) {
+			CHECK(mapping.find(programHash) == mapping.end());
+			mapping.insert(std::make_pair(programHash, program));
+		}
+	
+		void unregisterProgram(uint32 programHash) {
+			mapping.erase(programHash);
+		}
+
+		void forEach(std::function<void(ShaderProgram*)> handler) {
+			for(const auto& item : mapping) {
+				handler(item.second);
+			}
+		}
+	
+		//ShaderProgram* find(const char* programClassName);
+	
+	private:
+		std::map<uint32, ShaderProgram*> mapping;
+	
+	};
 
 	// Shader program compiled from shader stage sources.
 	// #todo-shader-rework: When to initialize GL programs? at demand or on startup, or support both ways?
