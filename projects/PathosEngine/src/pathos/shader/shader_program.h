@@ -112,6 +112,7 @@ namespace pathos {
 	// class ShaderAssembler { ... };
 	//
 
+	// #todo-shader-rework: Serious problem - now I can't destroy shader programs until application termination.
 #define DEFINE_COMPUTE_PROGRAM(ShaderProgramClass, ComputeStageClass)   \
 	class ShaderProgramClass : public ShaderProgram {                   \
 	public:                                                             \

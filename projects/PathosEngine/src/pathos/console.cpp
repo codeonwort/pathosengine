@@ -5,6 +5,7 @@
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/brush.h"
+#include "pathos/util/string_conversion.h"
 
 namespace pathos {
 
@@ -80,9 +81,8 @@ namespace pathos {
 	}
 
 	Label* ConsoleWindow::addLine(const char* text) {
-		int size = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, NULL);
-		std::vector<wchar_t> buffer(size, 0);
-		MultiByteToWideChar(CP_ACP, 0, text, static_cast<int>(strlen(text) + 1), buffer.data(), size);
+		std::wstring buffer;
+		pathos::MBCS_TO_WCHAR(text, buffer);
 		return addLine(buffer.data());
 	}
 
@@ -114,10 +114,8 @@ namespace pathos {
 	}
 
 	void ConsoleWindow::evaluate(const wchar_t* text) {
-		int size = WideCharToMultiByte(CP_ACP, 0, text, -1, NULL, 0, NULL, NULL);
-		std::vector<char> buffer(size, 0);
-		WideCharToMultiByte(CP_ACP, 0, text, -1, buffer.data(), size, NULL, NULL);
-		std::string command(buffer.data());
+		std::string command;
+		pathos::WCHAR_TO_MBCS(text, command);
 
 		auto ix = command.find(' ');
 		std::string header = ix == string::npos ? command : command.substr(0, ix);
