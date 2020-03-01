@@ -16,15 +16,18 @@ OpenGL rendering library (for 3d graphics study)
 note: Requires Visual C++ 2013 Redistributable Package because I used pre-built binaries. This limitation may be removed in future.
 
 ## Features
-* Render command list
-* PBR materials
-* Cascaded shadow map
-* Bloom
-* Depth of field
-* Tone mapping
-* FXAA
-* Screen-space ambient occlusion
-* Asynchronous asset loader
+* Rendering
+  * PBR materials
+  * Cascaded shadow map
+  * Bloom
+  * Depth of field
+  * Tone mapping
+  * FXAA
+  * Screen-space ambient occlusion
+* System
+  * Render command list
+  * Asynchronous asset loader
+  * Runtime shader recompilation
 
 ## Sample Images
 
