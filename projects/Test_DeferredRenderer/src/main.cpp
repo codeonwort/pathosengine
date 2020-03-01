@@ -313,7 +313,6 @@ void setupScene() {
 		color->setMetallic(0.2f);
 		color->setRoughness(0.1f);
 	}
-	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
 
 	// PBR material
 	PBRTextureMaterial* material_pbr;

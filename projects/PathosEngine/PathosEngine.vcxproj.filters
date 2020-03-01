@@ -291,6 +291,9 @@
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\shader\shader_program.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -603,6 +606,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\irradiance_baker.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\shader\shader_program.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

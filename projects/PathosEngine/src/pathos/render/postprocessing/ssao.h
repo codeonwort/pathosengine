@@ -19,7 +19,6 @@ namespace pathos {
 
 	private:
 		GLuint program_downscale = 0xffffffff;
-		GLuint program_ao = 0xffffffff;
 		GLuint program_blur = 0xffffffff;
 		GLuint program_blur2 = 0xffffffff;
 		GLuint fboBlur = 0;

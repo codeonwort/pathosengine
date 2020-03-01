@@ -1,6 +1,7 @@
 #include "ssao.h"
 #include "pathos/console.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
 
 #include "badger/math/random.h"
@@ -22,6 +23,23 @@ namespace pathos {
 		uint32 randomizePoints; // bool in shader
 	};
 
+	class SSAO_Compute : public ShaderStage {
+		
+	public:
+		SSAO_Compute()
+			: ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute")
+		{
+			setFilepath("ssao_ao.glsl");
+		}
+
+	};
+
+	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
+
+}
+
+namespace pathos {
+
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -30,11 +48,6 @@ namespace pathos {
 			Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
 			cs_downscale.loadSource("ssao_downscale.glsl");
 			program_downscale = pathos::createProgram(cs_downscale, "SSAO_Downscale");
-		}
-		{
-			Shader cs_ao(GL_COMPUTE_SHADER, "CS_SSAO_AO");
-			cs_ao.loadSource("ssao_ao.glsl");
-			program_ao = pathos::createProgram(cs_ao, "SSAO_AO");
 		}
 		{
 			Shader vs_blur(GL_VERTEX_SHADER, "VS_SSAO_BLUR_1");
@@ -70,7 +83,6 @@ namespace pathos {
 	void SSAO::releaseResources(RenderCommandList& cmdList)
 	{
 		cmdList.deleteProgram(program_downscale);
-		cmdList.deleteProgram(program_ao);
 		cmdList.deleteProgram(program_blur);
 		cmdList.deleteProgram(program_blur2);
 		cmdList.deleteFramebuffers(1, &fboBlur);
@@ -105,7 +117,8 @@ namespace pathos {
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 16.0f);
 			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 16.0f);
 
-			cmdList.useProgram(program_ao);
+			ShaderProgram& program_computeAO = FIND_SHADER_PROGRAM(Program_SSAO_Compute);
+			cmdList.useProgram(program_computeAO.getGLName());
 
 			UBO_SSAO uboData;
 			uboData.ssaoRadius      = cvar_ssao_radius.getFloat();
