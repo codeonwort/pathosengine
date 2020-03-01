@@ -20,12 +20,12 @@ namespace pathos {
 			static ShaderDB instance;
 			return instance;
 		}
-	
+		
 		void registerProgram(uint32 programHash, ShaderProgram* program) {
 			CHECK(mapping.find(programHash) == mapping.end());
 			mapping.insert(std::make_pair(programHash, program));
 		}
-	
+		
 		void unregisterProgram(uint32 programHash) {
 			mapping.erase(programHash);
 		}
@@ -35,16 +35,13 @@ namespace pathos {
 				handler(item.second);
 			}
 		}
-	
-		//ShaderProgram* find(const char* programClassName);
-	
+		
 	private:
 		std::map<uint32, ShaderProgram*> mapping;
-	
+		
 	};
 
 	// Shader program compiled from shader stage sources.
-	// #todo-shader-rework: When to initialize GL programs? at demand or on startup, or support both ways?
 	class ShaderProgram {
 
 	public:
@@ -80,6 +77,13 @@ namespace pathos {
 		friend class ShaderProgram;
 
 	public:
+		enum class CompileResponse : uint8 {
+			Failed,
+			NotChanged,
+			Compiled
+		};
+
+	public:
 		ShaderStage(GLenum inShaderType, const char* inDebugName);
 		virtual ~ShaderStage();
 
@@ -93,7 +97,7 @@ namespace pathos {
 
 	private:
 		bool loadSource();
-		bool tryCompile();
+		ShaderStage::CompileResponse tryCompile();
 		bool finishCompile();
 
 		inline GLuint getGLName() const { return glName; }

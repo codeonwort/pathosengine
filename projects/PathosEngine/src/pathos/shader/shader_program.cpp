@@ -29,16 +29,6 @@ namespace pathos {
 		}
 	} internal_recompileShaders;
 
-	//ShaderProgram* ShaderDB::find(const char* programClassName)
-	//{
-	//	auto it = mapping.find(COMPILE_TIME_CRC32_STR(programClassName));
-	//	CHECK(it != mapping.end());
-	//
-	//	ShaderProgram* program = it->second;
-	//	program->checkFirstLoad();
-	//	return program;
-	//}
-
 	ShaderProgram::ShaderProgram(const char* inDebugName)
 		: debugName(inDebugName)
 		, glName(0xffffffff)
@@ -60,7 +50,6 @@ namespace pathos {
 		shaderStages.push_back(shaderStage);
 	}
 
-	// #todo-shader-rework: Reload only when the source has been changed
 	void ShaderProgram::reload()
 	{
 		GLuint oldGLName = glName;
@@ -68,10 +57,18 @@ namespace pathos {
 
 		// Try to compile shader stages
 		bool allCompiled = true;
+		bool allNotChanged = true;
 		for (ShaderStage* shaderStage : shaderStages) {
-			allCompiled = allCompiled && shaderStage->tryCompile();
+			ShaderStage::CompileResponse response = shaderStage->tryCompile();
+			allCompiled = allCompiled && response == ShaderStage::CompileResponse::Compiled;
+			allNotChanged = allNotChanged && response == ShaderStage::CompileResponse::NotChanged;
+		}
+		if (allNotChanged) {
+			LOG(LogDebug, "%s: All shader stages are not changed, won't recompile.", debugName);
+			return;
 		}
 		if (!allCompiled) {
+			LOG(LogDebug, "%s: Failed to compile some shader stages.", debugName);
 			return;
 		}
 
@@ -224,13 +221,30 @@ namespace pathos {
 		return true;
 	}
 
-	bool ShaderStage::tryCompile()
+	ShaderStage::CompileResponse ShaderStage::tryCompile()
 	{
+		std::vector<std::string> sourceCodeBackup = sourceCode;
+		loadSource();
+
+		bool sourceChanged = false;
+		if (sourceCode.size() == sourceCodeBackup.size()) {
+			for (uint32 i = 0; i < sourceCode.size(); ++i) {
+				if (sourceCode[i] != sourceCodeBackup[i]) {
+					sourceChanged = true;
+					break;
+				}
+			}
+		} else {
+			sourceChanged = true;
+		}
+		if (sourceChanged == false) {
+			LOG(LogDebug, "%s: Source code is same.", debugName);
+			return ShaderStage::CompileResponse::NotChanged;
+		}
+
 		if (pendingGLName != 0) {
 			glDeleteShader(pendingGLName);
 		}
-
-		loadSource();
 
 		// #todo-shader-rework: Output shader code to intermediate/shader_dump
 #if DUMP_SHADER_SOURCE
@@ -260,9 +274,11 @@ namespace pathos {
 
 			glDeleteShader(pendingGLName);
 			pendingGLName = 0;
+
+			return ShaderStage::CompileResponse::Failed;
 		}
 
-		return success;
+		return ShaderStage::CompileResponse::Compiled;
 	}
 
 	bool ShaderStage::finishCompile()
