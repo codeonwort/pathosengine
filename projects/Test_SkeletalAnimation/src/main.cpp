@@ -1,6 +1,7 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/gui/gui_window.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
@@ -242,4 +243,10 @@ void tick(float deltaSeconds) {
 	daeModel->updateAnimation(0, time);
 	daeModel->updateSoftwareSkinning();
 #endif
+
+	{
+		char title[256];
+		sprintf_s(title, "%s (GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getGPUTime());
+		gEngine->getMainWindow()->setTitle(title);
+	}
 }

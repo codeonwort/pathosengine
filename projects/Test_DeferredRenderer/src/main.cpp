@@ -4,6 +4,7 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
+#include "pathos/gui/gui_window.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -428,10 +429,9 @@ void tick(float deltaSeconds)
 		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
-//#if !(_DEBUG)
-//	char title[256];
-//	sprintf_s(title, "%s (Elapsed: %.2f ms)", WINDOW_TITLE, gEngine->getMilliseconds());
-//	glutSetWindowTitle(title); // #todo: why this terminates the application in debug build after switching glLoadGen to gl3w?
-//#endif
-
+	{
+		char title[256];
+		sprintf_s(title, "%s (GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getGPUTime());
+		gEngine->getMainWindow()->setTitle(title);
+	}
 }

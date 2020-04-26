@@ -106,7 +106,7 @@ namespace pathos {
 		// Silently fix values
 		windowWidth = std::max(400, windowWidth);
 		windowHeight = std::max(300, windowHeight);
-		if (title == nullptr) title = "title here";
+		if (title.empty()) title = "title here";
 
 		glutInitErrorFunc(onGlutError);
 		glutInitWarningFunc(onGlutWarning);
@@ -119,7 +119,7 @@ namespace pathos {
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(windowWidth, windowHeight);
 
-		nativeHandle = glutCreateWindow(title);
+		nativeHandle = glutCreateWindow(title.c_str());
 
 		if (bFullscreen) {
 			glutFullScreen();
@@ -178,6 +178,22 @@ namespace pathos {
 	void GUIWindow::onReshape(int32 newWidth, int32 newHeight)
 	{
 		callback_onReshape(newWidth, newHeight);
+	}
+
+	void GUIWindow::setTitle(const char* newTitle)
+	{
+		title = newTitle;
+
+		glutSetWindow(nativeHandle);
+		glutSetWindowTitle(title.c_str());
+	}
+
+	void GUIWindow::setTitle(std::string&& newTitle)
+	{
+		title = std::move(newTitle);
+
+		glutSetWindow(nativeHandle);
+		glutSetWindowTitle(title.c_str());
 	}
 
 }

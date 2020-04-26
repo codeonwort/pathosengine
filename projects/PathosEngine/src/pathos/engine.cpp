@@ -52,7 +52,7 @@ namespace pathos {
 		, render_device(nullptr)
 		, renderer(nullptr)
 		, timer_query(0)
-		, elapsed_ms(0)
+		, elapsed_gpu(0)
 	{
 	}
 
@@ -311,7 +311,7 @@ namespace pathos {
 
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
-		elapsed_ms = (float)elapsed_ns / 1000000.0f;
+		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
 
 		if (gConsole) {
 			gConsole->renderConsoleWindow(immediateContext);

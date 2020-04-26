@@ -3,6 +3,7 @@
 #include "badger/types/int_types.h"
 
 #include <functional>
+#include <string>
 #include <map>
 
 namespace pathos {
@@ -51,6 +52,8 @@ namespace pathos {
 		void onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY);
 		void onReshape(int32 newWidth, int32 newHeight);
 
+		void setTitle(const char* newTitle);
+		void setTitle(std::string&& newTitle);
 		//void hideToTaskbar();
 		//void flashTaskbar();
 
@@ -60,7 +63,7 @@ namespace pathos {
 		int32 windowWidth;
 		int32 windowHeight;
 		bool bFullscreen;
-		const char* title;
+		std::string title;
 
 		int nativeHandle;
 

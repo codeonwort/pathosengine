@@ -79,12 +79,14 @@ namespace pathos {
 
 		const EngineConfig& getConfig() const { return conf; }
 
-		// Estimated time of rendering work
-		inline float getMilliseconds() const { return elapsed_ms; }
+		// Estimated time of GPU work
+		inline float getGPUTime() const { return elapsed_gpu; }
 
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
 
 		AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
+
+		inline class GUIWindow* getMainWindow() const { return mainWindow.get(); }
 
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
 		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
@@ -140,7 +142,7 @@ namespace pathos {
 		Renderer* renderer;
 
 		GLuint timer_query;
-		float elapsed_ms;
+		float elapsed_gpu; // in milliseconds
 
 		// System textures
 		GLuint texture2D_black = 0;
