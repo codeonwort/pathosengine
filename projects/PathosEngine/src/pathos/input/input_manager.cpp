@@ -43,6 +43,10 @@ namespace pathos {
 			}
 		}
 
+		if (isShiftActive) activeKeys.push_back(InputConstants::SHIFT);
+		if (isCtrlActive) activeKeys.push_back(InputConstants::CTRL);
+		if (isAltActive) activeKeys.push_back(InputConstants::ALT);
+
 		for (const AxisBinding& binding : axisBindings) {
 			axisMapping[binding.event_name_hash] = 0.0f;
 
@@ -80,6 +84,10 @@ namespace pathos {
 	{
 		std::vector<uint32> matchingEvents;
 
+		if ('A' <= ascii && ascii <= 'Z') {
+			ascii = 'a' + (ascii - 'A');
+		}
+
 		if (asciiMap[ascii] == false) {
 			asciiMap[ascii] = true;
 
@@ -103,11 +111,59 @@ namespace pathos {
 	{
 		std::vector<uint32> matchingEvents;
 
+		if ('A' <= ascii && ascii <= 'Z') {
+			ascii = 'a' + (ascii - 'A');
+		}
+
 		asciiMap[ascii] = false;
 
 		for (const ButtonBinding& binding : buttonReleasedBindings) {
 			InputConstants ic = asciiToInputConstants[ascii];
 			if (ic != InputConstants::UNDEFINED && binding.contains(ic)) {
+				matchingEvents.push_back(binding.event_name_hash);
+			}
+		}
+
+		for (uint32 event : matchingEvents) {
+			auto it = buttonReleasedMapping.find(event);
+			CHECK(it != buttonReleasedMapping.end());
+
+			it->second();
+		}
+	}
+
+	void InputManager::processModifierKeyDown(InputConstants modifier)
+	{
+		std::vector<uint32> matchingEvents;
+
+		if (modifier == InputConstants::SHIFT) isShiftActive = true;
+		else if (modifier == InputConstants::CTRL) isCtrlActive = true;
+		else if (modifier == InputConstants::ALT) isAltActive = true;
+
+		for (const ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(modifier)) {
+				matchingEvents.push_back(binding.event_name_hash);
+			}
+		}
+
+		for (uint32 event : matchingEvents) {
+			auto it = buttonPressedMapping.find(event);
+			CHECK(it != buttonPressedMapping.end());
+
+			it->second();
+		}
+	}
+
+	void InputManager::processModifierKeyUp(InputConstants modifier)
+	{
+		std::vector<uint32> matchingEvents;
+
+		if (modifier == InputConstants::SHIFT) isShiftActive = false;
+		else if (modifier == InputConstants::CTRL) isCtrlActive = false;
+		else if (modifier == InputConstants::ALT) isAltActive = false;
+
+		for (const ButtonBinding& binding : buttonReleasedBindings) {
+			if (binding.contains(modifier)) {
 				matchingEvents.push_back(binding.event_name_hash);
 			}
 		}

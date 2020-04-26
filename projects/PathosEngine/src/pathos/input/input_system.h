@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
+#include "input_constants.h"
 
 #include <list>
 
@@ -17,8 +18,11 @@ namespace pathos {
 		InputManager* getDefaultInputManager() const { return defaultInputManager; }
 
 		void tick();
+
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
+		void processModifierKeyDown(InputConstants modifier);
+		void processModifierKeyUp(InputConstants modifier);
 
 	private:
 		InputManager* defaultInputManager;

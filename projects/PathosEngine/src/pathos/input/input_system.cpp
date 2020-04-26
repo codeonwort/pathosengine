@@ -42,4 +42,20 @@ namespace pathos {
 		}
 	}
 
+	void InputSystem::processModifierKeyDown(InputConstants modifier)
+	{
+		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
+			InputManager* manager = *it;
+			manager->processModifierKeyDown(modifier);
+		}
+	}
+
+	void InputSystem::processModifierKeyUp(InputConstants modifier)
+	{
+		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
+			InputManager* manager = *it;
+			manager->processModifierKeyUp(modifier);
+		}
+	}
+
 }

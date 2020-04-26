@@ -44,6 +44,10 @@ namespace pathos {
 		KEYBOARD_9,
 		BACKTICK, // ascii = 0x60
 
+		SHIFT,
+		CTRL,
+		ALT,
+
 		// XboxOne Pad
 		XBOXONE_A,
 		XBOXONE_B,

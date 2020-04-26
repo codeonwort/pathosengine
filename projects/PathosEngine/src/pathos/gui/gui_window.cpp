@@ -5,6 +5,7 @@
 #include "GL/freeglut.h"
 #include <stdio.h>
 #include <algorithm>
+#include <array>
 
 #pragma comment(lib, "freeglut.lib")
 
@@ -54,6 +55,16 @@ namespace pathos {
 		window->onKeyUp(ascii, (int32)mouseX, (int32)mouseY);
 	}
 
+	static void onGlutSpecialKeyDown(int specialKey, int mouseX, int mouseY) {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->checkModifierKeyDown();
+	}
+
+	static void onGlutSpecialKeyUp(int specialKey, int mouseX, int mouseY) {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->checkModifierKeyUp();
+	}
+
 	static void onGlutReshape(int width, int height) {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
 		window->onReshape((int32)width, (int32)height);
@@ -94,14 +105,16 @@ namespace pathos {
 		bFullscreen  = createParams.fullscreen;
 		title        = createParams.title;
 
-		callback_onIdle    = createParams.onIdle;
-		callback_onDisplay = createParams.onDisplay;
-		callback_onKeyDown = createParams.onKeyDown;
-		callback_onKeyUp   = createParams.onKeyUp;
-		callback_onReshape = createParams.onReshape;
+		callback_onIdle            = createParams.onIdle;
+		callback_onDisplay         = createParams.onDisplay;
+		callback_onKeyDown         = createParams.onKeyDown;
+		callback_onKeyUp           = createParams.onKeyUp;
+		callback_onModifierKeyDown = createParams.onModifierKeyDown;
+		callback_onModifierKeyUp   = createParams.onModifierKeyUp;
+		callback_onReshape         = createParams.onReshape;
 
 		CHECK(windowWidth > 0 && windowHeight > 0);
-		CHECK(title != nullptr);
+		CHECK(title.size() > 0);
 
 		// Silently fix values
 		windowWidth = std::max(400, windowWidth);
@@ -130,6 +143,8 @@ namespace pathos {
 		glutReshapeFunc(onGlutReshape);
 		glutKeyboardFunc(onGlutKeyDown);
 		glutKeyboardUpFunc(onGlutKeyUp);
+		glutSpecialFunc(onGlutSpecialKeyDown);
+		glutSpecialUpFunc(onGlutSpecialKeyUp);
 
 		GUIWindow::handleToWindow[nativeHandle] = this;
 	}
@@ -194,6 +209,34 @@ namespace pathos {
 
 		glutSetWindow(nativeHandle);
 		glutSetWindowTitle(title.c_str());
+	}
+
+	void GUIWindow::checkModifierKeyDown()
+	{
+		int modifiers = glutGetModifiers();
+		if (modifiers & GLUT_ACTIVE_SHIFT) {
+			callback_onModifierKeyDown(InputConstants::SHIFT);
+		}
+		if (modifiers & GLUT_ACTIVE_CTRL) {
+			callback_onModifierKeyDown(InputConstants::CTRL);
+		}
+		if (modifiers & GLUT_ACTIVE_ALT) {
+			callback_onModifierKeyDown(InputConstants::ALT);
+		}
+	}
+
+	void GUIWindow::checkModifierKeyUp()
+	{
+		int modifiers = glutGetModifiers();
+		if (0 == (modifiers & GLUT_ACTIVE_SHIFT)) {
+			callback_onModifierKeyUp(InputConstants::SHIFT);
+		}
+		if (0 == (modifiers & GLUT_ACTIVE_CTRL)) {
+			callback_onModifierKeyUp(InputConstants::CTRL);
+		}
+		if (0 == (modifiers & GLUT_ACTIVE_ALT)) {
+			callback_onModifierKeyUp(InputConstants::ALT);
+		}
 	}
 
 }

@@ -79,9 +79,14 @@ namespace pathos {
 
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
+		void processModifierKeyDown(InputConstants modifier);
+		void processModifierKeyUp(InputConstants modifier);
 
 	private:
 		bool asciiMap[256] = { false, };
+		bool isShiftActive = false;
+		bool isCtrlActive = false;
+		bool isAltActive = false;
 
 		std::map<uint32, std::function<void()>> buttonPressedMapping;
 		std::map<uint32, std::function<void()>> buttonReleasedMapping;

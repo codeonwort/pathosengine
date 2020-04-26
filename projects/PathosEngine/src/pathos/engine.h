@@ -117,6 +117,8 @@ namespace pathos {
 		static void onMainWindowReshape(int32 newWidth, int32 newHeight);
 		static void onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY);
 		static void onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY);
+		static void onModifierKeyDown(InputConstants modifier);
+		static void onModifierKeyUp(InputConstants modifier);
 
 	private:
 		void tick();

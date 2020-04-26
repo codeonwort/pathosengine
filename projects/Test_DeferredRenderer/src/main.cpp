@@ -5,6 +5,7 @@
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/gui/gui_window.h"
+#include "pathos/util/math_lib.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -107,11 +108,15 @@ void setupInput()
 	rotatePitch.addInput(InputConstants::KEYBOARD_Z, -1.0f);
 	rotatePitch.addInput(InputConstants::KEYBOARD_X, 1.0f);
 
+	AxisBinding moveFast;
+	moveFast.addInput(InputConstants::SHIFT, 1.0f);
+
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
 	inputManager->bindAxis("rotateYaw", rotateYaw);
 	inputManager->bindAxis("rotatePitch", rotatePitch);
+	inputManager->bindAxis("moveFast", moveFast);
 }
 
 void setupCSMDebugger()
@@ -410,8 +415,9 @@ void tick(float deltaSeconds)
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 
 		// movement per seconds
-		const float speedX = 400.0f * deltaSeconds;
-		const float speedY = -200.0f * deltaSeconds;
+		const float moveMultiplier = pathos::max(1.0f, input->getAxis("moveFast") * 10.0f);
+		const float speedX = 400.0f * deltaSeconds * moveMultiplier;
+		const float speedY = -200.0f * deltaSeconds * moveMultiplier;
 		const float rotateY = 120.0f * deltaSeconds;
 		const float rotateX = 120.0f * deltaSeconds;
 

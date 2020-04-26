@@ -107,11 +107,13 @@ namespace pathos {
 		createParams.glMinorVersion = REQUIRED_GL_MINOR_VERSION;
 		createParams.glDebugContext = GL_DEBUG_CONTEXT;
 
-		createParams.onIdle    = Engine::onIdle;
-		createParams.onDisplay = Engine::onMainWindowDisplay;
-		createParams.onKeyDown = Engine::onKeyDown;
-		createParams.onKeyUp   = Engine::onKeyUp;
-		createParams.onReshape = Engine::onMainWindowReshape;
+		createParams.onIdle            = Engine::onIdle;
+		createParams.onDisplay         = Engine::onMainWindowDisplay;
+		createParams.onKeyDown         = Engine::onKeyDown;
+		createParams.onKeyUp           = Engine::onKeyUp;
+		createParams.onModifierKeyDown = Engine::onModifierKeyDown;
+		createParams.onModifierKeyUp   = Engine::onModifierKeyUp;
+		createParams.onReshape         = Engine::onMainWindowReshape;
 
 		mainWindow = std::make_unique<GUIWindow>();
 		mainWindow->create(createParams);
@@ -333,8 +335,8 @@ namespace pathos {
 	}
 
 	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {
-		// backtick
 		if (ascii == 0x60) {
+			// backtick
 			gConsole->toggle();
 		} else if (gConsole->isVisible()) {
 			gConsole->onKeyPress(ascii);
@@ -348,5 +350,15 @@ namespace pathos {
 	}
 
 	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }
+
+	void Engine::onModifierKeyDown(InputConstants modifier)
+	{
+		gEngine->inputSystem->processModifierKeyDown(modifier);
+	}
+
+	void Engine::onModifierKeyUp(InputConstants modifier)
+	{
+		gEngine->inputSystem->processModifierKeyUp(modifier);
+	}
 
 }

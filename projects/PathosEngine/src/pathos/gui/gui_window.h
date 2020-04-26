@@ -2,6 +2,8 @@
 
 #include "badger/types/int_types.h"
 
+#include "pathos/input/input_constants.h"
+
 #include <functional>
 #include <string>
 #include <map>
@@ -30,6 +32,8 @@ namespace pathos {
 		std::function<void(int w, int h)> onReshape;
 		std::function<void(unsigned char ascii, int x, int y)> onKeyDown;
 		std::function<void(unsigned char ascii, int x, int y)> onKeyUp;
+		std::function<void(InputConstants)> onModifierKeyDown;
+		std::function<void(InputConstants)> onModifierKeyUp;
 	};
 
 	class GUIWindow {
@@ -51,6 +55,8 @@ namespace pathos {
 		void onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY);
 		void onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY);
 		void onReshape(int32 newWidth, int32 newHeight);
+		void checkModifierKeyDown();
+		void checkModifierKeyUp();
 
 		void setTitle(const char* newTitle);
 		void setTitle(std::string&& newTitle);
@@ -72,6 +78,8 @@ namespace pathos {
 		std::function<void(int32, int32)> callback_onReshape;
 		std::function<void(uint8, int32, int32)> callback_onKeyDown;
 		std::function<void(uint8, int32, int32)> callback_onKeyUp;
+		std::function<void(InputConstants modifier)> callback_onModifierKeyDown;
+		std::function<void(InputConstants modifier)> callback_onModifierKeyUp;
 
 	};
 
