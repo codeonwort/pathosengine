@@ -20,7 +20,8 @@ const int32         WINDOW_HEIGHT       =   1080;
 const bool          WINDOW_FULLSCREEN   =   false;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
-const glm::vec3     CAMERA_POSITION     =   glm::vec3(0.0f, 25.0f, 200.0f);
+const glm::vec3     CAMERA_POSITION     =   glm::vec3(20.0f, 25.0f, 200.0f);
+const glm::vec3     CAMERA_LOOK_AT      =   glm::vec3(20.0f, 25.0f, 190.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
 const float         CAMERA_Z_FAR        =   5000.0f;
 const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
@@ -34,6 +35,7 @@ Scene scene;
 	Mesh* ground;
 	Mesh* objModel;
 	std::vector<Mesh*> balls;
+	std::vector<Mesh*> boxes;
 #if VISUALIZE_CSM_FRUSTUM
 	Mesh* csmDebugger;
 #endif
@@ -74,7 +76,7 @@ int main(int argc, char** argv) {
 	// camera
 	float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	cam->move(CAMERA_POSITION);
+	cam->lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, glm::vec3(0.0f, 1.0f, 0.0f));
 
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ("models/fireplace_room/fireplace_room.obj", "models/fireplace_room/", onLoadWavefrontOBJ);
 
@@ -111,24 +113,32 @@ void setupInput()
 	AxisBinding moveFast;
 	moveFast.addInput(InputConstants::SHIFT, 1.0f);
 
+	ButtonBinding drawShadowFrustum;
+	drawShadowFrustum.addInput(InputConstants::KEYBOARD_F);
+
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
 	inputManager->bindAxis("rotateYaw", rotateYaw);
 	inputManager->bindAxis("rotatePitch", rotatePitch);
 	inputManager->bindAxis("moveFast", moveFast);
+	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebugger);
 }
 
 void setupCSMDebugger()
 {
 #if VISUALIZE_CSM_FRUSTUM
+	static bool firstRun = true;
+
 	float aspect_ratio = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT);
 	Camera tempCamera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	tempCamera.move(CAMERA_POSITION);
+	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	csmDebugger = new Mesh;
-	csmDebugger->castsShadow = false;
-	scene.add(csmDebugger);
+	if (firstRun) {
+		csmDebugger = new Mesh;
+		csmDebugger->castsShadow = false;
+		scene.add(csmDebugger);
+	}
 
 	constexpr uint32 numFrustum = 4;
 	std::vector<glm::vec3> frustumPlanes;
@@ -138,9 +148,12 @@ void setupCSMDebugger()
 
 	// Wireframe for camera frustum
 	{
-		ProceduralGeometry* G = new ProceduralGeometry;
-		WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
-		csmDebugger->add(G, M);
+		static ProceduralGeometry* G = new ProceduralGeometry;
+		static WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
+		if (firstRun) {
+			csmDebugger->add(G, M);
+		}
+		G->clear();
 
 		constexpr uint32 iMax = 4 * (numFrustum + 1);
 		for (uint32 i = 0; i < iMax; i += 4) {
@@ -173,24 +186,17 @@ void setupCSMDebugger()
 
 	// Wireframe for bounds of light view projections
 	{
-		ProceduralGeometry* G = new ProceduralGeometry;
-		WireframeMaterial* M = new WireframeMaterial(1.0f, 0.0f, 0.0f);
-		csmDebugger->add(G, M);
+		static ProceduralGeometry* G = new ProceduralGeometry;
+		static WireframeMaterial* M = new WireframeMaterial(1.0f, 0.0f, 0.0f);
+		if (firstRun) {
+			csmDebugger->add(G, M);
+		}
+		G->clear();
 
 		auto calcBounds = [](const glm::vec3* frustum, std::vector<glm::vec3>& outVertices) -> void {
-			glm::vec3 sun_origin(0.0f, 0.0f, 0.0f);
 			glm::vec3 sun_direction = SUN_DIRECTION;
-			glm::vec3 sun_up(0.0f, 1.0f, 0.0f);
-
-			// if almost parallel, choose another random direction
-			float angle = glm::dot(sun_up, sun_direction);
-			if (fabs(angle) >= 0.999f) {
-				sun_up = glm::vec3(1.0f, 0.0f, 0.0f);
-			}
-
-			glm::mat4 lightView = glm::lookAt(sun_origin, sun_direction, sun_up);
-			glm::vec3 sun_right = glm::vec3(lightView[0][0], lightView[1][0], lightView[2][0]);
-			sun_up = glm::vec3(lightView[0][1], lightView[1][1], lightView[2][1]);
+			glm::vec3 sun_up, sun_right;
+			pathos::calculateOrthonormalBasis(sun_direction, sun_up, sun_right);
 
 			glm::vec3 frustum_center(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
@@ -246,6 +252,7 @@ void setupCSMDebugger()
 		G->calculateNormals();
 		G->calculateTangentBasis();
 	}
+	firstRun = false;
 #endif
 }
 
@@ -389,6 +396,30 @@ void setupScene() {
 		scene.add(ball);
 	}
 
+	constexpr float box_x0 = 200.0f;
+	constexpr float box_y0 = 60.0f;
+	constexpr float box_spaceX = 20.0f;
+	constexpr float box_spaceY = 20.0f;
+	float sinT = 0.0f;
+	ColorMaterial* box_material = new ColorMaterial;
+	box_material->setAlbedo(1.0f, 1.0f, 1.0f);
+	box_material->setMetallic(0.2f);
+	box_material->setRoughness(0.5f);
+	for (uint32 i = 0; i < 16; ++i)
+	{
+		for (uint32 j = 0; j < 16; ++j)
+		{
+			float wave = ::sinf(sinT += 0.0417f);
+
+			Mesh* box = new Mesh(geom_cube, box_material);
+			box->getTransform().setLocation(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY);
+			box->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			scene.add(box);
+
+			boxes.push_back(box);
+		}
+	}
+
 	godRaySource = new Mesh(geom_sphere, material_color);
 	godRaySource->getTransform().setScale(10.0f);
 	godRaySource->getTransform().setLocation(0.0f, 300.0f, -500.0f);
@@ -416,17 +447,18 @@ void tick(float deltaSeconds)
 
 		// movement per seconds
 		const float moveMultiplier = pathos::max(1.0f, input->getAxis("moveFast") * 10.0f);
-		const float speedX = 400.0f * deltaSeconds * moveMultiplier;
-		const float speedY = -200.0f * deltaSeconds * moveMultiplier;
+		const float speedRight = 400.0f * deltaSeconds * moveMultiplier;
+		const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
 		const float rotateY = 120.0f * deltaSeconds;
 		const float rotateX = 120.0f * deltaSeconds;
 
-		float dx   = input->getAxis("moveRight") * speedX;
-		float dz   = input->getAxis("moveForward") * speedY;
-		float rotY = input->getAxis("rotateYaw") * rotateY;
-		float rotX = input->getAxis("rotatePitch") * rotateX;
+		float deltaRight   = input->getAxis("moveRight") * speedRight;
+		float deltaForward = input->getAxis("moveForward") * speedForward;
+		float rotY         = input->getAxis("rotateYaw") * rotateY;
+		float rotX         = input->getAxis("rotatePitch") * rotateX;
 
-		cam->move(glm::vec3(dx, 0, dz));
+		cam->moveForward(deltaForward);
+		cam->moveRight(deltaRight);
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}
@@ -434,6 +466,24 @@ void tick(float deltaSeconds)
 	for (Mesh* ball : balls) {
 		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
+
+	static float sinT = 0.0f;
+	sinT += 6.28f * 0.25f * deltaSeconds;
+	for (uint32 i = 0; i < 16; ++i)
+	{
+		for (uint32 j = 0; j < 16; ++j)
+		{
+			float wave = ::sinf(sinT + 13.2754f * (i*16+j)/256.0f + (6.3f * j/16.0f));
+			boxes[i*16+j]->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+		}
+	}
+
+#if 0 // lookat debug
+	static float lookAtTime = 0.0f;
+	lookAtTime += 6.28f * deltaSeconds * 0.1f;
+	glm::vec3 lookDir(100.0f * sinf(lookAtTime), 0.0f, 100.0f * cosf(lookAtTime));
+	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + lookDir, glm::vec3(0.0f, 1.0f, 0.0f));
+#endif
 
 	{
 		char title[256];

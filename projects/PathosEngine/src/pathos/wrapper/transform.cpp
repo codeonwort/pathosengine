@@ -37,7 +37,8 @@ namespace pathos {
 	}
 
 	void Transform::prependMove(const glm::vec3& movement) {
-		matrix = glm::translate(matrix, movement);
+		//matrix = glm::translate(matrix, movement);
+		prepend(glm::translate(glm::mat4(1.0f), movement));
 	}
 
 	void Transform::prependMove(float dx, float dy, float dz) {

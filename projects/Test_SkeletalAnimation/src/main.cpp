@@ -22,7 +22,7 @@ constexpr int32 WINDOW_WIDTH    = 1920;
 constexpr int32 WINDOW_HEIGHT   = 1080;
 constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
 constexpr float FOVY            = 60.0f;
-const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 100.0f);
+const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 300.0f);
 constexpr float CAMERA_Z_NEAR   = 1.0f;
 constexpr float CAMERA_Z_FAR    = 10000.0f;
 
@@ -58,7 +58,14 @@ int main(int argc, char** argv) {
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	cam->move(CAMERA_POSITION);
+#if 0
+	// #todo-camera: Eye have to see +z when yaw=0, but it sees -z !!!
+	cam->moveToPosition(CAMERA_POSITION);
+	cam->setYaw(0.0f);
+	cam->setPitch(0.0f);
+#else
+	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+#endif
 
 	loadDAE();
 	setupScene();
@@ -217,17 +224,17 @@ void tick(float deltaSeconds) {
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 
 		// movement per seconds
-		const float speedX = 400.0f * deltaSeconds;
-		const float speedY = -200.0f * deltaSeconds;
+		const float speedRight = 400.0f * deltaSeconds;
+		const float speedForward = 200.0f * deltaSeconds;
 		const float rotateY = 120.0f * deltaSeconds;
 		const float rotateX = 120.0f * deltaSeconds;
 
-		float dx = input->getAxis("moveRight") * speedX;
-		float dz = input->getAxis("moveForward") * speedY;
+		float moveRight = input->getAxis("moveRight") * speedRight;
+		float moveForward = input->getAxis("moveForward") * speedForward;
 		float rotY = input->getAxis("rotateYaw") * rotateY;
 		float rotX = input->getAxis("rotatePitch") * rotateX;
 
-		cam->move(glm::vec3(dx, 0, dz));
+		cam->move(glm::vec3(moveForward, moveRight, 0.0f));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}

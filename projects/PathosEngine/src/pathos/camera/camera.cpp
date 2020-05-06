@@ -4,6 +4,10 @@
 
 namespace pathos {
 
+	static const glm::vec3 forward0(0.0f, 0.0f, 1.0f);
+	static const glm::vec3 right0(1.0f, 0.0f, 0.0f);
+	static const glm::vec3 up0(0.0f, 1.0f, 0.0f);
+
 	// PerspectiveLens
 	PerspectiveLens::PerspectiveLens(float fovY_degrees, float aspect_wh, float znear, float zfar) {
 		z_near = znear;
@@ -30,16 +34,15 @@ namespace pathos {
 	// Camera
 	Camera::Camera(Lens* lens) :lens(lens), viewDirty(true) {
 		rotationX = rotationY = 0.0f;
-		movement = glm::vec3(0.0f, 0.0f, 0.0f);
+		_position = glm::vec3(0.0f, 0.0f, 0.0f);
 	}
 
 	void Camera::calculateViewMatrix() const {
-		if (viewDirty){
+		if (viewDirty) {
 			transform.identity();
-			transform.appendMove(movement);
-			
-			transform.appendRotation(rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
-			transform.appendRotation(rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+			transform.appendMove(-_position);
+			transform.appendRotation(rotationY, up0);
+			transform.appendRotation(rotationX, right0);
 			viewDirty = false;
 		}
 	}
@@ -56,25 +59,59 @@ namespace pathos {
 	glm::vec3 Camera::getEyeVector() const {
 		// eye direction in world space
 		calculateViewMatrix();
-		return transform.inverseTransformVector(glm::vec3(0.0f, 0.0f, -1.0f));
+		return transform.inverseTransformVector(-forward0);
 	}
 	glm::vec3 Camera::getPosition() const {
-		return -movement;
+		return _position;
 	}
 
 	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
 		glm::mat3 L = glm::transpose(glm::mat3(glm::lookAt(position, target, up)));
-		glm::vec3 v = glm::normalize(L * glm::vec3(0.0f, 0.0f, -1.0f));
-		rotationX = -asin(v.y);
-		rotationY = asin(v.x);
-		movement = -position;
+		glm::vec3 v = glm::normalize(L * forward0);
+		rotationX = asin(v.y);
+		if (v.z >= 0.0f)
+		{
+			rotationY = -asin(v.x);
+		}
+		else
+		{
+			rotationY = glm::pi<float>() + asin(v.x);
+		}
+		_position = position;
 		viewDirty = true;
 	}
 
 	// move direction is alongside the camera's view direction
-	void Camera::move(const glm::vec3& movement_) {
-		glm::vec3 mov = transform.inverseTransformVector(movement_);
-		movement -= mov;
+	void Camera::move(const glm::vec3& forwardRightUp) {
+		calculateViewMatrix();
+		_position += transform.inverseTransformVector(forwardRightUp.x * -forward0 + forwardRightUp.y * right0 + forwardRightUp.z * up0);
+		viewDirty = true;
+	}
+
+	void Camera::moveForward(float amount)
+	{
+		calculateViewMatrix();
+		_position += transform.inverseTransformVector(amount * -forward0); // #todo-camera: Dunno why the hell I have to flip the sign
+		viewDirty = true;
+	}
+
+	void Camera::moveRight(float amount)
+	{
+		calculateViewMatrix();
+		_position += transform.inverseTransformVector(amount * right0);
+		viewDirty = true;
+	}
+
+	void Camera::moveUp(float amount)
+	{
+		calculateViewMatrix();
+		_position += transform.inverseTransformVector(amount * up0);
+		viewDirty = true;
+	}
+
+	void Camera::moveToPosition(const glm::vec3& newPosition)
+	{
+		_position = newPosition;
 		viewDirty = true;
 	}
 
@@ -87,19 +124,20 @@ namespace pathos {
 		viewDirty = true;
 	}
 	
+	void Camera::setYaw(float newYaw)
+	{
+		rotationY = glm::radians(newYaw);
+		viewDirty = true;
+	}
+
+	void Camera::setPitch(float newPitch)
+	{
+		rotationX = glm::radians(newPitch);
+		viewDirty = true;
+	}
+
 	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const {
 		CHECK(numCascades >= 1);
-
-		const glm::vec3 forward = getEyeVector();
-		glm::vec3 up(0.0f, 1.0f, 0.0f);
-
-		float theta = glm::dot(forward, up);
-		if (fabs(theta) >= 0.999f) {
-			up = glm::vec3(1.0f, 0.0f, 0.0f);
-		}
-
-		glm::vec3 right = glm::normalize(glm::cross(forward, up));
-		up = glm::cross(right, forward);
 
 		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
 		CHECK(plens);
@@ -112,7 +150,7 @@ namespace pathos {
 		const float hw_far = hh_far * plens->getAspectRatioWH();
 
 		const glm::vec3 P0 = getPosition();
-		const glm::mat4 view = getViewMatrix();
+		const glm::mat3 viewInv = glm::transpose(glm::mat3(getViewMatrix()));
 
 		float zi, hwi, hhi;
 		outFrustum.resize(4 * (1 + numCascades));
@@ -126,15 +164,17 @@ namespace pathos {
 			hwi = hw_near + (hw_far - hw_near) * k;
 			hhi = hh_near + (hh_far - hh_near) * k;
 
-			outFrustum[i * 4 + 0] = (forward * zi) + (right * hwi) + (up * hhi);
-			outFrustum[i * 4 + 1] = (forward * zi) - (right * hwi) + (up * hhi);
-			outFrustum[i * 4 + 2] = (forward * zi) + (right * hwi) - (up * hhi);
-			outFrustum[i * 4 + 3] = (forward * zi) - (right * hwi) - (up * hhi);
+			// #todo-shadow: Dunno why the hell I have to flip the sign
+			// And... debug visualization is wrong but the rendering is alright???
+			outFrustum[i * 4 + 0] = (-forward0 * zi) + (right0 * hwi) + (up0 * hhi);
+			outFrustum[i * 4 + 1] = (-forward0 * zi) - (right0 * hwi) + (up0 * hhi);
+			outFrustum[i * 4 + 2] = (-forward0 * zi) + (right0 * hwi) - (up0 * hhi);
+			outFrustum[i * 4 + 3] = (-forward0 * zi) - (right0 * hwi) - (up0 * hhi);
 
-			outFrustum[i * 4 + 0] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 0], 0.0f));
-			outFrustum[i * 4 + 1] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 1], 0.0f));
-			outFrustum[i * 4 + 2] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 2], 0.0f));
-			outFrustum[i * 4 + 3] = P0 + glm::vec3(view * glm::vec4(outFrustum[i * 4 + 3], 0.0f));
+			outFrustum[i * 4 + 0] = P0 + (viewInv * outFrustum[i * 4 + 0]);
+			outFrustum[i * 4 + 1] = P0 + (viewInv * outFrustum[i * 4 + 1]);
+			outFrustum[i * 4 + 2] = P0 + (viewInv * outFrustum[i * 4 + 2]);
+			outFrustum[i * 4 + 3] = P0 + (viewInv * outFrustum[i * 4 + 3]);
 		}
 	}
 
