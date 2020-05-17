@@ -2,7 +2,7 @@
 
 #include "pathos/mesh/mesh.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 
 namespace pathos {
 

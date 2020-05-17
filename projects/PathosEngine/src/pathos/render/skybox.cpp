@@ -1,5 +1,5 @@
 #include "skybox.h"
-#include "scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/console.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"

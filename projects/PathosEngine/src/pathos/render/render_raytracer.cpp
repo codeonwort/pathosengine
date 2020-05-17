@@ -1,5 +1,5 @@
 #include "render_raytracer.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
 
 #include "pathos/shader/shader.h"

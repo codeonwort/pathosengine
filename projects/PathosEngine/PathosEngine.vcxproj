@@ -146,7 +146,7 @@
     <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
-    <ClCompile Include="src\pathos\render\scene.cpp" />
+    <ClCompile Include="src\pathos\scene\scene.cpp" />
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
     <ClCompile Include="src\pathos\render\skybox.cpp" />
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
@@ -258,7 +258,7 @@
     <ClInclude Include="src\pathos\render\render_forward.h" />
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
-    <ClInclude Include="src\pathos\render\scene.h" />
+    <ClInclude Include="src\pathos\scene\scene.h" />
     <ClInclude Include="src\pathos\render\skybox.h" />
     <ClInclude Include="src\pathos\render\sky_ansel.h" />
     <ClInclude Include="src\pathos\render\visualize_depth.h" />

@@ -6,7 +6,7 @@
 #include "postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/light/shadow_directional.h"
 
 #include <memory>

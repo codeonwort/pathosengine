@@ -2,7 +2,7 @@
 
 #include "pathos/util/resource_finder.h"
 
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 

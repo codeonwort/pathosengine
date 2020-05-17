@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/shader/uniform_buffer.h"
