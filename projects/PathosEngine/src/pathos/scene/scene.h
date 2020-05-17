@@ -35,6 +35,7 @@ namespace pathos {
 
 			T* actor = new T;
 			actors.emplace_back(actor);
+			actor->isInConstructor = false;
 			actor->owner = this;
 			actor->onSpawn();
 

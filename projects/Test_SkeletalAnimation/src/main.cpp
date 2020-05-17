@@ -2,6 +2,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/gui/gui_window.h"
+#include "pathos/light/point_light_actor.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
@@ -43,6 +44,7 @@ Scene scene;
 void setupInput();
 void loadDAE();
 void setupScene();
+void setupSceneWithActor(Scene* scene);
 void tick(float deltaSeconds);
 
 int main(int argc, char** argv) {
@@ -69,6 +71,7 @@ int main(int argc, char** argv) {
 
 	loadDAE();
 	setupScene();
+	setupSceneWithActor(&scene);
 
 	gEngine->setWorld(&scene, cam);
 	gEngine->start();
@@ -140,10 +143,12 @@ void loadDAE() {
 #endif
 }
 
+void setupSceneWithActor(Scene* scene) {
+	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
+	pointLight0->setLightParameters(glm::vec3(0, 0, 0), glm::vec3(1.0f));
+}
 void setupScene() {
-	plight = new PointLight(glm::vec3(0, 0, 0), glm::vec3(1.0f));
 	dlight = new DirectionalLight(glm::vec3(0, 0, -1), glm::vec3(1.0f));
-	scene.add(plight);
 	scene.add(dlight);
 
 	srand(static_cast<unsigned int>(time(NULL)));

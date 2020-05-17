@@ -19,9 +19,4 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\point_light_actor.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>

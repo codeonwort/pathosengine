@@ -4,6 +4,10 @@
 
 namespace pathos {
 
+	Actor::~Actor() {
+		destroyComponents();
+	}
+
 	void Actor::destroy() {
 		owner->destroyActor(this);
 	}
@@ -26,6 +30,14 @@ namespace pathos {
 			component->owner = nullptr;
 			components.erase(it);
 		}
+	}
+
+	void Actor::destroyComponents() {
+		for (ActorComponent* component : components) {
+			component->onUnregister();
+			delete component;
+		}
+		components.clear();
 	}
 
 	// #todo-actor: Implement later... when really needed

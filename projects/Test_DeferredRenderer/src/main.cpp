@@ -6,9 +6,8 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/light/point_light_actor.h"
 using namespace pathos;
-
-#include "point_light_actor.h"
 
 #define VISUALIZE_CSM_FRUSTUM 0
 #define DEBUG_SKYBOX          0
@@ -468,10 +467,10 @@ void setupSceneWithActor(Scene* scene) {
 	PointLightActor* pointLight2 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight3 = scene->spawnActor<PointLightActor>();
 
-	pointLight0->setParameters(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
-	pointLight1->setParameters(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
-	pointLight2->setParameters(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
-	pointLight3->setParameters(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
+	pointLight0->setLightParameters(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
+	pointLight1->setLightParameters(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
+	pointLight2->setLightParameters(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
+	pointLight3->setLightParameters(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
 }
 
 void tick(float deltaSeconds)
