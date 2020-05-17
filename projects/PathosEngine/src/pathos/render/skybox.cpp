@@ -3,9 +3,9 @@
 #include "pathos/console.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
+#include "pathos/util/math_lib.h"
 
 #include <string>
-#include <algorithm>
 
 namespace pathos {
 
@@ -25,7 +25,7 @@ namespace pathos {
 	}
 
 	void Skybox::setLOD(float inLOD) {
-		lod = std::max(0.0f, inLOD);
+		lod = pathos::max(0.0f, inLOD);
 	}
 
 	void Skybox::createShader() {

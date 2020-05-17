@@ -5,7 +5,6 @@
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"
-#include "pathos/light/light.h"
 
 #include "gl_core.h"
 #include <vector>

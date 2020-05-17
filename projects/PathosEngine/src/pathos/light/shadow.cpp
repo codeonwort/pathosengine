@@ -6,6 +6,7 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
+#include "directional_light_component.h"
 
 namespace pathos {
 
@@ -84,7 +85,7 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void ShadowMap::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
+	void ShadowMap::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLightProxy* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) assert(0);
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -107,7 +108,7 @@ void main() {
 		mesh->drawPrimitive(cmdList);
 	}
 
-	void ShadowMap::activate(GLuint materialProgram, const vector<DirectionalLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix) {
+	void ShadowMap::activate(GLuint materialProgram, const vector<DirectionalLightProxy*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix) {
 		const auto numLights = lights.size();
 		//textureBindings.resize(numLights);
 		textureBindings.resize(maxLights);

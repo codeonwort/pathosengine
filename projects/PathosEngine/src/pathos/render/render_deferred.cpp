@@ -14,6 +14,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/light/point_light_component.h"
+#include "pathos/light/directional_light_component.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -204,7 +205,7 @@ namespace pathos {
 		sunShadowMap->renderShadowMap(cmdList, scene, camera);
 
 		// ready scene for rendering
-		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
+		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
 
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
@@ -394,9 +395,9 @@ namespace pathos {
 
 		data.ws_eyePosition = camera->getPosition();
 
-		data.numDirLights = pathos::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
-		if (data.numDirLights > 0) {
-			memcpy_s(&data.directionalLights[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightBuffer(), scene->getDirectionalLightBufferSize());
+		data.numDirLights = pathos::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
+		for (uint32 i = 0; i < data.numDirLights; ++i) {
+			data.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
 		}
 
 		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);

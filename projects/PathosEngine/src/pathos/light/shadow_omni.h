@@ -1,6 +1,5 @@
 #pragma once
 
-#include "light.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry.h"

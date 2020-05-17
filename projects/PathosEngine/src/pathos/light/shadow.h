@@ -4,7 +4,6 @@
 #include <vector>
 #include "gl_core.h"
 
-#include "light.h"
 #include "shadow_omni.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
@@ -14,6 +13,8 @@
 //       make this header includes shadow_omni.h and shadow_directional.h
 
 namespace pathos {
+
+	struct DirectionalLightProxy;
 
 	// #todo-shadow: This is deprecated. @see DirectionalShadowMap
 	class ShadowMap {
@@ -29,12 +30,12 @@ namespace pathos {
 		virtual ~ShadowMap();
 
 		void clearLightDepths(uint32_t numLights);
-		void renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix);
+		void renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, DirectionalLightProxy* light, MeshGeometry* mesh, const glm::mat4& modelMatrix);
 
 		inline void setProjection(glm::mat4& newProjection) { projection = newProjection; }
 
 		// add shadow algorithm to the shadow castee's program
-		void activate(GLuint materialPassProgram, const vector<DirectionalLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix);
+		void activate(GLuint materialPassProgram, const vector<DirectionalLightProxy*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix);
 		void deactivate(GLuint materialPassProgram, unsigned int textureBinding);
 
 		inline const GLuint getDebugTexture(uint32_t index) const { return static_cast<GLuint>(depthTextures[index]); }

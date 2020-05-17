@@ -1,8 +1,8 @@
 #include "scene.h"
 #include "pathos/console.h"
-#include "pathos/light/light.h"
 #include "pathos/actor/scene_component.h"
 #include "pathos/light/point_light_component.h"
+#include "pathos/light/directional_light_component.h"
 
 namespace pathos {
 
@@ -51,6 +51,7 @@ namespace pathos {
 	}
 
 	void Scene::clearRenderProxy() {
+		proxyList_directionalLight.clear();
 		proxyList_pointLight.clear();
 	}
 
@@ -64,24 +65,13 @@ namespace pathos {
 		}
 	}
 
-	void Scene::calculateLightBuffer() {
-		const uint32 numDirs = (uint32)directionalLights_DEPRECATED.size();
-		directionalLightBuffer_DEPRECATED.resize(numDirs);
-		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightBuffer_DEPRECATED[i] = directionalLights_DEPRECATED[i]->getProxy();
-		}
-	}
-
-	void Scene::calculateLightBufferInViewSpace(const glm::mat4& viewMatrix) {
+	void Scene::transformLightProxyToViewSpace(const glm::mat4& viewMatrix) {
 		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
 			proxyList_pointLight[i]->position = glm::vec3(viewMatrix * glm::vec4(proxyList_pointLight[i]->position, 1.0f));
 		}
 
-		const uint32 numDirs = (uint32)directionalLights_DEPRECATED.size();
-		directionalLightBuffer_DEPRECATED.resize(numDirs);
-		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightBuffer_DEPRECATED[i] = directionalLights_DEPRECATED[i]->getProxy();
-			directionalLightBuffer_DEPRECATED[i].direction = glm::vec3(viewMatrix * glm::vec4(directionalLightBuffer_DEPRECATED[i].direction, 0.0f));
+		for (uint32 i = 0u; i < proxyList_directionalLight.size(); ++i) {
+			proxyList_directionalLight[i]->direction = glm::vec3(viewMatrix * glm::vec4(proxyList_directionalLight[i]->direction, 0.0f));
 		}
 	}
 

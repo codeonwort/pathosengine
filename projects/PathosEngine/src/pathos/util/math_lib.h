@@ -2,6 +2,9 @@
 
 #include <glm/glm.hpp>
 
+#undef min
+#undef max
+
 namespace pathos {
 
 	// Given N (assuming normalized), returns two arbitrary vectors T and B to form an orthonormal basis.
@@ -19,12 +22,12 @@ namespace pathos {
 	}
 
 	template<typename T>
-	inline T min(T x, T y) {
+	T min(T x, T y) {
 		return (x < y) ? x : y;
 	}
 
 	template<typename T>
-	inline T max(T x, T y) {
+	T max(T x, T y) {
 		return (x < y) ? y : x;
 	}
 

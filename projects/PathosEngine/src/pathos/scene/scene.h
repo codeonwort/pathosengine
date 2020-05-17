@@ -1,16 +1,15 @@
 #pragma once
 
 #include "pathos/actor/actor.h"
-#include "pathos/light/light.h"
 
 #include "glm/glm.hpp"
+#include "gl_core.h"
 #include <vector>
 
 namespace pathos {
 
 	// Forward declaration
 	class Mesh;
-	class DirectionalLight;
 	class SkyRendering;
 
 	// Represents a 3D scene.
@@ -50,15 +49,7 @@ namespace pathos {
 		inline void add(Mesh* mesh) { meshes.push_back(mesh); }
 		void add(std::initializer_list<Mesh*> meshes);
 		
-		inline void add(DirectionalLight* light) { directionalLights_DEPRECATED.push_back(light); }
-
-		inline uint32 numDirectionalLights() const { return (uint32)directionalLights_DEPRECATED.size(); }
-
-		void calculateLightBuffer(); // in world space
-		void calculateLightBufferInViewSpace(const glm::mat4& viewMatrix);
-
-		inline const GLfloat* getDirectionalLightBuffer() const { return (GLfloat*)directionalLightBuffer_DEPRECATED.data(); }
-		inline uint32 getDirectionalLightBufferSize() const { return (uint32)(sizeof(DirectionalLightProxy) * directionalLightBuffer_DEPRECATED.size()); }
+		void transformLightProxyToViewSpace(const glm::mat4& viewMatrix);
 
 	public:
 		SkyRendering* sky = nullptr;
@@ -71,18 +62,13 @@ namespace pathos {
 		uint32 prefilterEnvMapMipLevels = 0;
 
 	public:
-		std::vector<struct PointLightProxy*> proxyList_directionalLight; // first is sun light
-		std::vector<struct PointLightProxy*> proxyList_pointLight;
+		std::vector<struct DirectionalLightProxy*> proxyList_directionalLight; // first is sun
+		std::vector<struct PointLightProxy*>       proxyList_pointLight;
 
 	protected:
 		// #todo-actor: Wanna represent ownership, but can't use std::unique_ptr<Actor> as it can't hold subclasses of Actor.
 		std::vector<Actor*> actors;          // Actors in this scene
 		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
-
-	// #todo-deprecated: Replace with DirectionalLightComponent
-	public:
-		std::vector<DirectionalLight*> directionalLights_DEPRECATED;
-		std::vector<DirectionalLightProxy> directionalLightBuffer_DEPRECATED;
 
 	};
 

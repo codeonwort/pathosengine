@@ -69,9 +69,6 @@
     <ClCompile Include="src\pathos\wrapper\transform.cpp">
       <Filter>소스 파일\pathos\wrapper</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\light\light.cpp">
-      <Filter>소스 파일\pathos\light</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\camera\camera.cpp">
       <Filter>소스 파일\pathos\camera</Filter>
     </ClCompile>
@@ -313,9 +310,6 @@
     </ClInclude>
     <ClInclude Include="src\pathos\wrapper\transform.h">
       <Filter>헤더 파일\pathos\wrapper</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\light\light.h">
-      <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\camera\camera.h">
       <Filter>헤더 파일\pathos\camera</Filter>
@@ -634,6 +628,15 @@
     </ClInclude>
     <ClInclude Include="src\pathos\light\point_light_actor.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\directional_light_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\directional_light_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\light_all.h">
+      <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

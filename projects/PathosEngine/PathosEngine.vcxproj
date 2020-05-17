@@ -98,7 +98,6 @@
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
-    <ClCompile Include="src\pathos\light\light.cpp" />
     <ClCompile Include="src\pathos\light\shadow.cpp" />
     <ClCompile Include="src\pathos\light\shadow_directional.cpp" />
     <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
@@ -184,6 +183,8 @@
     <ClInclude Include="src\pathos\input\input_manager.h" />
     <ClInclude Include="src\pathos\input\input_constants.h" />
     <ClInclude Include="src\pathos\input\input_system.h" />
+    <ClInclude Include="src\pathos\light\directional_light_actor.h" />
+    <ClInclude Include="src\pathos\light\directional_light_component.h" />
     <ClInclude Include="src\pathos\light\point_light_actor.h" />
     <ClInclude Include="src\pathos\light\point_light_component.h" />
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
@@ -192,7 +193,7 @@
     <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
-    <ClInclude Include="src\pathos\light\light.h" />
+    <ClInclude Include="src\pathos\light\light_all.h" />
     <ClInclude Include="src\pathos\light\shadow_directional.h" />
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />

@@ -7,6 +7,7 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/light/point_light_actor.h"
+#include "pathos/light/directional_light_actor.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -31,7 +32,6 @@ const uint32        NUM_BALLS           =   10;
 // World
 Camera* cam;
 Scene scene;
-	DirectionalLight* sunLight;
 	Mesh* godRaySource;
 	Mesh* ground;
 	Mesh* objModel;
@@ -261,12 +261,6 @@ void setupCSMDebugger()
 }
 
 void setupScene() {
-	//---------------------------------------------------------------------------------------
-	// lighting
-	//---------------------------------------------------------------------------------------
-	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
-	scene.add(sunLight);
-
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
@@ -462,6 +456,9 @@ void setupSceneWithActor(Scene* scene) {
 
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting
+	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
+	dirLight->setLightParameters(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
+
 	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight2 = scene->spawnActor<PointLightActor>();

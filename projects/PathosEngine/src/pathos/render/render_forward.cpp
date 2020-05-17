@@ -93,15 +93,14 @@ namespace pathos {
 
 		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		scene->calculateLightBuffer();
-
 		// ready shadow before rendering any object
 		{
 			SCOPED_DRAW_EVENT(ShadowMap);
 
+#if 0 // #todo-forward-rendering
 			shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
-			// #todo-forward-rendering: Fix
-			//omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
+			omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
+#endif
 			for (Mesh* mesh : scene->meshes) {
 				if (mesh->visible == false) continue;
 				renderLightDepth(cmdList,mesh);
@@ -135,11 +134,13 @@ namespace pathos {
 		if (mesh->renderInternal) glFrontFace(GL_CW);
 
 		// shadow mapping for directional light
+#if 0 // #todo-forward-rendering
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numDirectionalLights(); ++light) {
 				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights_DEPRECATED[light], geoms[i], modelTransform);
 			}
 		}
+#endif
 
 #if 0 // #todo-forward-rendering: Fix
 		// omnidirectional shadow for point light

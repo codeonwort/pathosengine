@@ -8,7 +8,7 @@
 
 #include "pathos/camera/camera.h"
 
-#include "pathos/light/light.h"
+#include "pathos/light/light_all.h"
 
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"

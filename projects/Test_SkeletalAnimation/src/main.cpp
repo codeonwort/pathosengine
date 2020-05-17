@@ -2,7 +2,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/gui/gui_window.h"
-#include "pathos/light/point_light_actor.h"
+#include "pathos/light/light_all.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
@@ -35,7 +35,6 @@ constexpr float CAMERA_Z_FAR    = 10000.0f;
 
 Camera* cam;
 Scene scene;
-	DirectionalLight *dlight;
 	Mesh *model, *model2;
 	SkinnedMesh *daeModel;
 	SkinnedMesh *daeModel2;
@@ -143,13 +142,13 @@ void loadDAE() {
 }
 
 void setupSceneWithActor(Scene* scene) {
+	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
+	dirLight->setLightParameters(glm::vec3(0, 0, -1), glm::vec3(1.0f));
+
 	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
 	pointLight0->setLightParameters(glm::vec3(0, 0, 0), glm::vec3(1.0f));
 }
 void setupScene() {
-	dlight = new DirectionalLight(glm::vec3(0, 0, -1), glm::vec3(1.0f));
-	scene.add(dlight);
-
 	srand(static_cast<unsigned int>(time(NULL)));
 
 	//---------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/light/directional_light_component.h"
 
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
@@ -29,8 +30,8 @@ namespace pathos {
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
 		// 1. Build projection matrices that perfectly cover each camera frustum
-		if (scene->directionalLights_DEPRECATED.size() > 0) {
-			setLightDirection(scene->directionalLights_DEPRECATED[0]->direction);
+		if (scene->proxyList_directionalLight.size() > 0) {
+			setLightDirection(scene->proxyList_directionalLight[0]->direction);
 		}
 		calculateBounds(*camera, sceneContext.numCascades);
 
