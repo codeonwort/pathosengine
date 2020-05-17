@@ -6,7 +6,47 @@ namespace pathos {
 
 	static ConsoleVariable<int32_t> cvar_visualize_depth("r.visualize_depth", 0, "visualize the scene depth");
 
-	Scene::Scene() {}
+	void Scene::destroyActor(Actor* actor) {
+		CHECKF(actor != nullptr, "Parameter is null");
+		CHECKF(actor->owner == this, "this Actor does not belong to this Scene");
+
+		int32 ix = -1;
+		for (int32 i = 0; i < actors.size(); ++i) {
+			if (actors[i] == actor) {
+				ix = i;
+				break;
+			}
+		}
+
+		if (ix == -1) {
+			// #todo-actor: Should fix if reaches here
+			CHECK_NO_ENTRY();
+		} else {
+			actor->markedForDeath = true;
+			actorsToDestroy.push_back(actors[ix]);
+			actors.erase(actors.begin() + ix);
+		}
+	}
+
+	void Scene::tick(float deltaSeconds) {
+		// Destroy actors that were marked for death
+		{
+			for (auto& actor : actorsToDestroy) {
+				actor->onDestroy();
+				delete actor;
+			}
+			actorsToDestroy.clear();
+		}
+
+		// Tick
+		{
+			for (auto& actor : actors) {
+				if (!actor->markedForDeath) {
+					actor->onTick(deltaSeconds);
+				}
+			}
+		}
+	}
 
 	void Scene::calculateLightBuffer() {
 		const uint32 numPoints = (uint32)pointLights.size();

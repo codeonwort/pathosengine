@@ -42,7 +42,9 @@ Scene scene;
 
 void setupInput();
 void setupCSMDebugger();
-void setupScene();
+void setupScene(); // #todo-actor: Remove this
+void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from setupScene()
+
 void tick(float deltaSeconds);
 
 void onLoadWavefrontOBJ(OBJLoader* loader) {
@@ -84,6 +86,7 @@ int main(int argc, char** argv) {
 	setupCSMDebugger();
 #endif
 	setupScene();
+	setupSceneWithActor(&scene);
 
 	gEngine->setWorld(&scene, cam);
 
@@ -438,6 +441,26 @@ void setupScene() {
 
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+}
+
+void setupSceneWithActor(Scene* scene) {
+	class TestActor : public Actor {
+	public:
+		TestActor() {
+			LOG(LogDebug, "[TestActor] ctor");
+		}
+		virtual void onTick(float deltaSeconds) override {
+			LOG(LogDebug, "[TestActor] tick");
+			if (cnt++ > 10) destroy();
+		}
+		virtual void onDestroy() override {
+			LOG(LogDebug, "[TestActor] onDestroy");
+		}
+	private:
+		int32 cnt = 0;
+	};
+
+	scene->spawnActor<TestActor>();
 }
 
 void tick(float deltaSeconds)

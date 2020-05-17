@@ -287,6 +287,10 @@ namespace pathos {
 
 		inputSystem->tick();
 
+		if (scene != nullptr) {
+			scene->tick(deltaSeconds);
+		}
+
 		auto callback = Engine::conf.tick;
 		if (callback != nullptr) {
 			callback(deltaSeconds);

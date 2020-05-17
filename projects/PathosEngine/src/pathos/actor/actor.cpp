@@ -1,7 +1,12 @@
 #include "actor.h"
 #include "actor_component.h"
+#include "pathos/scene/scene.h"
 
 namespace pathos {
+
+	void Actor::destroy() {
+		owner->destroyActor(this);
+	}
 
 	void Actor::registerComponent(ActorComponent* component) {
 		if (component->owner != nullptr) {
