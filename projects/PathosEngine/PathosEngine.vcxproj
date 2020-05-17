@@ -87,6 +87,8 @@
     <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\badger\thread\thread_pool.cpp" />
     <ClCompile Include="src\gl3w\gl3w.c" />
+    <ClCompile Include="src\pathos\actor\actor.cpp" />
+    <ClCompile Include="src\pathos\actor\actor_component.cpp" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\gui\gui_window.cpp" />
@@ -172,6 +174,8 @@
     <ClInclude Include="src\badger\types\int_types.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\gl_core.h" />
+    <ClInclude Include="src\pathos\actor\actor.h" />
+    <ClInclude Include="src\pathos\actor\actor_component.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\engine_version.h" />
