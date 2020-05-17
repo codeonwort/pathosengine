@@ -65,41 +65,23 @@ namespace pathos {
 	}
 
 	void Scene::calculateLightBuffer() {
-#if OLD_POINT_LIGHT
-		const uint32 numPoints = (uint32)pointLights.size();
-		pointLightBuffer.resize(numPoints);
-		for (uint32 i = 0u; i < numPoints; ++i) {
-			pointLightBuffer[i] = pointLights[i]->getProxy();
-		}
-#endif
-
-		const uint32 numDirs = (uint32)directionalLights.size();
-		directionalLightBuffer.resize(numDirs);
+		const uint32 numDirs = (uint32)directionalLights_DEPRECATED.size();
+		directionalLightBuffer_DEPRECATED.resize(numDirs);
 		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightBuffer[i] = directionalLights[i]->getProxy();
+			directionalLightBuffer_DEPRECATED[i] = directionalLights_DEPRECATED[i]->getProxy();
 		}
 	}
 
 	void Scene::calculateLightBufferInViewSpace(const glm::mat4& viewMatrix) {
-#if OLD_POINT_LIGHT
-		const uint32 numPoints = (uint32)pointLights.size();
-		pointLightBuffer.resize(numPoints);
-		for (uint32 i = 0u; i < numPoints; ++i) {
-			pointLightBuffer[i] = pointLights[i]->getProxy();
-			pointLightBuffer[i].position = glm::vec3(viewMatrix * glm::vec4(pointLightBuffer[i].position, 1.0f));
-		}
-#else
 		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
-			proxyList_pointLight[i]->position
-				= glm::vec3(viewMatrix * glm::vec4(proxyList_pointLight[i]->position, 1.0f));
+			proxyList_pointLight[i]->position = glm::vec3(viewMatrix * glm::vec4(proxyList_pointLight[i]->position, 1.0f));
 		}
-#endif
 
-		const uint32 numDirs = (uint32)directionalLights.size();
-		directionalLightBuffer.resize(numDirs);
+		const uint32 numDirs = (uint32)directionalLights_DEPRECATED.size();
+		directionalLightBuffer_DEPRECATED.resize(numDirs);
 		for (uint32 i = 0u; i < numDirs; ++i) {
-			directionalLightBuffer[i] = directionalLights[i]->getProxy();
-			directionalLightBuffer[i].direction = glm::vec3(viewMatrix * glm::vec4(directionalLightBuffer[i].direction, 0.0f));
+			directionalLightBuffer_DEPRECATED[i] = directionalLights_DEPRECATED[i]->getProxy();
+			directionalLightBuffer_DEPRECATED[i].direction = glm::vec3(viewMatrix * glm::vec4(directionalLightBuffer_DEPRECATED[i].direction, 0.0f));
 		}
 	}
 

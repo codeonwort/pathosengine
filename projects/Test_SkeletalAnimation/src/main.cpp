@@ -36,7 +36,6 @@ constexpr float CAMERA_Z_FAR    = 10000.0f;
 Camera* cam;
 Scene scene;
 	DirectionalLight *dlight;
-	PointLight *plight;
 	Mesh *model, *model2;
 	SkinnedMesh *daeModel;
 	SkinnedMesh *daeModel2;

@@ -29,8 +29,8 @@ namespace pathos {
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
 		// 1. Build projection matrices that perfectly cover each camera frustum
-		if (scene->directionalLights.size() > 0) {
-			setLightDirection(scene->directionalLights[0]->direction);
+		if (scene->directionalLights_DEPRECATED.size() > 0) {
+			setLightDirection(scene->directionalLights_DEPRECATED[0]->direction);
 		}
 		calculateBounds(*camera, sceneContext.numCascades);
 

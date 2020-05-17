@@ -116,7 +116,9 @@ namespace pathos {
 		geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 		geometry->activateIndexBuffer(cmdList);
 
+#if 0 // #todo-forward-rendering: point light
 		PointLight* light = scene->pointLights_DEPRECATED[0];
+#endif
 
 		glUseProgram(program);
 
@@ -132,7 +134,11 @@ namespace pathos {
 		glUniformMatrix3fv(glGetUniformLocation(program, "mvTransform3x3"), 1, false, glm::value_ptr(mvTransform3x3));
 		
 		// uniform: vector
+#if 0 // #todo-forward-rendering: point light
 		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(light->position, 1.0f));
+#else
+		glm::vec3 light_cameraspace = glm::vec3(viewTransform * glm::vec4(glm::vec3(0.0f), 1.0f));
+#endif
 		glm::vec3 eye_cameraspace = glm::mat3(viewTransform) * camera->getEyeVector();
 		glUniform3f(glGetUniformLocation(program, "lightPos_camera"), light_cameraspace.x, light_cameraspace.y, light_cameraspace.z);
 		glUniform3f(glGetUniformLocation(program, "eyeDir_camera"), -eye_cameraspace.x, -eye_cameraspace.y, -eye_cameraspace.z);
@@ -161,10 +167,10 @@ namespace pathos {
 		uploadDirectionalLightUniform(scene, maxDirectionalLights);
 		uploadPointLightUniform(scene, maxPointLights);
 		if (shadowMapping != nullptr) {
-			shadowMapping->activate(program, scene->directionalLights, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
+			shadowMapping->activate(program, scene->directionalLights_DEPRECATED, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
 		}
 		if (omniShadow != nullptr) {
-			omniShadow->activate(program, scene->pointLights_DEPRECATED, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
+			omniShadow->activate(program, scene->proxyList_pointLight, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
 		}
 
 		//--------------------------------------------------------------------------------------

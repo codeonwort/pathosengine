@@ -137,7 +137,7 @@ namespace pathos {
 		// shadow mapping for directional light
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numDirectionalLights(); ++light) {
-				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights[light], geoms[i], modelTransform);
+				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights_DEPRECATED[light], geoms[i], modelTransform);
 			}
 		}
 
