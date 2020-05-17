@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
+#include "badger/memory/mem_alloc.h"
 #include "badger/system/stopwatch.h"
 
 #include "pathos/input/input_system.h"
@@ -51,6 +52,7 @@ namespace pathos {
 	};
 
 	class Engine final {
+		friend class EngineUtil;
 
 		using ExecProc = std::function<void(const std::string&)>;
 		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
@@ -127,6 +129,7 @@ namespace pathos {
 	// Game thread
 	private:
 		EngineConfig conf;
+		StackAllocator renderProxyAllocator;
 		Stopwatch stopwatch_gameThread;
 
 		Scene* scene;

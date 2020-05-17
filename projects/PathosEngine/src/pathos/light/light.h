@@ -4,17 +4,21 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#define OLD_POINT_LIGHT 0 // #todo-old-point-light
+
 // Role model for parameters of point light:
 //     https://docs.unrealengine.com/en-US/Engine/Rendering/LightingAndShadows/LightTypes/Point/index.html
 
 namespace pathos {
 
+#if OLD_POINT_LIGHT
 	struct PointLightProxy {
 		glm::vec3 position;
 		float     attenuationRadius;
 		glm::vec3 intensity;
 		float     falloffExponent;
 	};
+#endif
 
 	class PointLight {
 
@@ -27,6 +31,7 @@ namespace pathos {
 		{
 		}
 
+#if OLD_POINT_LIGHT
 		PointLightProxy getProxy() const {
 			PointLightProxy proxy;
 			proxy.position          = position;
@@ -36,6 +41,7 @@ namespace pathos {
 
 			return proxy;
 		};
+#endif
 
 	public:
 		glm::vec3 position;

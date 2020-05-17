@@ -1,6 +1,8 @@
 #include "scene.h"
 #include "pathos/console.h"
 #include "pathos/light/light.h"
+#include "pathos/actor/scene_component.h"
+#include "pathos/light/point_light_component.h"
 
 namespace pathos {
 
@@ -48,12 +50,28 @@ namespace pathos {
 		}
 	}
 
+	void Scene::clearRenderProxy() {
+		proxyList_pointLight.clear();
+	}
+
+	void Scene::createRenderProxy() {
+		for (auto& actor : actors) {
+			if (!actor->markedForDeath) {
+				for (ActorComponent* actorComponent : actor->components) {
+					actorComponent->createRenderProxy(this);
+				}
+			}
+		}
+	}
+
 	void Scene::calculateLightBuffer() {
+#if OLD_POINT_LIGHT
 		const uint32 numPoints = (uint32)pointLights.size();
 		pointLightBuffer.resize(numPoints);
 		for (uint32 i = 0u; i < numPoints; ++i) {
 			pointLightBuffer[i] = pointLights[i]->getProxy();
 		}
+#endif
 
 		const uint32 numDirs = (uint32)directionalLights.size();
 		directionalLightBuffer.resize(numDirs);
@@ -63,12 +81,19 @@ namespace pathos {
 	}
 
 	void Scene::calculateLightBufferInViewSpace(const glm::mat4& viewMatrix) {
+#if OLD_POINT_LIGHT
 		const uint32 numPoints = (uint32)pointLights.size();
 		pointLightBuffer.resize(numPoints);
 		for (uint32 i = 0u; i < numPoints; ++i) {
 			pointLightBuffer[i] = pointLights[i]->getProxy();
 			pointLightBuffer[i].position = glm::vec3(viewMatrix * glm::vec4(pointLightBuffer[i].position, 1.0f));
 		}
+#else
+		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
+			proxyList_pointLight[i]->position
+				= glm::vec3(viewMatrix * glm::vec4(proxyList_pointLight[i]->position, 1.0f));
+		}
+#endif
 
 		const uint32 numDirs = (uint32)directionalLights.size();
 		directionalLightBuffer.resize(numDirs);

@@ -13,6 +13,7 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/light/point_light_component.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -398,10 +399,17 @@ namespace pathos {
 			memcpy_s(&data.directionalLights[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightBuffer(), scene->getDirectionalLightBufferSize());
 		}
 
+#if 0 // #todo-actor: I prefer this, but can't just memcpy with new architecture.
 		data.numPointLights = pathos::min(scene->numPointLights(), MAX_POINT_LIGHTS);
 		if (data.numPointLights > 0) {
 			memcpy_s(&data.pointLights[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightBuffer(), scene->getPointLightBufferSize());
 		}
+#else
+		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
+		for (uint32 i = 0; i < data.numPointLights; ++i) {
+			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
+		}
+#endif
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 	}

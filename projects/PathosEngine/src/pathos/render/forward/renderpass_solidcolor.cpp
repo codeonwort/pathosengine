@@ -117,7 +117,7 @@ namespace pathos {
 			shadowMapping->activate(program, scene->directionalLights, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
 		}
 		if (omniShadow != nullptr) {
-			omniShadow->activate(program, scene->pointLights, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
+			omniShadow->activate(program, scene->pointLights_DEPRECATED, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
 		}
 
 		//--------------------------------------------------------------------------------------

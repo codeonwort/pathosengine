@@ -623,5 +623,14 @@
     <ClInclude Include="src\pathos\scene\scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\actor\scene_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\point_light_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\util\engine_util.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -100,7 +100,8 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(ShadowMap);
 
 			shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
-			omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
+			// #todo-forward-rendering: Fix
+			//omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
 			for (Mesh* mesh : scene->meshes) {
 				if (mesh->visible == false) continue;
 				renderLightDepth(cmdList,mesh);
@@ -140,12 +141,14 @@ namespace pathos {
 			}
 		}
 
+#if 0 // #todo-forward-rendering: Fix
 		// omnidirectional shadow for point light
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numPointLights(); ++light) {
 				omniShadow->renderLightDepth(cmdList, light, scene->pointLights[light], geoms[i], modelTransform);
 			}
 		}
+#endif
 
 		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
 		if (mesh->renderInternal) glFrontFace(GL_CCW);

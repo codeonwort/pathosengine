@@ -8,6 +8,8 @@
 #include "pathos/util/math_lib.h"
 using namespace pathos;
 
+#include "point_light_actor.h"
+
 #define VISUALIZE_CSM_FRUSTUM 0
 #define DEBUG_SKYBOX          0
 
@@ -266,11 +268,6 @@ void setupScene() {
 	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(sunLight);
 
-	scene.add(new PointLight(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 1.0f, 1.0f), 100.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f), 100.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
-
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
@@ -444,6 +441,8 @@ void setupScene() {
 }
 
 void setupSceneWithActor(Scene* scene) {
+	//////////////////////////////////////////////////////////////////////////
+	// Test
 	class TestActor : public Actor {
 	public:
 		TestActor() {
@@ -461,6 +460,18 @@ void setupSceneWithActor(Scene* scene) {
 	};
 
 	scene->spawnActor<TestActor>();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Lighting
+	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight1 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight2 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight3 = scene->spawnActor<PointLightActor>();
+
+	pointLight0->setParameters(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
+	pointLight1->setParameters(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
+	pointLight2->setParameters(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
+	pointLight3->setParameters(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
 }
 
 void tick(float deltaSeconds)

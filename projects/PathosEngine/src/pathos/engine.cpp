@@ -16,6 +16,8 @@
 
 namespace pathos {
 
+	static constexpr uint32 RENDER_PROXY_MEMORY = 16 * 1024 * 1024; // 16 MB
+
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
 
@@ -47,7 +49,8 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
-		: scene(nullptr)
+		: renderProxyAllocator(RENDER_PROXY_MEMORY)
+		, scene(nullptr)
 		, camera(nullptr)
 		, render_device(nullptr)
 		, renderer(nullptr)
@@ -296,6 +299,10 @@ namespace pathos {
 			callback(deltaSeconds);
 		}
 
+		if (scene != nullptr) {
+			scene->createRenderProxy();
+		}
+
 		stopwatch_gameThread.start();
 	}
 
@@ -322,6 +329,12 @@ namespace pathos {
 		if (gConsole) {
 			gConsole->renderConsoleWindow(immediateContext);
 			immediateContext.flushAllCommands();
+		}
+
+		renderProxyAllocator.clear();
+
+		if (scene != nullptr) {
+			scene->clearRenderProxy();
 		}
 	}
 

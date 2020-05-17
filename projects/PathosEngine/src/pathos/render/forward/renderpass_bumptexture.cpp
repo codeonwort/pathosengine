@@ -116,7 +116,7 @@ namespace pathos {
 		geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 		geometry->activateIndexBuffer(cmdList);
 
-		PointLight* light = scene->pointLights[0];
+		PointLight* light = scene->pointLights_DEPRECATED[0];
 
 		glUseProgram(program);
 
@@ -164,7 +164,7 @@ namespace pathos {
 			shadowMapping->activate(program, scene->directionalLights, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
 		}
 		if (omniShadow != nullptr) {
-			omniShadow->activate(program, scene->pointLights, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
+			omniShadow->activate(program, scene->pointLights_DEPRECATED, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
 		}
 
 		//--------------------------------------------------------------------------------------
