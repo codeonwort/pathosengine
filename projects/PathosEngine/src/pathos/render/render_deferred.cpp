@@ -399,35 +399,16 @@ namespace pathos {
 			memcpy_s(&data.directionalLights[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightBuffer(), scene->getDirectionalLightBufferSize());
 		}
 
-#if 0 // #todo-actor: I prefer this, but can't just memcpy with new architecture.
-		data.numPointLights = pathos::min(scene->numPointLights(), MAX_POINT_LIGHTS);
-		if (data.numPointLights > 0) {
-			memcpy_s(&data.pointLights[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightBuffer(), scene->getPointLightBufferSize());
-		}
-#else
 		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
 		for (uint32 i = 0; i < data.numPointLights; ++i) {
 			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
 		}
-#endif
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 	}
 
 	void DeferredRenderer::collectRenderItems()
 	{
-#if 0 // DEBUG: assert geometries and materials
-		for (Mesh* mesh : scene->meshes) {
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-			size_t len = geoms.size();
-			assert(geoms.size() == materials.size());
-			for (auto i = 0u; i < len; ++i) {
-				assert(geoms[i] != nullptr && materials[i] != nullptr);
-			}
-		}
-#endif
-
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			renderItems[i].clear();

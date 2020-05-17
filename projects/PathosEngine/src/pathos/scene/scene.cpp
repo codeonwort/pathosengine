@@ -21,7 +21,7 @@ namespace pathos {
 		}
 
 		if (ix == -1) {
-			// #todo-actor: Should fix if reaches here
+			// Should fix if enters here
 			CHECK_NO_ENTRY();
 		} else {
 			actor->markedForDeath = true;

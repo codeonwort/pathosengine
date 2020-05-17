@@ -82,7 +82,7 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 
-	// #todo: remove this and all children
+	// #todo-shader: remove this and all children
 	// generates shader source codes for Shader::setSource().
 	class ShaderSource {
 	protected:

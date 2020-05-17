@@ -79,7 +79,7 @@ namespace pathos {
 		std::vector<Actor*> actors;          // Actors in this scene
 		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
 
-	// #todo-deprecated
+	// #todo-deprecated: Replace with DirectionalLightComponent
 	public:
 		std::vector<DirectionalLight*> directionalLights_DEPRECATED;
 		std::vector<DirectionalLightProxy> directionalLightBuffer_DEPRECATED;

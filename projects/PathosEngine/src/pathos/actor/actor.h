@@ -8,6 +8,7 @@ namespace pathos {
 	class Scene;
 	class ActorComponent;
 
+	// #note-actor: Actors are owned by Scene.
 	class Actor
 	{
 		friend class Scene;
