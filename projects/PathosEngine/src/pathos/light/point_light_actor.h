@@ -20,7 +20,7 @@ namespace pathos {
 			float inAttenuationRadius = 100.0f,
 			float inFalloffExponent = 0.001f)
 		{
-			lightComponent->position = inPosition;
+			lightComponent->setLocation(inPosition);
 			lightComponent->color = inColor;
 			lightComponent->attenuationRadius = inAttenuationRadius;
 			lightComponent->falloffExponent = inFalloffExponent;

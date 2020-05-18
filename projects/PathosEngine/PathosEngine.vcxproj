@@ -89,6 +89,7 @@
     <ClCompile Include="src\gl3w\gl3w.c" />
     <ClCompile Include="src\pathos\actor\actor.cpp" />
     <ClCompile Include="src\pathos\actor\actor_component.cpp" />
+    <ClCompile Include="src\pathos\actor\scene_component.cpp" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\gui\gui_window.cpp" />

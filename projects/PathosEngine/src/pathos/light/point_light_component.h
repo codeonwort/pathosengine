@@ -22,7 +22,7 @@ namespace pathos {
 		{
 			PointLightProxy* proxy = ALLOC_RENDER_PROXY<PointLightProxy>();
 
-			proxy->position          = position;
+			proxy->position          = getLocation();
 			proxy->attenuationRadius = attenuationRadius;
 			proxy->intensity         = color;
 			proxy->falloffExponent   = falloffExponent;
@@ -31,7 +31,6 @@ namespace pathos {
 		}
 
 	public:
-		glm::vec3 position;
 		glm::vec3 color;
 		float     attenuationRadius;
 		float     falloffExponent;
