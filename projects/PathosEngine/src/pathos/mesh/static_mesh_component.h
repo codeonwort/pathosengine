@@ -11,7 +11,6 @@ namespace pathos {
 
 	// #todo-renderer: Further decompose
 	struct StaticMeshProxy : public SceneComponentProxy {
-		uint32 castsShadow : 1;
 		uint32 doubleSided : 1;
 		uint32 renderInternal : 1;
 		matrix4 modelMatrix;

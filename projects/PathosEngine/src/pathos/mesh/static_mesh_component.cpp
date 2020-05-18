@@ -37,14 +37,13 @@ namespace pathos {
 			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>();
-			proxy->castsShadow = mesh->castsShadow;
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getMatrix();
 			proxy->geometry = geoms[i];
 			proxy->material = materials[i];
 
-			scene->proxyList_staticMesh[(uint16)materialID].push_back(proxy);
+			scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
 		}
 	}
 
@@ -65,7 +64,6 @@ namespace pathos {
 			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>();
-			proxy->castsShadow = mesh->castsShadow;
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getMatrix();

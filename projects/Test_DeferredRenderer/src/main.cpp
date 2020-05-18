@@ -39,7 +39,7 @@ Scene scene;
 	std::vector<StaticMeshActor*> balls;
 	std::vector<StaticMeshActor*> boxes;
 #if VISUALIZE_CSM_FRUSTUM
-	Mesh* csmDebugger;
+	StaticMeshActor* csmDebugger;
 #endif
 
 void setupInput();
@@ -139,9 +139,9 @@ void setupCSMDebugger()
 	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	if (firstRun) {
-		csmDebugger = new Mesh;
-		csmDebugger->castsShadow = false;
-		scene.add(csmDebugger);
+		csmDebugger = scene.spawnActor<StaticMeshActor>();
+		csmDebugger->setStaticMesh(new Mesh);
+		csmDebugger->getStaticMesh()->castsShadow = false;
 	}
 
 	constexpr uint32 numFrustum = 4;
@@ -155,7 +155,7 @@ void setupCSMDebugger()
 		static ProceduralGeometry* G = new ProceduralGeometry;
 		static WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
 		if (firstRun) {
-			csmDebugger->add(G, M);
+			csmDebugger->getStaticMesh()->add(G, M);
 		}
 		G->clear();
 
@@ -193,7 +193,7 @@ void setupCSMDebugger()
 		static ProceduralGeometry* G = new ProceduralGeometry;
 		static WireframeMaterial* M = new WireframeMaterial(1.0f, 0.0f, 0.0f);
 		if (firstRun) {
-			csmDebugger->add(G, M);
+			csmDebugger->getStaticMesh()->add(G, M);
 		}
 		G->clear();
 
