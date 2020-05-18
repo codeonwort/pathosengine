@@ -3,10 +3,12 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/light/light_all.h"
+#include "pathos/mesh/static_mesh_actor.h"
 
 #include "daeloader.h"
 #include "skinned_mesh.h"
 #include <time.h>
+
 
 using namespace std;
 using namespace pathos;
@@ -35,7 +37,7 @@ constexpr float CAMERA_Z_FAR    = 10000.0f;
 
 Camera* cam;
 Scene scene;
-	Mesh *model, *model2;
+	StaticMeshActor *model, *model2;
 	SkinnedMesh *daeModel;
 	SkinnedMesh *daeModel2;
 
@@ -58,8 +60,7 @@ int main(int argc, char** argv) {
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, ar, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-#if 0
-	// #todo-camera: Eye have to see +z when yaw=0, but it sees -z !!!
+#if 0 // #todo-camera: Eye have to see +z when yaw=0, but it looks at -z !!!
 	cam->moveToPosition(CAMERA_POSITION);
 	cam->setYaw(0.0f);
 	cam->setPitch(0.0f);
@@ -119,13 +120,16 @@ void loadDAE() {
 	DAELoader loader(model.c_str(), dir.c_str(), aiProcessPreset_TargetRealtime_MaxQuality, invertWinding);
 	if (loader.getMesh()) {
 		daeModel = dynamic_cast<SkinnedMesh*>(loader.getMesh());
-		daeModel->getTransform().setScale(10.0f);
+
+		StaticMeshActor* daeActor = scene.spawnActor<StaticMeshActor>();
+		daeActor->setStaticMesh(daeModel);
+		
+		daeActor->setActorScale(10.0f);
 #if DAE_MODEL_ID == 2
-		daeModel->getTransform().setScale(5.0f);
-		daeModel->getTransform().setRotation(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		daeActor->setActorScale(5.0f);
+		daeActor->setActorRotation(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
-		daeModel->getTransform().setLocation(0.0f, 0.0f, 0.0f);
-		scene.add(daeModel);
+		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
 	} else {
 		LOG(LogError, "Failed to load model: %s", model.c_str());
 	}
@@ -198,29 +202,29 @@ void setupScene() {
 
 	for (int32_t i = 0; i < 8; ++i) {
 		for (int32_t j = 0; j < 4; ++j) {
-			Mesh* cube = new Mesh(geom_cube, material_color);
+			StaticMeshActor* cube = scene.spawnActor<StaticMeshActor>();
+			cube->setStaticMesh(new Mesh(geom_cube, material_color));
 			glm::vec3 p0(-50.0f, 50.0f, -50.0f);
 			float e = (rand() % 256) / 255.0f;
 			float x = (rand() % 256) / 255.0f;
 			float y = (rand() % 256) / 255.0f;
 			float z = (rand() % 256) / 255.0f;
-			cube->getTransform().setRotation(e * 60.0f, glm::vec3(x, y, z));
-			cube->getTransform().setLocation(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
-			scene.add(cube);
+			cube->setActorRotation(e * 60.0f, glm::vec3(x, y, z));
+			cube->setActorLocation(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
 		}
 	}
 
-	model = new Mesh(geom_sphere_big, material_texture);
-	model->getTransform().setLocation(-40, 0, 0);
+	model = scene.spawnActor<StaticMeshActor>();
+	model->setStaticMesh(new Mesh(geom_sphere_big, material_texture));
+	model->setActorLocation(vector3(-40.0f, 0.0f, 0.0f));
 
-	model2 = new Mesh(geom_sphere, material_color);
-	model2->getTransform().setScale(10.0f);
-	model2->getTransform().setLocation(0, 50, -200);
+	model2 = scene.spawnActor<StaticMeshActor>();
+	model2->setStaticMesh(new Mesh(geom_sphere, material_color));
+	model2->setActorScale(10.0f);
+	model2->setActorLocation(vector3(0.0f, 50.0f, -200.0f));
 
-	scene.add(model);
-	scene.add(model2);
 	scene.sky = new Skybox(cubeTexture);
-	scene.godRaySource = model2;
+	scene.godRaySource = model2->getStaticMeshComponent();
 }
 
 void tick(float deltaSeconds) {
@@ -243,9 +247,10 @@ void tick(float deltaSeconds) {
 		cam->rotateX(rotX);
 	}
 
-	model->getTransform().setLocation(0, 20, 0);
-	model->getTransform().setRotation(0.01f, glm::vec3(0, 0.5, 1));
-	model->getTransform().setLocation(0, -20, 0);
+	static float modelAngle = 0.0f;
+	model->setActorLocation(vector3(0, 20, 0));
+	model->setActorRotation(modelAngle += 0.01f, glm::vec3(0, 0.5, 1));
+	model->setActorLocation(vector3(0, -20, 0));
 
 #if DAE_MODEL_ID == 2
 	static double time = 0.0;
@@ -257,7 +262,7 @@ void tick(float deltaSeconds) {
 
 	{
 		char title[256];
-		sprintf_s(title, "%s (GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getGPUTime());
+		sprintf_s(title, "%s (CPU Time: %.2f ms, GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getCPUTime(), gEngine->getGPUTime());
 		gEngine->getMainWindow()->setTitle(title);
 	}
 }
