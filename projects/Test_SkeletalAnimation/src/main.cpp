@@ -143,10 +143,11 @@ void loadDAE() {
 
 void setupSceneWithActor(Scene* scene) {
 	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
-	dirLight->setLightParameters(glm::vec3(0, 0, -1), glm::vec3(1.0f));
+	dirLight->setLightParameters(vector3(0.0f, 0.0f, -1.0f), vector3(1.0f));
 
 	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
-	pointLight0->setLightParameters(glm::vec3(0, 0, 0), glm::vec3(1.0f));
+	pointLight0->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
+	pointLight0->setLightParameters(vector3(1.0f));
 }
 void setupScene() {
 	srand(static_cast<unsigned int>(time(NULL)));

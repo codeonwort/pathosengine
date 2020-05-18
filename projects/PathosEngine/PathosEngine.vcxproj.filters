@@ -641,5 +641,8 @@
     <ClInclude Include="src\pathos\light\light_all.h">
       <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
+    <ClInclude Include="src\badger\types\vector_types.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

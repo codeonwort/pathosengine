@@ -173,6 +173,7 @@
     <ClInclude Include="src\badger\thread\thread_pool.h" />
     <ClInclude Include="src\badger\types\int_types.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
+    <ClInclude Include="src\badger\types\vector_types.h" />
     <ClInclude Include="src\gl_core.h" />
     <ClInclude Include="src\pathos\actor\actor.h" />
     <ClInclude Include="src\pathos\actor\actor_component.h" />

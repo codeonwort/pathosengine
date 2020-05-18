@@ -11,17 +11,17 @@ namespace pathos {
 		PointLightActor()
 		{
 			lightComponent = createDefaultComponent<PointLightComponent>();
+
+			setAsRootComponent(lightComponent);
 		}
 
 		// #todo-light: Temporary API
 		void setLightParameters(
-			const glm::vec3& inPosition,
-			const glm::vec3& inColor = glm::vec3(1, 1, 1),
+			const vector3& inRadiance = vector3(1.0f, 1.0f, 1.0f),
 			float inAttenuationRadius = 100.0f,
 			float inFalloffExponent = 0.001f)
 		{
-			lightComponent->setLocation(inPosition);
-			lightComponent->color = inColor;
+			lightComponent->color = inRadiance;
 			lightComponent->attenuationRadius = inAttenuationRadius;
 			lightComponent->falloffExponent = inFalloffExponent;
 		}

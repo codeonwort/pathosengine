@@ -457,17 +457,22 @@ void setupSceneWithActor(Scene* scene) {
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting
 	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
-	dirLight->setLightParameters(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
+	dirLight->setLightParameters(SUN_DIRECTION, vector3(1.0f, 1.0f, 1.0f));
 
 	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight2 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight3 = scene->spawnActor<PointLightActor>();
 
-	pointLight0->setLightParameters(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
-	pointLight1->setLightParameters(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
-	pointLight2->setLightParameters(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
-	pointLight3->setLightParameters(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
+	pointLight0->setActorLocation(vector3(-50.0f, 60.0f, 170.0f));
+	pointLight1->setActorLocation(vector3(0.0f, 30.0f, 150.0f));
+	pointLight2->setActorLocation(vector3(-20.0f, 50.0f, 50.0f));
+	pointLight3->setActorLocation(vector3(-20.0f, 50.0f, 150.0f));
+
+	pointLight0->setLightParameters(5.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
+	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
+	pointLight2->setLightParameters(2.0f * vector3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
+	pointLight3->setLightParameters(1.0f * vector3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
 }
 
 void tick(float deltaSeconds)

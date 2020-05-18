@@ -31,6 +31,7 @@ namespace pathos {
 			actors.emplace_back(actor);
 			actor->isInConstructor = false;
 			actor->owner = this;
+			actor->fixRootComponent();
 			actor->onSpawn();
 
 			return actor;
