@@ -50,6 +50,8 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: renderProxyAllocator(RENDER_PROXY_MEMORY)
+		, elapsed_gameThread(0.0f)
+		, elapsed_renderThread(0.0f)
 		, scene(nullptr)
 		, camera(nullptr)
 		, render_device(nullptr)
@@ -288,6 +290,8 @@ namespace pathos {
 		// #todo-tick: add option to limit fps
 		float deltaSeconds = stopwatch_gameThread.stop();
 
+		stopwatch_gameThread.start();
+
 		inputSystem->tick();
 
 		if (scene != nullptr) {
@@ -303,12 +307,16 @@ namespace pathos {
 			scene->createRenderProxy();
 		}
 
+		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+
 		stopwatch_gameThread.start();
 	}
 
 	void Engine::render() {
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
+
+		stopwatch_renderThread.start();
 
 		assetStreamer->renderThread_flushLoadedAssets();
 
@@ -322,20 +330,22 @@ namespace pathos {
 			immediateContext.flushAllCommands();
 		}
 
-		glEndQuery(GL_TIME_ELAPSED);
-		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
-		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
-
 		if (gConsole) {
 			gConsole->renderConsoleWindow(immediateContext);
 			immediateContext.flushAllCommands();
 		}
+
+		glEndQuery(GL_TIME_ELAPSED);
+		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
+		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
 
 		renderProxyAllocator.clear();
 
 		if (scene != nullptr) {
 			scene->clearRenderProxy();
 		}
+
+		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
 	}
 
 	/////////////////////////////////////////////////////////////////////

@@ -58,6 +58,10 @@ namespace pathos {
 		rootComponent->setLocation(inLocation);
 	}
 
+	void Actor::setActorRotation(float inAngle_radians, const vector3& inAxis) {
+		rootComponent->setRotation(inAngle_radians, inAxis);
+	}
+
 	void Actor::setActorScale(const vector3& inScale) {
 		rootComponent->setScale(inScale);
 	}

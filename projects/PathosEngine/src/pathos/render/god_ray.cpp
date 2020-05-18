@@ -2,10 +2,15 @@
 #include "scene_render_targets.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
+#include "pathos/shader/shader.h"
+#include "pathos/material/material.h"
+#include "pathos/mesh/geometry.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh_component.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/types/matrix_types.h"
 #include "glm/gtc/type_ptr.hpp"
-
 
 namespace pathos {
 
@@ -165,7 +170,7 @@ void main() {
 		cmdList.depthFunc(GL_LEQUAL);
 
 		// special case: no light source
-		if (scene->godRaySource == nullptr) {
+		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
 			return;
 		}
 
@@ -175,12 +180,24 @@ void main() {
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
 			cmdList.useProgram(program_silhouette);
-			renderSilhouette(cmdList, camera, scene->godRaySource, opaque_white);
-			for (Mesh* mesh : scene->meshes) {
-				if (mesh == scene->godRaySource) {
-					continue;
+
+			// Source
+			std::vector<StaticMeshProxy*> sourceProxyList;
+			scene->godRaySource->createRenderProxy_internal(scene, sourceProxyList); // #todo-godray: hack
+			MeshGeometry* godRayGeometry = scene->godRaySource->getStaticMesh()->getGeometries()[0];
+			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
+				renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
+			}
+
+			// Occluders
+			for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
+				const auto& proxyList = scene->proxyList_staticMesh[i];
+				for (StaticMeshProxy* proxy : proxyList) {
+					if (proxy->geometry == godRayGeometry) {
+						continue;
+					}
+					renderSilhouette(cmdList, camera, proxy, opaque_black);
 				}
-				renderSilhouette(cmdList, camera, mesh, opaque_black);
 			}
 		}
 
@@ -188,7 +205,7 @@ void main() {
 		{
 			SCOPED_DRAW_EVENT(LightScattering);
 
-			glm::vec3 lightPos = scene->godRaySource->getTransform().getLocation();
+			vector3 lightPos = scene->godRaySource->getLocation();
 			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
 			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
 			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
@@ -227,37 +244,29 @@ void main() {
 		}
 	}
 
-	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color) {
-		const auto modelMatrix = mesh->getTransform().getMatrix();
-		const auto geoms = mesh->getGeometries();
-		const auto materials = mesh->getMaterials();
+	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* meshProxy, GLfloat* color) {
+		// #todo-godray: Ignore translucent materials for now
+		if (meshProxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+			return;
+		}
 
 		cmdList.uniform3fv(uniform_color, 1, color);
-		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * modelMatrix));
+		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * meshProxy->modelMatrix));
 
-		for (auto i = 0u; i < geoms.size(); ++i) {
-			MeshGeometry* G = geoms[i];
-			Material* M = materials[i];
 
-			// #todo-godray: Ignore translucent materials for now
-			if (M != nullptr && M->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
-				continue;
-			}
+		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
+		if (wireframe) {
+			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
 
-			bool wireframe = M != nullptr && M->getMaterialID() == MATERIAL_ID::WIREFRAME;
-			if (wireframe) {
-				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			}
+		meshProxy->geometry->activate_position(cmdList);
+		meshProxy->geometry->activateIndexBuffer(cmdList);
+		meshProxy->geometry->drawPrimitive(cmdList);
+		meshProxy->geometry->deactivate(cmdList);
+		meshProxy->geometry->deactivateIndexBuffer(cmdList);
 
-			G->activate_position(cmdList);
-			G->activateIndexBuffer(cmdList);
-			G->drawPrimitive(cmdList);
-			G->deactivate(cmdList);
-			G->deactivateIndexBuffer(cmdList);
-
-			if (wireframe) {
-				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			}
+		if (wireframe) {
+			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 	}
 

@@ -15,9 +15,9 @@
 #include "pathos/util/math_lib.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/light/directional_light_component.h"
+#include "pathos/mesh/static_mesh_component.h"
 
 #include "badger/assertion/assertion.h"
-
 
 #define ASSERT_GL_NO_ERROR 0
 
@@ -189,8 +189,6 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
-		collectRenderItems();
-
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
@@ -325,19 +323,20 @@ namespace pathos {
 				pass->bindProgram(cmdList);
 			}
 
-			for (auto j = 0u; j < renderItems[i].size(); ++j) {
-				const RenderItem& item = renderItems[i][j];
+			const auto& proxyList = scene->proxyList_staticMesh[i];
+			for (auto j = 0u; j < proxyList.size(); ++j) {
+				const StaticMeshProxy& item = *(proxyList[j]);
 
 				// #todo-renderer: Batching by same state
-				if (item.mesh->doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) cmdList.frontFace(GL_CW);
+				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (item.renderInternal) cmdList.frontFace(GL_CW);
 
- 				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
+ 				pass->setModelMatrix(item.modelMatrix);
  				pass->render(cmdList, scene, camera, item.geometry, item.material);
 
 				// #todo-renderer: Batching by same state
-				if (item.mesh->doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) cmdList.frontFace(GL_CCW);
+				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (item.renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
 	}
@@ -360,7 +359,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(Translucency);
 
 		uint8 materialID = (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
-		const std::vector<RenderItem>& meshBatches = renderItems[materialID];
+		const auto& meshBatches = scene->proxyList_staticMesh[materialID];
 
 		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
 	}
@@ -406,33 +405,6 @@ namespace pathos {
 		}
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
-	}
-
-	void DeferredRenderer::collectRenderItems()
-	{
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			renderItems[i].clear();
-		}
-
-		// sort by materials
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->visible == false) continue;
-
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-
-			for (size_t i = 0u; i < geoms.size(); ++i) {
-				MeshGeometry* G = geoms[i];
-				Material* M = materials[i];
-
-				uint8 materialID = (uint8)M->getMaterialID();
-				CHECK(0 <= materialID && materialID < numMaterialIDs);
-
-				RenderItem meshBatch(mesh, G, M);
-				renderItems[materialID].emplace_back(meshBatch);
-			}
-		}
 	}
 
 }

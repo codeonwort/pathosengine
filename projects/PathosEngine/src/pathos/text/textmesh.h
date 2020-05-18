@@ -32,6 +32,8 @@ namespace pathos {
 	private:
 		void configureGeometry(const std::wstring& text);
 
+		ModelTransform transform;
+
 		// TODO: why is this a member variable?
 		//       make it shared by text meshes.
 		FontTextureCache cache;

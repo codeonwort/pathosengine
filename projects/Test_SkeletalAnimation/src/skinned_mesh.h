@@ -41,7 +41,11 @@ namespace pathos {
 		void updateAnimation(int index, double progress);
 		void updateGlobalTransform();
 
+		inline ModelTransform& getTransform() { return transform; }
+
 	protected:
+		ModelTransform transform;
+
 		std::vector<std::vector<Bone>> boneMapping;
 		std::vector<std::vector<float>> initialPositionsMapping;
 

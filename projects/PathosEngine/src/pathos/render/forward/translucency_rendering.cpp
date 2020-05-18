@@ -1,17 +1,18 @@
 #include "translucency_rendering.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/shader/shader.h"
 #include "pathos/render/scene_render_targets.h"
 
 namespace pathos {
 
 	struct UBO_Translucency {
-		glm::mat4 mvMatrix;
-		glm::mat4 mvpMatrix;
-		glm::mat3x4 mvMatrix3x3;
-		glm::vec4 albedo;
-		glm::vec4 metallic_roughness;
-		glm::vec4 transmittance_opacity;
+		matrix4   mvMatrix;
+		matrix4   mvpMatrix;
+		matrix3x4 mvMatrix3x3;
+		vector4   albedo;
+		vector4   metallic_roughness;
+		vector4   transmittance_opacity;
 	};
 
 	TranslucencyRendering::TranslucencyRendering()
@@ -47,7 +48,7 @@ namespace pathos {
 		cmdList.deleteFramebuffers(1, &fbo);
 	}
 
-	void TranslucencyRendering::renderTranslucency(RenderCommandList& cmdList, const Camera* camera, const std::vector<RenderItem>& meshBatches)
+	void TranslucencyRendering::renderTranslucency(RenderCommandList& cmdList, const Camera* camera, const std::vector<StaticMeshProxy*>& meshBatches)
 	{
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
@@ -70,19 +71,19 @@ namespace pathos {
 		}
 
 		// #todo-translucency: drawcall
-		for (const RenderItem& meshBatch : meshBatches) {
-			const glm::mat4& modelMatrix = meshBatch.mesh->getTransform().getMatrix();
-			TranslucentColorMaterial* material = static_cast<TranslucentColorMaterial*>(meshBatch.material);
-			MeshGeometry* geometry = meshBatch.geometry;
+		for (const StaticMeshProxy* meshBatch : meshBatches) {
+			const matrix4& modelMatrix = meshBatch->modelMatrix;
+			TranslucentColorMaterial* material = static_cast<TranslucentColorMaterial*>(meshBatch->material);
+			MeshGeometry* geometry = meshBatch->geometry;
 
 			UBO_Translucency uboData;
 			uboData.mvMatrix              = camera->getViewMatrix() * modelMatrix;
 			uboData.mvpMatrix             = camera->getViewProjectionMatrix() * modelMatrix;
-			uboData.mvMatrix3x3           = glm::mat3x4(uboData.mvMatrix);
-			uboData.albedo                = glm::vec4(material->getAlbedo(), 0.0f);
+			uboData.mvMatrix3x3           = matrix3x4(uboData.mvMatrix);
+			uboData.albedo                = vector4(material->getAlbedo(), 0.0f);
 			uboData.metallic_roughness.x  = material->getMetallic();
 			uboData.metallic_roughness.y  = material->getRoughness();
-			uboData.transmittance_opacity = glm::vec4(material->getTransmittance(), material->getOpacity());
+			uboData.transmittance_opacity = vector4(material->getTransmittance(), material->getOpacity());
 			ubo.update(cmdList, 1, &uboData);
 
 			geometry->activate_position_uv_normal_tangent_bitangent(cmdList);

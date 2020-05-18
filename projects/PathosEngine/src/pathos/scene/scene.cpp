@@ -53,6 +53,11 @@ namespace pathos {
 	void Scene::clearRenderProxy() {
 		proxyList_directionalLight.clear();
 		proxyList_pointLight.clear();
+		proxyList_shadowMesh.clear();
+		proxyList_wireframeShadowMesh.clear();
+		for (uint32 i = 0; i < (uint32)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+			proxyList_staticMesh[i].clear();
+		}
 	}
 
 	void Scene::createRenderProxy() {
@@ -65,19 +70,14 @@ namespace pathos {
 		}
 	}
 
-	void Scene::transformLightProxyToViewSpace(const glm::mat4& viewMatrix) {
+	void Scene::transformLightProxyToViewSpace(const matrix4& viewMatrix) {
 		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
-			proxyList_pointLight[i]->position = glm::vec3(viewMatrix * glm::vec4(proxyList_pointLight[i]->position, 1.0f));
+			proxyList_pointLight[i]->position = vector3(viewMatrix * vector4(proxyList_pointLight[i]->position, 1.0f));
 		}
 
 		for (uint32 i = 0u; i < proxyList_directionalLight.size(); ++i) {
-			proxyList_directionalLight[i]->direction = glm::vec3(viewMatrix * glm::vec4(proxyList_directionalLight[i]->direction, 0.0f));
+			proxyList_directionalLight[i]->direction = vector3(viewMatrix * vector4(proxyList_directionalLight[i]->direction, 0.0f));
 		}
 	}
 
-	void Scene::add(std::initializer_list<Mesh*> newMeshes) {
-		for (Mesh* mesh : newMeshes) {
-			meshes.push_back(mesh);
-		}
-	}
 }

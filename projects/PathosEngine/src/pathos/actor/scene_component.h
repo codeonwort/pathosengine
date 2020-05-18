@@ -21,22 +21,29 @@ namespace pathos {
 		SceneComponent() = default;
 		virtual ~SceneComponent() = default;
 
+		inline void setVisibility(bool isVisible) { visible = isVisible; }
+		inline bool getVisibility() const { return visible; }
+
 		// Location
-		void setLocation(const glm::vec3& inLocation);
-		void addLocation(const glm::vec3& inDeltaLocation);
-		inline glm::vec3 getLocation() const { return transform.getLocation(); }
+		void setLocation(const vector3& inLocation);
+		void addLocation(const vector3& inDeltaLocation);
+		inline vector3 getLocation() const { return transform.getLocation(); }
 
 		// Rotation // #todo-actor
-		//void setRotation();
+		void setRotation(float inAngle_radians, const vector3& inAxis);
 		//inline Rotator getRotation() const { return (0); }
 
 		// Scale
 		void setScale(float inUniformScale);
-		void setScale(const glm::vec3& inScale);
-		inline glm::vec3 getScale() const { return transform.getScale(); }
+		void setScale(const vector3& inScale);
+		inline vector3 getScale() const { return transform.getScale(); }
+
+	protected:
+		matrix4 getMatrix() const;
 
 	private:
 		ModelTransform transform;
+		bool visible = true;
 
 	};
 

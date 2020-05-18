@@ -1,15 +1,17 @@
 #pragma once
 
 #include "pathos/actor/actor.h"
+#include "pathos/material/material_id.h"
 
-#include "glm/glm.hpp"
+#include "badger/types/matrix_types.h"
+
 #include "gl_core.h"
 #include <vector>
 
 namespace pathos {
 
 	// Forward declaration
-	class Mesh;
+	class StaticMeshComponent;
 	class SkyRendering;
 
 	// Represents a 3D scene.
@@ -47,15 +49,11 @@ namespace pathos {
 		//////////////////////////////////////////////////////////////////////////
 		// Old API
 
-		inline void add(Mesh* mesh) { meshes.push_back(mesh); }
-		void add(std::initializer_list<Mesh*> meshes);
-		
-		void transformLightProxyToViewSpace(const glm::mat4& viewMatrix);
+		void transformLightProxyToViewSpace(const matrix4& viewMatrix);
 
 	public:
 		SkyRendering* sky = nullptr;
-		Mesh* godRaySource = nullptr;
-		std::vector<Mesh*> meshes;
+		StaticMeshComponent* godRaySource = nullptr;
 
 		// IBL
 		GLuint irradianceMap = 0;
@@ -65,6 +63,9 @@ namespace pathos {
 	public:
 		std::vector<struct DirectionalLightProxy*> proxyList_directionalLight; // first is sun
 		std::vector<struct PointLightProxy*>       proxyList_pointLight;
+		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
+		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
+		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
 
 	protected:
 		// #todo-actor: Wanna represent ownership, but can't use std::unique_ptr<Actor> as it can't hold subclasses of Actor.

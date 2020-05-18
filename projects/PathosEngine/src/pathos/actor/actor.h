@@ -31,7 +31,7 @@ namespace pathos {
 		vector3 getActorScale() const; //{ return rootComponent->getScale(); }
 
 		void setActorLocation(const vector3& inLocation);
-		//void setActorRotation(const Rotator& inRotation); // #todo-actor
+		void setActorRotation(float inAngle_radians, const vector3& inAxis); // #todo-actor: Use Rotator
 		void setActorScale(const vector3& inScale);
 		void setActorScale(float inScale);
 

@@ -8,6 +8,7 @@
 #include "pathos/util/math_lib.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/mesh/static_mesh_actor.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -32,11 +33,11 @@ const uint32        NUM_BALLS           =   10;
 // World
 Camera* cam;
 Scene scene;
-	Mesh* godRaySource;
-	Mesh* ground;
-	Mesh* objModel;
-	std::vector<Mesh*> balls;
-	std::vector<Mesh*> boxes;
+	StaticMeshActor* godRaySource;
+	StaticMeshActor* ground;
+	StaticMeshActor* objModel;
+	std::vector<StaticMeshActor*> balls;
+	std::vector<StaticMeshActor*> boxes;
 #if VISUALIZE_CSM_FRUSTUM
 	Mesh* csmDebugger;
 #endif
@@ -49,19 +50,18 @@ void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from set
 void tick(float deltaSeconds);
 
 void onLoadWavefrontOBJ(OBJLoader* loader) {
-	objModel = loader->craftMeshFromAllShapes();
-	objModel->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	objModel->getTransform().setScale(50.0f);
-	objModel->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
+	objModel = scene.spawnActor<StaticMeshActor>();
+	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
+	objModel->setActorRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	objModel->setActorScale(50.0f);
+	objModel->setActorLocation(vector3(-100.0f, -10.0f, 0.0f));
 
-	for(Material* M : objModel->getMaterials()) {
+	for(Material* M : objModel->getStaticMesh()->getMaterials()) {
 		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
 		if(CM) {
 			CM->setRoughness(1.0f);
 		}
 	}
-
-	scene.add(objModel);
 }
 
 int main(int argc, char** argv) {
@@ -285,6 +285,22 @@ void setupScene() {
 	}
 
 	//---------------------------------------------------------------------------------------
+	// sky
+	//---------------------------------------------------------------------------------------
+	//Skybox* skybox = new Skybox(cubeTexture);
+	//skybox->setLOD(1.0f);
+	//scene.sky = skybox;
+
+	//scene.sky = new AtmosphereScattering;
+
+	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+}
+
+void setupSceneWithActor(Scene* scene) {
+	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
 #if DEBUG_SKYBOX
@@ -357,103 +373,6 @@ void setupScene() {
 	geom_plane_big->calculateTangentBasis();
 	geom_cube->calculateTangentBasis();
 
-
-	//---------------------------------------------------------------------------------------
-	// create meshes
-	//---------------------------------------------------------------------------------------
-
-	ground = new Mesh(geom_plane_big, material_texture);
-	ground->getTransform().setScale(1000.0f);
-	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
-	ground->castsShadow = false;
-	scene.add(ground);
-
-	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
-		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
-		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
-		balls.push_back(ball);
-		scene.add(ball);
-	}
-	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
-		ColorMaterial* ball_material = new ColorMaterial;
-		ball_material->setAlbedo(0.5f, 0.3f, 0.3f);
-		ball_material->setMetallic(0.2f);
-		ball_material->setRoughness((float)i / NUM_BALLS);
-
-		Mesh* ball = new Mesh(geom_cube, ball_material);
-		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
-		ball->getTransform().setLocation(-550.0f, 50.0f, 300.0f - 100.0f * i);
-		balls.push_back(ball);
-		scene.add(ball);
-	}
-
-	constexpr float box_x0 = 200.0f;
-	constexpr float box_y0 = 60.0f;
-	constexpr float box_spaceX = 20.0f;
-	constexpr float box_spaceY = 20.0f;
-	float sinT = 0.0f;
-	ColorMaterial* box_material = new ColorMaterial;
-	box_material->setAlbedo(1.0f, 1.0f, 1.0f);
-	box_material->setMetallic(0.2f);
-	box_material->setRoughness(0.5f);
-	for (uint32 i = 0; i < 16; ++i)
-	{
-		for (uint32 j = 0; j < 16; ++j)
-		{
-			float wave = ::sinf(sinT += 0.0417f);
-
-			Mesh* box = new Mesh(geom_cube, box_material);
-			box->getTransform().setLocation(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY);
-			box->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
-			scene.add(box);
-
-			boxes.push_back(box);
-		}
-	}
-
-	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().setScale(10.0f);
-	godRaySource->getTransform().setLocation(0.0f, 300.0f, -500.0f);
-	scene.godRaySource = godRaySource;
-
-	//---------------------------------------------------------------------------------------
-	// sky
-	//---------------------------------------------------------------------------------------
-	//Skybox* skybox = new Skybox(cubeTexture);
-	//skybox->setLOD(1.0f);
-	//scene.sky = skybox;
-
-	//scene.sky = new AtmosphereScattering;
-
-	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
-
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
-}
-
-void setupSceneWithActor(Scene* scene) {
-	//////////////////////////////////////////////////////////////////////////
-	// Test
-	class TestActor : public Actor {
-	public:
-		TestActor() {
-			LOG(LogDebug, "[TestActor] ctor");
-		}
-		virtual void onTick(float deltaSeconds) override {
-			LOG(LogDebug, "[TestActor] tick");
-			if (cnt++ > 10) destroy();
-		}
-		virtual void onDestroy() override {
-			LOG(LogDebug, "[TestActor] onDestroy");
-		}
-	private:
-		int32 cnt = 0;
-	};
-
-	scene->spawnActor<TestActor>();
-
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting
 	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
@@ -473,6 +392,67 @@ void setupSceneWithActor(Scene* scene) {
 	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
 	pointLight2->setLightParameters(2.0f * vector3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
 	pointLight3->setLightParameters(1.0f * vector3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
+
+	godRaySource = scene->spawnActor<StaticMeshActor>();
+	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
+	godRaySource->setActorScale(20.0f);
+	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	scene->godRaySource = godRaySource->getStaticMeshComponent();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Static meshes
+
+	ground = scene->spawnActor<StaticMeshActor>();
+	ground->setStaticMesh(new Mesh(geom_plane_big, material_texture));
+	ground->setActorScale(1000.0f);
+	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
+	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
+	ground->getStaticMesh()->castsShadow = false;
+
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
+		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
+		ball->setStaticMesh(new Mesh(geom_sphere, material_pbr));
+		ball->setActorScale(5.0f + (float)i * 0.5f);
+		ball->setActorLocation(vector3(-400.0f, 50.0f, 300.0f - 100.0f * i));
+		balls.push_back(ball);
+	}
+	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
+		ColorMaterial* ball_material = new ColorMaterial;
+		ball_material->setAlbedo(0.5f, 0.3f, 0.3f);
+		ball_material->setMetallic(0.2f);
+		ball_material->setRoughness((float)i / NUM_BALLS);
+
+		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
+		ball->setStaticMesh(new Mesh(geom_cube, ball_material));
+		ball->setActorScale(5.0f + (float)i * 0.5f);
+		ball->setActorLocation(vector3(-550.0f, 50.0f, 300.0f - 100.0f * i));
+		balls.push_back(ball);
+	}
+
+	constexpr float box_x0 = 200.0f;
+	constexpr float box_y0 = 60.0f;
+	constexpr float box_spaceX = 20.0f;
+	constexpr float box_spaceY = 20.0f;
+	float sinT = 0.0f;
+	ColorMaterial* box_material = new ColorMaterial;
+	box_material->setAlbedo(1.0f, 1.0f, 1.0f);
+	box_material->setMetallic(0.2f);
+	box_material->setRoughness(0.5f);
+	for (uint32 i = 0; i < 16; ++i)
+	{
+		for (uint32 j = 0; j < 16; ++j)
+		{
+			float wave = ::sinf(sinT += 0.0417f);
+
+			StaticMeshActor* box = scene->spawnActor<StaticMeshActor>();
+			box->setStaticMesh(new Mesh(geom_cube, box_material));
+			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY));
+			box->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+
+			boxes.push_back(box);
+		}
+	}
+
 }
 
 void tick(float deltaSeconds)
@@ -498,8 +478,9 @@ void tick(float deltaSeconds)
 		cam->rotateX(rotX);
 	}
 
-	for (Mesh* ball : balls) {
-		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
+	static float ballAngle = 0.0f;
+	for (StaticMeshActor* ball : balls) {
+		ball->setActorRotation(ballAngle += 0.0005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
 	static float sinT = 0.0f;
@@ -509,7 +490,7 @@ void tick(float deltaSeconds)
 		for (uint32 j = 0; j < 16; ++j)
 		{
 			float wave = ::sinf(sinT + 13.2754f * (i*16+j)/256.0f + (6.3f * j/16.0f));
-			boxes[i*16+j]->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			boxes[i*16+j]->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
 		}
 	}
 
@@ -522,7 +503,7 @@ void tick(float deltaSeconds)
 
 	{
 		char title[256];
-		sprintf_s(title, "%s (GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getGPUTime());
+		sprintf_s(title, "%s (CPU Time: %.2f ms, GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getCPUTime(), gEngine->getGPUTime());
 		gEngine->getMainWindow()->setTitle(title);
 	}
 }

@@ -300,6 +300,9 @@
     <ClCompile Include="src\pathos\actor\scene_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -642,6 +645,15 @@
       <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\vector_types.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\static_mesh_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\badger\types\matrix_types.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\static_mesh_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

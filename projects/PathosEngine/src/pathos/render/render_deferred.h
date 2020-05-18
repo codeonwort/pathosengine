@@ -32,8 +32,6 @@ namespace pathos {
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
-		void collectRenderItems();
-
 		void clearGBuffer(RenderCommandList& cmdList);
 		void packGBuffer(RenderCommandList& cmdList);
 		void unpackGBuffer(RenderCommandList& cmdList);

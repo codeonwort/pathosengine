@@ -29,17 +29,6 @@ namespace pathos {
 		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjectionMatrices[index]; }
 
 	private:
-		struct CSM_MeshBatch {
-			CSM_MeshBatch(class MeshGeometry* inGeometry, const glm::mat4& inModelMatrix)
-				: geometry(inGeometry)
-				, modelMatrix(inModelMatrix)
-			{
-			}
-			class MeshGeometry* geometry;
-			glm::mat4 modelMatrix;
-		};
-		void collectMeshBatches(const Scene* scene, std::vector<CSM_MeshBatch>& outMeshBatches, std::vector<CSM_MeshBatch>& outWireframeBatches);
-
 		// Update viewProjectionMatrices
 		void calculateBounds(const Camera& camera, uint32 numCascades);
 

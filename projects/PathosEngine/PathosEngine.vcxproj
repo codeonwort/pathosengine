@@ -97,6 +97,7 @@
     <ClCompile Include="src\pathos\input\input_system.cpp" />
     <ClCompile Include="src\pathos\loader\asset_streamer.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
+    <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
     <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\shadow.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\thread\thread_pool.h" />
     <ClInclude Include="src\badger\types\int_types.h" />
+    <ClInclude Include="src\badger\types\matrix_types.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
     <ClInclude Include="src\gl_core.h" />
@@ -192,6 +194,8 @@
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
     <ClInclude Include="src\pathos\mesh\model_transform.h" />
+    <ClInclude Include="src\pathos\mesh\static_mesh_actor.h" />
+    <ClInclude Include="src\pathos\mesh\static_mesh_component.h" />
     <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
