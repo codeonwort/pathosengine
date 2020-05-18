@@ -287,24 +287,11 @@ void setupScene() {
 	//---------------------------------------------------------------------------------------
 	// sky
 	//---------------------------------------------------------------------------------------
-	//Skybox* skybox = new Skybox(cubeTexture);
-	//skybox->setLOD(1.0f);
-	//scene.sky = skybox;
+#define SKY_METHOD 2
 
-	//scene.sky = new AtmosphereScattering;
-
-	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
-
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
-}
-
-void setupSceneWithActor(Scene* scene) {
-	//---------------------------------------------------------------------------------------
-	// create materials
-	//---------------------------------------------------------------------------------------
+#if SKY_METHOD == 0
 #if DEBUG_SKYBOX
-	std::array<const char*,6> cubeImgName = {
+	std::array<const char*, 6> cubeImgName = {
 		"resources/placeholder/cubemap_right.jpg",
 		"resources/placeholder/cubemap_left.jpg",
 		"resources/placeholder/cubemap_top.jpg",
@@ -323,6 +310,24 @@ void setupSceneWithActor(Scene* scene) {
 	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
 	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
 	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
+
+	Skybox* skybox = new Skybox(cubeTexture);
+	skybox->setLOD(1.0f);
+	scene.sky = skybox;
+#elif SKY_METHOD == 1
+	scene.sky = new AtmosphereScattering;
+#elif SKY_METHOD == 2
+	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+#else
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+#endif
+}
+
+void setupSceneWithActor(Scene* scene) {
+	//---------------------------------------------------------------------------------------
+	// create materials
+	//---------------------------------------------------------------------------------------
 
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/154_norm.jpg"), true, false);
