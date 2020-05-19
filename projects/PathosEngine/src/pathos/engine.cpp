@@ -2,7 +2,6 @@
 #include "engine_version.h"
 #include "console.h"
 #include "render/render_device.h"
-#include "render/render_forward.h"
 #include "render/render_deferred.h"
 #include "util/log.h"
 #include "util/resource_finder.h"
@@ -125,7 +124,7 @@ namespace pathos {
 		mainWindow = std::make_unique<GUIWindow>();
 		mainWindow->create(createParams);
 
-		LOG(LogInfo, "Main window has been created");
+		LOG(LogInfo, "Initialize the main window");
 		return true;
 	}
 
@@ -203,7 +202,7 @@ namespace pathos {
 		}
 		FontManager::loadFont("default", "../../resources/fonts/consola.ttf", 28);
 		FontManager::loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28);    // [http://font.woowahan.com/jua/]
-		LOG(LogInfo, "Font system has been initialized");
+		LOG(LogInfo, "Initialize font subsystem");
 
 		return true;
 	}
@@ -217,7 +216,7 @@ namespace pathos {
 		}
 		gConsole->addLine(L"Built-in debug console. Press ` to toggle.");
 
-		LOG(LogInfo, "Debug console has been created");
+		LOG(LogInfo, "Initialize the debug console");
 		return true;
 	}
 
@@ -225,7 +224,8 @@ namespace pathos {
 	{
 		switch (conf.rendererType) {
 		case ERendererType::Forward:
-			renderer = new ForwardRenderer;
+			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
+			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
 			break;
 
 		case ERendererType::Deferred:

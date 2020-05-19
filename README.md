@@ -28,6 +28,7 @@ note: Requires Visual C++ 2013 Redistributable Package because I used pre-built 
   * Render command list
   * Asynchronous asset loader
   * Runtime shader recompilation
+  * Actor system (component-based development)
 
 ## Sample Images
 

@@ -100,9 +100,7 @@
     <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
     <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
-    <ClCompile Include="src\pathos\light\shadow.cpp" />
     <ClCompile Include="src\pathos\light\shadow_directional.cpp" />
-    <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
     <ClCompile Include="src\pathos\loader\objloader.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry.cpp" />
@@ -125,13 +123,6 @@
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\depth_of_field.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_alphaonlytexture.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_base.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_bumptexture.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_cubeenv.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_solidcolor.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_texture.cpp" />
-    <ClCompile Include="src\pathos\render\forward\renderpass_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\god_ray.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp" />
@@ -144,7 +135,6 @@
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_norm.cpp" />
-    <ClCompile Include="src\pathos\render\render_forward.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
@@ -201,7 +191,6 @@
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light_all.h" />
     <ClInclude Include="src\pathos\light\shadow_directional.h" />
-    <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
     <ClInclude Include="src\pathos\overlay\brush.h" />
@@ -247,17 +236,8 @@
     <ClInclude Include="src\pathos\mesh\mesh.h" />
     <ClInclude Include="src\pathos\mesh\render.h" />
     <ClInclude Include="src\pathos\mesh\shader.h" />
-    <ClInclude Include="src\pathos\light\shadow.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_alphaonlytexture.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_bumptexture.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_cubeenv.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_base.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_solidcolor.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_texture.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_wireframe.h" />
     <ClInclude Include="src\pathos\render\god_ray.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_base.h" />
@@ -266,7 +246,6 @@
     <ClInclude Include="src\pathos\render\renderer.h" />
     <ClInclude Include="src\pathos\render\render_deferred.h" />
     <ClInclude Include="src\pathos\render\render_norm.h" />
-    <ClInclude Include="src\pathos\render\render_forward.h" />
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
     <ClInclude Include="src\pathos\scene\scene.h" />

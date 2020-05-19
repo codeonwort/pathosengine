@@ -36,6 +36,10 @@ namespace pathos {
 		vfprintf(stderr, format, argptr);
 		va_end(argptr);
 		puts("");
+
+		if (severity == LogFatal) {
+			__debugbreak();
+		}
 #endif
 	}
 

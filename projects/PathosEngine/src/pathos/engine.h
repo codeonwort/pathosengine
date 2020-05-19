@@ -22,7 +22,7 @@ namespace pathos {
 	class AssetStreamer;
 
 	enum class ERendererType : uint8 {
-		Forward,
+		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
 		Deferred
 	};
 
