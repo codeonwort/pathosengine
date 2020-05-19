@@ -48,7 +48,9 @@ namespace pathos {
 
 		UniformBuffer ubo_perFrame;
 
-		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
+		std::unique_ptr<class ColorMaterial> fallbackMaterial;
+
+		MeshDeferredRenderPass_Pack* pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
 		MeshDeferredRenderPass_Unpack* unpack_pass;
 		std::unique_ptr<class TranslucencyRendering> translucency_pass;
 

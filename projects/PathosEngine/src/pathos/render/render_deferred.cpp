@@ -127,6 +127,11 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createShaders() {
+		fallbackMaterial = std::make_unique<ColorMaterial>();
+		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
+		fallbackMaterial->setMetallic(0.0f);
+		fallbackMaterial->setRoughness(0.0f);
+
 		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			pack_passes[i] = nullptr;
 		}
@@ -305,11 +310,12 @@ namespace pathos {
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			MeshDeferredRenderPass_Pack* const pass = pack_passes[i];
+			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
 
+			bool fallbackPass = false;
 			if (pass == nullptr) {
-				// #todo: implement render pass
-				continue;
+				pass = pack_passes[static_cast<uint16>(MATERIAL_ID::SOLID_COLOR)];
+				fallbackPass = true;
 			}
 
 			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
@@ -326,13 +332,14 @@ namespace pathos {
 			const auto& proxyList = scene->proxyList_staticMesh[i];
 			for (auto j = 0u; j < proxyList.size(); ++j) {
 				const StaticMeshProxy& item = *(proxyList[j]);
+				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
 
 				// #todo-renderer: Batching by same state
 				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);
 				if (item.renderInternal) cmdList.frontFace(GL_CW);
 
  				pass->setModelMatrix(item.modelMatrix);
- 				pass->render(cmdList, scene, camera, item.geometry, item.material);
+ 				pass->render(cmdList, scene, camera, item.geometry, materialOverride);
 
 				// #todo-renderer: Batching by same state
 				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);

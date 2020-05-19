@@ -1,6 +1,6 @@
 #include "render_forward.h"
 
-// #todo: Need a kind of refactoring that was done in deferred renderer.
+// #todo-forward-rendering: Need a kind of refactoring that was done in deferred renderer.
 
 namespace pathos {
 
