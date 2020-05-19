@@ -87,9 +87,6 @@
     <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\render_norm.cpp">
-      <Filter>소스 파일\pathos\render</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\render_deferred.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -315,9 +312,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\render_norm.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h">

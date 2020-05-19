@@ -134,7 +134,6 @@
     <ClCompile Include="src\pathos\render\render_command_list.cpp" />
     <ClCompile Include="src\pathos\render\render_deferred.cpp" />
     <ClCompile Include="src\pathos\render\render_device.cpp" />
-    <ClCompile Include="src\pathos\render\render_norm.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
@@ -245,7 +244,6 @@
     <ClInclude Include="src\pathos\render\overlay\overlaypass_text.h" />
     <ClInclude Include="src\pathos\render\renderer.h" />
     <ClInclude Include="src\pathos\render\render_deferred.h" />
-    <ClInclude Include="src\pathos\render\render_norm.h" />
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\render\render_raytracer.h" />
     <ClInclude Include="src\pathos\scene\scene.h" />
