@@ -13,6 +13,7 @@ using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
 #define DEBUG_SKYBOX          0
+#define FIX_IBL               1
 
 #if VISUALIZE_CSM_FRUSTUM
 #include "pathos/mesh/geometry_procedural.h"
@@ -27,7 +28,7 @@ const glm::vec3     CAMERA_POSITION     =   glm::vec3(20.0f, 25.0f, 200.0f);
 const glm::vec3     CAMERA_LOOK_AT      =   glm::vec3(20.0f, 25.0f, 190.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
 const float         CAMERA_Z_FAR        =   5000.0f;
-const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, -1.0f));
 const uint32        NUM_BALLS           =   10;
 
 // World
@@ -44,7 +45,7 @@ Scene scene;
 
 void setupInput();
 void setupCSMDebugger();
-void setupScene(); // #todo-actor: Remove this
+void setupSky(); // #todo-actor: Remove this
 void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from setupScene()
 
 void tick(float deltaSeconds);
@@ -86,7 +87,7 @@ int main(int argc, char** argv) {
 #if VISUALIZE_CSM_FRUSTUM
 	setupCSMDebugger();
 #endif
-	setupScene();
+	setupSky();
 	setupSceneWithActor(&scene);
 
 	gEngine->setWorld(&scene, cam);
@@ -260,7 +261,7 @@ void setupCSMDebugger()
 #endif
 }
 
-void setupScene() {
+void setupSky() {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
@@ -344,20 +345,14 @@ void setupSceneWithActor(Scene* scene) {
 	// PBR material
 	PBRTextureMaterial* material_pbr;
 	{
-		constexpr bool sRGB = true;
-#if 1
-		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), true, !sRGB);
-		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), true, !sRGB);
-		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), true, !sRGB);
-#else
-		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), true, !sRGB);
-		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"), true, !sRGB);
-		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"), true, !sRGB);
-#endif
+		constexpr bool genMipmap = true;
+		constexpr bool sRGB      = true;
+		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), genMipmap, sRGB);
+		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), genMipmap, !sRGB);
+		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), genMipmap, !sRGB);
+		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), genMipmap, !sRGB);
+		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), genMipmap, !sRGB);
+
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
 	
@@ -413,6 +408,9 @@ void setupSceneWithActor(Scene* scene) {
 	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
 	ground->getStaticMeshComponent()->castsShadow = false;
+#if FIX_IBL
+	ground->getStaticMeshComponent()->setVisibility(false);
+#endif
 
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
@@ -458,6 +456,22 @@ void setupSceneWithActor(Scene* scene) {
 		}
 	}
 
+#if FIX_IBL
+	{
+		ColorMaterial* whiteColor = new ColorMaterial;
+		whiteColor->setAlbedo(1.0f, 1.0f, 1.0f);
+		whiteColor->setMetallic(0.0f);
+		whiteColor->setRoughness(1.0f);
+		gConsole->addLine("r.shadow 0");
+
+		MeshGeometry* boxGeometry = new CubeGeometry(glm::vec3(1.0f));
+		StaticMeshActor* whiteBox = scene->spawnActor<StaticMeshActor>();
+		whiteBox->setStaticMesh(new Mesh(boxGeometry, whiteColor));
+		whiteBox->setActorLocation(700.0f, 0.0f, 0.0f);
+		whiteBox->setActorScale(20.0f);
+		cam->moveToPosition(700.0f, 0.0f, 50.0f);
+	}
+#endif
 }
 
 void tick(float deltaSeconds)
