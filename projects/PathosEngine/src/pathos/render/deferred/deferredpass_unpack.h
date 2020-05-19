@@ -3,7 +3,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/uniform_buffer.h"
 

@@ -114,10 +114,10 @@ namespace pathos {
 		uploadDirectionalLightUniform(scene, maxDirectionalLights);
 		uploadPointLightUniform(scene, maxPointLights);
 		if (shadowMapping != nullptr) {
-			shadowMapping->activate(program, scene->directionalLights, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
+			shadowMapping->activate(program, scene->proxyList_directionalLight, SHADOW_MAPPING_TEXTURE_UNIT_START, modelMatrix);
 		}
 		if (omniShadow != nullptr) {
-			omniShadow->activate(program, scene->pointLights, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
+			omniShadow->activate(program, scene->proxyList_pointLight, OMNIDIRECTIONAL_SHADOW_TEXTURE_UNIT_START, modelMatrix);
 		}
 
 		//--------------------------------------------------------------------------------------

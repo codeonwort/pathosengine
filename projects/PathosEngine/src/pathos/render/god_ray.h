@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
-#include "pathos/mesh/mesh.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "gl_core.h"
 
 namespace pathos {
+
+	class MeshGeometry;
+	struct StaticMeshProxy;
 
 	// TODO: need depth buffer
 	class GodRay final {
@@ -29,7 +31,7 @@ namespace pathos {
 		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad);
 
 	private:
-		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, Mesh* mesh, GLfloat* color);
+		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* mesh, GLfloat* color);
 
 	private:
 		bool destroyed = false;

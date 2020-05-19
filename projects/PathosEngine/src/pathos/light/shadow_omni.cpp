@@ -1,6 +1,7 @@
 #include "shadow_omni.h"
 #include "pathos/engine.h"
 #include "pathos/util/log.h"
+#include "pathos/light/point_light_component.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
@@ -81,7 +82,7 @@ void main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void OmnidirectionalShadow::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, PointLight* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
+	void OmnidirectionalShadow::renderLightDepth(RenderCommandList& cmdList, uint32 lightIndex, PointLightProxy* light, MeshGeometry* mesh, const glm::mat4& modelMatrix) {
 		if (lightIndex >= maxLights) {
 			assert(0);
 		}
@@ -120,7 +121,7 @@ void main() {
 		glViewport(0, 0, config.windowWidth, config.windowHeight);
 	}
 
-	void OmnidirectionalShadow::activate(GLuint materialProgram, const vector<PointLight*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix)
+	void OmnidirectionalShadow::activate(GLuint materialProgram, const vector<PointLightProxy*>& lights, unsigned int textureBinding, const glm::mat4& modelMatrix)
 	{
 		static_cast<void>(modelMatrix);
 

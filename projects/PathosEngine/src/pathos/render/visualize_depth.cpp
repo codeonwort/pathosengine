@@ -2,6 +2,7 @@
 #include "scene_render_targets.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/shader/shader.h"
 
 namespace pathos {
@@ -51,16 +52,16 @@ namespace pathos {
 
 		cmdList.useProgram(program);
 
-		for (Mesh* mesh : scene->meshes) {
-			const glm::mat4 model = mesh->getTransform().getMatrix();
-			uboData.mvp = viewProj * model;
-			cmdList.namedBufferSubData(ubo, 0, sizeof(UBO_VisualizeDepth), &uboData);
-			cmdList.bindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+		for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
+			const auto& proxyList = scene->proxyList_staticMesh[i];
+			for (StaticMeshProxy* proxy : proxyList) {
+				uboData.mvp = viewProj * proxy->modelMatrix;
+				cmdList.namedBufferSubData(ubo, 0, sizeof(UBO_VisualizeDepth), &uboData);
+				cmdList.bindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
 
-			for (MeshGeometry* geometry : mesh->getGeometries()) {
-				geometry->activate_position(cmdList);
-				geometry->activateIndexBuffer(cmdList);
-				geometry->drawPrimitive(cmdList);
+				proxy->geometry->activate_position(cmdList);
+				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->drawPrimitive(cmdList);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
 
 namespace pathos {

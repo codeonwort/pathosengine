@@ -3,7 +3,9 @@
 #include "pathos/util/math_lib.h"
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/light/directional_light_component.h"
 
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
@@ -29,8 +31,8 @@ namespace pathos {
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
 		// 1. Build projection matrices that perfectly cover each camera frustum
-		if (scene->directionalLights.size() > 0) {
-			setLightDirection(scene->directionalLights[0]->direction);
+		if (scene->proxyList_directionalLight.size() > 0) {
+			setLightDirection(scene->proxyList_directionalLight[0]->direction);
 		}
 		calculateBounds(*camera, sceneContext.numCascades);
 
@@ -39,10 +41,6 @@ namespace pathos {
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_LESS);
-
-		std::vector<CSM_MeshBatch> meshBatches;
-		std::vector<CSM_MeshBatch> wireframeBatches;
-		collectMeshBatches(scene, meshBatches, wireframeBatches);
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
 		for (uint32 i = 0u; i < sceneContext.numCascades; ++i) {
@@ -54,25 +52,25 @@ namespace pathos {
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
 			const glm::mat4& VP = viewProjectionMatrices[i];
 
-			for (CSM_MeshBatch& batch : meshBatches) {
-				glm::mat4 mvp = VP * batch.modelMatrix;
+			for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
+				glm::mat4 mvp = VP * batch->modelMatrix;
 
 				cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
-				batch.geometry->activate_position(cmdList);
-				batch.geometry->activateIndexBuffer(cmdList);
-				batch.geometry->drawPrimitive(cmdList);
+				batch->geometry->activate_position(cmdList);
+				batch->geometry->activateIndexBuffer(cmdList);
+				batch->geometry->drawPrimitive(cmdList);
 			}
 
-			if (wireframeBatches.size() > 0) {
+			if (scene->proxyList_wireframeShadowMesh.size() > 0) {
 				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				for (CSM_MeshBatch& batch : meshBatches) {
-					glm::mat4 mvp = VP * batch.modelMatrix;
+				for (ShadowMeshProxy* batch : scene->proxyList_wireframeShadowMesh) {
+					glm::mat4 mvp = VP * batch->modelMatrix;
 
 					cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
-					batch.geometry->activate_position(cmdList);
-					batch.geometry->activateIndexBuffer(cmdList);
-					batch.geometry->drawPrimitive(cmdList);
+					batch->geometry->activate_position(cmdList);
+					batch->geometry->activateIndexBuffer(cmdList);
+					batch->geometry->drawPrimitive(cmdList);
 				}
 
 				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -129,32 +127,6 @@ void main() {
 			cmdList.deleteProgram(program);
 		}
 		destroyed = true;
-	}
-
-	void DirectionalShadowMap::collectMeshBatches(const Scene* scene, std::vector<CSM_MeshBatch>& outMeshBatches, std::vector<CSM_MeshBatch>& outWireframeBatches)
-	{
-		outMeshBatches.clear();
-		outWireframeBatches.clear();
-
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->castsShadow == false) {
-				continue;
-			}
-
-			const auto geometries = mesh->getGeometries();
-			const auto materials = mesh->getMaterials();
-			int32 ix = 0;
-
-			for (MeshGeometry* G : geometries) {
-				const glm::mat4& modelMatrix = mesh->getTransform().getMatrix();
-
-				if (materials[ix++]->getMaterialID() == MATERIAL_ID::WIREFRAME) {
-					outWireframeBatches.push_back(CSM_MeshBatch(G, modelMatrix));
-				} else {
-					outMeshBatches.push_back(CSM_MeshBatch(G, modelMatrix));
-				}
-			}
-		}
 	}
 
 	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades)

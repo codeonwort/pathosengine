@@ -4,7 +4,6 @@ namespace pathos {
 
 	Mesh::Mesh(MeshGeometry* geom, Material* mat)
 		: doubleSided(false)
-		, castsShadow(true)
 	{
 		bool bothNull = geom == nullptr && mat == nullptr;
 		bool bothValid = geom != nullptr && mat != nullptr;
@@ -30,7 +29,6 @@ namespace pathos {
 		materials.push_back(M);
 	}
 
-	ModelTransform& Mesh::getTransform() { return transform; }
 	const Geometries& Mesh::getGeometries() { return geometries; }
 	const Materials& Mesh::getMaterials() { return materials; }
 

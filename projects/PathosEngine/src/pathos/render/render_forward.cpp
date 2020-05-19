@@ -1,6 +1,6 @@
 #include "render_forward.h"
 
-// #todo: Need a kind of refactoring that was done in deferred renderer.
+// #todo-forward-rendering: Need a kind of refactoring that was done in deferred renderer.
 
 namespace pathos {
 
@@ -93,18 +93,17 @@ namespace pathos {
 
 		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		scene->calculateLightBuffer();
-
 		// ready shadow before rendering any object
 		{
 			SCOPED_DRAW_EVENT(ShadowMap);
 
+#if 0 // #todo-forward-rendering
 			shadowMap->clearLightDepths(static_cast<uint32_t>(scene->numDirectionalLights()));
 			omniShadow->clearLightDepths(static_cast<uint32_t>(scene->numPointLights()));
 			for (Mesh* mesh : scene->meshes) {
-				if (mesh->visible == false) continue;
-				renderLightDepth(cmdList,mesh);
+				renderLightDepth(cmdList, mesh);
 			}
+#endif
 		}
 
 		if (scene->sky != nullptr) {
@@ -114,11 +113,11 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(BasePass);
 
-			// #todo-occlusion: occluder or BSP tree
+#if 0 // #todo-forward-rendering
 			for (Mesh* mesh : scene->meshes) {
-				if (mesh->visible == false) continue;
 				renderMesh(cmdList, mesh);
 			}
+#endif
 		}
 
 		scene = nullptr;
@@ -126,6 +125,7 @@ namespace pathos {
 	}
 
 	void ForwardRenderer::renderLightDepth(RenderCommandList& cmdList, Mesh* mesh) {
+#if 0 // #todo-forward-rendering
 		const glm::mat4& modelTransform = mesh->getTransform().getMatrix();
 		Geometries geoms = mesh->getGeometries();
 		size_t len = geoms.size();
@@ -136,7 +136,7 @@ namespace pathos {
 		// shadow mapping for directional light
 		for (auto i = 0u; i < len; ++i) {
 			for (auto light = 0u; light < scene->numDirectionalLights(); ++light) {
-				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights[light], geoms[i], modelTransform);
+				shadowMap->renderLightDepth(cmdList, light, scene->directionalLights_DEPRECATED[light], geoms[i], modelTransform);
 			}
 		}
 
@@ -149,6 +149,7 @@ namespace pathos {
 
 		if (mesh->doubleSided) glEnable(GL_CULL_FACE);
 		if (mesh->renderInternal) glFrontFace(GL_CCW);
+#endif
 	}
 
 	void ForwardRenderer::renderMesh(RenderCommandList& cmdList, Mesh* mesh) {
@@ -218,33 +219,45 @@ namespace pathos {
 	//------------------------------------------------------------------------------------------------------
 
 	void ForwardRenderer::renderSolidColor(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, ColorMaterial* M) {
+#if 0 // #todo-forward-rendering
 		colorPass->setModelMatrix(mesh->getTransform().getMatrix());
 		colorPass->renderMeshPass(cmdList, scene, camera, G, M);
+#endif
 	}
 
 	void ForwardRenderer::renderFlatTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, TextureMaterial* M) {
+#if 0 // #todo-forward-rendering
 		texturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		texturePass->renderMeshPass(cmdList, scene, camera, G, M);
+#endif
 	}
 
 	void ForwardRenderer::renderWireframe(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, WireframeMaterial* M) {
+#if 0 // #todo-forward-rendering
 		wireframePass->setModelMatrix(mesh->getTransform().getMatrix());
 		wireframePass->renderMeshPass(cmdList, scene, camera, G, M);
+#endif
 	}
 
 	void ForwardRenderer::renderCubeEnvMap(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* G, CubeEnvMapMaterial* M) {
+#if 0 // #todo-forward-rendering
 		cubeEnvMapPass->setModelMatrix(mesh->getTransform().getMatrix());
 		cubeEnvMapPass->renderMeshPass(cmdList, scene, camera, G, M);
+#endif
 	}
 
 	void ForwardRenderer::renderBumpTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, BumpTextureMaterial* material) {
+#if 0 // #todo-forward-rendering
 		bumpTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		bumpTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
+#endif
 	}
 
 	void ForwardRenderer::renderAlphaOnlyTexture(RenderCommandList& cmdList, Mesh* mesh, MeshGeometry* geom, AlphaOnlyTextureMaterial* material) {
+#if 0 // #todo-forward-rendering
 		alphaOnlyTexturePass->setModelMatrix(mesh->getTransform().getMatrix());
 		alphaOnlyTexturePass->renderMeshPass(cmdList, scene, camera, geom, material);
+#endif
 	}
 
 }

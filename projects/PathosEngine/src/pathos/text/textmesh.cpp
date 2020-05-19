@@ -9,7 +9,9 @@
 
 namespace pathos {
 
-	TextMesh::TextMesh(const std::string& tag_):Mesh(nullptr, nullptr) {
+	TextMesh::TextMesh(const std::string& tag_)
+		: Mesh(nullptr, nullptr)
+	{
 		tag = tag_;
 		doubleSided = true;
 

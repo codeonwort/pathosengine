@@ -12,12 +12,11 @@ namespace pathos {
 	using Geometries = std::vector<MeshGeometry*>;
 	using Materials = std::vector<Material*>;
 
-	// mesh = physical presence of geometry with material
+	// mesh asset = geometries + materials
 	class Mesh : public NamedObject {
 
 	public:
-		bool castsShadow    = true;
-		bool visible        = true;
+		// #todo-static-mesh: Move to StaticMeshComponent
 		bool doubleSided    = false;
 		bool renderInternal = false;
 
@@ -27,14 +26,12 @@ namespace pathos {
 
 		void add(MeshGeometry* geometry, Material* material);
 
-		ModelTransform& getTransform();
 		const Geometries& getGeometries();
 		const Materials& getMaterials();
 
 		void setMaterial(int32 index, Material* M) { materials[index] = M; }
 
 	protected:
-		ModelTransform transform;
 		Geometries geometries;
 		Materials materials;
 

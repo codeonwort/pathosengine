@@ -6,7 +6,7 @@
 #include "sky.h"
 #include "forward/renderpass.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/light/shadow.h"
 
 namespace pathos {

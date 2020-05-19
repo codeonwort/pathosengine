@@ -13,9 +13,11 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/light/point_light_component.h"
+#include "pathos/light/directional_light_component.h"
+#include "pathos/mesh/static_mesh_component.h"
 
 #include "badger/assertion/assertion.h"
-
 
 #define ASSERT_GL_NO_ERROR 0
 
@@ -125,6 +127,11 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::createShaders() {
+		fallbackMaterial = std::make_unique<ColorMaterial>();
+		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
+		fallbackMaterial->setMetallic(0.0f);
+		fallbackMaterial->setRoughness(0.0f);
+
 		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			pack_passes[i] = nullptr;
 		}
@@ -187,13 +194,11 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
-		collectRenderItems();
-
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
-		// #todo-debug: Why is this null in debug build?
+		// #todo-debug: Broken due to Reverse-Z
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);
@@ -203,7 +208,7 @@ namespace pathos {
 		sunShadowMap->renderShadowMap(cmdList, scene, camera);
 
 		// ready scene for rendering
-		scene->calculateLightBufferInViewSpace(camera->getViewMatrix());
+		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
 
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
@@ -305,11 +310,12 @@ namespace pathos {
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			MeshDeferredRenderPass_Pack* const pass = pack_passes[i];
+			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
 
+			bool fallbackPass = false;
 			if (pass == nullptr) {
-				// #todo: implement render pass
-				continue;
+				pass = pack_passes[static_cast<uint16>(MATERIAL_ID::SOLID_COLOR)];
+				fallbackPass = true;
 			}
 
 			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
@@ -323,19 +329,21 @@ namespace pathos {
 				pass->bindProgram(cmdList);
 			}
 
-			for (auto j = 0u; j < renderItems[i].size(); ++j) {
-				const RenderItem& item = renderItems[i][j];
+			const auto& proxyList = scene->proxyList_staticMesh[i];
+			for (auto j = 0u; j < proxyList.size(); ++j) {
+				const StaticMeshProxy& item = *(proxyList[j]);
+				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
 
 				// #todo-renderer: Batching by same state
-				if (item.mesh->doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) cmdList.frontFace(GL_CW);
+				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (item.renderInternal) cmdList.frontFace(GL_CW);
 
- 				pass->setModelMatrix(item.mesh->getTransform().getMatrix());
- 				pass->render(cmdList, scene, camera, item.geometry, item.material);
+ 				pass->setModelMatrix(item.modelMatrix);
+ 				pass->render(cmdList, scene, camera, item.geometry, materialOverride);
 
 				// #todo-renderer: Batching by same state
-				if (item.mesh->doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (item.mesh->renderInternal) cmdList.frontFace(GL_CCW);
+				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (item.renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
 	}
@@ -358,7 +366,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(Translucency);
 
 		uint8 materialID = (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
-		const std::vector<RenderItem>& meshBatches = renderItems[materialID];
+		const auto& meshBatches = scene->proxyList_staticMesh[materialID];
 
 		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
 	}
@@ -393,56 +401,17 @@ namespace pathos {
 
 		data.ws_eyePosition = camera->getPosition();
 
-		data.numDirLights = pathos::min(scene->numDirectionalLights(), MAX_DIRECTIONAL_LIGHTS);
-		if (data.numDirLights > 0) {
-			memcpy_s(&data.directionalLights[0], DIRECTIONAL_LIGHT_BUFFER_SIZE, scene->getDirectionalLightBuffer(), scene->getDirectionalLightBufferSize());
+		data.numDirLights = pathos::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
+		for (uint32 i = 0; i < data.numDirLights; ++i) {
+			data.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
 		}
 
-		data.numPointLights = pathos::min(scene->numPointLights(), MAX_POINT_LIGHTS);
-		if (data.numPointLights > 0) {
-			memcpy_s(&data.pointLights[0], POINT_LIGHT_BUFFER_SIZE, scene->getPointLightBuffer(), scene->getPointLightBufferSize());
+		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
+		for (uint32 i = 0; i < data.numPointLights; ++i) {
+			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
 		}
 
 		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
-	}
-
-	void DeferredRenderer::collectRenderItems()
-	{
-#if 0 // DEBUG: assert geometries and materials
-		for (Mesh* mesh : scene->meshes) {
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-			size_t len = geoms.size();
-			assert(geoms.size() == materials.size());
-			for (auto i = 0u; i < len; ++i) {
-				assert(geoms[i] != nullptr && materials[i] != nullptr);
-			}
-		}
-#endif
-
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			renderItems[i].clear();
-		}
-
-		// sort by materials
-		for (Mesh* mesh : scene->meshes) {
-			if (mesh->visible == false) continue;
-
-			Geometries geoms = mesh->getGeometries();
-			Materials materials = mesh->getMaterials();
-
-			for (size_t i = 0u; i < geoms.size(); ++i) {
-				MeshGeometry* G = geoms[i];
-				Material* M = materials[i];
-
-				uint8 materialID = (uint8)M->getMaterialID();
-				CHECK(0 <= materialID && materialID < numMaterialIDs);
-
-				RenderItem meshBatch(mesh, G, M);
-				renderItems[materialID].emplace_back(meshBatch);
-			}
-		}
 	}
 
 }

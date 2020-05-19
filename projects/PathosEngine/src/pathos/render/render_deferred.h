@@ -6,7 +6,7 @@
 #include "postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/scene.h"
+#include "pathos/scene/scene.h"
 #include "pathos/light/shadow_directional.h"
 
 #include <memory>
@@ -32,8 +32,6 @@ namespace pathos {
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
-		void collectRenderItems();
-
 		void clearGBuffer(RenderCommandList& cmdList);
 		void packGBuffer(RenderCommandList& cmdList);
 		void unpackGBuffer(RenderCommandList& cmdList);
@@ -50,7 +48,9 @@ namespace pathos {
 
 		UniformBuffer ubo_perFrame;
 
-		MeshDeferredRenderPass_Pack* pack_passes[(int)MATERIAL_ID::NUM_MATERIAL_IDS];
+		std::unique_ptr<class ColorMaterial> fallbackMaterial;
+
+		MeshDeferredRenderPass_Pack* pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
 		MeshDeferredRenderPass_Unpack* unpack_pass;
 		std::unique_ptr<class TranslucencyRendering> translucency_pass;
 

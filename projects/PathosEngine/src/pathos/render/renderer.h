@@ -9,21 +9,6 @@ namespace pathos {
 
 	class Scene;
 	class Camera;
-	class Mesh;
-	class MeshGeometry;
-	class Material;
-
-	struct RenderItem {
-		Mesh*         mesh;
-		MeshGeometry* geometry;
-		Material*     material;
-
-		RenderItem(Mesh* inMesh, MeshGeometry* inGeometry, Material* inMaterial)
-			: mesh(inMesh)
-			, geometry(inGeometry)
-			, material(inMaterial)
-		{}
-	};
 
 	class Renderer {
 		
@@ -36,10 +21,7 @@ namespace pathos {
 
 		virtual void initializeResources(RenderCommandList& cmdList) = 0;
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
-		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera*) = 0;
-
-	protected:
-		std::vector<RenderItem> renderItems[(unsigned int)MATERIAL_ID::NUM_MATERIAL_IDS];
+		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) = 0;
 
 	};
 

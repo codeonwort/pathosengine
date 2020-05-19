@@ -10,11 +10,9 @@ namespace pathos {
 		ModelTransform();
 		ModelTransform(const glm::vec3& inLocation, const glm::vec3& inRotationAxis, float inRotationAngle_radians, const glm::vec3& inScale);
 
-		// #todo-transform: getters here
 		inline glm::vec3 getLocation() const { return location; }
-		// getTranslation
-		// getRotation
-		// getScale
+		// #todo-transform: getRotation()
+		inline glm::vec3 getScale() const { return scale; }
 
 		void identity();
 

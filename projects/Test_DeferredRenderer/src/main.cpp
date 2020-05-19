@@ -6,6 +6,9 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/light/point_light_actor.h"
+#include "pathos/light/directional_light_actor.h"
+#include "pathos/mesh/static_mesh_actor.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -30,35 +33,35 @@ const uint32        NUM_BALLS           =   10;
 // World
 Camera* cam;
 Scene scene;
-	DirectionalLight* sunLight;
-	Mesh* godRaySource;
-	Mesh* ground;
-	Mesh* objModel;
-	std::vector<Mesh*> balls;
-	std::vector<Mesh*> boxes;
+	StaticMeshActor* godRaySource;
+	StaticMeshActor* ground;
+	StaticMeshActor* objModel;
+	std::vector<StaticMeshActor*> balls;
+	std::vector<StaticMeshActor*> boxes;
 #if VISUALIZE_CSM_FRUSTUM
-	Mesh* csmDebugger;
+	StaticMeshActor* csmDebugger;
 #endif
 
 void setupInput();
 void setupCSMDebugger();
-void setupScene();
+void setupScene(); // #todo-actor: Remove this
+void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from setupScene()
+
 void tick(float deltaSeconds);
 
 void onLoadWavefrontOBJ(OBJLoader* loader) {
-	objModel = loader->craftMeshFromAllShapes();
-	objModel->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	objModel->getTransform().setScale(50.0f);
-	objModel->getTransform().setLocation(-100.0f, -10.0f, 0.0f);
+	objModel = scene.spawnActor<StaticMeshActor>();
+	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
+	objModel->setActorRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	objModel->setActorScale(50.0f);
+	objModel->setActorLocation(vector3(-100.0f, -10.0f, 0.0f));
 
-	for(Material* M : objModel->getMaterials()) {
+	for(Material* M : objModel->getStaticMesh()->getMaterials()) {
 		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
 		if(CM) {
 			CM->setRoughness(1.0f);
 		}
 	}
-
-	scene.add(objModel);
 }
 
 int main(int argc, char** argv) {
@@ -84,6 +87,7 @@ int main(int argc, char** argv) {
 	setupCSMDebugger();
 #endif
 	setupScene();
+	setupSceneWithActor(&scene);
 
 	gEngine->setWorld(&scene, cam);
 
@@ -135,9 +139,9 @@ void setupCSMDebugger()
 	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	if (firstRun) {
-		csmDebugger = new Mesh;
-		csmDebugger->castsShadow = false;
-		scene.add(csmDebugger);
+		csmDebugger = scene.spawnActor<StaticMeshActor>();
+		csmDebugger->setStaticMesh(new Mesh);
+		csmDebugger->getStaticMeshComponent()->castsShadow = false;
 	}
 
 	constexpr uint32 numFrustum = 4;
@@ -151,7 +155,7 @@ void setupCSMDebugger()
 		static ProceduralGeometry* G = new ProceduralGeometry;
 		static WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
 		if (firstRun) {
-			csmDebugger->add(G, M);
+			csmDebugger->getStaticMesh()->add(G, M);
 		}
 		G->clear();
 
@@ -189,7 +193,7 @@ void setupCSMDebugger()
 		static ProceduralGeometry* G = new ProceduralGeometry;
 		static WireframeMaterial* M = new WireframeMaterial(1.0f, 0.0f, 0.0f);
 		if (firstRun) {
-			csmDebugger->add(G, M);
+			csmDebugger->getStaticMesh()->add(G, M);
 		}
 		G->clear();
 
@@ -257,17 +261,6 @@ void setupCSMDebugger()
 }
 
 void setupScene() {
-	//---------------------------------------------------------------------------------------
-	// lighting
-	//---------------------------------------------------------------------------------------
-	sunLight = new DirectionalLight(SUN_DIRECTION, glm::vec3(1.0f, 1.0f, 1.0f));
-	scene.add(sunLight);
-
-	scene.add(new PointLight(glm::vec3(-50.0f, 60.0f, 170.0f), 5.0f * glm::vec3(0.2f, 1.0f, 1.0f), 100.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(0.0f, 30.0f, 150.0f), 5.0f * glm::vec3(1.0f, 0.2f, 1.0f), 100.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 50.0f), 2.0f * glm::vec3(1.0f, 0.0f, 0.0f), 80.0f, 0.001f));
-	scene.add(new PointLight(glm::vec3(-20.0f, 50.0f, 150.0f), 1.0f * glm::vec3(1.0f, 1.0f, 1.0f), 500.0f, 0.0001f));
-
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
@@ -292,10 +285,13 @@ void setupScene() {
 	}
 
 	//---------------------------------------------------------------------------------------
-	// create materials
+	// sky
 	//---------------------------------------------------------------------------------------
+#define SKY_METHOD 2
+
+#if SKY_METHOD == 0
 #if DEBUG_SKYBOX
-	std::array<const char*,6> cubeImgName = {
+	std::array<const char*, 6> cubeImgName = {
 		"resources/placeholder/cubemap_right.jpg",
 		"resources/placeholder/cubemap_left.jpg",
 		"resources/placeholder/cubemap_top.jpg",
@@ -314,6 +310,24 @@ void setupScene() {
 	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
 	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
 	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
+
+	Skybox* skybox = new Skybox(cubeTexture);
+	skybox->setLOD(1.0f);
+	scene.sky = skybox;
+#elif SKY_METHOD == 1
+	scene.sky = new AtmosphereScattering;
+#elif SKY_METHOD == 2
+	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+#else
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+#endif
+}
+
+void setupSceneWithActor(Scene* scene) {
+	//---------------------------------------------------------------------------------------
+	// create materials
+	//---------------------------------------------------------------------------------------
 
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/154_norm.jpg"), true, false);
@@ -364,24 +378,48 @@ void setupScene() {
 	geom_plane_big->calculateTangentBasis();
 	geom_cube->calculateTangentBasis();
 
+	//////////////////////////////////////////////////////////////////////////
+	// Lighting
+	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
+	dirLight->setLightParameters(SUN_DIRECTION, vector3(1.0f, 1.0f, 1.0f));
 
-	//---------------------------------------------------------------------------------------
-	// create meshes
-	//---------------------------------------------------------------------------------------
+	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight1 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight2 = scene->spawnActor<PointLightActor>();
+	PointLightActor* pointLight3 = scene->spawnActor<PointLightActor>();
 
-	ground = new Mesh(geom_plane_big, material_texture);
-	ground->getTransform().setScale(1000.0f);
-	ground->getTransform().setRotation(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ground->getTransform().setLocation(0.0f, -30.0f, 0.0f);
-	ground->castsShadow = false;
-	scene.add(ground);
+	pointLight0->setActorLocation(vector3(-50.0f, 60.0f, 170.0f));
+	pointLight1->setActorLocation(vector3(0.0f, 30.0f, 150.0f));
+	pointLight2->setActorLocation(vector3(-20.0f, 50.0f, 50.0f));
+	pointLight3->setActorLocation(vector3(-20.0f, 50.0f, 150.0f));
+
+	pointLight0->setLightParameters(5.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
+	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
+	pointLight2->setLightParameters(2.0f * vector3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
+	pointLight3->setLightParameters(1.0f * vector3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
+
+	godRaySource = scene->spawnActor<StaticMeshActor>();
+	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
+	godRaySource->setActorScale(20.0f);
+	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	scene->godRaySource = godRaySource->getStaticMeshComponent();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Static meshes
+
+	ground = scene->spawnActor<StaticMeshActor>();
+	ground->setStaticMesh(new Mesh(geom_plane_big, material_texture));
+	ground->setActorScale(1000.0f);
+	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
+	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
+	ground->getStaticMeshComponent()->castsShadow = false;
 
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
-		Mesh* ball = new Mesh(geom_sphere, material_pbr);
-		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
-		ball->getTransform().setLocation(-400.0f, 50.0f, 300.0f - 100.0f * i);
+		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
+		ball->setStaticMesh(new Mesh(geom_sphere, material_pbr));
+		ball->setActorScale(5.0f + (float)i * 0.5f);
+		ball->setActorLocation(vector3(-400.0f, 50.0f, 300.0f - 100.0f * i));
 		balls.push_back(ball);
-		scene.add(ball);
 	}
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		ColorMaterial* ball_material = new ColorMaterial;
@@ -389,11 +427,11 @@ void setupScene() {
 		ball_material->setMetallic(0.2f);
 		ball_material->setRoughness((float)i / NUM_BALLS);
 
-		Mesh* ball = new Mesh(geom_cube, ball_material);
-		ball->getTransform().setScale(5.0f + (float)i * 0.5f);
-		ball->getTransform().setLocation(-550.0f, 50.0f, 300.0f - 100.0f * i);
+		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
+		ball->setStaticMesh(new Mesh(geom_cube, ball_material));
+		ball->setActorScale(5.0f + (float)i * 0.5f);
+		ball->setActorLocation(vector3(-550.0f, 50.0f, 300.0f - 100.0f * i));
 		balls.push_back(ball);
-		scene.add(ball);
 	}
 
 	constexpr float box_x0 = 200.0f;
@@ -411,33 +449,15 @@ void setupScene() {
 		{
 			float wave = ::sinf(sinT += 0.0417f);
 
-			Mesh* box = new Mesh(geom_cube, box_material);
-			box->getTransform().setLocation(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY);
-			box->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
-			scene.add(box);
+			StaticMeshActor* box = scene->spawnActor<StaticMeshActor>();
+			box->setStaticMesh(new Mesh(geom_cube, box_material));
+			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY));
+			box->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
 
 			boxes.push_back(box);
 		}
 	}
 
-	godRaySource = new Mesh(geom_sphere, material_color);
-	godRaySource->getTransform().setScale(10.0f);
-	godRaySource->getTransform().setLocation(0.0f, 300.0f, -500.0f);
-	scene.godRaySource = godRaySource;
-
-	//---------------------------------------------------------------------------------------
-	// sky
-	//---------------------------------------------------------------------------------------
-	//Skybox* skybox = new Skybox(cubeTexture);
-	//skybox->setLOD(1.0f);
-	//scene.sky = skybox;
-
-	//scene.sky = new AtmosphereScattering;
-
-	//scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
-
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 }
 
 void tick(float deltaSeconds)
@@ -463,8 +483,9 @@ void tick(float deltaSeconds)
 		cam->rotateX(rotX);
 	}
 
-	for (Mesh* ball : balls) {
-		ball->getTransform().setRotation(0.005f, glm::vec3(0.0f, 1.0f, 1.0f));
+	static float ballAngle = 0.0f;
+	for (StaticMeshActor* ball : balls) {
+		ball->setActorRotation(ballAngle += 0.0005f, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
 	static float sinT = 0.0f;
@@ -474,7 +495,7 @@ void tick(float deltaSeconds)
 		for (uint32 j = 0; j < 16; ++j)
 		{
 			float wave = ::sinf(sinT + 13.2754f * (i*16+j)/256.0f + (6.3f * j/16.0f));
-			boxes[i*16+j]->getTransform().setScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			boxes[i*16+j]->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
 		}
 	}
 
@@ -487,7 +508,7 @@ void tick(float deltaSeconds)
 
 	{
 		char title[256];
-		sprintf_s(title, "%s (GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getGPUTime());
+		sprintf_s(title, "%s (CPU Time: %.2f ms, GPU Time: %.2f ms)", WINDOW_TITLE, gEngine->getCPUTime(), gEngine->getGPUTime());
 		gEngine->getMainWindow()->setTitle(title);
 	}
 }

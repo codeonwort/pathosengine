@@ -7,6 +7,8 @@
 
 namespace pathos {
 
+	struct StaticMeshProxy;
+
 	class TranslucencyRendering final {
 		
 	public:
@@ -16,7 +18,7 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderTranslucency(RenderCommandList& cmdList, const Camera* camera, const std::vector<RenderItem>& meshBatches);
+		void renderTranslucency(RenderCommandList& cmdList, const Camera* camera, const std::vector<StaticMeshProxy*>& meshBatches);
 
 	private:
 		GLuint fbo = 0xffffffff;

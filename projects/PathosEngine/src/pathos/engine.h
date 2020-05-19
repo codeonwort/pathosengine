@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
+#include "badger/memory/mem_alloc.h"
 #include "badger/system/stopwatch.h"
 
 #include "pathos/input/input_system.h"
@@ -51,6 +52,7 @@ namespace pathos {
 	};
 
 	class Engine final {
+		friend class EngineUtil;
 
 		using ExecProc = std::function<void(const std::string&)>;
 		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
@@ -79,8 +81,8 @@ namespace pathos {
 
 		const EngineConfig& getConfig() const { return conf; }
 
-		// Estimated time of GPU work
-		inline float getGPUTime() const { return elapsed_gpu; }
+		inline float getCPUTime() const { return elapsed_gameThread + elapsed_renderThread; } // Currently single-threaded (in milliseconds)
+		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
 
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
 
@@ -127,7 +129,12 @@ namespace pathos {
 	// Game thread
 	private:
 		EngineConfig conf;
+		StackAllocator renderProxyAllocator;
 		Stopwatch stopwatch_gameThread;
+		Stopwatch stopwatch_renderThread;
+
+		float elapsed_gameThread;
+		float elapsed_renderThread;
 
 		Scene* scene;
 		Camera* camera;

@@ -73,7 +73,7 @@ void main() {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		// #todo-fxaa: See the FXAA pixel shader for details
+		// #note-fxaa: See the FXAA pixel shader for details
 		float sharpness = 0.5f;
 		float subpix = 0.75f;
 		float edge_threshold = 0.166f;

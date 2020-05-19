@@ -32,13 +32,17 @@ namespace pathos {
 		if (program == 0) {
 			return;
 		}
+
+		// #todo-forward-rendering: Fix
+#if 0
 		uint32 numPointLights = std::min(static_cast<uint32>(scene->numPointLights()), maxPointLights);
 		glUniform1ui(glGetUniformLocation(program, "numPointLights"), numPointLights);
-		// #todo-forward-rendering: Fix
-		//if (numPointLights) {
-		//	glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, scene->getPointLightPositionBuffer());
-		//	glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, scene->getPointLightColorBuffer());
-		//}
+		
+		if (numPointLights) {
+			glUniform3fv(glGetUniformLocation(program, "pointLightPos"), numPointLights, scene->getPointLightPositionBuffer());
+			glUniform3fv(glGetUniformLocation(program, "pointLightColors"), numPointLights, scene->getPointLightColorBuffer());
+		}
+#endif
 	}
 
 }

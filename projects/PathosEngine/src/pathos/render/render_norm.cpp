@@ -43,6 +43,7 @@ namespace pathos {
 	}
 
 	void NormalRenderer::render(RenderCommandList& cmdList, Mesh* inMesh, Camera* inCamera) {
+#if 0 // #todo-forward-rendering
 		glm::mat4 model = inMesh->getTransform().getMatrix();
 		glm::mat4 mvp = inCamera->getViewProjectionMatrix() * model;
 
@@ -63,6 +64,7 @@ namespace pathos {
 		//glEnable(GL_CULL_FACE);
 
 		cmdList.useProgram(0);
+#endif
 	}
 
 }
