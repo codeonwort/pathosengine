@@ -17,7 +17,6 @@ namespace pathos {
 
 	public:
 		// #todo-static-mesh: Move to StaticMeshComponent
-		bool castsShadow    = true;
 		bool doubleSided    = false;
 		bool renderInternal = false;
 

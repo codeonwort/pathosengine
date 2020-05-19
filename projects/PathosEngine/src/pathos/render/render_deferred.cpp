@@ -198,7 +198,7 @@ namespace pathos {
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
-		// #todo-debug: Why is this null in debug build?
+		// #todo-debug: Broken due to Reverse-Z
 		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
 		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);

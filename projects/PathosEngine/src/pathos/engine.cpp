@@ -16,6 +16,8 @@
 
 namespace pathos {
 
+	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
+
 	static constexpr uint32 RENDER_PROXY_MEMORY = 16 * 1024 * 1024; // 16 MB
 
 	Engine*        gEngine  = nullptr;
@@ -287,8 +289,15 @@ namespace pathos {
 
 	void Engine::tick()
 	{
-		// #todo-tick: add option to limit fps
 		float deltaSeconds = stopwatch_gameThread.stop();
+
+		// #todo-fps: This is wrong. Rendering rate should be also controlled...
+		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
+			if (scene != nullptr) {
+				scene->createRenderProxy();
+			}
+			return;
+		}
 
 		stopwatch_gameThread.start();
 

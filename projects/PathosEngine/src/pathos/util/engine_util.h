@@ -16,11 +16,15 @@ namespace pathos {
 
 }
 
+// #todo-render-proxy: For performance, CHECK() and placement new might be disabled later.
 template<typename T>
 inline T* ALLOC_RENDER_PROXY() {
 	CHECKF(gEngine != nullptr, "Engine instance is invalid");
 
 	T* proxy = reinterpret_cast<T*>(EngineUtil::getRenderProxyAllocator().alloc(sizeof(T)));
-	new (proxy) T; // #todo-render-proxy: Needed?
+#if defined(_DEBUG)
+	CHECKF(proxy != nullptr, "Failed to allocate render proxy!!! Need to increase the allocator size.");
+#endif
+	new (proxy) T;
 	return proxy;
 }

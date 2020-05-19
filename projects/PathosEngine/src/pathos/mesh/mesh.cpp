@@ -4,7 +4,6 @@ namespace pathos {
 
 	Mesh::Mesh(MeshGeometry* geom, Material* mat)
 		: doubleSided(false)
-		, castsShadow(true)
 	{
 		bool bothNull = geom == nullptr && mat == nullptr;
 		bool bothValid = geom != nullptr && mat != nullptr;

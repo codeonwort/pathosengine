@@ -113,7 +113,6 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(BasePass);
 
-			// #todo-occlusion: occluder or BSP tree
 #if 0 // #todo-forward-rendering
 			for (Mesh* mesh : scene->meshes) {
 				renderMesh(cmdList, mesh);

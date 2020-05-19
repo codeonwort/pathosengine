@@ -24,14 +24,20 @@ namespace pathos {
 	};
 
 	class StaticMeshComponent : public SceneComponent {
+		friend class GodRay; // due to createRenderProxy_internal()
 
 	public:
+		virtual void createRenderProxy(Scene* scene);
+
 		inline Mesh* getStaticMesh() const { return mesh; }
 
 		void setStaticMesh(Mesh* inMesh) { mesh = inMesh; }
 
-		virtual void createRenderProxy(Scene* scene);
+	private:
 		void createRenderProxy_internal(Scene* scene, std::vector<StaticMeshProxy*>& outProxyList);
+
+	public:
+		bool castsShadow = true;
 
 	private:
 		Mesh* mesh;

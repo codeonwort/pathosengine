@@ -4,7 +4,6 @@
 
 namespace pathos {
 	
-	// #todo-scene-textures: Use this struct in forward renderer
 	// Textures for scene rendering
 	struct SceneRenderTargets {
 

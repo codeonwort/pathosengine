@@ -141,7 +141,7 @@ void setupCSMDebugger()
 	if (firstRun) {
 		csmDebugger = scene.spawnActor<StaticMeshActor>();
 		csmDebugger->setStaticMesh(new Mesh);
-		csmDebugger->getStaticMesh()->castsShadow = false;
+		csmDebugger->getStaticMeshComponent()->castsShadow = false;
 	}
 
 	constexpr uint32 numFrustum = 4;
@@ -412,7 +412,7 @@ void setupSceneWithActor(Scene* scene) {
 	ground->setActorScale(1000.0f);
 	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
-	ground->getStaticMesh()->castsShadow = false;
+	ground->getStaticMeshComponent()->castsShadow = false;
 
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		StaticMeshActor* ball = scene->spawnActor<StaticMeshActor>();
