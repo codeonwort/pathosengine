@@ -83,6 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\badger\assertion\assertion.cpp" />
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\badger\thread\thread_pool.cpp" />

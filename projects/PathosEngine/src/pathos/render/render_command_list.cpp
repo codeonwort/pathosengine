@@ -37,7 +37,7 @@ namespace pathos {
 	RenderCommandBase* RenderCommandList::getNextPacket()
 	{
 		RenderCommandBase* packet = (RenderCommandBase*)commands_alloc.alloc(sizeof(RenderCommandPacketUnion));
-		CHECK(packet != nullptr);
+		CHECKF(packet != nullptr, "Not enough memory for render command list");
 		commands.push_back(packet);
 		return packet;
 	}

@@ -10,7 +10,7 @@
 
 namespace pathos {
 
-	static constexpr uint32 RENDER_COMMAND_LIST_MAX_MEMORY = 16 * 1024 * 1024; // 16 MB
+	static constexpr uint32 RENDER_COMMAND_LIST_MAX_MEMORY = 32 * 1024 * 1024; // 32 MB
 	static constexpr uint32 COMMAND_PARAMETERS_MAX_MEMORY  = 16 * 1024 * 1024; // 16 MB
 
 	class RenderCommandList {
