@@ -45,8 +45,8 @@ Scene scene;
 
 void setupInput();
 void setupCSMDebugger();
-void setupSky(); // #todo-actor: Remove this
-void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from setupScene()
+void setupSky();
+void setupSceneWithActor(Scene* scene);
 
 void tick(float deltaSeconds);
 

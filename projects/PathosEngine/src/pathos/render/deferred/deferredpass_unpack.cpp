@@ -5,10 +5,22 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/shader/shader_program.h"
 
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
+
+	static ConsoleVariable<int32_t> cvar_enable_fog("r.fog", 0, "0 = disable fog, 1 = enable fog");
+	static ConsoleVariable<float> cvar_fog_bottom("r.fog.bottom", 0.0f, "bottom Y");
+	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
+	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
+
+	static ConsoleVariable<float> cvar_bloom_strength("r.bloom.strength", 4.0f, "Bloom strength");
+	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
+	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
 
 	struct UBO_Unpack {
 		glm::ivec4 enabledTechniques1; // (shadow, fog, ?, ?)
@@ -18,16 +30,25 @@ namespace pathos {
 		float prefilterEnvMapMaxLOD;
 	};
 
-	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
-	
-	static ConsoleVariable<int32_t> cvar_enable_fog("r.fog", 0, "0 = disable fog, 1 = enable fog");
-	static ConsoleVariable<float> cvar_fog_bottom("r.fog.bottom", 0.0f, "bottom Y");
-	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
-	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
+	class UnpackGBufferVS : public ShaderStage {
+	public:
+		UnpackGBufferVS() : ShaderStage(GL_VERTEX_SHADER, "UnpackGBufferVS")
+		{
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+	class UnpackGBufferFS : public ShaderStage {
+	public:
+		UnpackGBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "UnpackGBufferFS")
+		{
+			setFilepath("deferred_unpack.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_UnpackGBuffer, UnpackGBufferVS, UnpackGBufferFS);
 
-	static ConsoleVariable<float> cvar_bloom_strength("r.bloom.strength", 4.0f, "Bloom strength");
-	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
-	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
+}
+
+namespace pathos {
 
 	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack()
 		: fbo(0xffffffff)
@@ -41,45 +62,18 @@ namespace pathos {
 	void MeshDeferredRenderPass_Unpack::initializeResources(RenderCommandList& cmdList) {
 		// fullscreen quad
 		quad = new PlaneGeometry(2.0f, 2.0f);
-		createProgram();
 		createResource(cmdList);
+
+		ubo_unpack.init<UBO_Unpack>();
 	}
 
 	void MeshDeferredRenderPass_Unpack::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			cmdList.deleteProgram(program);
 			cmdList.deleteFramebuffers(1, &fbo);
 			quad->dispose();
 			delete quad;
 		}
 		destroyed = true;
-	}
-
-	void MeshDeferredRenderPass_Unpack::createProgram() {
-		std::string vshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 uv;
-
-out VS_OUT {
-	vec2 screenUV;
-} vs_out;
-
-void main() {
-	gl_Position = vec4(position, 1.0);
-	vs_out.screenUV = uv;
-}
-)";
-		
-		Shader vs(GL_VERTEX_SHADER, "VS_GBuffer_Unpack");
-		vs.setSource(vshader);
-
-		Shader fs(GL_FRAGMENT_SHADER, "FS_GBuffer_Unpack");
-		fs.loadSource("deferred_unpack.glsl");
-
-		program = pathos::createProgram(vs, fs, "UnpackGBuffer");
-		ubo_unpack.init<UBO_Unpack>();
 	}
 
 	void MeshDeferredRenderPass_Unpack::createResource(RenderCommandList& cmdList) {
@@ -119,7 +113,8 @@ void main() {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		cmdList.useProgram(program);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_UnpackGBuffer);
+		cmdList.useProgram(program.getGLName());
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };

@@ -24,12 +24,10 @@ namespace pathos {
 		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
 	private:
-		void createProgram();
 		void createResource(RenderCommandList& cmdList);
 
 	private:
 
-		GLuint program = 0;
 		GLuint fbo;
 		UniformBuffer ubo_unpack;
 

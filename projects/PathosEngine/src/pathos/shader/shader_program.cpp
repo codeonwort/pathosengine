@@ -29,20 +29,20 @@ namespace pathos {
 		}
 	} internal_recompileShaders;
 
-	ShaderProgram::ShaderProgram(const char* inDebugName)
+	ShaderProgram::ShaderProgram(const char* inDebugName, uint32 inProgramHash)
 		: debugName(inDebugName)
+		, programHash(inProgramHash)
 		, glName(0xffffffff)
 		, firstLoad(true)
 		, internal_justInstantiated(true)
 	{
-		uint32 programHash = COMPILE_TIME_CRC32_STR(inDebugName);
-		ShaderDB::get().registerProgram(programHash, this);
+		ShaderDB::get().registerProgram(inProgramHash, this);
 	}
 
 	ShaderProgram::~ShaderProgram()
 	{
 		CHECK(isValid());
-		ShaderDB::get().unregisterProgram(COMPILE_TIME_CRC32_STR(debugName));
+		ShaderDB::get().unregisterProgram(programHash);
 	}
 
 	void ShaderProgram::addShaderStage(ShaderStage* shaderStage)
@@ -60,7 +60,7 @@ namespace pathos {
 		bool allNotChanged = true;
 		for (ShaderStage* shaderStage : shaderStages) {
 			ShaderStage::CompileResponse response = shaderStage->tryCompile();
-			allCompiled = allCompiled && response == ShaderStage::CompileResponse::Compiled;
+			allCompiled = allCompiled && response != ShaderStage::CompileResponse::Failed;
 			allNotChanged = allNotChanged && response == ShaderStage::CompileResponse::NotChanged;
 		}
 		if (allNotChanged) {
@@ -105,14 +105,17 @@ namespace pathos {
 			if (oldValid) {
 				glDeleteProgram(oldGLName);
 			}
+			if (!firstLoad) {
+				LOG(LogDebug, "%s: Recompiled the shader program.", debugName);
+			}
 		}
 	}
 
 	void ShaderProgram::checkFirstLoad()
 	{
 		if (firstLoad) {
-			firstLoad = false;
 			reload();
+			firstLoad = false;
 		}
 	}
 

@@ -17,7 +17,7 @@ namespace pathos {
 
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
 
-	static constexpr uint32 RENDER_PROXY_MEMORY = 16 * 1024 * 1024; // 16 MB
+	static constexpr uint32 RENDER_PROXY_MEMORY = 32 * 1024 * 1024; // 32 MB
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;

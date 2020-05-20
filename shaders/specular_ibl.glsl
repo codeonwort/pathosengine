@@ -66,7 +66,7 @@ void main() {
 #if FRAGMENT_SHADER && BRDF_INTEGRATION
 
 in VS_OUT {
-	vec2 uv;
+	vec2 screenUV;
 } fs_in;
 
 out vec2 out_color;
@@ -126,7 +126,7 @@ vec2 IntegrateBRDF(float NdotV, float roughness) {
 }
 
 void main() {
-    vec2 integratedBRDF = IntegrateBRDF(fs_in.uv.x, fs_in.uv.y);
+    vec2 integratedBRDF = IntegrateBRDF(fs_in.screenUV.x, fs_in.screenUV.y);
     out_color = integratedBRDF;
 }
 
