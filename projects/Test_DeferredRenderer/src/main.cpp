@@ -462,7 +462,8 @@ void setupSceneWithActor(Scene* scene) {
 		whiteColor->setAlbedo(1.0f, 1.0f, 1.0f);
 		whiteColor->setMetallic(0.0f);
 		whiteColor->setRoughness(1.0f);
-		gConsole->addLine("r.shadow 0");
+		gConsole->addLine("r.shadow 0", true);
+		gConsole->addLine("r.ssao.enable 0", true);
 
 		MeshGeometry* boxGeometry = new CubeGeometry(glm::vec3(1.0f));
 		StaticMeshActor* whiteBox = scene->spawnActor<StaticMeshActor>();

@@ -48,6 +48,11 @@ namespace pathos {
 		CTRL,
 		ALT,
 
+		KEYBOARD_ARROW_LEFT,
+		KEYBOARD_ARROW_RIGHT,
+		KEYBOARD_ARROW_UP,
+		KEYBOARD_ARROW_DOWN,
+
 		// XboxOne Pad
 		XBOXONE_A,
 		XBOXONE_B,
@@ -325,5 +330,14 @@ namespace pathos {
 		InputConstants::UNDEFINED, // 254
 		InputConstants::UNDEFINED, // 255
 	};
+
+	constexpr bool isModifierKey(InputConstants key) {
+		return key == InputConstants::CTRL || key == InputConstants::SHIFT || key == InputConstants::ALT;
+	}
+
+	constexpr bool isArrowKey(InputConstants key) {
+		return key == InputConstants::KEYBOARD_ARROW_LEFT || key == InputConstants::KEYBOARD_ARROW_RIGHT
+			|| key == InputConstants::KEYBOARD_ARROW_UP || key == InputConstants::KEYBOARD_ARROW_DOWN;
+	}
 
 }

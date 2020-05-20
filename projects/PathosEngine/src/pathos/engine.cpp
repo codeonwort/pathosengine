@@ -117,8 +117,8 @@ namespace pathos {
 		createParams.onDisplay         = Engine::onMainWindowDisplay;
 		createParams.onKeyDown         = Engine::onKeyDown;
 		createParams.onKeyUp           = Engine::onKeyUp;
-		createParams.onModifierKeyDown = Engine::onModifierKeyDown;
-		createParams.onModifierKeyUp   = Engine::onModifierKeyUp;
+		createParams.onSpecialKeyDown  = Engine::onSpecialKeyDown;
+		createParams.onSpecialKeyUp    = Engine::onSpecialKeyUp;
 		createParams.onReshape         = Engine::onMainWindowReshape;
 
 		mainWindow = std::make_unique<GUIWindow>();
@@ -387,14 +387,20 @@ namespace pathos {
 
 	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }
 
-	void Engine::onModifierKeyDown(InputConstants modifier)
-	{
-		gEngine->inputSystem->processModifierKeyDown(modifier);
+	void Engine::onSpecialKeyDown(InputConstants specialKey) {
+		if (gConsole->isVisible()) {
+			if (specialKey == InputConstants::KEYBOARD_ARROW_UP) {
+				gConsole->showPreviousHistory();
+			} else if (specialKey == InputConstants::KEYBOARD_ARROW_DOWN) {
+				gConsole->showNextHistory();
+			}
+		} else {
+			gEngine->inputSystem->processSpecialKeyDown(specialKey);
+		}
 	}
 
-	void Engine::onModifierKeyUp(InputConstants modifier)
-	{
-		gEngine->inputSystem->processModifierKeyUp(modifier);
+	void Engine::onSpecialKeyUp(InputConstants specialKey) {
+		gEngine->inputSystem->processSpecialKeyUp(specialKey);
 	}
 
 }

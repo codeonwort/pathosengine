@@ -132,16 +132,17 @@ namespace pathos {
 		}
 	}
 
-	void InputManager::processModifierKeyDown(InputConstants modifier)
+	void InputManager::processSpecialKeyDown(InputConstants specialKey)
 	{
 		std::vector<uint32> matchingEvents;
 
-		if (modifier == InputConstants::SHIFT) isShiftActive = true;
-		else if (modifier == InputConstants::CTRL) isCtrlActive = true;
-		else if (modifier == InputConstants::ALT) isAltActive = true;
+		if (specialKey == InputConstants::SHIFT) isShiftActive = true;
+		else if (specialKey == InputConstants::CTRL) isCtrlActive = true;
+		else if (specialKey == InputConstants::ALT) isAltActive = true;
 
+		// #todo-input: Redundant; same as processRawKeyDown
 		for (const ButtonBinding& binding : buttonPressedBindings) {
-			if (binding.contains(modifier)) {
+			if (binding.contains(specialKey)) {
 				matchingEvents.push_back(binding.event_name_hash);
 			}
 		}
@@ -154,16 +155,16 @@ namespace pathos {
 		}
 	}
 
-	void InputManager::processModifierKeyUp(InputConstants modifier)
+	void InputManager::processSpecialKeyUp(InputConstants specialKey)
 	{
 		std::vector<uint32> matchingEvents;
 
-		if (modifier == InputConstants::SHIFT) isShiftActive = false;
-		else if (modifier == InputConstants::CTRL) isCtrlActive = false;
-		else if (modifier == InputConstants::ALT) isAltActive = false;
+		if (specialKey == InputConstants::SHIFT) isShiftActive = false;
+		else if (specialKey == InputConstants::CTRL) isCtrlActive = false;
+		else if (specialKey == InputConstants::ALT) isAltActive = false;
 
 		for (const ButtonBinding& binding : buttonReleasedBindings) {
-			if (binding.contains(modifier)) {
+			if (binding.contains(specialKey)) {
 				matchingEvents.push_back(binding.event_name_hash);
 			}
 		}
