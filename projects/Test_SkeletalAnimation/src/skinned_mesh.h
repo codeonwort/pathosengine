@@ -1,8 +1,8 @@
 #pragma once
 
 #include "pathos/mesh/mesh.h"
+#include "badger/types/vector_types.h"
 
-#include "glm/glm.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "assimp/anim.h"
 
@@ -61,7 +61,7 @@ namespace pathos {
 		int rotation_lower_bound(aiNodeAnim* channel, double time);
 		int scale_lower_bound(aiNodeAnim* channel, double time);
 
-		glm::vec3 interpolate(aiVectorKey* keys, int len, int i, double time);
+		vector3 interpolate(aiVectorKey* keys, int len, int i, double time);
 		glm::quat interpolate(aiQuatKey* keys, int len, int i, double time);
 
 	};

@@ -21,13 +21,13 @@ using namespace pathos;
 #define DAE_MODEL_ID              2
 #define LOAD_SECOND_DAE_MODEL     0
 
-constexpr int32 WINDOW_WIDTH    = 1920;
-constexpr int32 WINDOW_HEIGHT   = 1080;
-constexpr char* WINDOW_TITLE    = "Test: Skeletal Animation";
-constexpr float FOVY            = 60.0f;
-const glm::vec3 CAMERA_POSITION = glm::vec3(0.0f, 0.0f, 300.0f);
-constexpr float CAMERA_Z_NEAR   = 1.0f;
-constexpr float CAMERA_Z_FAR    = 10000.0f;
+constexpr int32     WINDOW_WIDTH    = 1920;
+constexpr int32     WINDOW_HEIGHT   = 1080;
+constexpr char*     WINDOW_TITLE    = "Test: Skeletal Animation";
+constexpr float     FOVY            = 60.0f;
+const     vector3   CAMERA_POSITION = vector3(0.0f, 0.0f, 300.0f);
+constexpr float     CAMERA_Z_NEAR   = 1.0f;
+constexpr float     CAMERA_Z_FAR    = 10000.0f;
 
 /* ------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	cam->setYaw(0.0f);
 	cam->setPitch(0.0f);
 #else
-	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + vector3(0.0f, 0.0f, -1.0f), vector3(0.0f, 1.0f, 0.0f));
 #endif
 
 	loadDAE();
@@ -127,7 +127,7 @@ void loadDAE() {
 		daeActor->setActorScale(10.0f);
 #if DAE_MODEL_ID == 2
 		daeActor->setActorScale(5.0f);
-		daeActor->setActorRotation(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		daeActor->setActorRotation(glm::radians(90.0f), vector3(0.0f, 1.0f, 0.0f));
 #endif
 		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
 	} else {
@@ -189,7 +189,7 @@ void setupScene() {
 	auto geom_sphere_big = new SphereGeometry(15.0f, 30);
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
 	auto geom_plane = new PlaneGeometry(10.f, 10.f);
-	auto geom_cube = new CubeGeometry(glm::vec3(5.0f));
+	auto geom_cube = new CubeGeometry(vector3(5.0f));
 
 	geom_sphere->calculateTangentBasis();
 	geom_sphere_big->calculateTangentBasis();
@@ -204,13 +204,13 @@ void setupScene() {
 		for (int32_t j = 0; j < 4; ++j) {
 			StaticMeshActor* cube = scene.spawnActor<StaticMeshActor>();
 			cube->setStaticMesh(new Mesh(geom_cube, material_color));
-			glm::vec3 p0(-50.0f, 50.0f, -50.0f);
+			vector3 p0(-50.0f, 50.0f, -50.0f);
 			float e = (rand() % 256) / 255.0f;
 			float x = (rand() % 256) / 255.0f;
 			float y = (rand() % 256) / 255.0f;
 			float z = (rand() % 256) / 255.0f;
-			cube->setActorRotation(e * 60.0f, glm::vec3(x, y, z));
-			cube->setActorLocation(p0 + glm::vec3(i * 15.0f, -j * 15.0f, 0.0f));
+			cube->setActorRotation(e * 60.0f, vector3(x, y, z));
+			cube->setActorLocation(p0 + vector3(i * 15.0f, -j * 15.0f, 0.0f));
 		}
 	}
 
@@ -242,14 +242,14 @@ void tick(float deltaSeconds) {
 		float rotY = input->getAxis("rotateYaw") * rotateY;
 		float rotX = input->getAxis("rotatePitch") * rotateX;
 
-		cam->move(glm::vec3(moveForward, moveRight, 0.0f));
+		cam->move(vector3(moveForward, moveRight, 0.0f));
 		cam->rotateY(rotY);
 		cam->rotateX(rotX);
 	}
 
 	static float modelAngle = 0.0f;
 	model->setActorLocation(vector3(0, 20, 0));
-	model->setActorRotation(modelAngle += 0.01f, glm::vec3(0, 0.5, 1));
+	model->setActorRotation(modelAngle += 0.01f, vector3(0, 0.5, 1));
 	model->setActorLocation(vector3(0, -20, 0));
 
 #if DAE_MODEL_ID == 2

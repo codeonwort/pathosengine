@@ -155,7 +155,7 @@ namespace pathos {
 		return -1;
 	}
 
-	glm::vec3 SkinnedMesh::interpolate(aiVectorKey* keys, int len, int i, double time) {
+	vector3 SkinnedMesh::interpolate(aiVectorKey* keys, int len, int i, double time) {
 		aiVector3D result;
 		if (len == 1) {
 			result = keys[0].mValue;
@@ -163,7 +163,7 @@ namespace pathos {
 			float ratio = static_cast<float>((time - keys[i].mTime) / (keys[i + 1].mTime - keys[i].mTime));
 			result = ratio * keys[i].mValue + (1 - ratio) * keys[i + 1].mValue;
 		}
-		return glm::vec3(result.x, result.y, result.z);
+		return vector3(result.x, result.y, result.z);
 	}
 	glm::quat SkinnedMesh::interpolate(aiQuatKey* keys, int len, int i, double time) {
 		aiQuaternion result;
