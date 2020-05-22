@@ -3,19 +3,20 @@
 #include "sky.h"
 #include "god_ray.h"
 #include "visualize_depth.h"
-#include "forward/translucency_rendering.h"
-#include "postprocessing/ssao.h"
-#include "postprocessing/bloom.h"
-#include "postprocessing/tone_mapping.h"
-#include "postprocessing/depth_of_field.h"
-#include "postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/forward/translucency_rendering.h"
+#include "pathos/render/postprocessing/ssao.h"
+#include "pathos/render/postprocessing/bloom.h"
+#include "pathos/render/postprocessing/tone_mapping.h"
+#include "pathos/render/postprocessing/depth_of_field.h"
+#include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/light/directional_light_component.h"
+#include "pathos/light/point_light_component.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
-#include "pathos/light/point_light_component.h"
-#include "pathos/light/directional_light_component.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/util/gl_debug_group.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -205,7 +206,11 @@ namespace pathos {
 			return;
 		}
 
-		sunShadowMap->renderShadowMap(cmdList, scene, camera);
+		{
+			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
+
+			sunShadowMap->renderShadowMap(cmdList, scene, camera);
+		}
 
 		// ready scene for rendering
 		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
@@ -226,35 +231,49 @@ namespace pathos {
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
-		godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
+		{
+			SCOPED_GPU_COUNTER(RenderGodRay);
+
+			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
+		}
 
 		clearGBuffer(cmdList);
 
  		packGBuffer(cmdList);
 
-		ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+		{
+			SCOPED_GPU_COUNTER(SSAO);
+
+			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+		}
 
  		unpackGBuffer(cmdList);
 
 		// Translucency pass
-		renderTranslucency(cmdList);
+		{
+			SCOPED_GPU_COUNTER(Translucency);
+
+			renderTranslucency(cmdList);
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		{
+			SCOPED_GPU_COUNTER(PostProcessing);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
 
-		// input: bright pixels in gbuffer
-		// output: bloom texture
-		bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+			// input: bright pixels in gbuffer
+			// output: bloom texture
+			bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
 
-		// input: scene color, bloom, god ray
-		// output: scene final
-		toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+			// input: scene color, bloom, god ray
+			// output: scene final
+			toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-		antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
-		switch (antiAliasing) {
+			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+			switch (antiAliasing) {
 			case EAntiAliasingMethod::NoAA:
 				// Do nothing
 				break;
@@ -265,15 +284,17 @@ namespace pathos {
 
 			default:
 				break;
-		}
+			}
 
-		// input: scene final
-		// output: scene final with DoF
-		if (cvar_enable_dof.getInt() != 0) {
-			constexpr GLuint dofRenderTarget = 0; // default framebuffer
-			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
-			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
-			depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+			// input: scene final
+			// output: scene final with DoF
+			if (cvar_enable_dof.getInt() != 0) {
+				constexpr GLuint dofRenderTarget = 0; // default framebuffer
+				//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
+				//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
+				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+			}
+
 		}
 
 #if ASSERT_GL_NO_ERROR

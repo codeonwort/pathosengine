@@ -103,6 +103,7 @@ namespace pathos {
 		Engine& operator=(const Engine&) = delete;
 
 		bool initialize(int argcp, char** argv, const EngineConfig& conf);
+		bool destroy();
 
 		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeInput();
@@ -112,6 +113,8 @@ namespace pathos {
 		bool initializeFontSystem();
 		bool initializeConsole();
 		bool initializeRenderer();
+
+		bool destroyOpenGL();
 
 		// glut event listeners //
 		static void onIdle();

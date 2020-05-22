@@ -24,6 +24,7 @@ namespace pathos {
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
 
 	private:
+		// #todo-scene-capture: Global resources should not be owned by renderer
 		void createShaders();
 		void destroyShaders();
 

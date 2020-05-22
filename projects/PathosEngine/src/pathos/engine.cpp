@@ -66,8 +66,7 @@ namespace pathos {
 	{
 	}
 
-	bool Engine::initialize(int argc, char** argv, const EngineConfig& config)
-	{
+	bool Engine::initialize(int argc, char** argv, const EngineConfig& config) {
 		conf = config;
 
 		LOG(LogInfo, "");
@@ -93,6 +92,20 @@ namespace pathos {
 #undef BailIfFalse
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
+		LOG(LogInfo, "");
+
+		return true;
+	}
+
+	bool Engine::destroy() {
+		LOG(LogInfo, "");
+		LOG(LogInfo, "=== Destroy PATHOS ===");
+
+#define BailIfFalse(x) if(!(x)) { return false; }
+		BailIfFalse(destroyOpenGL());
+#undef BailIfFalse
+
+		LOG(LogInfo, "=== PATHOS has been destroyed ===");
 		LOG(LogInfo, "");
 
 		return true;
@@ -184,6 +197,8 @@ namespace pathos {
 			routine(render_device);
 		}
 
+		ScopedGpuCounter::initializeQueryObjectPool();
+
 		return validDevice;
 	}
 
@@ -256,6 +271,14 @@ namespace pathos {
 		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
 			routine(render_device);
 		}
+
+		CHECKF(destroy(), "Failed to destroy the engine properly !!!");
+	}
+
+	bool Engine::destroyOpenGL() {
+		ScopedGpuCounter::destroyQueryObjectPool();
+
+		return true;
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
@@ -289,6 +312,9 @@ namespace pathos {
 
 	void Engine::tick()
 	{
+		// Wait for previous frame
+		glFinish();
+
 		float deltaSeconds = stopwatch_gameThread.stop();
 
 		// #todo-fps: This is wrong. Rendering rate should be also controlled...
@@ -347,6 +373,13 @@ namespace pathos {
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
 		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
+
+		// #todo-gpu-counter: Provide a way to print the result
+		{
+			std::vector<std::string> gpuCounterNames;
+			std::vector<float> gpuCounterTimes;
+			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(gpuCounterNames, gpuCounterTimes);
+		}
 
 		renderProxyAllocator.clear();
 

@@ -10,10 +10,10 @@
 
 namespace pathos {
 
-	static constexpr uint32 RENDER_COMMAND_LIST_MAX_MEMORY = 32 * 1024 * 1024; // 32 MB
-	static constexpr uint32 COMMAND_PARAMETERS_MAX_MEMORY  = 16 * 1024 * 1024; // 16 MB
-
 	class RenderCommandList {
+
+		static const uint32 RENDER_COMMAND_LIST_MAX_MEMORY;
+		static const uint32 COMMAND_PARAMETERS_MAX_MEMORY;
 
 	private:
 		struct RenderCommand_registerHook : RenderCommandBase {
@@ -46,7 +46,7 @@ namespace pathos {
 		void flushAllCommands();
 
 		// For subsequent works related to GL calls that have return values
-		void registerHook(std::function<void(void*)> hook, void* argument);
+		void registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes);
 
 		// Should be assigned by renderer before rendering anything of current frame
 		struct SceneRenderTargets* sceneRenderTargets;
