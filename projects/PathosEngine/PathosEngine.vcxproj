@@ -137,6 +137,7 @@
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_raytracer.cpp" />
+    <ClCompile Include="src\pathos\render\render_target.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
     <ClCompile Include="src\pathos\render\skybox.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="src\pathos\render\render_command_list.generated.h" />
     <ClInclude Include="src\pathos\render\render_command_list.h" />
     <ClInclude Include="src\pathos\render\render_device.h" />
+    <ClInclude Include="src\pathos\render\render_target.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />

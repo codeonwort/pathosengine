@@ -118,11 +118,6 @@ void main() {
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
-
-		// #todo-fxaa: Resolving sceneFinal to toneMappingResult for now
-		//cmdList.bindTextureUnit(0, 0);
-		//cmdList.copyTextureSubImage2D(input0, 0, 0, 0, 0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
 	}
 
 }

@@ -1,8 +1,9 @@
 #include "render_deferred.h"
 
-#include "sky.h"
-#include "god_ray.h"
-#include "visualize_depth.h"
+#include "pathos/render/sky.h"
+#include "pathos/render/god_ray.h"
+#include "pathos/render/visualize_depth.h"
+#include "pathos/render/render_target.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom.h"
@@ -17,7 +18,6 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/gl_debug_group.h"
-#include "pathos/scene/scene_capture_component.h" // #todo-scene-capture: temporary include for RenderTarget2D
 
 #include "badger/assertion/assertion.h"
 
