@@ -27,7 +27,6 @@ namespace pathos {
 		void createResource(RenderCommandList& cmdList);
 
 	private:
-
 		GLuint fbo;
 		UniformBuffer ubo_unpack;
 

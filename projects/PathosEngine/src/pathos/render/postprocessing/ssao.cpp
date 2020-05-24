@@ -42,8 +42,6 @@ namespace pathos {
 
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		{
 			Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
 			cs_downscale.loadSource("ssao_downscale.glsl");
@@ -70,14 +68,12 @@ namespace pathos {
 		uboRandom.init<UBO_SSAO_Random>();
 
 		cmdList.createFramebuffers(1, &fboBlur);
-		cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
 		cmdList.namedFramebufferDrawBuffer(fboBlur, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fboBlur);
+		//checkFramebufferStatus(cmdList, fboBlur); // #todo-framebuffer: Can't check completeness now
 
 		cmdList.createFramebuffers(1, &fboBlur2);
-		cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fboBlur2);
+		//checkFramebufferStatus(cmdList, fboBlur2); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void SSAO::releaseResources(RenderCommandList& cmdList)
@@ -149,11 +145,13 @@ namespace pathos {
 
 			cmdList.useProgram(program_blur);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);
+			cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMap);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.useProgram(program_blur2);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
+			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
 			fullscreenQuad->drawPrimitive(cmdList);
 		}

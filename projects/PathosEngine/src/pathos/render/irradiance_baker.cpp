@@ -4,6 +4,7 @@
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/util/engine_util.h"
 
 namespace pathos {
 
@@ -303,11 +304,6 @@ namespace pathos {
 		delete IrradianceBaker::dummyCube;
 	}
 
-	// #todo-misc: Define a macro for static initialization
-	static struct InitIrradianceBaker_0xDEADBEEF {
-		InitIrradianceBaker_0xDEADBEEF() {
-			Engine::internal_registerGlobalRenderRoutine(IrradianceBaker::internal_createIrradianceBakerResources, IrradianceBaker::internal_destroyIrradianceBakerResources);
-		}
-	} _init_irradiance_baker_0xDEADBEEF;
+	DEFINE_GLOBAL_RENDER_ROUTINE(IrradianceBaker, IrradianceBaker::internal_createIrradianceBakerResources, IrradianceBaker::internal_destroyIrradianceBakerResources);
 
 }

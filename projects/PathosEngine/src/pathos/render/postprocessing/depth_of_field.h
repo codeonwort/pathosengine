@@ -10,6 +10,8 @@ namespace pathos {
 	class DepthOfField : public PostProcess {
 
 	public:
+		~DepthOfField();
+
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;

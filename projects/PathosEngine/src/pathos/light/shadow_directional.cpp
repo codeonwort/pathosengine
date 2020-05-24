@@ -47,6 +47,7 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(RenderCascade);
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, i);
+			cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
 			cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
@@ -82,19 +83,21 @@ namespace pathos {
 
 	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
-		// Bind layer 0 for completeness check, but it will be reset for each layer.
-		cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, 0);
-		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
-
-		GLenum fboCompleteness;
-		cmdList.checkNamedFramebufferStatus(fbo, GL_FRAMEBUFFER, &fboCompleteness);
-
-		cmdList.flushAllCommands();
-		CHECK(fboCompleteness == GL_FRAMEBUFFER_COMPLETE);
+		// #todo-framebuffer: Can't check completeness now
+		//{
+		//	// Bind layer 0 for completeness check, but it will be reset for each layer.
+		//	cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, 0);
+		//	cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
+		//
+		//
+		//	GLenum fboCompleteness;
+		//	cmdList.checkNamedFramebufferStatus(fbo, GL_FRAMEBUFFER, &fboCompleteness);
+		//
+		//	cmdList.flushAllCommands();
+		//	CHECK(fboCompleteness == GL_FRAMEBUFFER_COMPLETE);
+		//}
 
 		// create shadow program
 		string vshader = R"(#version 430 core

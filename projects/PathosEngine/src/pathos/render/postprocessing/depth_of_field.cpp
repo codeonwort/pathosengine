@@ -14,16 +14,17 @@ namespace pathos {
 		float maxRadius;
 	};
 
+	DepthOfField::~DepthOfField() {
+		markDestroyed();
+	}
+
 	void DepthOfField::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.createVertexArrays(1, &vao);
 
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneFinal, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fbo);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 
 		// compute program. output is transposed.
 		program_subsum2D = createSubsumShader();
@@ -48,8 +49,8 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		GLuint input0 = getInput(EPostProcessInput::PPI_0);
-		GLuint output0 = getOutput(EPostProcessOutput::PPO_0);
+		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneFinal
+		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // backbuffer
 
 		{
 			SCOPED_DRAW_EVENT(Subsum);

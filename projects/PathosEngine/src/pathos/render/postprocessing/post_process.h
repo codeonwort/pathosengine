@@ -89,9 +89,6 @@ namespace pathos {
 	public:
 		virtual ~PostProcess();
 
-		//void setInput(EPostProcessInput binding, GLuint texture);
-		//void setOutput(EPostProcessOutput binding, GLuint texture);
-
 		virtual void initializeResources(RenderCommandList& cmdList) = 0;
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) = 0;

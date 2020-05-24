@@ -34,11 +34,7 @@ namespace pathos {
 
 	void TranslucencyRendering::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.flushAllCommands();
 	}
@@ -65,6 +61,8 @@ namespace pathos {
 
 		cmdList.useProgram(shaderProgram);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 
 		// #todo-translucency: Sort by z
 		{

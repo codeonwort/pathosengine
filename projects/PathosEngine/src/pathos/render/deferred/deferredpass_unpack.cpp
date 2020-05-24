@@ -77,45 +77,44 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Unpack::createResource(RenderCommandList& cmdList) {
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		//auto checkFramebufferStatus = [&cmdList](GLuint fbo) -> void {
+		//	GLenum completeness;
+		//	cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, &completeness);
+		//	cmdList.flushAllCommands(); // #todo-cmd-list: Don't flush here
+		//	if (completeness != GL_FRAMEBUFFER_COMPLETE) {
+		//		LOG(LogFatal, "%s: Failed to initialize fbo", __FUNCTION__);
+		//		CHECK(0);
+		//	}
+		//};
 
-		auto checkFramebufferStatus = [&cmdList](GLuint fbo) -> void {
-			GLenum completeness;
-			cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, &completeness);
-			// #todo-cmd-list: Don't flush here
-			cmdList.flushAllCommands();
-			if (completeness != GL_FRAMEBUFFER_COMPLETE) {
-				LOG(LogFatal, "%s: Failed to initialize fbo", __FUNCTION__);
-				CHECK(0);
-			}
-		};
-
-		// hdr resource
 		GLenum hdr_draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 		cmdList.namedFramebufferDrawBuffers(fbo, 2, hdr_draw_buffers);
-		checkFramebufferStatus(fbo);
+		//checkFramebufferStatus(fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList) {
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
 		cmdList.clearBufferfv(GL_COLOR, 1, zero);
-		cmdList.clearBufferfv(GL_COLOR, 2, zero);
 	}
 
 	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(UnpackHDR);
-
+		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_UnpackGBuffer);
 		cmdList.useProgram(program.getGLName());
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);

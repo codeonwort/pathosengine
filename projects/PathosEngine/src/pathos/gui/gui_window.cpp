@@ -131,7 +131,7 @@ namespace pathos {
 		}
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(windowWidth, windowHeight);
-
+		
 		nativeHandle = glutCreateWindow(title.c_str());
 
 		if (bFullscreen) {

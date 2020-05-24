@@ -13,9 +13,36 @@
 
 namespace pathos {
 
+	class OpenGLDevice;
 	class RenderTarget2D;
 
 	class DeferredRenderer : public Renderer {
+
+	public:
+		static void internal_initGlobalResources(OpenGLDevice* renderDevice);
+		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice);
+	private:
+		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
+		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
+
+		static std::unique_ptr<UniformBuffer> ubo_perFrame;
+
+		// mesh rendering
+		static MeshDeferredRenderPass_Pack* pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
+		static std::unique_ptr<MeshDeferredRenderPass_Unpack> unpack_pass;
+		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
+
+		// full-screen processing
+		static std::unique_ptr<DirectionalShadowMap> sunShadowMap;
+		static std::unique_ptr<class VisualizeDepth> visualizeDepth;
+
+		// post-processing
+		static std::unique_ptr<class GodRay> godRay;
+		static std::unique_ptr<class SSAO> ssao;
+		static std::unique_ptr<class BloomPass> bloomPass;
+		static std::unique_ptr<class ToneMapping> toneMapping;
+		static std::unique_ptr<class FXAA> fxaa;
+		static std::unique_ptr<class DepthOfField> depthOfField;
 
 	public:
 		DeferredRenderer(uint32 width, uint32 height);
@@ -27,10 +54,6 @@ namespace pathos {
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
 
 	private:
-		// #todo-scene-capture: Global resources should not be owned by renderer
-		void createShaders();
-		void destroyShaders();
-
 		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
 		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
@@ -49,37 +72,16 @@ namespace pathos {
 
 		EAntiAliasingMethod antiAliasing;
 
+		// #todo-scene-capture: Are these global resources?
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
-
-		UniformBuffer ubo_perFrame;
-
-		std::unique_ptr<class ColorMaterial> fallbackMaterial;
-
-		MeshDeferredRenderPass_Pack* pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-		MeshDeferredRenderPass_Unpack* unpack_pass;
-		std::unique_ptr<class TranslucencyRendering> translucency_pass;
-
-		std::unique_ptr<DirectionalShadowMap> sunShadowMap;
-
-		class VisualizeDepth* visualizeDepth;
-
-		// post-processing
-		std::unique_ptr<class GodRay> godRay;
-		std::unique_ptr<class SSAO> ssao;
-		std::unique_ptr<class BloomPass> bloomPass;
-		std::unique_ptr<class ToneMapping> toneMapping;
-		std::unique_ptr<class FXAA> fxaa;
-		std::unique_ptr<class DepthOfField> depthOfField;
-
-		std::unique_ptr<class PlaneGeometry> fullscreenQuad;
 
 		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
 		Scene* scene; 
 		Camera* camera;
-		uint32 sceneWidth;
+		uint32 sceneWidth; // #todo-scene-capture: Use pathos::SceneRenderSettings
 		uint32 sceneHeight;
 
 	};

@@ -6,8 +6,6 @@ namespace pathos {
 
 	void FXAA::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		std::string vshader = R"(
 #version 430 core
 
@@ -53,9 +51,8 @@ void main() {
 		//////////////////////////////////////////////////////////////////////////
 
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneFinal, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fbo);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void FXAA::releaseResources(RenderCommandList& cmdList)

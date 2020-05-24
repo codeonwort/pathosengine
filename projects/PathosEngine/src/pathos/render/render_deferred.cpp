@@ -1,5 +1,6 @@
 #include "render_deferred.h"
 
+#include "pathos/render/render_device.h"
 #include "pathos/render/sky.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_depth.h"
@@ -66,21 +67,12 @@ namespace pathos {
 		: sceneWidth(width)
 		, sceneHeight(height)
 		, antiAliasing(EAntiAliasingMethod::FXAA)
+		, scene(nullptr)
+		, camera(nullptr)
 	{
 		CHECK(width > 0 && height > 0);
 
 		sceneRenderTargets.useGBuffer = true;
-
-		createShaders();
-		ubo_perFrame.init<UBO_PerFrame>();
-
-		sunShadowMap = std::make_unique<DirectionalShadowMap>();
-		godRay = std::make_unique<GodRay>();
-		ssao = std::make_unique<SSAO>();
-		bloomPass = std::make_unique<BloomPass>();
-		toneMapping = std::make_unique<ToneMapping>();
-		fxaa = std::make_unique<FXAA>();
-		depthOfField = std::make_unique<DepthOfField>();
 	}
 
 	DeferredRenderer::~DeferredRenderer() {
@@ -91,72 +83,14 @@ namespace pathos {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
-
-		sunShadowMap->initializeResources(cmdList);
-		unpack_pass->initializeResources(cmdList);
-		translucency_pass->initializeResources(cmdList);
-
-		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
-
-		godRay->initializeResources(cmdList);
-		ssao->initializeResources(cmdList);
-		bloomPass->initializeResources(cmdList);
-		toneMapping->initializeResources(cmdList);
-		fxaa->initializeResources(cmdList);
-		depthOfField->initializeResources(cmdList);
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			destroyShaders();
 			destroySceneRenderTargets(cmdList);
-
-			sunShadowMap->destroyResources(cmdList);
-			unpack_pass->destroyResources(cmdList);
-			translucency_pass->releaseResources(cmdList);
-
-			godRay->releaseResources(cmdList);
-			ssao->releaseResources(cmdList);
-			bloomPass->releaseResources(cmdList);
-			toneMapping->releaseResources(cmdList);
-			fxaa->releaseResources(cmdList);
-			depthOfField->releaseResources(cmdList);
-
 			cmdList.flushAllCommands();
-			fullscreenQuad->dispose();
 		}
 		destroyed = true;
-	}
-
-	void DeferredRenderer::createShaders() {
-		fallbackMaterial = std::make_unique<ColorMaterial>();
-		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
-		fallbackMaterial->setMetallic(0.0f);
-		fallbackMaterial->setRoughness(0.0f);
-
-		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			pack_passes[i] = nullptr;
-		}
-		pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
-		pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
-		pack_passes[(uint8)MATERIAL_ID::WIREFRAME]    = new MeshDeferredRenderPass_Pack_Wireframe;
-		pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
-		pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
-
-		unpack_pass = new MeshDeferredRenderPass_Unpack;
-
-		translucency_pass = std::make_unique<TranslucencyRendering>();
-
-		visualizeDepth = new VisualizeDepth;
-	}
-
-	void DeferredRenderer::destroyShaders() {
-		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			if (pack_passes[i]) {
-				delete pack_passes[i];
-			}
-		}
-		delete unpack_pass;
 	}
 
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
@@ -474,7 +408,126 @@ namespace pathos {
 			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
 		}
 
-		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
+		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 	}
+
+}
+
+namespace pathos {
+	
+	std::unique_ptr<class ColorMaterial>           DeferredRenderer::fallbackMaterial;
+	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
+	
+	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
+	
+	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
+	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
+	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
+
+	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
+	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
+
+	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
+	std::unique_ptr<class SSAO>                    DeferredRenderer::ssao;
+	std::unique_ptr<class BloomPass>               DeferredRenderer::bloomPass;
+	std::unique_ptr<class ToneMapping>             DeferredRenderer::toneMapping;
+	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
+	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
+
+	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice) {
+		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
+
+		fallbackMaterial = std::make_unique<ColorMaterial>();
+		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
+		fallbackMaterial->setMetallic(0.0f);
+		fallbackMaterial->setRoughness(0.0f);
+
+		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
+
+		ubo_perFrame = std::make_unique<UniformBuffer>();
+		ubo_perFrame->init<UBO_PerFrame>();
+
+		{
+			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+				pack_passes[i] = nullptr;
+			}
+			pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR] = new MeshDeferredRenderPass_Pack_SolidColor;
+			pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
+			pack_passes[(uint8)MATERIAL_ID::WIREFRAME] = new MeshDeferredRenderPass_Pack_Wireframe;
+			pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
+			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
+			unpack_pass = std::make_unique<MeshDeferredRenderPass_Unpack>();
+			translucency_pass = std::make_unique<TranslucencyRendering>();
+
+			unpack_pass->initializeResources(cmdList);
+			translucency_pass->initializeResources(cmdList);
+		}
+
+		{
+			sunShadowMap = std::make_unique<DirectionalShadowMap>();
+			visualizeDepth = std::make_unique<VisualizeDepth>();
+
+			sunShadowMap->initializeResources(cmdList);
+		}
+
+		{
+			godRay = std::make_unique<GodRay>();
+			ssao = std::make_unique<SSAO>();
+			bloomPass = std::make_unique<BloomPass>();
+			toneMapping = std::make_unique<ToneMapping>();
+			fxaa = std::make_unique<FXAA>();
+			depthOfField = std::make_unique<DepthOfField>();
+
+			godRay->initializeResources(cmdList);
+			ssao->initializeResources(cmdList);
+			bloomPass->initializeResources(cmdList);
+			toneMapping->initializeResources(cmdList);
+			fxaa->initializeResources(cmdList);
+			depthOfField->initializeResources(cmdList);
+		}
+
+		cmdList.flushAllCommands();
+	}
+
+	// #todo-scene-capture: Oh my fucking god. Freeglut does not support callback on close window.
+	// Engine::stop() will not be called thus this method will not also, but std::unique_ptr's destructor will be called,
+	// Which invalidates the CHECK() in PostProcess' destructor.
+	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
+		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
+
+		fallbackMaterial.release();
+		fullscreenQuad->dispose();
+
+		ubo_perFrame.release();
+
+		{
+			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+				if (pack_passes[i]) {
+					delete pack_passes[i];
+					pack_passes[i] = nullptr;
+				}
+			}
+			unpack_pass->destroyResources(cmdList);
+			translucency_pass->releaseResources(cmdList);
+		}
+
+		{
+			sunShadowMap->destroyResources(cmdList);
+			visualizeDepth.release();
+		}
+
+		{
+			godRay->releaseResources(cmdList);
+			ssao->releaseResources(cmdList);
+			bloomPass->releaseResources(cmdList);
+			toneMapping->releaseResources(cmdList);
+			fxaa->releaseResources(cmdList);
+			depthOfField->releaseResources(cmdList);
+		}
+
+		cmdList.flushAllCommands();
+	}
+
+	DEFINE_GLOBAL_RENDER_ROUTINE(DeferredRenderer, DeferredRenderer::internal_initGlobalResources, DeferredRenderer::internal_destroyGlobalResources);
 
 }

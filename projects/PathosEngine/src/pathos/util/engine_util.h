@@ -28,3 +28,11 @@ inline T* ALLOC_RENDER_PROXY() {
 	new (proxy) T;
 	return proxy;
 }
+
+// Use inside of pathos namespace
+#define DEFINE_GLOBAL_RENDER_ROUTINE(UniqueName, InitRoutine, DestroyRoutine)           \
+	static struct _GlobalRenderRoutine_##UniqueName {	   							    \
+		_GlobalRenderRoutine_##UniqueName() {											\
+			Engine::internal_registerGlobalRenderRoutine(InitRoutine, DestroyRoutine);	\
+		}																				\
+	} _global_render_routine_##UniqueName;                                          	\

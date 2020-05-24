@@ -10,8 +10,6 @@ namespace pathos {
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		Shader vs(GL_VERTEX_SHADER, "VS_ToneMapping");
 		Shader fs(GL_FRAGMENT_SHADER, "FS_ToneMapping");
 		vs.loadSource("fullscreen_quad.glsl");
@@ -22,15 +20,16 @@ namespace pathos {
 
 		// tone mapping resource
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.toneMappingResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fbo);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void ToneMapping::releaseResources(RenderCommandList& cmdList)
 	{
 		cmdList.deleteProgram(program);
 		cmdList.deleteFramebuffers(1, &fbo);
+
+		markDestroyed();
 	}
 
 	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)

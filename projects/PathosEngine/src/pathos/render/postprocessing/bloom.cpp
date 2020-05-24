@@ -8,12 +8,9 @@ namespace pathos {
 
 	void BloomPass::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fbo);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 
 		Shader vs(GL_VERTEX_SHADER, "VS_Bloom");
 		vs.loadSource("fullscreen_quad.glsl");
@@ -44,8 +41,8 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(BloomPass);
 
-		const GLuint input0 = getInput(EPostProcessInput::PPI_0);
-		const GLuint input1 = getInput(EPostProcessInput::PPI_1);
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneBloom
+		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloomTemp
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
