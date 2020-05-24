@@ -13,6 +13,8 @@
 
 namespace pathos {
 
+	class RenderTarget2D;
+
 	class DeferredRenderer : public Renderer {
 
 	public:
@@ -22,6 +24,7 @@ namespace pathos {
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
+		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
 
 	private:
 		// #todo-scene-capture: Global resources should not be owned by renderer
@@ -38,6 +41,8 @@ namespace pathos {
 		void unpackGBuffer(RenderCommandList& cmdList);
 
 		void renderTranslucency(RenderCommandList& cmdList);
+
+		GLuint getFinalRenderTarget() const;
 
 	private:
 		bool destroyed = false;
@@ -68,6 +73,8 @@ namespace pathos {
 		std::unique_ptr<class DepthOfField> depthOfField;
 
 		std::unique_ptr<class PlaneGeometry> fullscreenQuad;
+
+		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
 		Scene* scene; 

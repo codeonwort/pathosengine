@@ -47,10 +47,8 @@ namespace pathos {
 
 	OpenGLDevice::OpenGLDevice()
 	{
-		if (gRenderDevice)
-		{
-			assert(0);
-		}
+		CHECKF(gRenderDevice == nullptr, "Render device already exists");
+
 		gRenderDevice = this;
 	}
 

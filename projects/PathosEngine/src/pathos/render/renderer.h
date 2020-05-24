@@ -9,6 +9,7 @@ namespace pathos {
 
 	class Scene;
 	class Camera;
+	class RenderTarget2D;
 
 	class Renderer : public Noncopyable {
 		
@@ -19,6 +20,7 @@ namespace pathos {
 		virtual void initializeResources(RenderCommandList& cmdList) = 0;
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) = 0;
+		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) = 0; // Default backbuffer or custom off-screen render target
 
 	};
 

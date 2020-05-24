@@ -37,9 +37,19 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(ToneMapping);
 
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
+		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
+		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
+		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		if (output0 == 0) {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+		}
 
 		cmdList.useProgram(program);
 
@@ -48,7 +58,7 @@ namespace pathos {
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 0, &uboData);
 
-		GLuint tonemapping_attachments[] = { sceneContext.sceneColor, sceneContext.sceneBloom, sceneContext.godRayResult };
+		GLuint tonemapping_attachments[] = { input0, input1, input2 };
 		cmdList.bindTextures(0, 3, tonemapping_attachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);

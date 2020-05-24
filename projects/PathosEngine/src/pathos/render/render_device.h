@@ -1,5 +1,7 @@
 #pragma once
 
+#include "badger/types/noncopyable.h"
+
 #include "render_command_list.h"
 
 #include <functional>
@@ -15,14 +17,11 @@
 
 namespace pathos {
 
-	class OpenGLDevice {
+	class OpenGLDevice final : public Noncopyable {
 		
 	public:
 		OpenGLDevice();
 		~OpenGLDevice();
-
-		OpenGLDevice(const OpenGLDevice&&) = delete;
-		OpenGLDevice& operator=(const OpenGLDevice&&) = delete;
 
 		bool initialize();
 
@@ -36,10 +35,21 @@ namespace pathos {
 	extern OpenGLDevice* gRenderDevice;
 
 	// For game thread
-	// #todo-renderdevice: command list should store this lambda
 	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		//lambda(gRenderDevice->getImmediateCommandList());
-		CHECK(0);
+		//CHECK(isGameThread()); // #todo-multi-thread: Implement
+
+		struct TempArgument {
+			decltype(lambda) customCommand;
+		};
+		TempArgument arg;
+		arg.customCommand = lambda;
+
+		gRenderDevice->getImmediateCommandList().registerHook([](void* param) -> void
+			{
+				TempArgument* arg = reinterpret_cast<TempArgument*>(param);
+				arg->customCommand(gRenderDevice->getImmediateCommandList());
+			}
+		, &gRenderDevice->getImmediateCommandList(), sizeof(TempArgument*));
 	}
 
 }

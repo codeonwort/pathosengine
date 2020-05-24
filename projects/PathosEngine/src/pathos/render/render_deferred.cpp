@@ -17,6 +17,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/gl_debug_group.h"
+#include "pathos/scene/scene_capture_component.h" // #todo-scene-capture: temporary include for RenderTarget2D
 
 #include "badger/assertion/assertion.h"
 
@@ -261,37 +262,67 @@ namespace pathos {
 		{
 			SCOPED_GPU_COUNTER(PostProcessing);
 
+			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+
+			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
+			const bool noDOF = (cvar_enable_dof.getInt() == 0);
+
+			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
+
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// input: bright pixels in gbuffer
-			// output: bloom texture
-			bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+			// Post Process: Bloom
+			{
+				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
+				bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+				// output is fed back to PPI_0
+				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+			}
 
-			// input: scene color, bloom, god ray
-			// output: scene final
-			toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+			// Post Process: Tone Mapping
+			{
+				// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
+				const bool isFinalPP = (noAA && noDOF);
 
-			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
+				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
+				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
+				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+
+				sceneAfterLastPP = sceneRenderTargets.toneMappingResult;
+			}
+
+			// Post Process: Anti-aliasing
 			switch (antiAliasing) {
 			case EAntiAliasingMethod::NoAA:
 				// Do nothing
 				break;
 
 			case EAntiAliasingMethod::FXAA:
-				fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+				{
+					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
+					const bool isFinalPP = noDOF;
+
+					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+					fxaa->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.sceneFinal);
+					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+
+					sceneAfterLastPP = sceneRenderTargets.sceneFinal;
+				}
 				break;
 
 			default:
 				break;
 			}
 
-			// input: scene final
-			// output: scene final with DoF
-			if (cvar_enable_dof.getInt() != 0) {
-				constexpr GLuint dofRenderTarget = 0; // default framebuffer
-				//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
-				//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
+			// Post Process: Depth of Field
+			if (!noDOF) {
+				const GLuint dofRenderTarget = getFinalRenderTarget();
+
+				depthOfField->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
 				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
 			}
 
@@ -303,6 +334,10 @@ namespace pathos {
 
 		scene = nullptr;
 		camera = nullptr;
+	}
+
+	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+		finalRenderTarget = inFinalRenderTarget;
 	}
 
 	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
@@ -390,6 +425,13 @@ namespace pathos {
 		const auto& meshBatches = scene->proxyList_staticMesh[materialID];
 
 		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
+	}
+
+	GLuint DeferredRenderer::getFinalRenderTarget() const {
+		if (finalRenderTarget == nullptr) {
+			return 0; // Default backbuffer
+		}
+		return finalRenderTarget->getGLName();
 	}
 
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {

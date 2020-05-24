@@ -44,20 +44,20 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(BloomPass);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0);
+		const GLuint input1 = getInput(EPostProcessInput::PPI_1);
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-		// #todo-bloom: Use PPI_0 and PPI_1
 		cmdList.useProgram(program);
-		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloomTemp, 0);
-		cmdList.bindTextureUnit(0, sceneContext.sceneBloom);
+		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, input1, 0);
+		cmdList.bindTextureUnit(0, input0);
 		fullscreenQuad->drawPrimitive(cmdList);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
 
 		cmdList.useProgram(program2);
-		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sceneContext.sceneBloom, 0);
-		cmdList.bindTextureUnit(0, sceneContext.sceneBloomTemp);
+		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, input0, 0);
+		cmdList.bindTextureUnit(0, input1);
 		fullscreenQuad->drawPrimitive(cmdList);
 		cmdList.framebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
 	}

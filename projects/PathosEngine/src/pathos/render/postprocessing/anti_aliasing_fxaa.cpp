@@ -1,5 +1,4 @@
 #include "anti_aliasing_fxaa.h"
-#include "pathos/console.h"
 #include "pathos/shader/shader.h"
 #include "pathos/render/scene_render_targets.h"
 
@@ -71,6 +70,9 @@ void main() {
 	{
 		SCOPED_DRAW_EVENT(FXAA);
 
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // toneMappingResult
+		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneFinal or backbuffer
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		// #note-fxaa: See the FXAA pixel shader for details
@@ -102,25 +104,24 @@ void main() {
 		cmdList.uniform1f(fxaaConsoleEdgeThresholdMin, console_edge_threshold_min);
 		cmdList.uniform4f(fxaaConsole360ConstDir	 , 1.0f, -1.0f, 0.25f, -0.25f);
 
-		//cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-		ConsoleVariableBase* cvar_dof = ConsoleVariableManager::find("r.dof.enable");
-		if (cvar_dof && cvar_dof->getInt() != 0) {
-			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-		} else {
+		if (output0 == 0) {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
 		}
 
-		cmdList.textureParameteri(sceneContext.toneMappingResult, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(sceneContext.toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.bindTextureUnit(0, sceneContext.toneMappingResult);
+		cmdList.textureParameteri(input0, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(input0, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.bindTextureUnit(0, input0);
 
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		// #todo-fxaa: Resolving sceneFinal to toneMappingResult for now
-		cmdList.bindTextureUnit(0, 0);
-		cmdList.copyTextureSubImage2D(sceneContext.toneMappingResult, 0, 0, 0, 0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		//cmdList.bindTextureUnit(0, 0);
+		//cmdList.copyTextureSubImage2D(input0, 0, 0, 0, 0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 	}
 

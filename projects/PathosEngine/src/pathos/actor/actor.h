@@ -25,6 +25,8 @@ namespace pathos {
 		void registerComponent(ActorComponent* component);
 		void unregisterComponent(ActorComponent* component);
 
+		inline Scene* getOwnerScene() const { return owner; }
+
 		inline SceneComponent* getRootComponent() { return rootComponent; }
 		vector3 getActorLocation() const; //{ return rootComponent->getLocation(); }
 		//Rotator getActorRotation() const { return rootComponent->getRotation(); } // #todo-actor

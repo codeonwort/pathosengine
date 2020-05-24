@@ -248,7 +248,7 @@ namespace pathos {
 			break;
 		}
 
-		if(renderer) {
+		if (renderer) {
 			renderer->initializeResources(render_device->getImmediateCommandList());
 			render_device->getImmediateCommandList().flushAllCommands();
 		}

@@ -5,9 +5,8 @@
 
 namespace pathos {
 
-	PostProcess::~PostProcess()
-	{
-		CHECK(resourcesDestroyed);
+	PostProcess::~PostProcess() {
+		CHECKF(resourcesDestroyed, "Child classes should override releaseResources() and set this true at the end.");
 	}
 
 	//void PostProcess::setInput(EPostProcessInput inBinding, GLuint texture)
@@ -34,15 +33,14 @@ namespace pathos {
 	//	outputArray[binding] = texture;
 	//}
 
-	void PostProcess::checkFramebufferStatus(RenderCommandList& cmdList, GLuint fbo)
-	{
+	void PostProcess::checkFramebufferStatus(RenderCommandList& cmdList, GLuint fbo) {
 		GLenum completeness;
 		cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, &completeness);
 		// #todo-cmd-list: Don't flush here
 		cmdList.flushAllCommands();
 		if (completeness != GL_FRAMEBUFFER_COMPLETE) {
-			LOG(LogFatal, "%s: Failed to initialize fbo for post process", __FUNCTION__);
-			CHECK(0);
+			LOG(LogFatal, "%s: Failed to initialize FBO for post process", __FUNCTION__);
+			CHECKF(0, "Failed to initialize FBO for post process");
 		}
 	}
 

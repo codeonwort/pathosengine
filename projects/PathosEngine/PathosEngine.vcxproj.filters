@@ -273,6 +273,9 @@
     <ClCompile Include="src\badger\assertion\assertion.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\scene\scene_capture_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -591,6 +594,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\noncopyable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\scene_capture_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\scene_render_settings.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
