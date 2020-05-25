@@ -27,24 +27,22 @@ namespace pathos {
 		RenderTarget2D() = default;
 		~RenderTarget2D();
 
-		void initializeResource();
-		void destroyResource();
-
 		void respecTexture(uint32 inWidth, uint32 inHeight, RenderTargetFormat inFormat);
+		void immediateUpdateResource();
+		void destroyResource();
 
 		inline uint32 getWidth() const { return width; }
 		inline uint32 getHeight() const { return height; }
 
 		inline GLuint getGLName() const { return glTextureObject; }
 
-	private:
-		// Returns true if GL texture is invalid or its current spec doesn't match with the render target spec.
-		bool isTextureInvalid() const;
+		bool isTextureValid() const;
 
+	private:
 		GLuint glTextureObject = 0;
-		uint32 width;
-		uint32 height;
-		RenderTargetFormat format;
+		uint32 width = 0;
+		uint32 height = 0;
+		RenderTargetFormat format = RenderTargetFormat::RGBA16F;
 
 	};
 

@@ -240,15 +240,22 @@ namespace pathos {
 		switch (conf.rendererType) {
 		case ERendererType::Forward:
 			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+			renderer = new DeferredRenderer;
 			break;
 
 		case ERendererType::Deferred:
-			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+			renderer = new DeferredRenderer;
 			break;
 		}
 
 		if (renderer) {
+			{
+				SceneRenderSettings settings;
+				settings.sceneWidth        = conf.windowWidth;
+				settings.sceneHeight       = conf.windowHeight;
+				settings.enablePostProcess = true;
+				renderer->setSceneRenderSettings(settings);
+			}
 			renderer->initializeResources(render_device->getImmediateCommandList());
 			render_device->getImmediateCommandList().flushAllCommands();
 		}
@@ -354,6 +361,14 @@ namespace pathos {
 		stopwatch_renderThread.start();
 
 		assetStreamer->renderThread_flushLoadedAssets();
+
+		{
+			SceneRenderSettings settings;
+			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
+			settings.sceneHeight           = conf.windowHeight;
+			settings.enablePostProcess     = true;
+			renderer->setSceneRenderSettings(settings);
+		}
 
 		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 

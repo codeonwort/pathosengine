@@ -43,10 +43,10 @@ namespace pathos {
 		//float aspectRatio; // This is derived from the render target's (width/height)
 		float zNear = 1.0f;
 		float zFar = 10000.0f;
+		RenderTarget2D* renderTarget = nullptr;
 
 	private:
 		std::vector<Actor*> actorsToCapture;
-		RenderTarget2D* renderTarget = nullptr;
 
 	};
 

@@ -63,15 +63,11 @@ namespace pathos {
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
-	DeferredRenderer::DeferredRenderer(uint32 width, uint32 height)
-		: sceneWidth(width)
-		, sceneHeight(height)
-		, antiAliasing(EAntiAliasingMethod::FXAA)
+	DeferredRenderer::DeferredRenderer()
+		: antiAliasing(EAntiAliasingMethod::FXAA)
 		, scene(nullptr)
 		, camera(nullptr)
 	{
-		CHECK(width > 0 && height > 0);
-
 		sceneRenderTargets.useGBuffer = true;
 	}
 
@@ -80,7 +76,7 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::initializeResources(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 	}
@@ -88,13 +84,18 @@ namespace pathos {
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			destroySceneRenderTargets(cmdList);
-			cmdList.flushAllCommands();
 		}
 		destroyed = true;
 	}
 
+	void DeferredRenderer::setSceneRenderSettings(const SceneRenderSettings& settings) {
+		CHECK(settings.isValid());
+
+		sceneRenderSettings = settings;
+	}
+
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
 		if (gbufferFBO == 0) {
 			GLenum gbuffer_draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
@@ -106,11 +107,11 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
 			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
 
-			GLenum framebufferCompleteness = 0;
-			cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
-			// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
-			cmdList.flushAllCommands();
-			CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
+			//GLenum framebufferCompleteness = 0;
+			//cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
+			//// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
+			//cmdList.flushAllCommands();
+			//CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
 		}
 	}
 
@@ -122,6 +123,8 @@ namespace pathos {
 	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
+
+		CHECK(sceneRenderSettings.isValid());
 
 #if ASSERT_GL_NO_ERROR
 		glGetError();
@@ -294,7 +297,7 @@ namespace pathos {
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
+		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 
@@ -373,8 +376,8 @@ namespace pathos {
 
 		const glm::mat4& projMatrix = camera->getProjectionMatrix();
 
-		data.screenResolution.x = (float)sceneWidth;
-		data.screenResolution.y = (float)sceneHeight;
+		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
+		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
@@ -491,7 +494,7 @@ namespace pathos {
 
 	// #todo-scene-capture: Oh my fucking god. Freeglut does not support callback on close window.
 	// Engine::stop() will not be called thus this method will not also, but std::unique_ptr's destructor will be called,
-	// Which invalidates the CHECK() in PostProcess' destructor.
+	// which invalidates the CHECK() in PostProcess' destructor.
 	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
 		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
 

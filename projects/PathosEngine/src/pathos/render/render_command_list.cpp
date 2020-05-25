@@ -23,10 +23,17 @@ namespace pathos {
 		}
 	}
 
+	// #todo-cmd-list: Support nested flush?
 	void RenderCommandList::flushAllCommands()
 	{
-		executeAllCommands();
-		clearAllCommands();
+		++flushDepth;
+		if (flushDepth == 1) {
+			executeAllCommands();
+			clearAllCommands();
+		} else {
+			CHECKF(0, "Can't nest flushAllCommands()");
+		}
+		--flushDepth;
 	}
 
 	void RenderCommandList::registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes)

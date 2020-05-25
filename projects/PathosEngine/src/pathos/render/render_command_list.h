@@ -66,7 +66,9 @@ namespace pathos {
 
 		StackAllocator commands_alloc;
 		StackAllocator parameters_alloc; // non-singular parameters should be mem-copied to this allocator, as source data could be a local variable
+
 		std::vector<RenderCommandBase*> commands;
+		uint32 flushDepth = 0;
 
 	public:
 		#include "render_command_list.generated.h"

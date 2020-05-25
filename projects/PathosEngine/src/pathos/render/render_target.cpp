@@ -25,22 +25,11 @@ namespace pathos {
 		destroyResource();
 	}
 
-	void RenderTarget2D::initializeResource() {
-		//
-	}
-
-	void RenderTarget2D::destroyResource() {
-		if (glTextureObject != 0) {
-			glDeleteTextures(1, &glTextureObject);
-			glTextureObject = 0;
-		}
-	}
-
 	void RenderTarget2D::respecTexture(uint32 inWidth, uint32 inHeight, RenderTargetFormat inFormat) {
-		const bool invalidDimension = inWidth != 0 || inHeight != 0;
-		CHECKF(invalidDimension, "Invalid width or height");
+		const bool validDimension = inWidth != 0 && inHeight != 0;
+		CHECKF(validDimension, "Invalid width or height");
 
-		if (invalidDimension) {
+		if (!validDimension) {
 			return;
 		}
 
@@ -56,9 +45,31 @@ namespace pathos {
 		ENQUEUE_RENDER_COMMAND(
 			[texturePtr, glFormat, inWidth, inHeight](RenderCommandList& cmdList) {
 				cmdList.createTextures(GL_TEXTURE_2D, 1, texturePtr);
-				cmdList.textureStorage2D(*texturePtr, 0, glFormat, inWidth, inHeight);
+				cmdList.textureStorage2D(*texturePtr, 1, glFormat, inWidth, inHeight);
+				cmdList.bindTexture(GL_TEXTURE_2D, *texturePtr);
+				cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, "RenderTarget2D");
 			}
 		);
+	}
+
+	void RenderTarget2D::immediateUpdateResource() {
+		gRenderDevice->getImmediateCommandList().flushAllCommands();
+	}
+
+	void RenderTarget2D::destroyResource() {
+		if (glTextureObject != 0) {
+			GLuint texturePtr = glTextureObject;
+			ENQUEUE_RENDER_COMMAND(
+				[texturePtr](RenderCommandList& cmdList) {
+					cmdList.deleteTextures(1, &texturePtr);
+				}
+			);
+			glTextureObject = 0;
+		}
+	}
+
+	bool RenderTarget2D::isTextureValid() const {
+		return (glTextureObject != 0 && width != 0 && height != 0);
 	}
 
 }

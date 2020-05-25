@@ -47,7 +47,7 @@ namespace pathos {
 			return false;
 		}
 
-		int ret = apiEntry(eRENDERDOC_API_Version_1_2_0, (void**)&api);
+		int ret = apiEntry(eRENDERDOC_API_Version_1_4_1, (void**)&api);
 		if (ret != 1) {
 			LOG(LogError, "%s: Can't get api functions from api entry", __FUNCTION__);
 			api = nullptr;

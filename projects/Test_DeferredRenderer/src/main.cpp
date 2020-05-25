@@ -9,6 +9,8 @@
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/render/render_target.h" // #todo-scene-capture: scene capture test
+#include "pathos/scene/scene_capture_component.h" // #todo-scene-capture: scene capture test
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -265,11 +267,13 @@ void setupSky() {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
+		glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
+		glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
 			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
+			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 			scene.irradianceMap = irradianceMap;
 		}
 
@@ -278,7 +282,7 @@ void setupSky() {
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.prefilterEnvMap = prefilteredEnvMap;
 			scene.prefilterEnvMapMipLevels = mipLevels;
@@ -456,6 +460,28 @@ void setupSceneWithActor(Scene* scene) {
 
 void tick(float deltaSeconds)
 {
+	//////////////////////////////////////////////////////////////////////////
+	// #todo-scene-capture: scene capture test
+	static RenderTarget2D* tempRenderTarget = nullptr;
+	if (tempRenderTarget == nullptr) {
+		tempRenderTarget = new RenderTarget2D;
+		tempRenderTarget->respecTexture(512, 512, RenderTargetFormat::RGBA16F);
+		tempRenderTarget->immediateUpdateResource();
+	}
+
+	static Actor* sceneCaptureActor = nullptr;
+	static SceneCaptureComponent* sceneCaptureComponent = nullptr;
+	if (sceneCaptureActor == nullptr) {
+		sceneCaptureActor = scene.spawnActor<Actor>();
+		sceneCaptureComponent = new SceneCaptureComponent;
+		sceneCaptureActor->registerComponent(sceneCaptureComponent);
+
+		sceneCaptureComponent->renderTarget = tempRenderTarget;
+
+		sceneCaptureActor->setActorLocation(CAMERA_POSITION);
+	}
+	//sceneCaptureComponent->captureScene();
+
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 

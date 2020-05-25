@@ -3,6 +3,7 @@
 #include "badger/types/noncopyable.h"
 
 #include "render_command_list.h"
+#include "pathos/thread/engine_thread.h"
 
 #include <functional>
 #include <memory>
@@ -36,20 +37,19 @@ namespace pathos {
 
 	// For game thread
 	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		//CHECK(isGameThread()); // #todo-multi-thread: Implement
+		CHECK(isInMainThread());
 
-		struct TempArgument {
-			decltype(lambda) customCommand;
-		};
-		TempArgument arg;
-		arg.customCommand = lambda;
-
-		gRenderDevice->getImmediateCommandList().registerHook([](void* param) -> void
+		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
 			{
-				TempArgument* arg = reinterpret_cast<TempArgument*>(param);
-				arg->customCommand(gRenderDevice->getImmediateCommandList());
+				lambda(gRenderDevice->getImmediateCommandList());
 			}
-		, &gRenderDevice->getImmediateCommandList(), sizeof(TempArgument*));
+		, nullptr, 0);
+	}
+
+	inline void FLUSH_RENDER_COMMAND() {
+		CHECK(isInMainThread());
+
+		gRenderDevice->getImmediateCommandList().flushAllCommands();
 	}
 
 }

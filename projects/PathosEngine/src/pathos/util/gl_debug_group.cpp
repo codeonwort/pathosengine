@@ -18,6 +18,7 @@ namespace pathos {
 namespace pathos {
 
 	const uint32                ScopedGpuCounter::MAX_GPU_COUNTERS = 16;
+	bool                        ScopedGpuCounter::enable = true;
 
 	bool                        ScopedGpuCounter::poolInitialized = false;
 	bool                        ScopedGpuCounter::canBeginQuery = false;
@@ -32,6 +33,10 @@ namespace pathos {
 		, queryObject1(0)
 		, queryObject2(0)
 	{
+		if (!ScopedGpuCounter::enable) {
+			return;
+		}
+
 		bool validQueries = ScopedGpuCounter::getUnusedQueryObject(inCounterName, queryObject1, queryObject2);
 		CHECKF(validQueries, "Failed to get a GL query object.");
 
@@ -44,6 +49,10 @@ namespace pathos {
 	}
 
 	ScopedGpuCounter::~ScopedGpuCounter() {
+		if (!ScopedGpuCounter::enable) {
+			return;
+		}
+
 		if (queryObject2 != 0) {
 			command_list->queryCounter(queryObject2, GL_TIMESTAMP);
 

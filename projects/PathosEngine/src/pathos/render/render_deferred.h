@@ -45,13 +45,15 @@ namespace pathos {
 		static std::unique_ptr<class DepthOfField> depthOfField;
 
 	public:
-		DeferredRenderer(uint32 width, uint32 height);
+		DeferredRenderer();
 		virtual ~DeferredRenderer();
 
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;
-		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
+
+		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
+		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
 
 	private:
 		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
@@ -76,13 +78,12 @@ namespace pathos {
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
 
+		SceneRenderSettings sceneRenderSettings;
 		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
 		Scene* scene; 
 		Camera* camera;
-		uint32 sceneWidth; // #todo-scene-capture: Use pathos::SceneRenderSettings
-		uint32 sceneHeight;
 
 	};
 

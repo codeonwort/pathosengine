@@ -52,6 +52,7 @@ void main() {
 
 		cmdList.createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_FXAA");
 		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 

@@ -5,6 +5,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/thread/engine_thread.h"
 
 namespace pathos {
 
@@ -20,13 +21,59 @@ namespace pathos {
 	glm::mat4 IrradianceBaker::cubeTransforms[6];
 
 	GLuint IrradianceBaker::bakeCubemap(GLuint equirectangularMap, uint32 size) {
+		CHECK(isInMainThread());
+
+		GLuint cubemap = 0;
+#if 0 // #todo-scene-capture: commands in cmdList are not executed if queued in ENQUEUE_RENDER_COMMAND() ???
+		FLUSH_RENDER_COMMAND();
+		
+		ENQUEUE_RENDER_COMMAND([equirectangularMap, size, cubemapPtr = &cubemap](RenderCommandList& cmdList) {
+			SCOPED_DRAW_EVENT(EquirectangularMapToCubemap);
+
+			GLuint fbo = IrradianceBaker::dummyFBO;
+			CubeGeometry* cube = IrradianceBaker::dummyCube;
+			
+			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
+			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureStorage2D(*cubemapPtr, 1, GL_RGB16F, size, size);
+
+			cmdList.viewport(0, 0, size, size);
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_FRONT);
+
+			cmdList.useProgram(IrradianceBaker::equirectangularToCubemap);
+			cmdList.bindTextureUnit(0, equirectangularMap);
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+			for (int32 i = 0; i < 6; ++i) {
+				const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
+
+				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *cubemapPtr, 0, i);
+				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
+
+				cube->activate_position(cmdList);
+				cube->activateIndexBuffer(cmdList);
+				cube->drawPrimitive(cmdList);
+			}
+
+			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_BACK);
+		});
+		
+		FLUSH_RENDER_COMMAND();
+#else
 		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
 		SCOPED_DRAW_EVENT(EquirectangularMapToCubemap);
 
 		GLuint fbo = IrradianceBaker::dummyFBO;
 		CubeGeometry* cube = IrradianceBaker::dummyCube;
 
-		GLuint cubemap;
 		cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemap);
 		cmdList.textureParameteri(cubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(cubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -39,13 +86,13 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_FRONT);
 
-		cmdList.useProgram(equirectangularToCubemap);
+		cmdList.useProgram(IrradianceBaker::equirectangularToCubemap);
 		cmdList.bindTextureUnit(0, equirectangularMap);
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		for (int32 i = 0; i < 6; ++i) {
-			const glm::mat4& viewproj = cubeTransforms[i];
+			const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemap, 0, i);
 			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
@@ -59,18 +106,68 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 
 		cmdList.flushAllCommands();
+#endif
 
 		return cubemap;
 	}
 
 	GLuint IrradianceBaker::bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap) {
+		CHECK(isInMainThread());
+
+		GLuint irradianceMap = 0;
+
+#if 0
+		ENQUEUE_RENDER_COMMAND([cubemap, size, autoDestroyCubemap, irradianceMapPtr = &irradianceMap](RenderCommandList& cmdList) {
+			SCOPED_DRAW_EVENT(IrradianceMapFromCubemap);
+
+			GLuint fbo = IrradianceBaker::dummyFBO;
+			CubeGeometry* cube = IrradianceBaker::dummyCube;
+
+			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
+			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
+
+			cmdList.viewport(0, 0, size, size);
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_FRONT);
+
+			cmdList.useProgram(IrradianceBaker::diffuseIrradianceShader);
+			cmdList.bindTextureUnit(0, cubemap);
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+			for (int32 i = 0; i < 6; ++i) {
+				const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
+
+				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *irradianceMapPtr, 0, i);
+				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
+
+				cube->activate_position(cmdList);
+				cube->activateIndexBuffer(cmdList);
+				cube->drawPrimitive(cmdList);
+			}
+
+			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_BACK);
+
+			if (autoDestroyCubemap) {
+				cmdList.deleteTextures(1, &cubemap);
+			}
+		});
+
+		FLUSH_RENDER_COMMAND();
+#else
 		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
 		SCOPED_DRAW_EVENT(IrradianceMapFromCubemap);
 
 		GLuint fbo = IrradianceBaker::dummyFBO;
 		CubeGeometry* cube = IrradianceBaker::dummyCube;
 
-		GLuint irradianceMap;
 		cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, &irradianceMap);
 		cmdList.textureParameteri(irradianceMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(irradianceMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -83,13 +180,13 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_FRONT);
 
-		cmdList.useProgram(diffuseIrradianceShader);
+		cmdList.useProgram(IrradianceBaker::diffuseIrradianceShader);
 		cmdList.bindTextureUnit(0, cubemap);
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		for (int32 i = 0; i < 6; ++i) {
-			const glm::mat4& viewproj = cubeTransforms[i];
+			const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, irradianceMap, 0, i);
 			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
@@ -102,17 +199,76 @@ namespace pathos {
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
 
-		cmdList.flushAllCommands();
-
-		if(autoDestroyCubemap) {
+		if (autoDestroyCubemap) {
 			cmdList.deleteTextures(1, &cubemap);
 		}
+
+		cmdList.flushAllCommands();
+#endif
 
 		return irradianceMap;
 	}
 
 	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels) {
+		CHECK(isInMainThread());
+
+		GLuint envMap = 0;
+		uint32 maxMipLevels = pathos::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
+
+#if 0
+		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels](RenderCommandList& cmdList) {
+			SCOPED_DRAW_EVENT(PrefilteredEnvMap);
+
+			GLuint fbo = IrradianceBaker::dummyFBO;
+			CubeGeometry* cube = IrradianceBaker::dummyCube;
+			constexpr GLint uniform_transform = 0;
+			constexpr GLint uniform_roughness = 1;
+
+			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
+			cmdList.textureParameteri(envMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(envMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(envMap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(envMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			cmdList.textureParameteri(envMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureStorage2D(envMap, maxMipLevels, GL_RGB16F, size, size);
+			cmdList.generateTextureMipmap(envMap);
+
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_FRONT);
+
+			cmdList.useProgram(prefilterEnvMapShader);
+			cmdList.bindTextureUnit(0, cubemap);
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+			for (uint32 mip = 0; mip < maxMipLevels; ++mip) {
+				// resize framebuffer according to mip-level size
+				uint32 mipWidth = (uint32)(size * std::pow(0.5f, mip));
+				uint32 mipHeight = (uint32)(size * std::pow(0.5f, mip));
+				cmdList.viewport(0, 0, mipWidth, mipHeight);
+
+				float roughness = (float)mip / (float)(maxMipLevels - 1);
+				cmdList.uniform1f(uniform_roughness, roughness);
+				for (uint32 i = 0; i < 6; ++i) {
+					const glm::mat4& viewproj = cubeTransforms[i];
+
+					cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, envMap, mip, i);
+					cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
+
+					cube->activate_position(cmdList);
+					cube->activateIndexBuffer(cmdList);
+					cube->drawPrimitive(cmdList);
+				}
+			}
+
+			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.cullFace(GL_BACK);
+		});
+
+		FLUSH_RENDER_COMMAND();
+#else
 		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
 		SCOPED_DRAW_EVENT(PrefilteredEnvMap);
 
 		GLuint fbo = IrradianceBaker::dummyFBO;
@@ -120,9 +276,6 @@ namespace pathos {
 		constexpr GLint uniform_transform = 0;
 		constexpr GLint uniform_roughness = 1;
 
-		uint32 maxMipLevels = pathos::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
-
-		GLuint envMap;
 		cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, &envMap);
 		cmdList.textureParameteri(envMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(envMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -164,18 +317,48 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 
 		cmdList.flushAllCommands();
+#endif
 
 		outEnvMap = envMap;
 		outMipLevels = maxMipLevels;
 	}
 
 	GLuint IrradianceBaker::bakeBRDFIntegrationMap(uint32 size) {
+		CHECK(isInMainThread());
+
+		GLuint brdfLUT = 0;
+
+#if 0
+		ENQUEUE_RENDER_COMMAND([size, &brdfLUT = &brdfLUT](RenderCommandList& cmdList) {
+			SCOPED_DRAW_EVENT(BRDFIntegrationMap);
+
+			const GLuint fbo = IrradianceBaker::dummyFBO;
+			
+			cmdList.createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
+			cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
+
+			cmdList.viewport(0, 0, size, size);
+			cmdList.useProgram(BRDFIntegrationMapShader);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
+
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+		});
+
+		FLUSH_RENDER_COMMAND();
+#else
 		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
 		const GLuint fbo = IrradianceBaker::dummyFBO;
 
-		GLuint brdfLUT;
 		cmdList.createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
 		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -193,6 +376,7 @@ namespace pathos {
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		cmdList.flushAllCommands();
+#endif
 
 		return brdfLUT;
 	}
@@ -210,6 +394,8 @@ namespace pathos {
 		// Dummy meshes
 		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
+
+		cmdList.flushAllCommands();
 
 		glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		glm::mat4 captureViews[] =
@@ -285,8 +471,6 @@ namespace pathos {
 			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap(512);
 			cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
 		}
-
-		cmdList.flushAllCommands();
 	}
 
 	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice) {
