@@ -28,8 +28,9 @@ namespace pathos {
 		const float aspectRatio = (float)renderTarget->getWidth() / (float)renderTarget->getHeight();
 
 		// #todo-scene-capture: Let Renderer::render() take a view family parameter, not a camera.
-		PerspectiveLens lens(glm::radians(fovY * 0.5f), aspectRatio, zNear, zFar);
+		PerspectiveLens lens(fovY, aspectRatio, zNear, zFar);
 		Camera tempCamera(&lens);
+		tempCamera.moveToPosition(getLocation());
 
 		scene->createRenderProxy();
 
@@ -37,7 +38,7 @@ namespace pathos {
 
 		ENQUEUE_RENDER_COMMAND(
 			[renderer, scene, &tempCamera](RenderCommandList& cmdList) {
-				SCOPED_DRAW_EVENT(SceneCaptureBegin);
+				SCOPED_DRAW_EVENT(SceneCapture);
 
 				renderer->render(cmdList, scene, &tempCamera);
 			}
@@ -48,8 +49,6 @@ namespace pathos {
 
 		ENQUEUE_RENDER_COMMAND(
 			[renderer, scene, &tempCamera](RenderCommandList& cmdList) {
-				SCOPED_DRAW_EVENT(SceneCaptureEnd);
-
 				renderer->releaseResources(cmdList);
 			}
 		);

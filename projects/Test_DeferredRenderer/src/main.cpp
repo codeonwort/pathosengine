@@ -41,6 +41,7 @@ Scene scene;
 	StaticMeshActor* objModel;
 	std::vector<StaticMeshActor*> balls;
 	std::vector<StaticMeshActor*> boxes;
+	SceneCaptureComponent* sceneCaptureComponent;
 #if VISUALIZE_CSM_FRUSTUM
 	StaticMeshActor* csmDebugger;
 #endif
@@ -123,6 +124,9 @@ void setupInput()
 	ButtonBinding drawShadowFrustum;
 	drawShadowFrustum.addInput(InputConstants::KEYBOARD_F);
 
+	ButtonBinding updateSceneCapture;
+	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
+
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
@@ -130,6 +134,14 @@ void setupInput()
 	inputManager->bindAxis("rotatePitch", rotatePitch);
 	inputManager->bindAxis("moveFast", moveFast);
 	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebugger);
+	inputManager->bindButtonPressed("updateSceneCapture", updateSceneCapture, []()
+		{
+			if (sceneCaptureComponent != nullptr) {
+				sceneCaptureComponent->setLocation(cam->getPosition());
+				sceneCaptureComponent->captureScene();
+			}
+		}
+	);
 }
 
 void setupCSMDebugger()
@@ -401,6 +413,7 @@ void setupSceneWithActor(Scene* scene) {
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
 	godRaySource->setActorScale(20.0f);
 	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	scene->godRaySource = godRaySource->getStaticMeshComponent();
 
 	//////////////////////////////////////////////////////////////////////////
@@ -456,33 +469,38 @@ void setupSceneWithActor(Scene* scene) {
 			boxes.push_back(box);
 		}
 	}
-}
 
-void tick(float deltaSeconds)
-{
 	//////////////////////////////////////////////////////////////////////////
 	// #todo-scene-capture: scene capture test
 	static RenderTarget2D* tempRenderTarget = nullptr;
 	if (tempRenderTarget == nullptr) {
 		tempRenderTarget = new RenderTarget2D;
-		tempRenderTarget->respecTexture(512, 512, RenderTargetFormat::RGBA16F);
+		tempRenderTarget->respecTexture(1920, 1080, RenderTargetFormat::RGBA16F);
 		tempRenderTarget->immediateUpdateResource();
 	}
 
 	static Actor* sceneCaptureActor = nullptr;
-	static SceneCaptureComponent* sceneCaptureComponent = nullptr;
 	if (sceneCaptureActor == nullptr) {
-		sceneCaptureActor = scene.spawnActor<Actor>();
+		sceneCaptureActor = scene->spawnActor<Actor>();
 		sceneCaptureComponent = new SceneCaptureComponent;
 		sceneCaptureActor->registerComponent(sceneCaptureComponent);
 
 		sceneCaptureComponent->renderTarget = tempRenderTarget;
 
 		sceneCaptureActor->setActorLocation(CAMERA_POSITION);
-
-		sceneCaptureComponent->captureScene();
 	}
 
+	sceneCaptureComponent->captureScene();
+
+	auto material_sceneCapture = new TextureMaterial(tempRenderTarget->getGLName());
+	StaticMeshActor* sceneCaptureViewer = scene->spawnActor<StaticMeshActor>();
+	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
+	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);
+	sceneCaptureViewer->setActorScale(3.0f * vector3(16.0f, 9.0f, 1.0f));
+}
+
+void tick(float deltaSeconds)
+{
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
 

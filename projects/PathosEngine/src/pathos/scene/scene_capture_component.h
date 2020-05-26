@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/actor/actor_component.h"
+#include "pathos/actor/scene_component.h"
 
 #include "gl_core.h"
 #include <vector>
@@ -25,7 +25,7 @@ namespace pathos {
 
 	// Captures the scene at its current location and rotation, and then write the result to a render target.
 	// Basically it performs whole scene rendering again.
-	class SceneCaptureComponent : public ActorComponent {
+	class SceneCaptureComponent : public SceneComponent {
 
 	public:
 		SceneCaptureComponent() = default;
