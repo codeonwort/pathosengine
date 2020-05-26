@@ -27,9 +27,11 @@ namespace pathos {
 		bool initialize();
 
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
+		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
 	private:
 		std::unique_ptr<RenderCommandList> immediate_command_list;
+		std::unique_ptr<RenderCommandList> temp_command_list;
 
 	};
 
@@ -41,7 +43,9 @@ namespace pathos {
 
 		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
 			{
-				lambda(gRenderDevice->getImmediateCommandList());
+				RenderCommandList& tempCmdList = gRenderDevice->getCommandListForHook();
+				lambda(tempCmdList);
+				tempCmdList.flushAllCommands();
 			}
 		, nullptr, 0);
 	}

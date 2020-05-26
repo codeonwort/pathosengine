@@ -53,7 +53,7 @@ namespace pathos {
 	}
 
 	void RenderTarget2D::immediateUpdateResource() {
-		gRenderDevice->getImmediateCommandList().flushAllCommands();
+		FLUSH_RENDER_COMMAND();
 	}
 
 	void RenderTarget2D::destroyResource() {
@@ -61,7 +61,7 @@ namespace pathos {
 			GLuint texturePtr = glTextureObject;
 			ENQUEUE_RENDER_COMMAND(
 				[texturePtr](RenderCommandList& cmdList) {
-					cmdList.deleteTextures(1, &texturePtr);
+					glDeleteTextures(1, &texturePtr);
 				}
 			);
 			glTextureObject = 0;

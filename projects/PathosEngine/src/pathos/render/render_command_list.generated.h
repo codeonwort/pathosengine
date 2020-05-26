@@ -644,11 +644,11 @@ void deleteTextures(
 	GLsizei n,
 	const GLuint *textures)
 {
-	//RenderCommand_deleteTextures* __restrict packet = (RenderCommand_deleteTextures*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
-	//packet->n = n;
-	//packet->textures = textures;
-	glDeleteTextures(n, textures);
+	RenderCommand_deleteTextures* __restrict packet = (RenderCommand_deleteTextures*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
+	packet->n = n;
+	packet->textures = storeParameter(n * sizeof(GLuint*), textures);
+	//glDeleteTextures(n, textures);
 }
 void genTextures(
 	GLsizei n,

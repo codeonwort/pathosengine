@@ -113,7 +113,7 @@ namespace pathos {
 
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)
 	{
-#define safe_release(x) if(x != 0) { cmdList.deleteTextures(1, &x); x = 0; }
+#define safe_release(x) if(x != 0) { glDeleteTextures(1, &x); x = 0; }
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);

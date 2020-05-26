@@ -33,17 +33,30 @@ namespace pathos {
 
 		scene->createRenderProxy();
 
+		ScopedGpuCounter::enable = false;
+
 		ENQUEUE_RENDER_COMMAND(
 			[renderer, scene, &tempCamera](RenderCommandList& cmdList) {
-				SCOPED_DRAW_EVENT(SceneCapture);
+				SCOPED_DRAW_EVENT(SceneCaptureBegin);
 
 				renderer->render(cmdList, scene, &tempCamera);
+			}
+		);
+
+		// #todo-scene-capture: Remove flush
+		FLUSH_RENDER_COMMAND();
+
+		ENQUEUE_RENDER_COMMAND(
+			[renderer, scene, &tempCamera](RenderCommandList& cmdList) {
+				SCOPED_DRAW_EVENT(SceneCaptureEnd);
+
 				renderer->releaseResources(cmdList);
 			}
 		);
 
-		ScopedGpuCounter::enable = false;
-		gRenderDevice->getImmediateCommandList().flushAllCommands();
+		// #todo-scene-capture: Remove flush
+		FLUSH_RENDER_COMMAND();
+
 		ScopedGpuCounter::enable = true;
 
 		scene->clearRenderProxy();

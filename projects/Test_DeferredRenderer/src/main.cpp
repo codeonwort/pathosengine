@@ -479,8 +479,9 @@ void tick(float deltaSeconds)
 		sceneCaptureComponent->renderTarget = tempRenderTarget;
 
 		sceneCaptureActor->setActorLocation(CAMERA_POSITION);
+
+		sceneCaptureComponent->captureScene();
 	}
-	//sceneCaptureComponent->captureScene();
 
 	{
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
