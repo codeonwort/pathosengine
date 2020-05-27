@@ -50,6 +50,11 @@ namespace pathos {
 		return rootComponent->getLocation();
 	}
 
+	Rotator Actor::getActorRotation() const
+	{
+		return rootComponent->getRotation();
+	}
+
 	vector3 Actor::getActorScale() const {
 		return rootComponent->getScale();
 	}
@@ -62,8 +67,8 @@ namespace pathos {
 		setActorLocation(vector3(inX, inY, inZ));
 	}
 
-	void Actor::setActorRotation(float inAngle_radians, const vector3& inAxis) {
-		rootComponent->setRotation(inAngle_radians, inAxis);
+	void Actor::setActorRotation(const Rotator& inRotation) {
+		rootComponent->setRotation(inRotation);
 	}
 
 	void Actor::setActorScale(const vector3& inScale) {

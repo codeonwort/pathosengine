@@ -85,6 +85,7 @@
   <ItemGroup>
     <ClCompile Include="src\badger\assertion\assertion.cpp" />
     <ClCompile Include="src\badger\math\random.cpp" />
+    <ClCompile Include="src\badger\math\rotator.cpp" />
     <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\badger\thread\thread_pool.cpp" />
     <ClCompile Include="src\gl3w\gl3w.c" />
@@ -160,7 +161,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\badger\assertion\assertion.h" />
+    <ClInclude Include="src\badger\math\minmax.h" />
     <ClInclude Include="src\badger\math\random.h" />
+    <ClInclude Include="src\badger\math\rotator.h" />
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\thread\thread_pool.h" />

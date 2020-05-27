@@ -127,7 +127,7 @@ void loadDAE() {
 		daeActor->setActorScale(10.0f);
 #if DAE_MODEL_ID == 2
 		daeActor->setActorScale(5.0f);
-		daeActor->setActorRotation(glm::radians(90.0f), vector3(0.0f, 1.0f, 0.0f));
+		daeActor->setActorRotation(Rotator(90.0f, 0.0f, 0.0f));
 #endif
 		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
 	} else {
@@ -205,11 +205,10 @@ void setupScene() {
 			StaticMeshActor* cube = scene.spawnActor<StaticMeshActor>();
 			cube->setStaticMesh(new Mesh(geom_cube, material_color));
 			vector3 p0(-50.0f, 50.0f, -50.0f);
-			float e = (rand() % 256) / 255.0f;
-			float x = (rand() % 256) / 255.0f;
-			float y = (rand() % 256) / 255.0f;
-			float z = (rand() % 256) / 255.0f;
-			cube->setActorRotation(e * 60.0f, vector3(x, y, z));
+			float yaw = (float)(rand() % 180);
+			float pitch = (float)(rand() % 90);
+			float roll = (float)(rand() % 180);
+			cube->setActorRotation(Rotator(yaw, pitch, roll));
 			cube->setActorLocation(p0 + vector3(i * 15.0f, -j * 15.0f, 0.0f));
 		}
 	}
@@ -243,13 +242,13 @@ void tick(float deltaSeconds) {
 		float rotX = input->getAxis("rotatePitch") * rotateX;
 
 		cam->move(vector3(moveForward, moveRight, 0.0f));
-		cam->rotateY(rotY);
-		cam->rotateX(rotX);
+		cam->rotateYaw(rotY);
+		cam->rotatePitch(rotX);
 	}
 
-	static float modelAngle = 0.0f;
+	static float modelYaw = 0.0f;
 	model->setActorLocation(vector3(0, 20, 0));
-	model->setActorRotation(modelAngle += 0.01f, vector3(0, 0.5, 1));
+	model->setActorRotation(Rotator(modelYaw += 30.0f * deltaSeconds, 0.0f, 0.0f));
 	model->setActorLocation(vector3(0, -20, 0));
 
 #if DAE_MODEL_ID == 2

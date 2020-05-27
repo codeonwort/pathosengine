@@ -13,7 +13,7 @@ OpenGL rendering library (for 3d graphics study)
 * Font          : freetype
 * 3D model      : tinyobjloader, assimp
 
-note: Requires Visual C++ 2013 Redistributable Package because I used pre-built binaries. This limitation may be removed in future.
+note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-built binaries. This limitation may be removed in future.
 
 ## Features
 * Rendering
@@ -24,6 +24,7 @@ note: Requires Visual C++ 2013 Redistributable Package because I used pre-built 
   * Tone mapping
   * FXAA
   * Screen-space ambient occlusion
+  * Scene capture
 * System
   * Render command list
   * Asynchronous asset loader

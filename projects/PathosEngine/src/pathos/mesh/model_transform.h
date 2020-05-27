@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/vector_types.h"
+#include "badger/math/rotator.h"
 
 namespace pathos {
 
@@ -8,10 +9,10 @@ namespace pathos {
 	struct ModelTransform {
 
 		ModelTransform();
-		ModelTransform(const vector3& inLocation, const vector3& inRotationAxis, float inRotationAngle_radians, const vector3& inScale);
+		ModelTransform(const vector3& inLocation, const Rotator& inRotation, const vector3& inScale);
 
 		inline vector3 getLocation() const { return location; }
-		inline void getRotation(float& outRotationAngle, vector3& outRotationAxis) { outRotationAngle = rotationAngle; outRotationAxis = rotationAxis; }
+		inline Rotator getRotation() const { return rotation; }
 		inline vector3 getScale() const { return scale; }
 
 		void identity();
@@ -19,7 +20,7 @@ namespace pathos {
 		void setLocation(float inX, float inY, float inZ);
 		void setLocation(const vector3& inLocation);
 
-		void setRotation(float inAngle_radians, const vector3& inAxis);
+		void setRotation(const Rotator& inRotation);
 
 		void setScale(const vector3& inScale);
 		void setScale(float inScale);
@@ -28,8 +29,7 @@ namespace pathos {
 
 	private:
 		vector3 location;
-		float rotationAngle;
-		vector3 rotationAxis; // #todo-transform: quaternion or euler angles?
+		Rotator rotation;
 		vector3 scale;
 
 		mutable bool bDirty;

@@ -56,7 +56,7 @@ void tick(float deltaSeconds);
 void onLoadWavefrontOBJ(OBJLoader* loader) {
 	objModel = scene.spawnActor<StaticMeshActor>();
 	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
-	objModel->setActorRotation(glm::radians(-90.0f), vector3(0.0f, 1.0f, 0.0f));
+	objModel->setActorRotation(Rotator(-90.0f, 0.0f, 0.0f));
 	objModel->setActorScale(50.0f);
 	objModel->setActorLocation(vector3(-100.0f, -10.0f, 0.0f));
 
@@ -138,7 +138,7 @@ void setupInput()
 		{
 			if (sceneCaptureComponent != nullptr) {
 				sceneCaptureComponent->setLocation(cam->getPosition());
-				sceneCaptureComponent->setRotation(cam->getYaw(), vector3(0, 1, 0));
+				sceneCaptureComponent->setRotation(Rotator(cam->getYaw(), cam->getPitch(), 0.0f));
 				sceneCaptureComponent->captureScene();
 			}
 		}
@@ -423,7 +423,7 @@ void setupSceneWithActor(Scene* scene) {
 	ground = scene->spawnActor<StaticMeshActor>();
 	ground->setStaticMesh(new Mesh(geom_plane_big, material_texture));
 	ground->setActorScale(1000.0f);
-	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
+	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
 	ground->getStaticMeshComponent()->castsShadow = false;
 
@@ -519,13 +519,15 @@ void tick(float deltaSeconds)
 
 		cam->moveForward(deltaForward);
 		cam->moveRight(deltaRight);
-		cam->rotateY(rotY);
-		cam->rotateX(rotX);
+		cam->rotateYaw(rotY);
+		cam->rotatePitch(rotX);
 	}
 
 	static float ballAngle = 0.0f;
 	for (StaticMeshActor* ball : balls) {
-		ball->setActorRotation(ballAngle += 0.0005f, vector3(0.0f, 1.0f, 1.0f));
+		Rotator rot = ball->getActorRotation();
+		rot.yaw = fmod(rot.yaw + 1.0f, 180.0f);
+		ball->setActorRotation(rot);
 	}
 
 	static float sinT = 0.0f;
