@@ -6,7 +6,7 @@
 namespace pathos {
 
 	PostProcess::~PostProcess() {
-		// #todo-scene-capture: It fails on close window.
+		// #todo-system: It fails on close window.
 		// See DeferredRenderer::internal_destroyGlobalResources() for the reason :(
 		CHECKF(resourcesDestroyed, "Child classes should override releaseResources() and set this true at the end.");
 	}

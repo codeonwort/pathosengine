@@ -77,7 +77,7 @@ namespace pathos {
 
 		EAntiAliasingMethod antiAliasing;
 
-		// #todo-scene-capture: Are these global resources?
+		// #todo-renderer: Implement render target pool
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
 

@@ -42,7 +42,7 @@ namespace pathos {
 		static void destroyQueryObjectPool();
 		static uint32 flushQueries(std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds);
 
-		static bool enable; // #todo-scene-capture: Support gpu counter in scene capture
+		static bool enable; // #todo-gpu-counter: Support gpu counter in scene capture. This is a hack.
 
 	private:
 		static bool getUnusedQueryObject(const char* inCounterName, GLuint& outQuery1, GLuint& outQuery2);

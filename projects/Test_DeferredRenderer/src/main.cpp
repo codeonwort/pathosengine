@@ -9,8 +9,8 @@
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
-#include "pathos/render/render_target.h" // #todo-scene-capture: scene capture test
-#include "pathos/scene/scene_capture_component.h" // #todo-scene-capture: scene capture test
+#include "pathos/render/render_target.h"
+#include "pathos/scene/scene_capture_component.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -472,7 +472,7 @@ void setupSceneWithActor(Scene* scene) {
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// #todo-scene-capture: scene capture test
+	// scene capture test
 	static RenderTarget2D* tempRenderTarget = nullptr;
 	if (tempRenderTarget == nullptr) {
 		tempRenderTarget = new RenderTarget2D;
@@ -535,7 +535,7 @@ void tick(float deltaSeconds)
 		for (uint32 j = 0; j < 16; ++j)
 		{
 			float wave = ::sinf(sinT + 13.2754f * (i*16+j)/256.0f + (6.3f * j/16.0f));
-			boxes[i*16+j]->setActorScale(vector3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			boxes[i*16+j]->setActorScale(vector3(0.5f, 10.0f * 0.5f * (1.0f + wave), 0.5f));
 		}
 	}
 

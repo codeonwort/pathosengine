@@ -11,9 +11,9 @@ namespace pathos {
 		case RenderTargetFormat::RGBA32F:      return GL_RGBA32F;
 		case RenderTargetFormat::RGBA32I:      return GL_RGBA32I;
 		case RenderTargetFormat::RGBA32UI:     return GL_RGBA32UI;
-		case RenderTargetFormat::DEPTH16F:     return GL_DEPTH_COMPONENT16;  // #todo-scene-capture: Is this valid internalformat?
-		case RenderTargetFormat::DEPTH24F:     return GL_DEPTH_COMPONENT24;  // #todo-scene-capture: Is this valid internalformat?
-		case RenderTargetFormat::DEPTH32F:     return GL_DEPTH_COMPONENT32F; // #todo-scene-capture: Is this valid internalformat?
+		case RenderTargetFormat::DEPTH16F:     return GL_DEPTH_COMPONENT16;
+		case RenderTargetFormat::DEPTH24F:     return GL_DEPTH_COMPONENT24;
+		case RenderTargetFormat::DEPTH32F:     return GL_DEPTH_COMPONENT32F;
 		default:
 			CHECKF(0, "Missing case");
 			break;
@@ -70,6 +70,48 @@ namespace pathos {
 
 	bool RenderTarget2D::isTextureValid() const {
 		return (glTextureObject != 0 && width != 0 && height != 0);
+	}
+
+	bool RenderTarget2D::isColorFormat() const {
+		switch (format)
+		{
+		case RenderTargetFormat::RGBA16F:
+		case RenderTargetFormat::RGBA16I:
+		case RenderTargetFormat::RGBA16UI:
+		case RenderTargetFormat::RGBA32F:
+		case RenderTargetFormat::RGBA32I:
+		case RenderTargetFormat::RGBA32UI:
+			return true;
+		case RenderTargetFormat::DEPTH16F:
+		case RenderTargetFormat::DEPTH24F:
+		case RenderTargetFormat::DEPTH32F:
+			return false;
+		default:
+			CHECKF(0, "Missing case");
+			break;
+		}
+		return false;
+	}
+
+	bool RenderTarget2D::isDepthFormat() const {
+		switch (format)
+		{
+		case RenderTargetFormat::RGBA16F:
+		case RenderTargetFormat::RGBA16I:
+		case RenderTargetFormat::RGBA16UI:
+		case RenderTargetFormat::RGBA32F:
+		case RenderTargetFormat::RGBA32I:
+		case RenderTargetFormat::RGBA32UI:
+			return false;
+		case RenderTargetFormat::DEPTH16F:
+		case RenderTargetFormat::DEPTH24F:
+		case RenderTargetFormat::DEPTH32F:
+			return true;
+		default:
+			CHECKF(0, "Missing case");
+			break;
+		}
+		return false;
 	}
 
 }

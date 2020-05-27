@@ -37,6 +37,8 @@ namespace pathos {
 		inline GLuint getGLName() const { return glTextureObject; }
 
 		bool isTextureValid() const;
+		bool isColorFormat() const;
+		bool isDepthFormat() const;
 
 	private:
 		GLuint glTextureObject = 0;

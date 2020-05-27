@@ -300,6 +300,7 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
 		finalRenderTarget = inFinalRenderTarget;
 	}
 
@@ -539,7 +540,7 @@ namespace pathos {
 		cmdList.flushAllCommands();
 	}
 
-	// #todo-scene-capture: Oh my fucking god. Freeglut does not support callback on close window.
+	// #todo-system: Oh my fucking god. Freeglut does not support callback on close window.
 	// Engine::stop() will not be called thus this method will not also, but std::unique_ptr's destructor will be called,
 	// which invalidates the CHECK() in PostProcess' destructor.
 	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
