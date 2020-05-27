@@ -61,6 +61,8 @@ namespace pathos {
 		void setYaw(float newYaw);
 		void setPitch(float newPitch);
 
+		float getYaw() const;
+
 		// get vertices of camera frustum in world space
 		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/glm.hpp"
+#include "badger/types/vector_types.h"
 
 namespace pathos {
 
@@ -8,29 +8,29 @@ namespace pathos {
 	struct ModelTransform {
 
 		ModelTransform();
-		ModelTransform(const glm::vec3& inLocation, const glm::vec3& inRotationAxis, float inRotationAngle_radians, const glm::vec3& inScale);
+		ModelTransform(const vector3& inLocation, const vector3& inRotationAxis, float inRotationAngle_radians, const vector3& inScale);
 
-		inline glm::vec3 getLocation() const { return location; }
-		// #todo-transform: getRotation()
-		inline glm::vec3 getScale() const { return scale; }
+		inline vector3 getLocation() const { return location; }
+		inline void getRotation(float& outRotationAngle, vector3& outRotationAxis) { outRotationAngle = rotationAngle; outRotationAxis = rotationAxis; }
+		inline vector3 getScale() const { return scale; }
 
 		void identity();
 
 		void setLocation(float inX, float inY, float inZ);
-		void setLocation(const glm::vec3& inLocation);
+		void setLocation(const vector3& inLocation);
 
-		void setRotation(float inAngle_radians, const glm::vec3& inAxis);
+		void setRotation(float inAngle_radians, const vector3& inAxis);
 
-		void setScale(const glm::vec3& inScale);
+		void setScale(const vector3& inScale);
 		void setScale(float inScale);
 
 		const glm::mat4& getMatrix() const;
 
 	private:
-		glm::vec3 location;
+		vector3 location;
 		float rotationAngle;
-		glm::vec3 rotationAxis; // #todo-transform: quaternion or euler angles?
-		glm::vec3 scale;
+		vector3 rotationAxis; // #todo-transform: quaternion or euler angles?
+		vector3 scale;
 
 		mutable bool bDirty;
 		mutable glm::mat4 rawMatrix;

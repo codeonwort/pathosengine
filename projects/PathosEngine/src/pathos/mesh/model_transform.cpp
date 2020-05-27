@@ -5,11 +5,11 @@
 namespace pathos {
 
 	ModelTransform::ModelTransform()
-		: ModelTransform(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, glm::vec3(1.0f))
+		: ModelTransform(vector3(0.0f), vector3(0.0f, 0.0f, 1.0f), 0.0f, vector3(1.0f))
 	{
 	}
 
-	ModelTransform::ModelTransform(const glm::vec3& inLocation, const glm::vec3& inRotationAxis, float inRotationAngle_radians, const glm::vec3& inScale)
+	ModelTransform::ModelTransform(const vector3& inLocation, const vector3& inRotationAxis, float inRotationAngle_radians, const vector3& inScale)
 	{
 		setLocation(inLocation);
 		setRotation(inRotationAngle_radians, inRotationAxis);
@@ -18,12 +18,12 @@ namespace pathos {
 
 	void ModelTransform::identity()
 	{
-		setLocation(glm::vec3(0.0f));
-		setRotation(0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-		setScale(glm::vec3(1.0f));
+		setLocation(vector3(0.0f));
+		setRotation(0.0f, vector3(0.0f, 0.0f, 1.0f));
+		setScale(vector3(1.0f));
 	}
 
-	void ModelTransform::setLocation(const glm::vec3& inLocation)
+	void ModelTransform::setLocation(const vector3& inLocation)
 	{
 		location = inLocation;
 
@@ -32,10 +32,10 @@ namespace pathos {
 
 	void ModelTransform::setLocation(float inX, float inY, float inZ)
 	{
-		setLocation(glm::vec3(inX, inY, inZ));
+		setLocation(vector3(inX, inY, inZ));
 	}
 
-	void ModelTransform::setRotation(float inAngle_radians, const glm::vec3& inAxis)
+	void ModelTransform::setRotation(float inAngle_radians, const vector3& inAxis)
 	{
 		rotationAngle = inAngle_radians;
 		rotationAxis = inAxis;
@@ -43,7 +43,7 @@ namespace pathos {
 		bDirty = true;
 	}
 
-	void ModelTransform::setScale(const glm::vec3& inScale)
+	void ModelTransform::setScale(const vector3& inScale)
 	{
 		scale = inScale;
 
@@ -52,7 +52,7 @@ namespace pathos {
 
 	void ModelTransform::setScale(float inScale)
 	{
-		setScale(glm::vec3(inScale));
+		setScale(vector3(inScale));
 	}
 
 	const glm::mat4& ModelTransform::getMatrix() const

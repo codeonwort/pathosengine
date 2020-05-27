@@ -138,6 +138,7 @@ void setupInput()
 		{
 			if (sceneCaptureComponent != nullptr) {
 				sceneCaptureComponent->setLocation(cam->getPosition());
+				sceneCaptureComponent->setRotation(cam->getYaw(), vector3(0, 1, 0));
 				sceneCaptureComponent->captureScene();
 			}
 		}

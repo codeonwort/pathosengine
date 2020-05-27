@@ -32,6 +32,12 @@ namespace pathos {
 		Camera tempCamera(&lens);
 		tempCamera.moveToPosition(getLocation());
 
+		// #todo-transform: Rotator needed
+		float rotationAngle;
+		vector3 rotationAxis;
+		getRotation(rotationAngle, rotationAxis);
+		tempCamera.setYaw(rotationAngle * 180.0f / glm::pi<float>());
+
 		scene->createRenderProxy();
 
 		ScopedGpuCounter::enable = false;

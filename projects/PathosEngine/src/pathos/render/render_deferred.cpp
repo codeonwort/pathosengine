@@ -19,10 +19,31 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/gl_debug_group.h"
+#include "pathos/shader/shader_program.h"
 
 #include "badger/assertion/assertion.h"
 
 #define ASSERT_GL_NO_ERROR 0
+
+namespace pathos {
+
+	class CopyTextureVS : public ShaderStage {
+	public:
+		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS")
+		{
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+	class CopyTextureFS : public ShaderStage {
+	public:
+		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS")
+		{
+			setFilepath("copy_texture.fs.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
+
+}
 
 namespace pathos {
 
@@ -196,6 +217,11 @@ namespace pathos {
 
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		if (sceneRenderSettings.enablePostProcess == false)
+		{
+			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget());
+		}
+		else
 		{
 			SCOPED_GPU_COUNTER(PostProcessing);
 
@@ -364,6 +390,24 @@ namespace pathos {
 		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
 	}
 
+	void DeferredRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
+
+		cmdList.useProgram(program.getGLName());
+		if (target == 0) {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, DeferredRenderer::copyTextureFBO);
+			cmdList.namedFramebufferTexture(DeferredRenderer::copyTextureFBO, GL_COLOR_ATTACHMENT0, target, 0);
+		}
+		cmdList.bindTextureUnit(0, source);
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+		fullscreenQuad->deactivate(cmdList);
+		fullscreenQuad->deactivateIndexBuffer(cmdList);
+	}
+
 	GLuint DeferredRenderer::getFinalRenderTarget() const {
 		if (finalRenderTarget == nullptr) {
 			return 0; // Default backbuffer
@@ -420,6 +464,7 @@ namespace pathos {
 	
 	std::unique_ptr<class ColorMaterial>           DeferredRenderer::fallbackMaterial;
 	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
+	GLuint                                         DeferredRenderer::copyTextureFBO = 0;
 	
 	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
 	
@@ -446,6 +491,8 @@ namespace pathos {
 		fallbackMaterial->setRoughness(0.0f);
 
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
+		glCreateFramebuffers(1, &copyTextureFBO);
+		glNamedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
 
 		ubo_perFrame = std::make_unique<UniformBuffer>();
 		ubo_perFrame->init<UBO_PerFrame>();
@@ -500,6 +547,7 @@ namespace pathos {
 
 		fallbackMaterial.release();
 		fullscreenQuad->dispose();
+		glDeleteFramebuffers(1, &copyTextureFBO);
 
 		ubo_perFrame.release();
 

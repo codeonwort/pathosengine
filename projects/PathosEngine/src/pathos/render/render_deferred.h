@@ -24,6 +24,7 @@ namespace pathos {
 	private:
 		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
 		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
+		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
 		static std::unique_ptr<UniformBuffer> ubo_perFrame;
 
@@ -66,6 +67,8 @@ namespace pathos {
 		void unpackGBuffer(RenderCommandList& cmdList);
 
 		void renderTranslucency(RenderCommandList& cmdList);
+
+		void copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target);
 
 		GLuint getFinalRenderTarget() const;
 

@@ -31,7 +31,7 @@ namespace pathos {
 
 		// Rotation // #todo-actor
 		void setRotation(float inAngle_radians, const vector3& inAxis);
-		//inline Rotator getRotation() const { return (0); }
+		void getRotation(float& outRotationAngle, vector3& outRotationAxis);
 
 		// Scale
 		void setScale(float inUniformScale);

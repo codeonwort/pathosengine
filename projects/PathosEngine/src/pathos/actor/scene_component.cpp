@@ -14,6 +14,10 @@ namespace pathos {
 		transform.setRotation(inAngle_radians, inAxis);
 	}
 
+	void SceneComponent::getRotation(float& outRotationAngle, vector3& outRotationAxis) {
+		transform.getRotation(outRotationAngle, outRotationAxis);
+	}
+
 	void SceneComponent::setScale(float inUniformScale) {
 		transform.setScale(inUniformScale);
 	}
