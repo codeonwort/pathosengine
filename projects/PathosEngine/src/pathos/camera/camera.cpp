@@ -115,26 +115,27 @@ namespace pathos {
 		viewDirty = true;
 	}
 
-	void Camera::rotateY(float angleDegree) {
+	void Camera::rotateYaw(float angleDegree) {
 		rotationY += glm::radians(angleDegree);
 		viewDirty = true;
 	}
-	void Camera::rotateX(float angleDegree) {
+	void Camera::rotatePitch(float angleDegree) {
 		rotationX += glm::radians(angleDegree);
 		viewDirty = true;
 	}
 	
-	void Camera::setYaw(float newYaw)
-	{
+	void Camera::setYaw(float newYaw) {
 		rotationY = glm::radians(newYaw);
 		viewDirty = true;
 	}
 
-	void Camera::setPitch(float newPitch)
-	{
+	void Camera::setPitch(float newPitch) {
 		rotationX = glm::radians(newPitch);
 		viewDirty = true;
 	}
+
+	float Camera::getYaw() const { return glm::degrees(rotationY); }
+	float Camera::getPitch() const { return glm::degrees(rotationX); }
 
 	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const {
 		CHECK(numCascades >= 1);

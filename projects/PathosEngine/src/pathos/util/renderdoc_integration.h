@@ -22,7 +22,7 @@ namespace pathos {
 		void captureFrame();
 
 	private:
-		RENDERDOC_API_1_2_0* api;
+		RENDERDOC_API_1_4_1* api;
 
 	};
 

@@ -27,11 +27,16 @@ namespace pathos {
 
 		void onKeyPress(unsigned char ascii);
 
-		class Label* addLine(const char* text);
-		class Label* addLine(const wchar_t* text);
+		void showPreviousHistory();
+		void showNextHistory();
+
+		class Label* addLine(const char* text, bool addToHistory = false);
+		class Label* addLine(const wchar_t* text, bool addToHistory = false);
 
 	private:
+		void updateInputLine();
 		void evaluate(const wchar_t* text);
+		void addInputHistory(const wchar_t* inputText);
 
 		bool initialized;
 		bool visible;
@@ -44,7 +49,10 @@ namespace pathos {
 		class Label* inputText;
 		std::list<class Label*> textList;
 
-		std::wstring input;
+		std::wstring currentInput;
+
+		int32 inputHistoryCursor;
+		std::vector<std::wstring> inputHistory;
 
 	};
 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "badger/types/noncopyable.h"
+
 #include "render_command_list.h"
+#include "pathos/thread/engine_thread.h"
 
 #include <functional>
 #include <memory>
@@ -15,31 +18,42 @@
 
 namespace pathos {
 
-	class OpenGLDevice {
+	class OpenGLDevice final : public Noncopyable {
 		
 	public:
 		OpenGLDevice();
 		~OpenGLDevice();
 
-		OpenGLDevice(const OpenGLDevice&&) = delete;
-		OpenGLDevice& operator=(const OpenGLDevice&&) = delete;
-
 		bool initialize();
 
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
+		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
 	private:
 		std::unique_ptr<RenderCommandList> immediate_command_list;
+		std::unique_ptr<RenderCommandList> temp_command_list;
 
 	};
 
 	extern OpenGLDevice* gRenderDevice;
 
 	// For game thread
-	// #todo-renderdevice: command list should store this lambda
 	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		//lambda(gRenderDevice->getImmediateCommandList());
-		CHECK(0);
+		CHECK(isInMainThread());
+
+		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
+			{
+				RenderCommandList& tempCmdList = gRenderDevice->getCommandListForHook();
+				lambda(tempCmdList);
+				tempCmdList.flushAllCommands();
+			}
+		, nullptr, 0);
+	}
+
+	inline void FLUSH_RENDER_COMMAND() {
+		CHECK(isInMainThread());
+
+		gRenderDevice->getImmediateCommandList().flushAllCommands();
 	}
 
 }

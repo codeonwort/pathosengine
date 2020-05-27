@@ -42,19 +42,19 @@ namespace pathos {
 		}
 	}
 
-	void InputSystem::processModifierKeyDown(InputConstants modifier)
+	void InputSystem::processSpecialKeyDown(InputConstants specialKey)
 	{
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
-			manager->processModifierKeyDown(modifier);
+			manager->processSpecialKeyDown(specialKey);
 		}
 	}
 
-	void InputSystem::processModifierKeyUp(InputConstants modifier)
+	void InputSystem::processSpecialKeyUp(InputConstants specialKey)
 	{
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
-			manager->processModifierKeyUp(modifier);
+			manager->processSpecialKeyUp(specialKey);
 		}
 	}
 

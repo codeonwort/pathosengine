@@ -9,6 +9,8 @@
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/render/render_target.h"
+#include "pathos/scene/scene_capture_component.h"
 using namespace pathos;
 
 #define VISUALIZE_CSM_FRUSTUM 0
@@ -23,11 +25,12 @@ const int32         WINDOW_HEIGHT       =   1080;
 const bool          WINDOW_FULLSCREEN   =   false;
 const char*         WINDOW_TITLE        =   "Test: Deferred Rendering";
 const float         FOVY                =   60.0f;
-const glm::vec3     CAMERA_POSITION     =   glm::vec3(20.0f, 25.0f, 200.0f);
-const glm::vec3     CAMERA_LOOK_AT      =   glm::vec3(20.0f, 25.0f, 190.0f);
+const vector3       CAMERA_POSITION     =   vector3(20.0f, 25.0f, 200.0f);
+const vector3       CAMERA_LOOK_AT      =   vector3(20.0f, 25.0f, 190.0f);
 const float         CAMERA_Z_NEAR       =   1.0f;
 const float         CAMERA_Z_FAR        =   5000.0f;
-const glm::vec3     SUN_DIRECTION       =   glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+const vector3       SUN_DIRECTION       =   glm::normalize(vector3(0.0f, -1.0f, -1.0f));
+const vector3       SUN_RADIANCE        =   1.2f * vector3(1.0f, 1.0f, 1.0f);
 const uint32        NUM_BALLS           =   10;
 
 // World
@@ -38,21 +41,22 @@ Scene scene;
 	StaticMeshActor* objModel;
 	std::vector<StaticMeshActor*> balls;
 	std::vector<StaticMeshActor*> boxes;
+	SceneCaptureComponent* sceneCaptureComponent;
 #if VISUALIZE_CSM_FRUSTUM
 	StaticMeshActor* csmDebugger;
 #endif
 
 void setupInput();
 void setupCSMDebugger();
-void setupScene(); // #todo-actor: Remove this
-void setupSceneWithActor(Scene* scene); // #todo-actor: Port everything from setupScene()
+void setupSky();
+void setupSceneWithActor(Scene* scene);
 
 void tick(float deltaSeconds);
 
 void onLoadWavefrontOBJ(OBJLoader* loader) {
 	objModel = scene.spawnActor<StaticMeshActor>();
 	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
-	objModel->setActorRotation(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	objModel->setActorRotation(Rotator(-90.0f, 0.0f, 0.0f));
 	objModel->setActorScale(50.0f);
 	objModel->setActorLocation(vector3(-100.0f, -10.0f, 0.0f));
 
@@ -79,14 +83,14 @@ int main(int argc, char** argv) {
 	// camera
 	float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 	cam = new Camera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	cam->lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, glm::vec3(0.0f, 1.0f, 0.0f));
+	cam->lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ("models/fireplace_room/fireplace_room.obj", "models/fireplace_room/", onLoadWavefrontOBJ);
 
 #if VISUALIZE_CSM_FRUSTUM
 	setupCSMDebugger();
 #endif
-	setupScene();
+	setupSky();
 	setupSceneWithActor(&scene);
 
 	gEngine->setWorld(&scene, cam);
@@ -120,6 +124,9 @@ void setupInput()
 	ButtonBinding drawShadowFrustum;
 	drawShadowFrustum.addInput(InputConstants::KEYBOARD_F);
 
+	ButtonBinding updateSceneCapture;
+	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
+
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
@@ -127,6 +134,15 @@ void setupInput()
 	inputManager->bindAxis("rotatePitch", rotatePitch);
 	inputManager->bindAxis("moveFast", moveFast);
 	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebugger);
+	inputManager->bindButtonPressed("updateSceneCapture", updateSceneCapture, []()
+		{
+			if (sceneCaptureComponent != nullptr) {
+				sceneCaptureComponent->setLocation(cam->getPosition());
+				sceneCaptureComponent->setRotation(Rotator(cam->getYaw(), cam->getPitch(), 0.0f));
+				sceneCaptureComponent->captureScene();
+			}
+		}
+	);
 }
 
 void setupCSMDebugger()
@@ -136,7 +152,7 @@ void setupCSMDebugger()
 
 	float aspect_ratio = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT);
 	Camera tempCamera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), glm::vec3(0.0f, 1.0f, 0.0f));
+	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), vector3(0.0f, 1.0f, 0.0f));
 
 	if (firstRun) {
 		csmDebugger = scene.spawnActor<StaticMeshActor>();
@@ -145,7 +161,7 @@ void setupCSMDebugger()
 	}
 
 	constexpr uint32 numFrustum = 4;
-	std::vector<glm::vec3> frustumPlanes;
+	std::vector<vector3> frustumPlanes;
 	tempCamera.getFrustum(frustumPlanes, numFrustum);
 
 	bool cascadeMasks[4] = { true, true, true, true };
@@ -165,18 +181,18 @@ void setupCSMDebugger()
 				continue;
 			}
 
-			glm::vec3 p0 = frustumPlanes[i + 0];
-			glm::vec3 p1 = frustumPlanes[i + 1];
-			glm::vec3 p2 = frustumPlanes[i + 2];
-			glm::vec3 p3 = frustumPlanes[i + 3];
+			vector3 p0 = frustumPlanes[i + 0];
+			vector3 p1 = frustumPlanes[i + 1];
+			vector3 p2 = frustumPlanes[i + 2];
+			vector3 p3 = frustumPlanes[i + 3];
 			G->addTriangle(p0, p1, p2);
 			G->addTriangle(p1, p2, p3);
 
 			if (i < iMax - 4 && (i/4 != 4 || cascadeMasks[i/4 - 1])) {
-				glm::vec3 p4 = frustumPlanes[i + 4];
-				glm::vec3 p5 = frustumPlanes[i + 5];
-				glm::vec3 p6 = frustumPlanes[i + 6];
-				glm::vec3 p7 = frustumPlanes[i + 7];
+				vector3 p4 = frustumPlanes[i + 4];
+				vector3 p5 = frustumPlanes[i + 5];
+				vector3 p6 = frustumPlanes[i + 6];
+				vector3 p7 = frustumPlanes[i + 7];
 				G->addQuad(p0, p4, p5, p1);
 				G->addQuad(p2, p6, p7, p3);
 				G->addQuad(p0, p2, p6, p4);
@@ -197,38 +213,38 @@ void setupCSMDebugger()
 		}
 		G->clear();
 
-		auto calcBounds = [](const glm::vec3* frustum, std::vector<glm::vec3>& outVertices) -> void {
-			glm::vec3 sun_direction = SUN_DIRECTION;
-			glm::vec3 sun_up, sun_right;
+		auto calcBounds = [](const vector3* frustum, std::vector<vector3>& outVertices) -> void {
+			vector3 sun_direction = SUN_DIRECTION;
+			vector3 sun_up, sun_right;
 			pathos::calculateOrthonormalBasis(sun_direction, sun_up, sun_right);
 
-			glm::vec3 frustum_center(0.0f);
+			vector3 frustum_center(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
 				frustum_center += frustum[i];
 			}
 			frustum_center *= 0.125f;
 
-			glm::vec3 frustum_size(0.0f);
+			vector3 frustum_size(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
-				glm::vec3 delta = frustum[i] - frustum_center;
+				vector3 delta = frustum[i] - frustum_center;
 				frustum_size.x = std::max(frustum_size.x, fabs(glm::dot(delta, sun_right)));
 				frustum_size.y = std::max(frustum_size.y, fabs(glm::dot(delta, sun_up)));
 				frustum_size.z = std::max(frustum_size.z, fabs(glm::dot(delta, sun_direction)));
 			}
 
-			const glm::vec3 signs[8] = {
-				glm::vec3(1,1,1), glm::vec3(1,1,-1), glm::vec3(1,-1,-1), glm::vec3(1,-1,1),
-				glm::vec3(-1,1,1), glm::vec3(-1,1,-1), glm::vec3(-1,-1,-1), glm::vec3(-1,-1,1)
+			const vector3 signs[8] = {
+				vector3(1,1,1), vector3(1,1,-1), vector3(1,-1,-1), vector3(1,-1,1),
+				vector3(-1,1,1), vector3(-1,1,-1), vector3(-1,-1,-1), vector3(-1,-1,1)
 			};
 			for (int32 i = 0; i < 8; ++i) {
-				glm::vec3 s = signs[i] * frustum_size;
-				glm::vec3 d = (s.x * sun_right) + (s.y * sun_up) + (s.z * sun_direction);
-				glm::vec3 v = frustum_center + d;
+				vector3 s = signs[i] * frustum_size;
+				vector3 d = (s.x * sun_right) + (s.y * sun_up) + (s.z * sun_direction);
+				vector3 v = frustum_center + d;
 				outVertices.push_back(v);
 			}
 		};
 
-		std::vector<glm::vec3> lightViewVertices;
+		std::vector<vector3> lightViewVertices;
 		for (uint32 i = 0u; i <= numFrustum; ++i) {
 			calcBounds(&frustumPlanes[i * 4], lightViewVertices);
 		}
@@ -237,14 +253,14 @@ void setupCSMDebugger()
 				continue;
 			}
 
-			glm::vec3 p0 = lightViewVertices[i + 0];
-			glm::vec3 p1 = lightViewVertices[i + 1];
-			glm::vec3 p2 = lightViewVertices[i + 2];
-			glm::vec3 p3 = lightViewVertices[i + 3];
-			glm::vec3 p4 = lightViewVertices[i + 4];
-			glm::vec3 p5 = lightViewVertices[i + 5];
-			glm::vec3 p6 = lightViewVertices[i + 6];
-			glm::vec3 p7 = lightViewVertices[i + 7];
+			vector3 p0 = lightViewVertices[i + 0];
+			vector3 p1 = lightViewVertices[i + 1];
+			vector3 p2 = lightViewVertices[i + 2];
+			vector3 p3 = lightViewVertices[i + 3];
+			vector3 p4 = lightViewVertices[i + 4];
+			vector3 p5 = lightViewVertices[i + 5];
+			vector3 p6 = lightViewVertices[i + 6];
+			vector3 p7 = lightViewVertices[i + 7];
 			G->addQuad(p0, p1, p2, p3);
 			G->addQuad(p4, p5, p6, p7);
 			G->addQuad(p0, p3, p7, p4);
@@ -260,15 +276,17 @@ void setupCSMDebugger()
 #endif
 }
 
-void setupScene() {
+void setupSky() {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
+		glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
+		glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
 			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "diffuse irradiance");
+			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 			scene.irradianceMap = irradianceMap;
 		}
 
@@ -277,7 +295,7 @@ void setupScene() {
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "specular IBL (prefiltered env map)");
+			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.prefilterEnvMap = prefilteredEnvMap;
 			scene.prefilterEnvMapMipLevels = mipLevels;
@@ -344,20 +362,14 @@ void setupSceneWithActor(Scene* scene) {
 	// PBR material
 	PBRTextureMaterial* material_pbr;
 	{
-		constexpr bool sRGB = true;
-#if 1
-		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), true, !sRGB);
-		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), true, !sRGB);
-		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), true, !sRGB);
-#else
-		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-albedo.png"), true, sRGB);
-		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-normal.png"), true, !sRGB);
-		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-metalness.png"), true, !sRGB);
-		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-rough.png"), true, !sRGB);
-		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_redbricks/redbricks2b-ao.png"), true, !sRGB);
-#endif
+		constexpr bool genMipmap = true;
+		constexpr bool sRGB      = true;
+		GLuint albedo		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), genMipmap, sRGB);
+		GLuint normal		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), genMipmap, !sRGB);
+		GLuint metallic		= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), genMipmap, !sRGB);
+		GLuint roughness	= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), genMipmap, !sRGB);
+		GLuint ao			= pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), genMipmap, !sRGB);
+
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
 	
@@ -370,7 +382,7 @@ void setupSceneWithActor(Scene* scene) {
 	auto geom_sphere		= new SphereGeometry(5.0f, 30);
 	auto geom_plane			= new PlaneGeometry(10.0f, 10.0f);
 	auto geom_plane_big		= new PlaneGeometry(10.0f, 10.0f, 20, 20);
-	auto geom_cube			= new CubeGeometry(glm::vec3(5.0f));
+	auto geom_cube			= new CubeGeometry(vector3(5.0f));
 
 	geom_sphere->calculateTangentBasis();
 	geom_sphere_big->calculateTangentBasis();
@@ -381,7 +393,7 @@ void setupSceneWithActor(Scene* scene) {
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting
 	DirectionalLightActor* dirLight = scene->spawnActor<DirectionalLightActor>();
-	dirLight->setLightParameters(SUN_DIRECTION, vector3(1.0f, 1.0f, 1.0f));
+	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
 	PointLightActor* pointLight0 = scene->spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = scene->spawnActor<PointLightActor>();
@@ -402,6 +414,7 @@ void setupSceneWithActor(Scene* scene) {
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
 	godRaySource->setActorScale(20.0f);
 	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	scene->godRaySource = godRaySource->getStaticMeshComponent();
 
 	//////////////////////////////////////////////////////////////////////////
@@ -410,7 +423,7 @@ void setupSceneWithActor(Scene* scene) {
 	ground = scene->spawnActor<StaticMeshActor>();
 	ground->setStaticMesh(new Mesh(geom_plane_big, material_texture));
 	ground->setActorScale(1000.0f);
-	ground->setActorRotation(glm::radians(-90.0f), vector3(1.0f, 0.0f, 0.0f));
+	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
 	ground->getStaticMeshComponent()->castsShadow = false;
 
@@ -452,12 +465,39 @@ void setupSceneWithActor(Scene* scene) {
 			StaticMeshActor* box = scene->spawnActor<StaticMeshActor>();
 			box->setStaticMesh(new Mesh(geom_cube, box_material));
 			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY));
-			box->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			box->setActorScale(vector3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
 
 			boxes.push_back(box);
 		}
 	}
 
+	//////////////////////////////////////////////////////////////////////////
+	// scene capture test
+	static RenderTarget2D* tempRenderTarget = nullptr;
+	if (tempRenderTarget == nullptr) {
+		tempRenderTarget = new RenderTarget2D;
+		tempRenderTarget->respecTexture(1920, 1080, RenderTargetFormat::RGBA16F);
+		tempRenderTarget->immediateUpdateResource();
+	}
+
+	static Actor* sceneCaptureActor = nullptr;
+	if (sceneCaptureActor == nullptr) {
+		sceneCaptureActor = scene->spawnActor<Actor>();
+		sceneCaptureComponent = new SceneCaptureComponent;
+		sceneCaptureActor->registerComponent(sceneCaptureComponent);
+
+		sceneCaptureComponent->renderTarget = tempRenderTarget;
+
+		sceneCaptureActor->setActorLocation(CAMERA_POSITION);
+	}
+
+	sceneCaptureComponent->captureScene();
+
+	auto material_sceneCapture = new TextureMaterial(tempRenderTarget->getGLName());
+	StaticMeshActor* sceneCaptureViewer = scene->spawnActor<StaticMeshActor>();
+	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
+	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);
+	sceneCaptureViewer->setActorScale(3.0f * vector3(16.0f, 9.0f, 1.0f));
 }
 
 void tick(float deltaSeconds)
@@ -479,13 +519,15 @@ void tick(float deltaSeconds)
 
 		cam->moveForward(deltaForward);
 		cam->moveRight(deltaRight);
-		cam->rotateY(rotY);
-		cam->rotateX(rotX);
+		cam->rotateYaw(rotY);
+		cam->rotatePitch(rotX);
 	}
 
 	static float ballAngle = 0.0f;
 	for (StaticMeshActor* ball : balls) {
-		ball->setActorRotation(ballAngle += 0.0005f, glm::vec3(0.0f, 1.0f, 1.0f));
+		Rotator rot = ball->getActorRotation();
+		rot.yaw = fmod(rot.yaw + 1.0f, 180.0f);
+		ball->setActorRotation(rot);
 	}
 
 	static float sinT = 0.0f;
@@ -495,15 +537,15 @@ void tick(float deltaSeconds)
 		for (uint32 j = 0; j < 16; ++j)
 		{
 			float wave = ::sinf(sinT + 13.2754f * (i*16+j)/256.0f + (6.3f * j/16.0f));
-			boxes[i*16+j]->setActorScale(glm::vec3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			boxes[i*16+j]->setActorScale(vector3(0.5f, 10.0f * 0.5f * (1.0f + wave), 0.5f));
 		}
 	}
 
 #if 0 // lookat debug
 	static float lookAtTime = 0.0f;
 	lookAtTime += 6.28f * deltaSeconds * 0.1f;
-	glm::vec3 lookDir(100.0f * sinf(lookAtTime), 0.0f, 100.0f * cosf(lookAtTime));
-	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + lookDir, glm::vec3(0.0f, 1.0f, 0.0f));
+	vector3 lookDir(100.0f * sinf(lookAtTime), 0.0f, 100.0f * cosf(lookAtTime));
+	cam->lookAt(CAMERA_POSITION, CAMERA_POSITION + lookDir, vector3(0.0f, 1.0f, 0.0f));
 #endif
 
 	{

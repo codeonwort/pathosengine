@@ -10,8 +10,6 @@ namespace pathos {
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList)
 	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		Shader vs(GL_VERTEX_SHADER, "VS_ToneMapping");
 		Shader fs(GL_FRAGMENT_SHADER, "FS_ToneMapping");
 		vs.loadSource("fullscreen_quad.glsl");
@@ -22,24 +20,35 @@ namespace pathos {
 
 		// tone mapping resource
 		cmdList.createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.toneMappingResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		checkFramebufferStatus(cmdList, fbo);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void ToneMapping::releaseResources(RenderCommandList& cmdList)
 	{
 		cmdList.deleteProgram(program);
 		cmdList.deleteFramebuffers(1, &fbo);
+
+		markDestroyed();
 	}
 
 	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
 	{
 		SCOPED_DRAW_EVENT(ToneMapping);
 
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
+		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
+		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
+		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		if (output0 == 0) {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+		}
 
 		cmdList.useProgram(program);
 
@@ -48,7 +57,7 @@ namespace pathos {
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 0, &uboData);
 
-		GLuint tonemapping_attachments[] = { sceneContext.sceneColor, sceneContext.sceneBloom, sceneContext.godRayResult };
+		GLuint tonemapping_attachments[] = { input0, input1, input2 };
 		cmdList.bindTextures(0, 3, tonemapping_attachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);

@@ -10,7 +10,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <assert.h>
 
 // on/off console output
 #define DEBUG_SHADER			0
@@ -187,7 +186,7 @@ namespace pathos {
 	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
 	bool Shader::loadSource(const char* filepath_) {
 		std::string filepath = ResourceFinder::get().find(filepath_);
-		assert(filepath.size() > 0);
+		CHECK(filepath.size() > 0);
 
 		std::ifstream file(filepath);
 		if (!file.is_open()) {
@@ -236,7 +235,7 @@ namespace pathos {
 
 			size_t quote_start = include_line.find('"');
 			size_t quote_end = include_line.find('"', quote_start + 1);
-			assert(quote_start != string::npos && quote_end != string::npos);
+			CHECKF(quote_start != string::npos && quote_end != string::npos, "#include statement is ill-formed.");
 
 			// #todo-shader: Support recursive include?
 			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);

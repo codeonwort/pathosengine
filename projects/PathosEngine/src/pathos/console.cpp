@@ -6,12 +6,14 @@
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/brush.h"
 #include "pathos/util/string_conversion.h"
+#include "pathos/util/math_lib.h"
 
 namespace pathos {
 
 	static constexpr float LEFT_MARGIN = 10.0f;
-	static constexpr float LINE_GAP    = 20.0f;
-	static constexpr size_t MAX_LINES  = 18;
+	static constexpr float LINE_GAP = 20.0f;
+	static constexpr size_t MAX_LINES = 18;
+	static constexpr size_t MAX_HISTORY = 64;
 
 	ConsoleWindow::ConsoleWindow() {
 		initialized = false;
@@ -30,7 +32,7 @@ namespace pathos {
 	bool ConsoleWindow::initialize(uint16 width, uint16 height) {
 		windowWidth = width;
 		windowHeight = height;
-		
+
 		renderer = new OverlayRenderer;
 		root = DisplayObject2D::createRoot();
 
@@ -64,29 +66,44 @@ namespace pathos {
 	void ConsoleWindow::onKeyPress(unsigned char ascii) {
 		if (ascii == 0x08) {
 			// backspace
-			if (input.size() > 0) {
-				input = input.substr(0, input.size() - 1);
+			if (currentInput.size() > 0) {
+				currentInput = currentInput.substr(0, currentInput.size() - 1);
 			}
 		} else if (ascii == 13) {
 			// enter
-			addLine(input.data());
-			input = L"";
+			addLine(currentInput.data(), true);
+			currentInput = L"";
 		} else {
-			input += ascii;
+			currentInput += ascii;
 		}
 
-		std::wstring input2 = L"> " + input;
-		inputText->setVisible(true);
-		inputText->setText(input2.data());
+		updateInputLine();
 	}
 
-	Label* ConsoleWindow::addLine(const char* text) {
+	void ConsoleWindow::showPreviousHistory() {
+		if (inputHistory.size() > 0) {
+			inputHistoryCursor = pathos::max(0, inputHistoryCursor - 1);
+			currentInput = inputHistory[inputHistoryCursor];
+			updateInputLine();
+		}
+	}
+
+	void ConsoleWindow::showNextHistory() {
+		if (inputHistory.size() > 0) {
+			inputHistoryCursor = pathos::min((int32)inputHistory.size(), inputHistoryCursor + 1);
+			currentInput = (inputHistoryCursor == (int32)inputHistory.size()) ? L"" : inputHistory[inputHistoryCursor];
+			updateInputLine();
+		}
+	}
+
+	Label* ConsoleWindow::addLine(const char* text, bool addToHistory) {
 		std::wstring buffer;
 		pathos::MBCS_TO_WCHAR(text, buffer);
-		return addLine(buffer.data());
+
+		return addLine(buffer.data(), addToHistory);
 	}
 
-	Label* ConsoleWindow::addLine(const wchar_t* text) {
+	Label* ConsoleWindow::addLine(const wchar_t* text, bool addToHistory) {
 		if (wcslen(text) == 0) {
 			return nullptr;
 		}
@@ -109,8 +126,17 @@ namespace pathos {
 		}
 
 		evaluate(text);
+		if (addToHistory) {
+			addInputHistory(text);
+		}
 
 		return label;
+	}
+
+	void ConsoleWindow::updateInputLine() {
+		std::wstring input2 = L"> " + currentInput;
+		inputText->setVisible(true);
+		inputText->setText(input2.data());
 	}
 
 	void ConsoleWindow::evaluate(const wchar_t* text) {
@@ -121,7 +147,7 @@ namespace pathos {
 		std::string header = ix == string::npos ? command : command.substr(0, ix);
 
 		// Execute registered procedure if exists
-		if(gEngine->execute(command)) {
+		if (gEngine->execute(command)) {
 			return;
 		}
 
@@ -135,6 +161,18 @@ namespace pathos {
 			}
 		}
 	}
+
+	void ConsoleWindow::addInputHistory(const wchar_t* inputText) {
+		inputHistory.push_back(inputText);
+		if (inputHistory.size() > MAX_HISTORY) {
+			inputHistory.erase(inputHistory.begin());
+		}
+		inputHistoryCursor = (int32)inputHistory.size();
+	}
+
+}
+
+namespace pathos {
 
 	///////////////////////////////////////////////////////////
 	// ConsoleVariable

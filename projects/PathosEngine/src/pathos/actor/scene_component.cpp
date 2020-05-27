@@ -10,8 +10,8 @@ namespace pathos {
 		transform.setLocation(transform.getLocation() + inDeltaLocation);
 	}
 
-	void SceneComponent::setRotation(float inAngle_radians, const vector3& inAxis) {
-		transform.setRotation(inAngle_radians, inAxis);
+	void SceneComponent::setRotation(const Rotator& inRotation) {
+		transform.setRotation(inRotation);
 	}
 
 	void SceneComponent::setScale(float inUniformScale) {

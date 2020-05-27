@@ -1,25 +1,49 @@
 #include "render_deferred.h"
 
-#include "sky.h"
-#include "god_ray.h"
-#include "visualize_depth.h"
-#include "forward/translucency_rendering.h"
-#include "postprocessing/ssao.h"
-#include "postprocessing/bloom.h"
-#include "postprocessing/tone_mapping.h"
-#include "postprocessing/depth_of_field.h"
-#include "postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/sky.h"
+#include "pathos/render/god_ray.h"
+#include "pathos/render/visualize_depth.h"
+#include "pathos/render/render_target.h"
+#include "pathos/render/forward/translucency_rendering.h"
+#include "pathos/render/postprocessing/ssao.h"
+#include "pathos/render/postprocessing/bloom.h"
+#include "pathos/render/postprocessing/tone_mapping.h"
+#include "pathos/render/postprocessing/depth_of_field.h"
+#include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/light/directional_light_component.h"
+#include "pathos/light/point_light_component.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
-#include "pathos/light/point_light_component.h"
-#include "pathos/light/directional_light_component.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/util/gl_debug_group.h"
+#include "pathos/shader/shader_program.h"
 
 #include "badger/assertion/assertion.h"
 
 #define ASSERT_GL_NO_ERROR 0
+
+namespace pathos {
+
+	class CopyTextureVS : public ShaderStage {
+	public:
+		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS")
+		{
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+	class CopyTextureFS : public ShaderStage {
+	public:
+		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS")
+		{
+			setFilepath("copy_texture.fs.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
+
+}
 
 namespace pathos {
 
@@ -60,25 +84,12 @@ namespace pathos {
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
-	DeferredRenderer::DeferredRenderer(uint32 width, uint32 height)
-		: sceneWidth(width)
-		, sceneHeight(height)
-		, antiAliasing(EAntiAliasingMethod::FXAA)
+	DeferredRenderer::DeferredRenderer()
+		: antiAliasing(EAntiAliasingMethod::FXAA)
+		, scene(nullptr)
+		, camera(nullptr)
 	{
-		CHECK(width > 0 && height > 0);
-
 		sceneRenderTargets.useGBuffer = true;
-
-		createShaders();
-		ubo_perFrame.init<UBO_PerFrame>();
-
-		sunShadowMap = std::make_unique<DirectionalShadowMap>();
-		godRay = std::make_unique<GodRay>();
-		ssao = std::make_unique<SSAO>();
-		bloomPass = std::make_unique<BloomPass>();
-		toneMapping = std::make_unique<ToneMapping>();
-		fxaa = std::make_unique<FXAA>();
-		depthOfField = std::make_unique<DepthOfField>();
 	}
 
 	DeferredRenderer::~DeferredRenderer() {
@@ -86,79 +97,26 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::initializeResources(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
-
-		sunShadowMap->initializeResources(cmdList);
-		unpack_pass->initializeResources(cmdList);
-		translucency_pass->initializeResources(cmdList);
-
-		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
-
-		godRay->initializeResources(cmdList);
-		ssao->initializeResources(cmdList);
-		bloomPass->initializeResources(cmdList);
-		toneMapping->initializeResources(cmdList);
-		fxaa->initializeResources(cmdList);
-		depthOfField->initializeResources(cmdList);
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			destroyShaders();
 			destroySceneRenderTargets(cmdList);
-
-			sunShadowMap->destroyResources(cmdList);
-			unpack_pass->destroyResources(cmdList);
-			translucency_pass->releaseResources(cmdList);
-
-			godRay->releaseResources(cmdList);
-			ssao->releaseResources(cmdList);
-			bloomPass->releaseResources(cmdList);
-			toneMapping->releaseResources(cmdList);
-			fxaa->releaseResources(cmdList);
-			depthOfField->releaseResources(cmdList);
-
-			cmdList.flushAllCommands();
-			fullscreenQuad->dispose();
 		}
 		destroyed = true;
 	}
 
-	void DeferredRenderer::createShaders() {
-		fallbackMaterial = std::make_unique<ColorMaterial>();
-		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
-		fallbackMaterial->setMetallic(0.0f);
-		fallbackMaterial->setRoughness(0.0f);
+	void DeferredRenderer::setSceneRenderSettings(const SceneRenderSettings& settings) {
+		CHECK(settings.isValid());
 
-		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			pack_passes[i] = nullptr;
-		}
-		pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR]  = new MeshDeferredRenderPass_Pack_SolidColor;
-		pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
-		pack_passes[(uint8)MATERIAL_ID::WIREFRAME]    = new MeshDeferredRenderPass_Pack_Wireframe;
-		pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
-		pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE]  = new MeshDeferredRenderPass_Pack_PBR;
-
-		unpack_pass = new MeshDeferredRenderPass_Unpack;
-
-		translucency_pass = std::make_unique<TranslucencyRendering>();
-
-		visualizeDepth = new VisualizeDepth;
-	}
-
-	void DeferredRenderer::destroyShaders() {
-		for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			if (pack_passes[i]) {
-				delete pack_passes[i];
-			}
-		}
-		delete unpack_pass;
+		sceneRenderSettings = settings;
 	}
 
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneWidth, sceneHeight);
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
 		if (gbufferFBO == 0) {
 			GLenum gbuffer_draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
@@ -170,11 +128,11 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
 			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
 
-			GLenum framebufferCompleteness = 0;
-			cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
-			// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
-			cmdList.flushAllCommands();
-			CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
+			//GLenum framebufferCompleteness = 0;
+			//cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
+			//// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
+			//cmdList.flushAllCommands();
+			//CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
 		}
 	}
 
@@ -186,6 +144,8 @@ namespace pathos {
 	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
+
+		CHECK(sceneRenderSettings.isValid());
 
 #if ASSERT_GL_NO_ERROR
 		glGetError();
@@ -205,7 +165,11 @@ namespace pathos {
 			return;
 		}
 
-		sunShadowMap->renderShadowMap(cmdList, scene, camera);
+		{
+			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
+
+			sunShadowMap->renderShadowMap(cmdList, scene, camera);
+		}
 
 		// ready scene for rendering
 		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
@@ -226,54 +190,105 @@ namespace pathos {
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
-		godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
+		{
+			SCOPED_GPU_COUNTER(RenderGodRay);
+
+			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
+		}
 
 		clearGBuffer(cmdList);
 
  		packGBuffer(cmdList);
 
-		ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+		{
+			SCOPED_GPU_COUNTER(SSAO);
+
+			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+		}
 
  		unpackGBuffer(cmdList);
 
 		// Translucency pass
-		renderTranslucency(cmdList);
+		{
+			SCOPED_GPU_COUNTER(Translucency);
+
+			renderTranslucency(cmdList);
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		if (sceneRenderSettings.enablePostProcess == false)
+		{
+			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget());
+		}
+		else
+		{
+			SCOPED_GPU_COUNTER(PostProcessing);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
 
-		// input: bright pixels in gbuffer
-		// output: bloom texture
-		bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
+			const bool noDOF = (cvar_enable_dof.getInt() == 0);
 
-		// input: scene color, bloom, god ray
-		// output: scene final
-		toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
 
-		antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
-		switch (antiAliasing) {
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+
+			// Post Process: Bloom
+			{
+				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
+				bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+				// output is fed back to PPI_0
+				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+			}
+
+			// Post Process: Tone Mapping
+			{
+				// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
+				const bool isFinalPP = (noAA && noDOF);
+
+				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
+				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
+				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
+				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+
+				sceneAfterLastPP = sceneRenderTargets.toneMappingResult;
+			}
+
+			// Post Process: Anti-aliasing
+			switch (antiAliasing) {
 			case EAntiAliasingMethod::NoAA:
 				// Do nothing
 				break;
 
 			case EAntiAliasingMethod::FXAA:
-				fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+				{
+					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
+					const bool isFinalPP = noDOF;
+
+					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+					fxaa->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.sceneFinal);
+					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+
+					sceneAfterLastPP = sceneRenderTargets.sceneFinal;
+				}
 				break;
 
 			default:
 				break;
-		}
+			}
 
-		// input: scene final
-		// output: scene final with DoF
-		if (cvar_enable_dof.getInt() != 0) {
-			constexpr GLuint dofRenderTarget = 0; // default framebuffer
-			//dof->setInput(EPostProcessInput::PPI_0, sceneContext.toneMappingResult);
-			//dof->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
-			depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+			// Post Process: Depth of Field
+			if (!noDOF) {
+				const GLuint dofRenderTarget = getFinalRenderTarget();
+
+				depthOfField->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
+				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+			}
+
 		}
 
 #if ASSERT_GL_NO_ERROR
@@ -282,6 +297,11 @@ namespace pathos {
 
 		scene = nullptr;
 		camera = nullptr;
+	}
+
+	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
+		finalRenderTarget = inFinalRenderTarget;
 	}
 
 	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
@@ -304,7 +324,7 @@ namespace pathos {
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
+		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 
@@ -371,13 +391,38 @@ namespace pathos {
 		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
 	}
 
+	void DeferredRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
+
+		cmdList.useProgram(program.getGLName());
+		if (target == 0) {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
+		} else {
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, DeferredRenderer::copyTextureFBO);
+			cmdList.namedFramebufferTexture(DeferredRenderer::copyTextureFBO, GL_COLOR_ATTACHMENT0, target, 0);
+		}
+		cmdList.bindTextureUnit(0, source);
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+		fullscreenQuad->deactivate(cmdList);
+		fullscreenQuad->deactivateIndexBuffer(cmdList);
+	}
+
+	GLuint DeferredRenderer::getFinalRenderTarget() const {
+		if (finalRenderTarget == nullptr) {
+			return 0; // Default backbuffer
+		}
+		return finalRenderTarget->getGLName();
+	}
+
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
 		const glm::mat4& projMatrix = camera->getProjectionMatrix();
 
-		data.screenResolution.x = (float)sceneWidth;
-		data.screenResolution.y = (float)sceneHeight;
+		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
+		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
@@ -411,7 +456,130 @@ namespace pathos {
 			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
 		}
 
-		ubo_perFrame.update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
+		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 	}
+
+}
+
+namespace pathos {
+	
+	std::unique_ptr<class ColorMaterial>           DeferredRenderer::fallbackMaterial;
+	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
+	GLuint                                         DeferredRenderer::copyTextureFBO = 0;
+	
+	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
+	
+	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
+	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
+	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
+
+	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
+	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
+
+	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
+	std::unique_ptr<class SSAO>                    DeferredRenderer::ssao;
+	std::unique_ptr<class BloomPass>               DeferredRenderer::bloomPass;
+	std::unique_ptr<class ToneMapping>             DeferredRenderer::toneMapping;
+	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
+	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
+
+	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice) {
+		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
+
+		fallbackMaterial = std::make_unique<ColorMaterial>();
+		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
+		fallbackMaterial->setMetallic(0.0f);
+		fallbackMaterial->setRoughness(0.0f);
+
+		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
+		glCreateFramebuffers(1, &copyTextureFBO);
+		glNamedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
+
+		ubo_perFrame = std::make_unique<UniformBuffer>();
+		ubo_perFrame->init<UBO_PerFrame>();
+
+		{
+			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+				pack_passes[i] = nullptr;
+			}
+			pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR] = new MeshDeferredRenderPass_Pack_SolidColor;
+			pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
+			pack_passes[(uint8)MATERIAL_ID::WIREFRAME] = new MeshDeferredRenderPass_Pack_Wireframe;
+			pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
+			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
+			unpack_pass = std::make_unique<MeshDeferredRenderPass_Unpack>();
+			translucency_pass = std::make_unique<TranslucencyRendering>();
+
+			unpack_pass->initializeResources(cmdList);
+			translucency_pass->initializeResources(cmdList);
+		}
+
+		{
+			sunShadowMap = std::make_unique<DirectionalShadowMap>();
+			visualizeDepth = std::make_unique<VisualizeDepth>();
+
+			sunShadowMap->initializeResources(cmdList);
+		}
+
+		{
+			godRay = std::make_unique<GodRay>();
+			ssao = std::make_unique<SSAO>();
+			bloomPass = std::make_unique<BloomPass>();
+			toneMapping = std::make_unique<ToneMapping>();
+			fxaa = std::make_unique<FXAA>();
+			depthOfField = std::make_unique<DepthOfField>();
+
+			godRay->initializeResources(cmdList);
+			ssao->initializeResources(cmdList);
+			bloomPass->initializeResources(cmdList);
+			toneMapping->initializeResources(cmdList);
+			fxaa->initializeResources(cmdList);
+			depthOfField->initializeResources(cmdList);
+		}
+
+		cmdList.flushAllCommands();
+	}
+
+	// #todo-system: Oh my fucking god. Freeglut does not support callback on close window.
+	// Engine::stop() will not be called thus this method will not also, but std::unique_ptr's destructor will be called,
+	// which invalidates the CHECK() in PostProcess' destructor.
+	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
+		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
+
+		fallbackMaterial.release();
+		fullscreenQuad->dispose();
+		glDeleteFramebuffers(1, &copyTextureFBO);
+
+		ubo_perFrame.release();
+
+		{
+			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+				if (pack_passes[i]) {
+					delete pack_passes[i];
+					pack_passes[i] = nullptr;
+				}
+			}
+			unpack_pass->destroyResources(cmdList);
+			translucency_pass->releaseResources(cmdList);
+		}
+
+		{
+			sunShadowMap->destroyResources(cmdList);
+			visualizeDepth.release();
+		}
+
+		{
+			godRay->releaseResources(cmdList);
+			ssao->releaseResources(cmdList);
+			bloomPass->releaseResources(cmdList);
+			toneMapping->releaseResources(cmdList);
+			fxaa->releaseResources(cmdList);
+			depthOfField->releaseResources(cmdList);
+		}
+
+		cmdList.flushAllCommands();
+	}
+
+	DEFINE_GLOBAL_RENDER_ROUTINE(DeferredRenderer, DeferredRenderer::internal_initGlobalResources, DeferredRenderer::internal_destroyGlobalResources);
 
 }

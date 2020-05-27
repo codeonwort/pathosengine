@@ -14,14 +14,17 @@ namespace pathos {
 		float maxRadius;
 	};
 
+	DepthOfField::~DepthOfField() {
+		markDestroyed();
+	}
+
 	void DepthOfField::initializeResources(RenderCommandList& cmdList)
 	{
 		cmdList.createVertexArrays(1, &vao);
 
 		cmdList.createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		// Can't check now
-		// checkFramebufferStatus(cmdList);
+		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 
 		// compute program. output is transposed.
 		program_subsum2D = createSubsumShader();
@@ -46,12 +49,8 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		// #todo-post-processing
-		//GLuint input0 = getInput(EPostProcessInput::PPI_0);
-		//GLuint output0 = getOutput(EPostProcessOutput::PPO_0);
-
-		GLuint input0 = sceneContext.toneMappingResult;
-		GLuint output0 = 0; // backbuffer
+		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneFinal
+		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // backbuffer
 
 		{
 			SCOPED_DRAW_EVENT(Subsum);
@@ -84,10 +83,12 @@ namespace pathos {
 			uboBlur.update(cmdList, 1, &uboData);
 
 			if (output0 == 0) {
-				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+				cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
 			else {
-				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+				cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+				// #todo-misc: I sometimes make a typo like cmdList.namedFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, output0, 0);
+				// and do not realize what I did wrong. Need a utility for validation.
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
 			}
 

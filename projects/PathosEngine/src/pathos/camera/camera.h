@@ -54,12 +54,14 @@ namespace pathos {
 		void moveToPosition(const glm::vec3& newPosition);
 		inline void moveToPosition(float x, float y, float z) { moveToPosition(glm::vec3(x, y, z)); }
 
-		// mouse move to left/right in first person mode
-		void rotateY(float angleDegree);
-		// mouse move to up/down in first person mode
-		void rotateX(float angleDegree);
+		
+		void rotateYaw(float angleDegree); // mouse left/right in first person view
+		void rotatePitch(float angleDegree); // mouse up/down in first person view
 		void setYaw(float newYaw);
 		void setPitch(float newPitch);
+
+		float getYaw() const;
+		float getPitch() const;
 
 		// get vertices of camera frustum in world space
 		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const;
@@ -73,6 +75,7 @@ namespace pathos {
 		mutable Transform transform; // view transform
 
 		Lens* lens; // projection transform
+		// #todo-transform: Just use Rotator...
 		float rotationX; // pitch
 		float rotationY; // yaw
 		glm::vec3 _position;

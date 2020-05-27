@@ -21,8 +21,8 @@ namespace pathos {
 
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
-		void processModifierKeyDown(InputConstants modifier);
-		void processModifierKeyUp(InputConstants modifier);
+		void processSpecialKeyDown(InputConstants modifier);
+		void processSpecialKeyUp(InputConstants modifier);
 
 	private:
 		InputManager* defaultInputManager;

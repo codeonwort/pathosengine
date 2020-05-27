@@ -57,12 +57,12 @@ namespace pathos {
 
 	static void onGlutSpecialKeyDown(int specialKey, int mouseX, int mouseY) {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
-		window->checkModifierKeyDown();
+		window->checkSpecialKeyDown(specialKey);
 	}
 
 	static void onGlutSpecialKeyUp(int specialKey, int mouseX, int mouseY) {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
-		window->checkModifierKeyUp();
+		window->checkSpecialKeyUp(specialKey);
 	}
 
 	static void onGlutReshape(int width, int height) {
@@ -109,17 +109,17 @@ namespace pathos {
 		callback_onDisplay         = createParams.onDisplay;
 		callback_onKeyDown         = createParams.onKeyDown;
 		callback_onKeyUp           = createParams.onKeyUp;
-		callback_onModifierKeyDown = createParams.onModifierKeyDown;
-		callback_onModifierKeyUp   = createParams.onModifierKeyUp;
+		callback_onSpecialKeyDown  = createParams.onSpecialKeyDown;
+		callback_onSpecialKeyUp    = createParams.onSpecialKeyUp;
 		callback_onReshape         = createParams.onReshape;
 
-		CHECK(windowWidth > 0 && windowHeight > 0);
-		CHECK(title.size() > 0);
+		CHECKF(windowWidth > 0 && windowHeight > 0, "Invalid window size");
+		CHECKF(title.size() > 0, "Invalid window title");
 
-		// Silently fix values
+		// Silently fix window size
 		windowWidth = std::max(400, windowWidth);
 		windowHeight = std::max(300, windowHeight);
-		if (title.empty()) title = "title here";
+		if (title.empty()) title = "Title here";
 
 		glutInitErrorFunc(onGlutError);
 		glutInitWarningFunc(onGlutWarning);
@@ -131,7 +131,7 @@ namespace pathos {
 		}
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(windowWidth, windowHeight);
-
+		
 		nativeHandle = glutCreateWindow(title.c_str());
 
 		if (bFullscreen) {
@@ -211,31 +211,55 @@ namespace pathos {
 		glutSetWindowTitle(title.c_str());
 	}
 
-	void GUIWindow::checkModifierKeyDown()
+	void GUIWindow::checkSpecialKeyDown(int specialKey)
 	{
+		// Modifiers
 		int modifiers = glutGetModifiers();
 		if (modifiers & GLUT_ACTIVE_SHIFT) {
-			callback_onModifierKeyDown(InputConstants::SHIFT);
+			callback_onSpecialKeyDown(InputConstants::SHIFT);
 		}
 		if (modifiers & GLUT_ACTIVE_CTRL) {
-			callback_onModifierKeyDown(InputConstants::CTRL);
+			callback_onSpecialKeyDown(InputConstants::CTRL);
 		}
 		if (modifiers & GLUT_ACTIVE_ALT) {
-			callback_onModifierKeyDown(InputConstants::ALT);
+			callback_onSpecialKeyDown(InputConstants::ALT);
+		}
+
+		// Arrows
+		if (specialKey == GLUT_KEY_LEFT) {
+			callback_onSpecialKeyDown(InputConstants::KEYBOARD_ARROW_LEFT);
+		} else if (specialKey == GLUT_KEY_RIGHT) {
+			callback_onSpecialKeyDown(InputConstants::KEYBOARD_ARROW_RIGHT);
+		} else if (specialKey == GLUT_KEY_UP) {
+			callback_onSpecialKeyDown(InputConstants::KEYBOARD_ARROW_UP);
+		} else if (specialKey == GLUT_KEY_DOWN) {
+			callback_onSpecialKeyDown(InputConstants::KEYBOARD_ARROW_DOWN);
 		}
 	}
 
-	void GUIWindow::checkModifierKeyUp()
+	void GUIWindow::checkSpecialKeyUp(int specialKey)
 	{
+		// Modifiers
 		int modifiers = glutGetModifiers();
 		if (0 == (modifiers & GLUT_ACTIVE_SHIFT)) {
-			callback_onModifierKeyUp(InputConstants::SHIFT);
+			callback_onSpecialKeyUp(InputConstants::SHIFT);
 		}
 		if (0 == (modifiers & GLUT_ACTIVE_CTRL)) {
-			callback_onModifierKeyUp(InputConstants::CTRL);
+			callback_onSpecialKeyUp(InputConstants::CTRL);
 		}
 		if (0 == (modifiers & GLUT_ACTIVE_ALT)) {
-			callback_onModifierKeyUp(InputConstants::ALT);
+			callback_onSpecialKeyUp(InputConstants::ALT);
+		}
+
+		// Arrows
+		if (specialKey == GLUT_KEY_LEFT) {
+			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_LEFT);
+		} else if (specialKey == GLUT_KEY_RIGHT) {
+			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_RIGHT);
+		} else if (specialKey == GLUT_KEY_UP) {
+			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_UP);
+		} else if (specialKey == GLUT_KEY_DOWN) {
+			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_DOWN);
 		}
 	}
 

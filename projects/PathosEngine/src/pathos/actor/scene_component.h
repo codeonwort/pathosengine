@@ -1,5 +1,7 @@
 #pragma once
 
+#include "badger/math/rotator.h"
+
 #include "actor_component.h"
 #include "pathos/scene/scene.h"
 #include "pathos/util/engine_util.h"
@@ -29,9 +31,9 @@ namespace pathos {
 		void addLocation(const vector3& inDeltaLocation);
 		inline vector3 getLocation() const { return transform.getLocation(); }
 
-		// Rotation // #todo-actor
-		void setRotation(float inAngle_radians, const vector3& inAxis);
-		//inline Rotator getRotation() const { return (0); }
+		// Rotation
+		void setRotation(const Rotator& inRotation);
+		inline Rotator getRotation() const { return transform.getRotation(); }
 
 		// Scale
 		void setScale(float inUniformScale);

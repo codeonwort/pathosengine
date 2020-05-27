@@ -45,7 +45,7 @@ namespace pathos {
 	class ShaderProgram {
 
 	public:
-		ShaderProgram(const char* inDebugName);
+		ShaderProgram(const char* inDebugName, uint32 inProgramHash);
 		virtual ~ShaderProgram();
 
 		void addShaderStage(ShaderStage* shaderStage);
@@ -63,6 +63,8 @@ namespace pathos {
 	private:
 
 		const char* debugName;
+		uint32 programHash;
+
 		GLuint glName;
 
 		std::vector<ShaderStage*> shaderStages;
@@ -123,95 +125,100 @@ namespace pathos {
 	//
 
 	// #todo-shader-rework: Serious problem - now I can't destroy shader programs until application termination.
-#define DEFINE_COMPUTE_PROGRAM(ShaderProgramClass, ComputeStageClass)   \
-	class ShaderProgramClass : public ShaderProgram {                   \
-	public:                                                             \
-		static ShaderProgramClass& get() {                              \
-			static ShaderProgramClass instance(#ShaderProgramClass);    \
-			if (instance.internal_justInstantiated) {                   \
-				instance.internal_justInstantiated = false;             \
-				instance.addShaderStage(new ComputeStageClass);         \
-			}                                                           \
-			instance.checkFirstLoad();                                  \
-			return instance;                                            \
-		}                                                               \
-		ShaderProgramClass(const char* inDebugName)                     \
-			: ShaderProgram(inDebugName) {}                             \
-	};                                                                  \
+#define DEFINE_COMPUTE_PROGRAM(ShaderProgramClass, ComputeStageClass)                                \
+	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
+	class ShaderProgramClass : public ShaderProgram {                                                \
+	public:                                                                                          \
+		static ShaderProgramClass& get() {                                                           \
+			static ShaderProgramClass instance(#ShaderProgramClass, ShaderProgramClass##_Hash);      \
+			if (instance.internal_justInstantiated) {                                                \
+				instance.internal_justInstantiated = false;                                          \
+				instance.addShaderStage(new ComputeStageClass);                                      \
+			}                                                                                        \
+			instance.checkFirstLoad();                                                               \
+			return instance;                                                                         \
+		}                                                                                            \
+		ShaderProgramClass(const char* inDebugName, uint32 inProgramHash)                            \
+			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
+	};                                                                                               \
 
-#define DEFINE_SHADER_PROGRAM2(ShaderProgramClass, Stage1, Stage2)      \
-	class ShaderProgramClass : public ShaderProgram {                   \
-	public:                                                             \
-		static ShaderProgramClass& get() {                              \
-			static ShaderProgramClass instance(#ShaderProgramClass);    \
-			if (instance.internal_justInstantiated) {                   \
-				instance.internal_justInstantiated = false;             \
-				instance.addShaderStage(new Stage1);                    \
-				instance.addShaderStage(new Stage2);                    \
-			}                                                           \
-			instance.checkFirstLoad();                                  \
-			return instance;                                            \
-		}                                                               \
-		ShaderProgramClass(const char* inDebugName)                     \
-			: ShaderProgram(inDebugName) {}                             \
-	};                                                                  \
+#define DEFINE_SHADER_PROGRAM2(ShaderProgramClass, Stage1, Stage2)                                   \
+	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
+	class ShaderProgramClass : public ShaderProgram {                                                \
+	public:                                                                                          \
+		static ShaderProgramClass& get() {                                                           \
+			static ShaderProgramClass instance(#ShaderProgramClass, ShaderProgramClass##_Hash);      \
+			if (instance.internal_justInstantiated) {                                                \
+				instance.internal_justInstantiated = false;                                          \
+				instance.addShaderStage(new Stage1);                                                 \
+				instance.addShaderStage(new Stage2);                                                 \
+			}                                                                                        \
+			instance.checkFirstLoad();                                                               \
+			return instance;                                                                         \
+		}                                                                                            \
+		ShaderProgramClass(const char* inDebugName, uint32 inProgramHash)                            \
+			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
+	};                                                                                               \
 
-#define DEFINE_SHADER_PROGRAM3(ShaderProgramClass, Stage1, Stage2, Stage3) \
-	class ShaderProgramClass : public ShaderProgram {                   \
-	public:                                                             \
-		static ShaderProgramClass& get() {                              \
-			static ShaderProgramClass instance(#ShaderProgramClass);    \
-			if (instance.internal_justInstantiated) {                   \
-				instance.internal_justInstantiated = false;             \
-				instance.addShaderStage(new Stage1);                    \
-				instance.addShaderStage(new Stage2);                    \
-				instance.addShaderStage(new Stage3);                    \
-			}                                                           \
-			instance.checkFirstLoad();                                  \
-			return instance;                                            \
-		}                                                               \
-		ShaderProgramClass(const char* inDebugName)                     \
-			: ShaderProgram(inDebugName) {}                             \
-	};                                                                  \
+#define DEFINE_SHADER_PROGRAM3(ShaderProgramClass, Stage1, Stage2, Stage3)                           \
+	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
+	class ShaderProgramClass : public ShaderProgram {                                                \
+	public:                                                                                          \
+		static ShaderProgramClass& get() {                                                           \
+			static ShaderProgramClass instance(#ShaderProgramClass, ShaderProgramClass##_Hash);      \
+			if (instance.internal_justInstantiated) {                                                \
+				instance.internal_justInstantiated = false;                                          \
+				instance.addShaderStage(new Stage1);                                                 \
+				instance.addShaderStage(new Stage2);                                                 \
+				instance.addShaderStage(new Stage3);                                                 \
+			}                                                                                        \
+			instance.checkFirstLoad();                                                               \
+			return instance;                                                                         \
+		}                                                                                            \
+		ShaderProgramClass(const char* inDebugName, uint32 inProgramHash)                            \
+			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
+	};                                                                                               \
 
-#define DEFINE_SHADER_PROGRAM4(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4) \
-	class ShaderProgramClass : public ShaderProgram {                   \
-	public:                                                             \
-		static ShaderProgramClass& get() {                              \
-			static ShaderProgramClass instance(#ShaderProgramClass);    \
-			if (instance.internal_justInstantiated) {                   \
-				instance.internal_justInstantiated = false;             \
-				instance.addShaderStage(new Stage1);                    \
-				instance.addShaderStage(new Stage2);                    \
-				instance.addShaderStage(new Stage3);                    \
-				instance.addShaderStage(new Stage4);                    \
-			}                                                           \
-			instance.checkFirstLoad();                                  \
-			return instance;                                            \
-		}                                                               \
-		ShaderProgramClass(const char* inDebugName)                     \
-			: ShaderProgram(inDebugName) {}                             \
-	};                                                                  \
+#define DEFINE_SHADER_PROGRAM4(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4)                   \
+	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
+	class ShaderProgramClass : public ShaderProgram {                                                \
+	public:                                                                                          \
+		static ShaderProgramClass& get() {                                                           \
+			static ShaderProgramClass instance(#ShaderProgramClass, ShaderProgramClass##_Hash);      \
+			if (instance.internal_justInstantiated) {                                                \
+				instance.internal_justInstantiated = false;                                          \
+				instance.addShaderStage(new Stage1);                                                 \
+				instance.addShaderStage(new Stage2);                                                 \
+				instance.addShaderStage(new Stage3);                                                 \
+				instance.addShaderStage(new Stage4);                                                 \
+			}                                                                                        \
+			instance.checkFirstLoad();                                                               \
+			return instance;                                                                         \
+		}                                                                                            \
+		ShaderProgramClass(const char* inDebugName, uint32 inProgramHash)                            \
+			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
+	};                                                                                               \
 
-#define DEFINE_SHADER_PROGRAM5(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4, Stage5) \
-	class ShaderProgramClass : public ShaderProgram {                   \
-	public:                                                             \
-		static ShaderProgramClass& get() {                              \
-			static ShaderProgramClass instance(#ShaderProgramClass);    \
-			if (instance.internal_justInstantiated) {                   \
-				instance.internal_justInstantiated = false;             \
-				instance.addShaderStage(new Stage1);                    \
-				instance.addShaderStage(new Stage2);                    \
-				instance.addShaderStage(new Stage3);                    \
-				instance.addShaderStage(new Stage4);                    \
-				instance.addShaderStage(new Stage5);                    \
-			}                                                           \
-			instance.checkFirstLoad();                                  \
-			return instance;                                            \
-		}                                                               \
-		ShaderProgramClass(const char* inDebugName)                     \
-			: ShaderProgram(inDebugName) {}                             \
-	};                                                                  \
+#define DEFINE_SHADER_PROGRAM5(ShaderProgramClass, Stage1, Stage2, Stage3, Stage4, Stage5)           \
+	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
+	class ShaderProgramClass : public ShaderProgram {                                                \
+	public:                                                                                          \
+		static ShaderProgramClass& get() {                                                           \
+			static ShaderProgramClass instance(#ShaderProgramClass, ShaderProgramClass##_Hash);      \
+			if (instance.internal_justInstantiated) {                                                \
+				instance.internal_justInstantiated = false;                                          \
+				instance.addShaderStage(new Stage1);                                                 \
+				instance.addShaderStage(new Stage2);                                                 \
+				instance.addShaderStage(new Stage3);                                                 \
+				instance.addShaderStage(new Stage4);                                                 \
+				instance.addShaderStage(new Stage5);                                                 \
+			}                                                                                        \
+			instance.checkFirstLoad();                                                               \
+			return instance;                                                                         \
+		}                                                                                            \
+		ShaderProgramClass(const char* inDebugName, uint32 inProgramHash)                            \
+			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
+	};                                                                                               \
 
 #define FIND_SHADER_PROGRAM(ShaderProgramClass) ShaderProgramClass::get();
 

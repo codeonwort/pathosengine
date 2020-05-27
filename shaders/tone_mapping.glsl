@@ -10,7 +10,7 @@ layout (std140, binding = 0) uniform UBO_ToneMapping {
 } ubo;
 
 in VS_OUT {
-	vec2 uv;
+	vec2 screenUV;
 } fs_in;
 
 out vec4 color;
@@ -20,7 +20,7 @@ void main() {
 
 	vec4 c = texelFetch(hdr_image, texelXY, 0);
 	c.xyz += texelFetch(hdr_bloom, texelXY, 0).xyz;
-	c.xyz += texture(god_ray, fs_in.uv).xyz;
+	c.xyz += texture(god_ray, fs_in.screenUV).xyz;
 
 	// tone mapping
 	c.rgb = vec3(1.0) - exp(-c.rgb * ubo.exposure);

@@ -79,8 +79,8 @@ namespace pathos {
 
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
-		void processModifierKeyDown(InputConstants modifier);
-		void processModifierKeyUp(InputConstants modifier);
+		void processSpecialKeyDown(InputConstants specialKey);
+		void processSpecialKeyUp(InputConstants specialKey);
 
 	private:
 		bool asciiMap[256] = { false, };

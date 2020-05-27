@@ -1,5 +1,6 @@
 #pragma once
 
+#include "badger/math/rotator.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
 #include <vector>
@@ -25,13 +26,16 @@ namespace pathos {
 		void registerComponent(ActorComponent* component);
 		void unregisterComponent(ActorComponent* component);
 
+		inline Scene* getOwnerScene() const { return owner; }
+
 		inline SceneComponent* getRootComponent() { return rootComponent; }
-		vector3 getActorLocation() const; //{ return rootComponent->getLocation(); }
-		//Rotator getActorRotation() const { return rootComponent->getRotation(); } // #todo-actor
-		vector3 getActorScale() const; //{ return rootComponent->getScale(); }
+		vector3 getActorLocation() const;
+		Rotator getActorRotation() const;
+		vector3 getActorScale() const;
 
 		void setActorLocation(const vector3& inLocation);
-		void setActorRotation(float inAngle_radians, const vector3& inAxis); // #todo-actor: Use Rotator
+		void setActorLocation(float inX, float inY, float inZ);
+		void setActorRotation(const Rotator& inRotation);
 		void setActorScale(const vector3& inScale);
 		void setActorScale(float inScale);
 

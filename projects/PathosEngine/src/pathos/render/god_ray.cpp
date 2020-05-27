@@ -43,43 +43,38 @@ namespace pathos {
 	}
 
 	void GodRay::createFBO(RenderCommandList& cmdList) {
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		// generate fbo and textures
 		cmdList.createFramebuffers(2, fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "GodRaySource");
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "GodRayResult");
 
-		GLenum fboCompleteness0;
-		GLenum fboCompleteness1;
+		// #todo-framebuffer: Can't check completeness now
+		//GLenum fboCompleteness0;
+		//GLenum fboCompleteness1;
 
 		// Silhoutte pass
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0);
-		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_SOURCE], GL_DRAW_FRAMEBUFFER, &fboCompleteness0);
+		//cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_SOURCE], GL_DRAW_FRAMEBUFFER, &fboCompleteness0);
 
 		// Light scattering pass
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0);
-		cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_RESULT], GL_DRAW_FRAMEBUFFER, &fboCompleteness1);
+		//cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_RESULT], GL_DRAW_FRAMEBUFFER, &fboCompleteness1);
 
 		// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
-		cmdList.flushAllCommands();
-		if (fboCompleteness0 != GL_FRAMEBUFFER_COMPLETE) {
-			LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_SOURCE]");
-			CHECK(0);
-		}
-		if (fboCompleteness1 != GL_FRAMEBUFFER_COMPLETE) {
-			LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_RESULT]");
-			CHECK(0);
-		}
+		//cmdList.flushAllCommands();
+		//if (fboCompleteness0 != GL_FRAMEBUFFER_COMPLETE) {
+		//	LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_SOURCE]");
+		//	CHECK(0);
+		//}
+		//if (fboCompleteness1 != GL_FRAMEBUFFER_COMPLETE) {
+		//	LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_RESULT]");
+		//	CHECK(0);
+		//}
 
 		cmdList.createFramebuffers(1, &fboBlur1);
-		cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
 		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
 
 		cmdList.createFramebuffers(1, &fboBlur2);
-		cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
@@ -160,6 +155,9 @@ void main() {
 		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
 		GLfloat depth_clear[] = { 1.0f };
 
+		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
+		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_DEPTH, 0, depth_clear);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
@@ -232,6 +230,7 @@ void main() {
 
 			cmdList.useProgram(program_blur1);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
+			cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
@@ -239,6 +238,7 @@ void main() {
 
 			cmdList.useProgram(program_blur2);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
+			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
 			fullscreenQuad->drawPrimitive(cmdList);
 		}

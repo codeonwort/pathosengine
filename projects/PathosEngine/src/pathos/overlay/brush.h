@@ -5,6 +5,7 @@
 namespace pathos {
 
 	class OverlayRenderer;
+	class OverlayPass;
 
 	// Base class
 	class Brush {
@@ -17,7 +18,7 @@ namespace pathos {
 	public:
 		SolidColorBrush(float r, float g, float b);
 		SolidColorBrush(uint32_t rgb);
-		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
+		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
 		float rgb[4];
 	};
@@ -35,7 +36,7 @@ namespace pathos {
 	public:
 		TextBrush(float r, float g, float b);
 		TextBrush(uint32_t rgb);
-		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
+		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
 		float rgb[4];
 	};

@@ -1,4 +1,4 @@
-#version 430 core
+#version 450 core
 
 #include "deferred_common.glsl"
 #include "shadow_mapping.glsl"

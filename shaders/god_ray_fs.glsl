@@ -1,7 +1,7 @@
 #version 450 core
 
 in VS_OUT {
-	vec2 uv;
+	vec2 screenUV;
 } fs_in;
 
 layout (binding = 0) uniform sampler2D src;
@@ -25,7 +25,7 @@ void main() {
 	ivec2 screenXY = ivec2(gl_FragCoord.xy);
 	float ditherValue = bayerMatrix[screenXY.x % 4][screenXY.y % 4];
 
-	vec2 uv = fs_in.uv;
+	vec2 uv = fs_in.screenUV;
 
 	vec2 delta = (uv - lightPos) * (1.0 / (density * NUM_SAMPLES));
 	vec2 pos = uv;

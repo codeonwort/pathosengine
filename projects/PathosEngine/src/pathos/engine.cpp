@@ -17,7 +17,7 @@ namespace pathos {
 
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
 
-	static constexpr uint32 RENDER_PROXY_MEMORY = 16 * 1024 * 1024; // 16 MB
+	static constexpr uint32 RENDER_PROXY_MEMORY = 32 * 1024 * 1024; // 32 MB
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -66,8 +66,7 @@ namespace pathos {
 	{
 	}
 
-	bool Engine::initialize(int argc, char** argv, const EngineConfig& config)
-	{
+	bool Engine::initialize(int argc, char** argv, const EngineConfig& config) {
 		conf = config;
 
 		LOG(LogInfo, "");
@@ -98,6 +97,20 @@ namespace pathos {
 		return true;
 	}
 
+	bool Engine::destroy() {
+		LOG(LogInfo, "");
+		LOG(LogInfo, "=== Destroy PATHOS ===");
+
+#define BailIfFalse(x) if(!(x)) { return false; }
+		BailIfFalse(destroyOpenGL());
+#undef BailIfFalse
+
+		LOG(LogInfo, "=== PATHOS has been destroyed ===");
+		LOG(LogInfo, "");
+
+		return true;
+	}
+
 	bool Engine::initializeMainWindow(int argc, char** argv)
 	{
 		GUIWindowCreateParams createParams;
@@ -117,8 +130,8 @@ namespace pathos {
 		createParams.onDisplay         = Engine::onMainWindowDisplay;
 		createParams.onKeyDown         = Engine::onKeyDown;
 		createParams.onKeyUp           = Engine::onKeyUp;
-		createParams.onModifierKeyDown = Engine::onModifierKeyDown;
-		createParams.onModifierKeyUp   = Engine::onModifierKeyUp;
+		createParams.onSpecialKeyDown  = Engine::onSpecialKeyDown;
+		createParams.onSpecialKeyUp    = Engine::onSpecialKeyUp;
 		createParams.onReshape         = Engine::onMainWindowReshape;
 
 		mainWindow = std::make_unique<GUIWindow>();
@@ -184,6 +197,8 @@ namespace pathos {
 			routine(render_device);
 		}
 
+		ScopedGpuCounter::initializeQueryObjectPool();
+
 		return validDevice;
 	}
 
@@ -225,15 +240,22 @@ namespace pathos {
 		switch (conf.rendererType) {
 		case ERendererType::Forward:
 			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+			renderer = new DeferredRenderer;
 			break;
 
 		case ERendererType::Deferred:
-			renderer = new DeferredRenderer(conf.windowWidth, conf.windowHeight);
+			renderer = new DeferredRenderer;
 			break;
 		}
 
-		if(renderer) {
+		if (renderer) {
+			{
+				SceneRenderSettings settings;
+				settings.sceneWidth        = conf.windowWidth;
+				settings.sceneHeight       = conf.windowHeight;
+				settings.enablePostProcess = true;
+				renderer->setSceneRenderSettings(settings);
+			}
 			renderer->initializeResources(render_device->getImmediateCommandList());
 			render_device->getImmediateCommandList().flushAllCommands();
 		}
@@ -256,6 +278,14 @@ namespace pathos {
 		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
 			routine(render_device);
 		}
+
+		CHECKF(destroy(), "Failed to destroy the engine properly !!!");
+	}
+
+	bool Engine::destroyOpenGL() {
+		ScopedGpuCounter::destroyQueryObjectPool();
+
+		return true;
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
@@ -289,6 +319,9 @@ namespace pathos {
 
 	void Engine::tick()
 	{
+		// Wait for previous frame
+		glFinish();
+
 		float deltaSeconds = stopwatch_gameThread.stop();
 
 		// #todo-fps: This is wrong. Rendering rate should be also controlled...
@@ -329,6 +362,14 @@ namespace pathos {
 
 		assetStreamer->renderThread_flushLoadedAssets();
 
+		{
+			SceneRenderSettings settings;
+			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
+			settings.sceneHeight           = conf.windowHeight;
+			settings.enablePostProcess     = true;
+			renderer->setSceneRenderSettings(settings);
+		}
+
 		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 
 		// #todo-cmd-list: deferred command lists here
@@ -347,6 +388,13 @@ namespace pathos {
 		glEndQuery(GL_TIME_ELAPSED);
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
 		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
+
+		// #todo-gpu-counter: Provide a way to print the result
+		{
+			std::vector<std::string> gpuCounterNames;
+			std::vector<float> gpuCounterTimes;
+			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(gpuCounterNames, gpuCounterTimes);
+		}
 
 		renderProxyAllocator.clear();
 
@@ -387,14 +435,20 @@ namespace pathos {
 
 	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }
 
-	void Engine::onModifierKeyDown(InputConstants modifier)
-	{
-		gEngine->inputSystem->processModifierKeyDown(modifier);
+	void Engine::onSpecialKeyDown(InputConstants specialKey) {
+		if (gConsole->isVisible()) {
+			if (specialKey == InputConstants::KEYBOARD_ARROW_UP) {
+				gConsole->showPreviousHistory();
+			} else if (specialKey == InputConstants::KEYBOARD_ARROW_DOWN) {
+				gConsole->showNextHistory();
+			}
+		} else {
+			gEngine->inputSystem->processSpecialKeyDown(specialKey);
+		}
 	}
 
-	void Engine::onModifierKeyUp(InputConstants modifier)
-	{
-		gEngine->inputSystem->processModifierKeyUp(modifier);
+	void Engine::onSpecialKeyUp(InputConstants specialKey) {
+		gEngine->inputSystem->processSpecialKeyUp(specialKey);
 	}
 
 }
