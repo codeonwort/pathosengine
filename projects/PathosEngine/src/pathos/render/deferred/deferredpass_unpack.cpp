@@ -143,6 +143,7 @@ namespace pathos {
 		quad->activateIndexBuffer(cmdList);
 		quad->drawPrimitive(cmdList);
 
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, 0, 0);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 

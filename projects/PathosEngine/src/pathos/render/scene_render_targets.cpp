@@ -94,11 +94,15 @@ namespace pathos {
 
 		// bloom
 		reallocTexture2D(sceneBloom, GL_RGBA32F, sceneWidth, sceneHeight, "sceneBloom");
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		reallocTexture2D(sceneBloomTemp, GL_RGBA32F, sceneWidth, sceneHeight, "sceneBloomTemp");
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		// tone mapping
 		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");

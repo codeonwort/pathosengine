@@ -498,6 +498,18 @@ void setupSceneWithActor(Scene* scene) {
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
 	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);
 	sceneCaptureViewer->setActorScale(3.0f * vector3(16.0f, 9.0f, 1.0f));
+
+	//////////////////////////////////////////////////////////////////////////
+	// bloom test
+	ColorMaterial* material_tooBright = new ColorMaterial;
+	material_tooBright->setAlbedo(10.0f, 0.5f, 0.5f);
+	material_tooBright->setMetallic(0.2f);
+	material_tooBright->setRoughness(0.1f);
+	StaticMeshActor* bloomActor = scene->spawnActor<StaticMeshActor>();
+	bloomActor->setActorLocation(200.0f, 80.0f, 600.0f);
+	bloomActor->setActorScale(20.0f);
+	bloomActor->setStaticMesh(new Mesh(geom_sphere, material_tooBright));
+
 }
 
 void tick(float deltaSeconds)

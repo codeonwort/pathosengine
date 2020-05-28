@@ -12,9 +12,7 @@ namespace pathos {
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
 
 	private:
-		GLuint program = 0xffffffff;
-		GLuint program2 = 0xffffffff;
-		GLuint fbo = 0;
+		GLuint fbo[2];
 
 	};
 

@@ -45,8 +45,8 @@ namespace pathos {
 	void GodRay::createFBO(RenderCommandList& cmdList) {
 		// generate fbo and textures
 		cmdList.createFramebuffers(2, fbo);
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "GodRaySource");
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "GodRayResult");
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "FBO_GodRaySource");
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "FBO_GodRayResult");
 
 		// #todo-framebuffer: Can't check completeness now
 		//GLenum fboCompleteness0;

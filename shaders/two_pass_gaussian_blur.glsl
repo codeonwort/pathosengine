@@ -1,12 +1,16 @@
-#version 430 core
+#version 450 core
 
-// NOTE: In Shader object, define HORIZONTAL as 1 for horizontal blur
+// NOTE: In ShaderStage object, define HORIZONTAL as 1 for horizontal blur
 
 layout (binding = 0) uniform sampler2D src;
 
+in VS_OUT {
+	vec2 screenUV;
+} fs_in;
+
 // Supports 5, 6, 7
 #ifndef KERNEL_SIZE
-#define KERNEL_SIZE 5 // Actual kernel size is (KERNEL_SIZE * 2 - 1)
+	#define KERNEL_SIZE 5 // Actual kernel size is (KERNEL_SIZE * 2 - 1)
 #endif
 
 #if KERNEL_SIZE == 5
@@ -25,18 +29,24 @@ layout (binding = 0) uniform sampler2D src;
 out vec4 out_color;
 
 void main() {
-	ivec2 origin = ivec2(gl_FragCoord.xy);
-	vec3 result = texelFetch(src, origin, 0).rgb * weight[0];
+	vec2 uv = fs_in.screenUV;
+	vec2 invTexSize = 2.0 / vec2(textureSize(src, 0));
+
+	vec3 sourceColor = textureLod(src, uv, 0).rgb;
+	vec3 result = sourceColor * weight[0];
+	//float strength = 0.2 * float(KERNEL_SIZE) * dot(vec3(0.299, 0.587, 0.114), sourceColor);
 
 #if HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
-		result += texelFetch(src, origin + ivec2(1, 0), 0).rgb * weight[i];
-		result += texelFetch(src, origin - ivec2(1, 0), 0).rgb * weight[i];
+		vec2 delta = vec2(i * invTexSize.x, 0.0);
+		result += textureLod(src, uv + delta, 0).rgb * weight[i];
+		result += textureLod(src, uv - delta, 0).rgb * weight[i];
 	}
 #else
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
-		result += texelFetch(src, origin + ivec2(0, 1), 0).rgb * weight[i];
-		result += texelFetch(src, origin - ivec2(0, 1), 0).rgb * weight[i];
+		vec2 delta = vec2(0.0, i * invTexSize.y);
+		result += textureLod(src, uv + delta, 0).rgb * weight[i];
+		result += textureLod(src, uv - delta, 0).rgb * weight[i];
 	}
 #endif
 

@@ -8,9 +8,9 @@ layout (binding = 0) uniform sampler2D src;
 
 layout (location = 0) uniform vec2 lightPos = vec2(0.5, 0.5);
 
-const float alphaDecay = 0.8;
+const float alphaDecay = 0.92;
 const float density = 1.1;
-const int NUM_SAMPLES = 16;
+const int NUM_SAMPLES = 32;
 
 out vec4 out_color;
 
