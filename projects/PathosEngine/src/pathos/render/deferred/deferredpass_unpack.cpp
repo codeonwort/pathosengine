@@ -6,6 +6,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/render/render_device.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -88,7 +89,7 @@ namespace pathos {
 		//};
 
 		GLenum hdr_draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		cmdList.createFramebuffers(1, &fbo);
+		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffers(fbo, 2, hdr_draw_buffers);
 		//checkFramebufferStatus(fbo); // #todo-framebuffer: Can't check completeness now
 	}

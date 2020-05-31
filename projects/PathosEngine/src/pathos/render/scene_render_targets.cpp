@@ -1,4 +1,5 @@
 #include "scene_render_targets.h"
+#include "pathos/render/render_device.h"
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
@@ -48,7 +49,7 @@ namespace pathos {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
 			}
-			cmdList.createTextures(GL_TEXTURE_2D, 1, &texture);
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
 			cmdList.textureStorage2D(texture, 1, format, width, height);
 			cmdList.bindTexture(GL_TEXTURE_2D, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
@@ -57,7 +58,7 @@ namespace pathos {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
 			}
-			cmdList.createTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
+			gRenderDevice->createTextures(GL_TEXTURE_2D_ARRAY, 1, &texture);
 			cmdList.textureStorage3D(texture, 1, format, width, height, numLayers);
 			cmdList.bindTexture(GL_TEXTURE_2D_ARRAY, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
@@ -150,7 +151,7 @@ namespace pathos {
 		}
 
 		GLuint gbuffers[3];
-		cmdList.createTextures(GL_TEXTURE_2D, 3, gbuffers);
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 3, gbuffers);
 		gbufferA = gbuffers[0];
 		gbufferB = gbuffers[1];
 		gbufferC = gbuffers[2];

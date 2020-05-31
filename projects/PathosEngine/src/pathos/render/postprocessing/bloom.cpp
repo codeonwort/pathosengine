@@ -1,6 +1,7 @@
 #include "bloom.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 
@@ -47,7 +48,7 @@ namespace pathos {
 
 	void BloomPass::initializeResources(RenderCommandList& cmdList)
 	{
-		cmdList.createFramebuffers(2, fbo);
+		gRenderDevice->createFramebuffers(2, fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo[0], GL_COLOR_ATTACHMENT0);
 		cmdList.namedFramebufferDrawBuffer(fbo[1], GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[0], -1, "FBO_BloomPass[0]");

@@ -1,5 +1,6 @@
 #include "god_ray.h"
-#include "scene_render_targets.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/shader/shader.h"
@@ -44,7 +45,7 @@ namespace pathos {
 
 	void GodRay::createFBO(RenderCommandList& cmdList) {
 		// generate fbo and textures
-		cmdList.createFramebuffers(2, fbo);
+		gRenderDevice->createFramebuffers(2, fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "FBO_GodRaySource");
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "FBO_GodRayResult");
 
@@ -71,10 +72,10 @@ namespace pathos {
 		//	CHECK(0);
 		//}
 
-		cmdList.createFramebuffers(1, &fboBlur1);
+		gRenderDevice->createFramebuffers(1, &fboBlur1);
 		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
 
-		cmdList.createFramebuffers(1, &fboBlur2);
+		gRenderDevice->createFramebuffers(1, &fboBlur2);
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 

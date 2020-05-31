@@ -29,6 +29,18 @@ namespace pathos {
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
+	// API for GPU resource creation and deletion (not queued in command list)
+	public:
+		void createVertexArrays(GLsizei n, GLuint* arrays);
+		void createTextures(GLenum target, GLsizei n, GLuint* textures);
+		void createFramebuffers(GLsizei n, GLuint* framebuffers);
+		void createSamplers(GLsizei n, GLuint* samplers);
+		void createQueries(GLenum target, GLsizei n, GLuint* ids);
+		void createTransformFeedbacks(GLsizei n, GLuint* ids);
+		void createBuffers(GLsizei n, GLuint* buffers);
+		void createRenderbuffers(GLsizei n, GLuint* renderbuffers);
+		void createProgramPipelines(GLsizei n, GLuint* pipelines);
+
 	private:
 		std::unique_ptr<RenderCommandList> immediate_command_list;
 		std::unique_ptr<RenderCommandList> temp_command_list;

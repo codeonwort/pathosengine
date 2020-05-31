@@ -44,7 +44,7 @@ namespace pathos {
 		GLuint* texturePtr = &glTextureObject;
 		ENQUEUE_RENDER_COMMAND(
 			[texturePtr, glFormat, inWidth, inHeight](RenderCommandList& cmdList) {
-				cmdList.createTextures(GL_TEXTURE_2D, 1, texturePtr);
+				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 				cmdList.textureStorage2D(*texturePtr, 1, glFormat, inWidth, inHeight);
 				cmdList.bindTexture(GL_TEXTURE_2D, *texturePtr);
 				cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, "RenderTarget2D");

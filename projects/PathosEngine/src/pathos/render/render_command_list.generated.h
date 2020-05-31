@@ -6422,13 +6422,10 @@ void createTransformFeedbacks(
 	GLsizei n,
 	GLuint *ids)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createTransformFeedbacks* __restrict packet = (RenderCommand_createTransformFeedbacks*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTransformFeedbacks::execute);
-	//packet->n = n;
-	//packet->ids = ids;
-	glCreateTransformFeedbacks(n, ids);
+	RenderCommand_createTransformFeedbacks* __restrict packet = (RenderCommand_createTransformFeedbacks*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTransformFeedbacks::execute);
+	packet->n = n;
+	packet->ids = ids;
 }
 void transformFeedbackBufferBase(
 	GLuint xfb,
@@ -6497,13 +6494,10 @@ void createBuffers(
 	GLsizei n,
 	GLuint *buffers)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createBuffers* __restrict packet = (RenderCommand_createBuffers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createBuffers::execute);
-	//packet->n = n;
-	//packet->buffers = buffers;
-	glCreateBuffers(n, buffers);
+	RenderCommand_createBuffers* __restrict packet = (RenderCommand_createBuffers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createBuffers::execute);
+	packet->n = n;
+	packet->buffers = buffers;
 }
 void namedBufferStorage(
 	GLuint buffer,
@@ -6684,13 +6678,10 @@ void createFramebuffers(
 	GLsizei n,
 	GLuint *framebuffers)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createFramebuffers* __restrict packet = (RenderCommand_createFramebuffers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createFramebuffers::execute);
-	//packet->n = n;
-	//packet->framebuffers = framebuffers;
-	glCreateFramebuffers(n, framebuffers);
+	RenderCommand_createFramebuffers* __restrict packet = (RenderCommand_createFramebuffers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createFramebuffers::execute);
+	packet->n = n;
+	packet->framebuffers = framebuffers;
 }
 void namedFramebufferRenderbuffer(
 	GLuint framebuffer,
@@ -6929,13 +6920,10 @@ void createRenderbuffers(
 	GLsizei n,
 	GLuint *renderbuffers)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createRenderbuffers* __restrict packet = (RenderCommand_createRenderbuffers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createRenderbuffers::execute);
-	//packet->n = n;
-	//packet->renderbuffers = renderbuffers;
-	glCreateRenderbuffers(n, renderbuffers);
+	RenderCommand_createRenderbuffers* __restrict packet = (RenderCommand_createRenderbuffers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createRenderbuffers::execute);
+	packet->n = n;
+	packet->renderbuffers = renderbuffers;
 }
 void namedRenderbufferStorage(
 	GLuint renderbuffer,
@@ -6981,14 +6969,11 @@ void createTextures(
 	GLsizei n,
 	GLuint *textures)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createTextures* __restrict packet = (RenderCommand_createTextures*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTextures::execute);
-	//packet->target = target;
-	//packet->n = n;
-	//packet->textures = textures;
-	glCreateTextures(target, n, textures);
+	RenderCommand_createTextures* __restrict packet = (RenderCommand_createTextures*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createTextures::execute);
+	packet->target = target;
+	packet->n = n;
+	packet->textures = textures;
 }
 void textureBuffer(
 	GLuint texture,
@@ -7482,13 +7467,10 @@ void createVertexArrays(
 	GLsizei n,
 	GLuint *arrays)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createVertexArrays* __restrict packet = (RenderCommand_createVertexArrays*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createVertexArrays::execute);
-	//packet->n = n;
-	//packet->arrays = arrays;
-	glCreateVertexArrays(n, arrays);
+	RenderCommand_createVertexArrays* __restrict packet = (RenderCommand_createVertexArrays*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createVertexArrays::execute);
+	packet->n = n;
+	packet->arrays = arrays;
 }
 void disableVertexArrayAttrib(
 	GLuint vaobj,
@@ -7659,39 +7641,30 @@ void createSamplers(
 	GLsizei n,
 	GLuint *samplers)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createSamplers* __restrict packet = (RenderCommand_createSamplers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createSamplers::execute);
-	//packet->n = n;
-	//packet->samplers = samplers;
-	glCreateSamplers(n, samplers);
+	RenderCommand_createSamplers* __restrict packet = (RenderCommand_createSamplers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createSamplers::execute);
+	packet->n = n;
+	packet->samplers = samplers;
 }
 void createProgramPipelines(
 	GLsizei n,
 	GLuint *pipelines)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createProgramPipelines* __restrict packet = (RenderCommand_createProgramPipelines*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createProgramPipelines::execute);
-	//packet->n = n;
-	//packet->pipelines = pipelines;
-	glCreateProgramPipelines(n, pipelines);
+	RenderCommand_createProgramPipelines* __restrict packet = (RenderCommand_createProgramPipelines*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createProgramPipelines::execute);
+	packet->n = n;
+	packet->pipelines = pipelines;
 }
 void createQueries(
 	GLenum target,
 	GLsizei n,
 	GLuint *ids)
 {
-	// #todo-cmd-list: Execute glCreateXXX() immediately rather than queueing in the list.
-	// Maybe glCreateXXX() should not be called through command list and... will render device be a better place?
-	//RenderCommand_createQueries* __restrict packet = (RenderCommand_createQueries*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_createQueries::execute);
-	//packet->target = target;
-	//packet->n = n;
-	//packet->ids = ids;
-	glCreateQueries(target, n, ids);
+	RenderCommand_createQueries* __restrict packet = (RenderCommand_createQueries*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_createQueries::execute);
+	packet->target = target;
+	packet->n = n;
+	packet->ids = ids;
 }
 void getQueryBufferObjecti64v(
 	GLuint id,

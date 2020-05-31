@@ -1,5 +1,6 @@
 #include "anti_aliasing_fxaa.h"
 #include "pathos/shader/shader.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 
 namespace pathos {
@@ -50,7 +51,7 @@ void main() {
 
 		//////////////////////////////////////////////////////////////////////////
 
-		cmdList.createFramebuffers(1, &fbo);
+		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_FXAA");
 		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now

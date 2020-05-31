@@ -2,6 +2,7 @@
 #include "render_device.h"
 #include "pathos/engine.h"
 #include "pathos/shader/shader.h"
+#include "pathos/render/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
@@ -33,7 +34,7 @@ namespace pathos {
 			GLuint fbo = IrradianceBaker::dummyFBO;
 			CubeGeometry* cube = IrradianceBaker::dummyCube;
 			
-			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -81,7 +82,7 @@ namespace pathos {
 			GLuint fbo = IrradianceBaker::dummyFBO;
 			CubeGeometry* cube = IrradianceBaker::dummyCube;
 
-			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -136,7 +137,7 @@ namespace pathos {
 			constexpr GLint uniform_transform = 0;
 			constexpr GLint uniform_roughness = 1;
 
-			cmdList.createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -193,7 +194,7 @@ namespace pathos {
 
 			const GLuint fbo = IrradianceBaker::dummyFBO;
 			
-			cmdList.createTextures(GL_TEXTURE_2D, 1, brdfLUTPtr);
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, brdfLUTPtr);
 			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -219,10 +220,10 @@ namespace pathos {
 		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
 
 		// Dummy VAO
-		cmdList.createVertexArrays(1, &IrradianceBaker::dummyVAO);
+		gRenderDevice->createVertexArrays(1, &IrradianceBaker::dummyVAO);
 
 		// Dummy FBO
-		cmdList.createFramebuffers(1, &IrradianceBaker::dummyFBO);
+		gRenderDevice->createFramebuffers(1, &IrradianceBaker::dummyFBO);
 		cmdList.namedFramebufferDrawBuffer(IrradianceBaker::dummyFBO, GL_COLOR_ATTACHMENT0);
 
 		// Dummy meshes

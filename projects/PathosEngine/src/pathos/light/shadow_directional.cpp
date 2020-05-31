@@ -4,6 +4,7 @@
 #include "pathos/shader/shader.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/static_mesh_component.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/light/directional_light_component.h"
 
@@ -17,7 +18,7 @@ namespace pathos {
 	}
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
-		CHECK(destroyed);
+		CHECKF(destroyed, "Resource leak");
 	}
 
 	void DirectionalShadowMap::setLightDirection(const glm::vec3& direction) {
@@ -83,7 +84,7 @@ namespace pathos {
 
 	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)
 	{
-		cmdList.createFramebuffers(1, &fbo);
+		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
 		// #todo-framebuffer: Can't check completeness now
 		//{

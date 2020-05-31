@@ -2,6 +2,7 @@
 #include "pathos/console.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 
 #include "badger/math/random.h"
@@ -67,11 +68,11 @@ namespace pathos {
 		ubo.init<UBO_SSAO>();
 		uboRandom.init<UBO_SSAO_Random>();
 
-		cmdList.createFramebuffers(1, &fboBlur);
+		gRenderDevice->createFramebuffers(1, &fboBlur);
 		cmdList.namedFramebufferDrawBuffer(fboBlur, GL_COLOR_ATTACHMENT0);
 		//checkFramebufferStatus(cmdList, fboBlur); // #todo-framebuffer: Can't check completeness now
 
-		cmdList.createFramebuffers(1, &fboBlur2);
+		gRenderDevice->createFramebuffers(1, &fboBlur2);
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 		//checkFramebufferStatus(cmdList, fboBlur2); // #todo-framebuffer: Can't check completeness now
 	}

@@ -1,6 +1,7 @@
 #include "tone_mapping.h"
 #include "pathos/console.h"
 #include "pathos/shader/shader.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 
 namespace pathos {
@@ -19,7 +20,7 @@ namespace pathos {
 		ubo.init<UBO_ToneMapping>();
 
 		// tone mapping resource
-		cmdList.createFramebuffers(1, &fbo);
+		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}

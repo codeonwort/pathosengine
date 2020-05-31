@@ -2,6 +2,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/shader/shader.h"
+#include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 
 namespace pathos {
@@ -34,7 +35,7 @@ namespace pathos {
 
 	void TranslucencyRendering::initializeResources(RenderCommandList& cmdList)
 	{
-		cmdList.createFramebuffers(1, &fbo);
+		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.flushAllCommands();
 	}
