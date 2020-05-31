@@ -3,6 +3,7 @@
 #include "badger/math/rotator.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
+#include "badger/assertion/assertion.h"
 #include <vector>
 
 namespace pathos {

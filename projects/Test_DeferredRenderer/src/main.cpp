@@ -17,7 +17,7 @@ using namespace pathos;
 #define DEBUG_SKYBOX          0
 
 #if VISUALIZE_CSM_FRUSTUM
-#include "pathos/mesh/geometry_procedural.h"
+#include "csm_debugger.h"
 #endif
 
 const int32         WINDOW_WIDTH        =   1920;
@@ -43,7 +43,7 @@ Scene scene;
 	std::vector<StaticMeshActor*> boxes;
 	SceneCaptureComponent* sceneCaptureComponent;
 #if VISUALIZE_CSM_FRUSTUM
-	StaticMeshActor* csmDebugger;
+	CSMDebugger* csmDebugger;
 #endif
 
 void setupInput();
@@ -149,130 +149,12 @@ void setupCSMDebugger()
 {
 #if VISUALIZE_CSM_FRUSTUM
 	static bool firstRun = true;
-
-	float aspect_ratio = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT);
-	Camera tempCamera(new PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-	tempCamera.lookAt(cam->getPosition(), cam->getPosition() + cam->getEyeVector(), vector3(0.0f, 1.0f, 0.0f));
-
 	if (firstRun) {
-		csmDebugger = scene.spawnActor<StaticMeshActor>();
-		csmDebugger->setStaticMesh(new Mesh);
-		csmDebugger->getStaticMeshComponent()->castsShadow = false;
+		csmDebugger = scene.spawnActor<CSMDebugger>();
+		firstRun = false;
 	}
-
-	constexpr uint32 numFrustum = 4;
-	std::vector<vector3> frustumPlanes;
-	tempCamera.getFrustum(frustumPlanes, numFrustum);
-
-	bool cascadeMasks[4] = { true, true, true, true };
-
-	// Wireframe for camera frustum
-	{
-		static ProceduralGeometry* G = new ProceduralGeometry;
-		static WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
-		if (firstRun) {
-			csmDebugger->getStaticMesh()->add(G, M);
-		}
-		G->clear();
-
-		constexpr uint32 iMax = 4 * (numFrustum + 1);
-		for (uint32 i = 0; i < iMax; i += 4) {
-			if (cascadeMasks[i / 4] == false || (i/4 == 4 && cascadeMasks[3] == false)) {
-				continue;
-			}
-
-			vector3 p0 = frustumPlanes[i + 0];
-			vector3 p1 = frustumPlanes[i + 1];
-			vector3 p2 = frustumPlanes[i + 2];
-			vector3 p3 = frustumPlanes[i + 3];
-			G->addTriangle(p0, p1, p2);
-			G->addTriangle(p1, p2, p3);
-
-			if (i < iMax - 4 && (i/4 != 4 || cascadeMasks[i/4 - 1])) {
-				vector3 p4 = frustumPlanes[i + 4];
-				vector3 p5 = frustumPlanes[i + 5];
-				vector3 p6 = frustumPlanes[i + 6];
-				vector3 p7 = frustumPlanes[i + 7];
-				G->addQuad(p0, p4, p5, p1);
-				G->addQuad(p2, p6, p7, p3);
-				G->addQuad(p0, p2, p6, p4);
-				G->addQuad(p1, p3, p7, p5);
-			}
-		}
-		G->upload();
-		G->calculateNormals();
-		G->calculateTangentBasis();
-	}
-
-	// Wireframe for bounds of light view projections
-	{
-		static ProceduralGeometry* G = new ProceduralGeometry;
-		static WireframeMaterial* M = new WireframeMaterial(1.0f, 0.0f, 0.0f);
-		if (firstRun) {
-			csmDebugger->getStaticMesh()->add(G, M);
-		}
-		G->clear();
-
-		auto calcBounds = [](const vector3* frustum, std::vector<vector3>& outVertices) -> void {
-			vector3 sun_direction = SUN_DIRECTION;
-			vector3 sun_up, sun_right;
-			pathos::calculateOrthonormalBasis(sun_direction, sun_up, sun_right);
-
-			vector3 frustum_center(0.0f);
-			for (int32 i = 0; i < 8; ++i) {
-				frustum_center += frustum[i];
-			}
-			frustum_center *= 0.125f;
-
-			vector3 frustum_size(0.0f);
-			for (int32 i = 0; i < 8; ++i) {
-				vector3 delta = frustum[i] - frustum_center;
-				frustum_size.x = std::max(frustum_size.x, fabs(glm::dot(delta, sun_right)));
-				frustum_size.y = std::max(frustum_size.y, fabs(glm::dot(delta, sun_up)));
-				frustum_size.z = std::max(frustum_size.z, fabs(glm::dot(delta, sun_direction)));
-			}
-
-			const vector3 signs[8] = {
-				vector3(1,1,1), vector3(1,1,-1), vector3(1,-1,-1), vector3(1,-1,1),
-				vector3(-1,1,1), vector3(-1,1,-1), vector3(-1,-1,-1), vector3(-1,-1,1)
-			};
-			for (int32 i = 0; i < 8; ++i) {
-				vector3 s = signs[i] * frustum_size;
-				vector3 d = (s.x * sun_right) + (s.y * sun_up) + (s.z * sun_direction);
-				vector3 v = frustum_center + d;
-				outVertices.push_back(v);
-			}
-		};
-
-		std::vector<vector3> lightViewVertices;
-		for (uint32 i = 0u; i <= numFrustum; ++i) {
-			calcBounds(&frustumPlanes[i * 4], lightViewVertices);
-		}
-		for (uint32 i = 0; i < (uint32)lightViewVertices.size(); i += 8) {
-			if (cascadeMasks[i / 8] == false) {
-				continue;
-			}
-
-			vector3 p0 = lightViewVertices[i + 0];
-			vector3 p1 = lightViewVertices[i + 1];
-			vector3 p2 = lightViewVertices[i + 2];
-			vector3 p3 = lightViewVertices[i + 3];
-			vector3 p4 = lightViewVertices[i + 4];
-			vector3 p5 = lightViewVertices[i + 5];
-			vector3 p6 = lightViewVertices[i + 6];
-			vector3 p7 = lightViewVertices[i + 7];
-			G->addQuad(p0, p1, p2, p3);
-			G->addQuad(p4, p5, p6, p7);
-			G->addQuad(p0, p3, p7, p4);
-			G->addQuad(p0, p1, p5, p4);
-			G->addQuad(p2, p3, p7, p6);
-			G->addQuad(p1, p2, p6, p5);
-		}
-		G->upload();
-		G->calculateNormals();
-		G->calculateTangentBasis();
-	}
-	firstRun = false;
+	
+	csmDebugger->drawCameraFrustum(*cam, SUN_DIRECTION);
 #endif
 }
 
