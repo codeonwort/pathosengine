@@ -61,7 +61,7 @@ namespace pathos {
 			GLuint texturePtr = glTextureObject;
 			ENQUEUE_RENDER_COMMAND(
 				[texturePtr](RenderCommandList& cmdList) {
-					glDeleteTextures(1, &texturePtr);
+					gRenderDevice->deleteTextures(1, &texturePtr);
 				}
 			);
 			glTextureObject = 0;

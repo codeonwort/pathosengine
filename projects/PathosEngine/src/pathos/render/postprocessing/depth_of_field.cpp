@@ -37,10 +37,10 @@ namespace pathos {
 
 	void DepthOfField::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteVertexArrays(1, &vao);
-		cmdList.deleteFramebuffers(1, &fbo);
-		cmdList.deleteProgram(program_subsum2D);
-		cmdList.deleteProgram(program_blur);
+		gRenderDevice->deleteVertexArrays(1, &vao);
+		gRenderDevice->deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteProgram(program_subsum2D);
+		gRenderDevice->deleteProgram(program_blur);
 
 		markDestroyed();
 	}

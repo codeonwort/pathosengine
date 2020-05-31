@@ -27,8 +27,8 @@ namespace pathos {
 
 	void ToneMapping::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteProgram(program);
-		cmdList.deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteProgram(program);
+		gRenderDevice->deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
 	}

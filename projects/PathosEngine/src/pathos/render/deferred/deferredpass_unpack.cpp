@@ -70,7 +70,7 @@ namespace pathos {
 
 	void MeshDeferredRenderPass_Unpack::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			cmdList.deleteFramebuffers(1, &fbo);
+			gRenderDevice->deleteFramebuffers(1, &fbo);
 			quad->dispose();
 			delete quad;
 		}

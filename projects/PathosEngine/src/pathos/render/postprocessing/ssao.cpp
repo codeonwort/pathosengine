@@ -79,11 +79,11 @@ namespace pathos {
 
 	void SSAO::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteProgram(program_downscale);
-		cmdList.deleteProgram(program_blur);
-		cmdList.deleteProgram(program_blur2);
-		cmdList.deleteFramebuffers(1, &fboBlur);
-		cmdList.deleteFramebuffers(1, &fboBlur2);
+		gRenderDevice->deleteProgram(program_downscale);
+		gRenderDevice->deleteProgram(program_blur);
+		gRenderDevice->deleteProgram(program_blur2);
+		gRenderDevice->deleteFramebuffers(1, &fboBlur);
+		gRenderDevice->deleteFramebuffers(1, &fboBlur2);
 
 		markDestroyed();
 	}

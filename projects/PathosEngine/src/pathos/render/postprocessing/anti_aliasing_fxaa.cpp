@@ -35,7 +35,7 @@ void main() {
 
 		program = pathos::createProgram(vs, fs, "FXAA");
 
-#define GET_UNIFORM(uniform) { uniform = cmdList.getUniformLocation(program, #uniform); }
+#define GET_UNIFORM(uniform) { uniform = gRenderDevice->getUniformLocation(program, #uniform); }
 		GET_UNIFORM(fxaaQualityRcpFrame        );
 		GET_UNIFORM(fxaaConsoleRcpFrameOpt     );
 		GET_UNIFORM(fxaaConsoleRcpFrameOpt2    );
@@ -59,8 +59,8 @@ void main() {
 
 	void FXAA::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteProgram(program);
-		cmdList.deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteProgram(program);
+		gRenderDevice->deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
 	}

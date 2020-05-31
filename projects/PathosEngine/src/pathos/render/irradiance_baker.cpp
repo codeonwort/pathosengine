@@ -114,7 +114,7 @@ namespace pathos {
 			cmdList.cullFace(GL_BACK);
 
 			if (autoDestroyCubemap) {
-				glDeleteTextures(1, &cubemap);
+				gRenderDevice->deleteTextures(1, &cubemap);
 			}
 		});
 
@@ -311,13 +311,13 @@ namespace pathos {
 	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice) {
 		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
 
-		cmdList.deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
-		cmdList.deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
-		cmdList.deleteProgram(IrradianceBaker::equirectangularToCubemap);
-		cmdList.deleteProgram(IrradianceBaker::diffuseIrradianceShader);
-		cmdList.deleteProgram(IrradianceBaker::prefilterEnvMapShader);
-		cmdList.deleteProgram(IrradianceBaker::BRDFIntegrationMapShader);
-		glDeleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
+		gRenderDevice->deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
+		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
+		gRenderDevice->deleteProgram(IrradianceBaker::equirectangularToCubemap);
+		gRenderDevice->deleteProgram(IrradianceBaker::diffuseIrradianceShader);
+		gRenderDevice->deleteProgram(IrradianceBaker::prefilterEnvMapShader);
+		gRenderDevice->deleteProgram(IrradianceBaker::BRDFIntegrationMapShader);
+		gRenderDevice->deleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
 
 		delete IrradianceBaker::fullscreenQuad;
 		delete IrradianceBaker::dummyCube;

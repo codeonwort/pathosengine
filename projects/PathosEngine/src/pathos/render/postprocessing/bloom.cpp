@@ -58,7 +58,7 @@ namespace pathos {
 
 	void BloomPass::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteFramebuffers(2, fbo);
+		gRenderDevice->deleteFramebuffers(2, fbo);
 
 		markDestroyed();
 	}

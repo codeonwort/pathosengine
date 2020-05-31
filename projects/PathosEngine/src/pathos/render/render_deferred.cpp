@@ -138,7 +138,7 @@ namespace pathos {
 
 	void DeferredRenderer::destroySceneRenderTargets(RenderCommandList& cmdList) {
 		sceneRenderTargets.freeSceneTextures(cmdList);
-		cmdList.deleteFramebuffers(1, &gbufferFBO);
+		gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 	}
 
 	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {

@@ -33,12 +33,12 @@ namespace pathos {
 	void GodRay::releaseResources(RenderCommandList& cmdList)
 	{
 		if (!destroyed) {
-			cmdList.deleteVertexArrays(1, &vao_dummy);
-			cmdList.deleteFramebuffers(2, fbo);
-			cmdList.deleteProgram(program_silhouette);
-			cmdList.deleteProgram(program_godRay);
-			cmdList.deleteProgram(program_blur1);
-			cmdList.deleteProgram(program_blur2);
+			gRenderDevice->deleteVertexArrays(1, &vao_dummy);
+			gRenderDevice->deleteFramebuffers(2, fbo);
+			gRenderDevice->deleteProgram(program_silhouette);
+			gRenderDevice->deleteProgram(program_godRay);
+			gRenderDevice->deleteProgram(program_blur1);
+			gRenderDevice->deleteProgram(program_blur2);
 		}
 		destroyed = true;
 	}

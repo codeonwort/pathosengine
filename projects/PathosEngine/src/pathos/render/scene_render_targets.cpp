@@ -118,7 +118,10 @@ namespace pathos {
 
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)
 	{
-#define safe_release(x) if(x != 0) { glDeleteTextures(1, &x); x = 0; }
+		std::vector<GLuint> textures;
+		textures.reserve(32);
+
+#define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
@@ -138,6 +141,8 @@ namespace pathos {
 		safe_release(ssaoMap);
 		safe_release(ssaoMapTemp);
 #undef safe_release
+
+		gRenderDevice->deleteTextures((GLsizei)textures.size(), textures.data());
 
 		destroyed = true;
 	}

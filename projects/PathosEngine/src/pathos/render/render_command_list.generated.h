@@ -648,7 +648,6 @@ void deleteTextures(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
 	packet->n = n;
 	packet->textures = storeParameter(n * sizeof(GLuint*), textures);
-	//glDeleteTextures(n, textures);
 }
 void genTextures(
 	GLsizei n,
@@ -1027,11 +1026,10 @@ void deleteQueries(
 	GLsizei n,
 	const GLuint *ids)
 {
-	//RenderCommand_deleteQueries* __restrict packet = (RenderCommand_deleteQueries*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteQueries::execute);
-	//packet->n = n;
-	//packet->ids = ids;
-	glDeleteQueries(n, ids);
+	RenderCommand_deleteQueries* __restrict packet = (RenderCommand_deleteQueries*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteQueries::execute);
+	packet->n = n;
+	packet->ids = ids;
 }
 GLboolean isQuery(
 	GLuint id)
@@ -1102,11 +1100,10 @@ void deleteBuffers(
 	GLsizei n,
 	const GLuint *buffers)
 {
-	//RenderCommand_deleteBuffers* __restrict packet = (RenderCommand_deleteBuffers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteBuffers::execute);
-	//packet->n = n;
-	//packet->buffers = buffers;
-	glDeleteBuffers(n, buffers);
+	RenderCommand_deleteBuffers* __restrict packet = (RenderCommand_deleteBuffers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteBuffers::execute);
+	packet->n = n;
+	packet->buffers = buffers;
 }
 void genBuffers(
 	GLsizei n,
@@ -1297,18 +1294,16 @@ GLuint createShader(
 void deleteProgram(
 	GLuint program)
 {
-	//RenderCommand_deleteProgram* __restrict packet = (RenderCommand_deleteProgram*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteProgram::execute);
-	//packet->program = program;
-	glDeleteProgram(program);
+	RenderCommand_deleteProgram* __restrict packet = (RenderCommand_deleteProgram*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteProgram::execute);
+	packet->program = program;
 }
 void deleteShader(
 	GLuint shader)
 {
-	//RenderCommand_deleteShader* __restrict packet = (RenderCommand_deleteShader*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteShader::execute);
-	//packet->shader = shader;
-	glDeleteShader(shader);
+	RenderCommand_deleteShader* __restrict packet = (RenderCommand_deleteShader*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteShader::execute);
+	packet->shader = shader;
 }
 void detachShader(
 	GLuint program,
@@ -1458,11 +1453,12 @@ GLint getUniformLocation(
 	GLuint program,
 	const GLchar *name)
 {
-	//RenderCommand_getUniformLocation* __restrict packet = (RenderCommand_getUniformLocation*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_getUniformLocation::execute);
-	//packet->program = program;
-	//packet->name = name;
-	return glGetUniformLocation(program, name);
+	CHECKF(0, "This is auto-generated but ill-formed API. Don't use!!!");
+
+	RenderCommand_getUniformLocation* __restrict packet = (RenderCommand_getUniformLocation*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_getUniformLocation::execute);
+	packet->program = program;
+	packet->name = name;
 }
 void getUniformfv(
 	GLuint program,
@@ -2962,11 +2958,10 @@ void deleteFramebuffers(
 	GLsizei n,
 	const GLuint *framebuffers)
 {
-	//RenderCommand_deleteFramebuffers* __restrict packet = (RenderCommand_deleteFramebuffers*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteFramebuffers::execute);
-	//packet->n = n;
-	//packet->framebuffers = framebuffers;
-	glDeleteFramebuffers(n, framebuffers);
+	RenderCommand_deleteFramebuffers* __restrict packet = (RenderCommand_deleteFramebuffers*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteFramebuffers::execute);
+	packet->n = n;
+	packet->framebuffers = framebuffers;
 }
 void genFramebuffers(
 	GLsizei n,
@@ -3154,11 +3149,10 @@ void deleteVertexArrays(
 	GLsizei n,
 	const GLuint *arrays)
 {
-	//RenderCommand_deleteVertexArrays* __restrict packet = (RenderCommand_deleteVertexArrays*)getNextPacket();
-	//packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteVertexArrays::execute);
-	//packet->n = n;
-	//packet->arrays = arrays;
-	glDeleteVertexArrays(n, arrays);
+	RenderCommand_deleteVertexArrays* __restrict packet = (RenderCommand_deleteVertexArrays*)getNextPacket();
+	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteVertexArrays::execute);
+	packet->n = n;
+	packet->arrays = arrays;
 }
 void genVertexArrays(
 	GLsizei n,

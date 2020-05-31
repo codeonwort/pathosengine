@@ -42,7 +42,7 @@ namespace pathos {
 
 	void TranslucencyRendering::releaseResources(RenderCommandList& cmdList)
 	{
-		cmdList.deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
 	void TranslucencyRendering::renderTranslucency(RenderCommandList& cmdList, const Camera* camera, const std::vector<StaticMeshProxy*>& meshBatches)

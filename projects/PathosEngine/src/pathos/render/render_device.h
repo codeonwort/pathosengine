@@ -41,6 +41,15 @@ namespace pathos {
 		void createRenderbuffers(GLsizei n, GLuint* renderbuffers);
 		void createProgramPipelines(GLsizei n, GLuint* pipelines);
 
+		void deleteTextures(GLsizei n, const GLuint* textures);
+		void deleteVertexArrays(GLsizei n, const GLuint* arrays);
+		void deleteFramebuffers(GLsizei n, const GLuint* framebuffers);
+		void deleteQueries(GLsizei n, const GLuint* ids);
+		void deleteBuffers(GLsizei n, const GLuint* buffers);
+		void deleteProgram(GLuint program);
+
+		GLint getUniformLocation(GLuint program, const GLchar* name);
+
 	private:
 		std::unique_ptr<RenderCommandList> immediate_command_list;
 		std::unique_ptr<RenderCommandList> temp_command_list;

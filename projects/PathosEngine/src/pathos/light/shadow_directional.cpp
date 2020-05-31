@@ -127,8 +127,8 @@ void main() {
 	void DirectionalShadowMap::destroyResources(RenderCommandList& cmdList)
 	{
 		if (!destroyed) {
-			cmdList.deleteFramebuffers(1, &fbo);
-			cmdList.deleteProgram(program);
+			gRenderDevice->deleteFramebuffers(1, &fbo);
+			gRenderDevice->deleteProgram(program);
 		}
 		destroyed = true;
 	}
