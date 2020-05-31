@@ -9,6 +9,8 @@ namespace pathos {
 
 	class InputManager;
 
+	// InputSystem is a bridge between Engine and InputManager.
+	// It just delegates all works to input managers.
 	class InputSystem final {
 
 	public:
@@ -19,10 +21,13 @@ namespace pathos {
 
 		void tick();
 
+		// #todo-input: Integrate
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
 		void processSpecialKeyDown(InputConstants modifier);
 		void processSpecialKeyUp(InputConstants modifier);
+		void processButtonDown(InputConstants input);
+		void processButtonUp(InputConstants input);
 
 	private:
 		InputManager* defaultInputManager;

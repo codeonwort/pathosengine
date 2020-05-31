@@ -133,6 +133,8 @@ namespace pathos {
 		createParams.onSpecialKeyDown  = Engine::onSpecialKeyDown;
 		createParams.onSpecialKeyUp    = Engine::onSpecialKeyUp;
 		createParams.onReshape         = Engine::onMainWindowReshape;
+		createParams.onMouseDown       = Engine::onMouseDown;
+		createParams.onMouseUp         = Engine::onMouseUp;
 
 		mainWindow = std::make_unique<GUIWindow>();
 		mainWindow->create(createParams);
@@ -449,6 +451,14 @@ namespace pathos {
 
 	void Engine::onSpecialKeyUp(InputConstants specialKey) {
 		gEngine->inputSystem->processSpecialKeyUp(specialKey);
+	}
+
+	void Engine::onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
+		gEngine->inputSystem->processButtonDown(mouseInput);
+	}
+
+	void Engine::onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
+		gEngine->inputSystem->processButtonUp(mouseInput);
 	}
 
 }

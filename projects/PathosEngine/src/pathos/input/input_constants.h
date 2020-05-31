@@ -53,6 +53,11 @@ namespace pathos {
 		KEYBOARD_ARROW_UP,
 		KEYBOARD_ARROW_DOWN,
 
+		// Mouse
+		MOUSE_LEFT_BUTTON,
+		MOUSE_MIDDLE_BUTTON,
+		MOUSE_RIGHT_BUTTON,
+
 		// XboxOne Pad
 		XBOXONE_A,
 		XBOXONE_B,

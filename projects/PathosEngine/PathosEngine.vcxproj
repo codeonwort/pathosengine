@@ -165,6 +165,7 @@
     <ClInclude Include="src\badger\math\random.h" />
     <ClInclude Include="src\badger\math\rotator.h" />
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
+    <ClInclude Include="src\badger\types\os.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\thread\thread_pool.h" />
     <ClInclude Include="src\badger\types\int_types.h" />

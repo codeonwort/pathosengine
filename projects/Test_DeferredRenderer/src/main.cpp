@@ -46,6 +46,8 @@ Scene scene;
 	CSMDebugger* csmDebugger;
 #endif
 
+bool rotateByMouse = false;
+
 void setupInput();
 void setupCSMDebugger();
 void setupSky();
@@ -110,14 +112,6 @@ void setupInput()
 	moveRight.addInput(InputConstants::KEYBOARD_D, 1.0f);
 	moveRight.addInput(InputConstants::KEYBOARD_A, -1.0f);
 
-	AxisBinding rotateYaw;
-	rotateYaw.addInput(InputConstants::KEYBOARD_Q, -1.0f);
-	rotateYaw.addInput(InputConstants::KEYBOARD_E, 1.0f);
-
-	AxisBinding rotatePitch;
-	rotatePitch.addInput(InputConstants::KEYBOARD_Z, -1.0f);
-	rotatePitch.addInput(InputConstants::KEYBOARD_X, 1.0f);
-
 	AxisBinding moveFast;
 	moveFast.addInput(InputConstants::SHIFT, 1.0f);
 
@@ -127,11 +121,12 @@ void setupInput()
 	ButtonBinding updateSceneCapture;
 	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
 
+	ButtonBinding rmb;
+	rmb.addInput(InputConstants::MOUSE_RIGHT_BUTTON);
+
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
-	inputManager->bindAxis("rotateYaw", rotateYaw);
-	inputManager->bindAxis("rotatePitch", rotatePitch);
 	inputManager->bindAxis("moveFast", moveFast);
 	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebugger);
 	inputManager->bindButtonPressed("updateSceneCapture", updateSceneCapture, []()
@@ -143,6 +138,8 @@ void setupInput()
 			}
 		}
 	);
+	inputManager->bindButtonPressed("RMB", rmb, []() { rotateByMouse = true; });
+	inputManager->bindButtonReleased("RMB", rmb, []() { rotateByMouse = false; });
 }
 
 void setupCSMDebugger()
@@ -397,24 +394,35 @@ void setupSceneWithActor(Scene* scene) {
 void tick(float deltaSeconds)
 {
 	{
+		static int32 prevMouseX = 0;
+		static int32 prevMouseY = 0;
+
 		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
+
+		int32 currMouseX = input->getMouseX();
+		int32 currMouseY = input->getMouseY();
 
 		// movement per seconds
 		const float moveMultiplier = pathos::max(1.0f, input->getAxis("moveFast") * 10.0f);
 		const float speedRight = 400.0f * deltaSeconds * moveMultiplier;
 		const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
-		const float rotateY = 120.0f * deltaSeconds;
-		const float rotateX = 120.0f * deltaSeconds;
+		const float rotateYaw = 120.0f * deltaSeconds;
+		const float rotatePitch = 120.0f * deltaSeconds;
 
 		float deltaRight   = input->getAxis("moveRight") * speedRight;
 		float deltaForward = input->getAxis("moveForward") * speedForward;
-		float rotY         = input->getAxis("rotateYaw") * rotateY;
-		float rotX         = input->getAxis("rotatePitch") * rotateX;
+		float rotY         = 0.1f * (currMouseX - prevMouseX) * rotateYaw;
+		float rotX         = 0.1f * (currMouseY - prevMouseY) * rotatePitch;
 
 		cam->moveForward(deltaForward);
 		cam->moveRight(deltaRight);
-		cam->rotateYaw(rotY);
-		cam->rotatePitch(rotX);
+		if (rotateByMouse) {
+			cam->rotateYaw(rotY);
+			cam->rotatePitch(rotX);
+		}
+
+		prevMouseX = currMouseX;
+		prevMouseY = currMouseY;
 	}
 
 	static float ballAngle = 0.0f;

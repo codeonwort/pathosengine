@@ -124,6 +124,8 @@ namespace pathos {
 		static void onKeyUp(uint8 ascii, int32 mouseX, int32 mouseY);
 		static void onSpecialKeyDown(InputConstants specialKey);
 		static void onSpecialKeyUp(InputConstants specialKey);
+		static void onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY);
+		static void onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY);
 
 	private:
 		void tick();

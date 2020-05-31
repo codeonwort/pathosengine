@@ -65,6 +65,11 @@ namespace pathos {
 		window->checkSpecialKeyUp(specialKey);
 	}
 
+	static void onGlutMouseFunc(int button, int state, int x, int y) {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->onMouseFunc(button, state, x, y);
+	}
+
 	static void onGlutReshape(int width, int height) {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
 		window->onReshape((int32)width, (int32)height);
@@ -112,6 +117,8 @@ namespace pathos {
 		callback_onSpecialKeyDown  = createParams.onSpecialKeyDown;
 		callback_onSpecialKeyUp    = createParams.onSpecialKeyUp;
 		callback_onReshape         = createParams.onReshape;
+		callback_onMouseDown       = createParams.onMouseDown;
+		callback_onMouseUp         = createParams.onMouseUp;
 
 		CHECKF(windowWidth > 0 && windowHeight > 0, "Invalid window size");
 		CHECKF(title.size() > 0, "Invalid window title");
@@ -145,6 +152,7 @@ namespace pathos {
 		glutKeyboardUpFunc(onGlutKeyUp);
 		glutSpecialFunc(onGlutSpecialKeyDown);
 		glutSpecialUpFunc(onGlutSpecialKeyUp);
+		glutMouseFunc(onGlutMouseFunc);
 
 		GUIWindow::handleToWindow[nativeHandle] = this;
 	}
@@ -260,6 +268,23 @@ namespace pathos {
 			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_UP);
 		} else if (specialKey == GLUT_KEY_DOWN) {
 			callback_onSpecialKeyUp(InputConstants::KEYBOARD_ARROW_DOWN);
+		}
+	}
+
+	void GUIWindow::onMouseFunc(int button, int state, int x, int y) {
+		InputConstants input = (button == GLUT_LEFT_BUTTON) ? InputConstants::MOUSE_LEFT_BUTTON
+			: (button == GLUT_MIDDLE_BUTTON) ? InputConstants::MOUSE_MIDDLE_BUTTON
+			: (button == GLUT_RIGHT_BUTTON) ? InputConstants::MOUSE_RIGHT_BUTTON
+			: InputConstants::UNDEFINED;
+
+		CHECKF(input != InputConstants::UNDEFINED, "Unexpected mouse button input");
+
+		if (state == GLUT_DOWN) {
+			callback_onMouseDown(input, (int32)x, (int32)y);
+		} else if (state == GLUT_UP) {
+			callback_onMouseUp(input, (int32)x, (int32)y);
+		} else {
+			CHECKF(0, "Unexpected mouse button state");
 		}
 	}
 

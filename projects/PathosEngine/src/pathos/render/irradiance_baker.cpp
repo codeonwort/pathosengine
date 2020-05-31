@@ -8,6 +8,8 @@
 #include "pathos/util/engine_util.h"
 #include "pathos/thread/engine_thread.h"
 
+// #todo-framebuffer: Random crash on startup here... which function is the problem?
+
 namespace pathos {
 
 	GLuint IrradianceBaker::equirectangularToCubemap = 0xffffffff;
@@ -114,7 +116,7 @@ namespace pathos {
 			cmdList.cullFace(GL_BACK);
 
 			if (autoDestroyCubemap) {
-				gRenderDevice->deleteTextures(1, &cubemap);
+				cmdList.deleteTextures(1, &cubemap);
 			}
 		});
 

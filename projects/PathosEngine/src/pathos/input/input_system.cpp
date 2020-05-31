@@ -22,6 +22,7 @@ namespace pathos {
 	{
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			manager->tick();
 			manager->updateAxisValue();
 		}
 	}
@@ -55,6 +56,22 @@ namespace pathos {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
 			manager->processSpecialKeyUp(specialKey);
+		}
+	}
+
+	void InputSystem::processButtonDown(InputConstants input)
+	{
+		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
+			InputManager* manager = *it;
+			manager->processButtonDown(input);
+		}
+	}
+
+	void InputSystem::processButtonUp(InputConstants input)
+	{
+		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
+			InputManager* manager = *it;
+			manager->processButtonUp(input);
 		}
 	}
 

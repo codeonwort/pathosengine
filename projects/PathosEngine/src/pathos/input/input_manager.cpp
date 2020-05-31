@@ -1,7 +1,13 @@
 #include "input_manager.h"
 
+#include "badger/types/os.h"
 #include "badger/types/string_hash.h"
 #include "badger/assertion/assertion.h"
+
+#if PLATFORM_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
 
 namespace pathos {
 
@@ -27,6 +33,18 @@ namespace pathos {
 		buttonReleasedBindings.emplace_back(ib);
 
 		buttonReleasedMapping.insert(std::make_pair(hash, handler));
+	}
+
+	void InputManager::tick() {
+#if PLATFORM_WINDOWS
+		POINT mousePos;
+		::GetCursorPos(&mousePos);
+
+		mouseX = static_cast<int32>(mousePos.x);
+		mouseY = static_cast<int32>(mousePos.y);
+#else
+	#error "Not implemented for non-Windows OS"
+#endif
 	}
 
 	void InputManager::updateAxisValue()
@@ -165,6 +183,43 @@ namespace pathos {
 
 		for (const ButtonBinding& binding : buttonReleasedBindings) {
 			if (binding.contains(specialKey)) {
+				matchingEvents.push_back(binding.event_name_hash);
+			}
+		}
+
+		for (uint32 event : matchingEvents) {
+			auto it = buttonReleasedMapping.find(event);
+			CHECK(it != buttonReleasedMapping.end());
+
+			it->second();
+		}
+	}
+
+	void InputManager::processButtonDown(InputConstants input)
+	{
+		std::vector<uint32> matchingEvents;
+
+		// #todo-input: Redundant; same as processRawKeyDown
+		for (const ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(input)) {
+				matchingEvents.push_back(binding.event_name_hash);
+			}
+		}
+
+		for (uint32 event : matchingEvents) {
+			auto it = buttonPressedMapping.find(event);
+			CHECK(it != buttonPressedMapping.end());
+
+			it->second();
+		}
+	}
+
+	void InputManager::processButtonUp(InputConstants input)
+	{
+		std::vector<uint32> matchingEvents;
+
+		for (const ButtonBinding& binding : buttonReleasedBindings) {
+			if (binding.contains(input)) {
 				matchingEvents.push_back(binding.event_name_hash);
 			}
 		}
