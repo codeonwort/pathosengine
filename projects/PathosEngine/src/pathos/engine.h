@@ -1,5 +1,6 @@
 #pragma once
 
+#include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include "badger/memory/mem_alloc.h"
 #include "badger/system/stopwatch.h"
@@ -15,9 +16,8 @@
 
 namespace pathos {
 
+	class World;
 	class Renderer;
-	class Scene;
-	class Camera;
 	class InputSystem;
 	class AssetStreamer;
 
@@ -46,12 +46,9 @@ namespace pathos {
 		ERendererType rendererType;
 
 		uint32 numWorkersForAssetStreamer;
-
-		void(*tick)(float deltaSeconds)     = nullptr;
-		void(*render)()                     = nullptr;
 	};
 
-	class Engine final {
+	class Engine final : public Noncopyable {
 		friend class EngineUtil;
 
 		using ExecProc = std::function<void(const std::string&)>;
@@ -77,7 +74,7 @@ namespace pathos {
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 
-		void setWorld(Scene* inScene, Camera* inCamera);
+		void setWorld(World* inWorld);
 
 		const EngineConfig& getConfig() const { return conf; }
 
@@ -99,9 +96,6 @@ namespace pathos {
 		Engine();
 		~Engine();
 
-		Engine(const Engine&)            = delete;
-		Engine& operator=(const Engine&) = delete;
-
 		bool initialize(int argcp, char** argv, const EngineConfig& conf);
 		bool destroy();
 
@@ -116,7 +110,7 @@ namespace pathos {
 
 		bool destroyOpenGL();
 
-		// glut event listeners //
+		// GUI event listeners //
 		static void onIdle();
 		static void onMainWindowDisplay();
 		static void onMainWindowReshape(int32 newWidth, int32 newHeight);
@@ -141,8 +135,7 @@ namespace pathos {
 		float elapsed_gameThread;
 		float elapsed_renderThread;
 
-		Scene* scene;
-		Camera* camera;
+		World* currentWorld;
 
 		std::map<std::string, ExecProc> execMap;
 

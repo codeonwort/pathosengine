@@ -87,9 +87,11 @@
   <ItemGroup>
     <ClCompile Include="src\csm_debugger.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\world1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\csm_debugger.h" />
+    <ClInclude Include="src\world1.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

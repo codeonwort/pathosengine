@@ -92,6 +92,7 @@
     <ClCompile Include="src\pathos\actor\actor.cpp" />
     <ClCompile Include="src\pathos\actor\actor_component.cpp" />
     <ClCompile Include="src\pathos\actor\scene_component.cpp" />
+    <ClCompile Include="src\pathos\actor\world.cpp" />
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\gui\gui_window.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\pathos\actor\actor.h" />
     <ClInclude Include="src\pathos\actor\actor_component.h" />
     <ClInclude Include="src\pathos\actor\scene_component.h" />
+    <ClInclude Include="src\pathos\actor\world.h" />
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\engine_version.h" />

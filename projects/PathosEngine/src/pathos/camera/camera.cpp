@@ -12,29 +12,45 @@ namespace pathos {
 	PerspectiveLens::PerspectiveLens(float fovY_degrees, float aspect_wh, float znear, float zfar) {
 		z_near = znear;
 		z_far = zfar;
-		fovY_half = glm::radians(fovY_degrees);
+		fovY_radians = glm::radians(fovY_degrees);
 		aspect = aspect_wh;
 
-#if 1 // Reverse-Z
-		float f = 1.0f / tan(glm::radians(fovY_degrees) / 2.0f);
-		transform = glm::mat4(
-			f / aspect, 0.0f, 0.0f, 0.0f,
-			0.0f, f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, -1.0f,
-			0.0f, 0.0f, z_near, 0.0f);
-#else
-		transform = glm::perspective(fovY_half, aspect, znear, zfar);
-#endif
+		updateProjectionMatrix();
 	}
 
 	glm::mat4 PerspectiveLens::getProjectionMatrix() const {
 		return transform;
 	}
 
+	void PerspectiveLens::setFovY(float inFovY_degrees) {
+		fovY_radians = glm::radians(inFovY_degrees);
+		updateProjectionMatrix();
+	}
+
+	void PerspectiveLens::updateProjectionMatrix() {
+#if 1 // Reverse-Z
+		float f = 1.0f / tan(fovY_radians / 2.0f);
+		transform = glm::mat4(
+			f / aspect, 0.0f, 0.0f,   0.0f,
+			0.0f,       f,    0.0f,   0.0f,
+			0.0f,       0.0f, 0.0f,   -1.0f,
+			0.0f,       0.0f, z_near, 0.0f);
+#else
+		transform = glm::perspective(fovY_radians, aspect, znear, zfar);
+#endif
+	}
+
 	// Camera
-	Camera::Camera(Lens* lens) :lens(lens), viewDirty(true) {
+	Camera::Camera(const PerspectiveLens& lens)
+		: lens(lens)
+		, viewDirty(true)
+	{
 		rotationX = rotationY = 0.0f;
 		_position = glm::vec3(0.0f, 0.0f, 0.0f);
+	}
+
+	void Camera::changeLens(const PerspectiveLens& newLens) {
+		lens = newLens;
 	}
 
 	void Camera::calculateViewMatrix() const {
@@ -51,10 +67,10 @@ namespace pathos {
 		return transform.getMatrix();
 	}
 	glm::mat4 Camera::getViewProjectionMatrix() const {
-		return lens->getProjectionMatrix() * getViewMatrix();
+		return lens.getProjectionMatrix() * getViewMatrix();
 	}
 	glm::mat4 Camera::getProjectionMatrix() const {
-		return lens->getProjectionMatrix();
+		return lens.getProjectionMatrix();
 	}
 	glm::vec3 Camera::getEyeVector() const {
 		// eye direction in world space
@@ -140,15 +156,12 @@ namespace pathos {
 	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const {
 		CHECK(numCascades >= 1);
 
-		PerspectiveLens* plens = dynamic_cast<PerspectiveLens*>(lens);
-		CHECK(plens);
-		
-		const float zn = plens->getZNear();
-		const float zf = plens->getZFar();
-		const float hh_near = zn * tanf(plens->getFovY() * 0.5f);
-		const float hw_near = hh_near * plens->getAspectRatioWH();
-		const float hh_far = zf * tanf(plens->getFovY() * 0.5f);
-		const float hw_far = hh_far * plens->getAspectRatioWH();
+		const float zn = lens.getZNear();
+		const float zf = lens.getZFar();
+		const float hh_near = zn * tanf(lens.getFovYRadians() * 0.5f);
+		const float hw_near = hh_near * lens.getAspectRatioWH();
+		const float hh_far = zf * tanf(lens.getFovYRadians() * 0.5f);
+		const float hw_far = hh_far * lens.getAspectRatioWH();
 
 		const glm::vec3 P0 = getPosition();
 		const glm::mat3 viewInv = glm::transpose(glm::mat3(getViewMatrix()));

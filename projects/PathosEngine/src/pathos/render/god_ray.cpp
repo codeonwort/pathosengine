@@ -129,7 +129,7 @@ void main() {
 			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_1");
 			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_1");
 			fs_blur.addDefine("HORIZONTAL 1");
-			fs_blur.addDefine("KERNEL_SIZE 7");
+			fs_blur.addDefine("KERNEL_SIZE 5");
 			vs_blur.loadSource("fullscreen_quad.glsl");
 			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
 			program_blur1 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_1");
@@ -138,7 +138,7 @@ void main() {
 			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_2");
 			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_2");
 			fs_blur.addDefine("HORIZONTAL 0");
-			fs_blur.addDefine("KERNEL_SIZE 7");
+			fs_blur.addDefine("KERNEL_SIZE 5");
 			vs_blur.loadSource("fullscreen_quad.glsl");
 			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
 			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_2");
