@@ -27,6 +27,7 @@ namespace pathos {
 	class SceneCaptureComponent;
 }
 class CSMDebugger;
+class PlayerController;
 
 // World1
 class World1 : public World {
@@ -53,7 +54,6 @@ private:
 #if VISUALIZE_CSM_FRUSTUM
 	CSMDebugger* csmDebugger = nullptr;
 #endif
-
-	bool rotateByMouse = false;
+	PlayerController* playerController = nullptr;
 
 };
