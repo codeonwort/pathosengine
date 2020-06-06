@@ -164,14 +164,17 @@ void main() {
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_DEPTH, 0, depth_clear);
 
+		// special case: no light source
+		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
+			// #todo-godray: Fix crash on rendering without god ray source (hack)
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			return;
+		}
+
 		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_LEQUAL);
-
-		// special case: no light source
-		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
-			return;
-		}
 
 		// render silhouettes
 		{

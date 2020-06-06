@@ -14,7 +14,11 @@ public:
 	virtual void onInitialize() override;
 	virtual void onTick(float deltaSeconds) override;
 
+	void setupSky();
+	void setupScene();
+
 private:
 	PlayerController* playerController = nullptr;
+
 
 };

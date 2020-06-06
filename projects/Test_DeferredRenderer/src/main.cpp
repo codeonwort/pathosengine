@@ -1,4 +1,5 @@
 #include "world1.h"
+#include "world_rc1.h"
 #include "pathos/core_minimal.h"
 using namespace pathos;
 
@@ -9,6 +10,9 @@ const bool          WINDOW_FULLSCREEN    = false;
 const float         FOVY                 = 60.0f;
 const float         CAMERA_Z_NEAR        = 1.0f;
 const float         CAMERA_Z_FAR         = 5000.0f;
+
+#define WORLD_CLASS World1
+//#define WORLD_CLASS World_RC1
 
 int main(int argc, char** argv) {
 	EngineConfig conf;
@@ -21,7 +25,7 @@ int main(int argc, char** argv) {
 
 	const float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
 
-	World* world1 = new World1;
+	World* world1 = new WORLD_CLASS;
 	world1->getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 	world1->getCamera().changeLens(PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 

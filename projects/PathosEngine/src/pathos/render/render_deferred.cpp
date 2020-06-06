@@ -492,8 +492,8 @@ namespace pathos {
 		fallbackMaterial->setRoughness(0.0f);
 
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
-		glCreateFramebuffers(1, &copyTextureFBO);
-		glNamedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
+		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
+		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
 
 		ubo_perFrame = std::make_unique<UniformBuffer>();
 		ubo_perFrame->init<UBO_PerFrame>();
@@ -548,7 +548,7 @@ namespace pathos {
 
 		fallbackMaterial.release();
 		fullscreenQuad->dispose();
-		glDeleteFramebuffers(1, &copyTextureFBO);
+		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
 
 		ubo_perFrame.release();
 
