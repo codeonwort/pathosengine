@@ -25,8 +25,6 @@ namespace pathos {
 	ConsoleWindow* gConsole = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////
-	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderInitRoutines;
-	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderDestroyRoutines;
 
 	// static
 	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
@@ -41,12 +39,25 @@ namespace pathos {
 		return true;
 	}
 
+
+	Engine::GlobalRenderRoutineContainer& Engine::getGlobalRenderRoutineContainer()
+	{
+		static GlobalRenderRoutineContainer instance;
+		return instance;
+	}
+
+
 	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
 	{
 		CHECK(initRoutine != nullptr);
-		globalRenderInitRoutines.push_back(initRoutine);
+
+		// Due to parallel initialization of static variables
+		GlobalRenderRoutineContainer& container = getGlobalRenderRoutineContainer();
+		std::lock_guard<std::mutex> guard(container.vector_mutex);
+
+		container.initRoutines.push_back(initRoutine);
 		if (destroyRoutine) {
-			globalRenderDestroyRoutines.push_back(destroyRoutine);
+			container.destroyRoutines.push_back(destroyRoutine);
 		}
 	}
 
@@ -196,7 +207,7 @@ namespace pathos {
 			glObjectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
 		}
 
-		for(GlobalRenderRoutine routine : globalRenderInitRoutines) {
+		for(GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().initRoutines) {
 			routine(render_device);
 		}
 
@@ -278,7 +289,7 @@ namespace pathos {
 		assetStreamer->destroy();
 		pathos::destroyImageLibrary();
 
-		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
+		for (GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().destroyRoutines) {
 			routine(render_device);
 		}
 

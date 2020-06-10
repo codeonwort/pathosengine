@@ -9,6 +9,7 @@
 
 #include <map>
 #include <list>
+#include <mutex>
 #include <memory>
 #include <string>
 #include <functional>
@@ -61,10 +62,14 @@ namespace pathos {
 		// [INTERNAL USE ONLY]
 		// Given routine is called right after the render device is initialized.
 		// Use for initialization of global resources.
+		class GlobalRenderRoutineContainer {
+		public:
+			std::mutex vector_mutex;
+			std::vector<GlobalRenderRoutine> initRoutines;
+			std::vector<GlobalRenderRoutine> destroyRoutines;
+		};
+		static GlobalRenderRoutineContainer& getGlobalRenderRoutineContainer();
 		static void internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine);
-
-		static std::vector<GlobalRenderRoutine> globalRenderInitRoutines;
-		static std::vector<GlobalRenderRoutine> globalRenderDestroyRoutines;
 
 	// Public API
 	public:

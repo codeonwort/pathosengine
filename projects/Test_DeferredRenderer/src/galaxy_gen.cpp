@@ -35,7 +35,7 @@ PlaneGeometry* GalaxyGenerator::fullscreenQuad = nullptr;
 
 GLuint GalaxyGenerator::createStarField(uint32 width, uint32 height) {
 	CHECK(isInMainThread());
-	
+
 	GLuint texture = 0;
 
 	FLUSH_RENDER_COMMAND();
