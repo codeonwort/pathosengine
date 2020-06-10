@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\csm_debugger.cpp" />
+    <ClCompile Include="src\galaxy_gen.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
     <ClCompile Include="src\world1.cpp" />
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\csm_debugger.h" />
+    <ClInclude Include="src\galaxy_gen.h" />
     <ClInclude Include="src\player_controller.h" />
     <ClInclude Include="src\world1.h" />
     <ClInclude Include="src\world_rc1.h" />

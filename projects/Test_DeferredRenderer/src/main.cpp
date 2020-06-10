@@ -11,8 +11,15 @@ const float         FOVY                 = 60.0f;
 const float         CAMERA_Z_NEAR        = 1.0f;
 const float         CAMERA_Z_FAR         = 5000.0f;
 
-#define WORLD_CLASS World1
-//#define WORLD_CLASS World_RC1
+#define WORLD_TYPE 1
+
+#if WORLD_TYPE == 0
+	#define WORLD_CLASS World1
+#elif WORLD_TYPE == 1
+	#define WORLD_CLASS World_RC1
+#else
+	#error "Invalid world"
+#endif
 
 int main(int argc, char** argv) {
 	EngineConfig conf;

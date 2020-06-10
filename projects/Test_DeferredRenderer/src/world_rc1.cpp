@@ -1,4 +1,5 @@
 #include "world_rc1.h"
+#include "galaxy_gen.h"
 #include "player_controller.h"
 
 #include "pathos/render/sky_ansel.h"
@@ -26,9 +27,10 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
-	glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
+	GLuint starfield = GalaxyGenerator::createStarField(2048, 1024);
+	glObjectLabel(GL_TEXTURE, starfield, -1, "Texture: Starfield");
+
+	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512);
 	glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
 
 	// diffuse irradiance
@@ -45,7 +47,7 @@ void World_RC1::setupSky()
 	scene.prefilterEnvMap = prefilteredEnvMap;
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
-	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+	scene.sky = new AnselSkyRendering(starfield);
 }
 
 void World_RC1::setupScene()
@@ -65,10 +67,10 @@ void World_RC1::setupScene()
 		color->setRoughness(0.1f);
 	}
 
-	//StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
-	//godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
-	//godRaySource->setActorScale(20.0f);
-	//godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
-	//godRaySource->getStaticMeshComponent()->castsShadow = false;
-	//getScene().godRaySource = godRaySource->getStaticMeshComponent();
+	StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
+	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
+	godRaySource->setActorScale(20.0f);
+	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	godRaySource->getStaticMeshComponent()->castsShadow = false;
+	getScene().godRaySource = godRaySource->getStaticMeshComponent();
 }
