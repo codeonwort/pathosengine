@@ -9,6 +9,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/input/input_manager.h"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
@@ -18,6 +19,16 @@ void World_RC1::onInitialize()
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
+
+	ButtonBinding updateSky;
+	updateSky.addInput(InputConstants::KEYBOARD_R);
+
+	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	inputManager->bindButtonPressed("updateSky", updateSky, [this]()
+		{
+			updateStarfield();
+		}
+	);
 }
 
 void World_RC1::onTick(float deltaSeconds)
@@ -27,7 +38,7 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GLuint starfield = GalaxyGenerator::createStarField(2048, 1024);
+	GalaxyGenerator::createStarField(starfield, 2048, 1024);
 	glObjectLabel(GL_TEXTURE, starfield, -1, "Texture: Starfield");
 
 	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512);
@@ -73,4 +84,10 @@ void World_RC1::setupScene()
 	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	getScene().godRaySource = godRaySource->getStaticMeshComponent();
+}
+
+void World_RC1::updateStarfield()
+{
+	gEngine->execute("recompile_shaders");
+	GalaxyGenerator::createStarField(starfield, 2048, 1024);
 }

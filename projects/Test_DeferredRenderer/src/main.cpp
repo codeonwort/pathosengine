@@ -3,22 +3,25 @@
 #include "pathos/core_minimal.h"
 using namespace pathos;
 
+#define RENDERING_CHALLENGE 1
+
+#if RENDERING_CHALLENGE
+const char*         WINDOW_TITLE         = "Test: Rendering Challenge 1";
+const int32         WINDOW_WIDTH         = 960;
+#else
 const char*         WINDOW_TITLE         = "Test: Deferred Rendering";
 const int32         WINDOW_WIDTH         = 1920;
+#endif
 const int32         WINDOW_HEIGHT        = 1080;
 const bool          WINDOW_FULLSCREEN    = false;
 const float         FOVY                 = 60.0f;
 const float         CAMERA_Z_NEAR        = 1.0f;
 const float         CAMERA_Z_FAR         = 5000.0f;
 
-#define WORLD_TYPE 1
-
-#if WORLD_TYPE == 0
+#if RENDERING_CHALLENGE == 0
 	#define WORLD_CLASS World1
-#elif WORLD_TYPE == 1
+#elif RENDERING_CHALLENGE == 1
 	#define WORLD_CLASS World_RC1
-#else
-	#error "Invalid world"
 #endif
 
 int main(int argc, char** argv) {

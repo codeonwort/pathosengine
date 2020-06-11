@@ -17,8 +17,11 @@ public:
 	void setupSky();
 	void setupScene();
 
+	void updateStarfield();
+
 private:
 	PlayerController* playerController = nullptr;
-
+	
+	GLuint starfield = 0;
 
 };

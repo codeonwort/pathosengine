@@ -11,7 +11,7 @@ namespace pathos {
 class GalaxyGenerator {
 
 public:
-	static GLuint createStarField(uint32 width, uint32 height);
+	static void createStarField(GLuint& targetTexture, uint32 width, uint32 height);
 
 	static void internal_createResources(OpenGLDevice* renderDevice);
 	static void internal_destroyResources(OpenGLDevice* renderDevice);

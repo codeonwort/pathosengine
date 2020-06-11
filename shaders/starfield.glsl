@@ -67,7 +67,11 @@ float fbmHI3d(vec3 p, float dx) {
 }
 
 float stars(vec3 seed, float intensity) {
-	return smoothstep(1.0 - intensity*0.9, (1.0 - intensity *0.9)+0.1, supernoise3dX(seed) * (0.8 + 0.2 * supernoise3dX(seed)));
+	float edge0 = 1.0 - intensity * 0.9;
+	float edge1 = (1.0 - intensity *0.9) + 0.1;
+	//float x = supernoise3dX(seed * 500.0) * (0.8 + 0.2 * supernoise3dX(seed * 40.0));
+	float x = supernoise3dX(seed * 3700.0);
+	return smoothstep(edge0, edge1, x);
 }
 vec3 stars(vec3 dir) {
 	//float intensityred = (1.0 / (1.0 + 30.0 * abs(uv.y))) * fbmHI2d(uv * 30.0, 3.0) * (1.0 - abs(uv.x ));	
@@ -89,8 +93,24 @@ vec3 stars(vec3 dir) {
 	//vec3 bloom = 1.6 * dustinner * (1.0 / (1.0 + 30.0 * abs(uv.y))) * fbmHI2d(uv * 3.0, 3.0) * (1.0 - abs(uv.x ));	
 	//return allmix + bloom;
 
-	float fbm = fbmHI3d(dir, 3.0);
+	// TODO: perturbate dir itself with noise. It's making a donut pattern for now...
+	//dir = vec3(fbmHI3d(dir.xyz, 10.0), fbmHI3d(dir.yzx, 30.0), fbmHI3d(dir.zxy, 20.0));
 
+	float intensityred = fbmHI3d(dir * 12.062, 13.6);
+	float intensitywhite = fbmHI3d(dir * 16.211, 14.17);
+	float intensityblue = fbmHI3d(dir * 13.263, 12.83);
+
+	float redlights = stars(dir, intensityred);
+	float whitelights = stars(dir, intensitywhite);
+	float bluelights = stars(dir, intensityblue);
+
+	vec3 starscolor = vec3(1.0, 0.8, 0.5) * redlights
+		+ vec3(1.0) * whitelights
+		+ vec3(0.6, 0.7, 1.0) * bluelights;
+
+	return starscolor;
+
+	float fbm = fbmHI3d(dir, 3.0);
 	return vec3(fbm);
 }
 

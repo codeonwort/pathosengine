@@ -33,20 +33,20 @@ DEFINE_SHADER_PROGRAM2(Program_Starfield, StarfieldVS, StarfieldFS);
 GLuint GalaxyGenerator::dummyFBO = 0;
 PlaneGeometry* GalaxyGenerator::fullscreenQuad = nullptr;
 
-GLuint GalaxyGenerator::createStarField(uint32 width, uint32 height) {
+void GalaxyGenerator::createStarField(GLuint& targetTexture, uint32 width, uint32 height) {
 	CHECK(isInMainThread());
-
-	GLuint texture = 0;
 
 	FLUSH_RENDER_COMMAND();
 
-	ENQUEUE_RENDER_COMMAND([texturePtr = &texture, width, height](RenderCommandList& cmdList) {
+	ENQUEUE_RENDER_COMMAND([texturePtr = &targetTexture, width, height](RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(RenderStarfield);
 
 		GLuint fbo = dummyFBO;
 
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
-		cmdList.textureStorage2D(*texturePtr, 1, GL_RGBA16F, width, height);
+		if (*texturePtr == 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
+			cmdList.textureStorage2D(*texturePtr, 1, GL_RGBA16F, width, height);
+		}
 
 		cmdList.viewport(0, 0, width, height);
 		cmdList.disable(GL_DEPTH_TEST);
@@ -62,8 +62,6 @@ GLuint GalaxyGenerator::createStarField(uint32 width, uint32 height) {
 	});
 
 	FLUSH_RENDER_COMMAND();
-
-	return texture;
 }
 
 void GalaxyGenerator::internal_createResources(OpenGLDevice* renderDevice) {
