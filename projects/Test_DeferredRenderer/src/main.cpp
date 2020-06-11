@@ -7,7 +7,7 @@ using namespace pathos;
 
 #if RENDERING_CHALLENGE
 const char*         WINDOW_TITLE         = "Test: Rendering Challenge 1";
-const int32         WINDOW_WIDTH         = 960;
+const int32         WINDOW_WIDTH         = 1920;
 #else
 const char*         WINDOW_TITLE         = "Test: Deferred Rendering";
 const int32         WINDOW_WIDTH         = 1920;
