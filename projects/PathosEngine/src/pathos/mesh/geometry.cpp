@@ -24,11 +24,11 @@ namespace pathos {
 		dispose();
 	}
 
-	uint32 MeshGeometry::getIndexCount() { return indexCount; }
+	uint32 MeshGeometry::getIndexCount() const { return indexCount; }
 
 	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList) {
 		if (drawArraysMode){
-			cmdList.drawArrays(GL_TRIANGLES, 0, positionCount);
+			cmdList.drawArrays(GL_TRIANGLES, 0, positionBufferBytes);
 		}else{
 			cmdList.drawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, (void*)0);
 		}
@@ -52,7 +52,7 @@ namespace pathos {
 	
 	void MeshGeometry::updatePositionData(GLfloat* data, uint32 length) {
 		positionData.assign(data, data + length);
-		positionCount = length;
+		positionBufferBytes = length;
 		if (!positionBuffer) {
 			glGenBuffers(1, &positionBuffer);
 		}
@@ -61,7 +61,7 @@ namespace pathos {
 	}
 	void MeshGeometry::updateUVData(GLfloat* data, uint32 length) {
 		uvData.assign(data, data + length);
-		uvCount = length;
+		uvBufferBytes = length;
 		if (!uvBuffer) {
 			glGenBuffers(1, &uvBuffer);
 		}
@@ -71,7 +71,7 @@ namespace pathos {
 	void MeshGeometry::updateNormalData(GLfloat* data, uint32 length)
 	{
 		normalData.assign(data, data + length);
-		normalCount = length;
+		normalBufferBytes = length;
 		if (!normalBuffer) {
 			glGenBuffers(1, &normalBuffer);
 		}
@@ -118,15 +118,15 @@ namespace pathos {
 		else calculateNormals_indexed();
 	}
 	void MeshGeometry::calculateNormals_array() {
-		if (positionCount == 0 || positionData.size() == 0) {
+		if (positionBufferBytes == 0 || positionData.size() == 0) {
 			LOG(LogError, "%s: Position data should be available to calculate normals", __FUNCTION__);
 			return;
 		}
 
-		std::vector<GLfloat> normals(positionCount, 0.0f);
+		std::vector<GLfloat> normals(positionBufferBytes, 0.0f);
 
 		const GLfloat* P = positionData.data();
-		for (uint32 i = 0u; i < positionCount; i += 9){
+		for (uint32 i = 0u; i < positionBufferBytes; i += 9){
 			uint32 p0 = i, p1 = i + 3, p2 = i + 6;
 			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
 			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
@@ -136,15 +136,15 @@ namespace pathos {
 			normals[i + 2] = normals[i + 5] = normals[i + 8] = norm.z;
 		}
 
-		updateNormalData(normals.data(), positionCount);
+		updateNormalData(normals.data(), positionBufferBytes);
 	}
 	void MeshGeometry::calculateNormals_indexed() {
-		if (positionCount == 0 || positionData.size() == 0) {
+		if (positionBufferBytes == 0 || positionData.size() == 0) {
 			LOG(LogError, "%s: Position data should be available to calculate normals", __FUNCTION__);
 			return;
 		}
 
-		uint32 numPos = positionCount / 3;
+		uint32 numPos = positionBufferBytes / 3;
 		std::vector<glm::vec3> accum(numPos, glm::vec3(0.0f));
 		std::vector<uint32> counts(numPos, 0);
 
@@ -174,18 +174,18 @@ namespace pathos {
 			accum[i2] /= counts[i2];
 		}
 
-		std::vector<GLfloat> normals(positionCount, 0.0f);
+		std::vector<GLfloat> normals(positionBufferBytes, 0.0f);
 		for (uint32 i = 0; i < numPos; i++){
 			accum[i] = glm::normalize(accum[i]);
 			normals[i * 3 + 0] = accum[i].x;
 			normals[i * 3 + 1] = accum[i].y;
 			normals[i * 3 + 2] = accum[i].z;
 		}
-		updateNormalData(normals.data(), positionCount);
+		updateNormalData(normals.data(), positionBufferBytes);
 	}
 
 	void MeshGeometry::calculateTangentBasis() {
-		int32 numPos = positionCount / 3;
+		int32 numPos = positionBufferBytes / 3;
 		std::vector<glm::vec3> accum(numPos, glm::vec3(0.0f)); // tangents
 		std::vector<glm::vec3> accum2(numPos, glm::vec3(0.0f)); // bitangents
 
@@ -218,8 +218,8 @@ namespace pathos {
 			accum2[i2] += bitangent;
 		}
 
-		std::vector<GLfloat> tangents(positionCount, 0.0f);
-		std::vector<GLfloat> bitangents(positionCount, 0.0f);
+		std::vector<GLfloat> tangents(positionBufferBytes, 0.0f);
+		std::vector<GLfloat> bitangents(positionBufferBytes, 0.0f);
 
 		for (int32 i = 0; i < numPos; i++) {
 			glm::vec3 v = glm::normalize(accum[i]);
@@ -233,8 +233,8 @@ namespace pathos {
 			bitangents[i * 3 + 2] = v.z;
 		}
 
-		updateTangentData(tangents.data(), positionCount);
-		updateBitangentData(bitangents.data(), positionCount);
+		updateTangentData(tangents.data(), positionBufferBytes);
+		updateBitangentData(bitangents.data(), positionBufferBytes);
 	}
 
 	void MeshGeometry::dispose() {
