@@ -16,7 +16,7 @@ class PlayerController;
 class RingActor : public StaticMeshActor {
 public:
 	RingActor();
-	void buildRing(float innerRadius, float outerRadius, float thickness);
+	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
 private:
 	class ProceduralGeometry* G;
 	class ColorMaterial* M;
