@@ -96,13 +96,14 @@ void World_RC1::setupScene()
 	sphere->setActorScale(10.0f);
 
 	constexpr uint32 numRings = 6;
-	float ring_gap = 20.0f;
-	float ring_width = 100.0f;
+	const float ring_gap = 40.0f;
+	const float ring_width = 100.0f;
+	const float ring_thickness = 50.0f;
 	float innerRadius = 150.0f;
 	float outerRadius = innerRadius + ring_width;
 	for (uint32 i = 0; i < numRings; ++i) {
 		auto ring = spawnActor<RingActor>();
-		ring->buildRing(innerRadius, outerRadius);
+		ring->buildRing(innerRadius, outerRadius, ring_thickness);
 		innerRadius = outerRadius + ring_gap;
 		outerRadius = innerRadius + ring_width;
 		rings.push_back(ring);
@@ -135,49 +136,59 @@ RingActor::RingActor()
 	setStaticMesh(new Mesh(G, M));
 }
 
-void RingActor::buildRing(float innerRadius, float outerRadius)
+void RingActor::buildRing(float innerRadius, float outerRadius, float thickness)
 {
 	G->clear();
 
 	constexpr uint32 numSegments = 60;
+	constexpr auto n = numSegments;
+	std::vector<vector3> vertices(n * 4);
+	std::vector<vector2> uvs(n * 4);
+	std::vector<uint32> indices;
+	indices.reserve(n * 12);
 	{
-		constexpr auto n = numSegments;
-		std::vector<vector3> vertices(n * 2);
-		std::vector<vector2> uvs(n * 2);
-		std::vector<uint32> indices;
-		indices.reserve(n * 6);
-		
+		const float dz = thickness * 0.5f;
 		for (uint32 i = 0; i < numSegments; ++i)
 		{
 			float angle = 3.141592f * 2.0f * (float)i / n;
-			vector3 dir(cosf(angle), sinf(angle), 0.0f);
-			vertices[i] = innerRadius * dir;
-			vertices[i + n] = outerRadius * dir;
-			uvs[i] = vector2((float)i / n, 0.0f);
-			uvs[i + n] = vector2((float)i / n, 1.0f);
+			float cosAngle = cosf(angle);
+			float sinAngle = sinf(angle);
+
+			vertices[i]         = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
+			vertices[i + n]     = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);
+			vertices[i + 2 * n] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, -dz);
+			vertices[i + 3 * n] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, -dz);
+
+			uvs[i]         = vector2((float)i / n, 0.0f);
+			uvs[i + n]     = vector2((float)i / n, 1.0f);
+			uvs[i + 2 * n] = uvs[i];
+			uvs[i + 3 * n] = uvs[i + n];
+
+			// clockwise
+			auto makeQuad = [&indices](uint32 a, uint32 b, uint32 c, uint32 d) {
+				indices.push_back(a); indices.push_back(b); indices.push_back(d);
+				indices.push_back(b); indices.push_back(c); indices.push_back(d);
+			};
+
 			if (i != numSegments - 1) {
-				indices.push_back(i);
-				indices.push_back(i + n);
-				indices.push_back(i + 1);
-				indices.push_back(i + n);
-				indices.push_back(i + n + 1);
-				indices.push_back(i + 1);
+				makeQuad(i, i + n, i + n + 1, i + 1);                                 // front
+				makeQuad(2 * n + i, 2 * n + i + 1, 2 * n + i + n + 1, 2 * n + i + n); // back
+				makeQuad(i, i + 1, i + 2 * n + 1, i + 2 * n);                         // inner
+				makeQuad(i + n, 2 * n + i + n, 2 * n + i + n + 1, i + n + 1);         // outer
 			} else {
-				indices.push_back(i);
-				indices.push_back(i + n);
-				indices.push_back(0);
-				indices.push_back(i + n);
-				indices.push_back(n);
-				indices.push_back(0);
+				makeQuad(i, i + n, n, 0);
+				makeQuad(2 * n + i, 2 * n + 0, 2 * n + n, 2 * n + i + n);
+				makeQuad(i, 0, 2 * n, i + 2 * n);
+				makeQuad(i + n, 4 * n - 1, 3 * n, n);
 			}
 		}
 
-		G->updatePositionData((float*)vertices.data(), (uint32)(vertices.size() * sizeof(float) * 3));
-		G->updateUVData((float*)uvs.data(), (uint32)(uvs.size() * sizeof(float) * 2));
+		G->updatePositionData((float*)vertices.data(), (uint32)(vertices.size() * 3));
+		G->updateUVData((float*)uvs.data(), (uint32)(uvs.size() * 2));
 		G->updateIndexData(indices.data(), (uint32)indices.size());
 		G->calculateNormals();
 		G->calculateTangentBasis();
 	}
 
-	getStaticMeshComponent()->getStaticMesh()->doubleSided = true;
+	//getStaticMeshComponent()->getStaticMesh()->doubleSided = true;
 }

@@ -16,7 +16,7 @@ class PlayerController;
 class RingActor : public StaticMeshActor {
 public:
 	RingActor();
-	void buildRing(float innerRadius, float outerRadius);
+	void buildRing(float innerRadius, float outerRadius, float thickness);
 private:
 	class ProceduralGeometry* G;
 	class ColorMaterial* M;
