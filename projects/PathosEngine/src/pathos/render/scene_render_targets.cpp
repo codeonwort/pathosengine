@@ -163,7 +163,7 @@ namespace pathos {
 
 		cmdList.textureStorage2D(gbufferA, 1, GL_RGBA32UI, sceneWidth, sceneHeight);
 		cmdList.textureStorage2D(gbufferB, 1, GL_RGBA32F, sceneWidth, sceneHeight);
-		cmdList.textureStorage2D(gbufferC, 1, GL_RGBA32F, sceneWidth, sceneHeight);
+		cmdList.textureStorage2D(gbufferC, 1, GL_RGBA32UI, sceneWidth, sceneHeight);
 
 		// #todo-renderstate: Use sampler object
 		cmdList.textureParameteri(gbufferA, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

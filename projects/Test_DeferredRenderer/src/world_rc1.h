@@ -12,6 +12,7 @@ namespace pathos {
 	class ColorMaterial;
 }
 class PlayerController;
+class LightningActor;
 
 class RingActor : public StaticMeshActor {
 public:
@@ -36,7 +37,7 @@ public:
 
 private:
 	PlayerController* playerController = nullptr;
-	StaticMeshActor* sphere = nullptr;
+	LightningActor* lightningSphere = nullptr;
 	std::vector<RingActor*> rings;
 	
 	GLuint starfield = 0;

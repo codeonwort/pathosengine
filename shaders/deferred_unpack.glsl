@@ -12,7 +12,8 @@ layout (location = 1) out vec4 out_bright; // bright area only
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
-layout (binding = 2) uniform sampler2D gbuf2;
+layout (binding = 2) uniform usampler2D gbuf2;
+// reserved for more gbuffers...
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
 layout (binding = 7) uniform samplerCube irradianceMap;    // for Diffuse IBL
@@ -52,6 +53,7 @@ struct fragment_info {
 	float metallic;
 	float roughness;
 	float ao;
+	vec3 emissive;
 
 	vec3 ws_normal;
 };
@@ -59,21 +61,25 @@ struct fragment_info {
 void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	uvec4 data0 = texelFetch(gbuf0, coord, 0);
 	vec4 data1 = texelFetch(gbuf1, coord, 0);
-	vec4 data2 = texelFetch(gbuf2, coord, 0);
+	uvec4 data2 = texelFetch(gbuf2, coord, 0);
 
-	vec2 temp = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
+	vec2 albedoZ_normalX = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
+	vec2 metal_roughness = unpackHalf2x16(data2.x);
+	vec2 localAO_emissiveX = unpackHalf2x16(data2.y);
+	vec2 emissiveYZ = unpackHalf2x16(data2.z);
 
-	fragment.albedo         = vec3(unpackHalf2x16(data0.x), temp.x);
-	fragment.normal         = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
+	fragment.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
+	fragment.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
 	fragment.material_id    = data0.w;
 
 	fragment.vs_coords      = data1.xyz;
 	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
 	fragment.specular_power = data1.w;
 
-	fragment.metallic       = data2.x;
-	fragment.roughness      = data2.y;
-	fragment.ao             = data2.z;
+	fragment.metallic       = metal_roughness.x;
+	fragment.roughness      = metal_roughness.y;
+	fragment.ao             = localAO_emissiveX.x;
+	fragment.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
 
 	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
 }
@@ -269,5 +275,5 @@ void main() {
 	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
 
 	// #todo-bloom: NaN in what condition?
-	out_bright = max(color, vec4(0.0));
+	out_bright = max(color + vec4(fragment.emissive, 0.0), vec4(0.0));
 }

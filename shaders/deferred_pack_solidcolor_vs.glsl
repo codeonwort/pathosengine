@@ -9,8 +9,8 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
 	mat4 mvpTransform;
 	mat3 mvTransform3x3;
-	vec4 albedo;
-	vec4 metal_roughness;
+	vec4 albedo_metal;
+	vec4 emissive_roughness;
 } uboPerObject;
 
 out VS_OUT {

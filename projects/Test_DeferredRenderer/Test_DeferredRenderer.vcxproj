@@ -87,6 +87,7 @@
   <ItemGroup>
     <ClCompile Include="src\csm_debugger.cpp" />
     <ClCompile Include="src\galaxy_gen.cpp" />
+    <ClCompile Include="src\lightning_effect.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
     <ClCompile Include="src\world1.cpp" />

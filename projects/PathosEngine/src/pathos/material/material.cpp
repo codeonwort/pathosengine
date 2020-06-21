@@ -9,12 +9,19 @@ namespace pathos {
 		setMetallic(0.5f);
 		setRoughness(0.1f);
 		setAlbedo(0.5f, 0.5f, 0.5f);
+		setEmissive(0.0f, 0.0f, 0.0f);
 	}
 
 	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {
-		albedo[0] = r;
-		albedo[1] = g;
-		albedo[2] = b;
+		albedo.x = r;
+		albedo.y = g;
+		albedo.z = b;
+	}
+
+	void ColorMaterial::setEmissive(GLfloat r, GLfloat g, GLfloat b) {
+		emissive.x = r;
+		emissive.y = g;
+		emissive.z = b;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////

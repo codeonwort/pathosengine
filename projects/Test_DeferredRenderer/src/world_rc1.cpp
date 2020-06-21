@@ -1,6 +1,7 @@
 #include "world_rc1.h"
 #include "galaxy_gen.h"
 #include "player_controller.h"
+#include "lightning_effect.h"
 
 #include "pathos/render/sky_ansel.h"
 #include "pathos/loader/imageloader.h"
@@ -97,9 +98,8 @@ void World_RC1::setupScene()
 		color->setRoughness(0.1f);
 	}
 
-	sphere = spawnActor<StaticMeshActor>();
-	sphere->setStaticMesh(new Mesh(geom_sphere, material_color));
-	sphere->setActorScale(10.0f);
+	lightningSphere = spawnActor<LightningActor>();
+	lightningSphere->setActorScale(50.0f);
 
 	constexpr uint32 numRings = 6;
 	const float ring_gap = 40.0f;

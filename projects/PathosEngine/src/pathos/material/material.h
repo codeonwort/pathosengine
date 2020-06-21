@@ -1,5 +1,7 @@
 #pragma once
 
+#include "badger/types/vector_types.h"
+
 #include "pathos/named_object.h"
 #include "pathos/material/material_id.h"
 #include "pathos/camera/camera.h"
@@ -39,14 +41,17 @@ namespace pathos {
 		void setAlbedo(GLfloat r, GLfloat g, GLfloat b);
 		inline void setMetallic(GLfloat inMetallic)   { metallic = inMetallic; }
 		inline void setRoughness(GLfloat inRoughness) { roughness = inRoughness; }
+		void setEmissive(GLfloat r, GLfloat g, GLfloat b);
 
-		inline const GLfloat* getAlbedo() const { return albedo; }
-		inline GLfloat getMetallic()      const { return metallic; }
-		inline GLfloat getRoughness()     const { return roughness; }
+		inline const vector3 getAlbedo()   const { return albedo; }
+		inline GLfloat getMetallic()       const { return metallic; }
+		inline GLfloat getRoughness()      const { return roughness; }
+		inline const vector3 getEmissive() const { return emissive; }
 
 	private:
-		GLfloat albedo[3];
+		vector3 albedo;
 		GLfloat metallic;
+		vector3 emissive;
 		GLfloat roughness;
 
 	};

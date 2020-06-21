@@ -43,5 +43,5 @@ void main() {
 	vec3 roughness = texture(tex_roughness, fs_in.texcoord).rgb;
 	vec3 ao = texture(tex_ao, fs_in.texcoord).rgb;
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic.r, roughness.r, ao.r);
+	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic.r, roughness.r, ao.r, vec3(0.0));
 }

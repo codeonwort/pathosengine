@@ -6,8 +6,8 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
 	mat4 mvpTransform;
 	mat3 mvTransform3x3;
-	vec4 albedo;
-	vec4 metal_roughness;
+	vec4 albedo_metal;
+	vec4 emissive_roughness;
 } uboPerObject;
 
 in VS_OUT {
@@ -19,11 +19,12 @@ in VS_OUT {
 } fs_in;
 
 void main() {
-	vec3 albedo = uboPerObject.albedo.xyz;
+	vec3 albedo = uboPerObject.albedo_metal.xyz;
 	vec3 normal = normalize(fs_in.normal);
-	float metallic = uboPerObject.metal_roughness.x;
-	float roughness = uboPerObject.metal_roughness.y;
+	float metallic = uboPerObject.albedo_metal.w;
+	vec3 emissive = uboPerObject.emissive_roughness.xyz;
+	float roughness = uboPerObject.emissive_roughness.w;
 	float localAO = 1.0;
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic, roughness, localAO);
+	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic, roughness, localAO, emissive);
 }
