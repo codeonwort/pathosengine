@@ -143,7 +143,7 @@ RingActor::RingActor()
 {
 	G = new ProceduralGeometry;
 	
-	ColorMaterial* M = new ColorMaterial;
+	M = new ColorMaterial;
 	M->setAlbedo(1.8f, 1.8f, 1.8f);
 	M->setRoughness(1.0f);
 	M->setMetallic(0.0f);
@@ -154,6 +154,7 @@ RingActor::RingActor()
 void RingActor::buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges)
 {
 	G->clear();
+	innerVertexIndices.clear();
 
 	static const float defaultRange[] = { 0.0f, 360.0f };
 	const float* segRanges = segmentRanges.size() == 0 ? defaultRange : segmentRanges.data();
@@ -165,6 +166,7 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 	std::vector<vector2> uvs(numSegments * n * 4);
 	std::vector<uint32> indices;
 	indices.reserve(numSegments * n * 24);
+	innerVertexIndices.reserve(positions.size() / 2);
 
 	uint32 i0 = 0;
 
@@ -185,6 +187,9 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 			float angle = startAngle + (endAngle - startAngle) * ratio;
 			float cosAngle = cosf(angle);
 			float sinAngle = sinf(angle);
+
+			innerVertexIndices.push_back(i);
+			innerVertexIndices.push_back(i + 2 * n);
 
 			positions[i]         = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
 			positions[i + n]     = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);

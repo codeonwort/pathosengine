@@ -20,6 +20,7 @@ public:
 private:
 	class ProceduralGeometry* G;
 	class ColorMaterial* M;
+	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };
 
 class World_RC1 : public World {
