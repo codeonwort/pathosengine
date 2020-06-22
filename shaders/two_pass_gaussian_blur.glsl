@@ -30,11 +30,10 @@ out vec4 out_color;
 
 void main() {
 	vec2 uv = fs_in.screenUV;
-	vec2 invTexSize = 2.0 / vec2(textureSize(src, 0));
+	vec2 invTexSize = 1.0 / vec2(textureSize(src, 0));
 
 	vec3 sourceColor = textureLod(src, uv, 0).rgb;
 	vec3 result = sourceColor * weight[0];
-	//float strength = 0.2 * float(KERNEL_SIZE) * dot(vec3(0.299, 0.587, 0.114), sourceColor);
 
 #if HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {

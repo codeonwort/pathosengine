@@ -10,10 +10,10 @@ LightningActor::LightningActor()
 
 	sphereGeometry = new SphereGeometry(1.0f, 50);
 	sphereMaterial = new ColorMaterial;
-	sphereMaterial->setAlbedo(1.0f, 1.0f, 1.0f);
+	sphereMaterial->setAlbedo(0.2f, 0.3f, 0.8f);
 	sphereMaterial->setRoughness(0.0f);
 	sphereMaterial->setMetallic(0.0f);
-	sphereMaterial->setEmissive(1.5f, 1.5f, 3.0f);
+	sphereMaterial->setEmissive(3.0f, 3.0f, 5.0f);
 	sphereComponent->setStaticMesh(new Mesh(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);
