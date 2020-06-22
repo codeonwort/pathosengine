@@ -14,7 +14,7 @@
 #include "pathos/input/input_manager.h"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
-const vector3       SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
+const vector3       SUN_RADIANCE         = 20.0f * vector3(1.0f, 1.0f, 1.0f);
 
 void World_RC1::onInitialize()
 {
@@ -95,7 +95,6 @@ void World_RC1::setupScene()
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
 	//////////////////////////////////////////////////////////////////////////
-	// Objects
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
 	geom_sphere->calculateTangentBasis();
 
@@ -106,6 +105,21 @@ void World_RC1::setupScene()
 		color->setMetallic(0.2f);
 		color->setRoughness(0.1f);
 	}
+
+	PBRTextureMaterial* material_pbr;
+	{
+		constexpr bool genMipmap = true;
+		constexpr bool sRGB = true;
+		GLuint albedo = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/T_Brick.png"), genMipmap, sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/N_Brick.png"), genMipmap, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/M_Brick.png"), genMipmap, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/R_Brick.png"), genMipmap, !sRGB);
+		GLuint ao = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/A_Brick.png"), genMipmap, !sRGB);
+		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// Objects
 
 	lightningSphere = spawnActor<LightningActor>();
 	lightningSphere->setActorScale(50.0f);
@@ -130,6 +144,8 @@ void World_RC1::setupScene()
 		innerRadius = outerRadius + ring_gap;
 		outerRadius = innerRadius + (ring_width + i * 50.0f);
 		rings.push_back(ring);
+
+		ring->getStaticMesh()->setMaterial(0, material_pbr);
 	}
 
 	//StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
@@ -206,9 +222,9 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 			positions[i + 3 * n] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, -dz);
 
 			uvs[i]         = vector2(ratio, 0.0f);
-			uvs[i + n]     = vector2(ratio, 1.0f);
-			uvs[i + 2 * n] = uvs[i];
-			uvs[i + 3 * n] = uvs[i + n];
+			uvs[i + n]     = vector2(ratio, 0.25f);
+			uvs[i + 2 * n] = vector2(ratio, 0.5f);
+			uvs[i + 3 * n] = vector2(ratio, 1.0f);
 
 			if (i - i0 != n - 1) {
 				makeQuad(i, i + n, i + n + 1, i + 1);                                 // front
