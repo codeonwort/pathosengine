@@ -8,6 +8,7 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 	mat3 mvTransform3x3;
 	vec4 albedo_metal;
 	vec4 emissive_roughness;
+	vec4 billboardParam;
 } uboPerObject;
 
 in VS_OUT {

@@ -51,6 +51,15 @@ void World_RC1::onTick(float deltaSeconds)
 		rot.roll += ringRotations[i].z * deltaSeconds;
 		ring->setActorRotation(rot);
 	}
+
+	{
+		RingActor* ring = rings[0];
+		vector3 p1 = ring->getRandomInnerPosition();
+		ModelTransform ringTransform(ring->getActorLocation(), ring->getActorRotation(), ring->getActorScale());
+		p1 = vector3(ringTransform.getMatrix() * vector4(p1, 1.0f));
+
+		lightningSphere->generateParticle(vector3(0.0f), p1);
+	}
 }
 
 void World_RC1::setupSky()
@@ -224,4 +233,9 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 	G->updateIndexData(indices.data(), (uint32)indices.size());
 	G->calculateNormals();
 	G->calculateTangentBasis();
+}
+
+vector3 RingActor::getRandomInnerPosition() const
+{
+	return G->getPosition(innerVertexIndices[innerVertexIndices.size() / 2]);
 }

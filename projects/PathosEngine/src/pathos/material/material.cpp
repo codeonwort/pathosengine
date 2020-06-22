@@ -10,6 +10,9 @@ namespace pathos {
 		setRoughness(0.1f);
 		setAlbedo(0.5f, 0.5f, 0.5f);
 		setEmissive(0.0f, 0.0f, 0.0f);
+
+		billboard = false;
+		billboardWidth = 10.0f;
 	}
 
 	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {

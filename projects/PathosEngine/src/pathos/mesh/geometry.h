@@ -3,7 +3,7 @@
 #include "pathos/named_object.h"
 #include "pathos/render/render_command_list.h"
 #include "gl_core.h"
-
+#include "badger/types/vector_types.h"
 #include <stdint.h>
 
 namespace pathos {
@@ -22,6 +22,7 @@ namespace pathos {
 		// #todo-draw-prim: Remove this and call cmdList.drawElements() directly
 		void drawPrimitive(RenderCommandList& cmdList);
 
+		inline vector3 getPosition(uint32 index) const { return vector3(positionData[index * 3], positionData[index * 3 + 1], positionData[index * 3 + 2]); }
 		uint32_t getIndexCount() const;
 
 		void updatePositionData(GLfloat* data, uint32_t length);

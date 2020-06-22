@@ -31,7 +31,7 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Materials
 
-	// #todo-material: Support emissive and translucent
+	// #todo-material: Support translucent
 	// Opaque solid color, rendered in gbuffer pass
 	class ColorMaterial : public Material {
 
@@ -47,6 +47,11 @@ namespace pathos {
 		inline GLfloat getMetallic()       const { return metallic; }
 		inline GLfloat getRoughness()      const { return roughness; }
 		inline const vector3 getEmissive() const { return emissive; }
+
+	// #todo-material: Hard-coded for now
+	public:
+		bool billboard;
+		float billboardWidth;
 
 	private:
 		vector3 albedo;

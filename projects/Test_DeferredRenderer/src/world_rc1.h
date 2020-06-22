@@ -18,6 +18,7 @@ class RingActor : public StaticMeshActor {
 public:
 	RingActor();
 	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
+	vector3 getRandomInnerPosition() const;
 private:
 	class ProceduralGeometry* G;
 	class ColorMaterial* M;
