@@ -38,8 +38,10 @@ public:
 
 private:
 	PlayerController* playerController = nullptr;
-	LightningActor* lightningSphere = nullptr;
 	std::vector<RingActor*> rings;
+
+	LightningActor* lightningSphere = nullptr;
+	std::vector<uint32> ringIndicesForParticleRotation;
 	
 	GLuint starfield = 0;
 

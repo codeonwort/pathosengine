@@ -25,6 +25,7 @@ class LightningActor : public Actor {
 public:
 	LightningActor();
 
+	std::vector<LightningParticleComponent*>& getParticleComponents() { return particleComponents; }
 	void generateParticle(const vector3& p0, const vector3& p1);
 	
 private:
@@ -32,5 +33,5 @@ private:
 	SphereGeometry* sphereGeometry;
 	ColorMaterial* sphereMaterial;
 
-	LightningParticleComponent* particleComponent;
+	std::vector<LightningParticleComponent*> particleComponents;
 };

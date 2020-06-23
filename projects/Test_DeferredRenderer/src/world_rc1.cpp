@@ -3,6 +3,8 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
+#include "badger/math/random.h"
+
 #include "pathos/render/sky_ansel.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/render/irradiance_baker.h"
@@ -52,13 +54,9 @@ void World_RC1::onTick(float deltaSeconds)
 		ring->setActorRotation(rot);
 	}
 
-	{
-		RingActor* ring = rings[0];
-		vector3 p1 = ring->getRandomInnerPosition();
-		ModelTransform ringTransform(ring->getActorLocation(), ring->getActorRotation(), ring->getActorScale());
-		p1 = vector3(ringTransform.getMatrix() * vector4(p1, 1.0f));
-
-		lightningSphere->generateParticle(vector3(0.0f), p1);
+	auto& components = lightningSphere->getParticleComponents();
+	for (uint32 i = 0; i < (uint32)components.size(); ++i) {
+		components[i]->setRotation(rings[ringIndicesForParticleRotation[i]]->getActorRotation());
 	}
 }
 
@@ -122,7 +120,7 @@ void World_RC1::setupScene()
 	// Objects
 
 	lightningSphere = spawnActor<LightningActor>();
-	lightningSphere->setActorScale(50.0f);
+	lightningSphere->setActorScale(40.0f);
 
 	constexpr uint32 numRings = 6;
 	const float ring_gap = 40.0f;
@@ -146,6 +144,14 @@ void World_RC1::setupScene()
 		rings.push_back(ring);
 
 		ring->getStaticMesh()->setMaterial(0, material_pbr);
+	}
+
+	const uint32 numParticles = 10;
+	for (uint32 i = 0; i < numParticles; ++i) {
+		uint32 ringIx = (uint32)(numRings * Random());
+		RingActor* ring = rings[ringIx];
+		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition());
+		ringIndicesForParticleRotation.push_back(ringIx);
 	}
 
 	//StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
@@ -253,5 +259,6 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 
 vector3 RingActor::getRandomInnerPosition() const
 {
-	return G->getPosition(innerVertexIndices[innerVertexIndices.size() / 2]);
+	uint32 ix = (uint32)(innerVertexIndices.size() * Random());
+	return G->getPosition(innerVertexIndices[ix]);
 }
