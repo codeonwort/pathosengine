@@ -267,13 +267,13 @@ void main() {
 	out_color = color;
 
 	// #todo-shader: Write real opacity. Output this value in another place.
-	// for depth-of-field. continue to blur_pass.glsl
+	// for depth-of-field. continue to depth_of_field.glsl
 	out_color.a = -fragment.vs_coords.z;
 
 	// output: light bloom
+	color.xyz += fragment.emissive;
 	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
 	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
 
-	// #todo-bloom: NaN in what condition?
-	out_bright = max(color + vec4(fragment.emissive, 0.0), vec4(0.0));
+	out_bright = max(color, vec4(0.0));
 }

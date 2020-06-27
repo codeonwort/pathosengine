@@ -8,6 +8,8 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 
+static const vector3 LIGHTNING_PARTICLE_EMISSIVE(3.0f, 3.0f, 3.0f);
+
 LightningActor::LightningActor()
 {
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
@@ -17,7 +19,7 @@ LightningActor::LightningActor()
 	sphereMaterial->setAlbedo(0.2f, 0.3f, 0.8f);
 	sphereMaterial->setRoughness(0.0f);
 	sphereMaterial->setMetallic(0.0f);
-	sphereMaterial->setEmissive(3.0f, 3.0f, 5.0f);
+	sphereMaterial->setEmissive(3.0f, 3.0f, 3.0f);
 	sphereComponent->setStaticMesh(new Mesh(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);
@@ -40,7 +42,7 @@ LightningParticleComponent::LightningParticleComponent()
 	M->setAlbedo(0.0f, 0.0f, 0.0f);
 	M->setRoughness(0.0f);
 	M->setMetallic(0.0f);
-	M->setEmissive(1.0f, 1.0f, 1.0f);
+	M->setEmissive(LIGHTNING_PARTICLE_EMISSIVE.x, LIGHTNING_PARTICLE_EMISSIVE.y, LIGHTNING_PARTICLE_EMISSIVE.z);
 	M->billboard = true;
 	M->billboardWidth = 5.0f;
 
