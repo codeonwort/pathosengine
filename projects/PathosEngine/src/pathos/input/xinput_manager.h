@@ -68,7 +68,7 @@ namespace pathos {
 		inline void appendActiveKeys(XInputUserIndex userIndex, std::vector<std::pair<InputConstants, float>>& outKeys) {}
 		inline void getPressed(XInputUserIndex userIndex, std::vector<InputConstants>& outButtons) {}
 		inline void getReleased(XInputUserIndex userIndex, std::vector<InputConstants>& outButtons) {}
-	}
+	};
 #else
 	class XInputManager
 	{

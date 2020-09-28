@@ -3,6 +3,10 @@
 #include "badger/assertion/assertion.h"
 #include "pathos/input/input_constants.h"
 
+namespace pathos {
+	XInputManager* g_xinputManager = nullptr;
+}
+
 #if PLATFORM_WINDOWS
 
 #include <Windows.h>
@@ -11,8 +15,6 @@
 #pragma comment(lib, "xinput.lib")
 
 namespace pathos {
-	
-	XInputManager* g_xinputManager = nullptr;
 
 	const uint32 bitmasks[] = {
 		XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT,
