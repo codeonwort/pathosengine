@@ -45,6 +45,11 @@ void PlayerController::onTick(float deltaSeconds)
 		camera.rotatePitch(rotX);
 	}
 
+	rotX = input->getAxis("rotatePitch");
+	rotY = input->getAxis("rotateYaw");
+	camera.rotateYaw(rotY);
+	camera.rotatePitch(rotX);
+
 	prevMouseX = currMouseX;
 	prevMouseY = currMouseY;
 }
@@ -54,10 +59,12 @@ void PlayerController::setupInput()
 	AxisBinding moveForward;
 	moveForward.addInput(InputConstants::KEYBOARD_W, 1.0f);
 	moveForward.addInput(InputConstants::KEYBOARD_S, -1.0f);
+	moveForward.addInput(InputConstants::XBOXONE_LEFT_THUMB_Y, 1.0f);
 
 	AxisBinding moveRight;
 	moveRight.addInput(InputConstants::KEYBOARD_D, 1.0f);
 	moveRight.addInput(InputConstants::KEYBOARD_A, -1.0f);
+	moveRight.addInput(InputConstants::XBOXONE_LEFT_THUMB_X, 1.0f);
 
 	AxisBinding moveUp;
 	moveUp.addInput(InputConstants::KEYBOARD_E, 1.0f);
@@ -65,6 +72,13 @@ void PlayerController::setupInput()
 
 	AxisBinding moveFast;
 	moveFast.addInput(InputConstants::SHIFT, 1.0f);
+	moveFast.addInput(InputConstants::XBOXONE_RIGHT_TRIGGER, 1.0f);
+
+	AxisBinding rotateYaw;
+	rotateYaw.addInput(InputConstants::XBOXONE_RIGHT_THUMB_X, 1.0f);
+
+	AxisBinding rotatePitch;
+	rotatePitch.addInput(InputConstants::XBOXONE_RIGHT_THUMB_Y, -1.0f);
 
 	ButtonBinding drawShadowFrustum;
 	drawShadowFrustum.addInput(InputConstants::KEYBOARD_F);
@@ -80,6 +94,8 @@ void PlayerController::setupInput()
 	inputManager->bindAxis("moveRight", moveRight);
 	inputManager->bindAxis("moveUp", moveUp);
 	inputManager->bindAxis("moveFast", moveFast);
+	inputManager->bindAxis("rotateYaw", rotateYaw);
+	inputManager->bindAxis("rotatePitch", rotatePitch);
 	inputManager->bindButtonPressed("RMB", rmb, [this]() { rotateByMouse = true; });
 	inputManager->bindButtonReleased("RMB", rmb, [this]() { rotateByMouse = false; });
 }

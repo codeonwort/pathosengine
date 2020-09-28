@@ -1,8 +1,12 @@
 #include "pathos/camera/camera.h"
 #include "badger/assertion/assertion.h"
+#include "badger/math/minmax.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
+
+	static const float MAX_PITCH = glm::radians(80.0f);
+	static const float MIN_PITCH = glm::radians(-80.0f);
 
 	static const glm::vec3 forward0(0.0f, 0.0f, 1.0f);
 	static const glm::vec3 right0(1.0f, 0.0f, 0.0f);
@@ -136,7 +140,7 @@ namespace pathos {
 		viewDirty = true;
 	}
 	void Camera::rotatePitch(float angleDegree) {
-		rotationX += glm::radians(angleDegree);
+		rotationX = clamp(MIN_PITCH, rotationX + glm::radians(angleDegree), MAX_PITCH);
 		viewDirty = true;
 	}
 	

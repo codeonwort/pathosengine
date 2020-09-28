@@ -1,8 +1,8 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-
 #include "pathos/input/input_constants.h"
+#include "pathos/input/xinput_manager.h"
 
 #include <functional>
 #include <vector>
@@ -65,6 +65,7 @@ namespace pathos {
 
 	class InputManager {
 		friend class InputSystem;
+		friend class XInputManager;
 
 	public:
 		void bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
@@ -77,6 +78,8 @@ namespace pathos {
 
 		inline int32 getMouseX() const { return mouseX; }
 		inline int32 getMouseY() const { return mouseY; }
+
+		void bindXInput(XInputUserIndex userIndex);
 
 	private:
 		InputManager() = default;
@@ -104,6 +107,8 @@ namespace pathos {
 		std::vector<ButtonBinding> buttonPressedBindings;
 		std::vector<ButtonBinding> buttonReleasedBindings;
 		std::vector<AxisBinding> axisBindings;
+
+		XInputUserIndex xinputUserIndex = XInputUserIndex::MAX_USERS;
 
 	};
 

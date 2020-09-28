@@ -36,6 +36,19 @@ namespace pathos {
 	}
 
 	void InputManager::tick() {
+		// Process xinput button events
+		{
+			std::vector<InputConstants> buttons;
+			g_xinputManager->getPressed(xinputUserIndex, buttons);
+			for (InputConstants button : buttons) {
+				processButtonDown(button);
+			}
+			g_xinputManager->getReleased(xinputUserIndex, buttons);
+			for (InputConstants button : buttons) {
+				processButtonUp(button);
+			}
+		}
+
 #if PLATFORM_WINDOWS
 		POINT mousePos;
 		::GetCursorPos(&mousePos);
@@ -49,29 +62,32 @@ namespace pathos {
 
 	void InputManager::updateAxisValue()
 	{
-		std::vector<InputConstants> activeKeys;
+		std::vector<std::pair<InputConstants,float>> activeKeys;
 		activeKeys.reserve(256);
+
+		g_xinputManager->appendActiveKeys(xinputUserIndex, activeKeys);
 
 		for (uint32 i = 0; i <= 255; ++i) {
 			if (asciiMap[i]) {
 				InputConstants ic = asciiToInputConstants[i];
 				if (ic != InputConstants::UNDEFINED) {
-					activeKeys.push_back(ic);
+					activeKeys.push_back({ ic, 1.0f });
 				}
 			}
 		}
 
-		if (isShiftActive) activeKeys.push_back(InputConstants::SHIFT);
-		if (isCtrlActive) activeKeys.push_back(InputConstants::CTRL);
-		if (isAltActive) activeKeys.push_back(InputConstants::ALT);
+		if (isShiftActive) activeKeys.push_back({ InputConstants::SHIFT, 1.0f });
+		if (isCtrlActive) activeKeys.push_back({ InputConstants::CTRL, 1.0f });
+		if (isAltActive) activeKeys.push_back({ InputConstants::ALT, 1.0f });
 
 		for (const AxisBinding& binding : axisBindings) {
 			axisMapping[binding.event_name_hash] = 0.0f;
 
 			int32 numKeys = (int32)binding.keys.size();
 			for (int32 i = 0; i < numKeys; ++i) {
-				if (std::find(activeKeys.begin(), activeKeys.end(), binding.keys[i]) != activeKeys.end()) {
-					axisMapping[binding.event_name_hash] = binding.multipliers[i];
+				auto it = std::find_if(activeKeys.begin(), activeKeys.end(), [&](const auto& activeKey) { return activeKey.first == binding.keys[i]; });
+				if (it != activeKeys.end()) {
+					axisMapping[binding.event_name_hash] = it->second * binding.multipliers[i];
 
 					// #todo-input: What if multiple keys are pressed for this event?
 					break;
@@ -96,6 +112,11 @@ namespace pathos {
 	{
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
 		return axisMapping.find(hash)->second;
+	}
+
+	void InputManager::bindXInput(XInputUserIndex userIndex)
+	{
+		xinputUserIndex = userIndex;
 	}
 
 	void InputManager::processRawKeyDown(uint8 ascii)

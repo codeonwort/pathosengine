@@ -4,10 +4,12 @@
 #include "input_constants.h"
 
 #include <list>
+#include <memory>
 
 namespace pathos {
 
 	class InputManager;
+	class XInputManager;
 
 	// InputSystem is a bridge between Engine and InputManager.
 	// It just delegates all works to input managers.
@@ -32,7 +34,6 @@ namespace pathos {
 	private:
 		InputManager* defaultInputManager;
 		std::list<InputManager*> inputChain;
-
 	};
 
 }

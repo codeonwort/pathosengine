@@ -75,6 +75,12 @@ namespace pathos {
 		XBOXONE_RT,
 		XBOXONE_L3,
 		XBOXONE_R3,
+		XBOXONE_LEFT_TRIGGER,
+		XBOXONE_RIGHT_TRIGGER,
+		XBOXONE_LEFT_THUMB_X,
+		XBOXONE_LEFT_THUMB_Y,
+		XBOXONE_RIGHT_THUMB_X,
+		XBOXONE_RIGHT_THUMB_Y,
 	};
 
 	static constexpr InputConstants asciiToInputConstants[256] = {
