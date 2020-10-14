@@ -8,7 +8,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 
-static const vector3 LIGHTNING_PARTICLE_EMISSIVE(3.0f, 3.0f, 3.0f);
+static const vector3 LIGHTNING_PARTICLE_EMISSIVE(2.0f, 2.0f, 2.0f);
 
 LightningActor::LightningActor()
 {

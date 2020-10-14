@@ -5,6 +5,7 @@
 namespace pathos {
 	
 	// Textures for scene rendering
+	// #todo-renderer: render target pool for temporary textures
 	struct SceneRenderTargets {
 
 	private:
@@ -57,7 +58,7 @@ namespace pathos {
 		SceneRenderTargets(const SceneRenderTargets&) = delete;
 		SceneRenderTargets& operator=(const SceneRenderTargets&) = delete;
 
-		// Reallocate scene textures if invalid or screen resolution changed
+		// Reallocate scene textures if they are invalid or the screen resolution has been changed
 		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height);
 
 		void freeSceneTextures(RenderCommandList& cmdList);

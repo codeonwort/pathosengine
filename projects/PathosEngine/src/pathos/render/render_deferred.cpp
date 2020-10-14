@@ -7,6 +7,7 @@
 #include "pathos/render/render_target.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
+#include "pathos/render/postprocessing/bloom_setup.h"
 #include "pathos/render/postprocessing/bloom.h"
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
@@ -235,12 +236,20 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// Post Process: Bloom
+			// Post Process: Bloom (#todo-bloom: Bad quality)
 			{
+				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
+
+				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
+				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom);
+				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
+
+				// output is fed back to PPI_0
 				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
 				bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
-				// output is fed back to PPI_0
 				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+
+				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 			}
 
 			// Post Process: Tone Mapping
@@ -249,7 +258,7 @@ namespace pathos {
 				const bool isFinalPP = (noAA && noDOF);
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
+				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
@@ -478,6 +487,7 @@ namespace pathos {
 
 	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
 	std::unique_ptr<class SSAO>                    DeferredRenderer::ssao;
+	std::unique_ptr<class BloomSetup>              DeferredRenderer::bloomSetup;
 	std::unique_ptr<class BloomPass>               DeferredRenderer::bloomPass;
 	std::unique_ptr<class ToneMapping>             DeferredRenderer::toneMapping;
 	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
@@ -524,6 +534,7 @@ namespace pathos {
 		{
 			godRay = std::make_unique<GodRay>();
 			ssao = std::make_unique<SSAO>();
+			bloomSetup = std::make_unique<BloomSetup>();
 			bloomPass = std::make_unique<BloomPass>();
 			toneMapping = std::make_unique<ToneMapping>();
 			fxaa = std::make_unique<FXAA>();
@@ -531,6 +542,7 @@ namespace pathos {
 
 			godRay->initializeResources(cmdList);
 			ssao->initializeResources(cmdList);
+			bloomSetup->initializeResources(cmdList);
 			bloomPass->initializeResources(cmdList);
 			toneMapping->initializeResources(cmdList);
 			fxaa->initializeResources(cmdList);
@@ -571,6 +583,7 @@ namespace pathos {
 		{
 			godRay->releaseResources(cmdList);
 			ssao->releaseResources(cmdList);
+			bloomSetup->releaseResources(cmdList);
 			bloomPass->releaseResources(cmdList);
 			toneMapping->releaseResources(cmdList);
 			fxaa->releaseResources(cmdList);

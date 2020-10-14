@@ -51,10 +51,10 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneFinal
-		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // backbuffer
+		GLuint output0 = getOutput(EPostProcessOutput::PPO_0);
 
 		{
-			SCOPED_DRAW_EVENT(Subsum);
+			SCOPED_DRAW_EVENT(DepthOfField_Subsum);
 
 			cmdList.useProgram(program_subsum2D);
 			cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
@@ -71,7 +71,7 @@ namespace pathos {
 		/* sceneContext.dofSubsum1 now holds subsum table */
 		
 		{
-			SCOPED_DRAW_EVENT(Blur);
+			SCOPED_DRAW_EVENT(DepthOfField_Blur);
 
 			// apply box blur whose strength is relative to the difference between pixel depth and focal depth
 			cmdList.useProgram(program_blur);

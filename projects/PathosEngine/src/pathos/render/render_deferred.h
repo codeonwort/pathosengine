@@ -40,6 +40,7 @@ namespace pathos {
 		// post-processing
 		static std::unique_ptr<class GodRay> godRay;
 		static std::unique_ptr<class SSAO> ssao;
+		static std::unique_ptr<class BloomSetup> bloomSetup;
 		static std::unique_ptr<class BloomPass> bloomPass;
 		static std::unique_ptr<class ToneMapping> toneMapping;
 		static std::unique_ptr<class FXAA> fxaa;

@@ -19,7 +19,7 @@ void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
 
 	vec4 c = texelFetch(hdr_image, texelXY, 0);
-	c.xyz += texelFetch(hdr_bloom, texelXY, 0).xyz;
+	c.xyz += texture(hdr_bloom, fs_in.screenUV).xyz;
 	c.xyz += texture(god_ray, fs_in.screenUV).xyz;
 
 	// tone mapping

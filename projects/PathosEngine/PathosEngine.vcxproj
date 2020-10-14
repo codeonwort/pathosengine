@@ -126,6 +126,7 @@
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\bloom_setup.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\depth_of_field.cpp" />
     <ClCompile Include="src\pathos\render\god_ray.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.h" />
     <ClInclude Include="src\pathos\render\postprocessing\bloom.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\bloom_setup.h" />
     <ClInclude Include="src\pathos\render\postprocessing\post_process.h" />
     <ClInclude Include="src\pathos\render\postprocessing\ssao.h" />
     <ClInclude Include="src\pathos\render\postprocessing\ssr.h" />

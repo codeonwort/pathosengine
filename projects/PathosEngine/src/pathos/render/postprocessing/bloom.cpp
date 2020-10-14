@@ -25,7 +25,7 @@ namespace pathos {
 		BloomHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomHorizontalFS")
 		{
 			addDefine("HORIZONTAL 1");
-			addDefine("KERNEL_SIZE 7");
+			addDefine("KERNEL_SIZE 5");
 			setFilepath("two_pass_gaussian_blur.glsl");
 		}
 	};
@@ -35,7 +35,7 @@ namespace pathos {
 		BloomVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomVerticalFS")
 		{
 			addDefine("HORIZONTAL 0");
-			addDefine("KERNEL_SIZE 7");
+			addDefine("KERNEL_SIZE 5");
 			setFilepath("two_pass_gaussian_blur.glsl");
 		}
 	};

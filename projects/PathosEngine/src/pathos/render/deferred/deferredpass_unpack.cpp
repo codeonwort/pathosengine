@@ -19,15 +19,10 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
 	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
 
-	static ConsoleVariable<float> cvar_bloom_strength("r.bloom.strength", 4.0f, "Bloom strength");
-	static ConsoleVariable<float> cvar_bloom_min("r.bloom.min", 0.8f, "Minimum bloom");
-	static ConsoleVariable<float> cvar_bloom_max("r.bloom.max", 1.2f, "Maximum bloom");
-
 	struct UBO_Unpack {
 		glm::ivec4 enabledTechniques1; // (shadow, fog, ?, ?)
 		glm::vec4 fogColor;
 		glm::vec4 fogParams;           // (bottomY, topY, ?, ?)
-		glm::vec4 bloomParams;
 		float prefilterEnvMapMaxLOD;
 	};
 
@@ -88,9 +83,8 @@ namespace pathos {
 		//	}
 		//};
 
-		GLenum hdr_draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		gRenderDevice->createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferDrawBuffers(fbo, 2, hdr_draw_buffers);
+		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		//checkFramebufferStatus(fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
@@ -101,9 +95,7 @@ namespace pathos {
 		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
-		cmdList.clearBufferfv(GL_COLOR, 1, zero);
 	}
 
 	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
@@ -115,7 +107,6 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, sceneContext.sceneBloom, 0);
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);
@@ -134,9 +125,6 @@ namespace pathos {
 		uboData.fogParams.x           = cvar_fog_bottom.getFloat();
 		uboData.fogParams.y           = cvar_fog_top.getFloat();
 		uboData.fogParams.z           = cvar_fog_attenuation.getFloat();
-		uboData.bloomParams.x         = cvar_bloom_strength.getFloat();
-		uboData.bloomParams.y         = cvar_bloom_min.getFloat();
-		uboData.bloomParams.z         = cvar_bloom_max.getFloat();
 		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
 		ubo_unpack.update(cmdList, 1, &uboData);
 
@@ -144,7 +132,7 @@ namespace pathos {
 		quad->activateIndexBuffer(cmdList);
 		quad->drawPrimitive(cmdList);
 
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, 0, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 

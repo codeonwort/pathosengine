@@ -8,7 +8,6 @@
 #define DEBUG_CSM_ID  0
 
 layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright; // bright area only
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
@@ -28,7 +27,6 @@ layout (std140, binding = 1) uniform UBO_Unpack {
 	ivec4 enabledTechniques1;
 	vec4 fogColor;
 	vec4 fogParams;
-	vec4 bloomParams;
 	float prefilterEnvMapMaxLOD;
 } ubo;
 
@@ -39,9 +37,6 @@ vec3 getFogColor()        { return ubo.fogColor.rgb; }
 float getFogBottom()      { return ubo.fogParams.x; }
 float getFogTop()         { return ubo.fogParams.y; }
 float getFogAttenuation() { return ubo.fogParams.z; }
-float getBloomStrength()  { return ubo.bloomParams.x; }
-float getMinBloom()       { return ubo.bloomParams.y; }
-float getMaxBloom()       { return ubo.bloomParams.z; }
 
 struct fragment_info {
 	vec3 albedo;
@@ -253,27 +248,22 @@ vec3 applyFog(fragment_info fragment, vec3 color) {
 void main() {
 	fragment_info fragment;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
-	vec4 color = calculateShading(fragment);
 
-	if(isFogEnabled()) {
-		color.rgb = applyFog(fragment, color.rgb);
+	vec4 luminance = calculateShading(fragment);
+
+	if (isFogEnabled()) {
+		luminance.rgb = applyFog(fragment, luminance.rgb);
 	}
 
 #if DEBUG_CSM_ID
-	color.rgb = vec3(getShadowing(fragment));
+	luminance.rgb = vec3(getShadowing(fragment));
 #endif
 
 	// output: standard shading
-	out_color = color;
+	out_color = luminance;
+	out_color.rgb += fragment.emissive;
 
-	// #todo-shader: Write real opacity. Output this value in another place.
-	// for depth-of-field. continue to depth_of_field.glsl
+	// #todo-shader: Write real opacity. Output this value in another place for depth-of-field.
+	// Continue to depth_of_field.glsl
 	out_color.a = -fragment.vs_coords.z;
-
-	// output: light bloom
-	color.xyz += fragment.emissive;
-	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
-	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
-
-	out_bright = max(color, vec4(0.0));
 }
