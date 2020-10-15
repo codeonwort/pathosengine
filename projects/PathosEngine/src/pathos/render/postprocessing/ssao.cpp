@@ -144,6 +144,8 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(Blur);
 
+			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+
 			cmdList.useProgram(program_blur);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);
 			cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
@@ -155,6 +157,8 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
 			fullscreenQuad->drawPrimitive(cmdList);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		}
 	}
 
