@@ -53,6 +53,11 @@ namespace pathos {
 		KEYBOARD_ARROW_UP,
 		KEYBOARD_ARROW_DOWN,
 
+		// Mouse
+		MOUSE_LEFT_BUTTON,
+		MOUSE_MIDDLE_BUTTON,
+		MOUSE_RIGHT_BUTTON,
+
 		// XboxOne Pad
 		XBOXONE_A,
 		XBOXONE_B,
@@ -70,6 +75,12 @@ namespace pathos {
 		XBOXONE_RT,
 		XBOXONE_L3,
 		XBOXONE_R3,
+		XBOXONE_LEFT_TRIGGER,
+		XBOXONE_RIGHT_TRIGGER,
+		XBOXONE_LEFT_THUMB_X,
+		XBOXONE_LEFT_THUMB_Y,
+		XBOXONE_RIGHT_THUMB_X,
+		XBOXONE_RIGHT_THUMB_Y,
 	};
 
 	static constexpr InputConstants asciiToInputConstants[256] = {

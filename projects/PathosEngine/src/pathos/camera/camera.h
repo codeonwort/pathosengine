@@ -8,22 +8,25 @@
 
 namespace pathos {
 
-	class Lens {
-	public:
-		virtual glm::mat4 getProjectionMatrix() const = 0;
-	};
-
-	class PerspectiveLens : public Lens {
+	// #todo-camera: Orthogonal projection
+	class PerspectiveLens {
 	public:
 		PerspectiveLens(float fovY_degrees, float aspectRatio, float znear, float zfar);
-		virtual glm::mat4 getProjectionMatrix() const;
-		inline float getFovY() const { return fovY_half; }
+
+		glm::mat4 getProjectionMatrix() const;
+
+		inline float getFovYRadians() const { return fovY_radians; }
 		inline float getAspectRatioWH() const { return aspect; }
 		inline float getZNear() const { return z_near; }
 		inline float getZFar() const { return z_far; }
+
+		void setFovY(float inFovY_degrees);
+
 	private:
+		void updateProjectionMatrix();
+
 		glm::mat4 transform;
-		float fovY_half;
+		float fovY_radians;
 		float aspect; // (width / height)
 		float z_near;
 		float z_far;
@@ -32,7 +35,9 @@ namespace pathos {
 	// flying camera
 	class Camera {
 	public:
-		Camera(Lens* lens);
+		Camera(const PerspectiveLens& lens);
+
+		void changeLens(const PerspectiveLens& newLens);
 
 		glm::mat4 getViewMatrix() const;
 		glm::mat4 getViewProjectionMatrix() const;
@@ -40,10 +45,10 @@ namespace pathos {
 		glm::vec3 getEyeVector() const;
 		glm::vec3 getPosition() const;
 
-		inline float getZNear() const { return static_cast<PerspectiveLens*>(lens)->getZNear(); }
-		inline float getZFar() const { return static_cast<PerspectiveLens*>(lens)->getZFar(); }
-		inline float getFovYRadians() const { return static_cast<PerspectiveLens*>(lens)->getFovY(); }
-		inline float getAspectRatio() const { return static_cast<PerspectiveLens*>(lens)->getAspectRatioWH(); }
+		inline float getZNear() const { return lens.getZNear(); }
+		inline float getZFar() const { return lens.getZFar(); }
+		inline float getFovYRadians() const { return lens.getFovYRadians(); }
+		inline float getAspectRatio() const { return lens.getAspectRatioWH(); }
 
 		void lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up);
 
@@ -54,7 +59,6 @@ namespace pathos {
 		void moveToPosition(const glm::vec3& newPosition);
 		inline void moveToPosition(float x, float y, float z) { moveToPosition(glm::vec3(x, y, z)); }
 
-		
 		void rotateYaw(float angleDegree); // mouse left/right in first person view
 		void rotatePitch(float angleDegree); // mouse up/down in first person view
 		void setYaw(float newYaw);
@@ -66,7 +70,7 @@ namespace pathos {
 		// get vertices of camera frustum in world space
 		void getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const;
 
-		inline Lens* getLens() const { return lens; }
+		inline PerspectiveLens& getLens() { return lens; }
 
 	private:
 		void calculateViewMatrix() const;
@@ -74,7 +78,7 @@ namespace pathos {
 		mutable bool viewDirty;
 		mutable Transform transform; // view transform
 
-		Lens* lens; // projection transform
+		PerspectiveLens lens; // projection transform
 		// #todo-transform: Just use Rotator...
 		float rotationX; // pitch
 		float rotationY; // yaw

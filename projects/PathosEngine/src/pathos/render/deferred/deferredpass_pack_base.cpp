@@ -1,4 +1,5 @@
 #include "deferredpass_pack_base.h"
+#include "pathos/render/render_device.h"
 
 namespace pathos {
 
@@ -7,7 +8,7 @@ namespace pathos {
 	}
 
 	MeshDeferredRenderPass_Pack::~MeshDeferredRenderPass_Pack() {
-		glDeleteProgram(program);
+		gRenderDevice->deleteProgram(program);
 	}
 
 }

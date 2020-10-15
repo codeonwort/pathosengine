@@ -45,6 +45,7 @@ namespace pathos {
 		}
 
 	private:
+		// #todo-geometry: Duplicate of superclass members?
 		std::vector<glm::vec3> positions;
 		std::vector<glm::vec2> uvs;
 		std::vector<uint32> indices;

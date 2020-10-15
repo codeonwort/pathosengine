@@ -16,6 +16,7 @@ namespace pathos {
 
 	// Represents a 3D scene.
 	class Scene {
+		friend class World;
 
 	public:
 		Scene()                        = default;
@@ -25,26 +26,10 @@ namespace pathos {
 		//////////////////////////////////////////////////////////////////////////
 		// New API
 
-		template<typename T>
-		T* spawnActor() {
-			static_assert(std::is_base_of<Actor, T>::value, "T should be an Actor-derived type");
-
-			T* actor = new T;
-			actors.emplace_back(actor);
-			actor->isInConstructor = false;
-			actor->owner = this;
-			actor->fixRootComponent();
-			actor->onSpawn();
-
-			return actor;
-		}
-
-		void destroyActor(Actor* actor);
-
-		void tick(float deltaSeconds);
-
 		void clearRenderProxy();
 		void createRenderProxy();
+
+		World* getWorld() const { return owner; }
 
 		//////////////////////////////////////////////////////////////////////////
 		// Old API
@@ -68,9 +53,7 @@ namespace pathos {
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
 
 	protected:
-		// #todo-actor: Wanna represent ownership, but can't use std::unique_ptr<Actor> as it can't hold subclasses of Actor.
-		std::vector<Actor*> actors;          // Actors in this scene
-		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
+		World* owner = nullptr;
 
 	};
 

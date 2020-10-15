@@ -1,6 +1,7 @@
 #include "actor.h"
 #include "actor_component.h"
 #include "scene_component.h"
+#include "world.h"
 #include "pathos/scene/scene.h"
 
 namespace pathos {

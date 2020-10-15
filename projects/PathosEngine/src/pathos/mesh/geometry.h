@@ -3,7 +3,7 @@
 #include "pathos/named_object.h"
 #include "pathos/render/render_command_list.h"
 #include "gl_core.h"
-
+#include "badger/types/vector_types.h"
 #include <stdint.h>
 
 namespace pathos {
@@ -22,7 +22,8 @@ namespace pathos {
 		// #todo-draw-prim: Remove this and call cmdList.drawElements() directly
 		void drawPrimitive(RenderCommandList& cmdList);
 
-		uint32_t getIndexCount();
+		inline vector3 getPosition(uint32 index) const { return vector3(positionData[index * 3], positionData[index * 3 + 1], positionData[index * 3 + 2]); }
+		uint32_t getIndexCount() const;
 
 		void updatePositionData(GLfloat* data, uint32_t length);
 		void updateIndexData(GLuint* data, uint32_t length);
@@ -71,19 +72,18 @@ namespace pathos {
 		GLuint tangentBuffer   = 0;
 		GLuint bitangentBuffer = 0;
 
-		// what's this monstrosity :(
-		// Core profile forces usage of VAO, but I don't have a good idea to manage these combinations.
+		// #todo-shader: Core profile forces usage of VAO, but I don't have a good idea to manage these combinations.
 		GLuint vao_position                             = 0;
 		GLuint vao_position_uv                          = 0;
 		GLuint vao_position_normal                      = 0;
 		GLuint vao_position_uv_normal                   = 0;
 		GLuint vao_position_uv_normal_tangent_bitangent = 0;
 
-		// they are array lengths, not actual counts!
-		uint32 positionCount = 0;
-		uint32 uvCount       = 0;
-		uint32 normalCount   = 0;
-		uint32 indexCount    = 0;
+		// Array lengths, not actual counts!
+		uint32 positionBufferBytes = 0;
+		uint32 uvBufferBytes       = 0;
+		uint32 normalBufferBytes   = 0;
+		uint32 indexCount          = 0;
 
 		bool drawArraysMode; // use glDrawArrays() if true. use glDrawElements() if false. (default: false)
 	};

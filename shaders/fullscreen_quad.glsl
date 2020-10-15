@@ -1,5 +1,7 @@
 #version 430 core
 
+// Intended to be used with DeferredRenderer::fullscreenQuad
+
 layout (location = 0) in vec3 position;
 
 out VS_OUT {

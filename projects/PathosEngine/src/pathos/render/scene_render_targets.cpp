@@ -94,12 +94,12 @@ namespace pathos {
 		reallocTexture2D(dofSubsum1, GL_RGBA32F, sceneWidth, sceneHeight, "depthOfField_subsum1");
 
 		// bloom
-		reallocTexture2D(sceneBloom, GL_RGBA32F, sceneWidth, sceneHeight, "sceneBloom");
+		reallocTexture2D(sceneBloom, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloom");
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2D(sceneBloomTemp, GL_RGBA32F, sceneWidth, sceneHeight, "sceneBloomTemp");
+		reallocTexture2D(sceneBloomTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloomTemp");
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -163,7 +163,7 @@ namespace pathos {
 
 		cmdList.textureStorage2D(gbufferA, 1, GL_RGBA32UI, sceneWidth, sceneHeight);
 		cmdList.textureStorage2D(gbufferB, 1, GL_RGBA32F, sceneWidth, sceneHeight);
-		cmdList.textureStorage2D(gbufferC, 1, GL_RGBA32F, sceneWidth, sceneHeight);
+		cmdList.textureStorage2D(gbufferC, 1, GL_RGBA32UI, sceneWidth, sceneHeight);
 
 		// #todo-renderstate: Use sampler object
 		cmdList.textureParameteri(gbufferA, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

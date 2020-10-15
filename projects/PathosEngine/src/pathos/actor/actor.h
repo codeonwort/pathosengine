@@ -3,11 +3,13 @@
 #include "badger/math/rotator.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
+#include "badger/assertion/assertion.h"
 #include <vector>
 
 namespace pathos {
 
 	class Scene;
+	class World;
 	class ActorComponent;
 	class SceneComponent;
 
@@ -15,6 +17,7 @@ namespace pathos {
 	class Actor
 	{
 		friend class Scene;
+		friend class World;
 
 	protected:
 		Actor() { isInConstructor = true; } // Use Scene::spawnActor()
@@ -26,7 +29,7 @@ namespace pathos {
 		void registerComponent(ActorComponent* component);
 		void unregisterComponent(ActorComponent* component);
 
-		inline Scene* getOwnerScene() const { return owner; }
+		inline World* getWorld() const { return owner; }
 
 		inline SceneComponent* getRootComponent() { return rootComponent; }
 		vector3 getActorLocation() const;
@@ -64,7 +67,7 @@ namespace pathos {
 	private:
 		void fixRootComponent();
 
-		Scene* owner = nullptr;
+		World* owner = nullptr;
 		bool isInConstructor = false;
 		bool markedForDeath = false;
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-
 #include "pathos/input/input_constants.h"
+#include "pathos/input/xinput_manager.h"
 
 #include <functional>
 #include <vector>
@@ -65,28 +65,40 @@ namespace pathos {
 
 	class InputManager {
 		friend class InputSystem;
+		friend class XInputManager;
 
 	public:
 		void bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
 		void bindButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
 
+		void tick();
 		void updateAxisValue();
 		void bindAxis(const char* eventName, const AxisBinding& binding);
 		float getAxis(const char* eventName) const;
 
+		inline int32 getMouseX() const { return mouseX; }
+		inline int32 getMouseY() const { return mouseY; }
+
+		void bindXInput(XInputUserIndex userIndex);
+
 	private:
 		InputManager() = default;
 
+		// #todo-input: Integrate
 		void processRawKeyDown(uint8 ascii);
 		void processRawKeyUp(uint8 ascii);
 		void processSpecialKeyDown(InputConstants specialKey);
 		void processSpecialKeyUp(InputConstants specialKey);
+		void processButtonDown(InputConstants input);
+		void processButtonUp(InputConstants input);
 
 	private:
 		bool asciiMap[256] = { false, };
 		bool isShiftActive = false;
 		bool isCtrlActive = false;
 		bool isAltActive = false;
+		int32 mouseX = 0;
+		int32 mouseY = 0;
 
 		std::map<uint32, std::function<void()>> buttonPressedMapping;
 		std::map<uint32, std::function<void()>> buttonReleasedMapping;
@@ -95,6 +107,8 @@ namespace pathos {
 		std::vector<ButtonBinding> buttonPressedBindings;
 		std::vector<ButtonBinding> buttonReleasedBindings;
 		std::vector<AxisBinding> axisBindings;
+
+		XInputUserIndex xinputUserIndex = XInputUserIndex::MAX_USERS;
 
 	};
 

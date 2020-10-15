@@ -114,7 +114,7 @@ namespace pathos {
 			cmdList.cullFace(GL_BACK);
 
 			if (autoDestroyCubemap) {
-				gRenderDevice->deleteTextures(1, &cubemap);
+				cmdList.deleteTextures(1, &cubemap);
 			}
 		});
 

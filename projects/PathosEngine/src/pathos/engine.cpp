@@ -1,11 +1,13 @@
 #include "engine.h"
 #include "engine_version.h"
 #include "console.h"
-#include "render/render_device.h"
-#include "render/render_deferred.h"
-#include "util/log.h"
-#include "util/resource_finder.h"
-#include "util/renderdoc_integration.h"
+#include "pathos/actor/world.h"
+#include "pathos/scene/scene.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/render_deferred.h"
+#include "pathos/util/log.h"
+#include "pathos/util/resource_finder.h"
+#include "pathos/util/renderdoc_integration.h"
 
 #include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
@@ -23,8 +25,6 @@ namespace pathos {
 	ConsoleWindow* gConsole = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////
-	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderInitRoutines;
-	std::vector<Engine::GlobalRenderRoutine> Engine::globalRenderDestroyRoutines;
 
 	// static
 	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
@@ -39,12 +39,25 @@ namespace pathos {
 		return true;
 	}
 
+
+	Engine::GlobalRenderRoutineContainer& Engine::getGlobalRenderRoutineContainer()
+	{
+		static GlobalRenderRoutineContainer instance;
+		return instance;
+	}
+
+
 	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
 	{
 		CHECK(initRoutine != nullptr);
-		globalRenderInitRoutines.push_back(initRoutine);
+
+		// Due to parallel initialization of static variables
+		GlobalRenderRoutineContainer& container = getGlobalRenderRoutineContainer();
+		std::lock_guard<std::mutex> guard(container.vector_mutex);
+
+		container.initRoutines.push_back(initRoutine);
 		if (destroyRoutine) {
-			globalRenderDestroyRoutines.push_back(destroyRoutine);
+			container.destroyRoutines.push_back(destroyRoutine);
 		}
 	}
 
@@ -53,8 +66,7 @@ namespace pathos {
 		: renderProxyAllocator(RENDER_PROXY_MEMORY)
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
-		, scene(nullptr)
-		, camera(nullptr)
+		, currentWorld(nullptr)
 		, render_device(nullptr)
 		, renderer(nullptr)
 		, timer_query(0)
@@ -133,6 +145,8 @@ namespace pathos {
 		createParams.onSpecialKeyDown  = Engine::onSpecialKeyDown;
 		createParams.onSpecialKeyUp    = Engine::onSpecialKeyUp;
 		createParams.onReshape         = Engine::onMainWindowReshape;
+		createParams.onMouseDown       = Engine::onMouseDown;
+		createParams.onMouseUp         = Engine::onMouseUp;
 
 		mainWindow = std::make_unique<GUIWindow>();
 		mainWindow->create(createParams);
@@ -193,7 +207,7 @@ namespace pathos {
 			glObjectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
 		}
 
-		for(GlobalRenderRoutine routine : globalRenderInitRoutines) {
+		for(GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().initRoutines) {
 			routine(render_device);
 		}
 
@@ -275,7 +289,7 @@ namespace pathos {
 		assetStreamer->destroy();
 		pathos::destroyImageLibrary();
 
-		for (GlobalRenderRoutine routine : globalRenderDestroyRoutines) {
+		for (GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().destroyRoutines) {
 			routine(render_device);
 		}
 
@@ -311,10 +325,15 @@ namespace pathos {
 		return false;
 	}
 
-	void Engine::setWorld(Scene* inScene, Camera* inCamera)
+	void Engine::setWorld(World* inWorld)
 	{
-		scene = inScene;
-		camera = inCamera;
+		if (currentWorld != nullptr) {
+			currentWorld->destroy();
+			delete currentWorld;
+		}
+
+		currentWorld = inWorld;
+		currentWorld->initialize();
 	}
 
 	void Engine::tick()
@@ -326,8 +345,8 @@ namespace pathos {
 
 		// #todo-fps: This is wrong. Rendering rate should be also controlled...
 		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
-			if (scene != nullptr) {
-				scene->createRenderProxy();
+			if (currentWorld != nullptr) {
+				currentWorld->getScene().createRenderProxy();
 			}
 			return;
 		}
@@ -336,17 +355,9 @@ namespace pathos {
 
 		inputSystem->tick();
 
-		if (scene != nullptr) {
-			scene->tick(deltaSeconds);
-		}
-
-		auto callback = Engine::conf.tick;
-		if (callback != nullptr) {
-			callback(deltaSeconds);
-		}
-
-		if (scene != nullptr) {
-			scene->createRenderProxy();
+		if (currentWorld != nullptr) {
+			currentWorld->tick(deltaSeconds);
+			currentWorld->getScene().createRenderProxy();
 		}
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
@@ -375,8 +386,8 @@ namespace pathos {
 		// #todo-cmd-list: deferred command lists here
 
 		// Renderer adds more immediate commands
-		if (renderer && scene && camera) {
-			renderer->render(immediateContext, scene, camera);
+		if (renderer && currentWorld) {
+			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
 			immediateContext.flushAllCommands();
 		}
 
@@ -398,8 +409,8 @@ namespace pathos {
 
 		renderProxyAllocator.clear();
 
-		if (scene != nullptr) {
-			scene->clearRenderProxy();
+		if (currentWorld != nullptr) {
+			currentWorld->getScene().clearRenderProxy();
 		}
 
 		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
@@ -449,6 +460,14 @@ namespace pathos {
 
 	void Engine::onSpecialKeyUp(InputConstants specialKey) {
 		gEngine->inputSystem->processSpecialKeyUp(specialKey);
+	}
+
+	void Engine::onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
+		gEngine->inputSystem->processButtonDown(mouseInput);
+	}
+
+	void Engine::onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
+		gEngine->inputSystem->processButtonUp(mouseInput);
 	}
 
 }

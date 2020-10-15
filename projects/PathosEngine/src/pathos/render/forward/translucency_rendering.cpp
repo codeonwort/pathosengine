@@ -30,7 +30,7 @@ namespace pathos {
 
 	TranslucencyRendering::~TranslucencyRendering()
 	{
-		glDeleteProgram(shaderProgram);
+		gRenderDevice->deleteProgram(shaderProgram);
 	}
 
 	void TranslucencyRendering::initializeResources(RenderCommandList& cmdList)

@@ -8,11 +8,11 @@
 #define DEBUG_CSM_ID  0
 
 layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright; // bright area only
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
-layout (binding = 2) uniform sampler2D gbuf2;
+layout (binding = 2) uniform usampler2D gbuf2;
+// reserved for more gbuffers...
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
 layout (binding = 7) uniform samplerCube irradianceMap;    // for Diffuse IBL
@@ -27,7 +27,6 @@ layout (std140, binding = 1) uniform UBO_Unpack {
 	ivec4 enabledTechniques1;
 	vec4 fogColor;
 	vec4 fogParams;
-	vec4 bloomParams;
 	float prefilterEnvMapMaxLOD;
 } ubo;
 
@@ -38,9 +37,6 @@ vec3 getFogColor()        { return ubo.fogColor.rgb; }
 float getFogBottom()      { return ubo.fogParams.x; }
 float getFogTop()         { return ubo.fogParams.y; }
 float getFogAttenuation() { return ubo.fogParams.z; }
-float getBloomStrength()  { return ubo.bloomParams.x; }
-float getMinBloom()       { return ubo.bloomParams.y; }
-float getMaxBloom()       { return ubo.bloomParams.z; }
 
 struct fragment_info {
 	vec3 albedo;
@@ -52,6 +48,7 @@ struct fragment_info {
 	float metallic;
 	float roughness;
 	float ao;
+	vec3 emissive;
 
 	vec3 ws_normal;
 };
@@ -59,21 +56,25 @@ struct fragment_info {
 void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
 	uvec4 data0 = texelFetch(gbuf0, coord, 0);
 	vec4 data1 = texelFetch(gbuf1, coord, 0);
-	vec4 data2 = texelFetch(gbuf2, coord, 0);
+	uvec4 data2 = texelFetch(gbuf2, coord, 0);
 
-	vec2 temp = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
+	vec2 albedoZ_normalX = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
+	vec2 metal_roughness = unpackHalf2x16(data2.x);
+	vec2 localAO_emissiveX = unpackHalf2x16(data2.y);
+	vec2 emissiveYZ = unpackHalf2x16(data2.z);
 
-	fragment.albedo         = vec3(unpackHalf2x16(data0.x), temp.x);
-	fragment.normal         = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
+	fragment.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
+	fragment.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
 	fragment.material_id    = data0.w;
 
 	fragment.vs_coords      = data1.xyz;
 	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
 	fragment.specular_power = data1.w;
 
-	fragment.metallic       = data2.x;
-	fragment.roughness      = data2.y;
-	fragment.ao             = data2.z;
+	fragment.metallic       = metal_roughness.x;
+	fragment.roughness      = metal_roughness.y;
+	fragment.ao             = localAO_emissiveX.x;
+	fragment.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
 
 	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
 }
@@ -247,27 +248,22 @@ vec3 applyFog(fragment_info fragment, vec3 color) {
 void main() {
 	fragment_info fragment;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
-	vec4 color = calculateShading(fragment);
 
-	if(isFogEnabled()) {
-		color.rgb = applyFog(fragment, color.rgb);
+	vec4 luminance = calculateShading(fragment);
+
+	if (isFogEnabled()) {
+		luminance.rgb = applyFog(fragment, luminance.rgb);
 	}
 
 #if DEBUG_CSM_ID
-	color.rgb = vec3(getShadowing(fragment));
+	luminance.rgb = vec3(getShadowing(fragment));
 #endif
 
 	// output: standard shading
-	out_color = color;
+	out_color = luminance;
+	out_color.rgb += fragment.emissive;
 
-	// #todo-shader: Write real opacity. Output this value in another place.
-	// for depth-of-field. continue to blur_pass.glsl
+	// #todo-shader: Write real opacity. Output this value in another place for depth-of-field.
+	// Continue to depth_of_field.glsl
 	out_color.a = -fragment.vs_coords.z;
-
-	// output: light bloom
-	float Y = dot(color.xyz, vec3(0.299, 0.587, 0.144));
-	color.xyz = color.xyz * getBloomStrength() * smoothstep(getMinBloom(), getMaxBloom(), Y);
-
-	// #todo-bloom: NaN in what condition?
-	out_bright = max(color, vec4(0.0));
 }

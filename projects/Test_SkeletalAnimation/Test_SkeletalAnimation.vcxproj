@@ -71,12 +71,14 @@
     <ClCompile Include="src\daeloader.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\skinned_mesh.cpp" />
+    <ClCompile Include="src\world2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\animation.h" />
     <ClInclude Include="src\bone.h" />
     <ClInclude Include="src\daeloader.h" />
     <ClInclude Include="src\skinned_mesh.h" />
+    <ClInclude Include="src\world2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
