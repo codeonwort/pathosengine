@@ -13,10 +13,11 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/light/point_light_actor.h"
 #include "pathos/input/input_manager.h"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
-const vector3       SUN_RADIANCE         = 20.0f * vector3(1.0f, 1.0f, 1.0f);
+const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 
 void World_RC1::onInitialize()
 {
@@ -91,6 +92,9 @@ void World_RC1::setupScene()
 	// Light
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
+
+	PointLightActor* pLight = spawnActor<PointLightActor>();
+	pLight->setLightParameters(5000.0f * vector3(1.0f, 1.0f, 1.0f), 10000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
