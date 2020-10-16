@@ -3,11 +3,12 @@
 
 namespace pathos {
 
+	static constexpr uint32 LOAD_INFO_STACK_SIZE = 4 * 1024; // 4 KB
 	static constexpr uint32 OBJ_POOL_SIZE = 32;
 
-	void loadWavefrontOBJ(const WorkItemParam* param)
+	void internal_loadWavefrontOBJ(const WorkItemParam* param)
 	{
-		AssetLoadInfo_WavefrontOBJ* arg = (AssetLoadInfo_WavefrontOBJ*)param->arg;
+		AssetLoadInfoBase_WavefrontOBJ* arg = (AssetLoadInfoBase_WavefrontOBJ*)param->arg;
 		AssetStreamer* streamer = arg->streamer;
 
 		OBJLoader* loader = streamer->objLoaderAllocator.alloc();
@@ -24,7 +25,7 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	AssetStreamer::AssetStreamer()
-		: objAllocator(PoolAllocator<AssetLoadInfo_WavefrontOBJ>(OBJ_POOL_SIZE))
+		: loadInfoAllocator(StackAllocator(LOAD_INFO_STACK_SIZE))
 		, objLoaderAllocator(PoolAllocator<OBJLoader>(OBJ_POOL_SIZE))
 	{
 	}
@@ -45,24 +46,27 @@ namespace pathos {
 
 	void AssetStreamer::enqueueWavefrontOBJ(const char* inFilepath, const char* inMtlDir, WavefrontOBJHandler handler)
 	{
-		AssetLoadInfo_WavefrontOBJ* arg = objAllocator.alloc();
-		CHECK(arg);
-
+		using LoadInfoType = AssetLoadInfo_WavefrontOBJ<AssetLoadInfoBase::DummyType>;
+		LoadInfoType* arg = reinterpret_cast<LoadInfoType*>(loadInfoAllocator.alloc(sizeof(LoadInfoType)));
+		CHECKF(arg, "Out of memory for asset streamer load info");
+		
 		arg->streamer = this;
 		arg->filepath = inFilepath;
 		arg->mtlDir = inMtlDir;
+		
+		arg->handlerOwner = nullptr;
 		arg->handler = handler;
-
+		
 		ThreadPoolWork work;
 		work.arg = arg;
-		work.routine = loadWavefrontOBJ;
-
+		work.routine = internal_loadWavefrontOBJ;
+		
 		threadPool.AddWorkSafe(work);
 	}
 
 	void AssetStreamer::renderThread_flushLoadedAssets()
 	{
-		std::vector<AssetLoadInfo_WavefrontOBJ*> tempLoadedOBJs;
+		std::vector<AssetLoadInfoBase_WavefrontOBJ*> tempLoadedOBJs;
 
 		// Handlers can take long time, so clone the array and release the mutex
 		mutex_loadedOBJs.lock();
@@ -70,9 +74,8 @@ namespace pathos {
 		loadedOBJs.clear();
 		mutex_loadedOBJs.unlock();
 
-		for (AssetLoadInfo_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
-			assetInfo->handler(assetInfo->loader);
-			assetInfo->streamer->objAllocator.dealloc(assetInfo);
+		for (AssetLoadInfoBase_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
+			assetInfo->invokeHandler();
 		}
 	}
 

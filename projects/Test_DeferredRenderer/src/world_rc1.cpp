@@ -25,24 +25,22 @@
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 
-//////////////////////////////////////////////////////////////////////////
-// #todo-world: Support callback defined in a class
-class World_RC1* worldRC1 = nullptr;
-static void onLoadOBJGuardTower(OBJLoader* loader) {
-	worldRC1->onLoadOBJ(loader);
-}
-//////////////////////////////////////////////////////////////////////////
 
 void World_RC1::onInitialize()
 {
-	worldRC1 = this;
+	//////////////////////////////////////////////////////////////////////////
+	// Async load assets
+	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ);
 
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR, onLoadOBJGuardTower);
-
+	//////////////////////////////////////////////////////////////////////////
+	// Spawn actors
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
 
+	//////////////////////////////////////////////////////////////////////////
+	// Setup input
 	ButtonBinding updateSky;
 	updateSky.addInput(InputConstants::KEYBOARD_R);
 
