@@ -10,6 +10,7 @@ using namespace pathos;
 namespace pathos {
 	class ProceduralGeometry;
 	class ColorMaterial;
+	class OBJLoader;
 }
 class PlayerController;
 class LightningActor;
@@ -36,12 +37,16 @@ public:
 
 	void updateStarfield();
 
+	void onLoadOBJ(OBJLoader* loader);
+
 private:
 	PlayerController* playerController = nullptr;
 	std::vector<RingActor*> rings;
 
 	LightningActor* lightningSphere = nullptr;
 	std::vector<uint32> ringIndicesForParticleRotation;
+
+	StaticMeshActor* guardTower = nullptr;
 	
 	GLuint starfield = 0;
 

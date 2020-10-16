@@ -7,6 +7,8 @@
 
 #include "pathos/render/sky_ansel.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
+#include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
@@ -15,12 +17,28 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/util/log.h"
+
+#define OBJ_GUARD_TOWER_FILE "models/medieval_tower/medieval_tower.obj"
+#define OBJ_GUARD_TOWER_DIR  "models/medieval_tower/"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 
+//////////////////////////////////////////////////////////////////////////
+// #todo-world: Support callback defined in a class
+class World_RC1* worldRC1 = nullptr;
+static void onLoadOBJGuardTower(OBJLoader* loader) {
+	worldRC1->onLoadOBJ(loader);
+}
+//////////////////////////////////////////////////////////////////////////
+
 void World_RC1::onInitialize()
 {
+	worldRC1 = this;
+
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR, onLoadOBJGuardTower);
+
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
@@ -170,6 +188,16 @@ void World_RC1::updateStarfield()
 {
 	gEngine->execute("recompile_shaders");
 	GalaxyGenerator::createStarField(starfield, 2048, 1024);
+}
+
+void World_RC1::onLoadOBJ(OBJLoader* loader)
+{
+	LOG(LogInfo, "Load guard tower");
+
+	guardTower = spawnActor<StaticMeshActor>();
+	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
+	guardTower->setActorScale(1000.0f);
+	guardTower->setActorLocation(vector3(0.0f, -4700.0f, 0.0f));
 }
 
 //////////////////////////////////////////////////////////////////////////
