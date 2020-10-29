@@ -40,7 +40,7 @@ namespace pathos {
 		bool castsShadow = true;
 
 	private:
-		Mesh* mesh;
+		Mesh* mesh = nullptr;
 
 	};
 
