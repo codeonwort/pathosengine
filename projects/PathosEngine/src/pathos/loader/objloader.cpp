@@ -33,8 +33,6 @@ namespace std {
 #define WARN_INVALID_FACE_MARTERIAL 0
 #define LOAD_AS_PBR_TEXTURE         1
 
-static constexpr float TRANSLUCENT_THRESHOLD = 0.999f;
-
 namespace pathos {
 
 	void calculateNormal(const std::vector<GLfloat>& positions, const std::vector<GLuint>& indices, std::vector<GLfloat>& outNormals) {
@@ -96,7 +94,7 @@ namespace pathos {
 		std::string objFile = ResourceFinder::get().find(_objFile);
 		mtlDir = ResourceFinder::get().find(_mtlDir);
 
-		// read data using tinyobjloader
+		// Read data using tinyobjloader
 		std::string err;
 		bool loaded = tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
 
@@ -110,7 +108,7 @@ namespace pathos {
 		LOG(LogInfo, "Number of shapes: %d", (int32)t_shapes.size());
 		LOG(LogInfo, "Number of materials: %d", (int32)t_materials.size());
 
-		// reconstruct data
+		// Reconstruct meshes and materials
 		analyzeMaterials(t_materials, materials);
 		reconstructShapes(t_shapes, t_attrib, pendingShapes);
 
@@ -166,10 +164,7 @@ namespace pathos {
 				isPendingMaterial.push_back(true);
 				pendingTextureData.insert(make_pair(static_cast<int32>(i), PendingTexture(bmp, true)));
 			}
-			else if (t_mat.dissolve < TRANSLUCENT_THRESHOLD
-				|| t_mat.transmittance[0] < TRANSLUCENT_THRESHOLD
-				|| t_mat.transmittance[1] < TRANSLUCENT_THRESHOLD
-				|| t_mat.transmittance[2] < TRANSLUCENT_THRESHOLD)
+			else if (t_mat.dissolve < 1.0)
 			{
 				TranslucentColorMaterial* translucentColor = new TranslucentColorMaterial;
 				translucentColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
@@ -191,7 +186,7 @@ namespace pathos {
 				solidColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
 				solidColor->setMetallic(t_mat.metallic);
 				solidColor->setRoughness(t_mat.roughness);
-				// #todo-loader: Parse emission
+				solidColor->setEmissive(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]);
 
 				M = solidColor;
 				isPendingMaterial.push_back(false);

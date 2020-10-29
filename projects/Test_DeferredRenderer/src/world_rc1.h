@@ -26,6 +26,15 @@ private:
 	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };
 
+class SpaceshipActor : public StaticMeshActor {
+public:
+	virtual void onSpawn() override;
+	virtual void onDestroy() override {}
+	virtual void onTick(float deltaSeconds) override {}
+private:
+	void onLoadOBJ(OBJLoader* loader);
+};
+
 class World_RC1 : public World {
 
 public:
@@ -46,6 +55,8 @@ private:
 	LightningActor* lightningSphere = nullptr;
 	std::vector<uint32> ringIndicesForParticleRotation;
 
+	SpaceshipActor* spaceship1 = nullptr;
+	SpaceshipActor* spaceship2 = nullptr;
 	StaticMeshActor* guardTower = nullptr;
 	
 	GLuint starfield = 0;

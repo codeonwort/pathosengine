@@ -67,6 +67,16 @@ namespace pathos {
 			return false;
 		}
 
+		// #todo-gl-extension: Check OpenGL extensions
+		//{
+		//	GLint n, i;
+		//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+		//	for (i = 0; i < n; ++i) {
+		//		const GLubyte* ext_name = glGetStringi(GL_EXTENSIONS, i);
+		//		printf("%s\n", ext_name);
+		//	}
+		//}
+
 		// Create immediate command list
 		immediate_command_list = std::make_unique<RenderCommandList>();
 
