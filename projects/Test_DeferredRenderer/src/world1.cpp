@@ -26,25 +26,15 @@ const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -
 const vector3       SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
 const uint32        NUM_BALLS            = 10;
 
-//////////////////////////////////////////////////////////////////////////
-// #todo-world: Support callback defined in a class
-class World1* worldInstance = nullptr;
-static void onLoadOBJStatic(OBJLoader* loader) {
-	worldInstance->onLoadOBJ(loader);
-}
-static void setupCSMDebuggerStatic() {
-	worldInstance->setupCSMDebugger();
-}
-//////////////////////////////////////////////////////////////////////////
 
 World1::World1()
 {
-	worldInstance = this;
 }
 
 void World1::onInitialize()
 {
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(OBJ_FILE, OBJ_DIR, onLoadOBJStatic);
+	AssetReferenceWavefrontOBJ assetRef(OBJ_FILE, OBJ_DIR);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ);
 
 	setupInput();
 	setupSky();
@@ -62,7 +52,11 @@ void World1::setupInput()
 	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
 
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
-	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebuggerStatic);
+	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, [this]()
+		{
+			setupCSMDebugger();
+		}
+	);
 	inputManager->bindButtonPressed("updateSceneCapture", updateSceneCapture, [this]()
 		{
 			if (sceneCaptureComponent != nullptr) {

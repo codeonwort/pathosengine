@@ -4,9 +4,6 @@
 #include "shadow_mapping.glsl"
 #include "brdf.glsl"
 
-#define SOFT_SHADOW   1
-#define DEBUG_CSM_ID  0
-
 layout (location = 0) out vec4 out_color;
 
 layout (binding = 0) uniform usampler2D gbuf0;
@@ -207,14 +204,20 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 	vec3 ambient    = (kD * diffuse + specular) * ao;
 
+	// Is this right?
+	// Opinion: Shadow factor should affect only direct lighting. Ambient light is irrelevant to shadowing.
+	if (isShadowEnabled()) {
+		Lo *= getShadowing(fragment);
+	}
+
 	vec3 finalColor = ambient + Lo;
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
 	finalColor *= ssao;
 
-	if(isShadowEnabled()) {
-		finalColor = finalColor * getShadowing(fragment);
-	}
+	//if(isShadowEnabled()) {
+	//	finalColor = finalColor * getShadowing(fragment);
+	//}
 
 	return finalColor;
 }
@@ -255,6 +258,7 @@ void main() {
 		luminance.rgb = applyFog(fragment, luminance.rgb);
 	}
 
+// shadow_mapping.glsl
 #if DEBUG_CSM_ID
 	luminance.rgb = vec3(getShadowing(fragment));
 #endif

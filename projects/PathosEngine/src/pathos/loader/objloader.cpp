@@ -164,7 +164,10 @@ namespace pathos {
 				isPendingMaterial.push_back(true);
 				pendingTextureData.insert(make_pair(static_cast<int32>(i), PendingTexture(bmp, true)));
 			}
-			else if (t_mat.dissolve < 1.0)
+			else if (t_mat.dissolve < 1.0f
+				|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
+				|| (0.0f <= t_mat.transmittance[1] && t_mat.transmittance[1] < 1.0f)
+				|| (0.0f <= t_mat.transmittance[2] && t_mat.transmittance[2] < 1.0f))
 			{
 				TranslucentColorMaterial* translucentColor = new TranslucentColorMaterial;
 				translucentColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
