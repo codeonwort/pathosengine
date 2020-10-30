@@ -196,13 +196,6 @@ void World_RC1::setupScene()
 		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition());
 		ringIndicesForParticleRotation.push_back(ringIx);
 	}
-
-	//StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
-	//godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
-	//godRaySource->setActorScale(20.0f);
-	//godRaySource->setActorLocation(vector3(0.0f, 300.0f, -5500.0f));
-	//godRaySource->getStaticMeshComponent()->castsShadow = false;
-	//getScene().godRaySource = godRaySource->getStaticMeshComponent();
 }
 
 void World_RC1::updateStarfield()

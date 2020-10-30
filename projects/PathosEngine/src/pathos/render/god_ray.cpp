@@ -196,6 +196,7 @@ void main() {
 				const auto& proxyList = scene->proxyList_staticMesh[i];
 				for (StaticMeshProxy* proxy : proxyList) {
 					if (proxy->geometry == godRayGeometry) {
+						// #todo-godray: This skips one that is not the god ray source but whose geometry is same as that of the source :/
 						continue;
 					}
 					renderSilhouette(cmdList, camera, proxy, opaque_black);
@@ -227,6 +228,7 @@ void main() {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		}
 
+		// #todo-godray: This is just gaussian blur. Range filter kernel is needed.
 		// Bilateral sampling
 		if (cvar_godray_upsampling.getInt() != 0)
 		{
