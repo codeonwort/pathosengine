@@ -124,13 +124,11 @@ namespace pathos {
 		t_attrib.vertices.clear();
 		pendingShapes.clear();
 		materials.clear();
-		for (auto& bmp : bitmapDB) {
+		for (auto& bmp : cachedBitmapDB) {
 			FreeImage_Unload(bmp.second);
 		}
-		bitmapDB.clear();
-		isPendingMaterial.clear();
+		cachedBitmapDB.clear();
 		pendingTextureData.clear();
-		textureDB.clear();
 	}
 
 	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output) {
@@ -138,31 +136,53 @@ namespace pathos {
 			tinyobj::material_t& t_mat = t_materials[i];
 			Material* M = nullptr;
 
-			if (t_mat.diffuse_texname.length() > 0)
+			// #todo-loader: More robust criteria
+			bool isPBR = t_mat.diffuse_texname.length() > 0;
+
+			if (isPBR)
 			{
+				auto getOrLoadImage = [&](const std::string& texname, FIBITMAP** outBitmap) {
+					*outBitmap = nullptr;
+					if (texname.length() > 0) {
+						std::string filepath = mtlDir + texname;
+						if (cachedBitmapDB.find(filepath) == cachedBitmapDB.end()) {
+							*outBitmap = loadImage(filepath.c_str());
+							cachedBitmapDB.insert(std::make_pair(filepath, *outBitmap));
+						} else {
+							*outBitmap = cachedBitmapDB[filepath];
+						}
+					}
+				};
+
+				PendingTextures pending;
+				getOrLoadImage(t_mat.diffuse_texname, &pending.albedo);
+				getOrLoadImage(t_mat.normal_texname, &pending.normal);
+				getOrLoadImage(t_mat.roughness_texname, &pending.roughness);
+				getOrLoadImage(t_mat.metallic_texname, &pending.metallic);
+				// #todo-loader: Self AO texture is not supported in Wavefront format
+
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
 				FIBITMAP* bmp;
-				if (bitmapDB.find(image_path) == bitmapDB.end()) {
+				if (cachedBitmapDB.find(image_path) == cachedBitmapDB.end()) {
 					bmp = loadImage(image_path.c_str());
-					bitmapDB.insert(std::make_pair(image_path, bmp));
+					cachedBitmapDB.insert(std::make_pair(image_path, bmp));
 				} else {
-					bmp = bitmapDB[image_path];
+					bmp = cachedBitmapDB[image_path];
 				}
 
-				// pending request
+				// This is performed in loading thread, so creation of actual GL textures are delayed until getMaterial() call by main thread.
 #if LOAD_AS_PBR_TEXTURE
+				// https://en.wikipedia.org/wiki/Wavefront_.obj_file#Physically-based_Rendering
 				M = new PBRTextureMaterial(
-					0,
-					gEngine->getSystemTexture2DBlue(),   // #todo-loader: Parse normal texture
-					gEngine->getSystemTexture2DGrey(),   // #todo-loader: Parse metallic texture
-					gEngine->getSystemTexture2DWhite(),  // #todo-loader: Parse roughness texture
-					gEngine->getSystemTexture2DWhite()); // #todo-loader: Parse AO texture
+					gEngine->getSystemTexture2DWhite(),  // albedo
+					gEngine->getSystemTexture2DBlue(),   // normal
+					gEngine->getSystemTexture2DGrey(),   // metallic
+					gEngine->getSystemTexture2DWhite(),  // roughness
+					gEngine->getSystemTexture2DWhite()); // localAO
 #else
 				M = new TextureMaterial(0);
 #endif
-
-				isPendingMaterial.push_back(true);
-				pendingTextureData.insert(make_pair(static_cast<int32>(i), PendingTexture(bmp, true)));
+				pendingTextureData.insert(make_pair(static_cast<int32>(i), pending));
 			}
 			else if (t_mat.dissolve < 1.0f
 				|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
@@ -177,7 +197,6 @@ namespace pathos {
 				translucentColor->setTransmittance(glm::vec3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
 				
 				M = translucentColor;
-				isPendingMaterial.push_back(false);
 			}
 			else
 			{
@@ -192,7 +211,6 @@ namespace pathos {
 				solidColor->setEmissive(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]);
 
 				M = solidColor;
-				isPendingMaterial.push_back(false);
 			}
 
 			M->setName(t_mat.name);
@@ -370,7 +388,7 @@ namespace pathos {
 
 		Material* M = materials[index];
 
-		if (isPendingMaterial[index]) {
+		if (pendingTextureData.find(index) != pendingTextureData.end()) {
 			switch (M->getMaterialID())
 			{
 #if LOAD_AS_PBR_TEXTURE
@@ -378,25 +396,36 @@ namespace pathos {
 #else
 			case MATERIAL_ID::FLAT_TEXTURE:
 #endif
-				GLuint texture;
-				if (textureDB.find(index) == textureDB.end()) {
-					constexpr bool generateMipmap = true;
-					const PendingTexture& pendingTexture = pendingTextureData[index];
-					texture = pathos::createTextureFromBitmap(pendingTexture.rawData, generateMipmap, pendingTexture.sRGB);
-					textureDB.insert(make_pair(index, texture));
-				} else {
-					texture = textureDB[index];
+			{
+				constexpr bool generateMipmap = true;
+				constexpr bool sRGB = true;
+
+				PendingTextures& pendingTextures = pendingTextureData[index];
+				if (pendingTextures.glAlbedo == 0 && pendingTextures.albedo != nullptr) {
+					pendingTextures.glAlbedo = pathos::createTextureFromBitmap(pendingTextures.albedo, generateMipmap, sRGB);
+				}
+				if (pendingTextures.glNormal == 0 && pendingTextures.normal != nullptr) {
+					pendingTextures.glNormal = pathos::createTextureFromBitmap(pendingTextures.normal, generateMipmap, !sRGB);
+				}
+				if (pendingTextures.glRoughness == 0 && pendingTextures.roughness != nullptr) {
+					pendingTextures.glRoughness = pathos::createTextureFromBitmap(pendingTextures.roughness, generateMipmap, !sRGB);
+				}
+				if (pendingTextures.glMetallic == 0 && pendingTextures.metallic != nullptr) {
+					pendingTextures.glMetallic = pathos::createTextureFromBitmap(pendingTextures.metallic, generateMipmap, !sRGB);
 				}
 #if LOAD_AS_PBR_TEXTURE
-				static_cast<PBRTextureMaterial*>(M)->setAlbedo(texture);
+				if (pendingTextures.glAlbedo != 0) static_cast<PBRTextureMaterial*>(M)->setAlbedo(pendingTextures.glAlbedo);
+				if (pendingTextures.glNormal != 0) static_cast<PBRTextureMaterial*>(M)->setNormal(pendingTextures.glNormal);
+				if (pendingTextures.glRoughness != 0) static_cast<PBRTextureMaterial*>(M)->setRoughness(pendingTextures.glRoughness);
+				if (pendingTextures.glMetallic != 0) static_cast<PBRTextureMaterial*>(M)->setMetallic(pendingTextures.glMetallic);
 #else
-				static_cast<TextureMaterial*>(M)->setTexture(texture);
+				if (pendingTextures.glAlbedo != 0) static_cast<TextureMaterial*>(M)->setTexture(pendingTextures.glAlbedo);
 #endif
+			}
 				break;
 
 			default:
-				// no impl for a pending material. find out what's missing!
-				CHECK(0);
+				CHECKF(0, "Failed to process a pending material");
 			}
 		}
 

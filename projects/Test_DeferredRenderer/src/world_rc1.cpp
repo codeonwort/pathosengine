@@ -212,6 +212,9 @@ void World_RC1::onLoadOBJ(OBJLoader* loader)
 	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
 	guardTower->setActorScale(1000.0f);
 	guardTower->setActorLocation(vector3(0.0f, -4700.0f, 0.0f));
+
+	// #todo-material: hack
+	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;
 }
 
 //////////////////////////////////////////////////////////////////////////

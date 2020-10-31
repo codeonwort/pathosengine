@@ -22,6 +22,9 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	vec3 vSun = uboPerFrame.directionalLights[0].direction;
 	float linearZ = (-query.vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 
+	// Non-uniform partition of depth ranges. Should match with the partitioning criteria of Camera::getFrustum().
+	//linearZ = pow(linearZ, 2.0);
+
 	int csmLayer = int(linearZ * NUM_CASCADES);
 	if (csmLayer >= NUM_CASCADES) {
 		return 1.0;
@@ -32,7 +35,7 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 #endif
 
 	const float SLOPE_BIAS = 0.005;
-	const float NORMAL_OFFSET = 10.0; // Magic value for world_rc1, but too big for world1.
+	const float NORMAL_OFFSET = 10.0; // #todo-glsl: Magic value for world_rc1, but too big for world1.
 
 	// Convert world query position to the shadow texture coordinate
 	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(query.wPos + NORMAL_OFFSET * query.wNormal, 1.0);

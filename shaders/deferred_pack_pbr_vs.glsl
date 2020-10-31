@@ -16,6 +16,7 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 
 out VS_OUT {
 	vec3 vs_coords;
+	vec3 ls_coords;
 	vec3 normal;
 	vec3 tangent;
     vec3 bitangent;
@@ -25,6 +26,7 @@ out VS_OUT {
 
 void main() {
 	vs_out.vs_coords   = (uboPerObject.mvTransform * vec4(position, 1.0)).xyz;
+	vs_out.ls_coords   = position;
 	vs_out.normal      = normal;
 	vs_out.tangent     = tangent;
 	vs_out.bitangent   = bitangent;

@@ -1,5 +1,34 @@
 #include "deferredpass_pack_pbr.h"
+#include "pathos/shader/shader_program.h"
+#include "pathos/shader/shader_program.h"
+
 #include "glm/gtc/type_ptr.hpp"
+
+namespace pathos {
+
+	class DefaultLitVS : public ShaderStage {
+	public:
+		DefaultLitVS() : ShaderStage(GL_VERTEX_SHADER, "Material_DefaultLitVS")
+		{
+			setFilepath("deferred_pack_pbr_vs.glsl");
+		}
+	};
+
+	template<bool TriplanarMapping>
+	class DefaultLitFS : public ShaderStage {
+	public:
+		DefaultLitFS() : ShaderStage(GL_FRAGMENT_SHADER, "Material_DefaultLitFS")
+		{
+			if (TriplanarMapping) {
+				addDefine("TRIPLANAR_MAPPING 1");
+			}
+			setFilepath("deferred_pack_pbr_fs.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_DefaultLit, DefaultLitVS, DefaultLitFS<false>);
+	DEFINE_SHADER_PROGRAM2(Program_DefaultLitTriplanarMapping, DefaultLitVS, DefaultLitFS<true>);
+}
 
 namespace pathos {
 
@@ -20,17 +49,23 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Pack_PBR::createProgram() {
-		Shader vs(GL_VERTEX_SHADER, "VS_Deferred_Pack_PBR");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Pack_PBR");
-		vs.loadSource("deferred_pack_pbr_vs.glsl");
-		fs.loadSource("deferred_pack_pbr_fs.glsl");
+		ShaderProgram& program1 = FIND_SHADER_PROGRAM(Program_DefaultLit);
+		program = program1.getGLName();
 
-		program = pathos::createProgram(vs, fs, "Deferred_Pack_PBR");
 		ubo.init<UBO_Deferred_Pack_PBR>();
 	}
 
 	void MeshDeferredRenderPass_Pack_PBR::render(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
 		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(material_);
+
+		// #todo-material: hack and it increases overhead of shader changes.
+		if (material->useTriplanarMapping) {
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DefaultLitTriplanarMapping);
+			cmdList.useProgram(program.getGLName());
+		} else {
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DefaultLit);
+			cmdList.useProgram(program.getGLName());
+		}
 
 		geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 		geometry->activateIndexBuffer(cmdList);
