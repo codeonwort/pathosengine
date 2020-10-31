@@ -24,7 +24,7 @@
 #define OBJ_SPACESHIP_FILE "render_challenge_1/spaceship.obj"
 #define OBJ_SPACESHIP_DIR  "render_challenge_1/"
 
-const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.1f));
+const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 
 

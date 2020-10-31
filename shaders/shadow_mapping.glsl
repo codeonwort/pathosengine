@@ -15,6 +15,7 @@ struct ShadowQuery {
 	vec3 vPos;    // position in view space
 	vec3 wPos;    // position in world space
 	vec3 vNormal; // surface normal in view space
+	vec3 wNormal; // surface normal in world space
 };
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
@@ -30,14 +31,20 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	return float(csmLayer) / NUM_CASCADES;
 #endif
 
-	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(query.wPos, 1.0);
-	float NdotL = max(dot(query.vNormal, -vSun), 0.0);
-	float bias = max(0.005 * (1.0 - NdotL), 0.005);
+	const float SLOPE_BIAS = 0.005;
+	const float NORMAL_OFFSET = 10.0; // Magic value for world_rc1, but too big for world1.
+
+	// Convert world query position to the shadow texture coordinate
+	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(query.wPos + NORMAL_OFFSET * query.wNormal, 1.0);
 	float inv_w = 1.0 / ls_coords.w;
-	ls_coords.z -= bias;
 	ls_coords.xyz = ls_coords.xyz * inv_w;
-	// to uv space
 	ls_coords.xyz = (ls_coords.xyz + vec3(1.0)) * 0.5;
+
+	// Apply slope-scaled depth bias
+	float NdotL = max(dot(query.vNormal, -vSun), 0.0);
+	float bias = max(SLOPE_BIAS * (1.0 - NdotL), SLOPE_BIAS);
+	//float bias = SLOPE_BIAS * tan(acos(NdotL));
+	ls_coords.z -= clamp(bias, 0.0, SLOPE_BIAS);
 
 	float shadow = 0.0;
 

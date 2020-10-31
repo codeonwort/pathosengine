@@ -81,6 +81,7 @@ float getShadowing(fragment_info fragment) {
 	query.vPos    = fragment.vs_coords;
 	query.wPos    = fragment.ws_coords;
 	query.vNormal = fragment.normal;
+	query.wNormal = fragment.ws_normal;
 	
 	return getShadowingFactor(csm, query);
 }
