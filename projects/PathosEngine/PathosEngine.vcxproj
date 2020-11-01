@@ -99,6 +99,7 @@
     <ClCompile Include="src\pathos\input\input_manager.cpp" />
     <ClCompile Include="src\pathos\input\input_system.cpp" />
     <ClCompile Include="src\pathos\input\xinput_manager.cpp" />
+    <ClCompile Include="src\pathos\light\shadow_point_light.cpp" />
     <ClCompile Include="src\pathos\loader\asset_streamer.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="src\pathos\light\directional_light_component.h" />
     <ClInclude Include="src\pathos\light\point_light_actor.h" />
     <ClInclude Include="src\pathos\light\point_light_component.h" />
+    <ClInclude Include="src\pathos\light\shadow_point_light.h" />
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
     <ClInclude Include="src\pathos\mesh\model_transform.h" />

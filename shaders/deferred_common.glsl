@@ -1,5 +1,5 @@
 
-// should match with MeshDeferredRenderPass_Unpack::MAX_DIRECTIONAL_LIGHTS
+// should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 #define MAX_DIRECTIONAL_LIGHTS     4
 #define MAX_POINT_LIGHTS           8
 
@@ -15,6 +15,9 @@ struct PointLight {
 	float attenuationRadius;
 	vec3  intensity;
 	float falloffExponent;
+	uint  castsShadow;
+	//vec3  padding0; // This rather breaks padding. Very awesome layout rule :/
+	vec4  padding1; // big padding due to castsShadow
 };
 
 struct DirectionalLight {

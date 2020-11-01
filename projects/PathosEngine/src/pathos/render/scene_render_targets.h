@@ -22,7 +22,9 @@ namespace pathos {
 		GLuint sceneFinal; // Final texture rendered on the screen
 		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneDepth;
+
 		GLuint cascadedShadowMap;
+		GLuint pointLightShadowMaps; // cubemap array
 
 		// Deferred renderer only
 		bool useGBuffer;
@@ -62,6 +64,9 @@ namespace pathos {
 		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height);
 
 		void freeSceneTextures(RenderCommandList& cmdList);
+
+		// Called every frame by renderer
+		void reallocPointLightShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height);
 
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);

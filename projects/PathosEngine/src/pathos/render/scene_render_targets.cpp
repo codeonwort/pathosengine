@@ -11,6 +11,7 @@ namespace pathos {
 		, sceneColor(0)
 		, sceneDepth(0)
 		, cascadedShadowMap(0)
+		, pointLightShadowMaps(0)
 		, useGBuffer(false)
 		, gbufferA(0)
 		, gbufferB(0)
@@ -126,6 +127,7 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
 		safe_release(cascadedShadowMap);
+		safe_release(pointLightShadowMaps);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -145,6 +147,25 @@ namespace pathos {
 		gRenderDevice->deleteTextures((GLsizei)textures.size(), textures.data());
 
 		destroyed = true;
+	}
+
+	void SceneRenderTargets::reallocPointLightShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height)
+	{
+		if (pointLightShadowMaps != 0) {
+			cmdList.deleteTextures(1, &pointLightShadowMaps);
+		}
+		if (numPointLights > 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &pointLightShadowMaps);
+			cmdList.textureStorage3D(
+				pointLightShadowMaps,
+				1,
+				GL_DEPTH_COMPONENT32F, // #todo-shadow-plight: Too precise?
+				width,
+				height,
+				numPointLights * 6);
+			cmdList.bindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightShadowMaps);
+			cmdList.objectLabel(GL_TEXTURE, pointLightShadowMaps, -1, "PointLightShadowMaps");
+		}
 	}
 
 	void SceneRenderTargets::reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged)
