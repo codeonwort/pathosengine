@@ -153,6 +153,7 @@ namespace pathos {
 	{
 		if (pointLightShadowMaps != 0) {
 			cmdList.deleteTextures(1, &pointLightShadowMaps);
+			pointLightShadowMaps = 0;
 		}
 		if (numPointLights > 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &pointLightShadowMaps);

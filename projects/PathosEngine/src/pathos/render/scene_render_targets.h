@@ -24,7 +24,7 @@ namespace pathos {
 		GLuint sceneDepth;
 
 		GLuint cascadedShadowMap;
-		GLuint pointLightShadowMaps; // cubemap array
+		GLuint pointLightShadowMaps; // cubemap array (#todo: omniShadowMaps would be better naming)
 
 		// Deferred renderer only
 		bool useGBuffer;

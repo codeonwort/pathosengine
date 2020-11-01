@@ -14,6 +14,7 @@ namespace pathos {
 	struct UBO_PointLightShadow {
 		matrix4 model;
 		matrix4 viewproj;
+		vector4 lightPositionAndZFar;
 	};
 	
 	class PointLightShadowVS : public ShaderStage {
@@ -90,9 +91,9 @@ namespace pathos {
 			vector3(0.0f, 0.0f, 1.0f), vector3(0.0f, 0.0f, -1.0f)
 		};
 		vector3 upDirections[6] = {
-			vector3(0.0f, 1.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f),
-			vector3(0.0f, 0.0f, 1.0f), vector3(0.0f, 0.0f, 1.0f),
-			vector3(0.0f, 1.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f)
+			vector3(0.0f, -1.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f),
+			vector3(0.0f, 0.0f, 1.0f), vector3(0.0f, 0.0f, -1.0f),
+			vector3(0.0f, -1.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f)
 		};
 
 		for (uint32 lightIx = 0; lightIx < numLights; ++lightIx) {
@@ -118,6 +119,7 @@ namespace pathos {
 
 				UBO_PointLightShadow uboData;
 				uboData.viewproj = viewproj;
+				uboData.lightPositionAndZFar = vector4(light->position, zFar);
 
 				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
 					uboData.model = batch->modelMatrix;
