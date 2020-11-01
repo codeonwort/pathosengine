@@ -175,7 +175,7 @@ namespace pathos {
 		for (uint32 i = 0u; i <= numCascades; ++i) {
 			float k = static_cast<float>(i) / static_cast<float>(numCascades);
 			// #todo-shadow: Needs exponential division. Close view needs far more precision than just 1/n range of depths.
-			//k = powf(k, 3.0f);
+			//k = powf(k, 2.0f);
 
 			zi = zn + (zf - zn) * k;
 

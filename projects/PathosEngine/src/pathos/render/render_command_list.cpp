@@ -17,9 +17,11 @@ namespace pathos {
 
 	void RenderCommandList::executeAllCommands()
 	{
-		for (RenderCommandBase* __restrict cmd : commands)
+		uint32 n = (uint32)commands.size();
+		for(uint32 i = 0; i < n; ++i)
 		{
-			cmd->pfn_execute((RenderCommandBase*)cmd);
+			debugCurrentCommandIx = i;
+			commands[i]->pfn_execute(commands[i]);
 		}
 	}
 

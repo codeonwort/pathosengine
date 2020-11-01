@@ -4,20 +4,17 @@
 #include "pathos/camera/camera.h"
 #include "pathos/scene/scene.h"
 
+#include "badger/types/noncopyable.h"
 #include <vector>
 
 namespace pathos {
 
-	// Shadow mapping by directional light. (usually Sun)
-	// It's prepass prior to any material shading, so can be used in both forward and deferred renderers.
-	class DirectionalShadowMap {
+	// Shadow pass for a directional light. (usually Sun)
+	class DirectionalShadowMap : public Noncopyable {
 
 	public:
 		DirectionalShadowMap(const glm::vec3& lightDirection = glm::vec3(0.0f, -1.0f, 0.0f));
 		virtual ~DirectionalShadowMap();
-
-		DirectionalShadowMap(const DirectionalShadowMap&) = delete;
-		DirectionalShadowMap& operator=(DirectionalShadowMap&) = delete;
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
@@ -39,7 +36,6 @@ namespace pathos {
 
 		GLuint program = 0xffffffff; // shadow mapping
 		GLint uniform_depthMVP = -1;
-		std::vector<GLint> textureBindings;
 
 		// light space transform
 		glm::vec3 lightDirection;

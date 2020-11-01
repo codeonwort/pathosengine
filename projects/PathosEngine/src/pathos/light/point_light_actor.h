@@ -19,11 +19,13 @@ namespace pathos {
 		void setLightParameters(
 			const vector3& inRadiance = vector3(1.0f, 1.0f, 1.0f),
 			float inAttenuationRadius = 100.0f,
-			float inFalloffExponent = 0.001f)
+			float inFalloffExponent = 0.001f,
+			bool castsShadow = true)
 		{
 			lightComponent->color = inRadiance;
 			lightComponent->attenuationRadius = inAttenuationRadius;
 			lightComponent->falloffExponent = inFalloffExponent;
+			lightComponent->castsShadow = castsShadow;
 		}
 
 	private:

@@ -41,6 +41,7 @@ namespace pathos {
 		cmdList.useProgram(program);
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.enable(GL_DEPTH_CLAMP); // Let vertices farther than zFar to be clamped to zFar
 		cmdList.depthFunc(GL_LESS);
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -80,6 +81,7 @@ namespace pathos {
 		}
 
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		cmdList.disable(GL_DEPTH_CLAMP);
 	}
 
 	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)

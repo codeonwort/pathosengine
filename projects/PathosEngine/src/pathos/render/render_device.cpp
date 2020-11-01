@@ -34,7 +34,10 @@ void glErrorCallback(
 		const char* typeStrings[] = { "ERROR", "DEPRECATED", "UNDEFINED", "PORTABILITY", "PERFORMANCE", "OTHER" };
 		const char* severityStrings[] = { "HIGH", "MEDIUM", "LOW" };
 
-		fprintf_s(stderr, "GL CALLBACK: source=0x%x(%s), type=0x%x(%s), severity=0x%x(%s), message=%s\n",
+		// #todo-fatal: Sometimes DeferredRenderer::clearGBuffer() fails and leads to here. (reason: gbufferFBO is incomplete)
+
+		fprintf_s(stderr, "GL CALLBACK: renderCommandIx=%d, source=0x%x(%s), type=0x%x(%s), severity=0x%x(%s), message=%s\n",
+			pathos::gRenderDevice->getImmediateCommandList().debugCurrentCommandIx,
 			source, sourceStrings[source - 0x8246], type, typeStrings[type - 0x824C], severity, severityStrings[severity - 0x9146], message);
 		__debugbreak();
 	}
@@ -66,6 +69,16 @@ namespace pathos {
 			LOG(LogError, "GL %d.%d is not supported", REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION);
 			return false;
 		}
+
+		// #todo-gl-extension: Check OpenGL extensions
+		//{
+		//	GLint n, i;
+		//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+		//	for (i = 0; i < n; ++i) {
+		//		const GLubyte* ext_name = glGetStringi(GL_EXTENSIONS, i);
+		//		printf("%s\n", ext_name);
+		//	}
+		//}
 
 		// Create immediate command list
 		immediate_command_list = std::make_unique<RenderCommandList>();

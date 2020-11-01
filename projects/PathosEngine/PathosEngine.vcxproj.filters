@@ -135,9 +135,6 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\render_raytracer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\overlay\brush.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -291,6 +288,9 @@
     <ClCompile Include="src\pathos\render\postprocessing\bloom_setup.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\light\shadow_omni.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -387,9 +387,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\render_raytracer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\brush.h">
@@ -639,6 +636,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\bloom_setup.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\shadow_omni.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

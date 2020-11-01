@@ -26,25 +26,15 @@ const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -
 const vector3       SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
 const uint32        NUM_BALLS            = 10;
 
-//////////////////////////////////////////////////////////////////////////
-// #todo-world: Support callback defined in a class
-class World1* worldInstance = nullptr;
-static void onLoadOBJStatic(OBJLoader* loader) {
-	worldInstance->onLoadOBJ(loader);
-}
-static void setupCSMDebuggerStatic() {
-	worldInstance->setupCSMDebugger();
-}
-//////////////////////////////////////////////////////////////////////////
 
 World1::World1()
 {
-	worldInstance = this;
 }
 
 void World1::onInitialize()
 {
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(OBJ_FILE, OBJ_DIR, onLoadOBJStatic);
+	AssetReferenceWavefrontOBJ assetRef(OBJ_FILE, OBJ_DIR);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ);
 
 	setupInput();
 	setupSky();
@@ -62,7 +52,11 @@ void World1::setupInput()
 	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
 
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
-	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, setupCSMDebuggerStatic);
+	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, [this]()
+		{
+			setupCSMDebugger();
+		}
+	);
 	inputManager->bindButtonPressed("updateSceneCapture", updateSceneCapture, [this]()
 		{
 			if (sceneCaptureComponent != nullptr) {
@@ -205,10 +199,10 @@ void World1::setupScene()
 	pointLight2->setActorLocation(vector3(-20.0f, 50.0f, 50.0f));
 	pointLight3->setActorLocation(vector3(-20.0f, 50.0f, 150.0f));
 
-	pointLight0->setLightParameters(5.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f);
-	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f);
-	pointLight2->setLightParameters(2.0f * vector3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f);
-	pointLight3->setLightParameters(1.0f * vector3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f);
+	pointLight0->setLightParameters(15.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f, true);
+	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f, true);
+	pointLight2->setLightParameters(2.0f * vector3(2.0f, 0.0f, 0.0f), 80.0f, 0.001f, true);
+	pointLight3->setLightParameters(1.0f * vector3(2.0f, 2.0f, 2.0f), 500.0f, 0.0001f, true);
 
 	godRaySource = spawnActor<StaticMeshActor>();
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
@@ -266,6 +260,10 @@ void World1::setupScene()
 			box->setStaticMesh(new Mesh(geom_cube, box_material));
 			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY));
 			box->setActorScale(vector3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+
+			if (i == 0 && j == 0) {
+				box->setActorLocation(0.0f, 20.0f, 180.0f);
+			}
 
 			boxes.push_back(box);
 		}

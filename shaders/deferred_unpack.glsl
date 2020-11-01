@@ -4,9 +4,6 @@
 #include "shadow_mapping.glsl"
 #include "brdf.glsl"
 
-#define SOFT_SHADOW   1
-#define DEBUG_CSM_ID  0
-
 layout (location = 0) out vec4 out_color;
 
 layout (binding = 0) uniform usampler2D gbuf0;
@@ -15,9 +12,10 @@ layout (binding = 2) uniform usampler2D gbuf2;
 // reserved for more gbuffers...
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
-layout (binding = 7) uniform samplerCube irradianceMap;    // for Diffuse IBL
-layout (binding = 8) uniform samplerCube prefilterEnvMap;  // for Specular IBL
-layout (binding = 9) uniform sampler2D brdfIntegrationMap; // for Specular IBL
+layout (binding = 7) uniform samplerCubeArrayShadow pointLightShadowMaps;
+layout (binding = 8) uniform samplerCube irradianceMap;    // for Diffuse IBL
+layout (binding = 9) uniform samplerCube prefilterEnvMap;  // for Specular IBL
+layout (binding = 10) uniform sampler2D brdfIntegrationMap; // for Specular IBL
 
 in VS_OUT {
 	vec2 screenUV;
@@ -84,10 +82,23 @@ float getShadowing(fragment_info fragment) {
 	query.vPos    = fragment.vs_coords;
 	query.wPos    = fragment.ws_coords;
 	query.vNormal = fragment.normal;
+	query.wNormal = fragment.ws_normal;
 	
 	return getShadowingFactor(csm, query);
 }
 
+float getShadowingByPointLight(fragment_info fragment, PointLight light, int shadowMapIndex) {
+	OmniShadowQuery query;
+	query.shadowMapIndex    = shadowMapIndex;
+	// #todo: Remove transform
+	query.lightPos          = (uboPerFrame.inverseViewTransform * vec4(light.position, 1.0)).xyz;
+	query.attenuationRadius = light.attenuationRadius;
+	query.wPos              = fragment.ws_coords;
+
+	return getOmniShadowingFactor(pointLightShadowMaps, query);
+}
+
+// #todo: Too old model to be deprecated.
 vec3 phongShading(fragment_info fragment) {
 	vec3 result = vec3(0.0);
 	vec3 N = fragment.normal;
@@ -95,12 +106,18 @@ vec3 phongShading(fragment_info fragment) {
 	for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
 		DirectionalLight light = uboPerFrame.directionalLights[i];
 
+		vec3 radiance = light.intensity;
+		if (i == 0 && isShadowEnabled()) {
+			radiance = radiance * getShadowing(fragment);
+		}
+
 		vec3 L = -light.direction;
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 diffuse_color = light.intensity * (fragment.albedo * cosTheta);
+		vec3 diffuse_color = radiance * (fragment.albedo * cosTheta);
 		result += diffuse_color;
 	}
 
+	int omniShadowMapIndex = 0;
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
@@ -110,13 +127,17 @@ vec3 phongShading(fragment_info fragment) {
 		L = normalize(L);
 		vec3 R = reflect(-L, N);
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 specular_color = light.intensity * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
-		vec3 diffuse_color = light.intensity * fragment.albedo * cosTheta;
-		result += attenuation * (diffuse_color + specular_color);
-	}
 
-	if(isShadowEnabled()) {
-		result.rgb = result.rgb * getShadowing(fragment);
+		vec3 radiance = light.intensity;
+		radiance *= attenuation;
+		if (light.castsShadow != 0 && isShadowEnabled()) {
+			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
+			omniShadowMapIndex += 1;
+		}
+
+		vec3 specular_color = radiance * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
+		vec3 diffuse_color = radiance * fragment.albedo * cosTheta;
+		result += diffuse_color + specular_color;
 	}
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
@@ -148,7 +169,12 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 		vec3 L = -light.direction;
 		vec3 H = normalize(V + L);
+
 		vec3 radiance = light.intensity;
+		// #todo: Support shadow by each directional light
+		if (i == 0 && isShadowEnabled()) {
+			radiance *= getShadowing(fragment);
+		}
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);
@@ -166,6 +192,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
+	int omniShadowMapIndex = 0;
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
@@ -173,8 +200,13 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 H = normalize(V + L);
 		float distance = length(light.position - fragment.vs_coords);
 		float attenuation = pointLightAttenuation(light, distance);
+
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
+		if (light.castsShadow != 0 && isShadowEnabled()) {
+			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
+			omniShadowMapIndex += 1;
+		}
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);
@@ -211,10 +243,6 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
 	finalColor *= ssao;
-
-	if(isShadowEnabled()) {
-		finalColor = finalColor * getShadowing(fragment);
-	}
 
 	return finalColor;
 }
@@ -255,6 +283,7 @@ void main() {
 		luminance.rgb = applyFog(fragment, luminance.rgb);
 	}
 
+// shadow_mapping.glsl
 #if DEBUG_CSM_ID
 	luminance.rgb = vec3(getShadowing(fragment));
 #endif

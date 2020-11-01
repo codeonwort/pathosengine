@@ -51,6 +51,8 @@ namespace pathos {
 		// Should be assigned by renderer before rendering anything of current frame
 		struct SceneRenderTargets* sceneRenderTargets;
 
+		uint32 debugCurrentCommandIx = 0;
+
 	private:
 		RenderCommandBase* getNextPacket();
 

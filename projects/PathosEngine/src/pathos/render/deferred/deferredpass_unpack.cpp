@@ -112,9 +112,10 @@ namespace pathos {
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
-		cmdList.bindTextureUnit(7, scene->irradianceMap);
-		cmdList.bindTextureUnit(8, scene->prefilterEnvMap);
-		cmdList.bindTextureUnit(9, IrradianceBaker::getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
+		cmdList.bindTextureUnit(8, scene->irradianceMap);
+		cmdList.bindTextureUnit(9, scene->prefilterEnvMap);
+		cmdList.bindTextureUnit(10, IrradianceBaker::getBRDFIntegrationMap_512());
 
 		cmdList.disable(GL_DEPTH_TEST);
 

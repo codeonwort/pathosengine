@@ -8,6 +8,7 @@
 #include "pathos/camera/camera.h"
 #include "pathos/scene/scene.h"
 #include "pathos/light/shadow_directional.h"
+#include "pathos/light/shadow_omni.h"
 
 #include <memory>
 
@@ -35,6 +36,7 @@ namespace pathos {
 
 		// full-screen processing
 		static std::unique_ptr<DirectionalShadowMap> sunShadowMap;
+		static std::unique_ptr<OmniShadowPass> omniShadowPass;
 		static std::unique_ptr<class VisualizeDepth> visualizeDepth;
 
 		// post-processing

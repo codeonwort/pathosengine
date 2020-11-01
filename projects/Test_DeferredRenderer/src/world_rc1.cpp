@@ -7,6 +7,8 @@
 
 #include "pathos/render/sky_ansel.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
+#include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
@@ -15,23 +17,60 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/util/log.h"
+
+#define OBJ_GUARD_TOWER_FILE "render_challenge_1/medieval_tower.obj"
+#define OBJ_GUARD_TOWER_DIR  "render_challenge_1/"
+#define OBJ_SPACESHIP_FILE "render_challenge_1/spaceship.obj"
+#define OBJ_SPACESHIP_DIR  "render_challenge_1/"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 
+
 void World_RC1::onInitialize()
 {
+	//////////////////////////////////////////////////////////////////////////
+	// Async load assets
+	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ);
+	
+	spaceship1 = spawnActor<SpaceshipActor>();
+	spaceship1->setActorScale(30.0f);
+	spaceship1->setActorLocation(vector3(-347.0f, -1098.0f, 1648.0f));
+	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
+
+	spaceship2 = spawnActor<SpaceshipActor>();
+	spaceship2->setActorScale(30.0f);
+	spaceship2->setActorLocation(vector3(1257.0f, -1098.0f, 348.0f));
+	spaceship2->setActorRotation(Rotator(112.91f, -21.14f, 0.0f));
+
+	//////////////////////////////////////////////////////////////////////////
+	// Spawn actors
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
 
+	//////////////////////////////////////////////////////////////////////////
+	// Setup input
 	ButtonBinding updateSky;
 	updateSky.addInput(InputConstants::KEYBOARD_R);
+
+	ButtonBinding traceCamera;
+	traceCamera.addInput(InputConstants::KEYBOARD_C);
 
 	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindButtonPressed("updateSky", updateSky, [this]()
 		{
 			updateStarfield();
+		}
+	);
+	inputManager->bindButtonPressed("traceCamera", traceCamera, [this]()
+		{
+			vector3 position = getCamera().getPosition();
+			Rotator rotation = Rotator(getCamera().getYaw(), getCamera().getPitch(), 0.0f); // no roll yet
+			LOG(LogDebug, "Camera (x, y, z) = (%f, %f, %f), (pitch, yaw, roll) = (%f, %f, %f)",
+				position.x, position.y, position.z, rotation.yaw, rotation.pitch, rotation.roll);
 		}
 	);
 }
@@ -157,19 +196,25 @@ void World_RC1::setupScene()
 		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition());
 		ringIndicesForParticleRotation.push_back(ringIx);
 	}
-
-	//StaticMeshActor* godRaySource = spawnActor<StaticMeshActor>();
-	//godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
-	//godRaySource->setActorScale(20.0f);
-	//godRaySource->setActorLocation(vector3(0.0f, 300.0f, -5500.0f));
-	//godRaySource->getStaticMeshComponent()->castsShadow = false;
-	//getScene().godRaySource = godRaySource->getStaticMeshComponent();
 }
 
 void World_RC1::updateStarfield()
 {
 	gEngine->execute("recompile_shaders");
 	GalaxyGenerator::createStarField(starfield, 2048, 1024);
+}
+
+void World_RC1::onLoadOBJ(OBJLoader* loader)
+{
+	LOG(LogInfo, "Load guard tower model");
+
+	guardTower = spawnActor<StaticMeshActor>();
+	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
+	guardTower->setActorScale(1000.0f);
+	guardTower->setActorLocation(vector3(0.0f, -4700.0f, 0.0f));
+
+	// #todo-material: hack
+	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -265,4 +310,19 @@ vector3 RingActor::getRandomInnerPosition() const
 {
 	uint32 ix = (uint32)(innerVertexIndices.size() * Random());
 	return G->getPosition(innerVertexIndices[ix]);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+void SpaceshipActor::onSpawn()
+{
+	AssetReferenceWavefrontOBJ assetRef(OBJ_SPACESHIP_FILE, OBJ_SPACESHIP_DIR);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &SpaceshipActor::onLoadOBJ);
+}
+
+void SpaceshipActor::onLoadOBJ(OBJLoader* loader)
+{
+	LOG(LogInfo, "Load spaceship model");
+
+	setStaticMesh(loader->craftMeshFromAllShapes());
 }

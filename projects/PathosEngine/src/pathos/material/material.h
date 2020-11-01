@@ -181,6 +181,9 @@ namespace pathos {
 		inline void setRoughness(GLuint inTexture) { tex_roughness = inTexture; }
 		inline void setAO(GLuint inTexture)        { tex_ao = inTexture;        }
 
+		// #todo-material: hack
+		bool useTriplanarMapping = false;
+
 	protected:
 		GLuint tex_albedo;
 		GLuint tex_normal;

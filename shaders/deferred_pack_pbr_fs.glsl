@@ -2,6 +2,10 @@
 
 #include "deferred_common_fs.glsl"
 
+#if !defined(TRIPLANAR_MAPPING)
+	#define TRIPLANAR_MAPPING 0
+#endif
+
 layout (binding = 0) uniform sampler2D tex_albedo;
 layout (binding = 1) uniform sampler2D tex_normal;
 layout (binding = 2) uniform sampler2D tex_metallic;
@@ -16,6 +20,7 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 
 in VS_OUT {
 	vec3 vs_coords;
+	vec3 ls_coords;
 	vec3 normal;
 	vec3 tangent;
     vec3 bitangent;
@@ -37,11 +42,31 @@ vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
 }
 
 void main() {
-	vec3 albedo = texture(tex_albedo, fs_in.texcoord).rgb;
-	vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, fs_in.texcoord);
-	vec3 metallic = texture(tex_metallic, fs_in.texcoord).rgb;
-	vec3 roughness = texture(tex_roughness, fs_in.texcoord).rgb;
-	vec3 ao = texture(tex_ao, fs_in.texcoord).rgb;
+	vec2 uv = fs_in.texcoord;
+
+#if TRIPLANAR_MAPPING
+	// #todo: Same process for metallic, roughness, and ao
+	// #todo: Apply at least model transform
+	vec3 P = fs_in.ls_coords * 2.0;
+	vec3 N = fs_in.normal;
+	vec3 NN = N * N;
+	vec3 albedoX = texture(tex_albedo, P.zy).rgb;
+	vec3 albedoY = texture(tex_albedo, P.zx).rgb;
+	vec3 albedoZ = texture(tex_albedo, P.xy).rgb;
+	vec3 albedo = (albedoX * NN.x) + (albedoY * NN.y) + (albedoZ * NN.z);
+
+	vec3 normalX = getNormal(N, fs_in.tangent, fs_in.bitangent, P.zy);
+	vec3 normalY = getNormal(N, fs_in.tangent, fs_in.bitangent, P.zx);
+	vec3 normalZ = getNormal(N, fs_in.tangent, fs_in.bitangent, P.xy);
+	vec3 normal = normalize((normalX * NN.x) + (normalY * NN.y) + (normalZ * NN.z));
+#else
+	vec3 albedo = texture(tex_albedo, uv).rgb;
+	vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, uv);
+#endif
+	
+	vec3 metallic = texture(tex_metallic, uv).rgb;
+	vec3 roughness = texture(tex_roughness, uv).rgb;
+	vec3 ao = texture(tex_ao, uv).rgb;
 
 	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic.r, roughness.r, ao.r, vec3(0.0));
 }

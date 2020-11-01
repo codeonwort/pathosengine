@@ -53,8 +53,7 @@ namespace pathos {
 
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
-	static constexpr uint32 DIRECTIONAL_LIGHT_BUFFER_SIZE = MAX_DIRECTIONAL_LIGHTS * sizeof(DirectionalLightProxy);
-	static constexpr uint32 POINT_LIGHT_BUFFER_SIZE       = MAX_POINT_LIGHTS * sizeof(PointLightProxy);
+
 	struct UBO_PerFrame {
 		glm::mat4             view;
 		glm::mat4             inverseView;
@@ -170,6 +169,12 @@ namespace pathos {
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 
 			sunShadowMap->renderShadowMap(cmdList, scene, camera);
+		}
+
+		{
+			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
+
+			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
 		// ready scene for rendering
@@ -483,6 +488,7 @@ namespace pathos {
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
+	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
 	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
 
 	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
@@ -526,9 +532,11 @@ namespace pathos {
 
 		{
 			sunShadowMap = std::make_unique<DirectionalShadowMap>();
+			omniShadowPass = std::make_unique<OmniShadowPass>();
 			visualizeDepth = std::make_unique<VisualizeDepth>();
 
 			sunShadowMap->initializeResources(cmdList);
+			omniShadowPass->initializeResources(cmdList);
 		}
 
 		{
@@ -577,6 +585,7 @@ namespace pathos {
 
 		{
 			sunShadowMap->destroyResources(cmdList);
+			omniShadowPass->destroyResources(cmdList);
 			visualizeDepth.release();
 		}
 

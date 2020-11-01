@@ -9,10 +9,13 @@
 namespace pathos {
 
 	struct PointLightProxy : public SceneComponentProxy {
-		glm::vec3 position;
+		vector3   position;
 		float     attenuationRadius;
-		glm::vec3 intensity;
+		vector3   intensity;
 		float     falloffExponent;
+		uint32    castsShadow;
+		vector3   padding0;
+		vector4   padding1;
 	};
 
 	class PointLightComponent : public SceneComponent {
@@ -26,14 +29,16 @@ namespace pathos {
 			proxy->attenuationRadius = attenuationRadius;
 			proxy->intensity         = color;
 			proxy->falloffExponent   = falloffExponent;
+			proxy->castsShadow       = castsShadow;
 
 			scene->proxyList_pointLight.push_back(proxy);
 		}
 
 	public:
-		glm::vec3 color;
+		vector3   color;
 		float     attenuationRadius;
 		float     falloffExponent;
+		bool      castsShadow;
 
 	};
 

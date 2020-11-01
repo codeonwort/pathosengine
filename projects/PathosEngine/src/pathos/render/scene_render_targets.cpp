@@ -11,6 +11,7 @@ namespace pathos {
 		, sceneColor(0)
 		, sceneDepth(0)
 		, cascadedShadowMap(0)
+		, omniShadowMaps(0)
 		, useGBuffer(false)
 		, gbufferA(0)
 		, gbufferB(0)
@@ -126,6 +127,7 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
 		safe_release(cascadedShadowMap);
+		safe_release(omniShadowMaps);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -145,6 +147,30 @@ namespace pathos {
 		gRenderDevice->deleteTextures((GLsizei)textures.size(), textures.data());
 
 		destroyed = true;
+	}
+
+	void SceneRenderTargets::reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height)
+	{
+		if (omniShadowMaps != 0) {
+			cmdList.deleteTextures(1, &omniShadowMaps);
+			omniShadowMaps = 0;
+		}
+		if (numPointLights > 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &omniShadowMaps);
+			cmdList.textureStorage3D(
+				omniShadowMaps,
+				1,
+				GL_DEPTH_COMPONENT32F,
+				width,
+				height,
+				numPointLights * 6);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.bindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, omniShadowMaps);
+			cmdList.objectLabel(GL_TEXTURE, omniShadowMaps, -1, "OmniShadowMaps");
+		}
 	}
 
 	void SceneRenderTargets::reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged)

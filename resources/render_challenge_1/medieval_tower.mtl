@@ -1,0 +1,16 @@
+# Blender MTL File: 'medieval_tower.blend'
+# Material Count: 1
+
+newmtl TowerMaterial
+map_Kd T_Tower.png
+map_Pr R_Tower.png
+map_Pm M_Tower.png
+norm N_Tower.png
+Ns 323.999994
+Ka 0.202643 0.202643 0.202643
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 3
