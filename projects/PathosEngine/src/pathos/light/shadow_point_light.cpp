@@ -104,11 +104,10 @@ namespace pathos {
 				continue;
 			}
 
-			// #todo-shadow: proper values
-			constexpr float zNear = 0.1f;
-			constexpr float zFar = 65000.0f;
+			constexpr float zNear = 0.0f;
+			constexpr float zFar = 1000.0f; // #todo-shadow: Attenuation radius is a better bound
 			vector3 up(0.0f, 1.0f, 0.0f);
-			matrix4 projection = glm::perspective(glm::radians(45.0f), 1.0f, zNear, zFar);
+			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
 
 			for (uint32 faceIx = 0; faceIx < 6; ++faceIx) {
 				cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, shadowMaps, 0, lightIx * 6 + faceIx);
@@ -121,6 +120,7 @@ namespace pathos {
 				uboData.viewproj = viewproj;
 				uboData.lightPositionAndZFar = vector4(light->position, zFar);
 
+				// #todo-shadow: Discard geometries too far from the light source
 				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
 					uboData.model = batch->modelMatrix;
 					ubo.update(cmdList, 1, &uboData);

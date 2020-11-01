@@ -164,6 +164,10 @@ namespace pathos {
 				width,
 				height,
 				numPointLights * 6);
+			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.bindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightShadowMaps);
 			cmdList.objectLabel(GL_TEXTURE, pointLightShadowMaps, -1, "PointLightShadowMaps");
 		}

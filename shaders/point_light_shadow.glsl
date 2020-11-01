@@ -31,13 +31,11 @@ in VS_OUT {
 	vec3 wPos;
 } fs_in;
 
-out vec4 outLinearDepth;
-
 void main() {
 	float dist = length(fs_in.wPos - ubo.lightPositionAndZFar.xyz);
 	dist = dist / ubo.lightPositionAndZFar.w;
 
-	outLinearDepth = vec4(dist);
+	gl_FragDepth = dist;
 }
 
 #endif

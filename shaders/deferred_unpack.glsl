@@ -87,6 +87,16 @@ float getShadowing(fragment_info fragment) {
 	return getShadowingFactor(csm, query);
 }
 
+float getShadowingByPointLight(fragment_info fragment, vec3 vLightPos, int shadowMapIndex) {
+	OmniShadowQuery query;
+	query.shadowMapIndex = shadowMapIndex;
+	// #todo: Remove transform
+	query.lightPos       = (uboPerFrame.inverseViewTransform * vec4(vLightPos, 1.0)).xyz;
+	query.wPos           = fragment.ws_coords;
+
+	return getOmniShadowingFactor(pointLightShadowMaps, query);
+}
+
 // #todo: Too old model to be deprecated.
 vec3 phongShading(fragment_info fragment) {
 	vec3 result = vec3(0.0);
@@ -106,6 +116,7 @@ vec3 phongShading(fragment_info fragment) {
 		result += diffuse_color;
 	}
 
+	int omniShadowMapIndex = 0;
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
@@ -115,9 +126,17 @@ vec3 phongShading(fragment_info fragment) {
 		L = normalize(L);
 		vec3 R = reflect(-L, N);
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 specular_color = light.intensity * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
-		vec3 diffuse_color = light.intensity * fragment.albedo * cosTheta;
-		result += attenuation * (diffuse_color + specular_color);
+
+		vec3 radiance = light.intensity;
+		radiance *= attenuation;
+		if (light.castsShadow != 0 && isShadowEnabled()) {
+			radiance *= getShadowingByPointLight(fragment, light.position, omniShadowMapIndex);
+			omniShadowMapIndex += 1;
+		}
+
+		vec3 specular_color = radiance * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
+		vec3 diffuse_color = radiance * fragment.albedo * cosTheta;
+		result += diffuse_color + specular_color;
 	}
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
@@ -172,6 +191,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
+	int omniShadowMapIndex = 0;
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
@@ -182,7 +202,10 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
-		// #todo: shadow by point light
+		if (light.castsShadow != 0 && isShadowEnabled()) {
+			radiance *= getShadowingByPointLight(fragment, light.position, omniShadowMapIndex);
+			omniShadowMapIndex += 1;
+		}
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);

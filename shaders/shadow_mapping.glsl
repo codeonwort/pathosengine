@@ -9,13 +9,19 @@ CAUTION: Need to include deferred_common.glsl prior to this file
 
 #define SOFT_SHADOW      1
 #define NUM_CASCADES     4
-#define MIN_SHADOWING    0.2
+#define MIN_SHADOWING    0.0
 
 struct ShadowQuery {
 	vec3 vPos;    // position in view space
 	vec3 wPos;    // position in world space
 	vec3 vNormal; // surface normal in view space
 	vec3 wNormal; // surface normal in world space
+};
+
+struct OmniShadowQuery {
+	int  shadowMapIndex;
+	vec3 lightPos;
+	vec3 wPos;
 };
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
@@ -68,3 +74,19 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	
 	return max(MIN_SHADOWING, shadow);
 }
+
+float getOmniShadowingFactor(samplerCubeArrayShadow shadowMaps, OmniShadowQuery query) {
+	const float DEPTH_BIAS = 0.005;
+	const float Z_FAR = 1000.0f; // PointLightShadowPass::renderShadowMaps
+
+	vec3 fragToLight = query.wPos - query.lightPos;
+
+	float currentDepth = length(fragToLight);
+	currentDepth = max(0.0, currentDepth / Z_FAR - DEPTH_BIAS);
+
+	// #todo: Soft shadow
+	vec4 P = vec4(fragToLight, float(query.shadowMapIndex));
+	float shadow = texture(shadowMaps, P, currentDepth);
+
+	return shadow;
+};
