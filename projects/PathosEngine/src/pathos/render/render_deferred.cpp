@@ -172,9 +172,9 @@ namespace pathos {
 		}
 
 		{
-			SCOPED_GPU_COUNTER(RenderPointLightShadowMaps);
+			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
 
-			pointLightShadowPass->renderShadowMaps(cmdList, scene, camera);
+			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
 		// ready scene for rendering
@@ -488,7 +488,7 @@ namespace pathos {
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
-	std::unique_ptr<PointLightShadowPass>          DeferredRenderer::pointLightShadowPass;
+	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
 	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
 
 	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
@@ -532,11 +532,11 @@ namespace pathos {
 
 		{
 			sunShadowMap = std::make_unique<DirectionalShadowMap>();
-			pointLightShadowPass = std::make_unique<PointLightShadowPass>();
+			omniShadowPass = std::make_unique<OmniShadowPass>();
 			visualizeDepth = std::make_unique<VisualizeDepth>();
 
 			sunShadowMap->initializeResources(cmdList);
-			pointLightShadowPass->initializeResources(cmdList);
+			omniShadowPass->initializeResources(cmdList);
 		}
 
 		{
@@ -585,7 +585,7 @@ namespace pathos {
 
 		{
 			sunShadowMap->destroyResources(cmdList);
-			pointLightShadowPass->destroyResources(cmdList);
+			omniShadowPass->destroyResources(cmdList);
 			visualizeDepth.release();
 		}
 

@@ -11,7 +11,7 @@ namespace pathos {
 		, sceneColor(0)
 		, sceneDepth(0)
 		, cascadedShadowMap(0)
-		, pointLightShadowMaps(0)
+		, omniShadowMaps(0)
 		, useGBuffer(false)
 		, gbufferA(0)
 		, gbufferB(0)
@@ -127,7 +127,7 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
 		safe_release(cascadedShadowMap);
-		safe_release(pointLightShadowMaps);
+		safe_release(omniShadowMaps);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -149,27 +149,27 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void SceneRenderTargets::reallocPointLightShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height)
+	void SceneRenderTargets::reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height)
 	{
-		if (pointLightShadowMaps != 0) {
-			cmdList.deleteTextures(1, &pointLightShadowMaps);
-			pointLightShadowMaps = 0;
+		if (omniShadowMaps != 0) {
+			cmdList.deleteTextures(1, &omniShadowMaps);
+			omniShadowMaps = 0;
 		}
 		if (numPointLights > 0) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &pointLightShadowMaps);
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &omniShadowMaps);
 			cmdList.textureStorage3D(
-				pointLightShadowMaps,
+				omniShadowMaps,
 				1,
-				GL_DEPTH_COMPONENT32F, // #todo-shadow-plight: Too precise?
+				GL_DEPTH_COMPONENT32F,
 				width,
 				height,
 				numPointLights * 6);
-			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(pointLightShadowMaps, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.bindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointLightShadowMaps);
-			cmdList.objectLabel(GL_TEXTURE, pointLightShadowMaps, -1, "PointLightShadowMaps");
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.bindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, omniShadowMaps);
+			cmdList.objectLabel(GL_TEXTURE, omniShadowMaps, -1, "OmniShadowMaps");
 		}
 	}
 

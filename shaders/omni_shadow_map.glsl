@@ -1,6 +1,6 @@
 #version 450 core
 
-layout (std140, binding = 1) uniform UBO_PointLightShadow {
+layout (std140, binding = 1) uniform UBO_OmniShadow {
 	mat4 model;
 	mat4 viewproj;
 	vec4 lightPositionAndZFar;

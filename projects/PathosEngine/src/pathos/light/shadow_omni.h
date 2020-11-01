@@ -11,12 +11,12 @@
 namespace pathos {
 
 	// Shadow pass for point lights.
-	class PointLightShadowPass : public Noncopyable {
+	class OmniShadowPass : public Noncopyable {
 		static const uint32 SHADOW_MAP_SIZE;
 
 	public:
-		PointLightShadowPass() = default;
-		virtual ~PointLightShadowPass() = default;
+		OmniShadowPass() = default;
+		virtual ~OmniShadowPass() = default;
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);

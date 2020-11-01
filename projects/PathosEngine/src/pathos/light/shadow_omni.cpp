@@ -1,4 +1,4 @@
-#include "shadow_point_light.h"
+#include "shadow_omni.h"
 #include "point_light_component.h"
 #include "pathos/scene/scene.h"
 #include "pathos/render/render_device.h"
@@ -6,59 +6,60 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"
+#include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
 
-	struct UBO_PointLightShadow {
+	struct UBO_OmniShadow {
 		matrix4 model;
 		matrix4 viewproj;
 		vector4 lightPositionAndZFar;
 	};
 	
-	class PointLightShadowVS : public ShaderStage {
+	class OmniShadowVS : public ShaderStage {
 	public:
-		PointLightShadowVS() : ShaderStage(GL_VERTEX_SHADER, "PointLightShadowVS")
+		OmniShadowVS() : ShaderStage(GL_VERTEX_SHADER, "OmniShadowVS")
 		{
 			addDefine("VERTEX_SHADER 1");
-			setFilepath("point_light_shadow.glsl");
+			setFilepath("omni_shadow_map.glsl");
 		}
 	};
 
-	class PointLightShadowFS : public ShaderStage {
+	class OmniShadowFS : public ShaderStage {
 	public:
-		PointLightShadowFS() : ShaderStage(GL_FRAGMENT_SHADER, "PointLightShadowFS")
+		OmniShadowFS() : ShaderStage(GL_FRAGMENT_SHADER, "OmniShadowFS")
 		{
 			addDefine("FRAGMENT_SHADER 1");
-			setFilepath("point_light_shadow.glsl");
+			setFilepath("omni_shadow_map.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_PointLightShadow, PointLightShadowVS, PointLightShadowFS);
+	DEFINE_SHADER_PROGRAM2(Program_OmniShadow, OmniShadowVS, OmniShadowFS);
 
 }
 
 namespace pathos {
 
-	const uint32 PointLightShadowPass::SHADOW_MAP_SIZE = 256;
+	const uint32 OmniShadowPass::SHADOW_MAP_SIZE = 256;
 
-	void PointLightShadowPass::initializeResources(RenderCommandList& cmdList)
+	void OmniShadowPass::initializeResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->createFramebuffers(1, &fbo);
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_PointLightShadowMap");
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_OmniShadowMap");
 
-		ubo.init<UBO_PointLightShadow>();
+		ubo.init<UBO_OmniShadow>();
 	}
 
-	void PointLightShadowPass::destroyResources(RenderCommandList& cmdList)
+	void OmniShadowPass::destroyResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void PointLightShadowPass::renderShadowMaps(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
+	void OmniShadowPass::renderShadowMaps(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
 	{
-		SCOPED_DRAW_EVENT(PointLightShadowMaps);
+		SCOPED_DRAW_EVENT(OmniShadowMaps);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
@@ -68,15 +69,15 @@ namespace pathos {
 			if (light->castsShadow) numLights += 1;
 		}
 
-		sceneContext.reallocPointLightShadowMaps(cmdList, numLights, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-		GLuint shadowMaps = sceneContext.pointLightShadowMaps; // cubemap array
+		sceneContext.reallocOmniShadowMaps(cmdList, numLights, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+		GLuint shadowMaps = sceneContext.omniShadowMaps; // cubemap array
 
 		// Early exit
 		if (numLights == 0) {
 			return;
 		}
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PointLightShadow);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OmniShadow);
 
 		cmdList.useProgram(program.getGLName());
 		cmdList.enable(GL_DEPTH_TEST);
@@ -97,7 +98,7 @@ namespace pathos {
 		};
 
 		for (uint32 lightIx = 0; lightIx < numLights; ++lightIx) {
-			SCOPED_DRAW_EVENT(PointLightShadowMap);
+			SCOPED_DRAW_EVENT(OmniShadowMap);
 
 			PointLightProxy* light = scene->proxyList_pointLight[lightIx];
 			if (light->castsShadow == false) {
@@ -105,8 +106,8 @@ namespace pathos {
 			}
 
 			constexpr float zNear = 0.0f;
-			constexpr float zFar = 1000.0f; // #todo-shadow: Attenuation radius is a better bound
-			vector3 up(0.0f, 1.0f, 0.0f);
+			const float zFar = pathos::max(1.0f, light->attenuationRadius);
+			const vector3 up(0.0f, 1.0f, 0.0f);
 			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
 
 			for (uint32 faceIx = 0; faceIx < 6; ++faceIx) {
@@ -116,7 +117,7 @@ namespace pathos {
 				matrix4 lightView = glm::lookAt(light->position, light->position + faceDirections[faceIx], upDirections[faceIx]);
 				matrix4 viewproj = projection * lightView;
 
-				UBO_PointLightShadow uboData;
+				UBO_OmniShadow uboData;
 				uboData.viewproj = viewproj;
 				uboData.lightPositionAndZFar = vector4(light->position, zFar);
 

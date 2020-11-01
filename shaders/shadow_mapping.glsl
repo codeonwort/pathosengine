@@ -9,7 +9,7 @@ CAUTION: Need to include deferred_common.glsl prior to this file
 
 #define SOFT_SHADOW      1
 #define NUM_CASCADES     4
-#define MIN_SHADOWING    0.0
+#define MIN_SHADOWING    0.1
 
 struct ShadowQuery {
 	vec3 vPos;    // position in view space
@@ -21,6 +21,7 @@ struct ShadowQuery {
 struct OmniShadowQuery {
 	int  shadowMapIndex;
 	vec3 lightPos;
+	float attenuationRadius;
 	vec3 wPos;
 };
 
@@ -77,7 +78,7 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 
 float getOmniShadowingFactor(samplerCubeArrayShadow shadowMaps, OmniShadowQuery query) {
 	const float DEPTH_BIAS = 0.005;
-	const float Z_FAR = 1000.0f; // PointLightShadowPass::renderShadowMaps
+	float Z_FAR = query.attenuationRadius;
 
 	vec3 fragToLight = query.wPos - query.lightPos;
 

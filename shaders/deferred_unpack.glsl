@@ -87,12 +87,13 @@ float getShadowing(fragment_info fragment) {
 	return getShadowingFactor(csm, query);
 }
 
-float getShadowingByPointLight(fragment_info fragment, vec3 vLightPos, int shadowMapIndex) {
+float getShadowingByPointLight(fragment_info fragment, PointLight light, int shadowMapIndex) {
 	OmniShadowQuery query;
-	query.shadowMapIndex = shadowMapIndex;
+	query.shadowMapIndex    = shadowMapIndex;
 	// #todo: Remove transform
-	query.lightPos       = (uboPerFrame.inverseViewTransform * vec4(vLightPos, 1.0)).xyz;
-	query.wPos           = fragment.ws_coords;
+	query.lightPos          = (uboPerFrame.inverseViewTransform * vec4(light.position, 1.0)).xyz;
+	query.attenuationRadius = light.attenuationRadius;
+	query.wPos              = fragment.ws_coords;
 
 	return getOmniShadowingFactor(pointLightShadowMaps, query);
 }
@@ -130,7 +131,7 @@ vec3 phongShading(fragment_info fragment) {
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 		if (light.castsShadow != 0 && isShadowEnabled()) {
-			radiance *= getShadowingByPointLight(fragment, light.position, omniShadowMapIndex);
+			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
 			omniShadowMapIndex += 1;
 		}
 
@@ -203,7 +204,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 		if (light.castsShadow != 0 && isShadowEnabled()) {
-			radiance *= getShadowingByPointLight(fragment, light.position, omniShadowMapIndex);
+			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
 			omniShadowMapIndex += 1;
 		}
 

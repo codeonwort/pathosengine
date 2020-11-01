@@ -24,7 +24,7 @@ namespace pathos {
 		GLuint sceneDepth;
 
 		GLuint cascadedShadowMap;
-		GLuint pointLightShadowMaps; // cubemap array (#todo: omniShadowMaps would be better naming)
+		GLuint omniShadowMaps; // cubemap array (#todo: omniShadowMaps would be better naming)
 
 		// Deferred renderer only
 		bool useGBuffer;
@@ -66,7 +66,7 @@ namespace pathos {
 		void freeSceneTextures(RenderCommandList& cmdList);
 
 		// Called every frame by renderer
-		void reallocPointLightShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height);
+		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height);
 
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
