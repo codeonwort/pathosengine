@@ -1,13 +1,18 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
+#include "pathos/texture/volume_texture.h"
 
 #include "badger/assertion/assertion.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
 #pragma comment(lib, "FreeImage.lib")
+
+// #todo-image-loader: Cleanup image loading API
+// #todo-image-loader: Remove direct GL calls
 
 namespace pathos {
 
@@ -213,6 +218,32 @@ namespace pathos {
 	void unloadHDRImage(const HDRImageMetadata& metadata)
 	{
 		stbi_image_free(metadata.data);
+	}
+
+	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName)
+	{
+		// 1. Load data
+		std::string path = ResourceFinder::get().find(inFilename);
+		CHECK(path.size() != 0);
+
+		LOG(LogDebug, "Load volume texture data: %s", path.c_str());
+
+		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
+		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
+
+		FIBITMAP* img = FreeImage_Load(fif, path.c_str(), 0);
+
+		if (!img) {
+			LOG(LogError, "Error while loading: %s", path.c_str());
+			return nullptr;
+		}
+
+		// 2. Create a volume texture
+		VolumeTexture* vt = new VolumeTexture;
+		vt->setImageData(img);
+		vt->setDebugName(inDebugName);
+
+		return vt;
 	}
 
 }

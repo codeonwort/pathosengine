@@ -6,6 +6,7 @@
 #include "badger/math/random.h"
 
 #include "pathos/render/sky_ansel.h"
+#include "pathos/render/sky_clouds.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/asset_streamer.h"
@@ -14,15 +15,18 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/texture/volume_texture.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
-#define OBJ_GUARD_TOWER_FILE "render_challenge_1/medieval_tower.obj"
-#define OBJ_GUARD_TOWER_DIR  "render_challenge_1/"
-#define OBJ_SPACESHIP_FILE "render_challenge_1/spaceship.obj"
-#define OBJ_SPACESHIP_DIR  "render_challenge_1/"
+#define OBJ_GUARD_TOWER_FILE   "render_challenge_1/medieval_tower.obj"
+#define OBJ_GUARD_TOWER_DIR    "render_challenge_1/"
+#define OBJ_SPACESHIP_FILE     "render_challenge_1/spaceship.obj"
+#define OBJ_SPACESHIP_DIR      "render_challenge_1/"
+
+#define CLOUD_SHAPE_NOISE_FILE "render_challenge_1/noiseShape.tga"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
@@ -123,6 +127,19 @@ void World_RC1::setupSky()
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
 	scene.sky = new AnselSkyRendering(starfield);
+
+	// Volumetric cloud
+	{
+		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
+		{
+			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
+			uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
+			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+			cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+		}
+		scene.cloud = spawnActor<VolumetricCloudActor>();
+		scene.cloud->setNoiseTextures(cloudShapeNoise, nullptr);
+	}
 }
 
 void World_RC1::setupScene()

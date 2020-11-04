@@ -165,6 +165,10 @@ namespace pathos {
 			return;
 		}
 
+		if (scene->cloud != nullptr) {
+			// #todo-cloud: Render volumetric clouds
+		}
+
 		{
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 
