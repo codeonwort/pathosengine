@@ -83,6 +83,7 @@ namespace pathos {
 
 		const EngineConfig& getConfig() const { return conf; }
 
+		inline float getWorldTime() { return stopwatch_app.stop(); }
 		inline float getCPUTime() const { return elapsed_gameThread + elapsed_renderThread; } // Currently single-threaded (in milliseconds)
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
 
@@ -136,6 +137,7 @@ namespace pathos {
 		StackAllocator renderProxyAllocator;
 		Stopwatch stopwatch_gameThread;
 		Stopwatch stopwatch_renderThread;
+		Stopwatch stopwatch_app;
 
 		float elapsed_gameThread;
 		float elapsed_renderThread;

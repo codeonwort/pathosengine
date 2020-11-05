@@ -1,8 +1,32 @@
 #include "sky_ansel.h"
+#include "scene_render_targets.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 
 #include <string>
 #include <assert.h>
+
+namespace pathos {
+	
+	class AnselSkyVS : public ShaderStage {
+	public:
+		AnselSkyVS() : ShaderStage(GL_VERTEX_SHADER, "AnselSkyVS") {
+			addDefine("VERTEX_SHADER 1");
+			setFilepath("sky_ansel.glsl");
+		}
+	};
+
+	class AnselSkyFS : public ShaderStage {
+	public:
+		AnselSkyFS() : ShaderStage(GL_FRAGMENT_SHADER, "AnselSkyVS") {
+			addDefine("FRAGMENT_SHADER 1");
+			setFilepath("sky_ansel.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_AnselSky, AnselSkyVS, AnselSkyFS);
+
+}
 
 namespace pathos {
 
@@ -71,9 +95,9 @@ namespace pathos {
 			glm::vec3 v12 = glm::normalize(v1 + v2);
 			glm::vec3 v20 = glm::normalize(v2 + v0);
 
-			assert(glm::length<float>(v01) > 0.00001f);
-			assert(glm::length<float>(v12) > 0.00001f);
-			assert(glm::length<float>(v20) > 0.00001f);
+			CHECK(glm::length<float>(v01) > 0.00001f);
+			CHECK(glm::length<float>(v12) > 0.00001f);
+			CHECK(glm::length<float>(v20) > 0.00001f);
 
 			newPositions[i01 * 3] = v01.x;
 			newPositions[i01 * 3 + 1] = v01.y;
@@ -106,8 +130,8 @@ namespace pathos {
 			p += 3;
 		}
 
-		assert(p == newNumVertices);
-		assert(q == newNumTriangles * 3);
+		CHECK(p == newNumVertices);
+		CHECK(q == newNumTriangles * 3);
 
 		// replace
 		delete[] positionData;
@@ -129,23 +153,23 @@ namespace pathos {
 
 	AnselSkyRendering::AnselSkyRendering(GLuint textureID) :texture(textureID) {
 		sphere = new IcosahedronGeometry(0);
-
-		createShaderProgram();
+		uniform_transform = 0;
+		uniform_screenSize = 1;
 	}
 
 	AnselSkyRendering::~AnselSkyRendering() {
 		delete sphere;
 		sphere = nullptr;
-
-		glDeleteProgram(program);
 	}
 
 	void AnselSkyRendering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(AnselSkyRendering);
 
-		glm::mat4& view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4& proj = camera->getProjectionMatrix();
-		glm::mat4& transform = proj * view;
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
+		matrix4& proj = camera->getProjectionMatrix();
+		matrix4& transform = proj * view;
 
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.disable(GL_DEPTH_TEST);
@@ -153,59 +177,15 @@ namespace pathos {
 		sphere->activate_position(cmdList);
 		sphere->activateIndexBuffer(cmdList);
 
-		cmdList.useProgram(program);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AnselSky);
+		cmdList.useProgram(program.getGLName());
+
 		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		cmdList.uniform4f(uniform_screenSize, (float)sceneContext.sceneWidth, (float)sceneContext.sceneHeight, 0.0f, 0.0f);
 		cmdList.bindTextureUnit(0, texture);
+		cmdList.bindTextureUnit(1, sceneContext.volumetricCloud);
 
 		sphere->drawPrimitive(cmdList);
-	}
-
-	void AnselSkyRendering::createShaderProgram() {
-		std::string vs = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-
-layout (location = 0) uniform mat4 viewProj;
-
-out VS_OUT {
-	vec3 r;
-} vs_out;
-
-void main() {
-	vs_out.r = position;
-	gl_Position = (viewProj * vec4(position, 1)).xyww;
-}
-
-)";
-
-		std::string fs = R"(
-#version 430 core
-
-layout (binding = 0) uniform sampler2D texSampler;
-
-in VS_OUT {
-	vec3 r;
-} fs_in;
-
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright;
-
-void main() {
-	const float PI = 3.14159265359;
-	vec3 r0 = normalize(fs_in.r);
-	vec3 r = vec3(r0.x, r0.z, -r0.y);
-	vec2 tc;
-	tc.x = (atan(r.y, r.x) + PI) / PI * 0.5;
-	tc.y = acos(r.z) / PI;
-	out_color = texture(texSampler, tc);
-	out_bright = vec4(0.0);
-}
-
-)";
-
-		program = pathos::createProgram(vs, fs, "SkyAnsel");
-		uniform_transform = 0;
 	}
 
 }

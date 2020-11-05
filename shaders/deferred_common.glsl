@@ -37,10 +37,11 @@ layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
-	vec4 projParams;
 
+	vec4 projParams;
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4 time; // (currentTime, ?, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	
@@ -63,3 +64,5 @@ vec2 CubeToEquirectangular(vec3 v)
     uv += 0.5;
     return uv;
 }
+
+float getWorldTime() { return uboPerFrame.time.x; }

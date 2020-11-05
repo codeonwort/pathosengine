@@ -54,7 +54,6 @@ namespace pathos {
 		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight);
 
 	private:
-		GLuint renderTarget = 0;
 		uint32 renderTargetWidth = 0;
 		uint32 renderTargetHeight = 0;
 

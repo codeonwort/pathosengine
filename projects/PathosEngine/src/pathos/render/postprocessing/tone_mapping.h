@@ -14,7 +14,6 @@ namespace pathos {
 
 	private:
 		GLuint fbo;
-		GLuint program;
 		UniformBuffer ubo;
 
 		struct UBO_ToneMapping {

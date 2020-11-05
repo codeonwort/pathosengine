@@ -1,5 +1,6 @@
 #include "sky_clouds.h"
 #include "render_device.h"
+#include "scene_render_targets.h"
 #include "pathos/thread/engine_thread.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
@@ -40,9 +41,9 @@ namespace pathos {
 
 	VolumetricCloud::~VolumetricCloud()
 	{
-		if (renderTarget != 0) {
-			gRenderDevice->deleteTextures(1, &renderTarget);
-		}
+		//if (renderTarget != 0) {
+		//	gRenderDevice->deleteTextures(1, &renderTarget);
+		//}
 	}
 
 	void VolumetricCloud::initializeResources(RenderCommandList& cmdList)
@@ -59,6 +60,8 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(VolumetricCloud);
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		recreateRenderTarget(cmdList, settings.renderTargetWidth, settings.renderTargetHeight);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloud);
@@ -66,10 +69,11 @@ namespace pathos {
 		GLuint workGroupsY = (GLuint)ceilf((float)(settings.renderTargetHeight) / 16.0f);
 
 		cmdList.useProgram(program.getGLName());
-		cmdList.bindImageTexture(0, settings.weatherTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
-		cmdList.bindImageTexture(1, settings.shapeNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
-		cmdList.bindImageTexture(2, settings.erosionNoiseTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
-		cmdList.bindImageTexture(3, renderTarget, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		//cmdList.bindImageTexture(0, settings.weatherTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+		cmdList.bindTextureUnit(0, settings.weatherTexture);
+		cmdList.bindTextureUnit(1, settings.shapeNoiseTexture);
+		cmdList.bindTextureUnit(2, settings.erosionNoiseTexture);
+		cmdList.bindImageTexture(3, sceneContext.volumetricCloud, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
@@ -78,17 +82,21 @@ namespace pathos {
 	{
 		CHECKF(inWidth != 0 && inHeight != 0, "Invalid size for cloud render target");
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		if (renderTargetWidth != inWidth || renderTargetHeight != inHeight) {
-			if (renderTarget != 0) {
-				gRenderDevice->deleteTextures(1, &renderTarget);
-				renderTarget = 0;
+			if (sceneContext.volumetricCloud != 0) {
+				gRenderDevice->deleteTextures(1, &sceneContext.volumetricCloud);
+				sceneContext.volumetricCloud = 0;
 			}
 
-			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &renderTarget);
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &sceneContext.volumetricCloud);
+			glObjectLabel(GL_TEXTURE, sceneContext.volumetricCloud, -1, "Texture_CloudRT");
+
 			renderTargetWidth = inWidth;
 			renderTargetHeight = inHeight;
 
-			cmdList.textureStorage2D(renderTarget, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
+			cmdList.textureStorage2D(sceneContext.volumetricCloud, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
 		}
 	}
 

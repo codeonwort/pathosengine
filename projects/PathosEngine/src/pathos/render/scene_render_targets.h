@@ -23,6 +23,8 @@ namespace pathos {
 		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneDepth;
 
+		GLuint volumetricCloud;
+
 		GLuint cascadedShadowMap;
 		GLuint omniShadowMaps; // cubemap array (#todo: omniShadowMaps would be better naming)
 

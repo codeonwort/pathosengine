@@ -57,30 +57,31 @@ namespace pathos {
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
-		glm::mat4             view;
-		glm::mat4             inverseView;
-		glm::mat3x4           view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
-		glm::mat4             viewProj;
+		matrix4               view;
+		matrix4               inverseView;
+		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
+		matrix4               viewProj;
 
-		glm::vec4             projParams;
-		glm::vec4             screenResolution; // (w, h, 1/w, 1/h)
-		glm::vec4             zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+		vector4               projParams;
+		vector4               screenResolution; // (w, h, 1/w, 1/h)
+		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+		vector4               time; // (currentTime, ?, ?, ?)
 
-		glm::mat4             sunViewProj[4];
+		matrix4               sunViewProj[4];
 
-		glm::vec3             eyeDirection;
+		vector3               eyeDirection;
 		float                 __pad0;
 
-		glm::vec3             eyePosition;
+		vector3               eyePosition;
 		float                 __pad1;
 
-		glm::vec3             ws_eyePosition;
+		vector3               ws_eyePosition;
 		uint32                numDirLights;
 
 		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
 
 		uint32                numPointLights;
-		glm::vec3             __pad2;
+		vector3               __pad2;
 
 		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
@@ -167,18 +168,6 @@ namespace pathos {
 			return;
 		}
 
-		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
-		if (bRenderClouds) {
-			VolumetricCloudSettings settings;
-			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
-			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
-			settings.weatherTexture      = scene->cloud->weatherTexture;
-			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
-			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
-
-			volumetricCloud->render(cmdList, settings);
-		}
-
 		{
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 
@@ -206,6 +195,18 @@ namespace pathos {
 
 		// update ubo_perFrame
 		updateSceneUniformBuffer(cmdList, scene, camera);
+
+		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
+		if (bRenderClouds) {
+			VolumetricCloudSettings settings;
+			settings.renderTargetWidth = sceneRenderSettings.sceneWidth;
+			settings.renderTargetHeight = sceneRenderSettings.sceneHeight;
+			settings.weatherTexture = scene->cloud->weatherTexture;
+			settings.shapeNoiseTexture = scene->cloud->shapeNoise->getGLName();
+			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
+
+			volumetricCloud->render(cmdList, settings);
+		}
 
 		// GodRay
 		// input: static meshes
@@ -447,7 +448,7 @@ namespace pathos {
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
-		const glm::mat4& projMatrix = camera->getProjectionMatrix();
+		const matrix4& projMatrix = camera->getProjectionMatrix();
 
 		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
 		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
@@ -456,21 +457,23 @@ namespace pathos {
 
 		data.view        = camera->getViewMatrix();
 		data.inverseView = glm::inverse(data.view);
-		data.view3x3     = glm::mat3x4(data.view);
+		data.view3x3     = matrix3x4(data.view);
 		data.zRange.x    = camera->getZNear();
 		data.zRange.y    = camera->getZFar();
 		data.zRange.z    = camera->getFovYRadians();
 		data.zRange.w    = camera->getAspectRatio();
 		data.viewProj    = camera->getViewProjectionMatrix();
-		data.projParams  = glm::vec4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+
+		data.time        = vector4(gEngine->getWorldTime(), 0.0, 0.0, 0.0);
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
 		data.sunViewProj[2] = sunShadowMap->getViewProjection(2);
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 
-		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		data.eyePosition  = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+		data.eyeDirection = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
+		data.eyePosition  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
 
 		data.ws_eyePosition = camera->getPosition();
 
