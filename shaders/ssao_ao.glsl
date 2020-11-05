@@ -98,7 +98,7 @@ float computeAO(ivec2 texel, vec2 uv) {
 
 void main() {
 	ivec2 sceneSize = imageSize(ssaoMap);
-	if (gl_GlobalInvocationID.x >= sceneSize.x) {
+	if (gl_GlobalInvocationID.x >= sceneSize.x || gl_GlobalInvocationID.y >= sceneSize.y) {
 		return;
 	}
 	
