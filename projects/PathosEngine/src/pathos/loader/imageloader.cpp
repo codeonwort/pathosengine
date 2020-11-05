@@ -51,10 +51,22 @@ namespace pathos {
 		}
 
 		unsigned int bpp = FreeImage_GetBPP(img);
-		if (bpp != 32) {
+		if (bpp != 32 && bpp != 24) {
 			FIBITMAP* img32 = FreeImage_ConvertTo32Bits(img);
-			FreeImage_Unload(img);
-			return img32;
+			if (img32 != nullptr) {
+				FreeImage_Unload(img);
+				return img32;
+			} else {
+				FIBITMAP* img24 = FreeImage_ConvertTo24Bits(img);
+				if (img24 != nullptr) {
+					FreeImage_Unload(img);
+					return img24;
+				} else {
+					FreeImage_Unload(img);
+					CHECK_NO_ENTRY();
+					return nullptr;
+				}
+			}
 		}
 
 		return img;

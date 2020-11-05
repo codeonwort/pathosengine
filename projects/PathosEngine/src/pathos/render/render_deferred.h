@@ -34,6 +34,9 @@ namespace pathos {
 		static std::unique_ptr<MeshDeferredRenderPass_Unpack> unpack_pass;
 		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
+		// sky & atmosphere
+		static std::unique_ptr<class VolumetricCloud> volumetricCloud;
+
 		// full-screen processing
 		static std::unique_ptr<DirectionalShadowMap> sunShadowMap;
 		static std::unique_ptr<OmniShadowPass> omniShadowPass;

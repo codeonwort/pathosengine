@@ -31,6 +31,7 @@ namespace pathos {
 		void initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth);
 
 		inline GLuint getGLName() const { return texture; }
+		inline bool isValid() const { return texture != 0; }
 
 		inline uint32 getSourceImageWidth() const { return imageWidth; }
 		inline uint32 getSourceImageHeight() const { return imageHeight; }

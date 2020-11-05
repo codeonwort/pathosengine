@@ -2,6 +2,7 @@
 
 #include "pathos/render/render_device.h"
 #include "pathos/render/sky.h"
+#include "pathos/render/sky_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_depth.h"
 #include "pathos/render/render_target.h"
@@ -16,6 +17,7 @@
 #include "pathos/light/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/texture/volume_texture.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
@@ -165,8 +167,16 @@ namespace pathos {
 			return;
 		}
 
-		if (scene->cloud != nullptr) {
-			// #todo-cloud: Render volumetric clouds
+		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
+		if (bRenderClouds) {
+			VolumetricCloudSettings settings;
+			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
+			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
+			settings.weatherTexture      = scene->cloud->weatherTexture;
+			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
+			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
+
+			volumetricCloud->render(cmdList, settings);
 		}
 
 		{
@@ -491,6 +501,8 @@ namespace pathos {
 	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
+	std::unique_ptr<class VolumetricCloud>         DeferredRenderer::volumetricCloud;
+
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
 	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
 	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
@@ -532,6 +544,11 @@ namespace pathos {
 
 			unpack_pass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
+		}
+
+		{
+			volumetricCloud = std::make_unique<VolumetricCloud>();
+			volumetricCloud->initializeResources(cmdList);
 		}
 
 		{
@@ -585,6 +602,10 @@ namespace pathos {
 			}
 			unpack_pass->destroyResources(cmdList);
 			translucency_pass->releaseResources(cmdList);
+		}
+
+		{
+			volumetricCloud->destroyResources(cmdList);
 		}
 
 		{

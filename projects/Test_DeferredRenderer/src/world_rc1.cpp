@@ -21,12 +21,14 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
-#define OBJ_GUARD_TOWER_FILE   "render_challenge_1/medieval_tower.obj"
-#define OBJ_GUARD_TOWER_DIR    "render_challenge_1/"
-#define OBJ_SPACESHIP_FILE     "render_challenge_1/spaceship.obj"
-#define OBJ_SPACESHIP_DIR      "render_challenge_1/"
+#define OBJ_GUARD_TOWER_FILE     "render_challenge_1/medieval_tower.obj"
+#define OBJ_GUARD_TOWER_DIR      "render_challenge_1/"
+#define OBJ_SPACESHIP_FILE       "render_challenge_1/spaceship.obj"
+#define OBJ_SPACESHIP_DIR        "render_challenge_1/"
 
-#define CLOUD_SHAPE_NOISE_FILE "render_challenge_1/noiseShape.tga"
+#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.png"
+#define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
+#define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
@@ -130,6 +132,7 @@ void World_RC1::setupSky()
 
 	// Volumetric cloud
 	{
+		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), false, false);
 		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
 		{
 			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
@@ -137,8 +140,15 @@ void World_RC1::setupSky()
 			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
 			cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
 		}
+		VolumeTexture* cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudErosionNoise");
+		{
+			uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
+			uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
+			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+			cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+		}
 		scene.cloud = spawnActor<VolumetricCloudActor>();
-		scene.cloud->setNoiseTextures(cloudShapeNoise, nullptr);
+		scene.cloud->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 	}
 }
 
