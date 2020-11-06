@@ -51,7 +51,7 @@ namespace pathos {
 		void destroyResources(RenderCommandList& cmdList);
 
 		void render(RenderCommandList& cmdList, const VolumetricCloudSettings& settings);
-		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight);
+		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);
 
 	private:
 		uint32 renderTargetWidth = 0;

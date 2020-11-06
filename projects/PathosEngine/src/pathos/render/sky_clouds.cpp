@@ -5,8 +5,11 @@
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/texture/volume_texture.h"
+#include "pathos/console.h"
 
 namespace pathos {
+
+	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
 	class VolumetricCloudCS : public ShaderStage {
 	public:
@@ -62,7 +65,8 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		recreateRenderTarget(cmdList, settings.renderTargetWidth, settings.renderTargetHeight);
+		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
+		recreateRenderTarget(cmdList, settings.renderTargetWidth, settings.renderTargetHeight, resolutionScale);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloud);
 		GLuint workGroupsX = (GLuint)ceilf((float)(settings.renderTargetWidth) / 16.0f);
@@ -78,13 +82,18 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void VolumetricCloud::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight)
+	void VolumetricCloud::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)
 	{
 		CHECKF(inWidth != 0 && inHeight != 0, "Invalid size for cloud render target");
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		if (renderTargetWidth != inWidth || renderTargetHeight != inHeight) {
+		const uint32 targetWidth  = (uint32)(inWidth * inResolutionScale);
+		const uint32 targetHeight = (uint32)(inHeight * inResolutionScale);
+
+		CHECK(targetWidth != 0 && targetHeight != 0);
+
+		if (renderTargetWidth != targetWidth || renderTargetHeight != targetHeight) {
 			if (sceneContext.volumetricCloud != 0) {
 				gRenderDevice->deleteTextures(1, &sceneContext.volumetricCloud);
 				sceneContext.volumetricCloud = 0;
@@ -93,8 +102,8 @@ namespace pathos {
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &sceneContext.volumetricCloud);
 			glObjectLabel(GL_TEXTURE, sceneContext.volumetricCloud, -1, "Texture_CloudRT");
 
-			renderTargetWidth = inWidth;
-			renderTargetHeight = inHeight;
+			renderTargetWidth = targetWidth;
+			renderTargetHeight = targetHeight;
 
 			cmdList.textureStorage2D(sceneContext.volumetricCloud, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
 		}
