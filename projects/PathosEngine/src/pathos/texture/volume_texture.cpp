@@ -67,6 +67,12 @@ namespace pathos {
 			textureWidth, textureHeight, textureDepth, // size
 			pixelFormat, GL_UNSIGNED_BYTE, rawBytes);  // pixels
 		
+		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTextureParameteri(texture, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
 		if (debugName != nullptr) {
 			glObjectLabel(GL_TEXTURE, texture, -1, debugName);
 		}

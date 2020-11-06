@@ -2,8 +2,17 @@
 
 #include "deferred_common.glsl"
 
+// Visualize cloud coverage in weather texture
+#define DEBUG_MODE_WEATHER 1
+// Visualize raymarching result without applying cloud noise
+#define DEBUG_MODE_NO_NOISE 2
+// Apply shape noise, but no erosion noise
+#define DEBUG_MODE_NO_EROSION 3
+// Set to one of values above
+#define DEBUG_MODE 0
+
 //layout (std140, binding = 1) uniform UBO_VolumetricClouds {
-//	vec4 params;
+//	float cameraHeight;
 //} ubo;
 
 layout (local_size_x = 16, local_size_y = 16) in;
@@ -15,29 +24,42 @@ layout (binding = 3, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
+#define PI                    3.14159265359
+
+// Unit: meters
+#define EARTH_RADIUS          6.36e6
+// #todo: Parametrize cloud range
+#define CLOUD_Y_START         2000.0
+#define CLOUD_Y_END           6000.0
+
+//#define EYE_HEIGHT            1.84
+#define EYE_HEIGHT            (CLOUD_Y_START + 3500.0)
+//#define EYE_HEIGHT            (CLOUD_Y_START + 800.0)
+
+// Cone sampling random offsets
+uniform vec3 noiseKernel[6u] = vec3[]
+(
+	vec3( 0.38051305,  0.92453449, -0.02111345),
+	vec3(-0.50625799, -0.03590792, -0.86163418),
+	vec3(-0.32509218, -0.94557439,  0.01428793),
+	vec3( 0.09026238, -0.27376545,  0.95755165),
+	vec3( 0.28128598,  0.42443639, -0.86065785),
+	vec3(-0.16852403,  0.14748697,  0.97460106)
+);
+
+//////////////////////////////////////////////////////////////////////////
+// Unused
 #define MAGIC_RAYLEIGH        1.0
 #define MAGIC_MIE             0.3
 
-#define PI                    3.14159265359
-
-// #todo: Represent them as offset from the ground.
-//        Physical heights might cause float precision issues.
-// Unit: meters
 #define SUN_DISTANCE          1.496e11
 #define SUN_RADIUS            6.9551e8
-#define EARTH_RADIUS          6.36e6
 #define ATMOSPHERE_RADIUS     6.42e6
-#define CLOUD_INNER_RADIUS    (EARTH_RADIUS + 2000.0)
-#define CLOUD_OUTER_RADIUS    (EARTH_RADIUS + 5000.0)
 #define Hr                    7.994e3
 #define Hm                    1.2e3
 // Unit: 1 / meters
 #define BetaR                 vec3(5.8e-6, 13.5e-6, 33.1e-6)
 #define BetaM                 vec3(21e-6)
-
-//#define EYE_HEIGHT            (EARTH_RADIUS + 1.84)
-#define EYE_HEIGHT            (CLOUD_INNER_RADIUS + 2200.0)
-//#define EYE_HEIGHT            (CLOUD_INNER_RADIUS - 1.0)
 
 //////////////////////////////////////////////////////////////////////////
 // Ray, sphere code from https://www.shadertoy.com/view/XtBXDw
@@ -56,6 +78,9 @@ struct hit_t {
 	vec3 normal;
 	vec3 origin;
 };
+
+sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + CLOUD_Y_START);
+sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + CLOUD_Y_END);
 
 #define max_dist 1e8
 hit_t no_hit = hit_t(
@@ -115,9 +140,6 @@ bool isInvalidHit(hit_t hit) {
 
 //////////////////////////////////////////////////////////////////////////
 
-sphere_t cloudInnerSphere = sphere_t(vec3(0.0), CLOUD_INNER_RADIUS);
-sphere_t cloudOuterSphere = sphere_t(vec3(0.0), CLOUD_OUTER_RADIUS);
-
 // Rayleigh
 float phaseR(float cosTheta)
 {
@@ -151,19 +173,27 @@ float phaseCS(float t, float g) {
     return num / denom;
 }
 
+float powder(float d) {
+	return (1.0 - exp(-2.0 * d));
+}
+
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
     return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
 }
 
-float getHeightFraction(vec3 wPos, vec2 cloudMinMax) {
-    float fraction = (wPos.y - cloudMinMax.x) / (cloudMinMax.y - cloudMinMax.x);
-    return clamp(fraction, 0.0, 1.0);
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
 }
-// #todo: Temp function. Replace with a weather texture
+
+float getHeightFraction(vec3 wPos) {
+    float fraction = (wPos.y - CLOUD_Y_START.x) / (CLOUD_Y_END - CLOUD_Y_START);
+    return saturate(fraction);
+}
+// #todo: Temp function. Replace with a channel of the weather texture
 float getCumulusGradient(vec3 wPos) {
-    float f = getHeightFraction(wPos, vec2(CLOUD_INNER_RADIUS, CLOUD_OUTER_RADIUS));
+    float f = getHeightFraction(wPos);
     const vec2 attack = vec2(0.1, 0.2);
-    const vec2 decay = vec2(0.4, 0.5);
+    const vec2 decay = vec2(0.25, 0.9);
     if (f < attack.x) {
         return 0.0;
     } else if (f < attack.y) {
@@ -171,60 +201,78 @@ float getCumulusGradient(vec3 wPos) {
     } else if (f < decay.x) {
         return 1.0;
     } else if (f < decay.y) {
-        return remap(f, decay.x, decay.y, 1.0, 0.0);
+        return pow(remap(f, decay.x, decay.y, 1.0, 0.0), 2.0);
     } else {
         return 0.0;
     }
 }
 
+// #todo: User control
+const float WIND_SPEED = 0.2;
+const float WEATHER_SCALE = 0.005;
+const float CLOUD_SCALE = 0.4; // 0.4
+const float CURLINESS = 0.5;
+
 vec4 sampleWeather(vec3 wPos) {
-    // #todo: User control
-    const float WIND_SPEED = 0.00002;
-    const float SCALE = 50.0;
-    wPos.x += getWorldTime() * EARTH_RADIUS * WIND_SPEED;
-    vec2 uv = vec2(0.5) + (SCALE * wPos.xz / EARTH_RADIUS);
+    wPos.x += getWorldTime() * CLOUD_Y_START * WIND_SPEED;
+    vec2 uv = vec2(0.5) + (WEATHER_SCALE * wPos.xz / CLOUD_Y_START);
     vec4 data = texture(weatherMap, uv);
-    data.x = max(0.0, data.x - 0.5);
+
+    //data.x = max(0.0, data.x - 0.25); // If overall coverage is too high
     return data;
 }
 
 // #todo: Replace with a packed texture
-float sampleCloudShape(vec3 wPos) {
+vec2 sampleCloudShapeAndErosion(vec3 wPos) {
+    vec2 uv = 0.5 + wPos.xz / CLOUD_Y_START;
+    vec2 moving_uv = vec2(uv.x + getWorldTime() * WIND_SPEED, uv.y);
+
+    float heightFraction = getHeightFraction(wPos);
+    vec3 samplePos = vec3(CLOUD_SCALE * moving_uv, heightFraction);
+    vec3 samplePos2 = vec3(CLOUD_SCALE * uv, heightFraction);
+
+    vec2 result = vec2(0.0);
+
     // R: Perlin-Worley noise
     // G,B,A: Worley noises at increasing frequencies
-    vec4 noises = texture(shapeNoise, 10.0 * wPos / EARTH_RADIUS);
-    
-    float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), noises.yzw);
-    float baseCloud = noises.x;
+    vec4 baseNoises = texture(shapeNoise, samplePos);
+    float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
+    float baseCloud = saturate(baseNoises.x + 0.2);
 
-    float value = remap(baseCloud, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0);
-    return clamp(value, 0.0, 1.0);
-}
+    vec3 detailNoises = texture(erosionNoise, CURLINESS * samplePos2).xyz;
 
-// #todo: Replace with a packed texture
-float sampleCloudErosion(vec3 wPos) {
-    vec3 noises = texture(shapeNoise, 800.0 * wPos / EARTH_RADIUS).xyz;
-    return dot(vec3(0.625, 0.25, 0.125), noises);
+    result.x = saturate(remap(baseCloud, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
+    result.y = dot(vec3(0.625, 0.25, 0.125), detailNoises);
+    return result;
 }
 
 float sampleCloud(vec3 P) {
     vec4 weatherData = sampleWeather(P);
     float cloudCoverage = weatherData.x;
 
-    float baseCloud = sampleCloudShape(P);
+#if DEBUG_MODE == DEBUG_MODE_NO_NOISE
+    return cloudCoverage;
+#endif
+
+    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P);
+
+    float baseCloud = cloudNoiseSamples.x;
     float heightFraction = getCumulusGradient(P);
     baseCloud *= heightFraction;
 
     float baseCloudWithCoverage = remap(baseCloud, cloudCoverage, 1.0, 0.0, 1.0);
     baseCloudWithCoverage *= cloudCoverage;
-    
-    // #todo: Apply detail noise
-    float erosion = sampleCloudErosion(P);
-    float erosionModifier = mix(erosion, 1.0 - erosion, clamp(heightFraction * 10.0, 0.0, 1.0));
-	float finalCloud = baseCloudWithCoverage - erosionModifier * (1.0 - baseCloudWithCoverage);
-	finalCloud = remap(finalCloud * 2.0, erosionModifier * 0.2, 1.0, 0.0, 1.0);
 
-    return clamp(finalCloud, 0.0, 1.0);
+#if DEBUG_MODE == DEBUG_MODE_NO_EROSION
+    return saturate(baseCloudWithCoverage);
+#endif
+    
+    float erosion = cloudNoiseSamples.y;
+    float erosionModifier = 0.2 * mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0));
+	float finalCloud = baseCloudWithCoverage - erosionModifier * (1.0 - baseCloudWithCoverage);
+	finalCloud = remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0);
+
+    return saturate(finalCloud);
 }
 
 // #todo: for debug
@@ -233,7 +281,7 @@ bool isMinus(vec3 v) {
 }
 
 // #todo: This is a total mess
-vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
+vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 {
     float cameraHeight = camera.origin.y;
     float totalRayMarchLength = 0.0;
@@ -243,20 +291,20 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
     hit_t hit2 = no_hit;
     intersect_sphere(camera, cloudInnerSphere, hit1);
     intersect_sphere(camera, cloudOuterSphere, hit2);
-    if (cameraHeight < CLOUD_INNER_RADIUS) {
+    if (cameraHeight < CLOUD_Y_START) {
         raymarchStartPos = hit1.origin;
         totalRayMarchLength = hit2.t - hit1.t;
-    } else if (cameraHeight < CLOUD_OUTER_RADIUS) {
+    } else if (cameraHeight < CLOUD_Y_END) {
         // DEBUG
         if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
-            return vec3(1.0, 0.0, 0.0);
+            return vec4(1.0, 1.0, 0.0, 1.0);
         }
         raymarchStartPos = camera.origin;
         totalRayMarchLength = hit1.t < 0.0 ? hit2.t : hit2.t < 0.0 ? hit1.t : min(hit1.t, hit2.t);
     } else {
         if (isInvalidHit(hit2)) {
             // There's nothing above cloud layer
-            return vec3(0.0, 0.0, 0.0);
+            return vec4(0.0, 0.0, 0.0, 1.0);
         }
         raymarchStartPos = hit2.origin;
         totalRayMarchLength = hit1.t - hit2.t;
@@ -264,10 +312,10 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
 
     // DEBUG: intersection test failed
     if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
-        return vec3(1.0, 0.0, 0.0);
+        return vec4(1.0, 0.0, 0.0, 1.0);
     }
 
-    vec3 result = vec3(0.0);
+    vec3 result = vec3(0.0); // final luminance
     bool isGround = false;
 
     bool useDebugColor = false;
@@ -276,7 +324,9 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
     const int inscatSteps = 6;
     
     float cosTheta = dot(camera.direction, -sunDir);
-    vec3 T = vec3(1.0); // transmittance
+    float phaseFn = phaseHG(cosTheta, 0.52);
+
+    float T = 1.0; // transmittance
     vec3 L = vec3(0.0); // luminance
     
     vec3 P = raymarchStartPos; // Current sample position
@@ -284,45 +334,79 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
     vec3 P_step = camera.direction * seg; // Fixed step size between sample positions
 
     // (#todo: empty-space optimization)
+    // Raymarching
     for (int i = 0; i < numSteps; ++i)
     {
-        float height = P.y - EARTH_RADIUS;
-        if (height < 0.0)
+        if (P.y < 0.0)
         {
             isGround = true;
             break;
         }
 
-        float finalCloud = sampleCloud(P);
+#if DEBUG_MODE == DEBUG_MODE_WEATHER
+        return vec4(vec3(sampleWeather(P).x), 0.0);
+#endif
 
-        vec3 sigma_a = vec3(finalCloud) * 0.01; // absorption coeff
-        vec3 sigma_s = vec3(finalCloud) * 0.3; // scattering coeff
-        vec3 TL = vec3(1.0);                   // transmittance(P->Sun)
+        float cloudDensity = sampleCloud(P);
 
-        hit_t hitL = no_hit;
-        ray_t ray2 = ray_t(P, -sunDir);
-        intersect_sphere(ray2, cloudOuterSphere, hitL);
-        if (isInvalidHit(hitL) == false) {
-            float segLight = hitL.t / float(inscatSteps);
-            vec3 PL_step = ray2.direction * segLight;
-            vec3 PL = P;
-            for (int j = 0; j < inscatSteps; ++j) {
-                float cloud2 = sampleCloud(PL);
-                float sigma_a_L = cloud2 * 0.01;
-                TL *= exp(-sigma_a_L * segLight);
-                PL += PL_step;
+        float sigma_a = 0.0035; // absorption coeff
+        float sigma_s = 0.3; // scattering coeff
+
+        // Raymarch from current position to Sun
+        float TL = 1.0; // transmittance(P->Sun)
+        {
+            hit_t hitL = no_hit;
+            ray_t ray2 = ray_t(P, -sunDir);
+            intersect_sphere(ray2, cloudOuterSphere, hitL);
+            if (isInvalidHit(hitL) == false) {
+                // This is too large and will sample densities too far from P
+                //float segLight = hitL.t / float(inscatSteps);
+
+                float segLight = seg * 0.01 * float(inscatSteps);
+                vec3 PL_step = ray2.direction * segLight;
+                vec3 PL = P;
+
+                float coneRadius = 1.0;
+                const float CONE_STEP = 1.0/6.0;
+
+                for (int j = 0; j < inscatSteps; ++j) {
+#if 0 // Cone sample
+                    vec3 samplePos = P + coneRadius * noiseKernel[j] * float(j);
+
+                    TL *= exp(-sigma_a * sampleCloud(samplePos) * segLight);
+
+                    PL += PL_step;
+                    coneRadius += CONE_STEP;
+#else
+                    TL *= exp(-sigma_a * sampleCloud(PL) * segLight);
+                    PL += PL_step;
+#endif
+                }
             }
         }
-        float scProb = phaseHG(cosTheta, 0.52);
-        vec3 sunLuminance = 2.0 * vec3(0.06, 0.06, 0.2); // #todo
+        vec3 sunLuminance = 20.0 * vec3(0.15, 0.08, 0.06); // #todo
 
-        vec3 Lem = 0.008 * vec3(finalCloud); // luminance by emission
-        vec3 Lsc = sigma_s * scProb * sunLuminance * TL; // luminance by scattering
+        // luminance by emission
+        // #todo: Does cloud emits light?
+        // http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
+        vec3 Lem = 1.0 * vec3(0.13, 0.13, 0.17) * cloudDensity;
 
-        T *= exp(-sigma_a * seg);
-        L += (Lem + Lsc) * T * seg;
+        // luminance by scattering
+        vec3 Lsc = (cloudDensity * sigma_s) * phaseFn * sunLuminance * TL;
 
-        if (T.x < 0.01 && T.y < 0.01 && T.z < 0.01) {
+        float dT = exp(-(sigma_a + sigma_s) * cloudDensity * seg);
+        T *= dT;
+
+#if 0
+        L += dT * (Lem + Lsc) * seg;
+#else
+        // #todo: Dafuq is this
+        vec3 Lsample = dT * (Lem + Lsc) * seg;
+        Lsample = mix(vec3(min(0.03, TL)), Lsample, 1.0 - TL) * T;
+        L += Lsample;
+#endif
+
+        if (T < 0.01) {
             break;
         }
 
@@ -340,7 +424,12 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
     } else if (useDebugColor == false) {
         //result = vec3(1.0) - T; // DEBUG: transmittance
         //result = vec3(1.0) - L;
+
+        // #todo: L looks too artificial and black cloud at T = 0 cannot be distinguished from black atmosphere.
         result = L;
+        
+        // This hurts too much details of cloud color
+        //result = mix(vec3(0.1, 0.1, 0.1), L, T);
     }
 
     // DEBUG
@@ -348,7 +437,7 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
         result = vec3(0.0, 1.0, 1.0);
     }
 
-    return result;
+    return vec4(result, T); // luminance and transmittance
 }
 
 vec3 getViewDirection(vec2 uv) {
@@ -378,7 +467,7 @@ void main() {
     
 	vec3 sunDir = uboPerFrame.directionalLights[0].direction;
 
-    vec4 result = vec4(scene(eye_ray, sunDir, uv), 1.0);
+    vec4 result = scene(eye_ray, sunDir, uv);
 
     imageStore(renderTarget, currentTexel, result);
 }

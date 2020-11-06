@@ -33,21 +33,20 @@ layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
 
 void main() {
-	vec3 cloud = texture(texCloud, gl_FragCoord.xy / screenSize.xy).xyz;
-	// #todo: Just use cloud alpha channel
-	float cloudAlpha = dot(cloud, vec3(0.299, 0.587, 0.114));
-
 	const float PI = 3.14159265359;
 	vec3 r0 = normalize(fs_in.r);
 	vec3 r = vec3(r0.x, r0.z, -r0.y);
 	vec2 tc;
 	tc.x = (atan(r.y, r.x) + PI) / PI * 0.5;
 	tc.y = acos(r.z) / PI;
-	vec3 sky = texture(texSky, tc).xyz;
 
-	out_color = vec4(mix(sky, cloud, cloudAlpha), 1.0);
+	vec3 sky = texture(texSky, tc).xyz;
+	vec4 cloud = texture(texCloud, gl_FragCoord.xy / screenSize.xy);
+
+	//out_color = vec4(mix(vec3(0.0, 0.0, 1.0), cloud.rgb, 1.0 - cloud.a), 1.0);
+	out_color = vec4(mix(sky, cloud.rgb, 1.0 - cloud.a), 1.0);
 	//out_color = vec4(sky, 1.0);
-	//out_color = vec4(cloud, 1.0);
+	//out_color = cloud;
 
 	out_bright = vec4(0.0);
 }

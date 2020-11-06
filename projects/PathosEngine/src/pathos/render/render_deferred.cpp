@@ -50,6 +50,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 0, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
@@ -249,6 +250,7 @@ namespace pathos {
 			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
 
 			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
+			const bool noBloom = (cvar_enable_bloom.getInt() == 0);
 			const bool noDOF = (cvar_enable_dof.getInt() == 0);
 
 			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
@@ -262,12 +264,16 @@ namespace pathos {
 
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom);
-				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
+				if (noBloom) {
+					bloomSetup->clearSceneBloom(cmdList, fullscreenQuad.get());
+				} else {
+					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				// output is fed back to PPI_0
-				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
-				bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
-				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+					// output is fed back to PPI_0
+					bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
+					bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+					bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+				}
 
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 			}
@@ -278,7 +284,7 @@ namespace pathos {
 				const bool isFinalPP = (noAA && noDOF);
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());

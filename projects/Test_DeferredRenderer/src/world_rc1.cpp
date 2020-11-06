@@ -151,7 +151,7 @@ void World_RC1::setupSky()
 		scene.cloud = spawnActor<VolumetricCloudActor>();
 		scene.cloud->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 
-		scene.cloud = nullptr; // #todo-cloud: Comment out to test
+		//scene.cloud = nullptr; // #todo-cloud: Comment out to test
 	}
 }
 
