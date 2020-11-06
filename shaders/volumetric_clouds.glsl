@@ -27,16 +27,17 @@ layout (binding = 3, rgba16f) writeonly uniform image2D renderTarget;
 #define SUN_RADIUS            6.9551e8
 #define EARTH_RADIUS          6.36e6
 #define ATMOSPHERE_RADIUS     6.42e6
-#define CLOUD_INNER_RADIUS    6.362e6
-#define CLOUD_OUTER_RADIUS    6.367e6
+#define CLOUD_INNER_RADIUS    (EARTH_RADIUS + 2000.0)
+#define CLOUD_OUTER_RADIUS    (EARTH_RADIUS + 5000.0)
 #define Hr                    7.994e3
 #define Hm                    1.2e3
 // Unit: 1 / meters
 #define BetaR                 vec3(5.8e-6, 13.5e-6, 33.1e-6)
 #define BetaM                 vec3(21e-6)
 
-#define EYE_HEIGHT            EARTH_RADIUS
-//#define EYE_HEIGHT            (0.5 * (CLOUD_INNER_RADIUS + CLOUD_OUTER_RADIUS))
+//#define EYE_HEIGHT            (EARTH_RADIUS + 1.84)
+#define EYE_HEIGHT            (CLOUD_INNER_RADIUS + 2200.0)
+//#define EYE_HEIGHT            (CLOUD_INNER_RADIUS - 1.0)
 
 //////////////////////////////////////////////////////////////////////////
 // Ray, sphere code from https://www.shadertoy.com/view/XtBXDw
@@ -108,6 +109,10 @@ void intersect_sphere(
 	hit.normal = (impact - sphere.origin) / sphere.radius;
 }
 
+bool isInvalidHit(hit_t hit) {
+    return hit.t < 0.0 || hit.t > max_dist;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 sphere_t cloudInnerSphere = sphere_t(vec3(0.0), CLOUD_INNER_RADIUS);
@@ -157,29 +162,37 @@ float getHeightFraction(vec3 wPos, vec2 cloudMinMax) {
 // #todo: Temp function. Replace with a weather texture
 float getCumulusGradient(vec3 wPos) {
     float f = getHeightFraction(wPos, vec2(CLOUD_INNER_RADIUS, CLOUD_OUTER_RADIUS));
-    const float x1 = 0.2;
-    const float x2 = 0.7;
-    const float maxVal = 1.0;
-    if (f < x1) {
-        return remap(f, 0.0, x1, 0.0, maxVal);
-    } else if (f < x2) {
-        return maxVal;
+    const vec2 attack = vec2(0.1, 0.2);
+    const vec2 decay = vec2(0.4, 0.5);
+    if (f < attack.x) {
+        return 0.0;
+    } else if (f < attack.y) {
+        return remap(f, attack.x, attack.y, 0.0, 1.0);
+    } else if (f < decay.x) {
+        return 1.0;
+    } else if (f < decay.y) {
+        return remap(f, decay.x, decay.y, 1.0, 0.0);
     } else {
-        return remap(f, x2, 1.0, maxVal, 0.0);
+        return 0.0;
     }
 }
 
 vec4 sampleWeather(vec3 wPos) {
-    wPos.x += getWorldTime() * 100.0;
-    vec2 uv = wPos.xz * 0.00001; // #todo: User-friendly control
-    return texture(weatherMap, uv);
+    // #todo: User control
+    const float WIND_SPEED = 0.00002;
+    const float SCALE = 50.0;
+    wPos.x += getWorldTime() * EARTH_RADIUS * WIND_SPEED;
+    vec2 uv = vec2(0.5) + (SCALE * wPos.xz / EARTH_RADIUS);
+    vec4 data = texture(weatherMap, uv);
+    data.x = max(0.0, data.x - 0.5);
+    return data;
 }
 
 // #todo: Replace with a packed texture
 float sampleCloudShape(vec3 wPos) {
     // R: Perlin-Worley noise
     // G,B,A: Worley noises at increasing frequencies
-    vec4 noises = texture(shapeNoise, wPos * 0.0002);
+    vec4 noises = texture(shapeNoise, 10.0 * wPos / EARTH_RADIUS);
     
     float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), noises.yzw);
     float baseCloud = noises.x;
@@ -190,7 +203,7 @@ float sampleCloudShape(vec3 wPos) {
 
 // #todo: Replace with a packed texture
 float sampleCloudErosion(vec3 wPos) {
-    vec3 noises = texture(shapeNoise, wPos * 0.0001).xyz;
+    vec3 noises = texture(shapeNoise, 800.0 * wPos / EARTH_RADIUS).xyz;
     return dot(vec3(0.625, 0.25, 0.125), noises);
 }
 
@@ -199,48 +212,81 @@ float sampleCloud(vec3 P) {
     float cloudCoverage = weatherData.x;
 
     float baseCloud = sampleCloudShape(P);
-    baseCloud -= 0.08 * sampleCloudErosion(P);
-    float densityHeightGradient = getCumulusGradient(P);
-    baseCloud *= densityHeightGradient;
+    float heightFraction = getCumulusGradient(P);
+    baseCloud *= heightFraction;
 
     float baseCloudWithCoverage = remap(baseCloud, cloudCoverage, 1.0, 0.0, 1.0);
     baseCloudWithCoverage *= cloudCoverage;
-        
+    
     // #todo: Apply detail noise
-    float finalCloud = baseCloudWithCoverage;
+    float erosion = sampleCloudErosion(P);
+    float erosionModifier = mix(erosion, 1.0 - erosion, clamp(heightFraction * 10.0, 0.0, 1.0));
+	float finalCloud = baseCloudWithCoverage - erosionModifier * (1.0 - baseCloudWithCoverage);
+	finalCloud = remap(finalCloud * 2.0, erosionModifier * 0.2, 1.0, 0.0, 1.0);
 
-    return finalCloud;
+    return clamp(finalCloud, 0.0, 1.0);
+}
+
+// #todo: for debug
+bool isMinus(vec3 v) {
+    return v.x < 0.0 || v.y < 0.0 || v.z < 0.0;
 }
 
 // #todo: This is a total mess
 vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
 {
-    hit_t hit = no_hit;
-    intersect_sphere(camera, cloudInnerSphere, hit);
+    float cameraHeight = camera.origin.y;
+    float totalRayMarchLength = 0.0;
+    vec3 raymarchStartPos = vec3(0.0);
+
+    hit_t hit1 = no_hit;
+    hit_t hit2 = no_hit;
+    intersect_sphere(camera, cloudInnerSphere, hit1);
+    intersect_sphere(camera, cloudOuterSphere, hit2);
+    if (cameraHeight < CLOUD_INNER_RADIUS) {
+        raymarchStartPos = hit1.origin;
+        totalRayMarchLength = hit2.t - hit1.t;
+    } else if (cameraHeight < CLOUD_OUTER_RADIUS) {
+        // DEBUG
+        if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
+            return vec3(1.0, 0.0, 0.0);
+        }
+        raymarchStartPos = camera.origin;
+        totalRayMarchLength = hit1.t < 0.0 ? hit2.t : hit2.t < 0.0 ? hit1.t : min(hit1.t, hit2.t);
+    } else {
+        if (isInvalidHit(hit2)) {
+            // There's nothing above cloud layer
+            return vec3(0.0, 0.0, 0.0);
+        }
+        raymarchStartPos = hit2.origin;
+        totalRayMarchLength = hit1.t - hit2.t;
+    }
 
     // DEBUG: intersection test failed
-    if (hit.t > max_dist) {
+    if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
         return vec3(1.0, 0.0, 0.0);
     }
 
     vec3 result = vec3(0.0);
     bool isGround = false;
-    
+
+    bool useDebugColor = false;
+
     const int numSteps = 64;
-    const int inscatSteps = 8;
+    const int inscatSteps = 6;
     
     float cosTheta = dot(camera.direction, -sunDir);
     vec3 T = vec3(1.0); // transmittance
     vec3 L = vec3(0.0); // luminance
     
-    vec3 P = camera.origin + hit.t * camera.direction; // Current sample position
-    float seg = (CLOUD_OUTER_RADIUS - CLOUD_INNER_RADIUS) / float(numSteps); // dt
+    vec3 P = raymarchStartPos; // Current sample position
+    float seg = totalRayMarchLength / float(numSteps); // dt
     vec3 P_step = camera.direction * seg; // Fixed step size between sample positions
-    
+
     // (#todo: empty-space optimization)
     for (int i = 0; i < numSteps; ++i)
     {
-        float height = P.y - EYE_HEIGHT;
+        float height = P.y - EARTH_RADIUS;
         if (height < 0.0)
         {
             isGround = true;
@@ -253,22 +299,24 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
         vec3 sigma_s = vec3(finalCloud) * 0.3; // scattering coeff
         vec3 TL = vec3(1.0);                   // transmittance(P->Sun)
 
-        hit_t hit2 = no_hit;
+        hit_t hitL = no_hit;
         ray_t ray2 = ray_t(P, -sunDir);
-        intersect_sphere(ray2, cloudOuterSphere, hit2);
-        float segLight = hit2.t / float(inscatSteps);
-        vec3 PL_step = ray2.direction * segLight;
-        vec3 PL = P;
-        for (int j = 0; j < inscatSteps; ++j) {
-            float cloud2 = sampleCloud(PL);
-            float sigma_a_L = cloud2 * 0.01;
-            TL *= exp(-sigma_a_L * segLight);
-            PL += PL_step;
+        intersect_sphere(ray2, cloudOuterSphere, hitL);
+        if (isInvalidHit(hitL) == false) {
+            float segLight = hitL.t / float(inscatSteps);
+            vec3 PL_step = ray2.direction * segLight;
+            vec3 PL = P;
+            for (int j = 0; j < inscatSteps; ++j) {
+                float cloud2 = sampleCloud(PL);
+                float sigma_a_L = cloud2 * 0.01;
+                TL *= exp(-sigma_a_L * segLight);
+                PL += PL_step;
+            }
         }
-        float scProb = phaseHG(cosTheta, 0.76);
-        vec3 sunLuminance = 0.5 * vec3(1.0, 0.7, 0.4); // #todo
+        float scProb = phaseHG(cosTheta, 0.52);
+        vec3 sunLuminance = 2.0 * vec3(0.06, 0.06, 0.2); // #todo
 
-        vec3 Lem = 0.005 * vec3(finalCloud); // luminance by emission
+        vec3 Lem = 0.008 * vec3(finalCloud); // luminance by emission
         vec3 Lsc = sigma_s * scProb * sunLuminance * TL; // luminance by scattering
 
         T *= exp(-sigma_a * seg);
@@ -277,21 +325,30 @@ vec3 scene(ray_t camera, vec3 sunDir, vec2 uv)
         if (T.x < 0.01 && T.y < 0.01 && T.z < 0.01) {
             break;
         }
-        
+
+        if (isMinus(Lsc)) {
+            useDebugColor = true;
+            result = vec3(1.0, 0.0, 0.0);
+            break;
+        }
+
         P += P_step;
     }
     
-    // Just magic number
     if (isGround) {
-		result = vec3(0.0);
-    } else {
-        result = vec3(1.0) - T; // DEBUG: transmittance
+		result = vec3(0.0, 0.0, 0.0);
+    } else if (useDebugColor == false) {
+        //result = vec3(1.0) - T; // DEBUG: transmittance
         //result = vec3(1.0) - L;
-        //result = L;
+        result = L;
     }
 
-    // #todo: Minus value near horizon?
-    return max(result, vec3(0.0));
+    // DEBUG
+    if (isMinus(result) && useDebugColor == false) {
+        result = vec3(0.0, 1.0, 1.0);
+    }
+
+    return result;
 }
 
 vec3 getViewDirection(vec2 uv) {
