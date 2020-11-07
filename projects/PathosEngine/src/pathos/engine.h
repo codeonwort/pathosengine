@@ -116,6 +116,8 @@ namespace pathos {
 
 		bool destroyOpenGL();
 
+		void readConfigFile();
+
 		// GUI event listeners //
 		static void onIdle();
 		static void onMainWindowDisplay();

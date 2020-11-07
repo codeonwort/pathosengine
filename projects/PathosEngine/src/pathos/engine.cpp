@@ -103,6 +103,8 @@ namespace pathos {
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
 
+		readConfigFile();
+
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");
 
@@ -300,6 +302,25 @@ namespace pathos {
 		ScopedGpuCounter::destroyQueryObjectPool();
 
 		return true;
+	}
+
+	// Read config line by line and add to the console window.
+	void Engine::readConfigFile()
+	{
+		std::string configPath = ResourceFinder::get().find("EngineConfig.ini");
+		if (configPath.size() > 0) {
+			LOG(LogInfo, "Read config file: %s", configPath.c_str());
+
+			std::fstream file(configPath);
+			std::string line;
+			while (std::getline(file, line)) {
+				// Lines that are empty or start with # are comments
+				if (line.size() == 0 || line[0] == '#') {
+					continue;
+				}
+				gConsole->addLine(line.c_str(), false);
+			}
+		}
 	}
 
 	void Engine::registerExec(const char* command, ExecProc proc)
