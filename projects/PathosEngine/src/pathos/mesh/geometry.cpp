@@ -270,6 +270,7 @@ namespace pathos {
 		CHECK(*vao != 0);
 		glBindVertexArray(*vao);
 		for (const VAOElement& desc : descs) {
+			CHECKF(desc.buffer != 0, "Null buffer is not allowed");
 			glBindBuffer(GL_ARRAY_BUFFER, desc.buffer);
 			glVertexAttribPointer(desc.index, desc.size, desc.type, desc.normalized, 0, (void*)0);
 			glEnableVertexAttribArray(desc.index);

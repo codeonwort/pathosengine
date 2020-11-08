@@ -59,11 +59,13 @@ void World2::onTick(float deltaSeconds)
 	}
 
 #if DAE_MODEL_ID == 2
-	static double time = 0.0;
-	time += deltaSeconds;
-	if (time > 1.0) time = 0.0;
-	daeModel->updateAnimation(0, time);
-	daeModel->updateSoftwareSkinning();
+	if (daeModel != nullptr) {
+		static double time = 0.0;
+		time += deltaSeconds;
+		if (time > 1.0) time = 0.0;
+		daeModel->updateAnimation(0, time);
+		daeModel->updateSoftwareSkinning();
+	}
 #endif
 
 	{
