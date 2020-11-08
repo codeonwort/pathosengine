@@ -277,7 +277,11 @@ namespace pathos {
 			: (button == GLUT_RIGHT_BUTTON) ? InputConstants::MOUSE_RIGHT_BUTTON
 			: InputConstants::UNDEFINED;
 
-		CHECKF(input != InputConstants::UNDEFINED, "Unexpected mouse button input");
+		if (button == 3 || button == 4) {
+			// #todo: These are mouse wheel input, but it seems there are no constants for them.
+		} else {
+			CHECKF(input != InputConstants::UNDEFINED, "Unexpected mouse button input");
+		}
 
 		if (state == GLUT_DOWN) {
 			callback_onMouseDown(input, (int32)x, (int32)y);
