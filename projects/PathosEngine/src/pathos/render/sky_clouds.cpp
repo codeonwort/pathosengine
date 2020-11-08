@@ -69,8 +69,8 @@ namespace pathos {
 		recreateRenderTarget(cmdList, settings.renderTargetWidth, settings.renderTargetHeight, resolutionScale);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloud);
-		GLuint workGroupsX = (GLuint)ceilf((float)(settings.renderTargetWidth) / 16.0f);
-		GLuint workGroupsY = (GLuint)ceilf((float)(settings.renderTargetHeight) / 16.0f);
+		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetWidth) / 16.0f);
+		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetHeight) / 16.0f);
 
 		cmdList.useProgram(program.getGLName());
 		//cmdList.bindImageTexture(0, settings.weatherTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);

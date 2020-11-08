@@ -103,20 +103,23 @@ namespace pathos {
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &tex_id);
 
-		uint32 maxLOD = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+		uint32 numLODs = 1;
+		if (generateMipmap) {
+			numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+		}
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			if (sRGB) {
-				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8_ALPHA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_SRGB8_ALPHA8, w, h);
 			} else {
-				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 			}
 			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		} else if (bpp == 24) {
 			if (sRGB) {
-				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_SRGB8, w, h);
 			} else {
-				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 			}
 			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
@@ -157,8 +160,11 @@ namespace pathos {
 
 		unsigned int bpp = FreeImage_GetBPP(dib[0]);
 		if (bpp == 32 || bpp == 24) {
-			uint32 maxLOD = generateMipmap ? static_cast<uint32>(floor(log2(std::max(w, h))) + 1) : 0;
-			glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+			uint32 numLODs = 1;
+			if (generateMipmap) {
+				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+			}
+			glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 		} else {
 			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			return 0;
@@ -220,7 +226,7 @@ namespace pathos {
 		glObjectLabel(GL_TEXTURE, texture, -1, label);
 		label_counter += 1;
 
-		if(deleteBlobData) {
+		if (deleteBlobData) {
 			stbi_image_free(metadata.data);
 		}
 

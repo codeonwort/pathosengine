@@ -163,7 +163,7 @@ namespace pathos {
 
 		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
 		// #todo-debug: Broken due to Reverse-Z
-		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
+		auto cvar_visualizeDepth = ConsoleVariableManager::get().find("r.visualize_depth");
 		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);
 			return;
@@ -197,13 +197,16 @@ namespace pathos {
 		// update ubo_perFrame
 		updateSceneUniformBuffer(cmdList, scene, camera);
 
+		// Volumetric clouds
 		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
 		if (bRenderClouds) {
+			SCOPED_GPU_COUNTER(VolumetricCloud);
+
 			VolumetricCloudSettings settings;
-			settings.renderTargetWidth = sceneRenderSettings.sceneWidth;
-			settings.renderTargetHeight = sceneRenderSettings.sceneHeight;
-			settings.weatherTexture = scene->cloud->weatherTexture;
-			settings.shapeNoiseTexture = scene->cloud->shapeNoise->getGLName();
+			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
+			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
+			settings.weatherTexture      = scene->cloud->weatherTexture;
+			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
 			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
 
 			volumetricCloud->render(cmdList, settings);

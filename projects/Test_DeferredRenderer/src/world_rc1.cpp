@@ -57,6 +57,8 @@ void World_RC1::onInitialize()
 	setupSky();
 	setupScene();
 
+	getCamera().moveToPosition(0.0f, -100.0f, 4000.0f);
+
 	//////////////////////////////////////////////////////////////////////////
 	// Setup input
 	ButtonBinding updateSky;
@@ -132,7 +134,7 @@ void World_RC1::setupSky()
 
 	// Volumetric cloud
 	{
-		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), false, false);
+		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false);
 		glObjectLabel(GL_TEXTURE, weatherTexture, -1, "Texture: WeatherMap");
 		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
 		{

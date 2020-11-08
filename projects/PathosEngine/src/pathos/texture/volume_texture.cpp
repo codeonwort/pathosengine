@@ -35,6 +35,8 @@ namespace pathos {
 
 	void VolumeTexture::initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth)
 	{
+		constexpr bool generateMipmaps = true;
+
 		if (bitmapInfo == nullptr) {
 			return;
 		}
@@ -59,7 +61,12 @@ namespace pathos {
 		}
 
 		// #todo-texture: Remove direct GL call
-		glTextureStorage3D(texture, 1, internalFormat, textureWidth, textureHeight, textureDepth);
+		uint32 numLODs = 1;
+		if (generateMipmaps) {
+			numLODs = static_cast<uint32>(floor(log2(std::max(std::max(textureWidth, textureHeight), textureDepth))) + 1);
+		}
+
+		glTextureStorage3D(texture, numLODs, internalFormat, textureWidth, textureHeight, textureDepth);
 		glTextureSubImage3D(
 			texture,
 			0,                                         // LOD
@@ -67,6 +74,10 @@ namespace pathos {
 			textureWidth, textureHeight, textureDepth, // size
 			pixelFormat, GL_UNSIGNED_BYTE, rawBytes);  // pixels
 		
+		if (generateMipmaps) {
+			glGenerateTextureMipmap(texture);
+		}
+
 		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
