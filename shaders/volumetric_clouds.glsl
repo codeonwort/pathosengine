@@ -242,7 +242,7 @@ vec4 sampleWeather(vec3 wPos) {
 }
 
 // #todo: Replace with a packed texture
-vec2 sampleCloudShapeAndErosion(vec3 wPos) {
+vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     vec2 uv = 0.5 + wPos.xz / CLOUD_Y_START;
     vec2 moving_uv = vec2(uv.x + getWorldTime() * WIND_SPEED, uv.y);
 
@@ -254,30 +254,31 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos) {
 
     // R: Perlin-Worley noise
     // G,B,A: Worley noises at increasing frequencies
-    vec4 baseNoises = texture(shapeNoise, samplePos);
+    vec4 baseNoises = textureLod(shapeNoise, samplePos, lod);
     float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
 
     // #todo: baseCloud values are too high
     float baseCloud = baseNoises.x - 0.92;
 
-    vec3 detailNoises = texture(erosionNoise, CURLINESS * samplePos2).xyz;
+    vec3 detailNoises = textureLod(erosionNoise, CURLINESS * samplePos2, lod).xyz;
 
     result.x = saturate(remap(baseCloud, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
     result.y = dot(vec3(0.625, 0.25, 0.125), detailNoises);
     return result;
 }
 
-float sampleCloud(vec3 P) {
+float sampleCloud(vec3 P, float lod) {
     vec4 weatherData = sampleWeather(P);
 
     float cloudCoverage = weatherData.x;
 
 #if DEBUG_MODE == DEBUG_MODE_NO_NOISE || DEBUG_MODE == DEBUG_MODE_WEATHER
-    return cloudCoverage * getDensityForCloud(getHeightFraction(P), 0.5);
+    return cloudCoverage * getDensityForCloud(getHeightFraction(P), 1.0);
+    //return cloudCoverage * getCumulusGradient(P);
     //return cloudCoverage;
 #endif
 
-    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P);
+    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod);
 
     float baseCloud = cloudNoiseSamples.x;
     float heightFraction = getHeightFraction(P);
@@ -301,7 +302,7 @@ float sampleCloud(vec3 P) {
     float finalCloud = baseCloudWithCoverage - erosionModifier * (1.0 - baseCloudWithCoverage);
     finalCloud = remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0);
 #else
-    float erosionModifier = 0.1 * erosion * heightFraction;
+    float erosionModifier = 0.01 * erosion * heightFraction;
 	float finalCloud = baseCloudWithCoverage - erosionModifier;
     finalCloud = remap(finalCloud, erosionModifier, 1.0, 0.0, 1.0);
 #endif
@@ -331,7 +332,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
     } else if (cameraHeight < CLOUD_Y_END) {
         // DEBUG
         if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
-            return vec4(1.0, 1.0, 0.0, 1.0);
+            return vec4(1.0, 1.0, 0.0, 0.0);
         }
         raymarchStartPos = camera.origin;
         totalRayMarchLength = hit1.t < 0.0 ? hit2.t : hit2.t < 0.0 ? hit1.t : min(hit1.t, hit2.t);
@@ -343,6 +344,8 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         raymarchStartPos = hit2.origin;
         totalRayMarchLength = hit1.t - hit2.t;
     }
+    // raymarch length is too long near horizon
+    totalRayMarchLength = min(4.0 * (CLOUD_Y_END - CLOUD_Y_START), totalRayMarchLength);
 
     // DEBUG: intersection test failed
     if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
@@ -354,7 +357,11 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 
     bool useDebugColor = false;
 
-    const int numSteps = 64;
+    int numSteps = 64;
+    float lengthRatio = totalRayMarchLength / (CLOUD_Y_END - CLOUD_Y_START);
+    lengthRatio = clamp(lengthRatio, 1.0, 2.0);
+    numSteps = int(float(numSteps) * lengthRatio);
+
     const int inscatSteps = 6;
     
     float cosTheta = dot(camera.direction, -sunDir);
@@ -367,7 +374,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
     
     vec3 P = raymarchStartPos; // Current sample position
     // #todo: step size too large?
-    float seg = totalRayMarchLength / float(numSteps); // dt
+    float seg = totalRayMarchLength / float(numSteps);
     vec3 P_step = camera.direction * seg; // Fixed step size between sample positions
 
     // (#todo: empty-space optimization)
@@ -384,9 +391,9 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         return vec4(vec3(sampleWeather(P).x), 0.0);
 #endif
 
-        float cloudDensity = sampleCloud(P);
+        float cloudDensity = sampleCloud(P, float(i) / 16);
         
-        float sigma_a = 0.3; // absorption coeff
+        float sigma_a = 0.003; // absorption coeff
         float sigma_s = 0.1; // scattering coeff
 
         // Raymarch from current position to Sun
@@ -411,12 +418,12 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
                 for (int j = 0; j < inscatSteps; ++j) {
 #if 0 // Cone sample
                     vec3 samplePos = P + coneRadius * noiseKernel[j] * float(j);
-                    tau += (sigma_a + sigma_s) * sampleCloud(samplePos) * segLight;
+                    tau += (sigma_a + sigma_s) * sampleCloud(samplePos, 0) * segLight;
 
                     PL += PL_step;
                     coneRadius += CONE_STEP;
 #else
-                    tau += (sigma_a + sigma_s) * sampleCloud(PL) * segLight;
+                    tau += (sigma_a + sigma_s) * sampleCloud(PL, 0) * segLight;
                     PL += PL_step;
 #endif
                 }
@@ -443,7 +450,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         vec3 Lem = T * (0.05 * vec3(0.13, 0.13, 0.27));
 
         // In-scattering
-        vec3 SUN_RADIANCE = 0.6 * vec3(0.9, 0.8, 1.1); // #todo
+        vec3 SUN_RADIANCE = 0.4 * vec3(0.9, 0.8, 1.1); // #todo
         vec3 Lsc = T * sigma_s * phaseFn * (SUN_RADIANCE * TL);
 
         // #todo: Multiply with cloudDensity?
