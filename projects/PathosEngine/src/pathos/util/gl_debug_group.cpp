@@ -108,8 +108,8 @@ namespace pathos {
 	uint32 ScopedGpuCounter::flushQueries(std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds) {
 		CHECKF(poolInitialized, "Pool was not initialized");
 
-		outCounterNames.resize(numUsedQueryObjects);
-		outElapsedMilliseconds.resize(numUsedQueryObjects);
+		outCounterNames.resize(numUsedQueryObjects / 2);
+		outElapsedMilliseconds.resize(numUsedQueryObjects / 2);
 		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
 			GLuint64 beginTimeNS, endTimeNS;
 			glGetQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNS);

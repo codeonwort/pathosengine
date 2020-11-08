@@ -79,6 +79,8 @@ namespace pathos {
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 
+		void dumpGPUProfile();
+
 		void setWorld(World* inWorld);
 
 		const EngineConfig& getConfig() const { return conf; }
@@ -143,6 +145,9 @@ namespace pathos {
 
 		float elapsed_gameThread;
 		float elapsed_renderThread;
+
+		std::vector<std::string> lastGpuCounterNames;
+		std::vector<float> lastGpuCounterTimes;
 
 		World* currentWorld;
 

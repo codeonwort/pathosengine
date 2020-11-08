@@ -1,7 +1,8 @@
 #include "file_system.h"
 
-// #todo: cross-platform way
+// #todo: cross-platform way (std::filesystem in C++17)
 #include <Windows.h>
+#include <Shlwapi.h>
 
 namespace pathos {
 
@@ -18,6 +19,21 @@ namespace pathos {
 		getExecPath(path);
 		size_t ix = path.find_last_of(L'\\');
 		outDir = path.substr(0, ix + 1);
+	}
+
+	std::string getFullDirectoryPath(const char* targetDir)
+	{
+		char buffer[1024];
+		if (::GetFullPathNameA(targetDir, 1024, buffer, NULL) != 0) {
+			return std::string(buffer);
+		} else {
+			return "";
+		}
+	}
+
+	void createDirectory(const char* targetDir)
+	{
+		::CreateDirectoryA(targetDir, NULL);
 	}
 
 }
