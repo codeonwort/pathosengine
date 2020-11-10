@@ -10,11 +10,26 @@
 namespace pathos {
 
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
+
+	// #todo-cloud: Expose in VolumetricCloudActor
+	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
+	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
+	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
+	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
+	static ConsoleVariable<float> cvar_cloud_cloudScale("r.cloud.cloudScale", 0.4f, "Scale factor of basic shape of clouds");
+	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 
 	struct UBO_VolumetricCloud {
-		vector4 cloudLayerRange; // (minY, maxY, ?, ?)
+		float earthRadius;
+		float cloudLayerMinY;
+		float cloudLayerMaxY;
+		float windSpeedX;
+		float windSpeedZ;
+		float weatherScale;
+		float cloudScale;
+		float cloudCurliness;
 	};
 
 	class VolumetricCloudCS : public ShaderStage {
@@ -74,8 +89,14 @@ namespace pathos {
 
 		UBO_VolumetricCloud uboData;
 		{
-			uboData.cloudLayerRange.x = cvar_cloud_minY.getFloat();
-			uboData.cloudLayerRange.y = cvar_cloud_maxY.getFloat();
+			uboData.earthRadius    = cvar_cloud_earthRadius.getFloat();
+			uboData.cloudLayerMinY = cvar_cloud_minY.getFloat();
+			uboData.cloudLayerMaxY = cvar_cloud_maxY.getFloat();
+			uboData.windSpeedX     = cvar_cloud_windSpeedX.getFloat();
+			uboData.windSpeedZ     = cvar_cloud_windSpeedZ.getFloat();
+			uboData.weatherScale   = cvar_cloud_weatherScale.getFloat();
+			uboData.cloudScale     = cvar_cloud_cloudScale.getFloat();
+			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
 		}
 		ubo.update(cmdList, 1, &uboData);
 

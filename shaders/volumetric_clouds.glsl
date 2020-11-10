@@ -14,7 +14,16 @@
 #define DEBUG_TRANSMITTANCE 0
 
 layout (std140, binding = 1) uniform UBO_VolumetricCloud {
-	vec4 cloudLayerRange; // (minY, maxY, ?, ?)
+    float earthRadius;    // in meters
+    float cloudLayerMinY; // in meters
+    float cloudLayerMaxY; // in meters
+    float windSpeedX;
+
+    float windSpeedZ;
+    float weatherScale;
+    float cloudScale;
+    float cloudCurliness;
+
 } uboCloud;
 
 layout (local_size_x = 16, local_size_y = 16) in;
@@ -28,9 +37,6 @@ layout (binding = 4, rgba16f) writeonly uniform image2D renderTarget;
 //////////////////////////////////////////////////////////////////////////
 // Constants
 #define PI                    3.14159265359
-
-// Unit: meters
-#define EARTH_RADIUS          6.36e6
 
 // Cone sampling random offsets
 uniform vec3 noiseKernel[6u] = vec3[]
@@ -46,22 +52,13 @@ uniform vec3 noiseKernel[6u] = vec3[]
 //////////////////////////////////////////////////////////////////////////
 // Uniform getters
 
-float getCloudLayerMin() { return uboCloud.cloudLayerRange.x; }
-float getCloudLayerMax() { return uboCloud.cloudLayerRange.y; }
-
-//////////////////////////////////////////////////////////////////////////
-// Unused
-#define MAGIC_RAYLEIGH        1.0
-#define MAGIC_MIE             0.3
-
-#define SUN_DISTANCE          1.496e11
-#define SUN_RADIUS            6.9551e8
-#define ATMOSPHERE_RADIUS     6.42e6
-#define Hr                    7.994e3
-#define Hm                    1.2e3
-// Unit: 1 / meters
-#define BetaR                 vec3(5.8e-6, 13.5e-6, 33.1e-6)
-#define BetaM                 vec3(21e-6)
+float getEarthRadius() { return uboCloud.earthRadius; }
+float getCloudLayerMin() { return uboCloud.cloudLayerMinY; }
+float getCloudLayerMax() { return uboCloud.cloudLayerMaxY; }
+vec2 getWindSpeed() { return vec2(uboCloud.windSpeedX, uboCloud.windSpeedZ); }
+float getWeatherScale() { return uboCloud.weatherScale; }
+float getCloudScale() { return uboCloud.cloudScale; }
+float getCloudCurliness() { return uboCloud.cloudCurliness; }
 
 //////////////////////////////////////////////////////////////////////////
 // Ray, sphere code from https://www.shadertoy.com/view/XtBXDw
@@ -87,22 +84,6 @@ hit_t no_hit = hit_t(
 	vec3(0., 0., 0.), // normal
 	vec3(0., 0., 0.) // origin
 );
-
-ray_t get_primary_ray(
-	in vec3 cam_local_point,
-	inout vec3 cam_origin,
-	inout vec3 cam_look_at)
-{
-	vec3 fwd = normalize(cam_look_at - cam_origin);
-	vec3 up = vec3(0, 1, 0);
-	vec3 right = cross(up, fwd);
-	up = cross(fwd, right);
-
-    ray_t r;
-    r.origin = cam_origin;
-    r.direction = normalize(fwd + up * cam_local_point.y - right * cam_local_point.x);
-	return r;
-}
 
 void intersect_sphere(
 	in ray_t ray,
@@ -188,23 +169,6 @@ float getHeightFraction(vec3 wPos) {
     float fraction = (wPos.y - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
     return saturate(fraction);
 }
-// #todo: Temp function. Replace with a channel of the weather texture
-float getCumulusGradient(vec3 wPos) {
-    float f = getHeightFraction(wPos);
-    const vec2 attack = vec2(0.1, 0.10);
-    const vec2 decay = vec2(0.4, 0.6);
-    if (f < attack.x) {
-        return 0.1;
-    } else if (f < attack.y) {
-        return remap(f, attack.x, attack.y, 0.1, 1.0);
-    } else if (f < decay.x) {
-        return 1.0;
-    } else if (f < decay.y) {
-        return pow(remap(f, decay.x, decay.y, 1.0, 0.0), 2.0);
-    } else {
-        return 0.0;
-    }
-}
 
 // Cloud types height density gradients
 #define STRATUS_GRADIENT vec4(0.0, 0.1, 0.2, 0.3)
@@ -223,15 +187,9 @@ float getDensityForCloud(float heightFraction, float cloudType)
 	return smoothstep(baseGradient.x, baseGradient.y, heightFraction) - smoothstep(baseGradient.z, baseGradient.w, heightFraction);
 }
 
-// #todo: User control
-const float WIND_SPEED = 0.05; //0.05;
-const float WEATHER_SCALE = 0.01;
-const float CLOUD_SCALE = 0.4; // 0.4
-const float CURLINESS = 0.1;
-
 vec4 sampleWeather(vec3 wPos) {
-    wPos.x += getWorldTime() * getCloudLayerMin() * WIND_SPEED;
-    vec2 uv = vec2(0.5) + (WEATHER_SCALE * wPos.xz / getCloudLayerMin());
+    wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed();
+    vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
     vec4 data = textureLod(weatherMap, uv, 0);
 
     data.x = max(0.0, data.x - 0.1); // If overall coverage is too high
@@ -241,11 +199,11 @@ vec4 sampleWeather(vec3 wPos) {
 // #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     vec2 uv = 0.5 + wPos.xz / getCloudLayerMin();
-    vec2 moving_uv = vec2(uv.x + getWorldTime() * WIND_SPEED, uv.y);
+    vec2 moving_uv = uv + getWorldTime() * getWindSpeed();
 
     float heightFraction = getHeightFraction(wPos);
-    vec3 samplePos = vec3(CLOUD_SCALE * moving_uv, heightFraction);
-    vec3 samplePos2 = vec3(CLOUD_SCALE * uv, heightFraction);
+    vec3 samplePos = vec3(getCloudScale() * moving_uv, heightFraction);
+    vec3 samplePos2 = vec3(getCloudScale() * uv, heightFraction);
 
     vec2 result = vec2(0.0);
 
@@ -257,7 +215,7 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     // #todo: baseCloud values are too high
     float baseCloud = baseNoises.x - 0.92;
 
-    vec3 detailNoises = textureLod(erosionNoise, CURLINESS * samplePos2, lod).xyz;
+    vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
 
     result.x = saturate(remap(baseCloud, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
     result.y = dot(vec3(0.625, 0.25, 0.125), detailNoises);
@@ -271,8 +229,6 @@ float sampleCloud(vec3 P, float lod) {
 
 #if DEBUG_MODE == DEBUG_MODE_NO_NOISE || DEBUG_MODE == DEBUG_MODE_WEATHER
     return cloudCoverage * getDensityForCloud(getHeightFraction(P), 1.0);
-    //return cloudCoverage * getCumulusGradient(P);
-    //return cloudCoverage;
 #endif
 
     vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod);
@@ -280,7 +236,6 @@ float sampleCloud(vec3 P, float lod) {
     float baseCloud = cloudNoiseSamples.x;
     float heightFraction = getHeightFraction(P);
 
-    //float density = getCumulusGradient(P);
     float density = getDensityForCloud(heightFraction, 1.0);
     baseCloud *= density / heightFraction;
 
@@ -315,8 +270,8 @@ bool isMinus(vec3 v) {
 // #todo: This is a total mess
 vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 {
-    sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + getCloudLayerMin());
-    sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + getCloudLayerMax());
+    sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
+    sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
 
     float cameraHeight = camera.origin.y;
     float totalRayMarchLength = 0.0;
@@ -502,9 +457,6 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         result = vec3(0.0, 1.0, 1.0);
     }
 
-    //result = vec3(getViewPositionFromWorldPosition(raymarchStartPos).z);
-    //result = vec3(occluderPos.z);
-
     return vec4(result, T); // luminance and transmittance
 }
 
@@ -532,6 +484,11 @@ void main() {
 	ray_t eye_ray;
     eye_ray.origin = uboPerFrame.ws_eyePosition;
 	eye_ray.direction = getViewDirection(uv);
+
+    // Raymarching is broken if eye is too close to the interface of cloud layers
+    if (abs(eye_ray.origin.y - getCloudLayerMin()) <= 1.5 || abs(eye_ray.origin.y - getCloudLayerMax()) <= 1.5) {
+        eye_ray.origin.y += 1.5;
+    }
     
 	vec3 sunDir = uboPerFrame.directionalLights[0].direction;
 
