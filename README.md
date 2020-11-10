@@ -39,4 +39,4 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 
 ![LightScattering](https://user-images.githubusercontent.com/11644393/71560025-ecdc7f80-2aa7-11ea-900f-f7a76fda0843.jpg)
 
-![RC1_wip](https://user-images.githubusercontent.com/11644393/97787481-d89c6e00-1bf5-11eb-9a36-c8e3f8328dbb.jpg)
+![RC1_wip2](https://user-images.githubusercontent.com/11644393/98628358-c212b700-2359-11eb-9465-71a1791e15c8.jpg)
