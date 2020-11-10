@@ -42,13 +42,6 @@ namespace pathos {
 
 namespace pathos {
 
-	VolumetricCloud::~VolumetricCloud()
-	{
-		//if (renderTarget != 0) {
-		//	gRenderDevice->deleteTextures(1, &renderTarget);
-		//}
-	}
-
 	void VolumetricCloud::initializeResources(RenderCommandList& cmdList)
 	{
 		//
@@ -73,7 +66,6 @@ namespace pathos {
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetHeight) / 16.0f);
 
 		cmdList.useProgram(program.getGLName());
-		//cmdList.bindImageTexture(0, settings.weatherTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		cmdList.bindTextureUnit(0, settings.weatherTexture);
 		cmdList.bindTextureUnit(1, settings.shapeNoiseTexture);
 		cmdList.bindTextureUnit(2, settings.erosionNoiseTexture);

@@ -124,6 +124,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
+    <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
     <ClInclude Include="src\pathos\render\atmosphere.h" />
+    <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\irradiance_baker.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h" />

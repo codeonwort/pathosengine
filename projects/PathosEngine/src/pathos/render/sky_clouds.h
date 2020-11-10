@@ -45,7 +45,7 @@ namespace pathos {
 	class VolumetricCloud : public Noncopyable {
 
 	public:
-		~VolumetricCloud();
+		~VolumetricCloud() = default;
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);

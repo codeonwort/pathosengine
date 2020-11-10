@@ -1,6 +1,7 @@
 #include "render_deferred.h"
 
 #include "pathos/render/render_device.h"
+#include "pathos/render/depth_prepass.h"
 #include "pathos/render/sky.h"
 #include "pathos/render/sky_clouds.h"
 #include "pathos/render/god_ray.h"
@@ -13,16 +14,18 @@
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/texture/volume_texture.h"
+#include "pathos/shader/shader_program.h"
+
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/gl_debug_group.h"
-#include "pathos/shader/shader_program.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -161,8 +164,14 @@ namespace pathos {
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
-		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
-		// #todo-debug: Broken due to Reverse-Z
+		{
+			SCOPED_GPU_COUNTER(RenderPreDepth);
+
+			depthPrepass->renderPreDepth(cmdList, scene, camera);
+		}
+
+		// #todo-depthprepass: Now depth prepass will render the scene depth.
+		// Remove this pass and just use the sceneDepth texture.
 		auto cvar_visualizeDepth = ConsoleVariableManager::get().find("r.visualize_depth");
 		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);
@@ -221,9 +230,12 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
-		clearGBuffer(cmdList);
+		{
+			SCOPED_GPU_COUNTER(PackGBuffer);
 
- 		packGBuffer(cmdList);
+			clearGBuffer(cmdList);
+			packGBuffer(cmdList);
+		}
 
 		{
 			SCOPED_GPU_COUNTER(SSAO);
@@ -231,7 +243,11 @@ namespace pathos {
 			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
 		}
 
- 		unpackGBuffer(cmdList);
+		{
+			SCOPED_GPU_COUNTER(UnpackGBuffer);
+
+			unpackGBuffer(cmdList);
+		}
 
 		// Translucency pass
 		{
@@ -354,7 +370,8 @@ namespace pathos {
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
+		// Should not clear here due to depth prepass
+		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
 	}
 
 	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
@@ -363,8 +380,15 @@ namespace pathos {
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+#if 0	// No depth prepass
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_TRUE);
+#else	// Depth prepass
+		cmdList.depthFunc(GL_EQUAL);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_FALSE);
+#endif
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
@@ -404,6 +428,8 @@ namespace pathos {
 				if (item.renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
+
+		cmdList.depthMask(GL_TRUE);
 	}
 
 	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
@@ -515,6 +541,7 @@ namespace pathos {
 
 	std::unique_ptr<class VolumetricCloud>         DeferredRenderer::volumetricCloud;
 
+	std::unique_ptr<class DepthPrepass>            DeferredRenderer::depthPrepass;
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
 	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
 	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
@@ -564,10 +591,12 @@ namespace pathos {
 		}
 
 		{
+			depthPrepass = std::make_unique<DepthPrepass>();
 			sunShadowMap = std::make_unique<DirectionalShadowMap>();
 			omniShadowPass = std::make_unique<OmniShadowPass>();
 			visualizeDepth = std::make_unique<VisualizeDepth>();
 
+			depthPrepass->initializeResources(cmdList);
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
 		}
@@ -621,6 +650,7 @@ namespace pathos {
 		}
 
 		{
+			depthPrepass->destroyResources(cmdList);
 			sunShadowMap->destroyResources(cmdList);
 			omniShadowPass->destroyResources(cmdList);
 			visualizeDepth.release();
