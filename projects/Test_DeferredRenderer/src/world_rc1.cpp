@@ -32,7 +32,7 @@
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
-
+constexpr float     Y_OFFSET             = 6500.0f; // Offset every actor to match with cloud layer
 
 void World_RC1::onInitialize()
 {
@@ -43,12 +43,12 @@ void World_RC1::onInitialize()
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
 	spaceship1->setActorScale(30.0f);
-	spaceship1->setActorLocation(vector3(-347.0f, -1098.0f, 1648.0f));
+	spaceship1->setActorLocation(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
 
 	spaceship2 = spawnActor<SpaceshipActor>();
 	spaceship2->setActorScale(30.0f);
-	spaceship2->setActorLocation(vector3(1257.0f, -1098.0f, 348.0f));
+	spaceship2->setActorLocation(vector3(1257.0f, Y_OFFSET - 1098.0f, 348.0f));
 	spaceship2->setActorRotation(Rotator(112.91f, -21.14f, 0.0f));
 
 	//////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ void World_RC1::onInitialize()
 	setupSky();
 	setupScene();
 
-	getCamera().moveToPosition(0.0f, -100.0f, 4000.0f);
+	getCamera().moveToPosition(0.0f, Y_OFFSET - 100.0f, 4000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Setup input
@@ -105,6 +105,7 @@ void World_RC1::onTick(float deltaSeconds)
 	auto& components = lightningSphere->getParticleComponents();
 	for (uint32 i = 0; i < (uint32)components.size(); ++i) {
 		components[i]->setRotation(rings[ringIndicesForParticleRotation[i]]->getActorRotation());
+		components[i]->setLocation(vector3(0.0f, Y_OFFSET, 0.0f));
 	}
 }
 
@@ -165,6 +166,7 @@ void World_RC1::setupScene()
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
 	PointLightActor* pLight = spawnActor<PointLightActor>();
+	pLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 	pLight->setLightParameters(5000.0f * vector3(1.0f, 1.0f, 1.0f), 10000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -196,6 +198,7 @@ void World_RC1::setupScene()
 
 	lightningSphere = spawnActor<LightningActor>();
 	lightningSphere->setActorScale(40.0f);
+	lightningSphere->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 
 	constexpr uint32 numRings = 6;
 	const float ring_gap = 40.0f;
@@ -218,6 +221,7 @@ void World_RC1::setupScene()
 		outerRadius = innerRadius + (ring_width + i * 50.0f);
 		rings.push_back(ring);
 
+		ring->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 		ring->getStaticMesh()->setMaterial(0, material_pbr);
 	}
 
@@ -243,7 +247,7 @@ void World_RC1::onLoadOBJ(OBJLoader* loader)
 	guardTower = spawnActor<StaticMeshActor>();
 	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
 	guardTower->setActorScale(1000.0f);
-	guardTower->setActorLocation(vector3(0.0f, -4700.0f, 0.0f));
+	guardTower->setActorLocation(vector3(0.0f, Y_OFFSET - 4700.0f, 0.0f));
 
 	// #todo-material: hack
 	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;

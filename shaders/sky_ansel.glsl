@@ -23,7 +23,6 @@ void main() {
 #if FRAGMENT_SHADER
 
 layout (binding = 0) uniform sampler2D texSky;
-layout (binding = 1) uniform sampler2D texCloud;
 
 in VS_OUT {
 	vec3 r;
@@ -41,12 +40,7 @@ void main() {
 	tc.y = acos(r.z) / PI;
 
 	vec3 sky = texture(texSky, tc).xyz;
-	vec4 cloud = texture(texCloud, gl_FragCoord.xy / screenSize.xy);
-
-	//out_color = vec4(mix(vec3(0.0, 0.0, 1.0), cloud.rgb, 1.0 - cloud.a), 1.0);
-	out_color = vec4(mix(sky, cloud.rgb, 1.0 - cloud.a), 1.0);
-	//out_color = vec4(sky, 1.0);
-	//out_color = cloud;
+	out_color = vec4(sky, 1.0);
 
 	out_bright = vec4(0.0);
 }

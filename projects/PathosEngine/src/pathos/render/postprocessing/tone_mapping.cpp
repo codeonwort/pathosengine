@@ -54,6 +54,7 @@ namespace pathos {
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
 		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
+		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // volumetricCloud
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -73,8 +74,8 @@ namespace pathos {
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 0, &uboData);
 
-		GLuint tonemapping_attachments[] = { input0, input1, input2 };
-		cmdList.bindTextures(0, 3, tonemapping_attachments);
+		GLuint tonemapping_attachments[] = { input0, input1, input2, input3 };
+		cmdList.bindTextures(0, 4, tonemapping_attachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

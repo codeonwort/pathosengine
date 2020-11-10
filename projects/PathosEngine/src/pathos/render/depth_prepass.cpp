@@ -35,6 +35,8 @@ namespace pathos {
 
 	struct UBO_DepthPrepass {
 		matrix4 mvpTransform;
+		matrix3x4 mvMatrix3x3;
+		vector4 billboardParam;
 	};
 
 	void DepthPrepass::initializeResources(RenderCommandList& cmdList)
@@ -83,11 +85,26 @@ namespace pathos {
 					cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				}
 
+				// #todo-material: temp billboard
+				ColorMaterial* colorMaterial = nullptr;
+				if (proxy->material->getMaterialID() == MATERIAL_ID::SOLID_COLOR) {
+					colorMaterial = static_cast<ColorMaterial*>(proxy->material);
+				}
+
 				UBO_DepthPrepass uboData;
-				uboData.mvpTransform = camera->getViewProjectionMatrix() * proxy->modelMatrix;
+				{
+					uboData.mvpTransform = camera->getViewProjectionMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(camera->getViewMatrix() * proxy->modelMatrix);
+					uboData.billboardParam.x = colorMaterial && colorMaterial->billboard ? 1.0f : 0.0f;
+					uboData.billboardParam.y = colorMaterial ? colorMaterial->billboardWidth : 0.0f;
+				}
 				ubo.update(cmdList, 1, &uboData);
 
-				proxy->geometry->activate_position(cmdList);
+				if (colorMaterial && colorMaterial->billboard) {
+					proxy->geometry->activate_position_uv(cmdList);
+				} else {
+					proxy->geometry->activate_position(cmdList);
+				}
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
 				proxy->geometry->deactivate(cmdList);

@@ -13,16 +13,17 @@
 
 #define DEBUG_TRANSMITTANCE 0
 
-//layout (std140, binding = 1) uniform UBO_VolumetricClouds {
-//	float cameraHeight;
-//} ubo;
+layout (std140, binding = 1) uniform UBO_VolumetricCloud {
+	vec4 cloudLayerRange; // (minY, maxY, ?, ?)
+} uboCloud;
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0) uniform sampler2D weatherMap;
-layout (binding = 1) uniform sampler3D shapeNoise;
-layout (binding = 2) uniform sampler3D erosionNoise;
-layout (binding = 3, rgba16f) writeonly uniform image2D renderTarget;
+layout (binding = 0) uniform sampler2D sceneDepth;
+layout (binding = 1) uniform sampler2D weatherMap;
+layout (binding = 2) uniform sampler3D shapeNoise;
+layout (binding = 3) uniform sampler3D erosionNoise;
+layout (binding = 4, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
@@ -30,13 +31,6 @@ layout (binding = 3, rgba16f) writeonly uniform image2D renderTarget;
 
 // Unit: meters
 #define EARTH_RADIUS          6.36e6
-// #todo: Parametrize cloud range
-#define CLOUD_Y_START         2000.0
-#define CLOUD_Y_END           5000.0
-
-//#define EYE_HEIGHT            1.84
-#define EYE_HEIGHT            (CLOUD_Y_START + 3500.0)
-//#define EYE_HEIGHT            (CLOUD_Y_START + 800.0)
 
 // Cone sampling random offsets
 uniform vec3 noiseKernel[6u] = vec3[]
@@ -48,6 +42,12 @@ uniform vec3 noiseKernel[6u] = vec3[]
 	vec3( 0.28128598,  0.42443639, -0.86065785),
 	vec3(-0.16852403,  0.14748697,  0.97460106)
 );
+
+//////////////////////////////////////////////////////////////////////////
+// Uniform getters
+
+float getCloudLayerMin() { return uboCloud.cloudLayerRange.x; }
+float getCloudLayerMax() { return uboCloud.cloudLayerRange.y; }
 
 //////////////////////////////////////////////////////////////////////////
 // Unused
@@ -80,9 +80,6 @@ struct hit_t {
 	vec3 normal;
 	vec3 origin;
 };
-
-sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + CLOUD_Y_START);
-sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + CLOUD_Y_END);
 
 #define max_dist 1e8
 hit_t no_hit = hit_t(
@@ -188,7 +185,7 @@ float saturate(float x) {
 }
 
 float getHeightFraction(vec3 wPos) {
-    float fraction = (wPos.y - CLOUD_Y_START.x) / (CLOUD_Y_END - CLOUD_Y_START);
+    float fraction = (wPos.y - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
     return saturate(fraction);
 }
 // #todo: Temp function. Replace with a channel of the weather texture
@@ -233,8 +230,8 @@ const float CLOUD_SCALE = 0.4; // 0.4
 const float CURLINESS = 0.1;
 
 vec4 sampleWeather(vec3 wPos) {
-    wPos.x += getWorldTime() * CLOUD_Y_START * WIND_SPEED;
-    vec2 uv = vec2(0.5) + (WEATHER_SCALE * wPos.xz / CLOUD_Y_START);
+    wPos.x += getWorldTime() * getCloudLayerMin() * WIND_SPEED;
+    vec2 uv = vec2(0.5) + (WEATHER_SCALE * wPos.xz / getCloudLayerMin());
     vec4 data = textureLod(weatherMap, uv, 0);
 
     data.x = max(0.0, data.x - 0.1); // If overall coverage is too high
@@ -243,7 +240,7 @@ vec4 sampleWeather(vec3 wPos) {
 
 // #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
-    vec2 uv = 0.5 + wPos.xz / CLOUD_Y_START;
+    vec2 uv = 0.5 + wPos.xz / getCloudLayerMin();
     vec2 moving_uv = vec2(uv.x + getWorldTime() * WIND_SPEED, uv.y);
 
     float heightFraction = getHeightFraction(wPos);
@@ -318,6 +315,9 @@ bool isMinus(vec3 v) {
 // #todo: This is a total mess
 vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 {
+    sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + getCloudLayerMin());
+    sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -EARTH_RADIUS, 0.0), EARTH_RADIUS + getCloudLayerMax());
+
     float cameraHeight = camera.origin.y;
     float totalRayMarchLength = 0.0;
     vec3 raymarchStartPos = vec3(0.0);
@@ -326,10 +326,10 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
     hit_t hit2 = no_hit;
     intersect_sphere(camera, cloudInnerSphere, hit1);
     intersect_sphere(camera, cloudOuterSphere, hit2);
-    if (cameraHeight < CLOUD_Y_START) {
+    if (cameraHeight < getCloudLayerMin()) {
         raymarchStartPos = hit1.origin;
         totalRayMarchLength = hit2.t - hit1.t;
-    } else if (cameraHeight < CLOUD_Y_END) {
+    } else if (cameraHeight < getCloudLayerMax()) {
         // DEBUG
         if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
             return vec4(1.0, 1.0, 0.0, 0.0);
@@ -345,7 +345,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         totalRayMarchLength = hit1.t - hit2.t;
     }
     // raymarch length is too long near horizon
-    totalRayMarchLength = min(4.0 * (CLOUD_Y_END - CLOUD_Y_START), totalRayMarchLength);
+    totalRayMarchLength = min(4.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
 
     // DEBUG: intersection test failed
     if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
@@ -358,7 +358,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
     bool useDebugColor = false;
 
     int numSteps = 64;
-    float lengthRatio = totalRayMarchLength / (CLOUD_Y_END - CLOUD_Y_START);
+    float lengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
     lengthRatio = clamp(lengthRatio, 1.0, 2.0);
     numSteps = int(float(numSteps) * lengthRatio);
 
@@ -373,9 +373,11 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
     vec3 L = vec3(0.0); // luminance
     
     vec3 P = raymarchStartPos; // Current sample position
-    // #todo: step size too large?
     float seg = totalRayMarchLength / float(numSteps);
     vec3 P_step = camera.direction * seg; // Fixed step size between sample positions
+
+    float occluderDepth = texture(sceneDepth, uv).r;
+    vec3 occluderPos = getViewPositionFromSceneDepth(uv, occluderDepth);
 
     // (#todo: empty-space optimization)
     // Raymarching
@@ -384,6 +386,11 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         if (P.y < 0.0)
         {
             isGround = true;
+            break;
+        }
+
+        vec3 VP = getViewPositionFromWorldPosition(P);
+        if (VP.z < occluderPos.z) {
             break;
         }
 
@@ -495,6 +502,9 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
         result = vec3(0.0, 1.0, 1.0);
     }
 
+    //result = vec3(getViewPositionFromWorldPosition(raymarchStartPos).z);
+    //result = vec3(occluderPos.z);
+
     return vec4(result, T); // luminance and transmittance
 }
 
@@ -520,7 +530,7 @@ void main() {
     vec2 uv = vec2(currentTexel) / vec2(sceneSize);
 
 	ray_t eye_ray;
-    eye_ray.origin = vec3(0.0, EYE_HEIGHT, 0.0);
+    eye_ray.origin = uboPerFrame.ws_eyePosition;
 	eye_ray.direction = getViewDirection(uv);
     
 	vec3 sunDir = uboPerFrame.directionalLights[0].direction;

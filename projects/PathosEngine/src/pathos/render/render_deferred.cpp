@@ -65,6 +65,7 @@ namespace pathos {
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
 		matrix4               viewProj;
+		matrix4               inverseProj;
 
 		vector4               projParams;
 		vector4               screenResolution; // (w, h, 1/w, 1/h)
@@ -305,6 +306,7 @@ namespace pathos {
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
+				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.volumetricCloud);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
@@ -485,20 +487,23 @@ namespace pathos {
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
+		data.view        = camera->getViewMatrix();
+		data.inverseView = glm::inverse(data.view);
+		data.view3x3     = matrix3x4(data.view);
+		data.viewProj = camera->getViewProjectionMatrix();
+		data.inverseProj = glm::inverse(projMatrix);
+
+		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+
 		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
 		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
-		data.view        = camera->getViewMatrix();
-		data.inverseView = glm::inverse(data.view);
-		data.view3x3     = matrix3x4(data.view);
-		data.zRange.x    = camera->getZNear();
-		data.zRange.y    = camera->getZFar();
-		data.zRange.z    = camera->getFovYRadians();
-		data.zRange.w    = camera->getAspectRatio();
-		data.viewProj    = camera->getViewProjectionMatrix();
-		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+		data.zRange.x = camera->getZNear();
+		data.zRange.y = camera->getZFar();
+		data.zRange.z = camera->getFovYRadians();
+		data.zRange.w = camera->getAspectRatio();
 
 		data.time        = vector4(gEngine->getWorldTime(), 0.0, 0.0, 0.0);
 

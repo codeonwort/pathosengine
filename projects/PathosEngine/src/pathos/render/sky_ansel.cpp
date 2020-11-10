@@ -183,7 +183,6 @@ namespace pathos {
 		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
 		cmdList.uniform4f(uniform_screenSize, (float)sceneContext.sceneWidth, (float)sceneContext.sceneHeight, 0.0f, 0.0f);
 		cmdList.bindTextureUnit(0, texture);
-		cmdList.bindTextureUnit(1, sceneContext.volumetricCloud);
 
 		sphere->drawPrimitive(cmdList);
 	}

@@ -4,6 +4,7 @@
 #include "badger/types/noncopyable.h"
 
 #include "pathos/actor/actor.h"
+#include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
 
@@ -56,6 +57,7 @@ namespace pathos {
 	private:
 		uint32 renderTargetWidth = 0;
 		uint32 renderTargetHeight = 0;
+		UniformBuffer ubo;
 
 	};
 
