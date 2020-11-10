@@ -31,16 +31,18 @@ float pointLightAttenuation(PointLight L, float d) {
 	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
 }
 
-// in view space
+// Position components of camera and lights are in view space
 layout (std140, binding = 0) uniform UBO_PerFrame {
 	mat4x4 viewTransform;
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
-	vec4 projParams;
+	mat4x4 inverseProjTransform;
 
+	vec4 projParams;
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4 time; // (currentTime, ?, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	
@@ -62,4 +64,38 @@ vec2 CubeToEquirectangular(vec3 v)
     uv *= vec2(0.1591, 0.3183); // inverse atan
     uv += 0.5;
     return uv;
+}
+
+float getWorldTime() { return uboPerFrame.time.x; }
+
+vec3 getWorldPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
+	//float z = sceneDepth * 2.0 - 1.0; // Use this if not Reverse-Z
+	float z = sceneDepth; // clipZ is [0,1] in Reverse-Z
+
+    vec4 clipSpacePosition = vec4(screenUV * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = uboPerFrame.inverseProjTransform * clipSpacePosition;
+
+    // Perspective division
+    viewSpacePosition /= viewSpacePosition.w;
+
+    vec4 worldSpacePosition = uboPerFrame.inverseViewTransform * viewSpacePosition;
+
+    return worldSpacePosition.xyz;
+}
+
+vec3 getViewPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
+	//float z = sceneDepth * 2.0 - 1.0; // Use this if not Reverse-Z
+	float z = sceneDepth; // clipZ is [0,1] in Reverse-Z
+
+    vec4 clipSpacePosition = vec4(screenUV * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = uboPerFrame.inverseProjTransform * clipSpacePosition;
+
+    // Perspective division
+    viewSpacePosition /= viewSpacePosition.w;
+
+    return viewSpacePosition.xyz;
+}
+
+vec3 getViewPositionFromWorldPosition(vec3 wPos) {
+	return (uboPerFrame.viewTransform * vec4(wPos, 1.0)).xyz;
 }

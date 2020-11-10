@@ -54,7 +54,11 @@ namespace pathos {
 		static_cast<void>(scene);
 		ColorMaterial* material = static_cast<ColorMaterial*>(inMaterial);
 
-		geometry->activate_position_uv_normal(cmdList);
+		if (material->billboard) {
+			geometry->activate_position_uv_normal(cmdList);
+		} else {
+			geometry->activate_position_normal(cmdList);
+		}
 		geometry->activateIndexBuffer(cmdList);
 
 		UBO_Deferred_Pack_SolidColor uboData;

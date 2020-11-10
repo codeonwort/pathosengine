@@ -38,10 +38,8 @@ namespace pathos {
 		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
 	private:
-		void createShaderProgram();
-
-		GLuint program = 0;
-		GLint uniform_transform = -1;
+		GLint uniform_transform = 0;
+		GLint uniform_screenSize = 1;
 		GLuint texture = 0;
 
 		MeshGeometry* sphere = nullptr;

@@ -124,6 +124,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
+    <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp" />
@@ -142,6 +143,7 @@
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
+    <ClCompile Include="src\pathos\render\sky_clouds.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
     <ClCompile Include="src\pathos\render\skybox.cpp" />
@@ -150,6 +152,7 @@
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
     <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
+    <ClCompile Include="src\pathos\texture\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
@@ -211,6 +214,7 @@
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
     <ClInclude Include="src\pathos\render\atmosphere.h" />
+    <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\irradiance_baker.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h" />
@@ -227,10 +231,12 @@
     <ClInclude Include="src\pathos\render\render_command_list.h" />
     <ClInclude Include="src\pathos\render\render_device.h" />
     <ClInclude Include="src\pathos\render\render_target.h" />
+    <ClInclude Include="src\pathos\render\sky_clouds.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />
+    <ClInclude Include="src\pathos\texture\volume_texture.h" />
     <ClInclude Include="src\pathos\thread\engine_thread.h" />
     <ClInclude Include="src\pathos\util\engine_util.h" />
     <ClInclude Include="src\pathos\util\file_system.h" />

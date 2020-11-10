@@ -63,4 +63,20 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
 	}
 
+	void BloomSetup::clearSceneBloom(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
+	{
+		SCOPED_DRAW_EVENT(BloomSetup_NoBloom);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloom
+
+		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+		cmdList.clearNamedFramebufferfv(fbo, GL_COLOR, 0, zero);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+	}
+
 }

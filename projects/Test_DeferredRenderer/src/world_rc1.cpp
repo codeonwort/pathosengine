@@ -6,6 +6,7 @@
 #include "badger/math/random.h"
 
 #include "pathos/render/sky_ansel.h"
+#include "pathos/render/sky_clouds.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/asset_streamer.h"
@@ -14,19 +15,24 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/texture/volume_texture.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
-#define OBJ_GUARD_TOWER_FILE "render_challenge_1/medieval_tower.obj"
-#define OBJ_GUARD_TOWER_DIR  "render_challenge_1/"
-#define OBJ_SPACESHIP_FILE "render_challenge_1/spaceship.obj"
-#define OBJ_SPACESHIP_DIR  "render_challenge_1/"
+#define OBJ_GUARD_TOWER_FILE     "render_challenge_1/medieval_tower.obj"
+#define OBJ_GUARD_TOWER_DIR      "render_challenge_1/"
+#define OBJ_SPACESHIP_FILE       "render_challenge_1/spaceship.obj"
+#define OBJ_SPACESHIP_DIR        "render_challenge_1/"
+
+#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.png"
+#define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
+#define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
 const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
 const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
-
+constexpr float     Y_OFFSET             = 6500.0f; // Offset every actor to match with cloud layer
 
 void World_RC1::onInitialize()
 {
@@ -37,12 +43,12 @@ void World_RC1::onInitialize()
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
 	spaceship1->setActorScale(30.0f);
-	spaceship1->setActorLocation(vector3(-347.0f, -1098.0f, 1648.0f));
+	spaceship1->setActorLocation(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
 
 	spaceship2 = spawnActor<SpaceshipActor>();
 	spaceship2->setActorScale(30.0f);
-	spaceship2->setActorLocation(vector3(1257.0f, -1098.0f, 348.0f));
+	spaceship2->setActorLocation(vector3(1257.0f, Y_OFFSET - 1098.0f, 348.0f));
 	spaceship2->setActorRotation(Rotator(112.91f, -21.14f, 0.0f));
 
 	//////////////////////////////////////////////////////////////////////////
@@ -50,6 +56,8 @@ void World_RC1::onInitialize()
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
+
+	getCamera().moveToPosition(0.0f, Y_OFFSET - 100.0f, 4000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Setup input
@@ -97,6 +105,7 @@ void World_RC1::onTick(float deltaSeconds)
 	auto& components = lightningSphere->getParticleComponents();
 	for (uint32 i = 0; i < (uint32)components.size(); ++i) {
 		components[i]->setRotation(rings[ringIndicesForParticleRotation[i]]->getActorRotation());
+		components[i]->setLocation(vector3(0.0f, Y_OFFSET, 0.0f));
 	}
 }
 
@@ -123,6 +132,28 @@ void World_RC1::setupSky()
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
 	scene.sky = new AnselSkyRendering(starfield);
+
+	// Volumetric cloud
+	{
+		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false);
+		glObjectLabel(GL_TEXTURE, weatherTexture, -1, "Texture: WeatherMap");
+		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
+		{
+			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
+			uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
+			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+			cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+		}
+		VolumeTexture* cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
+		{
+			uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
+			uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
+			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+			cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+		}
+		scene.cloud = spawnActor<VolumetricCloudActor>();
+		scene.cloud->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
+	}
 }
 
 void World_RC1::setupScene()
@@ -133,6 +164,7 @@ void World_RC1::setupScene()
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
 	PointLightActor* pLight = spawnActor<PointLightActor>();
+	pLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 	pLight->setLightParameters(5000.0f * vector3(1.0f, 1.0f, 1.0f), 10000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -164,6 +196,7 @@ void World_RC1::setupScene()
 
 	lightningSphere = spawnActor<LightningActor>();
 	lightningSphere->setActorScale(40.0f);
+	lightningSphere->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 
 	constexpr uint32 numRings = 6;
 	const float ring_gap = 40.0f;
@@ -186,6 +219,7 @@ void World_RC1::setupScene()
 		outerRadius = innerRadius + (ring_width + i * 50.0f);
 		rings.push_back(ring);
 
+		ring->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 		ring->getStaticMesh()->setMaterial(0, material_pbr);
 	}
 
@@ -211,7 +245,7 @@ void World_RC1::onLoadOBJ(OBJLoader* loader)
 	guardTower = spawnActor<StaticMeshActor>();
 	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
 	guardTower->setActorScale(1000.0f);
-	guardTower->setActorLocation(vector3(0.0f, -4700.0f, 0.0f));
+	guardTower->setActorLocation(vector3(0.0f, Y_OFFSET - 4700.0f, 0.0f));
 
 	// #todo-material: hack
 	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;

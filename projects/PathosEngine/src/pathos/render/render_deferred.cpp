@@ -1,7 +1,9 @@
 #include "render_deferred.h"
 
 #include "pathos/render/render_device.h"
+#include "pathos/render/depth_prepass.h"
 #include "pathos/render/sky.h"
+#include "pathos/render/sky_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_depth.h"
 #include "pathos/render/render_target.h"
@@ -12,15 +14,18 @@
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/texture/volume_texture.h"
+#include "pathos/shader/shader_program.h"
+
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/gl_debug_group.h"
-#include "pathos/shader/shader_program.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -48,6 +53,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 0, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
@@ -55,30 +61,32 @@ namespace pathos {
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
-		glm::mat4             view;
-		glm::mat4             inverseView;
-		glm::mat3x4           view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
-		glm::mat4             viewProj;
+		matrix4               view;
+		matrix4               inverseView;
+		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
+		matrix4               viewProj;
+		matrix4               inverseProj;
 
-		glm::vec4             projParams;
-		glm::vec4             screenResolution; // (w, h, 1/w, 1/h)
-		glm::vec4             zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+		vector4               projParams;
+		vector4               screenResolution; // (w, h, 1/w, 1/h)
+		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
+		vector4               time; // (currentTime, ?, ?, ?)
 
-		glm::mat4             sunViewProj[4];
+		matrix4               sunViewProj[4];
 
-		glm::vec3             eyeDirection;
+		vector3               eyeDirection;
 		float                 __pad0;
 
-		glm::vec3             eyePosition;
+		vector3               eyePosition;
 		float                 __pad1;
 
-		glm::vec3             ws_eyePosition;
+		vector3               ws_eyePosition;
 		uint32                numDirLights;
 
 		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
 
 		uint32                numPointLights;
-		glm::vec3             __pad2;
+		vector3               __pad2;
 
 		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
@@ -157,9 +165,15 @@ namespace pathos {
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
-		// #todo-deprecated: No need of this. Just finish scene rendering and copy sceneDepth into sceneFinal.
-		// #todo-debug: Broken due to Reverse-Z
-		auto cvar_visualizeDepth = ConsoleVariableManager::find("r.visualize_depth");
+		{
+			SCOPED_GPU_COUNTER(RenderPreDepth);
+
+			depthPrepass->renderPreDepth(cmdList, scene, camera);
+		}
+
+		// #todo-depthprepass: Now depth prepass will render the scene depth.
+		// Remove this pass and just use the sceneDepth texture.
+		auto cvar_visualizeDepth = ConsoleVariableManager::get().find("r.visualize_depth");
 		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);
 			return;
@@ -193,6 +207,21 @@ namespace pathos {
 		// update ubo_perFrame
 		updateSceneUniformBuffer(cmdList, scene, camera);
 
+		// Volumetric clouds
+		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
+		if (bRenderClouds) {
+			SCOPED_GPU_COUNTER(VolumetricCloud);
+
+			VolumetricCloudSettings settings;
+			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
+			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
+			settings.weatherTexture      = scene->cloud->weatherTexture;
+			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
+			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
+
+			volumetricCloud->render(cmdList, settings);
+		}
+
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
@@ -202,9 +231,12 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
-		clearGBuffer(cmdList);
+		{
+			SCOPED_GPU_COUNTER(PackGBuffer);
 
- 		packGBuffer(cmdList);
+			clearGBuffer(cmdList);
+			packGBuffer(cmdList);
+		}
 
 		{
 			SCOPED_GPU_COUNTER(SSAO);
@@ -212,7 +244,11 @@ namespace pathos {
 			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
 		}
 
- 		unpackGBuffer(cmdList);
+		{
+			SCOPED_GPU_COUNTER(UnpackGBuffer);
+
+			unpackGBuffer(cmdList);
+		}
 
 		// Translucency pass
 		{
@@ -234,6 +270,7 @@ namespace pathos {
 			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
 
 			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
+			const bool noBloom = (cvar_enable_bloom.getInt() == 0);
 			const bool noDOF = (cvar_enable_dof.getInt() == 0);
 
 			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
@@ -241,18 +278,22 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// Post Process: Bloom (#todo-bloom: Bad quality)
+			// Post Process: Bloom (#todo-bloom: Random NaN pixels are enlarged here)
 			{
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
 
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom);
-				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
+				if (noBloom) {
+					bloomSetup->clearSceneBloom(cmdList, fullscreenQuad.get());
+				} else {
+					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				// output is fed back to PPI_0
-				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
-				bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
-				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+					// output is fed back to PPI_0
+					bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
+					bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+					bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+				}
 
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 			}
@@ -263,8 +304,9 @@ namespace pathos {
 				const bool isFinalPP = (noAA && noDOF);
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
+				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
+				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.volumetricCloud);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
@@ -330,7 +372,8 @@ namespace pathos {
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
+		// Should not clear here due to depth prepass
+		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
 	}
 
 	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
@@ -339,8 +382,15 @@ namespace pathos {
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+#if 0	// No depth prepass
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_TRUE);
+#else	// Depth prepass
+		cmdList.depthFunc(GL_EQUAL);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_FALSE);
+#endif
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
@@ -380,6 +430,8 @@ namespace pathos {
 				if (item.renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
+
+		cmdList.depthMask(GL_TRUE);
 	}
 
 	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
@@ -433,30 +485,35 @@ namespace pathos {
 	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
 		UBO_PerFrame data;
 
-		const glm::mat4& projMatrix = camera->getProjectionMatrix();
+		const matrix4& projMatrix = camera->getProjectionMatrix();
+
+		data.view        = camera->getViewMatrix();
+		data.inverseView = glm::inverse(data.view);
+		data.view3x3     = matrix3x4(data.view);
+		data.viewProj = camera->getViewProjectionMatrix();
+		data.inverseProj = glm::inverse(projMatrix);
+
+		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
 		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
 		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
-		data.view        = camera->getViewMatrix();
-		data.inverseView = glm::inverse(data.view);
-		data.view3x3     = glm::mat3x4(data.view);
-		data.zRange.x    = camera->getZNear();
-		data.zRange.y    = camera->getZFar();
-		data.zRange.z    = camera->getFovYRadians();
-		data.zRange.w    = camera->getAspectRatio();
-		data.viewProj    = camera->getViewProjectionMatrix();
-		data.projParams  = glm::vec4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+		data.zRange.x = camera->getZNear();
+		data.zRange.y = camera->getZFar();
+		data.zRange.z = camera->getFovYRadians();
+		data.zRange.w = camera->getAspectRatio();
+
+		data.time        = vector4(gEngine->getWorldTime(), 0.0, 0.0, 0.0);
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
 		data.sunViewProj[2] = sunShadowMap->getViewProjection(2);
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 
-		data.eyeDirection = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getEyeVector(), 0.0f));
-		data.eyePosition  = glm::vec3(camera->getViewMatrix() * glm::vec4(camera->getPosition(), 1.0f));
+		data.eyeDirection = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
+		data.eyePosition  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
 
 		data.ws_eyePosition = camera->getPosition();
 
@@ -487,6 +544,9 @@ namespace pathos {
 	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
+	std::unique_ptr<class VolumetricCloud>         DeferredRenderer::volumetricCloud;
+
+	std::unique_ptr<class DepthPrepass>            DeferredRenderer::depthPrepass;
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
 	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
 	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
@@ -531,10 +591,17 @@ namespace pathos {
 		}
 
 		{
+			volumetricCloud = std::make_unique<VolumetricCloud>();
+			volumetricCloud->initializeResources(cmdList);
+		}
+
+		{
+			depthPrepass = std::make_unique<DepthPrepass>();
 			sunShadowMap = std::make_unique<DirectionalShadowMap>();
 			omniShadowPass = std::make_unique<OmniShadowPass>();
 			visualizeDepth = std::make_unique<VisualizeDepth>();
 
+			depthPrepass->initializeResources(cmdList);
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
 		}
@@ -584,6 +651,11 @@ namespace pathos {
 		}
 
 		{
+			volumetricCloud->destroyResources(cmdList);
+		}
+
+		{
+			depthPrepass->destroyResources(cmdList);
 			sunShadowMap->destroyResources(cmdList);
 			omniShadowPass->destroyResources(cmdList);
 			visualizeDepth.release();

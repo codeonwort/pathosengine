@@ -152,7 +152,7 @@ namespace pathos {
 		}
 
 		// Is it a cvar?
-		if (auto cvar = ConsoleVariableManager::find(header.data())) {
+		if (auto cvar = ConsoleVariableManager::get().find(header.data())) {
 			std::string msg = command.substr(ix + 1);
 			if (ix == string::npos) {
 				cvar->print(this);
@@ -177,7 +177,11 @@ namespace pathos {
 	///////////////////////////////////////////////////////////
 	// ConsoleVariable
 
-	std::vector<ConsoleVariableBase*> ConsoleVariableManager::registry;
+	pathos::ConsoleVariableManager& ConsoleVariableManager::get()
+	{
+		static ConsoleVariableManager inst;
+		return inst;
+	}
 
 	ConsoleVariableBase* ConsoleVariableManager::find(const char* name) {
 		for (auto it = registry.begin(); it != registry.end(); ++it) {
@@ -189,8 +193,14 @@ namespace pathos {
 		return nullptr;
 	}
 
+	void ConsoleVariableManager::registerCVar(ConsoleVariableBase* cvar)
+	{
+		std::lock_guard<std::mutex> lockRegistry(registryLock);
+		registry.push_back(cvar);
+	}
+
 	ConsoleVariableBase::ConsoleVariableBase() {
-		ConsoleVariableManager::registry.push_back(this);
+		ConsoleVariableManager::get().registerCVar(this);
 	}
 
 }

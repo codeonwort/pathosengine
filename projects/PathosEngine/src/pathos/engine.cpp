@@ -103,6 +103,13 @@ namespace pathos {
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
 
+		readConfigFile();
+
+		// #todo: Where to put this
+		registerExec("profile_gpu", [](const std::string& command) {
+			gEngine->dumpGPUProfile();
+		});
+
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");
 
@@ -302,6 +309,25 @@ namespace pathos {
 		return true;
 	}
 
+	// Read config line by line and add to the console window.
+	void Engine::readConfigFile()
+	{
+		std::string configPath = ResourceFinder::get().find("EngineConfig.ini");
+		if (configPath.size() > 0) {
+			LOG(LogInfo, "Read config file: %s", configPath.c_str());
+
+			std::fstream file(configPath);
+			std::string line;
+			while (std::getline(file, line)) {
+				// Lines that are empty or start with # are comments
+				if (line.size() == 0 || line[0] == '#') {
+					continue;
+				}
+				gConsole->addLine(line.c_str(), false);
+			}
+		}
+	}
+
 	void Engine::registerExec(const char* command, ExecProc proc)
 	{
 		if (execMap.find(command) != execMap.end()) {
@@ -323,6 +349,40 @@ namespace pathos {
 		}
 
 		return false;
+	}
+
+	// #todo-gpu-counter: Show this in debug GUI
+	void Engine::dumpGPUProfile()
+	{
+		std::string solutionPath = ResourceFinder::get().find("PathosEngine.sln");
+		std::string solutionDir;
+		if (solutionPath.size() > 0) {
+			solutionDir = solutionPath.substr(0, solutionPath.size() - std::string("PathosEngine.sln").size());
+		}
+		if (solutionDir.size() == 0) {
+			return;
+		}
+
+		std::string filepath = pathos::getFullDirectoryPath(solutionDir.c_str());
+		filepath += "log/";
+		pathos::createDirectory(filepath.c_str());
+
+		time_t now = ::time(0);
+		tm localTm;
+		errno_t timeErr = ::localtime_s(&localTm, &now);
+		CHECKF(timeErr == 0, "Failed to get current time");
+		char timeBuffer[128];
+		::strftime(timeBuffer, sizeof(timeBuffer), "GPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
+		filepath += std::string(timeBuffer);
+
+		std::fstream fs(filepath, fstream::out);
+		if (fs.is_open()) {
+			uint32 n = (uint32)lastGpuCounterNames.size();
+			for (uint32 i = 0; i < n; ++i) {
+				fs << lastGpuCounterNames[i] << ": " << lastGpuCounterTimes[i] << " ms" << std::endl;
+			}
+			fs.close();
+		}
 	}
 
 	void Engine::setWorld(World* inWorld)
@@ -400,12 +460,8 @@ namespace pathos {
 		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
 		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
 
-		// #todo-gpu-counter: Provide a way to print the result
-		{
-			std::vector<std::string> gpuCounterNames;
-			std::vector<float> gpuCounterTimes;
-			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(gpuCounterNames, gpuCounterTimes);
-		}
+		// Get GPU profile
+		const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(lastGpuCounterNames, lastGpuCounterTimes);
 
 		renderProxyAllocator.clear();
 

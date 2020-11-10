@@ -10,6 +10,7 @@ namespace pathos {
 		, sceneFinal(0)
 		, sceneColor(0)
 		, sceneDepth(0)
+		, volumetricCloud(0)
 		, cascadedShadowMap(0)
 		, omniShadowMaps(0)
 		, useGBuffer(false)
@@ -126,6 +127,7 @@ namespace pathos {
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
+		safe_release(volumetricCloud);
 		safe_release(cascadedShadowMap);
 		safe_release(omniShadowMaps);
 		safe_release(gbufferA);

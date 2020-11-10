@@ -7,6 +7,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <mutex>
 
 namespace pathos {
 
@@ -59,9 +60,13 @@ namespace pathos {
 	class ConsoleVariableManager {
 		friend class ConsoleVariableBase;
 	public:
-		static ConsoleVariableBase* find(const char* name);
+		static ConsoleVariableManager& get();
+
+		ConsoleVariableBase* find(const char* name);
+		void registerCVar(ConsoleVariableBase* cvar);
 	private:
-		static std::vector<ConsoleVariableBase*> registry;
+		std::vector<ConsoleVariableBase*> registry;
+		std::mutex registryLock;
 	};
 	
 	class ConsoleVariableBase {

@@ -13,6 +13,7 @@ namespace pathos {
 	// Forward declaration
 	class StaticMeshComponent;
 	class SkyRendering;
+	class VolumetricCloudActor;
 
 	// Represents a 3D scene.
 	class Scene {
@@ -39,6 +40,7 @@ namespace pathos {
 	public:
 		SkyRendering* sky = nullptr;
 		StaticMeshComponent* godRaySource = nullptr;
+		VolumetricCloudActor* cloud = nullptr;
 
 		// IBL
 		GLuint irradianceMap = 0;

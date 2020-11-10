@@ -1,8 +1,29 @@
 #include "tone_mapping.h"
 #include "pathos/console.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+
+namespace pathos {
+
+	class ToneMappingVS : public ShaderStage {
+	public:
+		ToneMappingVS() : ShaderStage(GL_VERTEX_SHADER, "ToneMappingVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+
+	class ToneMappingFS : public ShaderStage {
+	public:
+		ToneMappingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ToneMappingFS") {
+			setFilepath("tone_mapping.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_ToneMapping, ToneMappingVS, ToneMappingFS);
+
+}
 
 namespace pathos {
 
@@ -11,12 +32,6 @@ namespace pathos {
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList)
 	{
-		Shader vs(GL_VERTEX_SHADER, "VS_ToneMapping");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_ToneMapping");
-		vs.loadSource("fullscreen_quad.glsl");
-		fs.loadSource("tone_mapping.glsl");
-
-		program = pathos::createProgram(vs, fs, "ToneMapping");
 		ubo.init<UBO_ToneMapping>();
 
 		// tone mapping resource
@@ -27,7 +42,6 @@ namespace pathos {
 
 	void ToneMapping::releaseResources(RenderCommandList& cmdList)
 	{
-		gRenderDevice->deleteProgram(program);
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
@@ -40,6 +54,7 @@ namespace pathos {
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
 		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
+		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // volumetricCloud
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -51,15 +66,16 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
 		}
 
-		cmdList.useProgram(program);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ToneMapping);
+		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
 		uboData.exposure = cvar_tonemapping_exposure.getValue();
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 0, &uboData);
 
-		GLuint tonemapping_attachments[] = { input0, input1, input2 };
-		cmdList.bindTextures(0, 3, tonemapping_attachments);
+		GLuint tonemapping_attachments[] = { input0, input1, input2, input3 };
+		cmdList.bindTextures(0, 4, tonemapping_attachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

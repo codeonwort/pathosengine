@@ -1,13 +1,18 @@
 #include "pathos/loader/imageloader.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
+#include "pathos/texture/volume_texture.h"
 
 #include "badger/assertion/assertion.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
 #pragma comment(lib, "FreeImage.lib")
+
+// #todo-image-loader: Cleanup image loading API
+// #todo-image-loader: Remove direct GL calls
 
 namespace pathos {
 
@@ -46,10 +51,22 @@ namespace pathos {
 		}
 
 		unsigned int bpp = FreeImage_GetBPP(img);
-		if (bpp != 32) {
+		if (bpp != 32 && bpp != 24) {
 			FIBITMAP* img32 = FreeImage_ConvertTo32Bits(img);
-			FreeImage_Unload(img);
-			return img32;
+			if (img32 != nullptr) {
+				FreeImage_Unload(img);
+				return img32;
+			} else {
+				FIBITMAP* img24 = FreeImage_ConvertTo24Bits(img);
+				if (img24 != nullptr) {
+					FreeImage_Unload(img);
+					return img24;
+				} else {
+					FreeImage_Unload(img);
+					CHECK_NO_ENTRY();
+					return nullptr;
+				}
+			}
 		}
 
 		return img;
@@ -86,20 +103,23 @@ namespace pathos {
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &tex_id);
 
-		uint32 maxLOD = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+		uint32 numLODs = 1;
+		if (generateMipmap) {
+			numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+		}
 		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp == 32) {
 			if (sRGB) {
-				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8_ALPHA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_SRGB8_ALPHA8, w, h);
 			} else {
-				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 			}
 			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 		} else if (bpp == 24) {
 			if (sRGB) {
-				glTextureStorage2D(tex_id, maxLOD, GL_SRGB8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_SRGB8, w, h);
 			} else {
-				glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 			}
 			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		} else {
@@ -140,8 +160,11 @@ namespace pathos {
 
 		unsigned int bpp = FreeImage_GetBPP(dib[0]);
 		if (bpp == 32 || bpp == 24) {
-			uint32 maxLOD = generateMipmap ? static_cast<uint32>(floor(log2(std::max(w, h))) + 1) : 0;
-			glTextureStorage2D(tex_id, maxLOD, GL_RGBA8, w, h);
+			uint32 numLODs = 1;
+			if (generateMipmap) {
+				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+			}
+			glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
 		} else {
 			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			return 0;
@@ -203,7 +226,7 @@ namespace pathos {
 		glObjectLabel(GL_TEXTURE, texture, -1, label);
 		label_counter += 1;
 
-		if(deleteBlobData) {
+		if (deleteBlobData) {
 			stbi_image_free(metadata.data);
 		}
 
@@ -213,6 +236,32 @@ namespace pathos {
 	void unloadHDRImage(const HDRImageMetadata& metadata)
 	{
 		stbi_image_free(metadata.data);
+	}
+
+	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName)
+	{
+		// 1. Load data
+		std::string path = ResourceFinder::get().find(inFilename);
+		CHECK(path.size() != 0);
+
+		LOG(LogDebug, "Load volume texture data: %s", path.c_str());
+
+		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
+		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
+
+		FIBITMAP* img = FreeImage_Load(fif, path.c_str(), 0);
+
+		if (!img) {
+			LOG(LogError, "Error while loading: %s", path.c_str());
+			return nullptr;
+		}
+
+		// 2. Create a volume texture
+		VolumeTexture* vt = new VolumeTexture;
+		vt->setImageData(img);
+		vt->setDebugName(inDebugName);
+
+		return vt;
 	}
 
 }

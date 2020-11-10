@@ -7,6 +7,8 @@
 
 namespace pathos {
 
+	class VolumeTexture;
+
 	void initializeImageLibrary();
 	void destroyImageLibrary();
 
@@ -36,5 +38,8 @@ namespace pathos {
 	HDRImageMetadata loadHDRImage(const char* inFilename);
 	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData = true);
 	void unloadHDRImage(const HDRImageMetadata& metadata);
+
+	// NOTE: You should call VolumeTexture::initGLResource() manually.
+	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
 
 }
