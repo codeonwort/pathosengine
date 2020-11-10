@@ -278,7 +278,7 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// Post Process: Bloom (#todo-bloom: Bad quality)
+			// Post Process: Bloom (#todo-bloom: Random NaN pixels are enlarged here)
 			{
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
 

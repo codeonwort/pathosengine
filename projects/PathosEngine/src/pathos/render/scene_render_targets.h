@@ -26,7 +26,7 @@ namespace pathos {
 		GLuint volumetricCloud;
 
 		GLuint cascadedShadowMap;
-		GLuint omniShadowMaps; // cubemap array (#todo: omniShadowMaps would be better naming)
+		GLuint omniShadowMaps; // cubemap array
 
 		// Deferred renderer only
 		bool useGBuffer;
