@@ -6,6 +6,7 @@
 using namespace pathos;
 
 #include <vector>
+#include "badger/math/spline.h"
 
 namespace pathos {
 	class ProceduralGeometry;
@@ -31,8 +32,11 @@ public:
 	virtual void onSpawn() override;
 	virtual void onDestroy() override {}
 	virtual void onTick(float deltaSeconds) override {}
+	HermiteSpline& getSpline() { return spline; }
 private:
 	void onLoadOBJ(OBJLoader* loader);
+
+	HermiteSpline spline;
 };
 
 class World_RC1 : public World {

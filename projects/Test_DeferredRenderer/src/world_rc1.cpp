@@ -46,6 +46,12 @@ void World_RC1::onInitialize()
 	spaceship1->setActorLocation(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
 
+	spaceship1->getSpline().addPoint(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), vector3(170.0f, -120.0f, 0.0f));
+	spaceship1->getSpline().addPoint(vector3(1000.0f -347.0f, 200.0f + Y_OFFSET - 1098.0f, 1648.0f), vector3(50.0f, 450.0f, 0.0f));
+	spaceship1->getSpline().addPoint(vector3(500.0f -347.0f, 500.0f + Y_OFFSET - 1098.0f, 1648.0f), vector3(-580.0f, 30.0f, 0.0f));
+	spaceship1->getSpline().addPoint(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), vector3(170.0f, -120.0f, 0.0f));
+	spaceship1->getSpline().updateSpline();
+
 	spaceship2 = spawnActor<SpaceshipActor>();
 	spaceship2->setActorScale(30.0f);
 	spaceship2->setActorLocation(vector3(1257.0f, Y_OFFSET - 1098.0f, 348.0f));
@@ -106,6 +112,15 @@ void World_RC1::onTick(float deltaSeconds)
 	for (uint32 i = 0; i < (uint32)components.size(); ++i) {
 		components[i]->setRotation(rings[ringIndicesForParticleRotation[i]]->getActorRotation());
 		components[i]->setLocation(vector3(0.0f, Y_OFFSET, 0.0f));
+	}
+
+	{
+		float totalTime = spaceship1->getSpline().getTotalTime();
+		float totalDistance = spaceship1->getSpline().getTotalDistance();
+		float worldTime = gEngine->getWorldTime();
+		//vector3 splineLocation = spaceship1->getSpline().locationAtDistance(fmod(worldTime * 0.1f, 1.0f) * totalDistance);
+		vector3 splineLocation = spaceship1->getSpline().locationAtTime(fmod(worldTime / 4.0f, totalTime));
+		spaceship1->setActorLocation(splineLocation);
 	}
 }
 
