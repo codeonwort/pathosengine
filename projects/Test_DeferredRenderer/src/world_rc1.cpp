@@ -115,12 +115,22 @@ void World_RC1::onTick(float deltaSeconds)
 	}
 
 	{
-		float totalTime = spaceship1->getSpline().getTotalTime();
-		float totalDistance = spaceship1->getSpline().getTotalDistance();
-		float worldTime = gEngine->getWorldTime();
-		//vector3 splineLocation = spaceship1->getSpline().locationAtDistance(fmod(worldTime * 0.1f, 1.0f) * totalDistance);
-		vector3 splineLocation = spaceship1->getSpline().locationAtTime(fmod(worldTime / 4.0f, totalTime));
+		HermiteSpline& spline  = spaceship1->getSpline();
+		float totalTime        = spline.getTotalTime();
+		float totalDistance    = spline.getTotalDistance();
+		float worldTime        = gEngine->getWorldTime();
+
+		float sampleDistance   = fmod(worldTime * 0.2f, 1.0f) * totalDistance;
+		float sampleTime       = fmod(worldTime / 4.0f, totalTime);
+
+		//vector3 splineLocation = spline.locationAtDistance(sampleDistance);
+		//vector3 splineTangent  = spline.tangentAtDistance(sampleDistance);
+		vector3 splineLocation = spline.locationAtTime(sampleTime);
+		vector3 splineTangent  = spline.tangentAtTime(sampleTime);
+
+		// #todo-spline: Rotation is wrong
 		spaceship1->setActorLocation(splineLocation);
+		spaceship1->setActorRotation(Rotator::directionToYawPitch(splineTangent));
 	}
 }
 
