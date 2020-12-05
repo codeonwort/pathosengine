@@ -2,6 +2,7 @@
 
 #include "badger/types/vector_types.h"
 #include "badger/types/int_types.h"
+#include "badger/types/matrix_types.h"
 #include <vector>
 
 class HermiteSpline
@@ -11,6 +12,8 @@ public:
 
 	// You must call updateSpline() after all points are added.
 	void addPoint(const vector3& point, const vector3& tangent);
+
+	void transformAllPoints(const matrix4& transform, bool bUpdateSpline = true);
 
 	void updateSpline();
 

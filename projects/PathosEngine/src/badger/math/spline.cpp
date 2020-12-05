@@ -18,6 +18,18 @@ void HermiteSpline::addPoint(const vector3& point, const vector3& tangent)
 	invalidated = true;
 }
 
+void HermiteSpline::transformAllPoints(const matrix4& transform, bool bUpdateSpline /*= true*/)
+{
+	size_t n = points.size();
+	for (size_t i = 0; i < n; ++i) {
+		points[i] = vector3(transform * vector4(points[i], 1.0f));
+		tangents[i] = vector3(transform * vector4(tangents[i], 0.0f));
+	}
+	if (bUpdateSpline) {
+		updateSpline();
+	}
+}
+
 void HermiteSpline::updateSpline()
 {
 	uint32 numPoints = (uint32)points.size();

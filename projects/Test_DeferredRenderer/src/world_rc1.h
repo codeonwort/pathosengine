@@ -33,6 +33,7 @@ public:
 	virtual void onDestroy() override {}
 	virtual void onTick(float deltaSeconds) override {}
 	HermiteSpline& getSpline() { return spline; }
+	void setSpline(const HermiteSpline& inSpline) { spline = inSpline; }
 private:
 	void onLoadOBJ(OBJLoader* loader);
 
