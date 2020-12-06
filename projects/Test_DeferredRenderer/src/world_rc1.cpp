@@ -47,22 +47,11 @@ void World_RC1::onInitialize()
 	spaceship1->setActorLocation(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
 
-#if 1
 	SplineLoader loader;
 	std::string splineName;
 	HermiteSpline spline1;
 	CHECK(loader.load("render_challenge_1/spaceship1.spline", true, splineName, spline1));
-	// #todo-spline: This is too arbitrary
-	ModelTransform transform(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), Rotator(0.0f, 90.0f, 0.0f), vector3(500.0f));
-	spline1.transformAllPoints(transform.getMatrix(), true);
 	spaceship1->setSpline(std::move(spline1));
-#else
-	spaceship1->getSpline().addPoint(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), vector3(170.0f, -120.0f, 0.0f));
-	spaceship1->getSpline().addPoint(vector3(1000.0f -347.0f, 200.0f + Y_OFFSET - 1098.0f, 1648.0f), vector3(50.0f, 450.0f, 0.0f));
-	spaceship1->getSpline().addPoint(vector3(500.0f -347.0f, 500.0f + Y_OFFSET - 1098.0f, 1648.0f), vector3(-580.0f, 30.0f, 0.0f));
-	spaceship1->getSpline().addPoint(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), vector3(170.0f, -120.0f, 0.0f));
-	spaceship1->getSpline().updateSpline();
-#endif
 
 	spaceship2 = spawnActor<SpaceshipActor>();
 	spaceship2->setActorScale(30.0f);
@@ -132,17 +121,17 @@ void World_RC1::onTick(float deltaSeconds)
 		float totalDistance    = spline.getTotalDistance();
 		float worldTime        = gEngine->getWorldTime();
 
-		float sampleDistance   = fmod(worldTime * 0.1f, 1.0f) * totalDistance;
+		float sampleDistance   = fmod(worldTime * 0.05f, 1.0f) * totalDistance;
 		float sampleTime       = fmod(worldTime * 1.0f, totalTime);
 
-		// #todo-spline: Doesn't look moving in constant speed :/
-		// Did I implement Gauss-Legendre Quadrature wrong or is it nature of the method?
 		vector3 splineLocation = spline.locationAtDistance(sampleDistance);
-		vector3 splineTangent  = glm::normalize(spline.tangentAtDistance(sampleDistance));
+		vector3 splineTangent = glm::normalize(spline.tangentAtDistance(sampleDistance));
 		//vector3 splineLocation = spline.locationAtTime(sampleTime);
 		//vector3 splineTangent  = glm::normalize(spline.tangentAtTime(sampleTime));
 
-		// #todo-spline: Rotation is *seriously* wrong
+		ModelTransform transform(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), Rotator(), vector3(1000.0f));
+		splineLocation = vector3(transform.getMatrix() * vector4(splineLocation, 1.0f));
+
 		spaceship1->setActorLocation(splineLocation);
 		spaceship1->setActorRotation(Rotator::directionToYawPitch(splineTangent));
 	}

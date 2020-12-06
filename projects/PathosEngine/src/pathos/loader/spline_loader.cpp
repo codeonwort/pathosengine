@@ -8,6 +8,8 @@ namespace pathos {
 	bool SplineLoader::load(const char* inFilename, bool bMakeLoop, std::string& outName, HermiteSpline& outSpline) {
 		std::string filename = ResourceFinder::get().find(inFilename);
 
+		LOG(LogInfo, "Load spline: %s", filename.c_str());
+
 		uint32 numPoints;
 		std::vector<vector3> points;
 		std::vector<vector3> left_handles;
@@ -39,6 +41,7 @@ namespace pathos {
 		outSpline.clearPoints();
 		for (uint32 i = 0; i < numPoints; ++i) {
 			// #todo-spline: what to do with left handles?
+			// Currently badger's HermiteSpline assumes leaving tangent and arriving tangent are same so that C2 continuity holds.
 			outSpline.addPoint(points[i], right_handles[i] - points[i]);
 		}
 		if (bMakeLoop) {

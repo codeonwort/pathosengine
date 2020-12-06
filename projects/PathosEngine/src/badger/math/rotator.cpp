@@ -9,15 +9,19 @@ Rotator Rotator::directionToYawPitch(const vector3& dir)
 		return Rotator(0.0f, 0.0f, 0.0f);
 	}
 
-	// #todo-spline: Wrong
-	float yaw = glm::degrees(atan2(-dir.z, dir.x));
-	//float pitch = glm::degrees(asinf(dir.y / mag));
-	float pitch = glm::degrees(atan(sqrtf(dir.x * dir.x + dir.z * dir.z) / dir.y));
-	return Rotator(yaw, pitch, 0.0f);
+	// https://gamedev.stackexchange.com/questions/172147/convert-3d-direction-vectors-to-yaw-pitch-roll-angles
+	const vector3 up(0.0f, 1.0f, 0.0f);
+	const vector3 forward(1.0f, 0.0f, 0.0f);
+	float yaw = atan2(-dir.z, dir.x);
+	float pitch = asinf(dir.y / mag);
+	float planeRightX = sin(yaw);
+	float planeRightY = -cos(yaw);
+	float roll = asin(up.x * planeRightX + up.z * planeRightY);
+	if (up.y < 0.0f) roll = (roll < 0.0f ? -1.0f : 1.0f) * glm::pi<float>() - roll;
+	return Rotator(glm::degrees(yaw), glm::degrees(pitch), glm::degrees(roll));
 }
 
 matrix4 Rotator::toMatrix() const {
-	// #todo-spline: Is this right?
 	return glm::eulerAngleYXZ(glm::radians(yaw), glm::radians(pitch), glm::radians(roll));
 }
 

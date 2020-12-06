@@ -18,18 +18,6 @@ void HermiteSpline::addPoint(const vector3& point, const vector3& tangent)
 	invalidated = true;
 }
 
-void HermiteSpline::transformAllPoints(const matrix4& transform, bool bUpdateSpline /*= true*/)
-{
-	size_t n = points.size();
-	for (size_t i = 0; i < n; ++i) {
-		points[i] = vector3(transform * vector4(points[i], 1.0f));
-		tangents[i] = vector3(transform * vector4(tangents[i], 0.0f));
-	}
-	if (bUpdateSpline) {
-		updateSpline();
-	}
-}
-
 void HermiteSpline::updateSpline()
 {
 	uint32 numPoints = (uint32)points.size();
@@ -110,7 +98,7 @@ vector3 HermiteSpline::tangentAtDistance(float distance)
 	int32 reparamIndex = findReparamIndex(distance);
 	if (reparamIndex >= 0) {
 		int32 i = int32(reparamIndex * INV_HERMITE_SPLINE_SEGMENTATION);
-		float progress = (float)(reparamIndex - i) * INV_HERMITE_SPLINE_SEGMENTATION;
+		float progress = (float)(reparamIndex - i * HERMITE_SPLINE_SEGMENTATION) * INV_HERMITE_SPLINE_SEGMENTATION;
 		// #todo-spline: slerp between nearest tangents?
 		progress += INV_HERMITE_SPLINE_SEGMENTATION * (distance - reparam[reparamIndex].w) / (reparam[reparamIndex + 1].w - reparam[reparamIndex].w);
 		return derivative(i, progress);
