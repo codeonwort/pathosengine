@@ -36,6 +36,7 @@ namespace pathos {
 
 		// post processing: god ray
 		GLuint godRaySource;
+		GLuint godRaySourceDepth;
 		GLuint godRayResult;
 		GLuint godRayResultTemp;
 

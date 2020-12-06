@@ -4,6 +4,7 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/mesh.h"
@@ -12,6 +13,26 @@
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
 #include "glm/gtc/type_ptr.hpp"
+
+namespace pathos {
+
+	class GodRayLightScatteringVS : public ShaderStage {
+	public:
+		GodRayLightScatteringVS() : ShaderStage(GL_VERTEX_SHADER, "GodRayLightScatteringVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+
+	class GodRayLightScatteringFS : public ShaderStage {
+	public:
+		GodRayLightScatteringFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayLightScatteringFS") {
+			setFilepath("god_ray_fs.glsl");
+		};
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_GodRayLightScattering, GodRayLightScatteringVS, GodRayLightScatteringFS);
+
+}
 
 namespace pathos {
 
@@ -36,7 +57,6 @@ namespace pathos {
 			gRenderDevice->deleteVertexArrays(1, &vao_dummy);
 			gRenderDevice->deleteFramebuffers(2, fbo);
 			gRenderDevice->deleteProgram(program_silhouette);
-			gRenderDevice->deleteProgram(program_godRay);
 			gRenderDevice->deleteProgram(program_blur1);
 			gRenderDevice->deleteProgram(program_blur2);
 		}
@@ -113,14 +133,8 @@ void main() {
 		uniform_color = 4;
 
 		/////////////////////////////////////////////////////////////////////////////////
-		// program - god ray
+		// program - light scattering
 		{
-			Shader vs(GL_VERTEX_SHADER, "GodRay_VS");
-			Shader fs(GL_FRAGMENT_SHADER, "GodRay_FS");
-			vs.loadSource("fullscreen_quad.glsl");
-			fs.loadSource("god_ray_fs.glsl");
-
-			program_godRay = pathos::createProgram(vs, fs, "GodRay");
 			uniform_lightPos = 0;
 		}
 
@@ -154,15 +168,15 @@ void main() {
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
-		GLfloat depth_clear[] = { 1.0f };
+		GLfloat depth_clear[] = { 0.0f };
 
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
+		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_DEPTH_ATTACHMENT, sceneContext.godRaySourceDepth, 0);
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_DEPTH, 0, depth_clear);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
-		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_DEPTH, 0, depth_clear);
 
 		// special case: no light source
 		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
@@ -174,7 +188,7 @@ void main() {
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_LEQUAL);
+		cmdList.depthFunc(GL_GEQUAL); // Due to Reverse-Z
 
 		// render silhouettes
 		{
@@ -187,19 +201,27 @@ void main() {
 			std::vector<StaticMeshProxy*> sourceProxyList;
 			scene->godRaySource->createRenderProxy_internal(scene, sourceProxyList); // #todo-godray: hack
 			MeshGeometry* godRayGeometry = scene->godRaySource->getStaticMesh()->getGeometries()[0];
-			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
-				renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
+			{
+				SCOPED_DRAW_EVENT(RenderSilhouette_LightSource);
+
+				for (StaticMeshProxy* sourceProxy : sourceProxyList) {
+					renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
+				}
 			}
 
 			// Occluders
-			for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
-				const auto& proxyList = scene->proxyList_staticMesh[i];
-				for (StaticMeshProxy* proxy : proxyList) {
-					if (proxy->geometry == godRayGeometry) {
-						// #todo-godray: This skips one that is not the god ray source but whose geometry is same as that of the source :/
-						continue;
+			{
+				SCOPED_DRAW_EVENT(RenderSilhouette_Occluders);
+
+				for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
+					const auto& proxyList = scene->proxyList_staticMesh[i];
+					for (StaticMeshProxy* proxy : proxyList) {
+						if (proxy->geometry == godRayGeometry) {
+							// #todo-godray: This skips one that is not the god ray source but whose geometry is same as that of the source :/
+							continue;
+						}
+						renderSilhouette(cmdList, camera, proxy, opaque_black);
 					}
-					renderSilhouette(cmdList, camera, proxy, opaque_black);
 				}
 			}
 		}
@@ -207,6 +229,8 @@ void main() {
 		// light scattering pass
 		{
 			SCOPED_DRAW_EVENT(LightScattering);
+
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayLightScattering);
 
 			vector3 lightPos = scene->godRaySource->getLocation();
 			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
@@ -217,7 +241,7 @@ void main() {
 			cmdList.bindVertexArray(vao_dummy);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
-			cmdList.useProgram(program_godRay);
+			cmdList.useProgram(program.getGLName());
 			cmdList.bindTextureUnit(0, sceneContext.godRaySource);
 			cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
 			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
@@ -251,14 +275,15 @@ void main() {
 	}
 
 	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* meshProxy, GLfloat* color) {
-		// #todo-godray: Ignore translucent materials for now
+		// #todo-godray: Ignore translucent materials completely for now.
+		// - Scaling the luminance proportional to the material's transmittance might produce a not so bad result.
+		// - No idea how to deal with refraction :/
 		if (meshProxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
 			return;
 		}
 
 		cmdList.uniform3fv(uniform_color, 1, color);
 		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * meshProxy->modelMatrix));
-
 
 		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
 		if (wireframe) {

@@ -38,13 +38,15 @@ namespace pathos {
 
 		GLuint fbo[2] = { 0, 0 };
 
+		// Program: silhouette
 		GLuint program_silhouette = 0;
 		GLint uniform_mvp;
 		GLint uniform_color;
 		
-		GLuint program_godRay = 0;
+		// Program: light scattering
 		GLint uniform_lightPos;
 
+		// Program: gaussian blur
 		GLuint fboBlur1 = 0xffffffff;
 		GLuint fboBlur2 = 0xffffffff;
 		GLuint program_blur1 = 0;

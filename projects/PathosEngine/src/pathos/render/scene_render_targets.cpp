@@ -18,6 +18,7 @@ namespace pathos {
 		, gbufferB(0)
 		, gbufferC(0)
 		, godRaySource(0)
+		, godRaySourceDepth(0)
 		, godRayResult(0)
 		, godRayResultTemp(0)
 		, dofSubsum0(0)
@@ -86,6 +87,7 @@ namespace pathos {
 
 		// god ray
 		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRaySource");
+		reallocTexture2D(godRaySourceDepth, GL_DEPTH_COMPONENT24, sceneWidth / 2, sceneHeight / 2, "godRaySourceDepth");
 		reallocTexture2D(godRayResult, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResult");
 		reallocTexture2D(godRayResultTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResultTemp");
 		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -134,6 +136,7 @@ namespace pathos {
 		safe_release(gbufferB);
 		safe_release(gbufferC);
 		safe_release(godRaySource);
+		safe_release(godRaySourceDepth);
 		safe_release(godRayResult);
 		safe_release(godRayResultTemp);
 		safe_release(dofSubsum0);
