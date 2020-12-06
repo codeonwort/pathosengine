@@ -102,9 +102,6 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -298,6 +295,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\depth_prepass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\badger\math\spline.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\init_tinygltf.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\init_tinyobjloader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\loader\spline_loader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -657,6 +666,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\depth_prepass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\badger\math\spline.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\loader\spline_loader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

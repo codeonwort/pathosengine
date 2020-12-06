@@ -86,9 +86,12 @@
     <ClCompile Include="src\badger\assertion\assertion.cpp" />
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\math\rotator.cpp" />
+    <ClCompile Include="src\badger\math\spline.cpp" />
     <ClCompile Include="src\badger\memory\mem_alloc.cpp" />
     <ClCompile Include="src\badger\thread\thread_pool.cpp" />
     <ClCompile Include="src\gl3w\gl3w.c" />
+    <ClCompile Include="src\init_tinygltf.cpp" />
+    <ClCompile Include="src\init_tinyobjloader.cpp" />
     <ClCompile Include="src\pathos\actor\actor.cpp" />
     <ClCompile Include="src\pathos\actor\actor_component.cpp" />
     <ClCompile Include="src\pathos\actor\scene_component.cpp" />
@@ -101,6 +104,7 @@
     <ClCompile Include="src\pathos\input\xinput_manager.cpp" />
     <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
     <ClCompile Include="src\pathos\loader\asset_streamer.cpp" />
+    <ClCompile Include="src\pathos\loader\spline_loader.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
     <ClCompile Include="src\pathos\named_object.cpp" />
@@ -163,13 +167,13 @@
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\util\string_conversion.cpp" />
     <ClCompile Include="src\pathos\wrapper\transform.cpp" />
-    <ClCompile Include="src\tinyobjloader\tiny_obj_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\badger\assertion\assertion.h" />
     <ClInclude Include="src\badger\math\minmax.h" />
     <ClInclude Include="src\badger\math\random.h" />
     <ClInclude Include="src\badger\math\rotator.h" />
+    <ClInclude Include="src\badger\math\spline.h" />
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
     <ClInclude Include="src\badger\types\os.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
@@ -198,6 +202,7 @@
     <ClInclude Include="src\pathos\light\point_light_component.h" />
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
+    <ClInclude Include="src\pathos\loader\spline_loader.h" />
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
     <ClInclude Include="src\pathos\mesh\model_transform.h" />
     <ClInclude Include="src\pathos\mesh\static_mesh_actor.h" />

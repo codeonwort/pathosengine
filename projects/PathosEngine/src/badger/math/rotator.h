@@ -1,10 +1,13 @@
 #pragma once
 
 #include "badger/math/minmax.h"
+#include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
 
 // Yaw-pitch-roll
 struct Rotator {
+
+	static Rotator directionToYawPitch(const vector3& dir);
 
 	Rotator()
 		: yaw(0.0f)

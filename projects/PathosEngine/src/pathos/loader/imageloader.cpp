@@ -4,10 +4,7 @@
 #include "pathos/texture/volume_texture.h"
 
 #include "badger/assertion/assertion.h"
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
 
 #pragma comment(lib, "FreeImage.lib")
 

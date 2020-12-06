@@ -9,6 +9,7 @@
 #include "pathos/render/sky_clouds.h"
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
+#include "pathos/loader/spline_loader.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/mesh/static_mesh_actor.h"
@@ -45,11 +46,24 @@ void World_RC1::onInitialize()
 	spaceship1->setActorScale(30.0f);
 	spaceship1->setActorLocation(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
-
+	{
+		SplineLoader loader;
+		std::string splineName;
+		HermiteSpline spline1;
+		CHECK(loader.load("render_challenge_1/SpaceshipCurve1.spline", true, splineName, spline1));
+		spaceship1->setSpline(std::move(spline1));
+	}
 	spaceship2 = spawnActor<SpaceshipActor>();
 	spaceship2->setActorScale(30.0f);
 	spaceship2->setActorLocation(vector3(1257.0f, Y_OFFSET - 1098.0f, 348.0f));
 	spaceship2->setActorRotation(Rotator(112.91f, -21.14f, 0.0f));
+	{
+		SplineLoader loader;
+		std::string splineName;
+		HermiteSpline spline2;
+		CHECK(loader.load("render_challenge_1/SpaceshipCurve2.spline", true, splineName, spline2));
+		spaceship2->setSpline(std::move(spline2));
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Spawn actors
@@ -106,6 +120,55 @@ void World_RC1::onTick(float deltaSeconds)
 	for (uint32 i = 0; i < (uint32)components.size(); ++i) {
 		components[i]->setRotation(rings[ringIndicesForParticleRotation[i]]->getActorRotation());
 		components[i]->setLocation(vector3(0.0f, Y_OFFSET, 0.0f));
+	}
+
+	{
+		HermiteSpline& spline  = spaceship1->getSpline();
+		float totalTime        = spline.getTotalTime();
+		float totalDistance    = spline.getTotalDistance();
+		float worldTime        = gEngine->getWorldTime();
+
+		float sampleDistance   = fmod(worldTime * 0.05f, 1.0f) * totalDistance;
+		float sampleTime       = fmod(worldTime * 1.0f, totalTime);
+
+		vector3 splineLocation = spline.locationAtDistance(sampleDistance);
+		vector3 splineTangent  = glm::normalize(spline.tangentAtDistance(sampleDistance));
+		//vector3 splineLocation = spline.locationAtTime(sampleTime);
+		//vector3 splineTangent  = glm::normalize(spline.tangentAtTime(sampleTime));
+
+		ModelTransform transform(vector3(-347.0f, Y_OFFSET - 1098.0f, 1648.0f), Rotator(), vector3(1000.0f));
+		splineLocation = vector3(transform.getMatrix() * vector4(splineLocation, 1.0f));
+
+		spaceship1->setActorLocation(splineLocation);
+		spaceship1->setActorRotation(Rotator::directionToYawPitch(splineTangent));
+
+		float deltaDist        = 1.0f;
+		float cameraSampleDist = sampleDistance < deltaDist ? sampleDistance - deltaDist + totalDistance : sampleDistance - deltaDist;
+		vector3 cameraPos      = spline.locationAtDistance(cameraSampleDist);
+		cameraPos              = vector3(transform.getMatrix() * vector4(cameraPos, 1.0f));
+		// Uncomment one line to auto-pilot the camera
+		//getCamera().lookAt(cameraPos, splineLocation, vector3(0.0f, 1.0f, 0.0f)); // Force position and rotation
+		//getCamera().moveToPosition(cameraPos);                                    // Force position only
+	}
+	{
+		HermiteSpline& spline  = spaceship2->getSpline();
+		float totalTime        = spline.getTotalTime();
+		float totalDistance    = spline.getTotalDistance();
+		float worldTime        = gEngine->getWorldTime();
+
+		float sampleDistance   = fmod(worldTime * 0.05f, 1.0f) * totalDistance;
+		float sampleTime       = fmod(worldTime * 1.0f, totalTime);
+
+		vector3 splineLocation = spline.locationAtDistance(sampleDistance);
+		vector3 splineTangent  = glm::normalize(spline.tangentAtDistance(sampleDistance));
+		//vector3 splineLocation = spline.locationAtTime(sampleTime);
+		//vector3 splineTangent  = glm::normalize(spline.tangentAtTime(sampleTime));
+
+		ModelTransform transform(vector3(-2347.0f, Y_OFFSET - 1098.0f, 1648.0f), Rotator(), vector3(1000.0f));
+		splineLocation = vector3(transform.getMatrix() * vector4(splineLocation, 1.0f));
+
+		spaceship2->setActorLocation(splineLocation);
+		spaceship2->setActorRotation(Rotator::directionToYawPitch(splineTangent));
 	}
 }
 
