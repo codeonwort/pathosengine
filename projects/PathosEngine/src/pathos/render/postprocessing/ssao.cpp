@@ -145,6 +145,8 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(Blur);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
 
 			cmdList.useProgram(program_blur);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);

@@ -12,7 +12,6 @@ namespace pathos {
 	class MeshGeometry;
 	struct StaticMeshProxy;
 
-	// TODO: need depth buffer
 	class GodRay final {
 
 		static constexpr uint32 GOD_RAY_SOURCE = 0;

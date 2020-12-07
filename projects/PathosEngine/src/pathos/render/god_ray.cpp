@@ -180,15 +180,12 @@ void main() {
 
 		// special case: no light source
 		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
-			// #todo-godray: Fix crash on rendering without god ray source (hack)
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
 			return;
 		}
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_GEQUAL); // Due to Reverse-Z
+		cmdList.depthFunc(GL_GREATER); // Due to Reverse-Z
 
 		// render silhouettes
 		{
@@ -216,10 +213,7 @@ void main() {
 				for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
 					const auto& proxyList = scene->proxyList_staticMesh[i];
 					for (StaticMeshProxy* proxy : proxyList) {
-						if (proxy->geometry == godRayGeometry) {
-							// #todo-godray: This skips one that is not the god ray source but whose geometry is same as that of the source :/
-							continue;
-						}
+						// God ray source's geometries are ignored because depth test is GL_GRAETER
 						renderSilhouette(cmdList, camera, proxy, opaque_black);
 					}
 				}
