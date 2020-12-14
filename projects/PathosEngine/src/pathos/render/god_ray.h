@@ -10,6 +10,7 @@
 namespace pathos {
 
 	class MeshGeometry;
+	class DeferredRenderer;
 	struct StaticMeshProxy;
 
 	class GodRay final {
@@ -27,7 +28,8 @@ namespace pathos {
 		void createFBO(RenderCommandList& cmdList);
 		void createShaders(RenderCommandList& cmdList);
 
-		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad);
+		// #todo-godray: 'renderer' parameter is hack
+		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer);
 
 	private:
 		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* mesh, GLfloat* color);
@@ -48,8 +50,6 @@ namespace pathos {
 		// Program: gaussian blur
 		GLuint fboBlur1 = 0xffffffff;
 		GLuint fboBlur2 = 0xffffffff;
-		GLuint program_blur1 = 0;
-		GLuint program_blur2 = 0;
 
 		GLuint vao_dummy;
 

@@ -8,6 +8,7 @@ layout (binding = 0) uniform sampler2D src;
 
 layout (location = 0) uniform vec2 lightPos = vec2(0.5, 0.5);
 
+// #todo-godray: Parameterize
 const float alphaDecay = 0.92;
 const float density = 1.1;
 const int NUM_SAMPLES = 32;

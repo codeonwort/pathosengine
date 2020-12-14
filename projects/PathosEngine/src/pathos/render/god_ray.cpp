@@ -1,4 +1,5 @@
 #include "god_ray.h"
+#include "pathos/render/render_deferred.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
@@ -30,7 +31,29 @@ namespace pathos {
 		};
 	};
 
+	class GodRayBilateralSamplingVS : public ShaderStage {
+	public:
+		GodRayBilateralSamplingVS() : ShaderStage(GL_VERTEX_SHADER, "GodRayBilateralSamplingVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+
+	template<bool horizontal>
+	class GodRayBilateralSamplingFS : public ShaderStage {
+	public:
+		GodRayBilateralSamplingFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayBilateralSamplingFS") {
+			if (horizontal) {
+				addDefine("HORIZONTAL 1");
+			}
+			addDefine("KERNEL_SIZE 5");
+			//addDefine("TONAL_WEIGHT 1");
+			setFilepath("two_pass_gaussian_blur.glsl");
+		}
+	};
+
 	DEFINE_SHADER_PROGRAM2(Program_GodRayLightScattering, GodRayLightScatteringVS, GodRayLightScatteringFS);
+	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingH, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<true>);
+	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingV, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<false>);
 
 }
 
@@ -57,8 +80,6 @@ namespace pathos {
 			gRenderDevice->deleteVertexArrays(1, &vao_dummy);
 			gRenderDevice->deleteFramebuffers(2, fbo);
 			gRenderDevice->deleteProgram(program_silhouette);
-			gRenderDevice->deleteProgram(program_blur1);
-			gRenderDevice->deleteProgram(program_blur2);
 		}
 		destroyed = true;
 	}
@@ -132,34 +153,13 @@ void main() {
 		uniform_mvp = 0;
 		uniform_color = 4;
 
-		/////////////////////////////////////////////////////////////////////////////////
 		// program - light scattering
 		{
 			uniform_lightPos = 0;
 		}
-
-		// program - bilateral sampling
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_1");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_1");
-			fs_blur.addDefine("HORIZONTAL 1");
-			fs_blur.addDefine("KERNEL_SIZE 5");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur1 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_1");
-		}
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "GodRay_VS_Blur_2");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "GodRay_FS_Blur_2");
-			fs_blur.addDefine("HORIZONTAL 0");
-			fs_blur.addDefine("KERNEL_SIZE 5");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "GodRay_Blur_2");
-		}
 	}
 
-	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad) {
+	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer) {
 		SCOPED_DRAW_EVENT(GodRay);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -171,11 +171,10 @@ void main() {
 		GLfloat depth_clear[] = { 0.0f };
 
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_DEPTH_ATTACHMENT, sceneContext.godRaySourceDepth, 0);
+		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
-		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_DEPTH, 0, depth_clear);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
 
 		// special case: no light source
@@ -183,9 +182,9 @@ void main() {
 			return;
 		}
 
-		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_GREATER); // Due to Reverse-Z
+		cmdList.depthFunc(GL_EQUAL);
 
 		// render silhouettes
 		{
@@ -199,25 +198,18 @@ void main() {
 			scene->godRaySource->createRenderProxy_internal(scene, sourceProxyList); // #todo-godray: hack
 			MeshGeometry* godRayGeometry = scene->godRaySource->getStaticMesh()->getGeometries()[0];
 			{
-				SCOPED_DRAW_EVENT(RenderSilhouette_LightSource);
-
 				for (StaticMeshProxy* sourceProxy : sourceProxyList) {
 					renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
 				}
 			}
+		}
 
-			// Occluders
-			{
-				SCOPED_DRAW_EVENT(RenderSilhouette_Occluders);
+		{
+			SCOPED_DRAW_EVENT(DownsampleSilhouette);
 
-				for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
-					const auto& proxyList = scene->proxyList_staticMesh[i];
-					for (StaticMeshProxy* proxy : proxyList) {
-						// God ray source's geometries are ignored because depth test is GL_GRAETER
-						renderSilhouette(cmdList, camera, proxy, opaque_black);
-					}
-				}
-			}
+			// Downsample
+			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+			renderer->copyTexture(cmdList, sceneContext.godRaySource, sceneContext.godRayResultTemp);
 		}
 
 		// light scattering pass
@@ -236,7 +228,7 @@ void main() {
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 			cmdList.useProgram(program.getGLName());
-			cmdList.bindTextureUnit(0, sceneContext.godRaySource);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
 			cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
 			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
 
@@ -252,7 +244,10 @@ void main() {
 		{
 			SCOPED_DRAW_EVENT(BilateralSampling);
 
-			cmdList.useProgram(program_blur1);
+			ShaderProgram& program_horizontal = FIND_SHADER_PROGRAM(Program_GodRayBilateralSamplingH);
+			ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_GodRayBilateralSamplingV);
+
+			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
 			cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
@@ -260,7 +255,7 @@ void main() {
 			fullscreenQuad->activateIndexBuffer(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 
-			cmdList.useProgram(program_blur2);
+			cmdList.useProgram(program_vertical.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
 			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
