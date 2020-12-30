@@ -45,7 +45,7 @@ namespace pathos {
 		GLint uniform_color;
 		
 		// Program: light scattering
-		GLint uniform_lightPos;
+		UniformBuffer uboLightScattering;
 
 		// Program: gaussian blur
 		GLuint fboBlur1 = 0xffffffff;

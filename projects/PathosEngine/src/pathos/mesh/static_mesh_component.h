@@ -34,7 +34,8 @@ namespace pathos {
 		void setStaticMesh(Mesh* inMesh) { mesh = inMesh; }
 
 	private:
-		void createRenderProxy_internal(Scene* scene, std::vector<StaticMeshProxy*>& outProxyList);
+		// #todo-godray: Hack
+		void createRenderProxy_internal(std::vector<StaticMeshProxy*>& outProxyList);
 
 	public:
 		bool castsShadow = true;

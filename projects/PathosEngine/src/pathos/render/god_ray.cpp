@@ -4,6 +4,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
+#include "pathos/util/math_lib.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/material/material.h"
@@ -16,6 +17,12 @@
 #include "glm/gtc/type_ptr.hpp"
 
 namespace pathos {
+
+	struct UBO_GodRayLightScattering {
+		vector2 lightPos;
+		float alphaDecay;
+		float density;
+	};
 
 	class GodRayLightScatteringVS : public ShaderStage {
 	public:
@@ -60,6 +67,8 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
+	static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.92f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
+	static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Density of god ray scattering (> 1.0)");
 
 	GodRay::GodRay() {
 	}
@@ -72,6 +81,7 @@ namespace pathos {
 		createFBO(cmdList);
 		createShaders(cmdList);
 		cmdList.genVertexArrays(1, &vao_dummy);
+		uboLightScattering.init<UBO_GodRayLightScattering>();
 	}
 
 	void GodRay::releaseResources(RenderCommandList& cmdList)
@@ -152,11 +162,6 @@ void main() {
 		program_silhouette = pathos::createProgram(vshader, fshader, "GodRay_silhouette");
 		uniform_mvp = 0;
 		uniform_color = 4;
-
-		// program - light scattering
-		{
-			uniform_lightPos = 0;
-		}
 	}
 
 	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer) {
@@ -195,12 +200,9 @@ void main() {
 
 			// Source
 			std::vector<StaticMeshProxy*> sourceProxyList;
-			scene->godRaySource->createRenderProxy_internal(scene, sourceProxyList); // #todo-godray: hack
-			MeshGeometry* godRayGeometry = scene->godRaySource->getStaticMesh()->getGeometries()[0];
-			{
-				for (StaticMeshProxy* sourceProxy : sourceProxyList) {
-					renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
-				}
+			scene->godRaySource->createRenderProxy_internal(sourceProxyList);
+			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
+				renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
 			}
 		}
 
@@ -222,17 +224,20 @@ void main() {
 			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
 			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
 			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
-			GLfloat lightPos_2d[2] = { (lightPos.x + 1.0f) / 2.0f, (lightPos.y + 1.0f) / 2.0f };
+
+			UBO_GodRayLightScattering uboData;
+			uboData.lightPos.x = (lightPos.x + 1.0f) / 2.0f;
+			uboData.lightPos.y = (lightPos.y + 1.0f) / 2.0f;
+			uboData.alphaDecay = pathos::max(0.0f, pathos::min(1.0f, cvar_godray_alphaDecay.getFloat()));
+			uboData.density    = pathos::max(1.0f, cvar_godray_density.getFloat());
+			uboLightScattering.update(cmdList, 1, &uboData);
 
 			cmdList.bindVertexArray(vao_dummy);
-
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 			cmdList.useProgram(program.getGLName());
 			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
-			cmdList.uniform2fv(uniform_lightPos, 1, lightPos_2d);
-			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4); // gl error?
+			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-			// unbind
 			cmdList.bindVertexArray(0);
 			cmdList.useProgram(0);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
