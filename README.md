@@ -33,7 +33,7 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 
 ## Sample Images
 
-![McGuireFireplaceRoom](https://user-images.githubusercontent.com/11644393/73363954-02360b00-42ed-11ea-8f2b-3184ff567848.jpg)
+![McGuireFireplaceRoom](https://user-images.githubusercontent.com/11644393/103409265-53a7e380-4ba9-11eb-8683-0122d3ef0b04.jpg)
 
 ![OmnidirectionalShadowMapping](https://cloud.githubusercontent.com/assets/11644393/15381530/30adbcc2-1dbb-11e6-9286-13c0f82e6f92.jpg)
 
