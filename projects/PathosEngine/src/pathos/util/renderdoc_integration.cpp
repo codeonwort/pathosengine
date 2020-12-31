@@ -41,13 +41,17 @@ namespace pathos {
 			return false;
 	 	}
 
+		// Versions in enum and log should match
+		RENDERDOC_Version requested_api_version = eRENDERDOC_API_Version_1_4_1;
+		LOG(LogInfo, "RenderDoc: Request API v1.4.1");
+
 		pRENDERDOC_GetAPI apiEntry = (pRENDERDOC_GetAPI)::GetProcAddress(dll, "RENDERDOC_GetAPI");
 		if (apiEntry == NULL) {
 			LOG(LogError, "%s: Can't find api entry from renderdoc.dll", __FUNCTION__);
 			return false;
 		}
 
-		int ret = apiEntry(eRENDERDOC_API_Version_1_4_1, (void**)&api);
+		int ret = apiEntry(requested_api_version, (void**)&api);
 		if (ret != 1) {
 			LOG(LogError, "%s: Can't get api functions from api entry", __FUNCTION__);
 			api = nullptr;
@@ -55,6 +59,12 @@ namespace pathos {
 		}
 
 		LOG(LogInfo, "RenderDoc integration is working with an injected dll");
+
+		{
+			int major, minor, patch;
+			api->GetAPIVersion(&major, &minor, &patch);
+			LOG(LogInfo, "RenderDoc: Actual API v%d.%d.%d", major, minor, patch);
+		}
 
 		gEngine->registerExec("capture_frame", [](const std::string& command) {
 			RenderDocIntegration::get().captureFrame();

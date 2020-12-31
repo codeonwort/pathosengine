@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)thirdparty\include;$(SolutionDir)thirdparty\tinygltf-2.5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)thirdparty\include;$(SolutionDir)thirdparty\renderdoc;$(SolutionDir)thirdparty\tinygltf-2.5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
