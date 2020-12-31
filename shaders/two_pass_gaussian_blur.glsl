@@ -26,16 +26,6 @@ in VS_OUT {
 	#error "KERNEL_SIZE is wrong"
 #endif
 
-// Range filter kernel (bad quality, disabled)
-#ifndef TONAL_WEIGHT
-	#define TONAL_WEIGHT 0
-#endif
-
-// Standard normal distribution
-float snd(float m, float a) {
-	return (1 / (a * 0.3989422804)) * exp(-m*m / (2.0*a*a));
-}
-
 out vec4 out_color;
 
 void main() {
@@ -45,54 +35,23 @@ void main() {
 	vec3 sourceColor = textureLod(src, uv, 0).rgb;
 	vec3 result = sourceColor * weight[0];
 
-#if TONAL_WEIGHT
-	const float TONAL_SD = 1.0;
-	const vec3 toGrayscale = vec3(0.299, 0.587, 0.114);
-	float sourceLuminance = dot(sourceColor, toGrayscale);
-	float totalWeight = 0.0f;
-#endif
-
 #if HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
 		vec2 delta = vec2(i * invTexSize.x, 0.0);
 		vec3 sampleR = textureLod(src, uv + delta, 0).rgb;
 		vec3 sampleL = textureLod(src, uv - delta, 0).rgb;
-#if TONAL_WEIGHT
-		float rLuminance = dot(sampleR, toGrayscale);
-		float lLuminance = dot(sampleL, toGrayscale);
-		float rWeight = weight[i] * snd(sourceLuminance - rLuminance, TONAL_SD);
-		float lWeight = weight[i] * snd(sourceLuminance - lLuminance, TONAL_SD);
-		totalWeight += rWeight + lWeight;
-		result += sampleR * rWeight;
-		result += sampleL * lWeight;
-#else // TONAL_WEIGHT
 		result += sampleR * weight[i];
 		result += sampleL * weight[i];
-#endif // TONAL_WEIGHT
 	}
 #else // HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
 		vec2 delta = vec2(0.0, i * invTexSize.y);
 		vec3 sampleR = textureLod(src, uv + delta, 0).rgb;
 		vec3 sampleL = textureLod(src, uv - delta, 0).rgb;
-#if TONAL_WEIGHT
-		float rLuminance = dot(sampleR, toGrayscale);
-		float lLuminance = dot(sampleL, toGrayscale);
-		float rWeight = weight[i] * snd(sourceLuminance - rLuminance, TONAL_SD);
-		float lWeight = weight[i] * snd(sourceLuminance - lLuminance, TONAL_SD);
-		totalWeight += rWeight + lWeight;
-		result += sampleR * rWeight;
-		result += sampleL * lWeight;
-#else
 		result += sampleR * weight[i];
 		result += sampleL * weight[i];
-#endif
 	}
 #endif // HORIZONTAL
-
-#if TONAL_WEIGHT
-	result /= max(1.0, totalWeight);
-#endif
 
 	out_color = vec4(result, 0.0);
 }

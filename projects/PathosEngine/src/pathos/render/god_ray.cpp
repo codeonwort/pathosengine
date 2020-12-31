@@ -14,7 +14,6 @@
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
-#include "glm/gtc/type_ptr.hpp"
 
 namespace pathos {
 
@@ -172,7 +171,7 @@ void main() {
 		// bind
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f };
+		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f }; // #todo-godray: Parameterize
 		GLfloat depth_clear[] = { 0.0f };
 
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
@@ -276,8 +275,10 @@ void main() {
 			return;
 		}
 
+		matrix4 MVP = camera->getViewProjectionMatrix() * meshProxy->modelMatrix;
+
 		cmdList.uniform3fv(uniform_color, 1, color);
-		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, glm::value_ptr(camera->getViewProjectionMatrix() * meshProxy->modelMatrix));
+		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, &MVP[0][0]);
 
 		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
 		if (wireframe) {
