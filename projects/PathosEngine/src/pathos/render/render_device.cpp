@@ -70,15 +70,7 @@ namespace pathos {
 			return false;
 		}
 
-		// #todo-gl-extension: Check OpenGL extensions
-		//{
-		//	GLint n, i;
-		//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
-		//	for (i = 0; i < n; ++i) {
-		//		const GLubyte* ext_name = glGetStringi(GL_EXTENSIONS, i);
-		//		printf("%s\n", ext_name);
-		//	}
-		//}
+		checkExtensions();
 
 		// Create immediate command list
 		immediate_command_list = std::make_unique<RenderCommandList>();
@@ -200,6 +192,36 @@ namespace pathos {
 		CHECK(isInRenderThread());
 
 		return glGetUniformLocation(program, name);
+	}
+
+	void OpenGLDevice::checkExtensions() {
+		::memset(&extensionSupport, 0, sizeof(extensionSupport));
+
+		GLint n;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+
+		std::vector<const char*> extNames(n, nullptr);
+		for (GLint i = 0; i < n; ++i) {
+			extNames[i] = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		}
+		
+		auto findExt = [&](const char* desiredExt) -> bool {
+			for (GLint i = 0; i < n; ++i) {
+				if (strcmp(extNames[i], desiredExt)) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		// #todo-gl-extension: Utilize available extensions
+		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
+		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
+		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
+		extensionSupport.NV_representative_fragment_test = findExt("GL_NV_representative_fragment_test");
+		extensionSupport.NV_fragment_shader_barycentric  = findExt("GL_NV_fragment_shader_barycentric");
+		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
+		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
 	}
 
 }

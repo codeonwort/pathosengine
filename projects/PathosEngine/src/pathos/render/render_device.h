@@ -18,6 +18,17 @@
 
 namespace pathos {
 
+	// https://developer.nvidia.com/vulkan-turing
+	struct OpenGLExtensionSupport {
+		uint32 NV_mesh_shader                  : 1;
+		uint32 NV_shading_rate_image           : 1;
+		uint32 NV_shader_texture_footprint     : 1;
+		uint32 NV_representative_fragment_test : 1;
+		uint32 NV_fragment_shader_barycentric  : 1;
+		uint32 NV_compute_shader_derivatives   : 1;
+		uint32 NV_scissor_exclusive            : 1;
+	};
+
 	class OpenGLDevice final : public Noncopyable {
 		
 	public:
@@ -26,6 +37,7 @@ namespace pathos {
 
 		bool initialize();
 
+		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
@@ -51,6 +63,9 @@ namespace pathos {
 		GLint getUniformLocation(GLuint program, const GLchar* name);
 
 	private:
+		void checkExtensions();
+
+		OpenGLExtensionSupport             extensionSupport;
 		std::unique_ptr<RenderCommandList> immediate_command_list;
 		std::unique_ptr<RenderCommandList> temp_command_list;
 
