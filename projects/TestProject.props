@@ -10,12 +10,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\freeimage\source;$(SolutionDir)thirdparty\assimp\source</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\thirdparty\binaries</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\thirdparty\assimp\binary;$(SolutionDir)\thirdparty\freeimage\binary;$(SolutionDir)\thirdparty\freetype-2.9.1\binary;$(SolutionDir)\thirdparty\freeglut\binary</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
     </Link>

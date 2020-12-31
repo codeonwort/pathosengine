@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)thirdparty\include;$(SolutionDir)thirdparty\renderdoc;$(SolutionDir)thirdparty\tinygltf-2.5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\renderdoc;$(SolutionDir)thirdparty\freeimage\source;$(SolutionDir)thirdparty\freetype-2.9.1\source;$(SolutionDir)thirdparty\freeglut\source;$(SolutionDir)thirdparty\assimp\source;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\tinygltf-2.5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -17,7 +17,7 @@
       </AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\binaries</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\assimp\binary;$(SolutionDir)thirdparty\freetype-2.9.1\binary;$(SolutionDir)thirdparty\freeimage\binary;$(SolutionDir)thirdparty\freeglut\binary</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
