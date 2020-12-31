@@ -47,7 +47,7 @@ namespace pathos {
 		}
 	}
 
-	void StaticMeshComponent::createRenderProxy_internal(Scene* scene, std::vector<StaticMeshProxy*>& outProxyList) {
+	void StaticMeshComponent::createRenderProxy_internal(std::vector<StaticMeshProxy*>& outProxyList) {
 		if (mesh == nullptr || getVisibility() == false) {
 			return;
 		}

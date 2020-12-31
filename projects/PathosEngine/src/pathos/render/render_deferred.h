@@ -63,6 +63,9 @@ namespace pathos {
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
 		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
 
+		// #todo: Make as a utility function, not a method of renderer.
+		void copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target);
+
 	private:
 		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
 		void destroySceneRenderTargets(RenderCommandList& cmdList);
@@ -74,8 +77,6 @@ namespace pathos {
 		void unpackGBuffer(RenderCommandList& cmdList);
 
 		void renderTranslucency(RenderCommandList& cmdList);
-
-		void copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target);
 
 		GLuint getFinalRenderTarget() const;
 

@@ -228,7 +228,7 @@ namespace pathos {
 		{
 			SCOPED_GPU_COUNTER(RenderGodRay);
 
-			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get());
+			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
 		{

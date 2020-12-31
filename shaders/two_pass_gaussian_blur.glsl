@@ -38,16 +38,20 @@ void main() {
 #if HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
 		vec2 delta = vec2(i * invTexSize.x, 0.0);
-		result += textureLod(src, uv + delta, 0).rgb * weight[i];
-		result += textureLod(src, uv - delta, 0).rgb * weight[i];
+		vec3 sampleR = textureLod(src, uv + delta, 0).rgb;
+		vec3 sampleL = textureLod(src, uv - delta, 0).rgb;
+		result += sampleR * weight[i];
+		result += sampleL * weight[i];
 	}
-#else
+#else // HORIZONTAL
 	for(int i = 1; i < KERNEL_SIZE; ++i) {
 		vec2 delta = vec2(0.0, i * invTexSize.y);
-		result += textureLod(src, uv + delta, 0).rgb * weight[i];
-		result += textureLod(src, uv - delta, 0).rgb * weight[i];
+		vec3 sampleR = textureLod(src, uv + delta, 0).rgb;
+		vec3 sampleL = textureLod(src, uv - delta, 0).rgb;
+		result += sampleR * weight[i];
+		result += sampleL * weight[i];
 	}
-#endif
+#endif // HORIZONTAL
 
 	out_color = vec4(result, 0.0);
 }

@@ -85,7 +85,7 @@ namespace pathos {
 		}
 
 		// god ray
-		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRaySource");
+		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth, sceneHeight, "godRaySource");
 		reallocTexture2D(godRayResult, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResult");
 		reallocTexture2D(godRayResultTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResultTemp");
 		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
