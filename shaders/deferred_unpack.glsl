@@ -262,7 +262,7 @@ vec4 calculateShading(fragment_info fragment) {
 }
 
 // From HLSL Development Cookbook
-// #todo: better fog implementation
+// #todo: better height fog implementation
 vec3 applyFog(fragment_info fragment, vec3 color) {
 	const float magic_number = getFogAttenuation(); // proper physical meaning?
 	float z = length(fragment.vs_coords) * magic_number;
@@ -287,6 +287,10 @@ void main() {
 #if DEBUG_CSM_ID
 	luminance.rgb = vec3(getShadowing(fragment));
 #endif
+
+	// #todo: Sometimes luminance.rgb is NaN, which results in vec3(65536.0) by bloom setup pass,
+	// which results in a big white circle by bloom pass.
+	luminance.rgb = max(vec3(0.0), luminance.rgb);
 
 	// output: standard shading
 	out_color = luminance;
