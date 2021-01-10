@@ -30,6 +30,7 @@ namespace pathos {
 		float weatherScale;
 		float cloudScale;
 		float cloudCurliness;
+		uint32 frameCounter;
 	};
 
 	class VolumetricCloudCS : public ShaderStage {
@@ -97,6 +98,7 @@ namespace pathos {
 			uboData.weatherScale   = cvar_cloud_weatherScale.getFloat();
 			uboData.cloudScale     = cvar_cloud_cloudScale.getFloat();
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
+			uboData.frameCounter   = settings.frameCounter;
 		}
 		ubo.update(cmdList, 1, &uboData);
 

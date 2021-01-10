@@ -24,6 +24,7 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
     float cloudScale;
     float cloudCurliness;
 
+    uint  frameCounter;
 } uboCloud;
 
 layout (local_size_x = 16, local_size_y = 16) in;
@@ -32,7 +33,7 @@ layout (binding = 0) uniform sampler2D sceneDepth;
 layout (binding = 1) uniform sampler2D weatherMap;
 layout (binding = 2) uniform sampler3D shapeNoise;
 layout (binding = 3) uniform sampler3D erosionNoise;
-layout (binding = 4) uniform sampler3D reprojectionHistory; // cloud RT of prev frame
+layout (binding = 4) uniform sampler2D reprojectionHistory; // cloud RT of prev frame
 layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
@@ -40,7 +41,7 @@ layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
 #define PI                    3.14159265359
 
 // Cone sampling random offsets
-uniform vec3 noiseKernel[6u] = vec3[]
+const vec3 noiseKernel[6u] = vec3[]
 (
 	vec3( 0.38051305,  0.92453449, -0.02111345),
 	vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -48,6 +49,14 @@ uniform vec3 noiseKernel[6u] = vec3[]
 	vec3( 0.09026238, -0.27376545,  0.95755165),
 	vec3( 0.28128598,  0.42443639, -0.86065785),
 	vec3(-0.16852403,  0.14748697,  0.97460106)
+);
+
+const uint bayerPattern[16u] = uint[]
+(
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5
 );
 
 //////////////////////////////////////////////////////////////////////////
@@ -481,6 +490,16 @@ void main() {
 
     ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = vec2(currentTexel) / vec2(sceneSize);
+
+    // Reprojection
+#if 1
+    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+        vec4 prevResult = texelFetch(reprojectionHistory, currentTexel, 0);
+        imageStore(renderTarget, currentTexel, prevResult);
+        return;
+    }
+#endif
 
 	ray_t eye_ray;
     eye_ray.origin = uboPerFrame.ws_eyePosition;
