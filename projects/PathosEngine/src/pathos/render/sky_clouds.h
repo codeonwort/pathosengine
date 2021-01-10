@@ -40,6 +40,7 @@ namespace pathos {
 		GLuint erosionNoiseTexture;
 		uint32 renderTargetWidth;
 		uint32 renderTargetHeight;
+		uint32 frameCounter;
 	};
 
 	// Rendering logic used by renderer

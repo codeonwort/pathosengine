@@ -61,6 +61,7 @@ namespace pathos {
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
+		matrix4               prevViewProj; // For reprojection
 		matrix4               view;
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
@@ -205,6 +206,7 @@ namespace pathos {
 		}
 
 		// update ubo_perFrame
+		// #todo: Why is this in the midst of rendering? Shouldn't it be at the very first?
 		updateSceneUniformBuffer(cmdList, scene, camera);
 
 		// Volumetric clouds
@@ -218,6 +220,7 @@ namespace pathos {
 			settings.weatherTexture      = scene->cloud->weatherTexture;
 			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
 			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
+			settings.frameCounter        = frameCounter;
 
 			volumetricCloud->render(cmdList, settings);
 		}
@@ -306,7 +309,7 @@ namespace pathos {
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
-				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.volumetricCloud);
+				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.getVolumetricCloud(frameCounter));
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
@@ -350,6 +353,8 @@ namespace pathos {
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());
 #endif
+
+		frameCounter += 1;
 
 		scene = nullptr;
 		camera = nullptr;
@@ -487,11 +492,16 @@ namespace pathos {
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
-		data.view        = camera->getViewMatrix();
-		data.inverseView = glm::inverse(data.view);
-		data.view3x3     = matrix3x4(data.view);
-		data.viewProj = camera->getViewProjectionMatrix();
-		data.inverseProj = glm::inverse(projMatrix);
+		if (frameCounter != 0) {
+			data.prevViewProj = data.viewProj;
+		} else {
+			data.prevViewProj = camera->getViewProjectionMatrix();
+		}
+		data.view         = camera->getViewMatrix();
+		data.inverseView  = glm::inverse(data.view);
+		data.view3x3      = matrix3x4(data.view);
+		data.viewProj     = camera->getViewProjectionMatrix();
+		data.inverseProj  = glm::inverse(projMatrix);
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 

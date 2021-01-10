@@ -82,6 +82,7 @@ namespace pathos {
 
 	private:
 		bool destroyed = false;
+		uint32 frameCounter = 0;
 
 		EAntiAliasingMethod antiAliasing;
 

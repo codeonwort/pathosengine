@@ -104,7 +104,8 @@ namespace pathos {
 		cmdList.bindTextureUnit(1, settings.weatherTexture);
 		cmdList.bindTextureUnit(2, settings.shapeNoiseTexture);
 		cmdList.bindTextureUnit(3, settings.erosionNoiseTexture);
-		cmdList.bindImageTexture(4, sceneContext.volumetricCloud, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(settings.frameCounter));
+		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(settings.frameCounter), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 		
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetHeight) / 16.0f);
@@ -125,18 +126,25 @@ namespace pathos {
 		CHECK(targetWidth != 0 && targetHeight != 0);
 
 		if (renderTargetWidth != targetWidth || renderTargetHeight != targetHeight) {
-			if (sceneContext.volumetricCloud != 0) {
-				gRenderDevice->deleteTextures(1, &sceneContext.volumetricCloud);
-				sceneContext.volumetricCloud = 0;
+			if (sceneContext.volumetricCloudA != 0) {
+				gRenderDevice->deleteTextures(1, &sceneContext.volumetricCloudA);
+				sceneContext.volumetricCloudA = 0;
+			}
+			if (sceneContext.volumetricCloudB != 0) {
+				gRenderDevice->deleteTextures(1, &sceneContext.volumetricCloudB);
+				sceneContext.volumetricCloudB = 0;
 			}
 
-			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &sceneContext.volumetricCloud);
-			glObjectLabel(GL_TEXTURE, sceneContext.volumetricCloud, -1, "Texture_CloudRT");
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &sceneContext.volumetricCloudA);
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &sceneContext.volumetricCloudB);
+			glObjectLabel(GL_TEXTURE, sceneContext.volumetricCloudA, -1, "Texture_CloudRT0");
+			glObjectLabel(GL_TEXTURE, sceneContext.volumetricCloudB, -1, "Texture_CloudRT1");
 
 			renderTargetWidth = targetWidth;
 			renderTargetHeight = targetHeight;
 
-			cmdList.textureStorage2D(sceneContext.volumetricCloud, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
+			cmdList.textureStorage2D(sceneContext.volumetricCloudA, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
+			cmdList.textureStorage2D(sceneContext.volumetricCloudB, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
 		}
 	}
 

@@ -32,7 +32,8 @@ layout (binding = 0) uniform sampler2D sceneDepth;
 layout (binding = 1) uniform sampler2D weatherMap;
 layout (binding = 2) uniform sampler3D shapeNoise;
 layout (binding = 3) uniform sampler3D erosionNoise;
-layout (binding = 4, rgba16f) writeonly uniform image2D renderTarget;
+layout (binding = 4) uniform sampler3D reprojectionHistory; // cloud RT of prev frame
+layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
