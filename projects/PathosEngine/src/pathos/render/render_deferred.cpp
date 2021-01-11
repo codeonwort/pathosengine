@@ -61,7 +61,8 @@ namespace pathos {
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
-		matrix4               prevViewProj; // For reprojection
+		matrix4               prevView; // For reprojection
+		matrix4               prevInverseView; // For reprojection
 		matrix4               view;
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
@@ -493,9 +494,11 @@ namespace pathos {
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
 		if (frameCounter != 0) {
-			data.prevViewProj = data.viewProj;
+			data.prevView        = data.view;
+			data.prevInverseView = data.inverseView;
 		} else {
-			data.prevViewProj = camera->getViewProjectionMatrix();
+			data.prevView        = matrix4(1.0f);
+			data.prevInverseView = matrix4(1.0f);
 		}
 		data.view         = camera->getViewMatrix();
 		data.inverseView  = glm::inverse(data.view);

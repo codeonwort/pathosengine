@@ -482,6 +482,26 @@ vec3 getViewDirection(vec2 uv) {
     return ray_forward;
 }
 
+vec3 getPrevViewDirection(vec2 uv) {
+	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
+    P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
+    P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P = normalize(P);
+    
+    mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
+	vec3 ray_forward = camera_transform * P;
+    
+    return ray_forward;
+}
+vec2 viewDirectionToUV(vec3 dir) {
+    float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+
+    vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
+    P.xy *= zOnPlane / P.z;
+    P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+    return 0.5 * (P.xy + vec2(1.0));
+}
+
 void main() {
     ivec2 sceneSize = imageSize(renderTarget);
     if (gl_GlobalInvocationID.x >= sceneSize.x || gl_GlobalInvocationID.y >= sceneSize.y) {
@@ -490,9 +510,30 @@ void main() {
 
     ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = vec2(currentTexel) / vec2(sceneSize);
+    vec3 viewDir = getViewDirection(uv);
+    vec3 prevViewDir = getPrevViewDirection(uv);
 
-    // Reprojection
-#if 1
+#define REPROJECTION_METHOD 1
+// #todo: Bad at camera rotation or at the interface between cloud and non-cloud texels
+#if REPROJECTION_METHOD == 1
+    const vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
+    const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
+    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+        float angle = abs(dot(viewDir, prevViewDir));
+        if (angle > REPROJECTION_INVALID_ANGLE) {
+            vec2 prevUV = viewDirectionToUV(prevViewDir);
+            if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
+                // #todo: texture() causes severe jittering. Needs texelFetch()
+                ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize) + REPROJECTION_FETCH_OFFSET);
+                vec4 prevResult = texelFetch(reprojectionHistory, prevTexel, 0);
+                //vec4 prevResult = texture(reprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
+                imageStore(renderTarget, currentTexel, prevResult);
+                return;
+            }
+        }
+    }
+#elif REPROJECTION_METHOD == 2
     uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
     if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
         vec4 prevResult = texelFetch(reprojectionHistory, currentTexel, 0);

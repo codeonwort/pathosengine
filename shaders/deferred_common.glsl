@@ -33,7 +33,8 @@ float pointLightAttenuation(PointLight L, float d) {
 
 // Position components of camera and lights are in view space
 layout (std140, binding = 0) uniform UBO_PerFrame {
-	mat4x4 prevViewProjTransform; // For reprojection
+	mat4x4 prevViewTransform; // For reprojection
+	mat4x4 prevInverseViewTransform; // For reprojection
 	mat4x4 viewTransform;
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
