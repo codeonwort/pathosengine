@@ -94,8 +94,10 @@ namespace pathos {
 		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
-		Scene* scene; 
+		Scene* scene;
 		Camera* camera;
+		matrix4 prevView;
+		matrix4 prevInverseView;
 
 	};
 

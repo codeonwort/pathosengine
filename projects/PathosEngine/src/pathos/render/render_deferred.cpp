@@ -494,8 +494,8 @@ namespace pathos {
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
 		if (frameCounter != 0) {
-			data.prevView        = data.view;
-			data.prevInverseView = data.inverseView;
+			data.prevView        = prevView;
+			data.prevInverseView = prevInverseView;
 		} else {
 			data.prevView        = matrix4(1.0f);
 			data.prevInverseView = matrix4(1.0f);
@@ -541,6 +541,9 @@ namespace pathos {
 		}
 
 		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
+
+		prevView = data.view;
+		prevInverseView = data.inverseView;
 	}
 
 }
