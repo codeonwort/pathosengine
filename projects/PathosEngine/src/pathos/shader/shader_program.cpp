@@ -10,6 +10,7 @@
 #include <sstream>
 
 #define DUMP_SHADER_SOURCE 0
+#define IGNORE_SAME_SHADERS_ON_RECOMPILE 1
 
 namespace pathos {
 
@@ -64,7 +65,9 @@ namespace pathos {
 			allNotChanged = allNotChanged && response == ShaderStage::CompileResponse::NotChanged;
 		}
 		if (allNotChanged) {
+#if IGNORE_SAME_SHADERS_ON_RECOMPILE == 0
 			LOG(LogDebug, "%s: All shader stages are not changed, won't recompile.", debugName);
+#endif
 			return;
 		}
 		if (!allCompiled) {
@@ -241,7 +244,9 @@ namespace pathos {
 			sourceChanged = true;
 		}
 		if (sourceChanged == false) {
+#if IGNORE_SAME_SHADERS_ON_RECOMPILE == 0
 			LOG(LogDebug, "%s: Source code is same.", debugName);
+#endif
 			return ShaderStage::CompileResponse::NotChanged;
 		}
 
