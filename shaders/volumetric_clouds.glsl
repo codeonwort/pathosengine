@@ -2,6 +2,9 @@
 
 #include "deferred_common.glsl"
 
+// #todo-cloud: wip
+#define TEMPORAL_REPROJECTION 0
+
 // Visualize cloud coverage in weather texture
 #define DEBUG_MODE_WEATHER 1
 // Visualize raymarching result without applying cloud noise
@@ -100,6 +103,8 @@ void intersect_sphere(
 	in sphere_t sphere,
 	inout hit_t hit
 ){
+// Original code from shadertoy
+#if 1
 	vec3 rc = sphere.origin - ray.origin;
 	float radius2 = sphere.radius * sphere.radius;
 	float tca = dot(rc, ray.direction);
@@ -119,9 +124,33 @@ void intersect_sphere(
 
 	vec3 impact = ray.origin + ray.direction * t0;
 
-	hit.t = t0;
+    hit.t = t0;
 	hit.origin = impact;
 	hit.normal = (impact - sphere.origin) / sphere.radius;
+// Ray Tracing Gems - Chapter 7
+// Precision Improvements for Ray/Sphere Intersection
+// -> Well, no visual differences. Let's use the original code.
+#else
+    vec3 d = ray.direction;
+    vec3 f = ray.origin - sphere.origin;
+    float r = sphere.radius;
+    float a = dot(d, d);
+    float b = -dot(f, d);
+    vec3 X = f + (b/a)*d;
+    float det = r*r - dot(X,X);
+    
+    if (det < 0.0) return;
+
+    float c = dot(f,f) - r*r;
+    float q = b + sign(b) * sqrt(a * det);
+    float t0 = c/q;
+    float t1 = q/a;
+    float t = t0 < 0.0 ? t1 : t1 < 0.0 ? t0 : min(t0, t1);
+
+    hit.t = t;
+    hit.origin = ray.origin + t * ray.direction;
+    hit.normal = (hit.origin - sphere.origin) / sphere.radius;
+#endif
 }
 
 bool isInvalidHit(hit_t hit) {
@@ -494,12 +523,24 @@ vec3 getPrevViewDirection(vec2 uv) {
     return ray_forward;
 }
 vec2 viewDirectionToUV_prevFrame(vec3 dir) {
-    float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
-
     vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
+
+#if 1
+    float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
     P.xy *= zOnPlane / P.z;
     P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
     return 0.5 * (P.xy + vec2(1.0));
+#else
+    float a = P.x;
+    float b = P.y;
+    float c = P.z;
+    float z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+    float k = uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+    float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
+    float u = 0.5 * (1.0 + a*m*k);
+    float v = 0.5 * (1.0 + b*m);
+    return vec2(u, v);
+#endif
 }
 
 void main() {
@@ -512,6 +553,8 @@ void main() {
     vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
     vec3 viewDir = getViewDirection(uv);
     vec3 prevViewDir = getPrevViewDirection(uv);
+
+#if TEMPORAL_REPROJECTION
 
 #define REPROJECTION_METHOD 1
 // #todo: Bad at camera rotation or at the interface between cloud and non-cloud texels
@@ -540,11 +583,12 @@ void main() {
         imageStore(renderTarget, currentTexel, prevResult);
         return;
     }
-#endif
+#endif // REPROJECTION_METHOD
+#endif // TEMPORAL_REPROJECTION
 
 	ray_t eye_ray;
     eye_ray.origin = uboPerFrame.ws_eyePosition;
-	eye_ray.direction = getViewDirection(uv);
+	eye_ray.direction = viewDir;
 
     // Raymarching is broken if eye is too close to the interface of cloud layers
     if (abs(eye_ray.origin.y - getCloudLayerMin()) <= 1.5 || abs(eye_ray.origin.y - getCloudLayerMax()) <= 1.5) {
