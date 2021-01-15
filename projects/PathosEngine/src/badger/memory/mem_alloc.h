@@ -15,6 +15,8 @@ public:
 	void* alloc(uint32 bytes);
 	void clear();
 
+	bool isClear() const;
+
 private:
 	void* memblock;
 	void* current;

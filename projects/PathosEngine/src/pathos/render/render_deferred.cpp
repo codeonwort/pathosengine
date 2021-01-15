@@ -123,6 +123,7 @@ namespace pathos {
 		CHECK(settings.isValid());
 
 		sceneRenderSettings = settings;
+		frameCounter = sceneRenderSettings.frameCounter;
 	}
 
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
@@ -354,8 +355,6 @@ namespace pathos {
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());
 #endif
-
-		frameCounter += 1;
 
 		scene = nullptr;
 		camera = nullptr;
