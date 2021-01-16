@@ -43,6 +43,9 @@ namespace pathos {
 
 	// API for GPU resource creation and deletion (not queued in command list)
 	public:
+		// Needed for texture view. Use createTextures() for normal case.
+		void genTextures(GLsizei n, GLuint* textures);
+
 		void createVertexArrays(GLsizei n, GLuint* arrays);
 		void createTextures(GLenum target, GLsizei n, GLuint* textures);
 		void createFramebuffers(GLsizei n, GLuint* framebuffers);

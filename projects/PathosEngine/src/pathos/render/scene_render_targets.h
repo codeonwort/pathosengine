@@ -23,6 +23,10 @@ namespace pathos {
 		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneDepth;
 
+		GLuint sceneColorDownsampleChain; // mip0: half resolution, mip1: quarter resolution, mip2: ...
+		uint32 sceneColorDownsampleMipmapCount; // # of mipmaps of sceneColorDownsampleChain
+		std::vector<GLuint> sceneColorDownsampleTextureViews;
+
 		GLuint volumetricCloudA; // Prev and current, rotated
 		GLuint volumetricCloudB; // Prev and current, rotated
 

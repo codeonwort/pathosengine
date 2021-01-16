@@ -1,6 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/render/render_device.h"
 #include "badger/assertion/assertion.h"
+#include "../util/log.h"
 
 namespace pathos {
 
@@ -10,6 +11,8 @@ namespace pathos {
 		, sceneFinal(0)
 		, sceneColor(0)
 		, sceneDepth(0)
+		, sceneColorDownsampleChain(0)
+		, sceneColorDownsampleMipmapCount(0)
 		, volumetricCloudA(0)
 		, volumetricCloudB(0)
 		, cascadedShadowMap(0)
@@ -48,12 +51,22 @@ namespace pathos {
 			return;
 		}
 
+		// #todo-rendertarget: Merge reallocTexture2D and reallocTexture2DMips
 		auto reallocTexture2D = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, char* objectLabel) -> void {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
 			}
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
 			cmdList.textureStorage2D(texture, 1, format, width, height);
+			cmdList.bindTexture(GL_TEXTURE_2D, texture);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
+		auto reallocTexture2DMips = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, uint32 numMips, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
+			cmdList.textureStorage2D(texture, numMips, format, width, height);
 			cmdList.bindTexture(GL_TEXTURE_2D, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
@@ -67,9 +80,24 @@ namespace pathos {
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
 
+		// #todo-rendertarget: Switch to rgba16f?
 		reallocTexture2D(sceneFinal, GL_RGBA32F, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, GL_RGBA32F, sceneWidth, sceneHeight, "sceneColor");
 		reallocTexture2D(sceneDepth, GL_DEPTH24_STENCIL8, sceneWidth, sceneHeight, "sceneDepth");
+
+		// sceneColorDownsampleChain
+		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
+		reallocTexture2DMips(sceneColorDownsampleChain, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneColorDownsampleChain");
+		gRenderDevice->deleteTextures((GLsizei)sceneColorDownsampleTextureViews.size(), sceneColorDownsampleTextureViews.data());
+		sceneColorDownsampleTextureViews.resize(sceneColorDownsampleMipmapCount);
+		gRenderDevice->genTextures(sceneColorDownsampleMipmapCount, sceneColorDownsampleTextureViews.data());
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			GLuint targetView = sceneColorDownsampleTextureViews[i];
+			std::string targetName = "sceneColorDownsample" + std::to_string(i);
+			cmdList.textureView(targetView, GL_TEXTURE_2D, sceneColorDownsampleChain, GL_RGBA16F, (GLuint)i, 1, 0, 1);
+			LOG(LogDebug, "ObjectLabel length=%d", strlen(targetName.c_str()) * sizeof(GLchar));
+			cmdList.objectLabel(GL_TEXTURE, targetView, -1, targetName.c_str());
+		}
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
@@ -122,12 +150,21 @@ namespace pathos {
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)
 	{
 		std::vector<GLuint> textures;
-		textures.reserve(32);
+		textures.reserve(64);
+
+		// Delete texture views first
+		{
+			uint32 n = (uint32)sceneColorDownsampleTextureViews.size();
+			for (uint32 i = 0; i < n; ++i) {
+				textures.push_back(sceneColorDownsampleTextureViews[i]);
+			}
+		}
 
 #define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
+		safe_release(sceneColorDownsampleChain);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);

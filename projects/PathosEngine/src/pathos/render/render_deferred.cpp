@@ -283,6 +283,24 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
+			// Downsample SceneColor to generate mipmaps
+			{
+				SCOPED_DRAW_EVENT(SceneColorDownsample);
+
+				uint32 viewportWidth = sceneRenderSettings.sceneWidth / 2;
+				uint32 viewportHeight = sceneRenderSettings.sceneHeight / 2;
+
+				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
+				for (uint32 i = 0; i < numMips; ++i) {
+					const uint32 source = i == 0 ? sceneRenderTargets.sceneColor : sceneRenderTargets.sceneColorDownsampleTextureViews[i - 1];
+					const uint32 target = sceneRenderTargets.sceneColorDownsampleTextureViews[i];
+					cmdList.viewport(0, 0, viewportWidth, viewportHeight);
+					copyTexture(cmdList, source, target);
+					viewportWidth /= 2;
+					viewportHeight /= 2;
+				}
+			}
+
 			// Post Process: Bloom (#todo-bloom: Random NaN pixels are enlarged here)
 			{
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
