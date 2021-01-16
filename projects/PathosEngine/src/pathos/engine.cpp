@@ -402,8 +402,6 @@ namespace pathos {
 		// Wait for previous frame
 		glFinish();
 
-		CHECKF(renderProxyAllocator.isClear(), "Render proxy allocator is dirty");
-
 		float deltaSeconds = stopwatch_gameThread.stop();
 
 		// #todo-fps: This is wrong. Rendering rate should be also controlled...
@@ -420,7 +418,11 @@ namespace pathos {
 
 		if (currentWorld != nullptr) {
 			currentWorld->tick(deltaSeconds);
-			currentWorld->getScene().createRenderProxy();
+			// #todo: More robust way to check if the main window is minimized
+			if (renderProxyAllocator.isClear() == false) {
+			} else {
+				currentWorld->getScene().createRenderProxy();
+			}
 		}
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
