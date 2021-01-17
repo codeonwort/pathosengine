@@ -98,6 +98,12 @@ namespace pathos {
 // 
 namespace pathos {
 
+	void OpenGLDevice::genTextures(GLsizei n, GLuint* textures) {
+		CHECK(isInRenderThread());
+
+		glGenTextures(n, textures);
+	}
+
 	void OpenGLDevice::createTextures(GLenum target, GLsizei n, GLuint* textures) {
 		CHECK(isInRenderThread());
 

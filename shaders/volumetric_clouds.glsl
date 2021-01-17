@@ -2,6 +2,9 @@
 
 #include "deferred_common.glsl"
 
+// #todo-cloud: wip
+#define TEMPORAL_REPROJECTION 0
+
 // Visualize cloud coverage in weather texture
 #define DEBUG_MODE_WEATHER 1
 // Visualize raymarching result without applying cloud noise
@@ -24,6 +27,7 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
     float cloudScale;
     float cloudCurliness;
 
+    uint  frameCounter;
 } uboCloud;
 
 layout (local_size_x = 16, local_size_y = 16) in;
@@ -32,14 +36,15 @@ layout (binding = 0) uniform sampler2D sceneDepth;
 layout (binding = 1) uniform sampler2D weatherMap;
 layout (binding = 2) uniform sampler3D shapeNoise;
 layout (binding = 3) uniform sampler3D erosionNoise;
-layout (binding = 4, rgba16f) writeonly uniform image2D renderTarget;
+layout (binding = 4) uniform sampler2D reprojectionHistory; // cloud RT of prev frame
+layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
 #define PI                    3.14159265359
 
 // Cone sampling random offsets
-uniform vec3 noiseKernel[6u] = vec3[]
+const vec3 noiseKernel[6u] = vec3[]
 (
 	vec3( 0.38051305,  0.92453449, -0.02111345),
 	vec3(-0.50625799, -0.03590792, -0.86163418),
@@ -47,6 +52,14 @@ uniform vec3 noiseKernel[6u] = vec3[]
 	vec3( 0.09026238, -0.27376545,  0.95755165),
 	vec3( 0.28128598,  0.42443639, -0.86065785),
 	vec3(-0.16852403,  0.14748697,  0.97460106)
+);
+
+const uint bayerPattern[16u] = uint[]
+(
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5
 );
 
 //////////////////////////////////////////////////////////////////////////
@@ -90,6 +103,8 @@ void intersect_sphere(
 	in sphere_t sphere,
 	inout hit_t hit
 ){
+// Original code from shadertoy
+#if 1
 	vec3 rc = sphere.origin - ray.origin;
 	float radius2 = sphere.radius * sphere.radius;
 	float tca = dot(rc, ray.direction);
@@ -109,9 +124,33 @@ void intersect_sphere(
 
 	vec3 impact = ray.origin + ray.direction * t0;
 
-	hit.t = t0;
+    hit.t = t0;
 	hit.origin = impact;
 	hit.normal = (impact - sphere.origin) / sphere.radius;
+// Ray Tracing Gems - Chapter 7
+// Precision Improvements for Ray/Sphere Intersection
+// -> Well, no visual differences. Let's use the original code.
+#else
+    vec3 d = ray.direction;
+    vec3 f = ray.origin - sphere.origin;
+    float r = sphere.radius;
+    float a = dot(d, d);
+    float b = -dot(f, d);
+    vec3 X = f + (b/a)*d;
+    float det = r*r - dot(X,X);
+    
+    if (det < 0.0) return;
+
+    float c = dot(f,f) - r*r;
+    float q = b + sign(b) * sqrt(a * det);
+    float t0 = c/q;
+    float t1 = q/a;
+    float t = t0 < 0.0 ? t1 : t1 < 0.0 ? t0 : min(t0, t1);
+
+    hit.t = t;
+    hit.origin = ray.origin + t * ray.direction;
+    hit.normal = (hit.origin - sphere.origin) / sphere.radius;
+#endif
 }
 
 bool isInvalidHit(hit_t hit) {
@@ -472,6 +511,38 @@ vec3 getViewDirection(vec2 uv) {
     return ray_forward;
 }
 
+vec3 getPrevViewDirection(vec2 uv) {
+	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
+    P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
+    P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P = normalize(P);
+    
+    mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
+	vec3 ray_forward = camera_transform * P;
+    
+    return ray_forward;
+}
+vec2 viewDirectionToUV_prevFrame(vec3 dir) {
+    vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
+
+#if 1
+    float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+    P.xy *= zOnPlane / P.z;
+    P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+    return 0.5 * (P.xy + vec2(1.0));
+#else
+    float a = P.x;
+    float b = P.y;
+    float c = P.z;
+    float z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+    float k = uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+    float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
+    float u = 0.5 * (1.0 + a*m*k);
+    float v = 0.5 * (1.0 + b*m);
+    return vec2(u, v);
+#endif
+}
+
 void main() {
     ivec2 sceneSize = imageSize(renderTarget);
     if (gl_GlobalInvocationID.x >= sceneSize.x || gl_GlobalInvocationID.y >= sceneSize.y) {
@@ -479,11 +550,45 @@ void main() {
 	}
 
     ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = vec2(currentTexel) / vec2(sceneSize);
+    vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
+    vec3 viewDir = getViewDirection(uv);
+    vec3 prevViewDir = getPrevViewDirection(uv);
+
+#if TEMPORAL_REPROJECTION
+
+#define REPROJECTION_METHOD 1
+// #todo: Bad at camera rotation or at the interface between cloud and non-cloud texels
+// #todo: Neighborhood clamping
+#if REPROJECTION_METHOD == 1
+    const vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
+    const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
+    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+        // #todo: Am I doing this wrong?
+        vec2 prevUV = viewDirectionToUV_prevFrame(viewDir);
+        if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
+            //ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize) + REPROJECTION_FETCH_OFFSET);
+            ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
+            vec4 prevResult = texelFetch(reprojectionHistory, prevTexel, 0);
+            //vec4 prevResult = texture(reprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
+            imageStore(renderTarget, currentTexel, prevResult);
+            return;
+        }
+    }
+// Reference quality for static camera
+#elif REPROJECTION_METHOD == 2
+    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+        vec4 prevResult = texelFetch(reprojectionHistory, currentTexel, 0);
+        imageStore(renderTarget, currentTexel, prevResult);
+        return;
+    }
+#endif // REPROJECTION_METHOD
+#endif // TEMPORAL_REPROJECTION
 
 	ray_t eye_ray;
     eye_ray.origin = uboPerFrame.ws_eyePosition;
-	eye_ray.direction = getViewDirection(uv);
+	eye_ray.direction = viewDir;
 
     // Raymarching is broken if eye is too close to the interface of cloud layers
     if (abs(eye_ray.origin.y - getCloudLayerMin()) <= 1.5 || abs(eye_ray.origin.y - getCloudLayerMax()) <= 1.5) {

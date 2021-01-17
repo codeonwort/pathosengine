@@ -33,3 +33,8 @@ void StackAllocator::clear()
 {
 	usedBytes = 0;
 }
+
+bool StackAllocator::isClear() const
+{
+	return usedBytes == 0;
+}

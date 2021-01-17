@@ -1,6 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/render/render_device.h"
 #include "badger/assertion/assertion.h"
+#include "../util/log.h"
 
 namespace pathos {
 
@@ -10,7 +11,10 @@ namespace pathos {
 		, sceneFinal(0)
 		, sceneColor(0)
 		, sceneDepth(0)
-		, volumetricCloud(0)
+		, sceneColorDownsampleChain(0)
+		, sceneColorDownsampleMipmapCount(0)
+		, volumetricCloudA(0)
+		, volumetricCloudB(0)
 		, cascadedShadowMap(0)
 		, omniShadowMaps(0)
 		, useGBuffer(false)
@@ -47,6 +51,7 @@ namespace pathos {
 			return;
 		}
 
+		// #todo-rendertarget: Merge reallocTexture2D and reallocTexture2DMips
 		auto reallocTexture2D = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, char* objectLabel) -> void {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
@@ -55,6 +60,29 @@ namespace pathos {
 			cmdList.textureStorage2D(texture, 1, format, width, height);
 			cmdList.bindTexture(GL_TEXTURE_2D, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
+		auto reallocTexture2DMips = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, uint32 numMips, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
+			cmdList.textureStorage2D(texture, numMips, format, width, height);
+			cmdList.bindTexture(GL_TEXTURE_2D, texture);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
+		// Create texture views for the original texture from mip 0 to mip (numMips-1)
+		auto reallocTexture2DViews = [&cmdList](std::vector<GLuint>& views, uint32 numMips, GLuint original, GLenum format, char* objectLabel) -> void {
+			if (views.size() > 0) {
+				gRenderDevice->deleteTextures((GLsizei)views.size(), views.data());
+			}
+			views.resize(numMips);
+			gRenderDevice->genTextures(numMips, views.data());
+			for (uint32 i = 0; i < numMips; ++i) {
+				GLuint targetView = views[i];
+				std::string targetName = objectLabel + std::to_string(i);
+				cmdList.textureView(targetView, GL_TEXTURE_2D, original, format, (GLuint)i, 1, 0, 1);
+				cmdList.objectLabel(GL_TEXTURE, targetView, -1, targetName.c_str());
+			}
 		};
 		auto reallocTexture2DArray = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, uint32 numLayers, char* objectLabel) -> void {
 			if (texture != 0) {
@@ -66,9 +94,21 @@ namespace pathos {
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
 
+		// #todo-rendertarget: Switch to rgba16f?
 		reallocTexture2D(sceneFinal, GL_RGBA32F, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, GL_RGBA32F, sceneWidth, sceneHeight, "sceneColor");
 		reallocTexture2D(sceneDepth, GL_DEPTH24_STENCIL8, sceneWidth, sceneHeight, "sceneDepth");
+
+		// sceneColorDownsampleChain
+		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
+		reallocTexture2DMips(sceneColorDownsampleChain, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneColorDownsampleChain");
+		reallocTexture2DViews(sceneColorDownsampleViews, sceneColorDownsampleMipmapCount, sceneColorDownsampleChain, GL_RGBA16F, "view_sceneColorDownsampleChain");
+		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
@@ -96,16 +136,26 @@ namespace pathos {
 		reallocTexture2D(dofSubsum1, GL_RGBA32F, sceneWidth, sceneHeight, "depthOfField_subsum1");
 
 		// bloom
-		reallocTexture2D(sceneBloom, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloom");
+		reallocTexture2DMips(sceneBloom, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloom");
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2D(sceneBloomTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloomTemp");
+		reallocTexture2DMips(sceneBloomTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloomTemp");
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, GL_RGBA16F, "view_sceneBloom");
+		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, GL_RGBA16F, "view_sceneBloomTemp");
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
 
 		// tone mapping
 		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
@@ -121,13 +171,26 @@ namespace pathos {
 	void SceneRenderTargets::freeSceneTextures(RenderCommandList& cmdList)
 	{
 		std::vector<GLuint> textures;
-		textures.reserve(32);
+		textures.reserve(64);
+
+		// Delete texture views first
+		auto releaseViews = [&](const std::vector<GLuint>& views) -> void {
+			uint32 n = (uint32)views.size();
+			for (uint32 i = 0; i < n; ++i) {
+				textures.push_back(views[i]);
+			}
+		};
+		releaseViews(sceneColorDownsampleViews);
+		releaseViews(sceneBloomViews);
+		releaseViews(sceneBloomTempViews);
 
 #define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
-		safe_release(volumetricCloud);
+		safe_release(sceneColorDownsampleChain);
+		safe_release(volumetricCloudA);
+		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);
 		safe_release(omniShadowMaps);
 		safe_release(gbufferA);

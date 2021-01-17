@@ -4,13 +4,13 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
+#include "pathos/engine.h"
 
 #include "badger/math/minmax.h"
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_bloom_iterations("r.bloom.iteration", 3, "Bloom pass iteration count");
-	static constexpr int32 maxBloomIterations = 6;
+	static ConsoleVariable<int32> cvar_bloom_preset("r.bloom.preset", 2, "Select bloom weights preset");
 
 	class BloomVS : public ShaderStage {
 	public:
@@ -25,7 +25,7 @@ namespace pathos {
 		BloomHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomHorizontalFS")
 		{
 			addDefine("HORIZONTAL 1");
-			addDefine("KERNEL_SIZE 5");
+			addDefine("KERNEL_SIZE 3");
 			setFilepath("two_pass_gaussian_blur.glsl");
 		}
 	};
@@ -35,7 +35,8 @@ namespace pathos {
 		BloomVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomVerticalFS")
 		{
 			addDefine("HORIZONTAL 0");
-			addDefine("KERNEL_SIZE 5");
+			addDefine("KERNEL_SIZE 3");
+			addDefine("ADDITIVE 1");
 			setFilepath("two_pass_gaussian_blur.glsl");
 		}
 	};
@@ -66,16 +67,76 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(BloomPass);
 
+		static constexpr uint32 MAX_ADDITIVE_WEIGHTS = 5;
+		static const float additiveWeightsPreset0[MAX_ADDITIVE_WEIGHTS] = {
+			1.0f,
+			1.0f,
+			1.0f,
+			1.0f,
+			1.0f
+		};
+		static const float additiveWeightsPreset1[MAX_ADDITIVE_WEIGHTS] = {
+			1.0f,
+			0.5f,
+			0.25f,
+			0.125f,
+			0.125f
+		};
+		static const float additiveWeightsPreset2[MAX_ADDITIVE_WEIGHTS] = {
+			0.5f,
+			0.25f,
+			0.125f,
+			0.0625f,
+			0.03125f
+		};
+		static const float* additiveWeightsPtr[3] = { additiveWeightsPreset0, additiveWeightsPreset1, additiveWeightsPreset2 };
+		int32 bloomPresetIndex = clamp(0, cvar_bloom_preset.getInt(), 2);
+		const float* additiveWeights = additiveWeightsPtr[bloomPresetIndex];
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneBloom
 		GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloomTemp
+
+		uint32 downsampleCount = sceneContext.sceneColorDownsampleMipmapCount;
+		std::vector<GLuint>& sceneColorDownsampleViews = sceneContext.sceneColorDownsampleViews;
+		std::vector<GLuint>& sceneBloomTempViews = sceneContext.sceneBloomTempViews;
+
+		CHECK(downsampleCount <= MAX_ADDITIVE_WEIGHTS + 1);
 
 		ShaderProgram& program_horizontal = FIND_SHADER_PROGRAM(Program_BloomHorizontal);
 		ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_BloomVertical);
 
-		int32 count = clamp(0, cvar_bloom_iterations.getValue(), maxBloomIterations);
+		uint32 viewportWidth = sceneContext.sceneWidth / 2;
+		uint32 viewportHeight = sceneContext.sceneHeight / 2;
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		while (count --> 0) {
+		for (uint32 i = 0; i < downsampleCount; ++i) {
+			int32 mipIndex = downsampleCount - i - 1;
+			GLuint sceneColorMip = sceneColorDownsampleViews[mipIndex];
+			GLuint bloomTempMip = sceneBloomTempViews[mipIndex];
+			GLuint bloomMip = sceneContext.sceneBloomViews[mipIndex];
+			GLuint bloomMipPrev = (mipIndex == downsampleCount - 1) ? gEngine->getSystemTexture2DBlack() : sceneContext.sceneBloomViews[mipIndex + 1];
+
+			cmdList.viewport(0, 0, viewportWidth >> mipIndex, viewportHeight >> mipIndex);
+
+			cmdList.useProgram(program_horizontal.getGLName());
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomTempMip, 0);
+			cmdList.bindTextureUnit(0, sceneColorMip);
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+
+			cmdList.useProgram(program_vertical.getGLName());
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomMip, 0);
+			cmdList.bindTextureUnit(0, bloomTempMip);
+			cmdList.bindTextureUnit(1, bloomMipPrev);
+			cmdList.uniform1f(0, additiveWeights[mipIndex]);
+			fullscreenQuad->drawPrimitive(cmdList);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+
+			/*
 			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, input1, 0);
 			cmdList.bindTextureUnit(0, input0);
@@ -89,6 +150,7 @@ namespace pathos {
 			cmdList.bindTextureUnit(0, input1);
 			fullscreenQuad->drawPrimitive(cmdList);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+			*/
 		}
 	}
 

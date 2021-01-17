@@ -23,7 +23,12 @@ namespace pathos {
 		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneDepth;
 
-		GLuint volumetricCloud;
+		GLuint sceneColorDownsampleChain; // mip0: half resolution, mip1: quarter resolution, mip2: ...
+		uint32 sceneColorDownsampleMipmapCount; // # of mipmaps of sceneColorDownsampleChain
+		std::vector<GLuint> sceneColorDownsampleViews;
+
+		GLuint volumetricCloudA; // Prev and current, rotated
+		GLuint volumetricCloudB; // Prev and current, rotated
 
 		GLuint cascadedShadowMap;
 		GLuint omniShadowMaps; // cubemap array
@@ -46,6 +51,8 @@ namespace pathos {
 		// post processing: bloom
 		GLuint sceneBloom;
 		GLuint sceneBloomTemp;
+		std::vector<GLuint> sceneBloomViews;
+		std::vector<GLuint> sceneBloomTempViews;
 
 		// post processing: tone mapping
 		GLuint toneMappingResult;
@@ -72,6 +79,13 @@ namespace pathos {
 
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
+
+		GLuint getVolumetricCloud(uint32 frameCounter) const {
+			return (frameCounter % 2 == 0) ? volumetricCloudA : volumetricCloudB;
+		}
+		GLuint getPrevVolumetricCloud(uint32 frameCounter) const {
+			return (frameCounter % 2 == 0) ? volumetricCloudB : volumetricCloudA;
+		}
 
 	};
 

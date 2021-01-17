@@ -64,6 +64,7 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: renderProxyAllocator(RENDER_PROXY_MEMORY)
+		, frameCounter(0)
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
@@ -417,7 +418,11 @@ namespace pathos {
 
 		if (currentWorld != nullptr) {
 			currentWorld->tick(deltaSeconds);
-			currentWorld->getScene().createRenderProxy();
+			// #todo: More robust way to check if the main window is minimized
+			if (renderProxyAllocator.isClear() == false) {
+			} else {
+				currentWorld->getScene().createRenderProxy();
+			}
 		}
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
@@ -437,6 +442,7 @@ namespace pathos {
 			SceneRenderSettings settings;
 			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
 			settings.sceneHeight           = conf.windowHeight;
+			settings.frameCounter          = frameCounter;
 			settings.enablePostProcess     = true;
 			renderer->setSceneRenderSettings(settings);
 		}
@@ -468,6 +474,8 @@ namespace pathos {
 		if (currentWorld != nullptr) {
 			currentWorld->getScene().clearRenderProxy();
 		}
+
+		frameCounter += 1;
 
 		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
 	}

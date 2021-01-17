@@ -1,19 +1,28 @@
 #version 450 core
 
-// NOTE: In ShaderStage object, define HORIZONTAL as 1 for horizontal blur
+#if HORIZONTAL != 0 && HORIZONTAL != 1
+	#error "Define HORIZONTAL as 0 or 1"
+#endif
 
 layout (binding = 0) uniform sampler2D src;
+#if ADDITIVE
+layout (binding = 1) uniform sampler2D additive;
+layout (location = 0) uniform float additiveWeight;
+#endif
 
 in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
-// Supports 5, 6, 7
+// Supports 3, 5, 6, 7
 #ifndef KERNEL_SIZE
 	#define KERNEL_SIZE 5 // Actual kernel size is (KERNEL_SIZE * 2 - 1)
 #endif
 
-#if KERNEL_SIZE == 5
+// #todo-gaussian: Receive weights as uniform (KERNEL_SIZE with shader permutation)
+#if KERNEL_SIZE == 3
+	const float weight[KERNEL_SIZE] = float[] (0.38774, 0.24477, 0.06136);
+#elif KERNEL_SIZE == 5
 	// I forgot where I did get this value, but (sigma = 1.7515, kernel size = 9) closely matches this setup.
 	const float weight[KERNEL_SIZE] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 #elif KERNEL_SIZE == 6
@@ -53,5 +62,10 @@ void main() {
 	}
 #endif // HORIZONTAL
 
+#if ADDITIVE
+	vec4 A = texture(additive, uv) * additiveWeight;
+	out_color = vec4(result, 0.0) + A;
+#else
 	out_color = vec4(result, 0.0);
+#endif
 }

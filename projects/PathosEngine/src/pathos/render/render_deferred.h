@@ -82,6 +82,7 @@ namespace pathos {
 
 	private:
 		bool destroyed = false;
+		uint32 frameCounter = 0;
 
 		EAntiAliasingMethod antiAliasing;
 
@@ -93,8 +94,10 @@ namespace pathos {
 		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
-		Scene* scene; 
+		Scene* scene;
 		Camera* camera;
+		matrix4 prevView;
+		matrix4 prevInverseView;
 
 	};
 

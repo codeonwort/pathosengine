@@ -13,7 +13,7 @@ namespace pathos {
 
 		uint32 sceneWidth = 0;
 		uint32 sceneHeight = 0;
-
+		uint32 frameCounter = 0;
 		bool enablePostProcess = true;
 
 	};

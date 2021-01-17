@@ -6228,8 +6228,8 @@ void objectLabel(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_objectLabel::execute);
 	packet->identifier = identifier;
 	packet->name = name;
-	packet->length = length;
-	packet->label = label;
+	packet->length = length < 0 ? (GLsizei)strlen(label) : length;
+	packet->label = storeParameter(packet->length * sizeof(GLchar), label);
 }
 void getObjectLabel(
 	GLenum identifier,
