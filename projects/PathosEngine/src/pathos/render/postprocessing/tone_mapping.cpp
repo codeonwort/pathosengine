@@ -72,7 +72,7 @@ namespace pathos {
 		UBO_ToneMapping uboData;
 		uboData.exposure = cvar_tonemapping_exposure.getValue();
 		uboData.gamma    = cvar_gamma.getValue();
-		ubo.update(cmdList, 0, &uboData);
+		ubo.update(cmdList, 1, &uboData);
 
 		GLuint tonemapping_attachments[] = { input0, input1, input2, input3 };
 		cmdList.bindTextures(0, 4, tonemapping_attachments);

@@ -11,11 +11,12 @@ namespace pathos {
 		VisualizeDepth();
 		~VisualizeDepth();
 
+		void initializeResources(RenderCommandList& cmdList);
+		void destroyResources(RenderCommandList& cmdList);
 		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
 
 	private:
-		GLuint program;
-		GLuint ubo;
+		GLuint dummyVAO;
 
 	};
 

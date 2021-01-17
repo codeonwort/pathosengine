@@ -1,3 +1,4 @@
+//#version 460 core // uncomment to check grammar
 
 // should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 #define MAX_DIRECTIONAL_LIGHTS     4
@@ -100,4 +101,11 @@ vec3 getViewPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
 
 vec3 getViewPositionFromWorldPosition(vec3 wPos) {
 	return (uboPerFrame.viewTransform * vec4(wPos, 1.0)).xyz;
+}
+
+// Near is 0.0, Far is 1.0
+float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
+	vec3 vPos = getViewPositionFromSceneDepth(screenUV, sceneDepth);
+	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
+	return linearDepth;
 }

@@ -1,34 +1,45 @@
 #include "visualize_depth.h"
 #include "scene_render_targets.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/mesh/geometry.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "render_device.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 
 namespace pathos {
 
-	struct UBO_VisualizeDepth {
-		glm::mat4 mvp;
-		glm::vec4 zRange;
+	class VisualizeDepthVS : public ShaderStage {
+	public:
+		VisualizeDepthVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeDepthVS")
+		{
+			setFilepath("fullscreen_quad.glsl");
+		}
 	};
 
-	VisualizeDepth::VisualizeDepth()
-	{
-		Shader vs(GL_VERTEX_SHADER);
-		Shader fs(GL_FRAGMENT_SHADER);
-		vs.loadSource("visualize_depth.vs.glsl");
-		fs.loadSource("visualize_depth.fs.glsl");
-		program = pathos::createProgram(vs, fs, "VisualizeDepth");
+	class VisualizeDepthFS : public ShaderStage {
+	public:
+		VisualizeDepthFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeDepthFS")
+		{
+			setFilepath("visualize_depth.glsl");
+		}
+	};
 
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(UBO_VisualizeDepth), (void*)0, GL_DYNAMIC_DRAW);
+	DEFINE_SHADER_PROGRAM2(Program_VisualizeDepth, VisualizeDepthVS, VisualizeDepthFS);
+
+}
+
+namespace pathos {
+
+	VisualizeDepth::VisualizeDepth()
+		: dummyVAO(0)
+	{
+	}
+	VisualizeDepth::~VisualizeDepth() {}
+
+	void VisualizeDepth::initializeResources(RenderCommandList& cmdList) {
+		gRenderDevice->createVertexArrays(1, &dummyVAO);
 	}
 
-	VisualizeDepth::~VisualizeDepth()
-	{
-		glDeleteProgram(program);
-		glDeleteBuffers(1, &ubo);
+	void VisualizeDepth::destroyResources(RenderCommandList& cmdList) {
+		gRenderDevice->deleteVertexArrays(1, &dummyVAO);
 	}
 
 	void VisualizeDepth::render(RenderCommandList& cmdList, Scene* scene, Camera* camera)
@@ -36,34 +47,21 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(VisualizeDepth);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeDepth);
+
+		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
-		cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthFunc(GL_GREATER);
+		cmdList.useProgram(program.getGLName());
+		cmdList.disable(GL_DEPTH_TEST);
 
-		UBO_VisualizeDepth uboData;
-		uboData.zRange.x = camera->getZNear();
-		uboData.zRange.y = camera->getZFar();
+		cmdList.bindVertexArray(dummyVAO);
+		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-		const glm::mat4 viewProj = camera->getViewProjectionMatrix();
-
-		cmdList.useProgram(program);
-
-		for (uint8 i = 0; i < static_cast<uint8>(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
-			const auto& proxyList = scene->proxyList_staticMesh[i];
-			for (StaticMeshProxy* proxy : proxyList) {
-				uboData.mvp = viewProj * proxy->modelMatrix;
-				cmdList.namedBufferSubData(ubo, 0, sizeof(UBO_VisualizeDepth), &uboData);
-				cmdList.bindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-
-				proxy->geometry->activate_position(cmdList);
-				proxy->geometry->activateIndexBuffer(cmdList);
-				proxy->geometry->drawPrimitive(cmdList);
-			}
-		}
+		cmdList.bindVertexArray(0);
+		cmdList.bindTextureUnit(0, 0);
 	}
 
 }

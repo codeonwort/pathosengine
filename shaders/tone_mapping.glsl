@@ -5,7 +5,7 @@ layout (binding = 1) uniform sampler2D hdr_bloom;
 layout (binding = 2) uniform sampler2D god_ray;
 layout (binding = 3) uniform sampler2D volumetricCloud;
 
-layout (std140, binding = 0) uniform UBO_ToneMapping {
+layout (std140, binding = 1) uniform UBO_ToneMapping {
 	float exposure;    // cvar: r.tonemapping.exposure
 	float gamma;       // cvar: r.gamma
 } ubo;
