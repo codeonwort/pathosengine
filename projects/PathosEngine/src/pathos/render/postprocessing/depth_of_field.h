@@ -16,14 +16,13 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
 
+		bool isAvailable() const;
+
 	private:
-		GLuint createSubsumShader();
 		GLuint createBlurShader();
 
 		GLuint vao = 0;
 		GLuint fbo = 0;
-		GLuint program_subsum2D = 0;
-		GLuint program_blur = 0;
 		UniformBuffer uboBlur;
 
 	};

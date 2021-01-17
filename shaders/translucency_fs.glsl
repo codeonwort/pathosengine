@@ -103,5 +103,8 @@ void main() {
 	vec3 ambient = vec3(0.03) * albedo;
 	vec3 finalColor = ambient + Lo;
 
+	// #todo-translucency: Even generates NaN
+	finalColor = max(vec3(0.0), finalColor);
+
 	output0 = vec4(finalColor, opacity);
 }
