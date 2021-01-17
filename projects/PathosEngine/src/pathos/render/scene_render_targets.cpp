@@ -103,6 +103,12 @@ namespace pathos {
 		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
 		reallocTexture2DMips(sceneColorDownsampleChain, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneColorDownsampleChain");
 		reallocTexture2DViews(sceneColorDownsampleViews, sceneColorDownsampleMipmapCount, sceneColorDownsampleChain, GL_RGBA16F, "view_sceneColorDownsampleChain");
+		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
@@ -142,6 +148,14 @@ namespace pathos {
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, GL_RGBA16F, "view_sceneBloom");
 		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, GL_RGBA16F, "view_sceneBloomTemp");
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
+			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
 
 		// tone mapping
 		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
