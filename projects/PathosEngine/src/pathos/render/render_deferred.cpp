@@ -54,6 +54,7 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
+	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 0, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
@@ -285,17 +286,27 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// Downsample SceneColor to generate mipmaps
-			{
+			// Downsample SceneColor to generate mipmaps. Only used by bloom pass for now.
+			if (!noBloom) {
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
 
 				uint32 viewportWidth = sceneRenderSettings.sceneWidth / 2;
 				uint32 viewportHeight = sceneRenderSettings.sceneHeight / 2;
+				const bool bloomWithThreshold = cvar_bloom_threshold.getInt() != 0;
 
+				if (bloomWithThreshold) {
+					cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
+					bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
+					bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
+					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
+				}
+
+				const GLuint firstSource = bloomWithThreshold ? sceneRenderTargets.sceneBloom : sceneRenderTargets.sceneColor;
 				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
+
 				for (uint32 i = 0; i < numMips; ++i) {
-					const uint32 source = i == 0 ? sceneRenderTargets.sceneColor : sceneRenderTargets.sceneColorDownsampleViews[i - 1];
-					const uint32 target = sceneRenderTargets.sceneColorDownsampleViews[i];
+					const GLuint source = i == 0 ? firstSource : sceneRenderTargets.sceneColorDownsampleViews[i - 1];
+					const GLuint target = sceneRenderTargets.sceneColorDownsampleViews[i];
 					cmdList.viewport(0, 0, viewportWidth, viewportHeight);
 					copyTexture(cmdList, source, target);
 					viewportWidth /= 2;
@@ -315,10 +326,6 @@ namespace pathos {
 				if (noBloom) {
 					bloomSetup->clearSceneBloom(cmdList, fullscreenQuad.get());
 				} else {
-					// #todo-bloom: Generate a version of sceneColorDownsample with threshold and use it.
-					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
-
-					// output is fed back to PPI_0
 					// #todo-bloom: Inputs are not used anymore (Cannot pass texture views by setInput())
 					bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
 					bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
