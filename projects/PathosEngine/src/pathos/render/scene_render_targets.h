@@ -25,7 +25,7 @@ namespace pathos {
 
 		GLuint sceneColorDownsampleChain; // mip0: half resolution, mip1: quarter resolution, mip2: ...
 		uint32 sceneColorDownsampleMipmapCount; // # of mipmaps of sceneColorDownsampleChain
-		std::vector<GLuint> sceneColorDownsampleTextureViews;
+		std::vector<GLuint> sceneColorDownsampleViews;
 
 		GLuint volumetricCloudA; // Prev and current, rotated
 		GLuint volumetricCloudB; // Prev and current, rotated
@@ -51,6 +51,8 @@ namespace pathos {
 		// post processing: bloom
 		GLuint sceneBloom;
 		GLuint sceneBloomTemp;
+		std::vector<GLuint> sceneBloomViews;
+		std::vector<GLuint> sceneBloomTempViews;
 
 		// post processing: tone mapping
 		GLuint toneMappingResult;

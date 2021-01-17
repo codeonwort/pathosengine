@@ -252,6 +252,7 @@ namespace pathos {
 		{
 			SCOPED_GPU_COUNTER(UnpackGBuffer);
 
+			// #todo-renderer: Sometimes NaN pixels are generated and enlarged in the bloom pass.
 			unpackGBuffer(cmdList);
 		}
 
@@ -270,6 +271,7 @@ namespace pathos {
 		}
 		else
 		{
+			// #todo: Support nested gpu counters
 			SCOPED_GPU_COUNTER(PostProcessing);
 
 			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
@@ -292,8 +294,8 @@ namespace pathos {
 
 				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
 				for (uint32 i = 0; i < numMips; ++i) {
-					const uint32 source = i == 0 ? sceneRenderTargets.sceneColor : sceneRenderTargets.sceneColorDownsampleTextureViews[i - 1];
-					const uint32 target = sceneRenderTargets.sceneColorDownsampleTextureViews[i];
+					const uint32 source = i == 0 ? sceneRenderTargets.sceneColor : sceneRenderTargets.sceneColorDownsampleViews[i - 1];
+					const uint32 target = sceneRenderTargets.sceneColorDownsampleViews[i];
 					cmdList.viewport(0, 0, viewportWidth, viewportHeight);
 					copyTexture(cmdList, source, target);
 					viewportWidth /= 2;
@@ -301,7 +303,10 @@ namespace pathos {
 				}
 			}
 
-			// Post Process: Bloom (#todo-bloom: Random NaN pixels are enlarged here)
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+
+			// Post Process: Bloom
 			{
 				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
 
@@ -310,9 +315,11 @@ namespace pathos {
 				if (noBloom) {
 					bloomSetup->clearSceneBloom(cmdList, fullscreenQuad.get());
 				} else {
+					// #todo-bloom: Generate a version of sceneColorDownsample with threshold and use it.
 					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
 					// output is fed back to PPI_0
+					// #todo-bloom: Inputs are not used anymore (Cannot pass texture views by setInput())
 					bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
 					bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
 					bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());

@@ -20,8 +20,8 @@ void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
 
 	vec4 c = texelFetch(hdr_image, texelXY, 0);
-	c.xyz += texture(hdr_bloom, fs_in.screenUV).xyz;
-	c.xyz += texture(god_ray, fs_in.screenUV).xyz;
+	c.xyz += textureLod(hdr_bloom, fs_in.screenUV, 0).xyz;
+	c.xyz += textureLod(god_ray, fs_in.screenUV, 0).xyz;
 
 	vec4 cloud = texture(volumetricCloud, fs_in.screenUV);
 	c.xyz = mix(c.xyz, cloud.xyz, 1.0 - cloud.a);

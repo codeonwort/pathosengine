@@ -70,6 +70,20 @@ namespace pathos {
 			cmdList.bindTexture(GL_TEXTURE_2D, texture);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
+		// Create texture views for the original texture from mip 0 to mip (numMips-1)
+		auto reallocTexture2DViews = [&cmdList](std::vector<GLuint>& views, uint32 numMips, GLuint original, GLenum format, char* objectLabel) -> void {
+			if (views.size() > 0) {
+				gRenderDevice->deleteTextures((GLsizei)views.size(), views.data());
+			}
+			views.resize(numMips);
+			gRenderDevice->genTextures(numMips, views.data());
+			for (uint32 i = 0; i < numMips; ++i) {
+				GLuint targetView = views[i];
+				std::string targetName = objectLabel + std::to_string(i);
+				cmdList.textureView(targetView, GL_TEXTURE_2D, original, format, (GLuint)i, 1, 0, 1);
+				cmdList.objectLabel(GL_TEXTURE, targetView, -1, targetName.c_str());
+			}
+		};
 		auto reallocTexture2DArray = [&cmdList](GLuint& texture, GLenum format, uint32 width, uint32 height, uint32 numLayers, char* objectLabel) -> void {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
@@ -88,16 +102,7 @@ namespace pathos {
 		// sceneColorDownsampleChain
 		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
 		reallocTexture2DMips(sceneColorDownsampleChain, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneColorDownsampleChain");
-		gRenderDevice->deleteTextures((GLsizei)sceneColorDownsampleTextureViews.size(), sceneColorDownsampleTextureViews.data());
-		sceneColorDownsampleTextureViews.resize(sceneColorDownsampleMipmapCount);
-		gRenderDevice->genTextures(sceneColorDownsampleMipmapCount, sceneColorDownsampleTextureViews.data());
-		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
-			GLuint targetView = sceneColorDownsampleTextureViews[i];
-			std::string targetName = "sceneColorDownsample" + std::to_string(i);
-			cmdList.textureView(targetView, GL_TEXTURE_2D, sceneColorDownsampleChain, GL_RGBA16F, (GLuint)i, 1, 0, 1);
-			LOG(LogDebug, "ObjectLabel length=%d", strlen(targetName.c_str()) * sizeof(GLchar));
-			cmdList.objectLabel(GL_TEXTURE, targetView, -1, targetName.c_str());
-		}
+		reallocTexture2DViews(sceneColorDownsampleViews, sceneColorDownsampleMipmapCount, sceneColorDownsampleChain, GL_RGBA16F, "view_sceneColorDownsampleChain");
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
@@ -125,16 +130,18 @@ namespace pathos {
 		reallocTexture2D(dofSubsum1, GL_RGBA32F, sceneWidth, sceneHeight, "depthOfField_subsum1");
 
 		// bloom
-		reallocTexture2D(sceneBloom, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloom");
+		reallocTexture2DMips(sceneBloom, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloom");
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2D(sceneBloomTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "sceneBloomTemp");
+		reallocTexture2DMips(sceneBloomTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloomTemp");
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, GL_RGBA16F, "view_sceneBloom");
+		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, GL_RGBA16F, "view_sceneBloomTemp");
 
 		// tone mapping
 		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
@@ -153,12 +160,15 @@ namespace pathos {
 		textures.reserve(64);
 
 		// Delete texture views first
-		{
-			uint32 n = (uint32)sceneColorDownsampleTextureViews.size();
+		auto releaseViews = [&](const std::vector<GLuint>& views) -> void {
+			uint32 n = (uint32)views.size();
 			for (uint32 i = 0; i < n; ++i) {
-				textures.push_back(sceneColorDownsampleTextureViews[i]);
+				textures.push_back(views[i]);
 			}
-		}
+		};
+		releaseViews(sceneColorDownsampleViews);
+		releaseViews(sceneBloomViews);
+		releaseViews(sceneBloomTempViews);
 
 #define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
 		safe_release(sceneFinal);

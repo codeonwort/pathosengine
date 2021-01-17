@@ -46,8 +46,6 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(BloomSetup);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
 		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloom
 
@@ -66,8 +64,6 @@ namespace pathos {
 	void BloomSetup::clearSceneBloom(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
 	{
 		SCOPED_DRAW_EVENT(BloomSetup_NoBloom);
-
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloom
 
