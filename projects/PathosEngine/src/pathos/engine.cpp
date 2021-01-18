@@ -6,6 +6,7 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/util/log.h"
+#include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/renderdoc_integration.h"
 
@@ -402,6 +403,10 @@ namespace pathos {
 		// Wait for previous frame
 		glFinish();
 
+		CpuProfiler::getInstance().clearProfile();
+
+		SCOPED_CPU_COUNTER(EngineTick);
+
 		float deltaSeconds = stopwatch_gameThread.stop();
 
 		// #todo-fps: This is wrong. Rendering rate should be also controlled...
@@ -417,6 +422,8 @@ namespace pathos {
 		inputSystem->tick();
 
 		if (currentWorld != nullptr) {
+			SCOPED_CPU_COUNTER(CreateRenderProxy);
+
 			currentWorld->tick(deltaSeconds);
 			// #todo: More robust way to check if the main window is minimized
 			if (renderProxyAllocator.isClear() == false) {
@@ -424,6 +431,10 @@ namespace pathos {
 				currentWorld->getScene().createRenderProxy();
 			}
 		}
+
+		// #todo-cpu: Use frameCounter as a checkpoint
+		// #todo-cpu: What about the render thread? Use a separate profiler instance?
+		CpuProfiler::getInstance().collectProfile();
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
 

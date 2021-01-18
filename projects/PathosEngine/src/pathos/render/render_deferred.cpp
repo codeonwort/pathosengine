@@ -55,7 +55,7 @@ namespace pathos {
 
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
-	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
+	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
 	static ConsoleVariable<int32> cvar_visualize_depth("r.visualize_depth", 0, "0 = disable, 1 = enable");

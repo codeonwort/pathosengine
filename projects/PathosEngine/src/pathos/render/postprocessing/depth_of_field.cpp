@@ -4,7 +4,6 @@
 #include "pathos/console.h"
 #include "pathos/shader/shader_program.h"
 
-// #todo-dof: shader classes
 namespace pathos {
 	
 	// Output is transposed
