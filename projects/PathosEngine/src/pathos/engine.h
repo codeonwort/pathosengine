@@ -143,7 +143,8 @@ namespace pathos {
 		Stopwatch stopwatch_renderThread;
 		Stopwatch stopwatch_app;
 
-		uint32 frameCounter;
+		uint32 frameCounter_gameThread;
+		uint32 frameCounter_renderThread;
 		float elapsed_gameThread;
 		float elapsed_renderThread;
 

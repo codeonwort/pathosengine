@@ -65,7 +65,8 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: renderProxyAllocator(RENDER_PROXY_MEMORY)
-		, frameCounter(0)
+		, frameCounter_gameThread(0)
+		, frameCounter_renderThread(0)
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
@@ -409,8 +410,9 @@ namespace pathos {
 
 		float deltaSeconds = stopwatch_gameThread.stop();
 
-		// #todo-fps: This is wrong. Rendering rate should be also controlled...
+		// #todo-fps: It only controls the game thread. What about the render thread + GPU?
 		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
+			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
 			if (currentWorld != nullptr) {
 				currentWorld->getScene().createRenderProxy();
 			}
@@ -437,11 +439,22 @@ namespace pathos {
 		CpuProfiler::getInstance().collectProfile();
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
-
 		stopwatch_gameThread.start();
+		if (frameCounter_gameThread == (uint32)(-1)) {
+			frameCounter_gameThread = 1;
+		} else {
+			frameCounter_gameThread += 1;
+		}
 	}
 
 	void Engine::render() {
+		// Render thread should be one frame behind of the game thread
+		if (frameCounter_renderThread >= frameCounter_gameThread) {
+			return;
+		}
+
+		frameCounter_renderThread = frameCounter_gameThread - 1;
+
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
 
@@ -453,7 +466,7 @@ namespace pathos {
 			SceneRenderSettings settings;
 			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
 			settings.sceneHeight           = conf.windowHeight;
-			settings.frameCounter          = frameCounter;
+			settings.frameCounter          = frameCounter_renderThread;
 			settings.enablePostProcess     = true;
 			renderer->setSceneRenderSettings(settings);
 		}
@@ -485,8 +498,6 @@ namespace pathos {
 		if (currentWorld != nullptr) {
 			currentWorld->getScene().clearRenderProxy();
 		}
-
-		frameCounter += 1;
 
 		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
 	}
