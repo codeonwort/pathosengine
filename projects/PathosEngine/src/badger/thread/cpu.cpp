@@ -5,7 +5,7 @@
 #include <Windows.h>
 #endif
 
-uint32 CPU::getTotalCoreCount() {
+uint32 CPU::getTotalLogicalCoreCount() {
 #if PLATFORM_WINDOWS
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
@@ -15,7 +15,7 @@ uint32 CPU::getTotalCoreCount() {
 #endif
 }
 
-uint32 CPU::getCurrentCoreIndex() {
+uint32 CPU::getCurrentLogicalCoreIndex() {
 #if PLATFORM_WINDOWS
 	PROCESSOR_NUMBER info;
 	GetCurrentProcessorNumberEx(&info);

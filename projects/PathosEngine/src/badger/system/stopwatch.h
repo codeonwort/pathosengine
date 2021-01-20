@@ -3,7 +3,7 @@
 #include <chrono>
 
 struct Stopwatch {
-	
+
 public:
 	Stopwatch() {
 		startTime = std::chrono::system_clock::now();

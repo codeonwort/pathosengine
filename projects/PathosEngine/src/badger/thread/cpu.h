@@ -5,8 +5,12 @@
 class CPU final {
 
 public:
-	static uint32 getTotalCoreCount();
-	static uint32 getCurrentCoreIndex();
+	// Metric about logical processors
+	static uint32 getTotalLogicalCoreCount();
+	// #todo-cpu: Why this changes within a single function?
+	static uint32 getCurrentLogicalCoreIndex();
+
+	// #todo-cpu: Should I detect SMT?
+	//static bool supportsSimultaneousMultithreading() const;
 
 };
-

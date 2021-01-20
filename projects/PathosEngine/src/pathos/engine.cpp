@@ -106,6 +106,8 @@ namespace pathos {
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
 
+		CpuProfiler::getInstance().initialize();
+
 		readConfigFile();
 
 		// #todo: Where to put this
@@ -404,7 +406,7 @@ namespace pathos {
 		// Wait for previous frame
 		glFinish();
 
-		CpuProfiler::getInstance().clearProfile();
+		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
 
 		SCOPED_CPU_COUNTER(EngineTick);
 
@@ -436,7 +438,7 @@ namespace pathos {
 
 		// #todo-cpu: Use frameCounter as a checkpoint
 		// #todo-cpu: What about the render thread? Use a separate profiler instance?
-		CpuProfiler::getInstance().collectProfile();
+		CpuProfiler::getInstance().finishCheckpoint();
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
 		stopwatch_gameThread.start();
@@ -460,7 +462,12 @@ namespace pathos {
 
 		stopwatch_renderThread.start();
 
-		assetStreamer->renderThread_flushLoadedAssets();
+		SCOPED_CPU_COUNTER(EngineRender);
+
+		{
+			SCOPED_CPU_COUNTER(FlushLoadedAssets);
+			assetStreamer->renderThread_flushLoadedAssets();
+		}
 
 		{
 			SceneRenderSettings settings;
@@ -477,11 +484,13 @@ namespace pathos {
 
 		// Renderer adds more immediate commands
 		if (renderer && currentWorld) {
+			SCOPED_CPU_COUNTER(ExecuteRenderer);
 			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
 			immediateContext.flushAllCommands();
 		}
 
 		if (gConsole) {
+			SCOPED_CPU_COUNTER(ExecuteDebugConsole);
 			gConsole->renderConsoleWindow(immediateContext);
 			immediateContext.flushAllCommands();
 		}

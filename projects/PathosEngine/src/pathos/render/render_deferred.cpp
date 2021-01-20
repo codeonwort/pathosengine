@@ -25,6 +25,7 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/util/cpu_profiler.h"
 #include "pathos/util/gl_debug_group.h"
 
 #include "badger/assertion/assertion.h"
@@ -172,20 +173,23 @@ namespace pathos {
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
 		{
+			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
 
 			depthPrepass->renderPreDepth(cmdList, scene, camera);
 		}
 
 		{
+			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
-
+			// #todo-opt: This is incredibly slow in debug build
 			sunShadowMap->renderShadowMap(cmdList, scene, camera);
 		}
 
 		{
+			SCOPED_CPU_COUNTER(RenderOmniShadowMaps);
 			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
-
+			// #todo-opt: This is incredibly super slow in debug build
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
