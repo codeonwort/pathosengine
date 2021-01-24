@@ -1,5 +1,6 @@
 #include "asset_streamer.h"
 #include "pathos/loader/objloader.h"
+#include "pathos/util/cpu_profiler.h"
 
 namespace pathos {
 
@@ -8,6 +9,8 @@ namespace pathos {
 
 	void internal_loadWavefrontOBJ(const WorkItemParam* param)
 	{
+		SCOPED_CPU_COUNTER(AsyncLoad_WavefrontOBJ);
+
 		AssetLoadInfoBase_WavefrontOBJ* arg = (AssetLoadInfoBase_WavefrontOBJ*)param->arg;
 		AssetStreamer* streamer = arg->streamer;
 
@@ -36,6 +39,7 @@ namespace pathos {
 
 	void AssetStreamer::initialize(uint32 numWorkerThreads)
 	{
+		// #todo-cpu: Thread IDs for cpu profiler
 		threadPool.Start(numWorkerThreads);
 	}
 
