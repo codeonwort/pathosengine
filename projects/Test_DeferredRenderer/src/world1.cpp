@@ -28,6 +28,8 @@ World1::World1()
 
 void World1::onInitialize()
 {
+	SCOPED_CPU_COUNTER(World1_initialize);
+
 	AssetReferenceWavefrontOBJ assetRef(OBJ_FILE, OBJ_DIR);
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ);
 

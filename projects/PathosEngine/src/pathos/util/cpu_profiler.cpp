@@ -1,6 +1,11 @@
 #include "cpu_profiler.h"
+#include "log.h"
+
 #include "badger/assertion/assertion.h"
 #include "badger/thread/cpu.h"
+
+#include <sstream>
+#include <utility>
 
 namespace pathos {
 
@@ -11,12 +16,21 @@ namespace pathos {
 		: name(inName)
 	{
 		CHECK(inName != nullptr);
-		coreIndex = CPU::getCurrentLogicalCoreIndex();
-		itemHandle = CpuProfiler::getInstance().beginItem(coreIndex, name);
+		threadId = CPU::getCurrentThreadId();
+		itemHandle = CpuProfiler::getInstance().beginItem(threadId, name);
+
+		// #todo-cpu: Temp logic for periodic purge
+		purge_milestone = CpuProfiler::getInstance().purge_milestone.load();
 	}
 
 	ScopedCpuCounter::~ScopedCpuCounter() {
-		CpuProfiler::getInstance().finishItem(itemHandle, coreIndex);
+		// #todo-cpu: Temp logic for periodic purge
+		const uint32 currentMilestone = CpuProfiler::getInstance().purge_milestone.load();
+		if (currentMilestone > purge_milestone) {
+			return;
+		}
+
+		CpuProfiler::getInstance().finishItem(itemHandle, threadId);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -29,12 +43,20 @@ namespace pathos {
 	void CpuProfiler::initialize() {
 		const uint32 nCores = CPU::getTotalLogicalCoreCount();
 		CHECKF(nCores != 0, "Couldn't get total core count");
-		profiles.resize(nCores);
-		checkpoints.resize(nCores);
+
 		globalClocks.resize(nCores);
 		for (uint32 i = 0; i < nCores; ++i) {
 			globalClocks[i].start();
 		}
+
+		purge_milestone.store(0);
+	}
+
+	void CpuProfiler::registerCurrentThread(const char* inDebugName) {
+		const uint32 threadId = CPU::getCurrentThreadId();
+		CHECKF(profiles.find(threadId) == profiles.end(), "Current thread is already registered");
+
+		profiles.insert(std::pair<uint32,ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
 	}
 
 	void CpuProfiler::beginCheckpoint(uint32 frameCounter)
@@ -60,37 +82,50 @@ namespace pathos {
 		}
 	}
 
-	uint32 CpuProfiler::beginItem(uint32 coreIndex, const char* counterName) {
-		CHECK(coreIndex < (uint32)profiles.size());
+	uint32 CpuProfiler::beginItem(uint32 threadId, const char* counterName) {
+#if 0	// #todo-cpu: Assert or anonymous profile?
+		CHECKF(profiles.find(threadId) != profiles.end(), "No profile exists for current thread");
+#else
+		if (profiles.find(threadId) == profiles.end()) {
+			std::stringstream ss;
+			ss << "Thread " << threadId;
+			profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, ss.str())));
+		}
+#endif
+		ProfilePerThread& currentProfile = profiles[threadId];
+		ProfileItem item(counterName, currentProfile.currentTab, getGlobalClockTime());
 
-		ProfileItem item(counterName, profiles[coreIndex].currentTab, globalClocks[coreIndex].stop());
-
-		// #todo-cpu: It seems coreIndex changes within a single function?
-		uint32 itemHandle = (uint32)profiles[coreIndex].items.size();
-		profiles[coreIndex].items.emplace_back(item);
-		profiles[coreIndex].currentTab += 1;
+		uint32 itemHandle = (uint32)profiles[threadId].items.size();
+		currentProfile.items.emplace_back(item);
+		currentProfile.currentTab += 1;
 		return itemHandle;
 	}
 
-	void CpuProfiler::finishItem(uint32 frameHandle, uint32 coreIndex) {
-		CHECK(coreIndex < (uint32)profiles.size());
-		// #todo-cpu: A single function jumps over logical cores so this CHECK fails ??
-		// #todo-fatal: Must fix
-		CHECK(profiles[coreIndex].currentTab > 0);
+	void CpuProfiler::finishItem(uint32 itemHandle, uint32 threadId) {
+		ProfilePerThread& currentProfile = profiles[threadId];
+		CHECK(currentProfile.currentTab > 0);
 
-		// #todo-cpu: Hazard - can a parent item finishes before a child item?
-		ProfileItem& item = profiles[coreIndex].items[frameHandle];
-		item.endTime = globalClocks[coreIndex].stop();
+		ProfileItem& item = currentProfile.items[itemHandle];
+		item.endTime = getGlobalClockTime();
 		item.elapsedMS = (item.endTime - item.startTime) * 1000.0f;
 
-		profiles[coreIndex].currentTab -= 1;
+		currentProfile.currentTab -= 1;
 	}
 
 	void CpuProfiler::purgeEverything() {
-		for (size_t i = 0; i < profiles.size(); ++i) {
-			profiles[i].clear();
+		LOG(LogDebug, "[TEMP] Purge cpu profiles");
+
+		purge_milestone.fetch_add(1);
+
+		for (auto it = profiles.begin(); it != profiles.end(); ++it) {
+			it->second.clearItems();
 		}
 		checkpoints.clear();
+	}
+
+	float CpuProfiler::getGlobalClockTime() {
+		const uint32 coreIndex = CPU::getCurrentLogicalCoreIndex();
+		return globalClocks[coreIndex].stop();
 	}
 
 }

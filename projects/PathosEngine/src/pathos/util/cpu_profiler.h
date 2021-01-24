@@ -3,6 +3,9 @@
 #include "badger/system/stopwatch.h"
 #include "badger/types/int_types.h"
 #include <vector>
+#include <string>
+#include <atomic>
+#include <unordered_map>
 
 namespace pathos {
 
@@ -10,9 +13,12 @@ namespace pathos {
 		ScopedCpuCounter(const char* inName);
 		~ScopedCpuCounter();
 
-		uint32 coreIndex;
+		uint32 threadId;
 		const char* name;
 		uint32 itemHandle;
+
+		// #todo-cpu: Temp value due to temp periodic purge
+		uint32 purge_milestone;
 	};
 
 	struct ProfileItem {
@@ -31,22 +37,43 @@ namespace pathos {
 		float elapsedMS; // in milliseconds
 	};
 
-	// For main threads, top-level items will cover a single frame entirely.
-	// For background threads, top-level items are desychronized with frame boundaries, even might linger on several frames.
-	struct ProfilePerCore {
-		ProfilePerCore()
-			: currentTab(0)
+	// It turned out that per-core profile is a bad idea. Let's go for per-thread profile.
+	struct ProfilePerThread {
+		ProfilePerThread(uint32 inThreadId, const char* inDebugName)
+			: threadId(inThreadId)
+			, debugName(inDebugName)
+			, currentTab(0)
 		{
 		}
-		void clear() {
+		ProfilePerThread(uint32 inThreadId, std::string&& inDebugName)
+			: threadId(inThreadId)
+			, debugName(inDebugName)
+			, currentTab(0)
+		{
+		}
+
+		void clearItems() {
 			items.clear();
 			currentTab = 0;
 		}
 		bool isEmpty() const {
 			return items.size() == 0;
 		}
+
+		uint32 threadId;
+		std::string debugName;
+
 		std::vector<ProfileItem> items;
 		uint32 currentTab;
+
+	// DO NOT USE. For unordered_map only.
+	public:
+		ProfilePerThread()
+			: threadId(0xffffffff)
+			, debugName(nullptr)
+			, currentTab(0)
+		{
+		}
 	};
 
 	struct ProfileCheckpoint {
@@ -62,27 +89,27 @@ namespace pathos {
 		static CpuProfiler& getInstance();
 
 		void initialize();
+		void registerCurrentThread(const char* inDebugName);
 
 		void beginCheckpoint(uint32 frameCounter);
 		void finishCheckpoint();
 
-		uint32 beginItem(uint32 coreIndex, const char* counterName);
-		void finishItem(uint32 frameHandle, uint32 coreIndex);
+		uint32 beginItem(uint32 threadId, const char* counterName);
+		void finishItem(uint32 frameHandle, uint32 threadId);
+
+		// #todo-cpu: Temp
+		std::atomic<uint32> purge_milestone;
 
 	private:
 		CpuProfiler() = default;
 		~CpuProfiler() = default;
 
 		void purgeEverything();
+		float getGlobalClockTime();
 
-		// Per-thread so that no mutex is necessary
-		// #todo-cpu: Switch to typed ring buffers
-		std::vector<ProfilePerCore> profiles;
-		std::vector<ProfileCheckpoint> checkpoints;
-		std::vector<Stopwatch> globalClocks;
-
-		// CAUTION: do not place anything thread-unsafe here
-
+		std::unordered_map<uint32, ProfilePerThread> profiles; // Map thread id to profile
+		std::vector<ProfileCheckpoint> checkpoints; // #todo-cpu: Switch to typed ring buffers
+		std::vector<Stopwatch> globalClocks; // Per-core so that no mutex is necessary
 	};
 
 }

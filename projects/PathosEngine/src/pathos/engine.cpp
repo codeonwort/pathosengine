@@ -106,7 +106,9 @@ namespace pathos {
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
 
-		CpuProfiler::getInstance().initialize();
+		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
+		cpuProfiler.initialize();
+		cpuProfiler.registerCurrentThread("main thread");
 
 		readConfigFile();
 

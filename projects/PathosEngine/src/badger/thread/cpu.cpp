@@ -25,3 +25,13 @@ uint32 CPU::getCurrentLogicalCoreIndex() {
 	#error "Not implemented"
 #endif
 }
+
+uint32 CPU::getCurrentThreadId()
+{
+#if PLATFORM_WINDOWS
+	static_assert(sizeof(DWORD) == sizeof(uint32), "Should match");
+	return (uint32)GetCurrentThreadId();
+#else
+	#error "Not implemented"
+#endif
+}

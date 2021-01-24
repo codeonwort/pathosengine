@@ -13,4 +13,6 @@ public:
 	// #todo-cpu: Should I detect SMT?
 	//static bool supportsSimultaneousMultithreading() const;
 
+	static uint32 getCurrentThreadId();
+
 };
