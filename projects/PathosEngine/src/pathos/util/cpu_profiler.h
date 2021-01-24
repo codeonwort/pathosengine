@@ -90,6 +90,7 @@ namespace pathos {
 
 		void initialize();
 		void registerCurrentThread(const char* inDebugName);
+		void registerThread(uint32 threadId, const char* inDebugName);
 
 		void beginCheckpoint(uint32 frameCounter);
 		void finishCheckpoint();

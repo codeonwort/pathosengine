@@ -10,7 +10,8 @@
 namespace pathos {
 
 	// #todo-cpu: Cleanup everything periodically for now
-	static constexpr size_t MAX_PROFILE_CHECKPOINT = 256;
+	static constexpr size_t PURGE_BETWEEN_CHECKPOINTS = 256;
+	static constexpr size_t PURGE_ITEMS_AFTER = 512;
 
 	ScopedCpuCounter::ScopedCpuCounter(const char* inName)
 		: name(inName)
@@ -54,9 +55,11 @@ namespace pathos {
 
 	void CpuProfiler::registerCurrentThread(const char* inDebugName) {
 		const uint32 threadId = CPU::getCurrentThreadId();
+		registerThread(threadId, inDebugName);
+	}
+	void CpuProfiler::registerThread(uint32 threadId, const char* inDebugName) {
 		CHECKF(profiles.find(threadId) == profiles.end(), "Current thread is already registered");
-
-		profiles.insert(std::pair<uint32,ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
+		profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
 	}
 
 	void CpuProfiler::beginCheckpoint(uint32 frameCounter)
@@ -77,7 +80,7 @@ namespace pathos {
 		checkpoints[checkpoints.size() - 1].endTime = globalClocks[coreIndex].stop();
 
 		// #todo-cpu: Print this to somewhere
-		if (checkpoints.size() > MAX_PROFILE_CHECKPOINT) {
+		if (checkpoints.size() > PURGE_BETWEEN_CHECKPOINTS) {
 			purgeEverything();
 		}
 	}
@@ -118,7 +121,9 @@ namespace pathos {
 		purge_milestone.fetch_add(1);
 
 		for (auto it = profiles.begin(); it != profiles.end(); ++it) {
-			it->second.clearItems();
+			if (it->second.items.size() >= PURGE_ITEMS_AFTER) {
+				it->second.clearItems();
+			}
 		}
 		checkpoints.clear();
 	}

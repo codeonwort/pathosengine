@@ -1,6 +1,7 @@
 #include "asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/cpu_profiler.h"
+#include <sstream>
 
 namespace pathos {
 
@@ -41,6 +42,13 @@ namespace pathos {
 	{
 		// #todo-cpu: Thread IDs for cpu profiler
 		threadPool.Start(numWorkerThreads);
+		for (uint32 i = 0; i < numWorkerThreads; ++i) {
+			std::stringstream ss;
+			ss << "AssetStreamer_Worker " << i;
+
+			uint32 threadId = threadPool.GetWorkerThreadId(i);
+			CpuProfiler::getInstance().registerThread(threadId, ss.str().c_str());
+		}
 	}
 
 	void AssetStreamer::destroy()
