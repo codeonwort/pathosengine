@@ -5,12 +5,12 @@
 class CPU final {
 
 public:
-	// Metric about logical processors
 	static uint32 getTotalLogicalCoreCount();
-	// #todo-cpu: Why this changes within a single function?
+
+	// #note-cpu: It can change within a single function. Usually it's good to use thread id instead.
 	static uint32 getCurrentLogicalCoreIndex();
 
-	// #todo-cpu: Should I detect SMT?
+	// #todo-cpu: If needed, search for GetLogicalProcessorInformation()
 	//static bool supportsSimultaneousMultithreading() const;
 
 	static uint32 getCurrentThreadId();

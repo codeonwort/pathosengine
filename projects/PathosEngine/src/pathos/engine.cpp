@@ -361,16 +361,7 @@ namespace pathos {
 	// #todo-gpu-counter: Show this in debug GUI
 	void Engine::dumpGPUProfile()
 	{
-		std::string solutionPath = ResourceFinder::get().find("PathosEngine.sln");
-		std::string solutionDir;
-		if (solutionPath.size() > 0) {
-			solutionDir = solutionPath.substr(0, solutionPath.size() - std::string("PathosEngine.sln").size());
-		}
-		if (solutionDir.size() == 0) {
-			return;
-		}
-
-		std::string filepath = pathos::getFullDirectoryPath(solutionDir.c_str());
+		std::string filepath = pathos::getSolutionDir();
 		filepath += "log/";
 		pathos::createDirectory(filepath.c_str());
 
@@ -382,7 +373,7 @@ namespace pathos {
 		::strftime(timeBuffer, sizeof(timeBuffer), "GPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
 		filepath += std::string(timeBuffer);
 
-		std::fstream fs(filepath, fstream::out);
+		std::fstream fs(filepath, std::fstream::out);
 		if (fs.is_open()) {
 			uint32 n = (uint32)lastGpuCounterNames.size();
 			for (uint32 i = 0; i < n; ++i) {
@@ -390,6 +381,8 @@ namespace pathos {
 			}
 			fs.close();
 		}
+
+		LOG(LogDebug, "Dump GPU profile to: %s", filepath.c_str());
 	}
 
 	void Engine::setWorld(World* inWorld)
@@ -439,7 +432,6 @@ namespace pathos {
 		}
 
 		// #todo-cpu: Use frameCounter as a checkpoint
-		// #todo-cpu: What about the render thread? Use a separate profiler instance?
 		CpuProfiler::getInstance().finishCheckpoint();
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;

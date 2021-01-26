@@ -52,7 +52,7 @@ namespace pathos {
 	class Engine final : public Noncopyable {
 		friend class EngineUtil;
 
-		using ExecProc = std::function<void(const std::string&)>;
+		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
 		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
 
 	// Static members

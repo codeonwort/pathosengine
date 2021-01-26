@@ -40,7 +40,6 @@ namespace pathos {
 
 	void AssetStreamer::initialize(uint32 numWorkerThreads)
 	{
-		// #todo-cpu: Thread IDs for cpu profiler
 		threadPool.Start(numWorkerThreads);
 		for (uint32 i = 0; i < numWorkerThreads; ++i) {
 			std::stringstream ss;

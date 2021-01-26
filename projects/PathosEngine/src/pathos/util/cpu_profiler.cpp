@@ -1,9 +1,12 @@
 #include "cpu_profiler.h"
 #include "log.h"
+#include "pathos/engine.h"
+#include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/thread/cpu.h"
 
+#include <fstream>
 #include <sstream>
 #include <utility>
 
@@ -51,6 +54,10 @@ namespace pathos {
 		}
 
 		purge_milestone.store(0);
+
+		gEngine->registerExec("profile_cpu", [](const std::string& command) {
+			CpuProfiler::getInstance().dumpCPUProfile();
+		});
 	}
 
 	void CpuProfiler::registerCurrentThread(const char* inDebugName) {
@@ -126,6 +133,55 @@ namespace pathos {
 			}
 		}
 		checkpoints.clear();
+	}
+
+	// #todo-cpu: Render 2D figure with this
+	void CpuProfiler::dumpCPUProfile() {
+		std::string filepath = pathos::getSolutionDir();
+		filepath += "log/";
+		pathos::createDirectory(filepath.c_str());
+
+		time_t now = ::time(0);
+		tm localTm;
+		errno_t timeErr = ::localtime_s(&localTm, &now);
+		CHECKF(timeErr == 0, "Failed to get current time");
+		char timeBuffer[128];
+		::strftime(timeBuffer, sizeof(timeBuffer), "CPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
+		filepath += std::string(timeBuffer);
+
+		std::fstream fs(filepath, std::fstream::out);
+
+		auto tab = [&fs](uint32 n) {
+			while (n-- > 0) {
+				fs << "    ";
+			}
+		};
+
+		if (fs.is_open()) {
+			for (auto it = profiles.begin(); it != profiles.end(); ++it) {
+				const ProfilePerThread& profile = it->second;
+
+				if (profile.isEmpty()) {
+					continue;
+				}
+
+				fs << profile.debugName << std::endl;
+
+				size_t numItems = profile.items.size();
+				for (size_t i = 0; i < numItems; ++i) {
+					const ProfileItem& item = profile.items[i];
+					tab(item.tab + 1);
+					fs << item.name << ": " << item.elapsedMS << " ms" << std::endl;
+				}
+				fs << std::endl;
+			}
+
+			fs.close();
+		}
+
+		LOG(LogDebug, "Dump CPU profile to: %s", filepath.c_str());
+		gConsole->addLine("Dump CPU profile to:", false);
+		gConsole->addLine(filepath.c_str(), false);
 	}
 
 	float CpuProfiler::getGlobalClockTime() {

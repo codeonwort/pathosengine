@@ -106,6 +106,9 @@ namespace pathos {
 		~CpuProfiler() = default;
 
 		void purgeEverything();
+
+		void dumpCPUProfile();
+
 		float getGlobalClockTime();
 
 		std::unordered_map<uint32, ProfilePerThread> profiles; // Map thread id to profile
