@@ -86,20 +86,20 @@ namespace pathos {
 		const uint32 coreIndex = CPU::getCurrentLogicalCoreIndex();
 		checkpoints[checkpoints.size() - 1].endTime = globalClocks[coreIndex].stop();
 
-		// #todo-cpu: Print this to somewhere
 		if (checkpoints.size() > PURGE_BETWEEN_CHECKPOINTS) {
 			purgeEverything();
 		}
 	}
 
 	uint32 CpuProfiler::beginItem(uint32 threadId, const char* counterName) {
-#if 0	// #todo-cpu: Assert or anonymous profile?
+#if 0	// Create anonymous profile rather than assert
 		CHECKF(profiles.find(threadId) != profiles.end(), "No profile exists for current thread");
 #else
 		if (profiles.find(threadId) == profiles.end()) {
 			std::stringstream ss;
 			ss << "Thread " << threadId;
 			profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, ss.str())));
+			LOG(LogDebug, "[%s] Anonymous thread has been detected: %s", __FUNCTION__, ss.str());
 		}
 #endif
 		ProfilePerThread& currentProfile = profiles[threadId];
