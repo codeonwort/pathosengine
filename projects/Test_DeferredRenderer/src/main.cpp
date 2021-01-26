@@ -3,7 +3,7 @@
 #include "pathos/core_minimal.h"
 using namespace pathos;
 
-#define RENDERING_CHALLENGE 1
+#define RENDERING_CHALLENGE 0
 
 #if RENDERING_CHALLENGE
 const char*         WINDOW_TITLE         = "Test: Rendering Challenge 1";

@@ -3,7 +3,7 @@
 #include <chrono>
 
 struct Stopwatch {
-	
+
 public:
 	Stopwatch() {
 		startTime = std::chrono::system_clock::now();
@@ -13,6 +13,7 @@ public:
 		startTime = std::chrono::system_clock::now();
 	}
 
+	// Elapsed seconds since start()
 	float stop() {
 		std::chrono::duration<float> diff = std::chrono::system_clock::now() - startTime;
 		float seconds = diff.count();

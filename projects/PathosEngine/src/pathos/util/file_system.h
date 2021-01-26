@@ -14,4 +14,6 @@ namespace pathos {
 
 	void createDirectory(const char* targetDir);
 
+	std::string getSolutionDir();
+
 }

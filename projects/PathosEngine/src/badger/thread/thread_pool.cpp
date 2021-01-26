@@ -1,5 +1,10 @@
 #include "thread_pool.h"
+#include "badger/system/platform.h"
 #include "badger/assertion/assertion.h"
+
+#if PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 static void* PooledThreadMain(void* _param)
 {
@@ -140,4 +145,15 @@ bool ThreadPool::Internal_PopWork(ThreadPoolWork& work)
 	queueLock.unlock();
 
 	return true;
+}
+
+uint32 ThreadPool::GetWorkerThreadId(uint32 workerThreadIndex)
+{
+#if PLATFORM_WINDOWS
+	HANDLE handle = threads[workerThreadIndex].native_handle();
+	DWORD id = GetThreadId(handle);
+	return (uint32)id;
+#else
+	#error "Not implemented"
+#endif
 }

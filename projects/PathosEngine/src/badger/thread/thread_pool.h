@@ -91,6 +91,8 @@ public:
 	// CAUTION: Do not call directly. This is public just for worker threads.
 	bool Internal_PopWork(ThreadPoolWork& work);
 
+	uint32 GetWorkerThreadId(uint32 workerThreadIndex);
+
 public:
 	std::vector<std::thread>                 threads;
 	std::vector<PooledThreadParam>           threadParams;

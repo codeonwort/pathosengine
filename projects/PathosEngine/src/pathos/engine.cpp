@@ -6,6 +6,7 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/util/log.h"
+#include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/renderdoc_integration.h"
 
@@ -64,7 +65,8 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
 		: renderProxyAllocator(RENDER_PROXY_MEMORY)
-		, frameCounter(0)
+		, frameCounter_gameThread(0)
+		, frameCounter_renderThread(0)
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
@@ -103,6 +105,10 @@ namespace pathos {
 		BailIfFalse( initializeConsole()              );
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
+
+		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
+		cpuProfiler.initialize();
+		cpuProfiler.registerCurrentThread("main thread");
 
 		readConfigFile();
 
@@ -355,16 +361,7 @@ namespace pathos {
 	// #todo-gpu-counter: Show this in debug GUI
 	void Engine::dumpGPUProfile()
 	{
-		std::string solutionPath = ResourceFinder::get().find("PathosEngine.sln");
-		std::string solutionDir;
-		if (solutionPath.size() > 0) {
-			solutionDir = solutionPath.substr(0, solutionPath.size() - std::string("PathosEngine.sln").size());
-		}
-		if (solutionDir.size() == 0) {
-			return;
-		}
-
-		std::string filepath = pathos::getFullDirectoryPath(solutionDir.c_str());
+		std::string filepath = pathos::getSolutionDir();
 		filepath += "log/";
 		pathos::createDirectory(filepath.c_str());
 
@@ -376,7 +373,7 @@ namespace pathos {
 		::strftime(timeBuffer, sizeof(timeBuffer), "GPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
 		filepath += std::string(timeBuffer);
 
-		std::fstream fs(filepath, fstream::out);
+		std::fstream fs(filepath, std::fstream::out);
 		if (fs.is_open()) {
 			uint32 n = (uint32)lastGpuCounterNames.size();
 			for (uint32 i = 0; i < n; ++i) {
@@ -384,6 +381,8 @@ namespace pathos {
 			}
 			fs.close();
 		}
+
+		LOG(LogDebug, "Dump GPU profile to: %s", filepath.c_str());
 	}
 
 	void Engine::setWorld(World* inWorld)
@@ -402,10 +401,15 @@ namespace pathos {
 		// Wait for previous frame
 		glFinish();
 
+		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
+
+		SCOPED_CPU_COUNTER(EngineTick);
+
 		float deltaSeconds = stopwatch_gameThread.stop();
 
-		// #todo-fps: This is wrong. Rendering rate should be also controlled...
+		// #todo-fps: It only controls the game thread. What about the render thread + GPU?
 		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
+			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
 			if (currentWorld != nullptr) {
 				currentWorld->getScene().createRenderProxy();
 			}
@@ -417,6 +421,8 @@ namespace pathos {
 		inputSystem->tick();
 
 		if (currentWorld != nullptr) {
+			SCOPED_CPU_COUNTER(CreateRenderProxy);
+
 			currentWorld->tick(deltaSeconds);
 			// #todo: More robust way to check if the main window is minimized
 			if (renderProxyAllocator.isClear() == false) {
@@ -425,24 +431,43 @@ namespace pathos {
 			}
 		}
 
-		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+		// #todo-cpu: Use frameCounter as a checkpoint
+		CpuProfiler::getInstance().finishCheckpoint();
 
+		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
 		stopwatch_gameThread.start();
+		if (frameCounter_gameThread == (uint32)(-1)) {
+			frameCounter_gameThread = 1;
+		} else {
+			frameCounter_gameThread += 1;
+		}
 	}
 
 	void Engine::render() {
+		// Render thread should be one frame behind of the game thread
+		if (frameCounter_renderThread >= frameCounter_gameThread) {
+			return;
+		}
+
+		frameCounter_renderThread = frameCounter_gameThread - 1;
+
 		GLuint64 elapsed_ns;
 		glBeginQuery(GL_TIME_ELAPSED, timer_query);
 
 		stopwatch_renderThread.start();
 
-		assetStreamer->renderThread_flushLoadedAssets();
+		SCOPED_CPU_COUNTER(EngineRender);
+
+		{
+			SCOPED_CPU_COUNTER(FlushLoadedAssets);
+			assetStreamer->renderThread_flushLoadedAssets();
+		}
 
 		{
 			SceneRenderSettings settings;
 			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
 			settings.sceneHeight           = conf.windowHeight;
-			settings.frameCounter          = frameCounter;
+			settings.frameCounter          = frameCounter_renderThread;
 			settings.enablePostProcess     = true;
 			renderer->setSceneRenderSettings(settings);
 		}
@@ -453,11 +478,13 @@ namespace pathos {
 
 		// Renderer adds more immediate commands
 		if (renderer && currentWorld) {
+			SCOPED_CPU_COUNTER(ExecuteRenderer);
 			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
 			immediateContext.flushAllCommands();
 		}
 
 		if (gConsole) {
+			SCOPED_CPU_COUNTER(ExecuteDebugConsole);
 			gConsole->renderConsoleWindow(immediateContext);
 			immediateContext.flushAllCommands();
 		}
@@ -474,8 +501,6 @@ namespace pathos {
 		if (currentWorld != nullptr) {
 			currentWorld->getScene().clearRenderProxy();
 		}
-
-		frameCounter += 1;
 
 		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
 	}
