@@ -110,7 +110,7 @@ vec3 phongShading(fragment_info fragment) {
 			radiance = radiance * getShadowing(fragment);
 		}
 
-		vec3 L = -light.direction;
+		vec3 L = -light.vsDirection;
 		float cosTheta = max(0.0, dot(N, L));
 		vec3 diffuse_color = radiance * (fragment.albedo * cosTheta);
 		result += diffuse_color;
@@ -166,7 +166,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
 		DirectionalLight light = uboPerFrame.directionalLights[i];
 
-		vec3 L = -light.direction;
+		vec3 L = -light.vsDirection;
 		vec3 H = normalize(V + L);
 
 		vec3 radiance = light.intensity;

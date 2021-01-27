@@ -24,10 +24,15 @@ struct PointLight {
 };
 
 struct DirectionalLight {
-	vec3  direction;
+	// 16 bytes
+	vec3  wsDirection;
 	float padding0;
+	// 16 bytes
 	vec3  intensity;
 	float padding1;
+	// 16 bytes
+	vec3  vsDirection;
+	float padding2;
 };
 
 float pointLightAttenuation(PointLight L, float d) {

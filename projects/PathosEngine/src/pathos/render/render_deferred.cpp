@@ -170,7 +170,16 @@ namespace pathos {
 		reallocateSceneRenderTargets(cmdList);
 
 		// #todo: multi-view
-		scene->createViewDependentRenderProxy(camera->getViewMatrix());
+		{
+			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
+
+			// They should be updated before updateSceneUniformBuffer
+			scene->createViewDependentRenderProxy(camera->getViewMatrix());
+			sunShadowMap->updateUniformBufferData(cmdList, scene, camera);
+
+			// Update ubo_perFrame
+			updateSceneUniformBuffer(cmdList, scene, camera);
+		}
 
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
@@ -205,11 +214,6 @@ namespace pathos {
 			cmdList.clearStencil(0);
 			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
-
-		// update ubo_perFrame
-		// #todo-refactoring: Why is this in the midst of rendering? Shouldn't it be at the very first?
-		// -> Because some values are calculated in prior passes (ex: renderShadowMap() updates the matrices for sunShadowMap->getViewProjection())
-		updateSceneUniformBuffer(cmdList, scene, camera);
 
 		// Volumetric clouds
 		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();

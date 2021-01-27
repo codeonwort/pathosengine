@@ -33,7 +33,7 @@ namespace pathos {
 		}
 
 		for (uint32 i = 0u; i < proxyList_directionalLight.size(); ++i) {
-			proxyList_directionalLight[i]->direction = vector3(viewMatrix * vector4(proxyList_directionalLight[i]->direction, 0.0f));
+			proxyList_directionalLight[i]->vsDirection = vector3(viewMatrix * vector4(proxyList_directionalLight[i]->wsDirection, 0.0f));
 		}
 	}
 

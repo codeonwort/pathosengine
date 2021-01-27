@@ -13,7 +13,7 @@
 
 namespace pathos {
 
-	DirectionalShadowMap::DirectionalShadowMap(const glm::vec3& inLightDirection) {
+	DirectionalShadowMap::DirectionalShadowMap(const vector3& inLightDirection) {
 		lightDirection = inLightDirection;
 	}
 
@@ -21,7 +21,7 @@ namespace pathos {
 		CHECKF(destroyed, "Resource leak");
 	}
 
-	void DirectionalShadowMap::setLightDirection(const glm::vec3& direction) {
+	void DirectionalShadowMap::setLightDirection(const vector3& direction) {
 		lightDirection = direction;
 	}
 
@@ -31,13 +31,9 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		// 1. Build projection matrices that perfectly cover each camera frustum
-		if (scene->proxyList_directionalLight.size() > 0) {
-			setLightDirection(scene->proxyList_directionalLight[0]->direction);
-		}
-		calculateBounds(*camera, sceneContext.numCascades);
+		// This call has been moved
+		//updateUniformBufferData(cmdList, scene, camera);
 
-		// 2. Render depth map
 		cmdList.useProgram(program);
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
@@ -53,10 +49,10 @@ namespace pathos {
 			cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
-			const glm::mat4& VP = viewProjectionMatrices[i];
+			const matrix4& VP = viewProjectionMatrices[i];
 
 			for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
-				glm::mat4 mvp = VP * batch->modelMatrix;
+				matrix4 mvp = VP * batch->modelMatrix;
 
 				cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
 				batch->geometry->activate_position(cmdList);
@@ -68,7 +64,7 @@ namespace pathos {
 				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				for (ShadowMeshProxy* batch : scene->proxyList_wireframeShadowMesh) {
-					glm::mat4 mvp = VP * batch->modelMatrix;
+					matrix4 mvp = VP * batch->modelMatrix;
 
 					cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
 					batch->geometry->activate_position(cmdList);
@@ -135,35 +131,43 @@ void main() {
 		destroyed = true;
 	}
 
+	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		if (scene->proxyList_directionalLight.size() > 0) {
+			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);
+		}
+		calculateBounds(*camera, sceneContext.numCascades);
+	}
+
 	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades)
 	{
 		viewProjectionMatrices.clear();
 
-		auto calcBounds = [this](const glm::vec3* frustum) -> void {
-			glm::vec3 L_forward = lightDirection;
-			glm::vec3 L_up, L_right;
+		auto calcBounds = [this](const vector3* frustum) -> void {
+			vector3 L_forward = lightDirection;
+			vector3 L_up, L_right;
 			pathos::calculateOrthonormalBasis(L_forward, L_up, L_right);
 
-			glm::vec3 center(0.0f);
+			vector3 center(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
 				center += frustum[i];
 			}
 			center *= 0.125f;
 
-			glm::vec3 lengths(0.0f);
+			vector3 lengths(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
-				glm::vec3 delta = frustum[i] - center;
+				vector3 delta = frustum[i] - center;
 				lengths.x = pathos::max(lengths.x, fabs(glm::dot(delta, L_right)));
 				lengths.y = pathos::max(lengths.y, fabs(glm::dot(delta, L_up)));
 				lengths.z = pathos::max(lengths.z, fabs(glm::dot(delta, L_forward)));
 			}
 
-			glm::mat4 lightView = glm::lookAt(center, center + L_forward, L_up);
-			glm::mat4 projection = glm::ortho(-lengths.x, lengths.x, -lengths.y, lengths.y, -lengths.z, lengths.z);
+			matrix4 lightView = glm::lookAt(center, center + L_forward, L_up);
+			matrix4 projection = glm::ortho(-lengths.x, lengths.x, -lengths.y, lengths.y, -lengths.z, lengths.z);
 			viewProjectionMatrices.emplace_back(projection * lightView);
 		};
 
-		std::vector<glm::vec3> frustumPlanes;
+		std::vector<vector3> frustumPlanes;
 		camera.getFrustum(frustumPlanes, numCascades);
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
