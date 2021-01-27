@@ -114,12 +114,12 @@ namespace pathos {
 				cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, shadowMaps, 0, lightIx * 6 + faceIx);
 				cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 
-				matrix4 lightView = glm::lookAt(light->position, light->position + faceDirections[faceIx], upDirections[faceIx]);
+				matrix4 lightView = glm::lookAt(light->worldPosition, light->worldPosition + faceDirections[faceIx], upDirections[faceIx]);
 				matrix4 viewproj = projection * lightView;
 
 				UBO_OmniShadow uboData;
 				uboData.viewproj = viewproj;
-				uboData.lightPositionAndZFar = vector4(light->position, zFar);
+				uboData.lightPositionAndZFar = vector4(light->worldPosition, zFar);
 
 				// #todo-shadow: Discard geometries too far from the light source
 				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {

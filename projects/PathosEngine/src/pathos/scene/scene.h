@@ -24,18 +24,16 @@ namespace pathos {
 		Scene(const Scene&)            = delete;
 		Scene& operator=(const Scene&) = delete;
 
-		//////////////////////////////////////////////////////////////////////////
-		// New API
-
 		void clearRenderProxy();
+
+		// Generate frame-invariant proxy data
 		void createRenderProxy();
 
+		// This should be called for each view
+		// #todo: Parameter might be further generalized
+		void createViewDependentRenderProxy(const matrix4& viewMatrix);
+
 		World* getWorld() const { return owner; }
-
-		//////////////////////////////////////////////////////////////////////////
-		// Old API
-
-		void transformLightProxyToViewSpace(const matrix4& viewMatrix);
 
 	public:
 		SkyRendering* sky = nullptr;

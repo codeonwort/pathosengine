@@ -77,10 +77,10 @@ void main() {
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight pointLight = uboPerFrame.pointLights[i];
 
-		vec3 L = normalize(pointLight.position - vs_coords);
+		vec3 L = normalize(pointLight.viewPosition - vs_coords);
 		vec3 H = normalize(V + L);
 
-		float distance = length(pointLight.position - vs_coords);
+		float distance = length(pointLight.viewPosition - vs_coords);
 		vec3 radiance = pointLight.intensity * pointLightAttenuation(pointLight, distance);
 
 		float NDF = distributionGGX(N, H, roughness);

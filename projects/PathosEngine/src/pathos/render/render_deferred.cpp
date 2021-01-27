@@ -30,7 +30,7 @@
 
 #include "badger/assertion/assertion.h"
 
-#define ASSERT_GL_NO_ERROR 0
+#define ASSERT_GL_NO_ERROR 0 // #todo: This has no meaning due to render command list
 
 namespace pathos {
 
@@ -169,6 +169,9 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
+		// #todo: multi-view
+		scene->createViewDependentRenderProxy(camera->getViewMatrix());
+
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
@@ -182,19 +185,16 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
-			// #todo-opt: This is incredibly slow in debug build
+			// #todo-performance: This is incredibly slow in debug build
 			sunShadowMap->renderShadowMap(cmdList, scene, camera);
 		}
 
 		{
 			SCOPED_CPU_COUNTER(RenderOmniShadowMaps);
 			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
-			// #todo-opt: This is incredibly super slow in debug build
+			// #todo-performance: This is incredibly super slow in debug build
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
-
-		// ready scene for rendering
-		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
 
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
@@ -207,7 +207,8 @@ namespace pathos {
 		}
 
 		// update ubo_perFrame
-		// #todo: Why is this in the midst of rendering? Shouldn't it be at the very first?
+		// #todo-refactoring: Why is this in the midst of rendering? Shouldn't it be at the very first?
+		// -> Because some values are calculated in prior passes (ex: renderShadowMap() updates the matrices for sunShadowMap->getViewProjection())
 		updateSceneUniformBuffer(cmdList, scene, camera);
 
 		// Volumetric clouds

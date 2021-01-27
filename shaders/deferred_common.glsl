@@ -12,13 +12,15 @@
 #define MATERIAL_ID_PBR            8
 
 struct PointLight {
-	vec3  position;
+	// 16 bytes
+	vec3  worldPosition;
 	float attenuationRadius;
+	// 16 bytes
 	vec3  intensity;
 	float falloffExponent;
+	// 16 bytes
+	vec3  viewPosition;
 	uint  castsShadow;
-	//vec3  padding0; // This rather breaks padding. Very awesome layout rule :/
-	vec4  padding1; // big padding due to castsShadow
 };
 
 struct DirectionalLight {

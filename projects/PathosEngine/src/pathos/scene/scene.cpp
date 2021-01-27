@@ -27,9 +27,9 @@ namespace pathos {
 		}
 	}
 
-	void Scene::transformLightProxyToViewSpace(const matrix4& viewMatrix) {
+	void Scene::createViewDependentRenderProxy(const matrix4& viewMatrix) {
 		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
-			proxyList_pointLight[i]->position = vector3(viewMatrix * vector4(proxyList_pointLight[i]->position, 1.0f));
+			proxyList_pointLight[i]->viewPosition = vector3(viewMatrix * vector4(proxyList_pointLight[i]->worldPosition, 1.0f));
 		}
 
 		for (uint32 i = 0u; i < proxyList_directionalLight.size(); ++i) {
