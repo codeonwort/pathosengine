@@ -1,3 +1,4 @@
+//#version 460 core // uncomment to check grammar
 
 // should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 #define MAX_DIRECTIONAL_LIGHTS     4
@@ -11,20 +12,27 @@
 #define MATERIAL_ID_PBR            8
 
 struct PointLight {
-	vec3  position;
+	// 16 bytes
+	vec3  worldPosition;
 	float attenuationRadius;
+	// 16 bytes
 	vec3  intensity;
 	float falloffExponent;
+	// 16 bytes
+	vec3  viewPosition;
 	uint  castsShadow;
-	//vec3  padding0; // This rather breaks padding. Very awesome layout rule :/
-	vec4  padding1; // big padding due to castsShadow
 };
 
 struct DirectionalLight {
-	vec3  direction;
+	// 16 bytes
+	vec3  wsDirection;
 	float padding0;
+	// 16 bytes
 	vec3  intensity;
 	float padding1;
+	// 16 bytes
+	vec3  vsDirection;
+	float padding2;
 };
 
 float pointLightAttenuation(PointLight L, float d) {
@@ -100,4 +108,11 @@ vec3 getViewPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
 
 vec3 getViewPositionFromWorldPosition(vec3 wPos) {
 	return (uboPerFrame.viewTransform * vec4(wPos, 1.0)).xyz;
+}
+
+// Near is 0.0, Far is 1.0
+float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
+	vec3 vPos = getViewPositionFromSceneDepth(screenUV, sceneDepth);
+	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
+	return linearDepth;
 }

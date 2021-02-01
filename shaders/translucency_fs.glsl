@@ -32,7 +32,7 @@ void main() {
 	vec3 vs_coords = fs_in.vs_coords;
 
 	vec3 N = normalize(fs_in.normal);
-	vec3 L = -uboPerFrame.directionalLights[0].direction;
+	vec3 L = -uboPerFrame.directionalLights[0].vsDirection;
 	vec3 V = normalize(uboPerFrame.eyePosition - vs_coords);
 	vec3 H = normalize(V + L);
 
@@ -53,7 +53,7 @@ void main() {
 	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
 		DirectionalLight dirLight = uboPerFrame.directionalLights[i];
 
-		vec3 L = -dirLight.direction;
+		vec3 L = -dirLight.vsDirection;
 		vec3 H = normalize(V + L);
 		vec3 radiance = dirLight.intensity;
 
@@ -77,10 +77,10 @@ void main() {
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight pointLight = uboPerFrame.pointLights[i];
 
-		vec3 L = normalize(pointLight.position - vs_coords);
+		vec3 L = normalize(pointLight.viewPosition - vs_coords);
 		vec3 H = normalize(V + L);
 
-		float distance = length(pointLight.position - vs_coords);
+		float distance = length(pointLight.viewPosition - vs_coords);
 		vec3 radiance = pointLight.intensity * pointLightAttenuation(pointLight, distance);
 
 		float NDF = distributionGGX(N, H, roughness);
@@ -102,6 +102,9 @@ void main() {
 	// Final color
 	vec3 ambient = vec3(0.03) * albedo;
 	vec3 finalColor = ambient + Lo;
+
+	// #todo-translucency: Even generates NaN
+	finalColor = max(vec3(0.0), finalColor);
 
 	output0 = vec4(finalColor, opacity);
 }

@@ -25,11 +25,12 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/util/cpu_profiler.h"
 #include "pathos/util/gl_debug_group.h"
 
 #include "badger/assertion/assertion.h"
 
-#define ASSERT_GL_NO_ERROR 0
+#define ASSERT_GL_NO_ERROR 0 // #todo: This has no meaning due to render command list
 
 namespace pathos {
 
@@ -55,8 +56,10 @@ namespace pathos {
 
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
-	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 0, "0 = disable DoF, 1 = enable DoF"); // #todo-dof: Sometimes generates NaN in dof subsum shader. Disable for now.
+	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
+
+	static ConsoleVariable<int32> cvar_visualize_depth("r.visualize_depth", 0, "0 = disable, 1 = enable");
 
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
@@ -166,37 +169,41 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
+		// #todo: multi-view
+		{
+			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
+
+			// They should be updated before updateSceneUniformBuffer
+			scene->createViewDependentRenderProxy(camera->getViewMatrix());
+			sunShadowMap->updateUniformBufferData(cmdList, scene, camera);
+
+			// Update ubo_perFrame
+			updateSceneUniformBuffer(cmdList, scene, camera);
+		}
+
 		// Reverse-Z
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
 		{
+			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
 
 			depthPrepass->renderPreDepth(cmdList, scene, camera);
 		}
 
-		// #todo-depthprepass: Now depth prepass will render the scene depth.
-		// Remove this pass and just use the sceneDepth texture.
-		auto cvar_visualizeDepth = ConsoleVariableManager::get().find("r.visualize_depth");
-		if (cvar_visualizeDepth && cvar_visualizeDepth->getInt() != 0) {
-			visualizeDepth->render(cmdList, scene, camera);
-			return;
-		}
-
 		{
+			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
-
+			// #todo-performance: This is incredibly slow in debug build
 			sunShadowMap->renderShadowMap(cmdList, scene, camera);
 		}
 
 		{
+			SCOPED_CPU_COUNTER(RenderOmniShadowMaps);
 			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
-
+			// #todo-performance: This is incredibly super slow in debug build
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
-
-		// ready scene for rendering
-		scene->transformLightProxyToViewSpace(camera->getViewMatrix());
 
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
@@ -207,10 +214,6 @@ namespace pathos {
 			cmdList.clearStencil(0);
 			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
-
-		// update ubo_perFrame
-		// #todo: Why is this in the midst of rendering? Shouldn't it be at the very first?
-		updateSceneUniformBuffer(cmdList, scene, camera);
 
 		// Volumetric clouds
 		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
@@ -374,7 +377,7 @@ namespace pathos {
 			}
 
 			// Post Process: Depth of Field
-			if (!noDOF) {
+			if (!noDOF && depthOfField->isAvailable()) {
 				const GLuint dofRenderTarget = getFinalRenderTarget();
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
@@ -382,6 +385,12 @@ namespace pathos {
 				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
 			}
 
+		}
+
+		// #todo-debugview: For depth visualization, no need to render anything other than prepass.
+		// but this will be a generalized debug pass for everything (sceneDepth, albedo, metallic, roughness, ...)
+		if (cvar_visualize_depth.getValue() != 0) {
+			visualizeDepth->render(cmdList, scene, camera);
 		}
 
 #if ASSERT_GL_NO_ERROR
@@ -651,6 +660,7 @@ namespace pathos {
 			depthPrepass->initializeResources(cmdList);
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
+			visualizeDepth->initializeResources(cmdList);
 		}
 
 		{
@@ -705,7 +715,7 @@ namespace pathos {
 			depthPrepass->destroyResources(cmdList);
 			sunShadowMap->destroyResources(cmdList);
 			omniShadowPass->destroyResources(cmdList);
-			visualizeDepth.release();
+			visualizeDepth->destroyResources(cmdList);
 		}
 
 		{

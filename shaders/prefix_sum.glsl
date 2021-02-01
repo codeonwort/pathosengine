@@ -1,6 +1,6 @@
 #version 430 core
 
-// Calculate subsum table for depth of field
+// Calculate prefix sum table for depth of field
 
 layout (local_size_x = 1024) in;
 
@@ -30,7 +30,7 @@ void main() {
 	barrier();
 	memoryBarrierShared();
 
-	for(step = 0; step < steps ; step++){
+	for (step = 0; step < steps ; step++) {
 		mask = (1 << step) - 1;
 		rd_id = ((id >> step) << (step + 1)) + mask;
 		wr_id = rd_id + 1 + (id & mask);
@@ -41,7 +41,6 @@ void main() {
 		memoryBarrierShared();
 	}
 
-	// #todo-dof: Sometimes NaN is stored in the output
 	imageStore(output_image, P0.yx, vec4(shared_data[P0.x], i0.a));
 	imageStore(output_image, P1.yx, vec4(shared_data[P1.x], i1.a));
 }

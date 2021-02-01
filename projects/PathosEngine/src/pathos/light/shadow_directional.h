@@ -5,6 +5,8 @@
 #include "pathos/scene/scene.h"
 
 #include "badger/types/noncopyable.h"
+#include "badger/types/vector_types.h"
+#include "badger/types/matrix_types.h"
 #include <vector>
 
 namespace pathos {
@@ -13,19 +15,20 @@ namespace pathos {
 	class DirectionalShadowMap : public Noncopyable {
 
 	public:
-		DirectionalShadowMap(const glm::vec3& lightDirection = glm::vec3(0.0f, -1.0f, 0.0f));
+		DirectionalShadowMap(const vector3& lightDirection = vector3(0.0f, -1.0f, 0.0f));
 		virtual ~DirectionalShadowMap();
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void setLightDirection(const glm::vec3& direction);
+		void updateUniformBufferData(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
 		
 		void renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
 
-		inline glm::mat4 getViewProjection(uint32_t index) const { return viewProjectionMatrices[index]; }
+		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
 
 	private:
+		void setLightDirection(const vector3& direction);
 		// Update viewProjectionMatrices
 		void calculateBounds(const Camera& camera, uint32 numCascades);
 
@@ -38,8 +41,8 @@ namespace pathos {
 		GLint uniform_depthMVP = -1;
 
 		// light space transform
-		glm::vec3 lightDirection;
-		std::vector<glm::mat4> viewProjectionMatrices;
+		vector3 lightDirection;
+		std::vector<matrix4> viewProjectionMatrices; // Projection matrices that perfectly cover each camera frustum
 
 	};
 

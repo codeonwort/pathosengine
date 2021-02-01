@@ -52,7 +52,7 @@ namespace pathos {
 	class Engine final : public Noncopyable {
 		friend class EngineUtil;
 
-		using ExecProc = std::function<void(const std::string&)>;
+		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
 		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
 
 	// Static members
@@ -143,7 +143,8 @@ namespace pathos {
 		Stopwatch stopwatch_renderThread;
 		Stopwatch stopwatch_app;
 
-		uint32 frameCounter;
+		uint32 frameCounter_gameThread;
+		uint32 frameCounter_renderThread;
 		float elapsed_gameThread;
 		float elapsed_renderThread;
 

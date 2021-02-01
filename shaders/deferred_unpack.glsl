@@ -90,8 +90,7 @@ float getShadowing(fragment_info fragment) {
 float getShadowingByPointLight(fragment_info fragment, PointLight light, int shadowMapIndex) {
 	OmniShadowQuery query;
 	query.shadowMapIndex    = shadowMapIndex;
-	// #todo: Remove transform
-	query.lightPos          = (uboPerFrame.inverseViewTransform * vec4(light.position, 1.0)).xyz;
+	query.lightPos          = light.worldPosition;
 	query.attenuationRadius = light.attenuationRadius;
 	query.wPos              = fragment.ws_coords;
 
@@ -111,7 +110,7 @@ vec3 phongShading(fragment_info fragment) {
 			radiance = radiance * getShadowing(fragment);
 		}
 
-		vec3 L = -light.direction;
+		vec3 L = -light.vsDirection;
 		float cosTheta = max(0.0, dot(N, L));
 		vec3 diffuse_color = radiance * (fragment.albedo * cosTheta);
 		result += diffuse_color;
@@ -121,7 +120,7 @@ vec3 phongShading(fragment_info fragment) {
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
-		vec3 L = light.position - fragment.vs_coords;
+		vec3 L = light.viewPosition - fragment.vs_coords;
 		float dist = length(L);
 		float attenuation = pointLightAttenuation(light, dist);
 		L = normalize(L);
@@ -167,7 +166,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
 		DirectionalLight light = uboPerFrame.directionalLights[i];
 
-		vec3 L = -light.direction;
+		vec3 L = -light.vsDirection;
 		vec3 H = normalize(V + L);
 
 		vec3 radiance = light.intensity;
@@ -196,9 +195,9 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
-		vec3 L = normalize(light.position - fragment.vs_coords);
+		vec3 L = normalize(light.viewPosition - fragment.vs_coords);
 		vec3 H = normalize(V + L);
-		float distance = length(light.position - fragment.vs_coords);
+		float distance = length(light.viewPosition - fragment.vs_coords);
 		float attenuation = pointLightAttenuation(light, distance);
 
 		vec3 radiance = light.intensity;

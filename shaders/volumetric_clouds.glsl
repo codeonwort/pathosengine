@@ -595,7 +595,7 @@ void main() {
         eye_ray.origin.y += 1.5;
     }
     
-	vec3 sunDir = uboPerFrame.directionalLights[0].direction;
+	vec3 sunDir = uboPerFrame.directionalLights[0].wsDirection;
 
     vec4 result = scene(eye_ray, sunDir, uv);
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pathos/actor/scene_component.h"
-#include <glm/glm.hpp>
 
 // Role model for parameters of point light:
 // https://docs.unrealengine.com/en-US/Engine/Rendering/LightingAndShadows/LightTypes/Point/index.html
@@ -9,13 +8,12 @@
 namespace pathos {
 
 	struct PointLightProxy : public SceneComponentProxy {
-		vector3   position;
+		vector3   worldPosition;
 		float     attenuationRadius;
 		vector3   intensity;
 		float     falloffExponent;
+		vector3   viewPosition;
 		uint32    castsShadow;
-		vector3   padding0;
-		vector4   padding1;
 	};
 
 	class PointLightComponent : public SceneComponent {
@@ -25,10 +23,11 @@ namespace pathos {
 		{
 			PointLightProxy* proxy = ALLOC_RENDER_PROXY<PointLightProxy>();
 
-			proxy->position          = getLocation();
+			proxy->worldPosition     = getLocation();
 			proxy->attenuationRadius = attenuationRadius;
 			proxy->intensity         = color;
 			proxy->falloffExponent   = falloffExponent;
+			proxy->viewPosition      = vector3(0.0f); // NOTE: This is filled later
 			proxy->castsShadow       = castsShadow;
 
 			scene->proxyList_pointLight.push_back(proxy);
