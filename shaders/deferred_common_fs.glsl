@@ -1,4 +1,4 @@
-//#version 450 core // uncomment to check grammar
+//? #version 450 core
 
 // x = albedo.x, albedo.y
 // y = albedo.z, normal.x

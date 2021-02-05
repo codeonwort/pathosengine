@@ -1,4 +1,4 @@
-//#version 460 core // uncomment to check grammar
+//? #version 460 core
 
 // should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 #define MAX_DIRECTIONAL_LIGHTS     4
