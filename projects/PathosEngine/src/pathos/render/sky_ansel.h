@@ -39,7 +39,6 @@ namespace pathos {
 
 	private:
 		GLint uniform_transform = 0;
-		GLint uniform_screenSize = 1;
 		GLuint texture = 0;
 
 		MeshGeometry* sphere = nullptr;

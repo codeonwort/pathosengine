@@ -1,7 +1,6 @@
 #version 450 core
 
 layout (location = 0) uniform mat4 viewProj;
-layout (location = 1) uniform vec4 screenSize;
 
 #if VERTEX_SHADER
 
@@ -31,13 +30,24 @@ in VS_OUT {
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
 
+vec2 CubeToEquirectangular(vec3 v) {
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= vec2(0.1591, 0.3183); // inverse atan
+    uv += 0.5;
+    return uv;
+}
+
 void main() {
+#if 0
 	const float PI = 3.14159265359;
 	vec3 r0 = normalize(fs_in.r);
 	vec3 r = vec3(r0.x, r0.z, -r0.y);
 	vec2 tc;
 	tc.x = (atan(r.y, r.x) + PI) / PI * 0.5;
 	tc.y = acos(r.z) / PI;
+#else
+	vec2 tc = CubeToEquirectangular(normalize(fs_in.r));
+#endif
 
 	vec3 sky = texture(texSky, tc).xyz;
 	out_color = vec4(sky, 1.0);

@@ -154,7 +154,6 @@ namespace pathos {
 	AnselSkyRendering::AnselSkyRendering(GLuint textureID) :texture(textureID) {
 		sphere = new IcosahedronGeometry(0);
 		uniform_transform = 0;
-		uniform_screenSize = 1;
 	}
 
 	AnselSkyRendering::~AnselSkyRendering() {
@@ -165,11 +164,9 @@ namespace pathos {
 	void AnselSkyRendering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(AnselSkyRendering);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
-		matrix4& proj = camera->getProjectionMatrix();
-		matrix4& transform = proj * view;
+		const matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
+		const matrix4& proj = camera->getProjectionMatrix();
+		const matrix4 transform = proj * view;
 
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.disable(GL_DEPTH_TEST);
@@ -181,7 +178,6 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		cmdList.uniform4f(uniform_screenSize, (float)sceneContext.sceneWidth, (float)sceneContext.sceneHeight, 0.0f, 0.0f);
 		cmdList.bindTextureUnit(0, texture);
 
 		sphere->drawPrimitive(cmdList);

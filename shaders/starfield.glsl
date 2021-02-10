@@ -4,17 +4,16 @@
 
 #define PI 3.141592
 
-//#define NOISE supernoise3dX
 #define NOISE iq_noise
 
 in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
-out vec4 out0;
+out vec4 outColor;
 
 vec2 CubeToEquirectangular(vec3 v) {
-    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    vec2 uv = vec2(atan(v.y, v.x), asin(v.z));
     uv *= vec2(0.1591, 0.3183); // inverse atan
     uv += 0.5;
     return uv;
@@ -24,12 +23,28 @@ vec3 EquirectangularToCube(vec2 uv) {
 	uv -= 0.5;
 	uv *= vec2(2.0 * PI, PI);
 
+	// x = cos(u) * cos(v)
+	// y = sin(u) * cos(v)
+	// z = sin(v)
 	return vec3(cos(uv.y) * cos(uv.x), cos(uv.y) * sin(uv.x), sin(uv.y));
 }
 
-//// iq ////
-// https://www.shadertoy.com/view/4sfGzS
-float iq_hash(vec3 p)  // replace this by something better
+// Ray Tracing Gems 16.5.4.2
+vec3 OctahedralConcentricMapping(vec2 uv) {
+	uv = 2.0 * uv - 1.0;
+	float d = 1 - (abs(uv.x) + abs(uv.y));
+	float r = 1 - abs(d);
+
+	float phi = (r == 0.0) ? 0.0 : (PI / 4.0) * ((abs(uv.x) - abs(uv.y)) / r + 1.0);
+	float f = r * sqrt(2.0 - r*r);
+	float x = f * sign(uv.x) * cos(phi);
+	float y = f * sign(uv.y) * sin(phi);
+	float z = sign(d) * (1.0 - r*r);
+	return vec3(x, y, z);
+}
+
+//// iq: https://www.shadertoy.com/view/4sfGzS
+float iq_hash(vec3 p)
 {
     p  = fract( p*0.3183099+.1 );
 	p *= 17.0;
@@ -126,7 +141,7 @@ float dustFbm(vec3 p, float dx) {
 	return a / wc;// + noise(p * 100.0) * 11;
 }
 
-float stars(vec3 seed, float intensity) {
+float starsInner(vec3 seed, float intensity) {
 	float edge0 = 1.0 - intensity * 0.9;
 	float edge1 = (1.0 - intensity * 0.9) + 0.1;
 	float x = NOISE(seed * 3700.0) * (0.5 + 0.5 * NOISE(seed * 2.0));
@@ -135,49 +150,28 @@ float stars(vec3 seed, float intensity) {
 }
 
 // This is a complete mess :(
-vec3 stars(vec3 dir) {
-	//float intensityred = (1.0 / (1.0 + 30.0 * abs(uv.y))) * fbmHI2d(uv * 30.0, 3.0) * (1.0 - abs(uv.x ));	
-	//float intensitywhite = (1.0 / (1.0 + 20.0 * abs(uv.y))) * fbmHI2d(uv * 30.0 + 120.0, 3.0) * (1.0 - abs(uv.x ));	
-	//float intensityblue = (1.0 / (1.0 + 20.0 * abs(uv.y))) * fbmHI2d(uv * 30.0 + 220.0, 3.0) * (1.0 - abs(uv.x ));	
-	//intensityred = 1.0 - pow(1.0 - intensityred, 3.0) * 0.73;
-	//intensitywhite = 1.0 - pow(1.0 - intensitywhite, 3.0) * 0.73;
-	//intensityblue = 1.0 - pow(1.0 - intensityblue, 3.0) * 0.73;
-	//float redlights = stars(uv, intensityred );
-	//float whitelights = stars(uv, intensitywhite );
-	//float bluelights = stars(uv, intensityblue );
-	//vec3 starscolor = vec3(1.0, 0.8, 0.5) * redlights + vec3(1.0) * whitelights + vec3(0.6, 0.7, 1.0) * bluelights;
-	//vec3 dustinner = vec3(0.9, 0.8, 0.8);
-	//vec3 dustouter = vec3(0.2, 0.1, 0.0);
-	//vec3 innermix = mix(dustinner, starscolor, 1.0 - galaxydust);
-	//vec3 allmix = mix(dustouter, innermix, 1.0 - galaxydust2);
-	//vec3 bloom = 1.6 * dustinner * (1.0 / (1.0 + 30.0 * abs(uv.y))) * fbmHI2d(uv * 3.0, 3.0) * (1.0 - abs(uv.x ));	
-	//return allmix + bloom;
+vec3 scene(vec3 dir) {
+	const float GRAY_LEVEL = 0.27;
 
-	const float GRAY_LEVEL = 0.32;
+	float intensityred   = NOISE(dir * 352.062) * 0.7;
+	float intensitywhite = NOISE(dir * 406.211) * 0.7;
+	float intensityblue  = NOISE(dir * 703.263) * 0.7;
 
-	float intensityred = fbmHI3d(dir * 102.062, 1.6);
-	float intensitywhite = fbmHI3d(dir * 106.211, 1.17);
-	float intensityblue = fbmHI3d(dir * 103.263, 1.83);
-
-	intensityred = smoothstep(GRAY_LEVEL, 1.0, intensityred);
+	intensityred   = smoothstep(GRAY_LEVEL, 1.0, intensityred);
 	intensitywhite = smoothstep(GRAY_LEVEL, 1.0, intensitywhite);
-	intensityblue = smoothstep(GRAY_LEVEL, 1.0, intensityblue);
+	intensityblue  = smoothstep(GRAY_LEVEL, 1.0, intensityblue);
 	
 	const float baseX = 0.0;
 	const float baseZ = 0.2;
 	float zFactor = 0.7 * abs(baseZ - dir.z);
 	float xFactor = 0.2 * max(0.0, baseX - dir.x);
 
-	//float galaxydust = smoothstep(0.1, 0.5, (1.0 / (1.0 + 20.0 * abs(uv.y))) * fbmHI2d(uv * 20.0 + 220.0, 3.0) * (1.0 - abs(uv.x)));
 	float galaxydust = smoothstep(0.1, 0.2, (1.0 / (23.0 * zFactor)) * dustFbm(dir * 62.0, 3.0) * xFactor);
 	float galaxydust2 = smoothstep(0.1, 0.43, (1.0 / (40.0 * zFactor)) * dustFbm(dir * 77.0, 3.0) * xFactor);
 
-	//galaxydust = smoothstep(0.1, 0.5, (1.0 / (1.0 + 30.0 * zFactor)) * fbmHI3d(dir * 30.0, 3.0));
-	//galaxydust2 = smoothstep(0.1, 0.5, (1.0 / (1.0 + 20.0 * zFactor)) * fbmHI3d(dir * 20.0, 3.0));
-
-	float redlights = stars(dir * 100.0, intensityred);
-	float whitelights = stars(dir * 100.0, intensitywhite);
-	float bluelights = stars(dir * 100.0, intensityblue);
+	float redlights = starsInner(dir * 25.126, intensityred);
+	float whitelights = starsInner(dir * 30.0, intensitywhite);
+	float bluelights = starsInner(dir * 50.0, intensityblue);
 
 	vec3 starscolor = vec3(1.0, 0.8, 0.5) * redlights
 		+ vec3(1.0) * whitelights
@@ -190,20 +184,28 @@ vec3 stars(vec3 dir) {
 	vec3 dustouter = white;
 	vec3 innermix = mix(dustinner, starscolor, 1.0 - galaxydust);
 	vec3 allmix = mix(dustouter, innermix, 1.0 - galaxydust2);
-	vec3 bloom = 1.6 * dustinner * (1.0 / (1.0 + 15.0 * zFactor)) * dustFbm(dir * 3.0, 3.0) * xFactor;
 
 	return allmix;
-	//return allmix + bloom;
 	//return starscolor;
 }
 
 void main() {
 	vec2 uv = fs_in.screenUV;
-	//uv.x += 0.01 * (0.5 - configurablenoise(260.0 * vec3(uv, 2.0), 126.3, 62.42));
-	//uv.y += 0.01 * (0.5 - configurablenoise(120.0 * vec3(uv, 1.0), 626.1, 33.27));
-
 	vec3 dir = EquirectangularToCube(uv);
 
-	//out0 = vec4(vec3(fbmHI3d(dir, 3.0)), 1.0);
-    out0 = vec4(stars(dir), 1.0);
+// Noise test
+#if 0
+	vec3 V = OctahedralConcentricMapping(uv);
+	//float x1 = hash(fbmHI3d(V, 4.0));
+	//float x1 = hash(asin(uv.y) * 634.232);
+	float x1 = iq_noise(dir * 552.253);
+	outColor = vec4(x1, x1, x1, 1.0);
+#elif 0
+	vec3 v = dir.xyz;
+	//v.z *= sin(dir.z);
+	float x1 = iq_hash(v);
+	outColor = vec4(x1, x1, x1, 1.0);
+#else
+    outColor = vec4(scene(dir), 1.0);
+#endif
 }
