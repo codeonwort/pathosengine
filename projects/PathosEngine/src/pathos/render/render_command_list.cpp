@@ -3,6 +3,8 @@
 
 #include "badger/assertion/assertion.h"
 
+#define ASSERT_GL_NO_ERROR 0
+
 namespace pathos {
 
 	const uint32 RenderCommandList::RENDER_COMMAND_LIST_MAX_MEMORY = 32 * 1024 * 1024; // 32 MB
@@ -17,12 +19,18 @@ namespace pathos {
 
 	void RenderCommandList::executeAllCommands()
 	{
+#if ASSERT_GL_NO_ERROR
+		glGetError();
+#endif
 		uint32 n = (uint32)commands.size();
 		for(uint32 i = 0; i < n; ++i)
 		{
 			debugCurrentCommandIx = i;
 			commands[i]->pfn_execute(commands[i]);
 		}
+#if ASSERT_GL_NO_ERROR
+		assert(GL_NO_ERROR == glGetError());
+#endif
 	}
 
 	// #todo-cmd-list: Support nested flush?

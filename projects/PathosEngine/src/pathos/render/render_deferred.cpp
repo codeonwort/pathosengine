@@ -30,8 +30,6 @@
 
 #include "badger/assertion/assertion.h"
 
-#define ASSERT_GL_NO_ERROR 0 // #todo: This has no meaning due to render command list
-
 namespace pathos {
 
 	class CopyTextureVS : public ShaderStage {
@@ -161,10 +159,6 @@ namespace pathos {
 		camera = inCamera;
 
 		CHECK(sceneRenderSettings.isValid());
-
-#if ASSERT_GL_NO_ERROR
-		glGetError();
-#endif
 
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
@@ -392,10 +386,6 @@ namespace pathos {
 		if (cvar_visualize_depth.getValue() != 0) {
 			visualizeDepth->render(cmdList, scene, camera);
 		}
-
-#if ASSERT_GL_NO_ERROR
-		assert(GL_NO_ERROR == glGetError());
-#endif
 
 		scene = nullptr;
 		camera = nullptr;
