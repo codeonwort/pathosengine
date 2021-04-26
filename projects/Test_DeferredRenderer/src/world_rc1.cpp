@@ -174,7 +174,7 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(starfield, 2048, 1024);
+	GalaxyGenerator::createStarField(starfield, 4096, 2048);
 	glObjectLabel(GL_TEXTURE, starfield, -1, "Texture: Starfield");
 
 	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512);

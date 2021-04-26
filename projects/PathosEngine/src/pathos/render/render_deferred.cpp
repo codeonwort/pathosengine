@@ -248,6 +248,7 @@ namespace pathos {
 		}
 
 		{
+			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
 			SCOPED_GPU_COUNTER(UnpackGBuffer);
 
 			// #todo-renderer: Sometimes NaN pixels are generated and enlarged in the bloom pass.
