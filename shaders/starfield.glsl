@@ -2,9 +2,8 @@
 
 // Forked from https://www.shadertoy.com/view/4ljcz1
 
-#define PI 3.141592
-
-#define NOISE iq_noise
+#define PI       3.14159265359
+#define NOISE    iq_noise
 
 in VS_OUT {
 	vec2 screenUV;

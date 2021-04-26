@@ -2,19 +2,20 @@
 
 #include "deferred_common.glsl"
 
-// #todo-cloud: wip
+// Tuning -----------------------------------------------------
+// #todo-cloud: wip temporal reprojection
 #define TEMPORAL_REPROJECTION 0
+// Ray Tracing Gems - Chapter 7. Precision Improvements for Ray/Sphere Intersection
+#define PRECISE_RAY_SPHERE_INTERSECTION 0
+// ------------------------------------------------------------
 
-// Visualize cloud coverage in weather texture
-#define DEBUG_MODE_WEATHER 1
-// Visualize raymarching result without applying cloud noise
-#define DEBUG_MODE_NO_NOISE 2
-// Apply shape noise, but no erosion noise
-#define DEBUG_MODE_NO_EROSION 3
+#define DEBUG_MODE            0 // Set to one of values for visualization
+#define DEBUG_MODE_WEATHER    1 // Cloud coverage in weather texture
+#define DEBUG_MODE_NO_NOISE   2 // Raymarching result without applying cloud noise
+#define DEBUG_MODE_NO_EROSION 3 // Apply shape noise, but no erosion noise
 
-#define DEBUG_MODE 0
-
-#define DEBUG_TRANSMITTANCE 0
+#define DEBUG_TRANSMITTANCE   0
+#define DEBUG_MINUS_COLOR     0
 
 layout (std140, binding = 1) uniform UBO_VolumetricCloud {
     float earthRadius;    // in meters
@@ -104,7 +105,7 @@ void intersect_sphere(
 	inout hit_t hit
 ){
 // Original code from shadertoy
-#if 1
+#if PRECISE_RAY_SPHERE_INTERSECTION == 0
 	vec3 rc = sphere.origin - ray.origin;
 	float radius2 = sphere.radius * sphere.radius;
 	float tca = dot(rc, ray.direction);
@@ -127,8 +128,6 @@ void intersect_sphere(
     hit.t = t0;
 	hit.origin = impact;
 	hit.normal = (impact - sphere.origin) / sphere.radius;
-// Ray Tracing Gems - Chapter 7
-// Precision Improvements for Ray/Sphere Intersection
 // -> Well, no visual differences. Let's use the original code.
 #else
     vec3 d = ray.direction;
@@ -301,10 +300,11 @@ float sampleCloud(vec3 P, float lod) {
     return saturate(finalCloud);
 }
 
-// #todo: for debug
+#if DEBUG_MINUS_COLOR
 bool isMinus(vec3 v) {
     return v.x < 0.0 || v.y < 0.0 || v.z < 0.0;
 }
+#endif
 
 // #todo: This is a total mess
 vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
@@ -375,8 +375,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 
     // (#todo: empty-space optimization)
     // Raymarching
-    for (int i = 0; i < numSteps; ++i)
-    {
+    for (int i = 0; i < numSteps; ++i) {
         if (P.y < 0.0)
         {
             isGround = true;
@@ -399,6 +398,7 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 
         // Raymarch from current position to Sun
         float TL = 1.0; // transmittance(P->Sun) or light visibility
+
         {
             hit_t hitL = no_hit;
             ray_t ray2 = ray_t(P, -sunDir);
@@ -472,11 +472,13 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
             break;
         }
 
+#if DEBUG_MINUS_COLOR
         if (isMinus(Lsc)) {
             useDebugColor = true;
             result = vec3(1.0, 0.0, 0.0);
             break;
         }
+#endif
 
         P += P_step;
     }
@@ -491,10 +493,11 @@ vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
 #endif
     }
 
-    // DEBUG
+#if DEBUG_MINUS_COLOR
     if (isMinus(result) && useDebugColor == false) {
         result = vec3(0.0, 1.0, 1.0);
     }
+#endif
 
     return vec4(result, T); // luminance and transmittance
 }
@@ -522,6 +525,7 @@ vec3 getPrevViewDirection(vec2 uv) {
     
     return ray_forward;
 }
+
 vec2 viewDirectionToUV_prevFrame(vec3 dir) {
     vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
 
@@ -590,7 +594,7 @@ void main() {
     eye_ray.origin = uboPerFrame.ws_eyePosition;
 	eye_ray.direction = viewDir;
 
-    // Raymarching is broken if eye is too close to the interface of cloud layers
+    // Raymarching will be broken if eye location is too close to the interface of cloud layers
     if (abs(eye_ray.origin.y - getCloudLayerMin()) <= 1.5 || abs(eye_ray.origin.y - getCloudLayerMax()) <= 1.5) {
         eye_ray.origin.y += 1.5;
     }

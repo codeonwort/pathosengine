@@ -15,7 +15,7 @@ void main() {
 	gl_Position = (viewProj * vec4(position, 1)).xyww;
 }
 
-#endif
+#endif // VERTEX_SHADER
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -55,4 +55,4 @@ void main() {
 	out_bright = vec4(0.0);
 }
 
-#endif
+#endif // FRAGMENT_SHADER
