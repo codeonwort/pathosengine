@@ -9,21 +9,26 @@ using namespace pathos;
 namespace pathos {
 	class StaticMeshActor;
 	class SkinnedMesh;
+	class DirectionalLightActor;
+	class PointLightActor;
 }
+class PlayerController;
 
 class World2 : public World {
 	
 public:
-	World2();
-
 	virtual void onInitialize() override;
 	virtual void onTick(float deltaSeconds) override;
 
-	void setupInput();
 	void setupScene();
 	void loadDAE();
 
 private:
+	PlayerController* playerController = nullptr;
+
+	DirectionalLightActor* dirLight = nullptr;
+	PointLightActor* pointLight0 = nullptr;
+
 	StaticMeshActor* model = nullptr;
 	StaticMeshActor* model2 = nullptr;
 	SkinnedMesh* daeModel = nullptr;

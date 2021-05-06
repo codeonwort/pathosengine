@@ -70,6 +70,7 @@
   <ItemGroup>
     <ClCompile Include="src\daeloader.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\player_controller.cpp" />
     <ClCompile Include="src\skinned_mesh.cpp" />
     <ClCompile Include="src\world2.cpp" />
   </ItemGroup>
@@ -77,6 +78,7 @@
     <ClInclude Include="src\animation.h" />
     <ClInclude Include="src\bone.h" />
     <ClInclude Include="src\daeloader.h" />
+    <ClInclude Include="src\player_controller.h" />
     <ClInclude Include="src\skinned_mesh.h" />
     <ClInclude Include="src\world2.h" />
   </ItemGroup>

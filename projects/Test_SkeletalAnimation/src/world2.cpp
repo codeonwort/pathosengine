@@ -1,56 +1,35 @@
 #include "world2.h"
 #include "daeloader.h"
 #include "skinned_mesh.h"
+#include "player_controller.h"
 
+#include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
-#include "pathos/input/input_manager.h"
 #include "pathos/gui/gui_window.h"
-#include "pathos/light/light_all.h"
 #include "pathos/mesh/static_mesh_actor.h"
-#include "pathos/util/log.h"
 
 #include <time.h>
 
 #define DAE_MODEL_ID              2
 #define LOAD_SECOND_DAE_MODEL     0
 
-World2::World2()
-{
-}
 
 void World2::onInitialize()
 {
-	setupInput();
+	playerController = spawnActor<PlayerController>();
+
 	setupScene();
 	loadDAE();
 }
 
 void World2::onTick(float deltaSeconds)
 {
-	{
-		InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
-
-		// movement per seconds
-		const float speedRight = 400.0f * deltaSeconds;
-		const float speedForward = 200.0f * deltaSeconds;
-		const float rotateY = 120.0f * deltaSeconds;
-		const float rotateX = 120.0f * deltaSeconds;
-
-		float moveRight = input->getAxis("moveRight") * speedRight;
-		float moveForward = input->getAxis("moveForward") * speedForward;
-		float rotY = input->getAxis("rotateYaw") * rotateY;
-		float rotX = input->getAxis("rotatePitch") * rotateX;
-
-		camera.move(vector3(moveForward, moveRight, 0.0f));
-		camera.rotateYaw(rotY);
-		camera.rotatePitch(rotX);
-	}
-
 	static float modelYaw = 0.0f;
 	model->setActorLocation(vector3(0, 20, 0));
 	model->setActorRotation(Rotator(modelYaw += 30.0f * deltaSeconds, 0.0f, 0.0f));
 	model->setActorLocation(vector3(0, -20, 0));
 
+	// Dummy boxes
 	for (uint32 i = 0; i < (uint32)boxes.size(); ++i)
 	{
 		Rotator rotator = boxes[i]->getActorRotation();
@@ -68,6 +47,7 @@ void World2::onTick(float deltaSeconds)
 	}
 #endif
 
+	// Update window title
 	{
 		char title[256];
 		sprintf_s(title, "%s (CPU Time: %.2f ms, GPU Time: %.2f ms)",
@@ -76,39 +56,14 @@ void World2::onTick(float deltaSeconds)
 	}
 }
 
-void World2::setupInput()
-{
-	AxisBinding moveForward;
-	moveForward.addInput(InputConstants::KEYBOARD_W, 1.0f);
-	moveForward.addInput(InputConstants::KEYBOARD_S, -1.0f);
-
-	AxisBinding moveRight;
-	moveRight.addInput(InputConstants::KEYBOARD_D, 1.0f);
-	moveRight.addInput(InputConstants::KEYBOARD_A, -1.0f);
-
-	AxisBinding rotateYaw;
-	rotateYaw.addInput(InputConstants::KEYBOARD_Q, -1.0f);
-	rotateYaw.addInput(InputConstants::KEYBOARD_E, 1.0f);
-
-	AxisBinding rotatePitch;
-	rotatePitch.addInput(InputConstants::KEYBOARD_Z, -1.0f);
-	rotatePitch.addInput(InputConstants::KEYBOARD_X, 1.0f);
-
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
-	inputManager->bindAxis("moveForward", moveForward);
-	inputManager->bindAxis("moveRight", moveRight);
-	inputManager->bindAxis("rotateYaw", rotateYaw);
-	inputManager->bindAxis("rotatePitch", rotatePitch);
-}
-
 void World2::setupScene()
 {
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
+	dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setLightParameters(vector3(0.0f, 0.0f, -1.0f), vector3(1.0f));
 
-	PointLightActor* pointLight0 = spawnActor<PointLightActor>();
+	pointLight0 = spawnActor<PointLightActor>();
 	pointLight0->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
 	pointLight0->setLightParameters(vector3(1.0f));
 
