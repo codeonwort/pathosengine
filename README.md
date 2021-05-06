@@ -18,13 +18,15 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 ## Features
 * Rendering
   * PBR materials
-  * Cascaded shadow map
-  * Bloom
-  * Depth of field
-  * Tone mapping
-  * FXAA
-  * Screen-space ambient occlusion
   * Scene capture
+  * Global Illumination
+    * Cascaded shadow map
+    * Screen-space ambient occlusion
+  * Post processing
+    * Bloom
+	* Depth of field
+	* Tone mapping
+	* FXAA
 * System
   * Render command list
   * Asynchronous asset loader
