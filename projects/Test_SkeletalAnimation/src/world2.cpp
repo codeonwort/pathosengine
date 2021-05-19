@@ -102,11 +102,6 @@ void World2::setupScene()
 	auto geom_plane = new PlaneGeometry(10.f, 10.f);
 	auto geom_cube = new CubeGeometry(vector3(5.0f));
 
-	geom_sphere->calculateTangentBasis();
-	geom_sphere_big->calculateTangentBasis();
-	geom_plane->calculateTangentBasis();
-	geom_cube->calculateTangentBasis();
-
 	//---------------------------------------------------------------------------------------
 	// create meshes
 	//---------------------------------------------------------------------------------------

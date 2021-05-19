@@ -175,12 +175,6 @@ void World1::setupScene()
 	auto geom_plane_big = new PlaneGeometry(10.0f, 10.0f, 20, 20);
 	auto geom_cube = new CubeGeometry(vector3(5.0f));
 
-	geom_sphere->calculateTangentBasis();
-	geom_sphere_big->calculateTangentBasis();
-	geom_plane->calculateTangentBasis();
-	geom_plane_big->calculateTangentBasis();
-	geom_cube->calculateTangentBasis();
-
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
