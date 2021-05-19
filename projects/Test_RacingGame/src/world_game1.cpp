@@ -36,7 +36,6 @@ void World_Game1::setupScene()
 	M_color->setRoughness(0.2f);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
-	G_sphere->calculateTangentBasis();
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);

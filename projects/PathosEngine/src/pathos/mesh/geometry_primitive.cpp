@@ -4,9 +4,16 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// PlaneGeometry
-	PlaneGeometry::PlaneGeometry(float width, float height, uint32_t gridX, uint32_t gridY)
-		: width(width), height(height), gridX(gridX), gridY(gridY) {
+	PlaneGeometry::PlaneGeometry(float width, float height, uint32 gridX, uint32 gridY, EPrimitiveInitOptions options)
+		: width(width)
+		, height(height)
+		, gridX(gridX)
+		, gridY(gridY)
+	{
 		buildGeometry();
+		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+			calculateTangentBasis();
+		}
 	}
 
 	void PlaneGeometry::buildGeometry() {
@@ -20,7 +27,7 @@ namespace pathos {
 		GLfloat* normals = new GLfloat[numPos * 3];
 		GLuint* indices = new GLuint[gridX * gridY * 6];
 
-		int32_t k = 0;
+		int32 k = 0;
 		for (auto i = 0u; i <= gridY; i++) {
 			for (auto j = 0u; j <= gridX; j++) {
 				positions[k * 3] = x0 + segW * j;
@@ -58,9 +65,15 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// CubeGeometry
-	CubeGeometry::CubeGeometry(const glm::vec3& halfSize) :halfSize(halfSize) {
+	CubeGeometry::CubeGeometry(const vector3& halfSize, EPrimitiveInitOptions options)
+		: halfSize(halfSize)
+	{
 		buildGeometry();
+		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+			calculateTangentBasis();
+		}
 	}
+
 	void CubeGeometry::buildGeometry() {
 		float hx = halfSize.x, hy = halfSize.y, hz = halfSize.z;
 		// ccw winding
@@ -94,9 +107,16 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// SphereGeometry
-	SphereGeometry::SphereGeometry(float radius, unsigned int division) :radius(radius), division(division) {
+	SphereGeometry::SphereGeometry(float radius, uint32 division, EPrimitiveInitOptions options)
+		: radius(radius)
+		, division(division)
+	{
 		buildGeometry();
+		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+			calculateTangentBasis();
+		}
 	}
+
 	void SphereGeometry::buildGeometry() {
 		uint32 numVertices = division * division;
 		uint32 numTriangles = division * (division - 1) * 2;
