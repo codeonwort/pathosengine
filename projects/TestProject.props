@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\freeimage\source;$(SolutionDir)thirdparty\assimp\source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\freeimage\source;$(SolutionDir)thirdparty\assimp\source;$(SolutionDir)thirdparty\rapidjson-1.1.0\include</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
