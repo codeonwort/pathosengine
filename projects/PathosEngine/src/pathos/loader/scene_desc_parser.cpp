@@ -81,6 +81,29 @@ namespace pathos {
 		}
 	}
 
+	static void parseStaticMeshes(rapidjson::Document& document, SceneDescription& outDesc) {
+		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
+			CONTINUE_IF_NOT(it, "staticMesh");
+
+			auto SM = it->value.GetObject();
+			if (!checkMembers(SM, { "name", "location", "rotation", "scale" })) {
+				continue;
+			}
+
+			auto name(parseName(SM));
+			auto loc = parseVec3(SM["location"].GetArray());
+			auto rot = parseVec3(SM["rotation"].GetArray());
+			auto scale = parseVec3(SM["scale"].GetArray());
+
+			// #todo-scene-loader: How to support actual assets here?
+
+			SceneDescription::StaticMesh desc{
+				name, loc, Rotator(rot.x, rot.y, rot.z), scale
+			};
+			outDesc.staticMeshes.emplace_back(desc);
+		}
+	}
+
 	bool SceneDescriptionParser::parse(const std::string& jsonSting, SceneDescription& outDesc) {
 		rapidjson::Document document;
 		document.Parse(jsonSting.c_str());
@@ -97,7 +120,7 @@ namespace pathos {
 
 		parseDirLights(document, outDesc);
 		parsePointLights(document, outDesc);
-		// #todo-scene-loader: static meshes (primitive or 3d model files)
+		parseStaticMeshes(document, outDesc);
 
 		return true;
 	}

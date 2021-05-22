@@ -4,6 +4,7 @@
 #pragma once
 
 #include "badger/types/vector_types.h"
+#include "badger/math/rotator.h"
 
 #include <string>
 #include <vector>
@@ -24,10 +25,17 @@ namespace pathos {
 			float falloffExponent;
 			bool castsShadow;
 		};
+		struct StaticMesh {
+			std::string name;
+			vector3 location;
+			Rotator rotation;
+			vector3 scale;
+		};
 
 		std::string sceneName;
 		std::vector<DirLight> dirLights;
 		std::vector<PointLight> pointLights;
+		std::vector<StaticMesh> staticMeshes;
 	};
 
 	class SceneDescriptionParser {

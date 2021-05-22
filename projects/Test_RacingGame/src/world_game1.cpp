@@ -24,6 +24,7 @@ void World_Game1::onInitialize()
 	ActorBinder binder;
 	binder.addBinding("Sun", &sun);
 	binder.addBinding("PointLight0", &pointLight0);
+	binder.addBinding("Sphere0", &sphere0);
 	SceneLoader sceneLoader;
 	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
 
@@ -48,7 +49,5 @@ void World_Game1::setupScene()
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 
-	sphere0 = spawnActor<StaticMeshActor>();
 	sphere0->setStaticMesh(new Mesh(G_sphere, M_color));
-	sphere0->setActorScale(15.0f);
 }

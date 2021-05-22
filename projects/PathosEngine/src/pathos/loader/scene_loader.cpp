@@ -4,6 +4,7 @@
 #include "pathos/actor/world.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/mesh/static_mesh_actor.h"
 
 #include <fstream>
 #include <sstream>
@@ -75,6 +76,15 @@ namespace pathos {
 			actor->setActorLocation(pLight.location);
 
 			outActorMap.insert(std::make_pair(pLight.name, actor));
+		}
+		// static meshes
+		for (const SceneDescription::StaticMesh& sm : sceneDesc.staticMeshes) {
+			StaticMeshActor* actor = world->spawnActor<StaticMeshActor>();
+			actor->setActorLocation(sm.location);
+			actor->setActorRotation(sm.rotation);
+			actor->setActorScale(sm.scale);
+
+			outActorMap.insert(std::make_pair(sm.name, actor));
 		}
 	}
 
