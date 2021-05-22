@@ -6,6 +6,7 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
 
+#include "badger/system/stopwatch.h"
 #include <fstream>
 #include <sstream>
 
@@ -16,6 +17,11 @@ namespace pathos {
 		const char* inFilename,
 		ActorBinder& actorBinder)
 	{
+		LOG(LogDebug, "Loading scene description...: %s", inFilename);
+
+		Stopwatch timer;
+		timer.start();
+
 		std::string jsonString;
 		if (!loadJSON(inFilename, jsonString)) {
 			return false;
@@ -30,6 +36,8 @@ namespace pathos {
 		ActorMap actorMap;
 		applyDescription(world, desc, actorMap);
 		bindActors(desc, actorMap, actorBinder);
+
+		LOG(LogDebug, "Loading done in %f ms", 1000.0f * timer.stop());
 
 		return true;
 	}

@@ -11,6 +11,7 @@ namespace pathos {
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
+	class Mesh;
 }
 
 class World_Game1 : public World {
@@ -23,6 +24,8 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 	// END_INTERFACE: World
 
+	void prepareAssets();
+	void reloadScene();
 	void setupScene();
 
 private:
@@ -30,4 +33,5 @@ private:
 	PointLightActor* pointLight0;
 	StaticMeshActor* sphere0;
 
+	Mesh* sphereMesh;
 };

@@ -14,6 +14,7 @@ World_Game1::World_Game1()
 	: sun(nullptr)
 	, pointLight0(nullptr)
 	, sphere0(nullptr)
+	, sphereMesh(nullptr)
 {
 }
 
@@ -21,14 +22,12 @@ void World_Game1::onInitialize()
 {
 	SCOPED_CPU_COUNTER(World_Game1_initialize);
 
-	ActorBinder binder;
-	binder.addBinding("Sun", &sun);
-	binder.addBinding("PointLight0", &pointLight0);
-	binder.addBinding("Sphere0", &sphere0);
-	SceneLoader sceneLoader;
-	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
+	prepareAssets();
+	reloadScene();
 
-	setupScene();
+	gEngine->registerExec("reload_scene", [this](const std::string& command) {
+		reloadScene();
+	});
 }
 
 void World_Game1::onTick(float deltaSeconds)
@@ -40,14 +39,34 @@ void World_Game1::onTick(float deltaSeconds)
 	p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
 }
 
-void World_Game1::setupScene()
+void World_Game1::prepareAssets()
 {
 	auto M_color = new ColorMaterial;
-	M_color->setAlbedo(1.0f, 0.0f, 0.0f);
+	M_color->setAlbedo(1.0f, 0.1f, 0.1f);
 	M_color->setMetallic(0.0f);
 	M_color->setRoughness(0.2f);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 
-	sphere0->setStaticMesh(new Mesh(G_sphere, M_color));
+	sphereMesh = new Mesh(G_sphere, M_color);
+}
+
+void World_Game1::reloadScene()
+{
+	destroyAllActors();
+
+	ActorBinder binder;
+	binder.addBinding("Sun", &sun);
+	binder.addBinding("PointLight0", &pointLight0);
+	binder.addBinding("Sphere0", &sphere0);
+
+	SceneLoader sceneLoader;
+	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
+
+	setupScene();
+}
+
+void World_Game1::setupScene()
+{
+	sphere0->setStaticMesh(sphereMesh);
 }

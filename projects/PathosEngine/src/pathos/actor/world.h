@@ -31,6 +31,7 @@ namespace pathos {
 		}
 
 		void destroyActor(Actor* actor);
+		void destroyAllActors();
 
 		void tick(float deltaSeconds);
 
