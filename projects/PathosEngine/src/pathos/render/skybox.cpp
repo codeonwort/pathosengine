@@ -1,10 +1,11 @@
 #include "skybox.h"
 #include "pathos/scene/scene.h"
-#include "pathos/console.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/util/math_lib.h"
 
+#include "badger/types/vector_types.h"
+#include "badger/types/matrix_types.h"
 #include <string>
 
 namespace pathos {
@@ -12,16 +13,11 @@ namespace pathos {
 	/**
 	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
 	*/
-	Skybox::Skybox(GLuint inTextureID) {
+	void Skybox::initialize(GLuint inTextureID) {
 		textureID = inTextureID;
 		createShader();
-		cube = new CubeGeometry(glm::vec3(1.0f));
+		cube = new CubeGeometry(vector3(1.0f));
 		lod = 0.0f;
-	}
-
-	Skybox::~Skybox() {
-		glDeleteProgram(program);
-		delete cube;
 	}
 
 	void Skybox::setLOD(float inLOD) {
@@ -66,9 +62,9 @@ void main() {
 	void Skybox::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(Skybox);
 
-		glm::mat4 view = glm::mat4(glm::mat3(camera->getViewMatrix())); // view transform without transition
-		glm::mat4 proj = camera->getProjectionMatrix();
-		glm::mat4 transform = proj * view;
+		matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
+		matrix4 proj = camera->getProjectionMatrix();
+		matrix4 transform = proj * view;
 
 		cmdList.depthFunc(GL_GEQUAL);
 		cmdList.disable(GL_DEPTH_TEST);
@@ -86,6 +82,17 @@ void main() {
 		
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
+	}
+
+	void Skybox::onDestroy() {
+		if (program != 0) {
+			glDeleteProgram(program);
+			program = 0;
+		}
+		if (cube) {
+			delete cube;
+			cube = nullptr;
+		}
 	}
 
 }

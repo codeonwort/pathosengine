@@ -121,6 +121,7 @@ namespace pathos {
 		parseDirLights(document, outDesc);
 		parsePointLights(document, outDesc);
 		parseStaticMeshes(document, outDesc);
+		// #todo-scene-loader: sky
 
 		return true;
 	}

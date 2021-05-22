@@ -42,9 +42,6 @@ namespace pathos {
 			const char* inFilename,
 			ActorBinder& actorBinder);
 
-		// #todo-scene-loader: Support unload?
-		//void unload();
-
 	private:
 		using ActorMap = std::map<std::string, Actor*>;
 

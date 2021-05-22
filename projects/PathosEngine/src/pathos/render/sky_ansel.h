@@ -29,13 +29,14 @@ namespace pathos {
 		
 	};
 
-	class AnselSkyRendering : public SkyRendering {
+	class AnselSkyRendering : public SkyActor {
 		
 	public:
-		AnselSkyRendering(GLuint textureID);
-		~AnselSkyRendering();
-
+		void initialize(GLuint textureID);
 		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
+
+	protected:
+		virtual void onDestroy() override;
 
 	private:
 		GLint uniform_transform = 0;
