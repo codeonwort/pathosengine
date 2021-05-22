@@ -25,7 +25,8 @@ public:
 	void setupScene();
 
 private:
-	DirectionalLightActor* sun;
+	// #todo-scene-loader: Way to automatically bind this?
+	//DirectionalLightActor* sun;
 	StaticMeshActor* sphere0;
 
 };
