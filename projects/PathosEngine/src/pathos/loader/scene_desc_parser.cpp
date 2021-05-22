@@ -1,9 +1,12 @@
 #include "scene_desc_parser.h"
+#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
 #include <rapidjson/document.h>
 
 namespace pathos {
+
+#define CONTINUE_IF_NOT(it, key) if (0 != strcmp(it->name.GetString(), key)) { continue; }
 
 	template<typename JSONObject>
 	static vector3 parseVec3(JSONObject& obj) {
@@ -20,10 +23,24 @@ namespace pathos {
 		return obj["name"].GetString();
 	}
 
+	template<typename JSONObject>
+	static bool checkMembers(JSONObject& obj, const std::vector<const char*>& members) {
+		bool valid = true;
+		for (size_t i = 0; i < members.size(); ++i) {
+			if (obj.HasMember(members[i]) == false) {
+				LOG(LogError, "Missing property: %s", members[i]);
+				valid = false;
+			}
+		}
+		return valid;
+	}
+
 	static void parseDirLights(rapidjson::Document& document, SceneDescription& outDesc) {
-		for (auto it = document.FindMember("directionalLight"); it != document.MemberEnd(); ++it) {
+		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
+			CONTINUE_IF_NOT(it, "directionalLight");
+
 			auto L = it->value.GetObject();
-			if (!L.HasMember("direction") || !L.HasMember("radiance")) {
+			if (!checkMembers(L, { "name", "direction", "radiance" })) {
 				continue;
 			}
 
@@ -37,6 +54,30 @@ namespace pathos {
 			desc.radiance = radiance;
 
 			outDesc.dirLights.emplace_back(desc);
+		}
+	}
+
+	static void parsePointLights(rapidjson::Document& document, SceneDescription& outDesc) {
+		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
+			CONTINUE_IF_NOT(it, "pointLight");
+
+			auto L = it->value.GetObject();
+			if (!checkMembers(L, { "name", "location", "radiance",
+					"attenuationRadius", "falloffExponent", "castsShadow" })) {
+				continue;
+			}
+
+			auto name(parseName(L));
+			auto loc = parseVec3(L["location"].GetArray());
+			auto radiance = parseVec3(L["radiance"].GetArray());
+			auto attenuationR = L["attenuationRadius"].GetFloat();
+			auto falloffExp = L["falloffExponent"].GetFloat();
+			auto castsShadow = L["castsShadow"].GetBool();
+
+			SceneDescription::PointLight desc{
+				name, loc, radiance, attenuationR, falloffExp, castsShadow
+			};
+			outDesc.pointLights.emplace_back(desc);
 		}
 	}
 
@@ -55,7 +96,7 @@ namespace pathos {
 		}
 
 		parseDirLights(document, outDesc);
-		// #todo-scene-loader: point lights
+		parsePointLights(document, outDesc);
 		// #todo-scene-loader: static meshes (primitive or 3d model files)
 
 		return true;

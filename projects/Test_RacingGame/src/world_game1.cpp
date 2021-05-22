@@ -12,6 +12,7 @@ const vector3       CAMERA_LOOK_AT       = vector3(0.0f, 0.0f, 0.0f);
 
 World_Game1::World_Game1()
 	: sun(nullptr)
+	, pointLight0(nullptr)
 	, sphere0(nullptr)
 {
 }
@@ -22,6 +23,7 @@ void World_Game1::onInitialize()
 
 	ActorBinder binder;
 	binder.addBinding("Sun", &sun);
+	binder.addBinding("PointLight0", &pointLight0);
 	SceneLoader sceneLoader;
 	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
 
@@ -30,6 +32,11 @@ void World_Game1::onInitialize()
 
 void World_Game1::onTick(float deltaSeconds)
 {
+	vector3 loc = pointLight0->getActorLocation();
+	loc.x = 10.0f * ::sinf(gEngine->getWorldTime());
+	pointLight0->setActorLocation(loc);
+	PointLightComponent* p = static_cast<PointLightComponent*>(pointLight0->getRootComponent());
+	p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
 }
 
 void World_Game1::setupScene()
@@ -40,8 +47,6 @@ void World_Game1::setupScene()
 	M_color->setRoughness(0.2f);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
-
-	//sun = spawnActor<DirectionalLightActor>();
 
 	sphere0 = spawnActor<StaticMeshActor>();
 	sphere0->setStaticMesh(new Mesh(G_sphere, M_color));

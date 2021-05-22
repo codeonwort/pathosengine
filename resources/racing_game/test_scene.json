@@ -5,6 +5,14 @@
 		"direction": [0, -1, -1],
 		"radiance": [1.2, 1.2, 1.2]
 	},
+	"pointLight": {
+		"name": "PointLight0",
+		"location": [-20, 5, 20],
+		"radiance": [0, 10, 0],
+		"attenuationRadius": 1000,
+		"falloffExponent": 0.001,
+		"castsShadow": true
+	},
 	"staticMesh": {
 		"name": "Sphere0",
 		"location": [0, 0, 0],

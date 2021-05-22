@@ -2,6 +2,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/actor/world.h"
+#include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 
 #include <fstream>
@@ -65,6 +66,15 @@ namespace pathos {
 			actor->setLightParameters(dirLight.direction, dirLight.radiance);
 
 			outActorMap.insert(std::make_pair(dirLight.name, actor));
+		}
+		// point lights
+		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
+			PointLightActor* actor = world->spawnActor<PointLightActor>();
+			actor->setLightParameters(pLight.radiance, pLight.attenuationRadius,
+				pLight.falloffExponent, pLight.castsShadow);
+			actor->setActorLocation(pLight.location);
+
+			outActorMap.insert(std::make_pair(pLight.name, actor));
 		}
 	}
 

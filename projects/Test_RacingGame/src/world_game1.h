@@ -9,6 +9,7 @@ extern const vector3       CAMERA_LOOK_AT;
 
 namespace pathos {
 	class DirectionalLightActor;
+	class PointLightActor;
 	class StaticMeshActor;
 }
 
@@ -26,6 +27,7 @@ public:
 
 private:
 	DirectionalLightActor* sun;
+	PointLightActor* pointLight0;
 	StaticMeshActor* sphere0;
 
 };

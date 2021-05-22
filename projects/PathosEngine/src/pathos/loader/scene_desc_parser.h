@@ -16,9 +16,18 @@ namespace pathos {
 			vector3 direction;
 			vector3 radiance;
 		};
+		struct PointLight {
+			std::string name;
+			vector3 location;
+			vector3 radiance;
+			float attenuationRadius;
+			float falloffExponent;
+			bool castsShadow;
+		};
 
 		std::string sceneName;
 		std::vector<DirLight> dirLights;
+		std::vector<PointLight> pointLights;
 	};
 
 	class SceneDescriptionParser {
