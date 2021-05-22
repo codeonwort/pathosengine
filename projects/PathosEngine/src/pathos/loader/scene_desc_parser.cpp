@@ -15,6 +15,11 @@ namespace pathos {
 		return v;
 	}
 
+	template<typename JSONObject>
+	static std::string parseName(JSONObject& obj) {
+		return obj["name"].GetString();
+	}
+
 	static void parseDirLights(rapidjson::Document& document, SceneDescription& outDesc) {
 		for (auto it = document.FindMember("directionalLight"); it != document.MemberEnd(); ++it) {
 			auto L = it->value.GetObject();
@@ -22,10 +27,12 @@ namespace pathos {
 				continue;
 			}
 
+			auto name(parseName(L));
 			auto dir = parseVec3(L["direction"].GetArray());
 			auto radiance = parseVec3(L["radiance"].GetArray());
 
 			SceneDescription::DirLight desc;
+			desc.name = name;
 			desc.direction = glm::normalize(dir);
 			desc.radiance = radiance;
 

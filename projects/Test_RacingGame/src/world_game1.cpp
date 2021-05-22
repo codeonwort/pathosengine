@@ -11,8 +11,8 @@ const vector3       CAMERA_POSITION      = vector3(0.0f, 0.0f, 50.0f);
 const vector3       CAMERA_LOOK_AT       = vector3(0.0f, 0.0f, 0.0f);
 
 World_Game1::World_Game1()
-	//: sun(nullptr)
-	: sphere0(nullptr)
+	: sun(nullptr)
+	, sphere0(nullptr)
 {
 }
 
@@ -20,8 +20,10 @@ void World_Game1::onInitialize()
 {
 	SCOPED_CPU_COUNTER(World_Game1_initialize);
 
+	ActorBinder binder;
+	binder.addBinding("Sun", &sun);
 	SceneLoader sceneLoader;
-	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json");
+	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
 
 	setupScene();
 }

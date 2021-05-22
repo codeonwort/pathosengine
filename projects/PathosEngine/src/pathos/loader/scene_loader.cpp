@@ -9,7 +9,11 @@
 
 namespace pathos {
 
-	bool SceneLoader::loadSceneDescription(World* world, const char* inFilename) {
+	bool SceneLoader::loadSceneDescription(
+		World* world,
+		const char* inFilename,
+		ActorBinder& actorBinder)
+	{
 		std::string jsonString;
 		if (!loadJSON(inFilename, jsonString)) {
 			return false;
@@ -21,7 +25,9 @@ namespace pathos {
 			return false;
 		}
 
-		applyDescription(world, desc);
+		ActorMap actorMap;
+		applyDescription(world, desc, actorMap);
+		bindActors(desc, actorMap, actorBinder);
 
 		return true;
 	}
@@ -52,12 +58,43 @@ namespace pathos {
 		return parser.parse(inJSON, outDesc);
 	}
 
-	void SceneLoader::applyDescription(World* world, const SceneDescription& sceneDesc) {
+	void SceneLoader::applyDescription(World* world, const SceneDescription& sceneDesc, ActorMap& outActorMap) {
 		// directional lights
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
 			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();
 			actor->setLightParameters(dirLight.direction, dirLight.radiance);
+
+			outActorMap.insert(std::make_pair(dirLight.name, actor));
 		}
+	}
+
+	void SceneLoader::bindActors(SceneDescription& desc, const ActorMap& actorMap, ActorBinder& binder) {
+		if (binder.bindings.size() == 0) {
+			return;
+		}
+
+		// Find bindings between names in scene description and actors in world
+		for (auto& it : binder.bindings) {
+			const std::string& targetName = it.first;
+			ActorBinder::Info& bindInfo = it.second;
+
+			auto it = actorMap.find(targetName);
+			if (it != actorMap.end()) {
+				Actor* targetActor = it->second;
+				*bindInfo.actor = targetActor;
+				bindInfo.bound = true;
+			}
+		}
+
+		// Validate if all actors are bound
+		int32 countNotBound = 0;
+		for (const auto& it : binder.bindings) {
+			if (it.second.bound == false) {
+				LOG(LogError, "Not bound: %s", it.first.c_str());
+				++countNotBound;
+			}
+		}
+		CHECKF(countNotBound == 0, "Not all actors are bound");
 	}
 
 }

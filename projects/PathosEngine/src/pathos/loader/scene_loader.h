@@ -7,22 +7,51 @@
 #pragma once
 
 #include "scene_desc_parser.h"
+#include "pathos/actor/actor.h"
+#include <vector>
+#include <map>
 
 namespace pathos {
 
 	class World;
+	//class Actor;
+
+	class ActorBinder {
+		friend class SceneLoader;
+		struct Info {
+			void** actor;
+			bool bound;
+		};
+	public:
+		template<typename ActorType>
+		void addBinding(const std::string& name, ActorType** actor) {
+			static_assert(std::is_base_of<Actor, ActorType>::value, "Target type is not derived from pathos::Actor");
+			CHECKF(bindings.find(name) == bindings.end(), "Duplicate name");
+
+			void** actorBase = reinterpret_cast<void**>(actor);
+			bindings.insert(std::make_pair(name, Info{ actorBase, false }));
+		}
+	private:
+		std::map<std::string, Info> bindings;
+	};
 
 	class SceneLoader {
 	public:
-		bool loadSceneDescription(World* world, const char* inFilename);
+		bool loadSceneDescription(
+			World* world,
+			const char* inFilename,
+			ActorBinder& actorBinder);
 
 		// #todo-scene-loader: Support unload?
 		//void unload();
 
 	private:
+		using ActorMap = std::map<std::string, Actor*>;
+
 		bool loadJSON(const char* inFilename, std::string& outJSON);
 		bool parseJSON(const std::string& inJSON, SceneDescription& outDesc);
-		void applyDescription(World* world, const SceneDescription& desc);
+		void applyDescription(World* world, const SceneDescription& desc, ActorMap& outActorMap);
+		void bindActors(SceneDescription& desc, const ActorMap& actorMap, ActorBinder& binder);
 	};
 
 }

@@ -12,6 +12,7 @@ namespace pathos {
 
 	struct SceneDescription {
 		struct DirLight {
+			std::string name;
 			vector3 direction;
 			vector3 radiance;
 		};
