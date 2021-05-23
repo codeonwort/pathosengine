@@ -221,6 +221,7 @@ namespace pathos {
 		};
 
 		// #todo-gl-extension: Utilize available extensions
+		extensionSupport.NV_ray_tracing                  = findExt("GL_NV_ray_tracing");
 		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
 		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
 		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
