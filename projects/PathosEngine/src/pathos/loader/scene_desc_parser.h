@@ -26,6 +26,12 @@ namespace pathos {
 			bool generateMipmaps;
 			bool valid = false;
 		};
+		struct SkyEquirectangularMap {
+			std::string name;
+			std::string texture;
+			bool hdr;
+			bool valid = false;
+		};
 		struct DirLight {
 			std::string name;
 			vector3 direction;
@@ -49,6 +55,7 @@ namespace pathos {
 		std::string sceneName;
 		SkyAtmosphere skyAtmosphere;
 		Skybox skybox;
+		SkyEquirectangularMap skyEquimap;
 		std::vector<DirLight> dirLights;
 		std::vector<PointLight> pointLights;
 		std::vector<StaticMesh> staticMeshes;

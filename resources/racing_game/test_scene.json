@@ -13,6 +13,11 @@
 		],
 		"generateMipmaps": true
 	},
+	"skyEquirectangularMap": {
+		"name": "SkyEquirectangularMap",
+		"texture": "resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr",
+		"hdr": true
+	},
 	"directionalLight": {
 		"name": "Sun",
 		"direction": [0, -1, -1],

@@ -39,21 +39,23 @@ namespace pathos {
 	static void parseSky(rapidjson::Document& document, SceneDescription& outDesc) {
 		int32 hasAtmosphere = (int32)document.HasMember("skyAtmosphere");
 		int32 hasSkybox = (int32)document.HasMember("skybox");
-		int32 hasEquimap = (int32)document.HasMember("skyEquirectangular");
+		int32 hasEquimap = (int32)document.HasMember("skyEquirectangularMap");
 		if (hasAtmosphere + hasSkybox + hasEquimap >= 2) {
 			LOG(LogWarning, "Too many sky descriptions. Only one will be activated. (priority: atmosphere -> skybox -> equirectangular map)");
 		}
 
 		if (hasAtmosphere) {
 			auto sky = document["skyAtmosphere"].GetObject();
-			auto name(parseName(sky));
-			
-			SceneDescription::SkyAtmosphere desc{ name, true };
-			outDesc.skyAtmosphere = std::move(desc);
+			if (checkMembers(sky, { "name" })) {
+				auto name(parseName(sky));
+
+				SceneDescription::SkyAtmosphere desc{ name, true };
+				outDesc.skyAtmosphere = std::move(desc);
+			}
 		}
 		if (hasSkybox) {
 			auto sky = document["skybox"].GetObject();
-			if (checkMembers(sky, { "flipPreference", "textures", "generateMipmaps" })) {
+			if (checkMembers(sky, { "name", "flipPreference", "textures", "generateMipmaps" })) {
 				auto name(parseName(sky));
 				std::string preferenceString(sky["flipPreference"].GetString());
 				auto texturePathes = sky["textures"].GetArray();
@@ -70,14 +72,21 @@ namespace pathos {
 
 					SceneDescription::Skybox desc{ name, flipPreference, std::move(textures), mips, true };
 					outDesc.skybox = std::move(desc);
-				}
-				if (!outDesc.skybox.valid) {
-					LOG(LogError, "skybox has all required members but some are ill-formatted");
+				} else {
+					LOG(LogError, "\"textures\" property should be an array of 6 textures");
 				}
 			}
 		}
 		if (hasEquimap) {
-			// #todo-scene-loader
+			auto sky = document["skyEquirectangularMap"].GetObject();
+			if (checkMembers(sky, { "name", "texture", "hdr" })) {
+				auto name(parseName(sky));
+				std::string texture = sky["texture"].GetString();
+				bool hdr = sky["hdr"].GetBool();
+
+				SceneDescription::SkyEquirectangularMap desc{ name, texture, hdr, true };
+				outDesc.skyEquimap = std::move(desc);
+			}
 		}
 	}
 

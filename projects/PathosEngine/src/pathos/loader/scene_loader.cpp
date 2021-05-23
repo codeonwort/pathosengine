@@ -7,6 +7,7 @@
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/render/atmosphere.h"
 #include "pathos/render/skybox.h"
+#include "pathos/render/sky_ansel.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>
@@ -99,6 +100,24 @@ namespace pathos {
 				world->getScene().sky = actor;
 			}
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
+		}
+		if (sceneDesc.skyEquimap.valid) {
+			GLuint texture = 0;
+			if (sceneDesc.skyEquimap.hdr) {
+				auto metadata = pathos::loadHDRImage(sceneDesc.skyEquimap.texture.c_str());
+				texture = pathos::createTextureFromHDRImage(metadata);
+			} else {
+				auto metadata = pathos::loadImage(sceneDesc.skyEquimap.texture.c_str());
+				texture = pathos::createTextureFromBitmap(metadata, false, true);
+			}
+
+			AnselSkyRendering* actor = world->spawnActor<AnselSkyRendering>();
+			actor->initialize(texture);
+
+			if (world->getScene().sky == nullptr) {
+				world->getScene().sky = actor;
+			}
+			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
 		}
 		// directional lights
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
