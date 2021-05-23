@@ -1,7 +1,17 @@
 {
 	"name": "TestScene",
 	"skyAtmosphere": {
-		"name": "Sky"
+		"name": "SkyAtmosphere"
+	},
+	"skybox": {
+		"name": "Skybox",
+		"flipPreference": "hlsl",
+		"textures": [
+			"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
+			"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
+			"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
+		],
+		"generateMipmaps": true
 	},
 	"directionalLight": {
 		"name": "Sun",

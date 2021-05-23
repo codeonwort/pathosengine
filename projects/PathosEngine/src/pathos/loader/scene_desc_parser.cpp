@@ -41,7 +41,7 @@ namespace pathos {
 		int32 hasSkybox = (int32)document.HasMember("skybox");
 		int32 hasEquimap = (int32)document.HasMember("skyEquirectangular");
 		if (hasAtmosphere + hasSkybox + hasEquimap >= 2) {
-			LOG(LogWarning, "Too many sky descriptions. Only one will be applied. (priority: atmosphere -> skybox -> equirectangular map)");
+			LOG(LogWarning, "Too many sky descriptions. Only one will be activated. (priority: atmosphere -> skybox -> equirectangular map)");
 		}
 
 		if (hasAtmosphere) {
@@ -49,10 +49,34 @@ namespace pathos {
 			auto name(parseName(sky));
 			
 			SceneDescription::SkyAtmosphere desc{ name, true };
-			outDesc.skyAtmosphere = desc;
-		} else if (hasSkybox) {
-			// #todo-scene-loader
-		} else if (hasEquimap) {
+			outDesc.skyAtmosphere = std::move(desc);
+		}
+		if (hasSkybox) {
+			auto sky = document["skybox"].GetObject();
+			if (checkMembers(sky, { "flipPreference", "textures", "generateMipmaps" })) {
+				auto name(parseName(sky));
+				std::string preferenceString(sky["flipPreference"].GetString());
+				auto texturePathes = sky["textures"].GetArray();
+
+				if (texturePathes.Size() >= 6) {
+					std::vector<std::string> textures(6);
+					for (rapidjson::SizeType i = 0; i < 6; ++i) {
+						textures[i] = texturePathes[i].GetString();
+					}
+					ECubemapImagePreference flipPreference = (preferenceString == "hlsl")
+						? ECubemapImagePreference::HLSL
+						: ECubemapImagePreference::GLSL;
+					bool mips = sky["generateMipmaps"].GetBool();
+
+					SceneDescription::Skybox desc{ name, flipPreference, std::move(textures), mips, true };
+					outDesc.skybox = std::move(desc);
+				}
+				if (!outDesc.skybox.valid) {
+					LOG(LogError, "skybox has all required members but some are ill-formatted");
+				}
+			}
+		}
+		if (hasEquimap) {
 			// #todo-scene-loader
 		}
 	}

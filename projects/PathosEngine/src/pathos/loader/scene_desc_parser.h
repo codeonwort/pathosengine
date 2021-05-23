@@ -3,6 +3,9 @@
 
 #pragma once
 
+// #todo: Due to ECubemapImagePreference, but this includes FreeImage
+#include "imageloader.h"
+
 #include "badger/types/vector_types.h"
 #include "badger/math/rotator.h"
 
@@ -14,6 +17,13 @@ namespace pathos {
 	struct SceneDescription {
 		struct SkyAtmosphere {
 			std::string name;
+			bool valid = false;
+		};
+		struct Skybox {
+			std::string name;
+			ECubemapImagePreference preference;
+			std::vector<std::string> textures;
+			bool generateMipmaps;
 			bool valid = false;
 		};
 		struct DirLight {
@@ -38,6 +48,7 @@ namespace pathos {
 
 		std::string sceneName;
 		SkyAtmosphere skyAtmosphere;
+		Skybox skybox;
 		std::vector<DirLight> dirLights;
 		std::vector<PointLight> pointLights;
 		std::vector<StaticMesh> staticMeshes;

@@ -6,10 +6,14 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/render/atmosphere.h"
+#include "pathos/render/skybox.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>
 #include <sstream>
+#include <array>
+
+#include <FreeImage.h>
 
 namespace pathos {
 
@@ -76,6 +80,25 @@ namespace pathos {
 
 			world->getScene().sky = actor;
 			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
+		}
+		if (sceneDesc.skybox.valid) {
+			std::array<const char*, 6> texturePathes;
+			for (size_t i = 0; i < 6; ++i) {
+				texturePathes[i] = sceneDesc.skybox.textures[i].c_str();
+			}
+			// #todo: Don't use FIBITMAP* and glObjectLabel directly
+			std::array<FIBITMAP*, 6> textureDataArray;
+			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
+			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps);
+			glObjectLabel(GL_TEXTURE, cubeTexture, -1, sceneDesc.skybox.name.c_str());
+
+			Skybox* actor = world->spawnActor<Skybox>();
+			actor->initialize(cubeTexture);
+
+			if (world->getScene().sky == nullptr) {
+				world->getScene().sky = actor;
+			}
+			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
 		// directional lights
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
