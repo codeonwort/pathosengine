@@ -6,15 +6,14 @@
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/loader/scene_loader.h"
+#include "pathos/render/atmosphere.h"
+#include "pathos/render/skybox.h"
+#include "pathos/render/sky_ansel.h"
 
 const vector3       CAMERA_POSITION      = vector3(0.0f, 0.0f, 50.0f);
 const vector3       CAMERA_LOOK_AT       = vector3(0.0f, 0.0f, 0.0f);
 
 World_Game1::World_Game1()
-	: sun(nullptr)
-	, pointLight0(nullptr)
-	, sphere0(nullptr)
-	, sphereMesh(nullptr)
 {
 }
 
@@ -56,6 +55,9 @@ void World_Game1::reloadScene()
 	destroyAllActors();
 
 	ActorBinder binder;
+	binder.addBinding("SkyAtmosphere", &skyAtmosphere);
+	binder.addBinding("Skybox", &skybox);
+	binder.addBinding("SkyEquirectangularMap", &skyEquimap);
 	binder.addBinding("Sun", &sun);
 	binder.addBinding("PointLight0", &pointLight0);
 	binder.addBinding("Sphere0", &sphere0);

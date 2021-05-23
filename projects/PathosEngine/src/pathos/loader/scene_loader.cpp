@@ -76,10 +76,12 @@ namespace pathos {
 
 	void SceneLoader::applyDescription(World* world, const SceneDescription& sceneDesc, ActorMap& outActorMap) {
 		// sky
+		bool skyBound = false;
 		if (sceneDesc.skyAtmosphere.valid) {
 			AtmosphereScattering* actor = world->spawnActor<AtmosphereScattering>();
 
 			world->getScene().sky = actor;
+			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
 		}
 		if (sceneDesc.skybox.valid) {
@@ -96,8 +98,9 @@ namespace pathos {
 			Skybox* actor = world->spawnActor<Skybox>();
 			actor->initialize(cubeTexture);
 
-			if (world->getScene().sky == nullptr) {
+			if (!skyBound) {
 				world->getScene().sky = actor;
+				skyBound = true;
 			}
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
@@ -114,8 +117,9 @@ namespace pathos {
 			AnselSkyRendering* actor = world->spawnActor<AnselSkyRendering>();
 			actor->initialize(texture);
 
-			if (world->getScene().sky == nullptr) {
+			if (!skyBound) {
 				world->getScene().sky = actor;
+				skyBound = true;
 			}
 			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
 		}
@@ -168,11 +172,14 @@ namespace pathos {
 		int32 countNotBound = 0;
 		for (const auto& it : binder.bindings) {
 			if (it.second.bound == false) {
-				LOG(LogError, "Not bound: %s", it.first.c_str());
+				*it.second.actor = nullptr;
+				LOG(LogError, "Not bound. target actor will be set to NULL: %s", it.first.c_str());
 				++countNotBound;
 			}
 		}
-		CHECKF(countNotBound == 0, "Not all actors are bound");
+		if (countNotBound > 0) {
+			LOG(LogWarning, "%d actors are not bound", countNotBound);
+		}
 	}
 
 }

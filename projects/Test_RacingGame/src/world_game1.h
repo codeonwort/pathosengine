@@ -8,6 +8,9 @@ extern const vector3       CAMERA_POSITION;
 extern const vector3       CAMERA_LOOK_AT;
 
 namespace pathos {
+	class AtmosphereScattering;
+	class Skybox;
+	class AnselSkyRendering;
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
@@ -29,9 +32,13 @@ public:
 	void setupScene();
 
 private:
-	DirectionalLightActor* sun;
-	PointLightActor* pointLight0;
-	StaticMeshActor* sphere0;
+	AtmosphereScattering* skyAtmosphere = nullptr;
+	Skybox* skybox = nullptr;
+	AnselSkyRendering* skyEquimap = nullptr;
 
-	Mesh* sphereMesh;
+	DirectionalLightActor* sun = nullptr;
+	PointLightActor* pointLight0 = nullptr;
+	StaticMeshActor* sphere0 = nullptr;
+
+	Mesh* sphereMesh = nullptr;
 };
