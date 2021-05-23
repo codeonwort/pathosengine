@@ -5,6 +5,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/render/render_target.h"
+#include "pathos/render/atmosphere.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/cpu_profiler.h"
@@ -119,16 +120,22 @@ void World1::setupSky()
 	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
 	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
 
-	Skybox* skybox = new Skybox(cubeTexture);
+	Skybox* skybox = spawnActor<Skybox>();
+	skybox->initialize(cubeTexture);
 	skybox->setLOD(1.0f);
 	scene.sky = skybox;
 #elif SKY_METHOD == 1
-	scene.sky = new AtmosphereScattering;
+	scene.sky = spawnActor<AtmosphereScattering>();
 #elif SKY_METHOD == 2
-	scene.sky = new AnselSkyRendering(pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr")));
+	AnselSkyRendering* ansel = spawnActor<AnselSkyRendering>();
+	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	ansel->initialize(anselTex);
+	scene.sky = ansel;
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
-	scene.sky = new Skybox(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+	Skybox* skybox = spawnActor<Skybox>();
+	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+	scene.sky = skybox;
 #endif
 }
 
@@ -174,12 +181,6 @@ void World1::setupScene()
 	auto geom_plane = new PlaneGeometry(10.0f, 10.0f);
 	auto geom_plane_big = new PlaneGeometry(10.0f, 10.0f, 20, 20);
 	auto geom_cube = new CubeGeometry(vector3(5.0f));
-
-	geom_sphere->calculateTangentBasis();
-	geom_sphere_big->calculateTangentBasis();
-	geom_plane->calculateTangentBasis();
-	geom_plane_big->calculateTangentBasis();
-	geom_cube->calculateTangentBasis();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Lighting

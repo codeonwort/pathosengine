@@ -2,15 +2,13 @@
 
 #include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
+#include "pathos/actor/actor.h"
 
 namespace pathos {
 
-	class SkyRendering {
+	class SkyActor : public Actor {
 		
 	public:
-		SkyRendering()          = default;
-		virtual ~SkyRendering() = default;
-
 		virtual void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) = 0;
 
 	};

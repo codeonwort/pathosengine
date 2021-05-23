@@ -102,11 +102,6 @@ void World2::setupScene()
 	auto geom_plane = new PlaneGeometry(10.f, 10.f);
 	auto geom_cube = new CubeGeometry(vector3(5.0f));
 
-	geom_sphere->calculateTangentBasis();
-	geom_sphere_big->calculateTangentBasis();
-	geom_plane->calculateTangentBasis();
-	geom_cube->calculateTangentBasis();
-
 	//---------------------------------------------------------------------------------------
 	// create meshes
 	//---------------------------------------------------------------------------------------
@@ -137,7 +132,10 @@ void World2::setupScene()
 	model2->setActorScale(30.0f);
 	model2->setActorLocation(vector3(0.0f, 50.0f, -400.0f));
 
-	scene.sky = new Skybox(cubeTexture);
+	Skybox* sky = spawnActor<Skybox>();
+	sky->initialize(cubeTexture);
+
+	scene.sky = sky;
 	scene.godRaySource = model2->getStaticMeshComponent();
 }
 

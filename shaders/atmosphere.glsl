@@ -239,7 +239,7 @@ void main() {
 	eye_ray.origin = vec3(0.0, EARTH_RADIUS + 1.84, 0.0);
 	eye_ray.direction = viewDirection();
 
-	vec3 sunDir = uboPerFrame.directionalLights[0].direction;
+	vec3 sunDir = uboPerFrame.directionalLights[0].wsDirection;
     
     out_color = vec4(scene(eye_ray, sunDir), 1.0);
     out_bright = vec4(0.0);

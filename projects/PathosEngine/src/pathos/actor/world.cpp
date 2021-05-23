@@ -31,6 +31,15 @@ namespace pathos {
 		}
 	}
 
+	void World::destroyAllActors() {
+		for (size_t i = 0; i < actors.size(); ++i) {
+			Actor* actor = actors[i];
+			actor->markedForDeath = true;
+			actorsToDestroy.push_back(actor);
+		}
+		actors.clear();
+	}
+
 	void World::tick(float deltaSeconds) {
 		// Destroy actors that were marked for death
 		for (auto& actor : actorsToDestroy) {

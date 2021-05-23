@@ -477,7 +477,7 @@ namespace pathos {
 		unpack_pass->bindFramebuffer(cmdList);
 
 		// actually not an unpack work, but rendering order is here...
-		if (scene->sky) {
+		if (scene->sky && !scene->sky->isDestroyed()) {
 			scene->sky->render(cmdList, scene, camera);
 		}
 

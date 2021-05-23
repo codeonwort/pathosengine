@@ -1,0 +1,40 @@
+{
+	"name": "TestScene",
+	"skyAtmosphere": {
+		"name": "SkyAtmosphere"
+	},
+	"skybox": {
+		"name": "Skybox",
+		"flipPreference": "hlsl",
+		"textures": [
+			"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
+			"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
+			"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
+		],
+		"generateMipmaps": true
+	},
+	"skyEquirectangularMap": {
+		"name": "SkyEquirectangularMap",
+		"texture": "resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr",
+		"hdr": true
+	},
+	"directionalLight": {
+		"name": "Sun",
+		"direction": [0, -1, -1],
+		"radiance": [1.2, 1.2, 1.2]
+	},
+	"pointLight": {
+		"name": "PointLight0",
+		"location": [-20, 5, 20],
+		"radiance": [0, 10, 0],
+		"attenuationRadius": 1000,
+		"falloffExponent": 0.001,
+		"castsShadow": true
+	},
+	"staticMesh": {
+		"name": "Sphere0",
+		"location": [0, 0, 0],
+		"rotation": [0, 0, 0],
+		"scale": [15, 15, 15]
+	}
+}

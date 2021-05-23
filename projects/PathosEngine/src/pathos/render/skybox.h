@@ -6,26 +6,27 @@
 
 namespace pathos {
 
-	class Skybox : public SkyRendering {
+	class Skybox : public SkyActor {
 
 	public:
-		Skybox(GLuint textureID);
-		~Skybox();
-
+		void initialize(GLuint textureID);
 		void setLOD(float inLOD);
 
 		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
+	protected:
+		virtual void onDestroy() override;
+
 	private:
 		void createShader();
 
-		GLuint program;
-		GLuint textureID;
+		GLuint program = 0;
+		GLuint textureID = 0;
 		GLint uniform_transform = -1;
 		GLint uniform_lod = -1;
 
-		CubeGeometry* cube;
-		float lod;
+		CubeGeometry* cube = nullptr;
+		float lod = 0.0f;
 
 	};
 

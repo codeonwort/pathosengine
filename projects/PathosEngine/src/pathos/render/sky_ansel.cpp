@@ -151,14 +151,10 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	AnselSkyRendering::AnselSkyRendering(GLuint textureID) :texture(textureID) {
+	void AnselSkyRendering::initialize(GLuint textureID) {
+		texture = textureID;
 		sphere = new IcosahedronGeometry(0);
 		uniform_transform = 0;
-	}
-
-	AnselSkyRendering::~AnselSkyRendering() {
-		delete sphere;
-		sphere = nullptr;
 	}
 
 	void AnselSkyRendering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
@@ -181,6 +177,13 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, texture);
 
 		sphere->drawPrimitive(cmdList);
+	}
+
+	void AnselSkyRendering::onDestroy() {
+		if (sphere) {
+			delete sphere;
+			sphere = nullptr;
+		}
 	}
 
 }

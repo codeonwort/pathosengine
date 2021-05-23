@@ -25,6 +25,7 @@ namespace pathos {
 		virtual ~Actor();
 
 		void destroy();
+		inline bool isDestroyed() const { return markedForDeath; }
 
 		void registerComponent(ActorComponent* component);
 		void unregisterComponent(ActorComponent* component);

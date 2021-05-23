@@ -194,7 +194,9 @@ void World_RC1::setupSky()
 	scene.prefilterEnvMap = prefilteredEnvMap;
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
-	scene.sky = new AnselSkyRendering(starfield);
+	AnselSkyRendering* ansel = spawnActor<AnselSkyRendering>();
+	ansel->initialize(starfield);
+	scene.sky = ansel;
 
 	// Volumetric cloud
 	{
@@ -232,7 +234,6 @@ void World_RC1::setupScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
-	geom_sphere->calculateTangentBasis();
 
 	auto material_color = new ColorMaterial;
 	{

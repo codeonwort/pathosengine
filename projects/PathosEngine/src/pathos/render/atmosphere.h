@@ -8,13 +8,14 @@
 
 namespace pathos {
 
-	class AtmosphereScattering : public SkyRendering {
+	class AtmosphereScattering : public SkyActor {
 		
 	public:
-		AtmosphereScattering();
-		~AtmosphereScattering();
-
 		virtual void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
+
+	public:
+		virtual void onSpawn() override;
+		virtual void onDestroy() override;
 
 	private:
 		GLuint program;

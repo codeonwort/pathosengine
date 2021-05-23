@@ -12,7 +12,7 @@ namespace pathos {
 
 	// Forward declaration
 	class StaticMeshComponent;
-	class SkyRendering;
+	class SkyActor;
 	class VolumetricCloudActor;
 
 	// Represents a 3D scene.
@@ -36,7 +36,7 @@ namespace pathos {
 		World* getWorld() const { return owner; }
 
 	public:
-		SkyRendering* sky = nullptr;
+		SkyActor* sky = nullptr;
 		StaticMeshComponent* godRaySource = nullptr;
 		VolumetricCloudActor* cloud = nullptr;
 
