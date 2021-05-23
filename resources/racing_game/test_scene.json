@@ -1,5 +1,8 @@
 {
 	"name": "TestScene",
+	"skyAtmosphere": {
+		"name": "Sky"
+	},
 	"directionalLight": {
 		"name": "Sun",
 		"direction": [0, -1, -1],

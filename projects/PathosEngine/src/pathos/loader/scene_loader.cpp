@@ -5,6 +5,7 @@
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/render/atmosphere.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>
@@ -69,6 +70,13 @@ namespace pathos {
 	}
 
 	void SceneLoader::applyDescription(World* world, const SceneDescription& sceneDesc, ActorMap& outActorMap) {
+		// sky
+		if (sceneDesc.skyAtmosphere.valid) {
+			AtmosphereScattering* actor = world->spawnActor<AtmosphereScattering>();
+
+			world->getScene().sky = actor;
+			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
+		}
 		// directional lights
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
 			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();

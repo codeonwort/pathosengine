@@ -1,6 +1,7 @@
 #include "scene_desc_parser.h"
 #include "pathos/util/log.h"
 
+#include "badger/types/int_types.h"
 #include "badger/assertion/assertion.h"
 #include <rapidjson/document.h>
 
@@ -33,6 +34,27 @@ namespace pathos {
 			}
 		}
 		return valid;
+	}
+
+	static void parseSky(rapidjson::Document& document, SceneDescription& outDesc) {
+		int32 hasAtmosphere = (int32)document.HasMember("skyAtmosphere");
+		int32 hasSkybox = (int32)document.HasMember("skybox");
+		int32 hasEquimap = (int32)document.HasMember("skyEquirectangular");
+		if (hasAtmosphere + hasSkybox + hasEquimap >= 2) {
+			LOG(LogWarning, "Too many sky descriptions. Only one will be applied. (priority: atmosphere -> skybox -> equirectangular map)");
+		}
+
+		if (hasAtmosphere) {
+			auto sky = document["skyAtmosphere"].GetObject();
+			auto name(parseName(sky));
+			
+			SceneDescription::SkyAtmosphere desc{ name, true };
+			outDesc.skyAtmosphere = desc;
+		} else if (hasSkybox) {
+			// #todo-scene-loader
+		} else if (hasEquimap) {
+			// #todo-scene-loader
+		}
 	}
 
 	static void parseDirLights(rapidjson::Document& document, SceneDescription& outDesc) {
@@ -118,10 +140,10 @@ namespace pathos {
 			outDesc.sceneName = "<unknown>";
 		}
 
+		parseSky(document, outDesc);
 		parseDirLights(document, outDesc);
 		parsePointLights(document, outDesc);
 		parseStaticMeshes(document, outDesc);
-		// #todo-scene-loader: sky
 
 		return true;
 	}

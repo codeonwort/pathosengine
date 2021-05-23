@@ -12,6 +12,10 @@
 namespace pathos {
 
 	struct SceneDescription {
+		struct SkyAtmosphere {
+			std::string name;
+			bool valid = false;
+		};
 		struct DirLight {
 			std::string name;
 			vector3 direction;
@@ -33,6 +37,7 @@ namespace pathos {
 		};
 
 		std::string sceneName;
+		SkyAtmosphere skyAtmosphere;
 		std::vector<DirLight> dirLights;
 		std::vector<PointLight> pointLights;
 		std::vector<StaticMesh> staticMeshes;
