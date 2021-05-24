@@ -38,6 +38,7 @@ void World_Game1::onInitialize()
 		playerController->togglePhotoMode();
 	});
 
+	gConsole->addLine("Press 'WASD' to control the pawn");
 	gConsole->addLine("Press 'P' to toggle photo mode");
 }
 
