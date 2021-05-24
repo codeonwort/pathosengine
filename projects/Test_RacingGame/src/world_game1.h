@@ -39,6 +39,8 @@ private:
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
 	StaticMeshActor* sphere0 = nullptr;
+	StaticMeshActor* landscape = nullptr; // #todo-landscape: Implement LandscapeActor
 
 	Mesh* sphereMesh = nullptr;
+	Mesh* landscapeMesh = nullptr;
 };

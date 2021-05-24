@@ -45,9 +45,14 @@ void World_Game1::prepareAssets()
 	M_color->setMetallic(0.0f);
 	M_color->setRoughness(0.2f);
 
+	GLuint landscapeTexture = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
+	auto M_landscape = new TextureMaterial(landscapeTexture);
+
 	auto G_sphere = new SphereGeometry(1.0f, 30);
+	auto G_plane = new PlaneGeometry(512.0f, 512.0f, 1, 1);
 
 	sphereMesh = new Mesh(G_sphere, M_color);
+	landscapeMesh = new Mesh(G_plane, M_landscape);
 }
 
 void World_Game1::reloadScene()
@@ -61,6 +66,7 @@ void World_Game1::reloadScene()
 	binder.addBinding("Sun", &sun);
 	binder.addBinding("PointLight0", &pointLight0);
 	binder.addBinding("Sphere0", &sphere0);
+	binder.addBinding("Landscape", &landscape);
 
 	SceneLoader sceneLoader;
 	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
@@ -71,4 +77,5 @@ void World_Game1::reloadScene()
 void World_Game1::setupScene()
 {
 	sphere0->setStaticMesh(sphereMesh);
+	landscape->setStaticMesh(landscapeMesh);
 }
