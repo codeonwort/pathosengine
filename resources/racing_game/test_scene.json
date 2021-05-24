@@ -20,7 +20,7 @@
 	},
 	"directionalLight": {
 		"name": "Sun",
-		"direction": [0, -1, -1],
+		"direction": [0, -0.4, -1],
 		"radiance": [1.2, 1.2, 1.2]
 	},
 	"pointLight": {

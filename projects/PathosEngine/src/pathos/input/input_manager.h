@@ -68,12 +68,20 @@ namespace pathos {
 		friend class XInputManager;
 
 	public:
+		bool hasButtonPressed(const char* eventName) const;
+		bool hasButtonReleased(const char* eventName) const;
+		bool hasAxis(const char* eventName) const;
+
 		void bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
 		void bindButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
+		void bindAxis(const char* eventName, const AxisBinding& binding);
+
+		void bindUniqueButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
+		void bindUniqueButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
+		void bindUniqueAxis(const char* eventName, const AxisBinding& binding);
 
 		void tick();
 		void updateAxisValue();
-		void bindAxis(const char* eventName, const AxisBinding& binding);
 		float getAxis(const char* eventName) const;
 
 		inline int32 getMouseX() const { return mouseX; }

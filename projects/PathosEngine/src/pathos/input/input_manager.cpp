@@ -108,10 +108,49 @@ namespace pathos {
 		axisMapping.insert(std::make_pair(hash, 0.0f));
 	}
 
+	void InputManager::bindUniqueButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler)
+	{
+		if (!hasButtonPressed(eventName)) {
+			bindButtonPressed(eventName, binding, handler);
+		}
+	}
+
+	void InputManager::bindUniqueButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler)
+	{
+		if (!hasButtonReleased(eventName)) {
+			bindButtonReleased(eventName, binding, handler);
+		}
+	}
+
+	void InputManager::bindUniqueAxis(const char* eventName, const AxisBinding& binding)
+	{
+		if (!hasAxis(eventName)) {
+			bindAxis(eventName, binding);
+		}
+	}
+
 	float InputManager::getAxis(const char* eventName) const
 	{
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
 		return axisMapping.find(hash)->second;
+	}
+
+	bool InputManager::hasButtonPressed(const char* eventName) const
+	{
+		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
+		return (buttonPressedMapping.find(hash) != buttonPressedMapping.end());
+	}
+
+	bool InputManager::hasButtonReleased(const char* eventName) const
+	{
+		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
+		return (buttonReleasedMapping.find(hash) != buttonReleasedMapping.end());
+	}
+
+	bool InputManager::hasAxis(const char* eventName) const
+	{
+		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
+		return (axisMapping.find(hash) != axisMapping.end());
 	}
 
 	void InputManager::bindXInput(XInputUserIndex userIndex)

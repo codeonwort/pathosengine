@@ -25,6 +25,13 @@ matrix4 Rotator::toMatrix() const {
 	return glm::eulerAngleYXZ(glm::radians(yaw), glm::radians(pitch), glm::radians(roll));
 }
 
+vector3 Rotator::toDirection() const {
+	float theta = glm::radians(yaw);
+	float phi = glm::radians(pitch);
+	float cosPhi = ::cosf(phi);
+	return vector3(sinf(theta) * cosPhi, sinf(phi), cosf(theta) * cosPhi);
+}
+
 void Rotator::clampValues() {
 	yaw = fmod(yaw, 360.0f);
 	pitch = fmod(pitch, 360.0f);

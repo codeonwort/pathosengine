@@ -16,6 +16,7 @@ namespace pathos {
 	class StaticMeshActor;
 	class Mesh;
 }
+class PlayerController;
 
 class World_Game1 : public World {
 	
@@ -43,4 +44,6 @@ private:
 
 	Mesh* sphereMesh = nullptr;
 	Mesh* landscapeMesh = nullptr;
+
+	PlayerController* playerController = nullptr;
 };

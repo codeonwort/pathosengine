@@ -1,4 +1,5 @@
 #include "world_game1.h"
+#include "player_controller.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
@@ -9,6 +10,7 @@
 #include "pathos/render/atmosphere.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
+#include "pathos/input/input_manager.h"
 
 const vector3       CAMERA_POSITION      = vector3(0.0f, 0.0f, 50.0f);
 const vector3       CAMERA_LOOK_AT       = vector3(0.0f, 0.0f, 0.0f);
@@ -27,15 +29,25 @@ void World_Game1::onInitialize()
 	gEngine->registerExec("reload_scene", [this](const std::string& command) {
 		reloadScene();
 	});
+
+	ButtonBinding photoMode;
+	photoMode.addInput(InputConstants::KEYBOARD_P);
+
+	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	inputManager->bindButtonPressed("photoMode", photoMode, [this]() {
+		playerController->togglePhotoMode();
+	});
+
+	gConsole->addLine("Press 'P' to toggle photo mode");
 }
 
 void World_Game1::onTick(float deltaSeconds)
 {
-	vector3 loc = pointLight0->getActorLocation();
-	loc.x = 10.0f * ::sinf(gEngine->getWorldTime());
-	pointLight0->setActorLocation(loc);
-	PointLightComponent* p = static_cast<PointLightComponent*>(pointLight0->getRootComponent());
-	p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
+	//vector3 loc = pointLight0->getActorLocation();
+	//loc.x = 10.0f * ::sinf(gEngine->getWorldTime());
+	//pointLight0->setActorLocation(loc);
+	//PointLightComponent* p = static_cast<PointLightComponent*>(pointLight0->getRootComponent());
+	//p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
 }
 
 void World_Game1::prepareAssets()
@@ -49,7 +61,7 @@ void World_Game1::prepareAssets()
 	auto M_landscape = new TextureMaterial(landscapeTexture);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
-	auto G_plane = new PlaneGeometry(512.0f, 512.0f, 1, 1);
+	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);
 
 	sphereMesh = new Mesh(G_sphere, M_color);
 	landscapeMesh = new Mesh(G_plane, M_landscape);
@@ -71,6 +83,10 @@ void World_Game1::reloadScene()
 	SceneLoader sceneLoader;
 	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
 
+	// reloadScene() destroys all actors so respawn here :/
+	playerController = spawnActor<PlayerController>();
+	playerController->setPlayerPawn(sphere0);
+
 	setupScene();
 }
 
@@ -78,4 +94,5 @@ void World_Game1::setupScene()
 {
 	sphere0->setStaticMesh(sphereMesh);
 	landscape->setStaticMesh(landscapeMesh);
+	landscape->getStaticMeshComponent()->castsShadow = false;
 }
