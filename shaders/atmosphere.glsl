@@ -1,6 +1,11 @@
 #version 460 core
 
+// #todo-atmosphere: Eye position is fixed on the ground.
+// Should render atmosphere correctly at any view position.
+
 #include "deferred_common.glsl"
+
+#define MAGIC_GROUND 0
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
@@ -155,11 +160,17 @@ vec3 scene(ray_t camera, vec3 sunDir)
     for(int i=0; i<numSteps; ++i)
     {
         float height = length(P) - EARTH_RADIUS;
+
+        // #todo-atmosphere
+        // Disabling this is physically non-sense as atmosphere is always rendered at ground position.
+        // But we can't leave the lower hemisphere as black, so render anything for now.
+#if MAGIC_GROUND
         if(height < 0.0)
         {
             isGround = true;
             break;
         }
+#endif
         
         // optical depth
         T += seg * (BetaR * exp(-height / Hr));
@@ -204,13 +215,14 @@ vec3 scene(ray_t camera, vec3 sunDir)
         P += P_step;
     }
     
-    // Just magic number
+#if MAGIC_GROUND
     if(isGround)
     {
-		return vec3(0.0);
-        //float r = 1.0 - 1.0 / (1.0 + 0.000001 * length(hit.origin - camera.origin));
-        //return vec3(r, 0.4, 0.2);
+		//return vec3(0.0);
+        float r = 1.0 - 1.0 / (1.0 + 0.000001 * length(hit.origin - camera.origin));
+        return vec3(r, 0.4, 0.2);
     }
+#endif
     
     T = exp(-T);
     
