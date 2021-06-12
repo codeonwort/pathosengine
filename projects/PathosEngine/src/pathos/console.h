@@ -103,20 +103,20 @@ namespace pathos {
 	};
 
 	template<>
-	virtual void ConsoleVariable<float>::print(ConsoleWindow* window) const override {
+	inline void ConsoleVariable<float>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %f", value);
 		window->addLine(buffer);
 	}
 	template<>
-	virtual void ConsoleVariable<int32_t>::print(ConsoleWindow* window) const override {
+	inline void ConsoleVariable<int32_t>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %d", value);
 		window->addLine(buffer);
 	}
 
 	template<>
-	virtual void ConsoleVariable<float>::parse(const char* msg, ConsoleWindow* window) override {
+	inline void ConsoleVariable<float>::parse(const char* msg, ConsoleWindow* window) override {
 		float newValue;
 		if (sscanf_s(msg, "%f", &newValue) == 1) {
 			setValue(newValue);
@@ -125,7 +125,7 @@ namespace pathos {
 		}
 	}
 	template<>
-	virtual void ConsoleVariable<int32_t>::parse(const char* msg, ConsoleWindow* window) override {
+	inline void ConsoleVariable<int32_t>::parse(const char* msg, ConsoleWindow* window) override {
 		int32_t newValue;
 		if (sscanf_s(msg, "%d", &newValue) == 1) {
 			setValue(newValue);
