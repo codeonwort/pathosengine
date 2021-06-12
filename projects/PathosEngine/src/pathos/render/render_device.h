@@ -65,6 +65,8 @@ namespace pathos {
 		void deleteBuffers(GLsizei n, const GLuint* buffers);
 		void deleteProgram(GLuint program);
 
+		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
+
 		GLint getUniformLocation(GLuint program, const GLchar* name);
 
 	private:
@@ -84,6 +86,7 @@ namespace pathos {
 
 		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
 			{
+				// #todo-refactoring: Do I need this temp command list?
 				RenderCommandList& tempCmdList = gRenderDevice->getCommandListForHook();
 				lambda(tempCmdList);
 				tempCmdList.flushAllCommands();

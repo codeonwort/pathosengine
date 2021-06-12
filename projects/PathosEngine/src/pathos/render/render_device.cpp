@@ -168,6 +168,12 @@ namespace pathos {
 		glDeleteProgram(program);
 	}
 
+	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label)
+	{
+		CHECK(isInRenderThread());
+		glObjectLabel(identifier, name, length, label);
+	}
+
 	void OpenGLDevice::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
 		CHECK(isInRenderThread());
 		glDeleteFramebuffers(n, framebuffers);

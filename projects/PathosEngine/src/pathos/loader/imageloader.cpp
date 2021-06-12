@@ -1,7 +1,7 @@
 #include "pathos/loader/imageloader.h"
-#include "pathos/util/log.h"
-#include "pathos/util/resource_finder.h"
 #include "pathos/texture/volume_texture.h"
+#include "pathos/util/resource_finder.h"
+#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
 #include "stb_image.h"
@@ -98,37 +98,30 @@ namespace pathos {
 
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &tex_id);
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &tex_id);
 
-		uint32 numLODs = 1;
-		if (generateMipmap) {
-			numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
-		}
-		unsigned int bpp = FreeImage_GetBPP(dib);
-		if (bpp == 32) {
-			if (sRGB) {
-				glTextureStorage2D(tex_id, numLODs, GL_SRGB8_ALPHA8, w, h);
-			} else {
-				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
+		ENQUEUE_RENDER_COMMAND([dib, data, w, h, tex_id, generateMipmap, sRGB](RenderCommandList& cmdList) {
+			uint32 numLODs = 1;
+			if (generateMipmap) {
+				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 			}
-			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
-		} else if (bpp == 24) {
-			if (sRGB) {
-				glTextureStorage2D(tex_id, numLODs, GL_SRGB8, w, h);
+			unsigned int bpp = FreeImage_GetBPP(dib);
+			if (bpp == 32) {
+				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
+				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+			} else if (bpp == 24) {
+				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
+				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 			} else {
-				glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
+				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
+				//gRenderDevice->deleteTextures(1, &tex_id);
 			}
-			glTextureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
-		} else {
-#ifdef _DEBUG
-			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
-#endif
-			glDeleteTextures(1, &tex_id);
-			return 0;
-		}
-		if (generateMipmap) {
-			glGenerateTextureMipmap(tex_id);
-		}
+			if (generateMipmap) {
+				cmdList.generateTextureMipmap(tex_id);
+			}
+		});
+		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
+		FLUSH_RENDER_COMMAND();
 
 		return tex_id;
 	}
@@ -149,36 +142,40 @@ namespace pathos {
 		}
 
 		GLuint tex_id;
-		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
-		glTextureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
 
-		unsigned int bpp = FreeImage_GetBPP(dib[0]);
-		if (bpp == 32 || bpp == 24) {
-			uint32 numLODs = 1;
-			if (generateMipmap) {
-				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, tex_id](RenderCommandList& cmdList) {
+			cmdList.textureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+			unsigned int bpp = FreeImage_GetBPP(dib[0]);
+			if (bpp == 32 || bpp == 24) {
+				uint32 numLODs = 1;
+				if (generateMipmap) {
+					numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
+				}
+				cmdList.textureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
+			} else {
+				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			}
-			glTextureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
-		} else {
-			LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
-			return 0;
-		}
 
-		for (int32 i = 0; i < 6; i++) {
-			uint8* data = FreeImage_GetBits(dib[i]);
-			GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
-			glTextureSubImage3D(tex_id, 0,
-				0, 0, i,
-				w, h, 1,
-				format, GL_UNSIGNED_BYTE, data);
-		}
+			for (int32 i = 0; i < 6; i++) {
+				uint8* data = FreeImage_GetBits(dib[i]);
+				GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
+				cmdList.textureSubImage3D(tex_id, 0,
+					0, 0, i,
+					w, h, 1,
+					format, GL_UNSIGNED_BYTE, data);
+			}
 
-		if (generateMipmap) {
-			glGenerateTextureMipmap(tex_id);
-		}
+			if (generateMipmap) {
+				cmdList.generateTextureMipmap(tex_id);
+			}
+		});
+		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
+		FLUSH_RENDER_COMMAND();
 
 		return tex_id;
 	}
@@ -208,20 +205,25 @@ namespace pathos {
 		static int32 label_counter = 0;
 
 		GLuint texture;
-		glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-		glTextureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
-		glTextureSubImage2D(texture, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
-		glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		//glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		//glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
 
 		char label[256];
 		sprintf_s(label, "Texture HDR %d", label_counter);
-		glObjectLabel(GL_TEXTURE, texture, -1, label);
+		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, label);
 		label_counter += 1;
+
+		ENQUEUE_RENDER_COMMAND([texture, &metadata](RenderCommandList& cmdList) {
+			cmdList.textureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
+			cmdList.textureSubImage2D(texture, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
+			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		});
+		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush here for now.
+		FLUSH_RENDER_COMMAND();
 
 		if (deleteBlobData) {
 			stbi_image_free(metadata.data);
