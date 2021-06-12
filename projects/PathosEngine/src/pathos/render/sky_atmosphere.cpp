@@ -1,10 +1,11 @@
-#include "atmosphere.h"
+#include "sky_atmosphere.h"
+#include "render_device.h"
 #include "pathos/shader/shader.h"
 
 namespace pathos {
 
 	struct UBO_Atmosphere {
-		glm::vec4 sunParams;     // (sunSizeMultiplier, sunIntensity)
+		glm::vec4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
 	};
 
 	void AtmosphereScattering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
@@ -34,12 +35,12 @@ namespace pathos {
 		program = pathos::createProgram(vs, fs, "AtmosphereScattering");
 		ubo.init<UBO_Atmosphere>();
 
-		glGenVertexArrays(1, &vao);
+		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
 	void AtmosphereScattering::onDestroy() {
-		glDeleteVertexArrays(1, &vao);
-		glDeleteProgram(program);
+		gRenderDevice->deleteVertexArrays(1, &vao);
+		gRenderDevice->deleteProgram(program);
 	}
 
 }

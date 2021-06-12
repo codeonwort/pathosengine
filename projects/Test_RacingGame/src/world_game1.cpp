@@ -7,9 +7,6 @@
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/loader/scene_loader.h"
-#include "pathos/render/atmosphere.h"
-#include "pathos/render/skybox.h"
-#include "pathos/render/sky_ansel.h"
 #include "pathos/input/input_manager.h"
 
 const vector3       CAMERA_POSITION      = vector3(0.0f, 0.0f, 50.0f);

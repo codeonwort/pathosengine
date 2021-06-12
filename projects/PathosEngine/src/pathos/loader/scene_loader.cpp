@@ -6,7 +6,7 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/render/render_device.h"
-#include "pathos/render/atmosphere.h"
+#include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 
