@@ -46,6 +46,7 @@ namespace pathos {
 	public:
 		// Needed for texture view. Use createTextures() for normal case.
 		void genTextures(GLsizei n, GLuint* textures);
+		void genQueries(GLsizei n, GLuint* queries);
 
 		void createVertexArrays(GLsizei n, GLuint* arrays);
 		void createTextures(GLenum target, GLsizei n, GLuint* textures);
