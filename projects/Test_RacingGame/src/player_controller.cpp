@@ -93,7 +93,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 
 	// #todo-game: torque
 	float turnRate = powf(pathos::min(1.0f, fabs(linearSpeed) / 500.0f), 3.0f);
-	LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
+	//LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
 	if (linearSpeed > 0.0f) {
 		pawnRotation.yaw -= turnRate * powerTurn * deltaSeconds;
 	} else if (linearSpeed < 0.0f) {
