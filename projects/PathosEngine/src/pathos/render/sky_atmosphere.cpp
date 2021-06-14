@@ -11,6 +11,9 @@
 // Precomputed Atmospheric Scattering
 namespace pathos {
 
+	// #todo-atmosphere: better lifecycle management
+	GLuint gTransmittanceLUT = 0;
+
 	class PASFullscreenVS : public ShaderStage {
 	public:
 		PASFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "PASFullscreenVS") {
@@ -27,12 +30,20 @@ namespace pathos {
 		}
 	};
 
+	class AtmosphericScatteringFS : public ShaderStage {
+	public:
+		AtmosphericScatteringFS() : ShaderStage(GL_FRAGMENT_SHADER, "AtmosphericScatteringFS") {
+			setFilepath("atmosphere.glsl");
+		}
+	};
+
 	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS, PASTransmittanceFS);
+	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS, AtmosphericScatteringFS);
 
 	void init_precomputeTransmittance(OpenGLDevice* device) {
-		// #todo-atmosphere: for test
-		GLuint lut;
+		GLuint& lut = gTransmittanceLUT;
 		GLuint fbo;
+
 		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &lut);
 		gRenderDevice->objectLabel(GL_TEXTURE, lut, -1, "LUT_Transmittance");
 		gRenderDevice->createFramebuffers(1, &fbo);
@@ -44,8 +55,13 @@ namespace pathos {
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
 			const int32 WIDTH = 64;
 			const int32 HEIGHT = 256;
+			// This does matter; transmittance is 1 outside of atmosphere.
+			GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 			cmdList.textureStorage2D(lut, 1, GL_RGBA32F, WIDTH, HEIGHT);
+			cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 			cmdList.viewport(0, 0, WIDTH, HEIGHT);
@@ -59,7 +75,8 @@ namespace pathos {
 		LOG(LogDebug, "Generate transmittance LUT (%s)", "LUT_Transmittance");
 	}
 	void destroy_precomputeTransmittance(OpenGLDevice* device) {
-		//
+		gRenderDevice->deleteTextures(1, &gTransmittanceLUT);
+		gTransmittanceLUT = 0;
 	}
 
 	DEFINE_GLOBAL_RENDER_ROUTINE(PAS, init_precomputeTransmittance, destroy_precomputeTransmittance);
@@ -75,7 +92,8 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(AtmosphereScattering);
 
-		cmdList.useProgram(program);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
+		cmdList.useProgram(program.getGLName());
 
 		cmdList.depthFunc(GL_GEQUAL);
 
@@ -84,26 +102,19 @@ namespace pathos {
 		uboData.sunParams.y = 13.61839144264511f;
 		ubo.update(cmdList, 1, &uboData);
 
+		cmdList.bindTextureUnit(0, gTransmittanceLUT);
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		cmdList.bindVertexArray(0);
 	}
 
 	void AtmosphereScattering::onSpawn() {
-		Shader vs(GL_VERTEX_SHADER);
-		Shader fs(GL_FRAGMENT_SHADER);
-		vs.loadSource("fullscreen_quad.glsl");
-		fs.loadSource("atmosphere.glsl");
-
-		program = pathos::createProgram(vs, fs, "AtmosphereScattering");
 		ubo.init<UBO_Atmosphere>();
-
 		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
 	void AtmosphereScattering::onDestroy() {
 		gRenderDevice->deleteVertexArrays(1, &vao);
-		gRenderDevice->deleteProgram(program);
 	}
 
 }

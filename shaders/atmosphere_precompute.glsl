@@ -131,7 +131,7 @@ vec3 precomputeTransmittance(vec2 uv) {
 
     vec3 T = vec3(0.0); // transmittance
     vec3 dx = (x0 - x) / float(NUM_INTEG_STEPS);
-    float dx_length = length(dx);
+    float dx_length = rayT / float(NUM_INTEG_STEPS);
     bool isGround = false;
 
     for (int i = 0; i < NUM_INTEG_STEPS; i++) {
