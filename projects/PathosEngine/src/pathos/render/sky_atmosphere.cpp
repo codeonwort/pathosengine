@@ -56,6 +56,7 @@ namespace pathos {
 			const int32 WIDTH = 64;
 			const int32 HEIGHT = 256;
 			// This does matter; transmittance is 1 outside of atmosphere.
+			//GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 			cmdList.textureStorage2D(lut, 1, GL_RGBA32F, WIDTH, HEIGHT);

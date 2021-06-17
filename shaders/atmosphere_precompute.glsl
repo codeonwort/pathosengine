@@ -18,7 +18,8 @@ layout (location = 0) out vec4 outResult;
 // Unit: meters
 #define EARTH_RADIUS          6.36e6
 #define ATMOSPHERE_RADIUS     6.42e6
-#define MAX_ALTITUDE          (ATMOSPHERE_RADIUS - EARTH_RADIUS)
+#define GROUND_EPSILON        (1.84) // Avoid collision to ground at uv.x = 0
+#define MAX_ALTITUDE          (ATMOSPHERE_RADIUS - EARTH_RADIUS - GROUND_EPSILON)
 #define Hr                    7.994e3
 #define Hm                    1.2e3
 // Unit: 1 / meters
@@ -51,7 +52,7 @@ hit_t no_hit = hit_t(
 );
 
 bool validHit(hit_t hit) {
-    return hit.t < max_dist;
+    return 0.0 < hit.t && hit.t < max_dist;
 }
 
 void intersect_sphere(
@@ -104,12 +105,15 @@ float phaseM(float t)
     return num / denom;
 }
 
+// uv.x : [0, 1] -> [EARTH_RADIUS, ATMOSPHERE_RADIUS]
+// uv.y : [0, 1] -> [0, PI]
 vec3 precomputeTransmittance(vec2 uv) {
     const int NUM_INTEG_STEPS = 128;
 
     // Due to spherical symmetry we only care about case of +X axis.
     float mu = PI * uv.y; // View-zenith angle
-    vec3 x = vec3(EARTH_RADIUS + uv.x * MAX_ALTITUDE, 0.0, 0.0); // Earth radius + altitude
+    float h = mix(EARTH_RADIUS + GROUND_EPSILON, ATMOSPHERE_RADIUS, uv.x);
+    vec3 x = vec3(h, 0.0, 0.0);
     vec3 v = vec3(cos(mu), sin(mu), 0.0); // View direction
     
     hit_t hit_atmosphere = no_hit;
@@ -119,34 +123,56 @@ vec3 precomputeTransmittance(vec2 uv) {
     intersect_sphere(ray, earth, hit_earth);
     float rayT = 0.0;
     if (validHit(hit_atmosphere) && validHit(hit_earth)) {
+        if (hit_earth.t < hit_atmosphere.t) {
+            return vec3(0.0);
+        }
         rayT = min(hit_atmosphere.t, hit_earth.t);
     } else if (validHit(hit_atmosphere)) {
         rayT = hit_atmosphere.t;
     } else if (validHit(hit_earth)) {
         rayT = hit_earth.t;
+        return vec3(0.0);
     } else {
-        return vec3(1.0);
+        // Cannot happen; debug color
+        return vec3(0.0, 10000.0, 0.0);
     }
     vec3 x0 = x + v * rayT;
 
-    vec3 T = vec3(0.0); // transmittance
+    vec3 opticalDepth = vec3(0.0);
     vec3 dx = (x0 - x) / float(NUM_INTEG_STEPS);
     float dx_length = rayT / float(NUM_INTEG_STEPS);
+
+#define ZERO_T_ON_HIT_GROUND 0
     bool isGround = false;
 
     for (int i = 0; i < NUM_INTEG_STEPS; i++) {
-        float height = max(0.0, length(x) - EARTH_RADIUS);
+#if ZERO_T_ON_HIT_GROUND
+        float height = length(x) - EARTH_RADIUS;
+        if (height < 0.0) {
+            isGround = true;
+            break;
+        }
+#else
+        //float height = max(0.0, length(x) - EARTH_RADIUS);
+        float height = length(x) - EARTH_RADIUS;
+#endif
 
         // Accumulate optical depth (converted to transmittance at end of loop)
-        T += (BetaR * exp(-height / Hr)) * dx_length;
-        T += (BetaM * exp(-height / Hm)) * dx_length;
+        opticalDepth += (BetaR * exp(-height / Hr)) * dx_length;
+        opticalDepth += (BetaM * exp(-height / Hm)) * dx_length;
 
         x += dx;
     }
 
-    T = exp(-T); // Optical depth to transmittance
+    vec3 T = exp(-opticalDepth);
 
-    return min(vec3(1.0), T);
+#if ZERO_T_ON_HIT_GROUND
+    if (isGround) {
+        T = vec3(0.0);
+    }
+#endif
+
+    return T;
 }
 
 void main() {
