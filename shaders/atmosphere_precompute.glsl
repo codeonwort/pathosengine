@@ -108,7 +108,7 @@ float phaseM(float t)
 // uv.x : [0, 1] -> [EARTH_RADIUS, ATMOSPHERE_RADIUS]
 // uv.y : [0, 1] -> [0, PI]
 vec3 precomputeTransmittance(vec2 uv) {
-    const int NUM_INTEG_STEPS = 128;
+    const int NUM_INTEG_STEPS = 512;
 
     // Due to spherical symmetry we only care about case of +X axis.
     float mu = PI * uv.y; // View-zenith angle
@@ -142,7 +142,7 @@ vec3 precomputeTransmittance(vec2 uv) {
     vec3 dx = (x0 - x) / float(NUM_INTEG_STEPS);
     float dx_length = rayT / float(NUM_INTEG_STEPS);
 
-#define ZERO_T_ON_HIT_GROUND 0
+#define ZERO_T_ON_HIT_GROUND 1
     bool isGround = false;
 
     for (int i = 0; i < NUM_INTEG_STEPS; i++) {

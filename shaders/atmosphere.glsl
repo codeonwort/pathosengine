@@ -5,7 +5,7 @@
 
 #include "deferred_common.glsl"
 
-#define USE_LUT      0
+#define USE_LUT      1
 #define VIS_T        0
 #define MAGIC_GROUND 0
 
@@ -42,12 +42,11 @@ layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
 // transmittance from x to x0 (x0: atmosphere boundary in direction of v)
 vec3 getTransmittanceToBoundary(vec3 x, vec3 v) {
     float r = (length(x) - EARTH_RADIUS) / MAX_ALTITUDE;
-    //float cosTheta = dot(normalize(x), v);
     float cosTheta = v.y;
     if (cosTheta < 0.0) {
         return vec3(0.0);
     }
-    float mu = acos(abs(cosTheta)) / PI;
+    float mu = acos(cosTheta) / PI;
     r = (0.5 / 64.0) + r * (1.0 - 1.0 / 64.0);
     mu = (0.5 / 256.0) + mu * (1.0 - 1.0 / 256.0);
     return texture(transmittanceLUT, vec2(r, mu)).xyz;
@@ -171,7 +170,7 @@ vec3 scene(ray_t camera, vec3 sunDir)
     vec3 AtmosphereScattering = vec3(0.0);
     bool isGround = false;
     
-    const int numSteps = 16;
+    const int numSteps = 64;
     const int inscatSteps = 8;
     
     float mu = dot(-sunDir, camera.direction);
@@ -264,7 +263,7 @@ vec3 scene(ray_t camera, vec3 sunDir)
 #endif
     
 #if USE_LUT
-    vec3 T = getTransmittanceToBoundary(P0, camera.direction);
+    vec3 T = getTransmittance(P0, Q);
 #else
     vec3 T = exp(-opticalDepth);
 #endif
@@ -301,7 +300,7 @@ void main() {
 	vec3 sunDir = uboPerFrame.directionalLights[0].wsDirection;
     //sunDir = vec3(0, 0, -1);
     //sunDir = vec3(0, -1, 0);
-    sunDir = normalize(vec3(0, -1, -1));
+    //sunDir = normalize(vec3(0, -1, -5));
 
     out_color = vec4(scene(eye_ray, sunDir), 1.0);
     out_bright = vec4(0.0);
