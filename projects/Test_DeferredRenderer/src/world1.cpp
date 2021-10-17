@@ -5,7 +5,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/render/render_target.h"
-#include "pathos/render/atmosphere.h"
+#include "pathos/render/sky_atmosphere.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/cpu_profiler.h"

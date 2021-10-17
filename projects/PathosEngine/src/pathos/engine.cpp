@@ -35,9 +35,10 @@ namespace pathos {
 		}
 
 		gEngine = new Engine;
-		gEngine->initialize(argc, argv, config);
+		bool initialized = gEngine->initialize(argc, argv, config);
+		CHECKF(initialized, "Failed to initialize the engine");
 
-		return true;
+		return initialized;
 	}
 
 
@@ -188,38 +189,41 @@ namespace pathos {
 		render_device = new OpenGLDevice;
 		bool validDevice = render_device->initialize();
 
-		glGenQueries(1, &timer_query);
-		CHECK(timer_query != 0);
+		ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
+			render_device->genQueries(1, &timer_query);
+			CHECK(timer_query != 0);
 
-		{
+			// Create engine resources
 			GLuint systemTextures[4];
-			glCreateTextures(GL_TEXTURE_2D, 4, systemTextures);
+			render_device->createTextures(GL_TEXTURE_2D, 4, systemTextures);
 
 			texture2D_black = systemTextures[0];
 			texture2D_white = systemTextures[1];
-			texture2D_grey  = systemTextures[2];
-			texture2D_blue  = systemTextures[3];
+			texture2D_grey = systemTextures[2];
+			texture2D_blue = systemTextures[3];
 
-			glTextureStorage2D(texture2D_black, 1, GL_RGBA8, 1, 1);
-			glTextureStorage2D(texture2D_white, 1, GL_RGBA8, 1, 1);
-			glTextureStorage2D(texture2D_grey,  1, GL_RGBA8, 1, 1);
-			glTextureStorage2D(texture2D_blue,  1, GL_RGBA8, 1, 1);
+			cmdList.textureStorage2D(texture2D_black, 1, GL_RGBA8, 1, 1);
+			cmdList.textureStorage2D(texture2D_white, 1, GL_RGBA8, 1, 1);
+			cmdList.textureStorage2D(texture2D_grey, 1, GL_RGBA8, 1, 1);
+			cmdList.textureStorage2D(texture2D_blue, 1, GL_RGBA8, 1, 1);
 
 			GLubyte black[4] = { 0, 0, 0, 0 };
 			GLubyte white[4] = { 0xff, 0xff, 0xff, 0xff };
-			GLubyte grey[4]  = { 0x7f, 0x7f, 0x7f, 0x7f };
-			GLubyte blue[4]  = { 0x00, 0x00, 0xff, 0xff };
+			GLubyte grey[4] = { 0x7f, 0x7f, 0x7f, 0x7f };
+			GLubyte blue[4] = { 0x00, 0x00, 0xff, 0xff };
 
-			glClearTexImage(texture2D_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
-			glClearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
-			glClearTexImage(texture2D_grey,  0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
-			glClearTexImage(texture2D_blue,  0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+			cmdList.clearTexImage(texture2D_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
+			cmdList.clearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
+			cmdList.clearTexImage(texture2D_grey, 0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
+			cmdList.clearTexImage(texture2D_blue, 0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
 
-			glObjectLabel(GL_TEXTURE, texture2D_black, -1, "system texture 2D (black)");
-			glObjectLabel(GL_TEXTURE, texture2D_white, -1, "system texture 2D (white)");
-			glObjectLabel(GL_TEXTURE, texture2D_grey, -1, "system texture 2D (grey)");
-			glObjectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
-		}
+			cmdList.objectLabel(GL_TEXTURE, texture2D_black, -1, "system texture 2D (black)");
+			cmdList.objectLabel(GL_TEXTURE, texture2D_white, -1, "system texture 2D (white)");
+			cmdList.objectLabel(GL_TEXTURE, texture2D_grey, -1, "system texture 2D (grey)");
+			cmdList.objectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
+		});
+
+		FLUSH_RENDER_COMMAND();
 
 		for(GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().initRoutines) {
 			routine(render_device);
@@ -399,7 +403,7 @@ namespace pathos {
 	void Engine::tick()
 	{
 		// Wait for previous frame
-		glFinish();
+		FLUSH_RENDER_COMMAND();
 
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
 
@@ -448,11 +452,12 @@ namespace pathos {
 		if (frameCounter_renderThread >= frameCounter_gameThread) {
 			return;
 		}
-
 		frameCounter_renderThread = frameCounter_gameThread - 1;
 
+		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
+
 		GLuint64 elapsed_ns;
-		glBeginQuery(GL_TIME_ELAPSED, timer_query);
+		immediateContext.beginQuery(GL_TIME_ELAPSED, timer_query);
 
 		stopwatch_renderThread.start();
 
@@ -472,8 +477,6 @@ namespace pathos {
 			renderer->setSceneRenderSettings(settings);
 		}
 
-		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
-
 		// #todo-cmd-list: deferred command lists here
 
 		// Renderer adds more immediate commands
@@ -489,8 +492,9 @@ namespace pathos {
 			immediateContext.flushAllCommands();
 		}
 
-		glEndQuery(GL_TIME_ELAPSED);
-		glGetQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
+		immediateContext.endQuery(GL_TIME_ELAPSED);
+		immediateContext.getQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
+		immediateContext.flushAllCommands();
 		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
 
 		// Get GPU profile

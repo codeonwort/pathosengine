@@ -5,7 +5,8 @@
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
-#include "pathos/render/atmosphere.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 
@@ -89,11 +90,11 @@ namespace pathos {
 			for (size_t i = 0; i < 6; ++i) {
 				texturePathes[i] = sceneDesc.skybox.textures[i].c_str();
 			}
-			// #todo: Don't use FIBITMAP* and glObjectLabel directly
+			// #todo: Don't use FIBITMAP* directly
 			std::array<FIBITMAP*, 6> textureDataArray;
 			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
 			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps);
-			glObjectLabel(GL_TEXTURE, cubeTexture, -1, sceneDesc.skybox.name.c_str());
+			gRenderDevice->objectLabel(GL_TEXTURE, cubeTexture, -1, sceneDesc.skybox.name.c_str());
 
 			Skybox* actor = world->spawnActor<Skybox>();
 			actor->initialize(cubeTexture);

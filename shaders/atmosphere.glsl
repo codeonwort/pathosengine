@@ -1,6 +1,15 @@
 #version 460 core
 
+// #todo-atmosphere: Eye position is fixed on the ground.
+// Should render atmosphere correctly at any view position.
+
 #include "deferred_common.glsl"
+
+#define USE_LUT      1
+#define VIS_T        0
+#define MAGIC_GROUND 0
+
+layout (binding = 0) uniform sampler2D transmittanceLUT;
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_bright;
@@ -21,11 +30,32 @@ layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
 #define SUN_RADIUS            6.9551e8
 #define EARTH_RADIUS          6.36e6
 #define ATMOSPHERE_RADIUS     6.42e6
+#define GROUND_EPSILON        (1.84) // Avoid collision to ground at uv.x = 0
+#define MAX_ALTITUDE          (ATMOSPHERE_RADIUS - EARTH_RADIUS - GROUND_EPSILON)
 #define Hr                    7.994e3
 #define Hm                    1.2e3
 // Unit: 1 / meters
 #define BetaR                 vec3(5.8e-6, 13.5e-6, 33.1e-6)
 #define BetaM                 vec3(21e-6)
+
+// Fetch transmittance LUT
+// transmittance from x to x0 (x0: atmosphere boundary in direction of v)
+vec3 getTransmittanceToBoundary(vec3 x, vec3 v) {
+    float r = (length(x) - EARTH_RADIUS) / MAX_ALTITUDE;
+    float cosTheta = v.y;
+    if (cosTheta < 0.0) {
+        return vec3(0.0);
+    }
+    float mu = acos(cosTheta) / PI;
+    r = (0.5 / 64.0) + r * (1.0 - 1.0 / 64.0);
+    mu = (0.5 / 256.0) + mu * (1.0 - 1.0 / 256.0);
+    return texture(transmittanceLUT, vec2(r, mu)).xyz;
+}
+// Transmittance from x to y
+vec3 getTransmittance(vec3 x, vec3 y) {
+    vec3 v = normalize(y - x);
+    return max(vec3(0.0), getTransmittanceToBoundary(x, v) / getTransmittanceToBoundary(y, v));
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Ray, sphere code from https://www.shadertoy.com/view/XtBXDw
@@ -140,30 +170,43 @@ vec3 scene(ray_t camera, vec3 sunDir)
     vec3 AtmosphereScattering = vec3(0.0);
     bool isGround = false;
     
-    const int numSteps = 16;
+    const int numSteps = 64;
     const int inscatSteps = 8;
     
     float mu = dot(-sunDir, camera.direction);
     vec3 Sun = vec3(ubo.sunParams.y);
-    vec3 T = vec3(0.0);
+    vec3 opticalDepth = vec3(0.0);
     
-    vec3 P = camera.origin;
+    vec3 P0 = camera.origin;
+    vec3 P = P0;
+    vec3 Q = camera.origin + hit.t * camera.direction;
     float seg = hit.t / float(numSteps);
     vec3 P_step = camera.direction * seg;
+
+#if USE_LUT && VIS_T
+    return getTransmittance(P0, Q);
+#endif
     
     // from eye to the outer end of atmosphere
-    for(int i=0; i<numSteps; ++i)
+    for (int i = 0; i < numSteps; i++)
     {
         float height = length(P) - EARTH_RADIUS;
-        if(height < 0.0)
+
+        // #todo-atmosphere
+        // Disabling this is physically non-sense as atmosphere is always rendered at ground position.
+        // But we can't leave the lower hemisphere as black, so render anything for now.
+#if MAGIC_GROUND
+        if (height < 0.0)
         {
             isGround = true;
             break;
         }
+#endif
         
-        // optical depth
-        T += seg * (BetaR * exp(-height / Hr));
-        T += seg * (BetaM * exp(-height / Hm));
+#if !USE_LUT
+        opticalDepth += seg * (BetaR * exp(-height / Hr));
+        opticalDepth += seg * (BetaM * exp(-height / Hm));
+#endif
         
         // single scattering
         hit_t hit2 = no_hit;
@@ -176,10 +219,10 @@ vec3 scene(ray_t camera, vec3 sunDir)
         
         vec3 TL = vec3(0.0);
         bool applyScattering = true;
-        for(int j=0; j<inscatSteps; ++j)
+        for (int j = 0; j < inscatSteps; j++)
         {
             float height2 = length(PL) - EARTH_RADIUS;
-            if(height2 < 0.0)
+            if (height2 < 0.0)
             {
                 applyScattering = false;
                 break;
@@ -190,30 +233,45 @@ vec3 scene(ray_t camera, vec3 sunDir)
             
             PL += PL_step;
         }
-        if(applyScattering)
+
+        if (applyScattering)
         {
             TL = exp(-TL);
 
             vec3 SingleScattering = vec3(0.0);
             // scattering = transmittance * scattering_coefficient * phase * radiance
-            SingleScattering += MAGIC_RAYLEIGH * seg * exp(-T) * (BetaR * exp(-height / Hr)) * phaseR(mu) * (TL * Sun);
-            SingleScattering += MAGIC_MIE * seg * exp(-T) * (BetaM * exp(-height / Hm)) * phaseM(mu) * (TL * Sun);
+#if USE_LUT
+            vec3 currT = getTransmittance(P0, P);
+#else
+            vec3 currT = exp(-opticalDepth);
+#endif
+            SingleScattering += MAGIC_RAYLEIGH * seg * currT * (BetaR * exp(-height / Hr)) * phaseR(mu) * (TL * Sun);
+            SingleScattering += MAGIC_MIE * seg * currT * (BetaM * exp(-height / Hm)) * phaseM(mu) * (TL * Sun);
             AtmosphereScattering += SingleScattering;
         }
         
         P += P_step;
     }
     
-    // Just magic number
-    if(isGround)
+#if MAGIC_GROUND
+    if (isGround)
     {
-		return vec3(0.0);
-        //float r = 1.0 - 1.0 / (1.0 + 0.000001 * length(hit.origin - camera.origin));
-        //return vec3(r, 0.4, 0.2);
+		//return vec3(0.0);
+        float r = 1.0 - 1.0 / (1.0 + 0.000001 * length(hit.origin - camera.origin));
+        return vec3(r, 0.4, 0.2);
     }
+#endif
     
-    T = exp(-T);
-    
+#if USE_LUT
+    vec3 T = getTransmittance(P0, Q);
+#else
+    vec3 T = exp(-opticalDepth);
+#endif
+   
+#if !USE_LUT && VIS_T
+    return T;
+#endif
+   
     // Zero scattering
 	vec3 L0 = T * sunImage(camera, sunDir);
     AtmosphereScattering += L0;
@@ -236,11 +294,14 @@ vec3 viewDirection() {
 
 void main() {
 	ray_t eye_ray;
-	eye_ray.origin = vec3(0.0, EARTH_RADIUS + 1.84, 0.0);
+	eye_ray.origin = vec3(0.0, EARTH_RADIUS + GROUND_EPSILON, 0.0);
 	eye_ray.direction = viewDirection();
 
 	vec3 sunDir = uboPerFrame.directionalLights[0].wsDirection;
-    
+    //sunDir = vec3(0, 0, -1);
+    //sunDir = vec3(0, -1, 0);
+    //sunDir = normalize(vec3(0, -1, -5));
+
     out_color = vec4(scene(eye_ray, sunDir), 1.0);
     out_bright = vec4(0.0);
 }

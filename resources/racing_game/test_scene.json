@@ -20,7 +20,7 @@
 	},
 	"directionalLight": {
 		"name": "Sun",
-		"direction": [0, -1, -1],
+		"direction": [0, -0.4, -1],
 		"radiance": [1.2, 1.2, 1.2]
 	},
 	"pointLight": {
@@ -36,5 +36,11 @@
 		"location": [0, 0, 0],
 		"rotation": [0, 0, 0],
 		"scale": [15, 15, 15]
+	},
+	"staticMesh": {
+		"name": "Landscape",
+		"location": [0, -20, 0],
+		"rotation": [0, -90, 0],
+		"scale": [100, 100, 1]
 	}
 }

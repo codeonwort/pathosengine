@@ -647,7 +647,7 @@ void deleteTextures(
 	RenderCommand_deleteTextures* __restrict packet = (RenderCommand_deleteTextures*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_deleteTextures::execute);
 	packet->n = n;
-	packet->textures = storeParameter(n * sizeof(GLuint*), textures);
+	packet->textures = storeParameter(n * sizeof(GLuint), textures);
 }
 void genTextures(
 	GLsizei n,
@@ -7286,16 +7286,17 @@ void textureParameterf(
 	packet->pname = pname;
 	packet->param = param;
 }
+template<int n>
 void textureParameterfv(
 	GLuint texture,
 	GLenum pname,
-	const GLfloat *param)
+	const GLfloat (&param)[n])
 {
 	RenderCommand_textureParameterfv* __restrict packet = (RenderCommand_textureParameterfv*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_textureParameterfv::execute);
 	packet->texture = texture;
 	packet->pname = pname;
-	packet->param = param;
+	packet->param = storeParameter(n * sizeof(GLfloat), param);
 }
 void textureParameteri(
 	GLuint texture,

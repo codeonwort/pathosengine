@@ -20,6 +20,7 @@ namespace pathos {
 
 	// https://developer.nvidia.com/vulkan-turing
 	struct OpenGLExtensionSupport {
+		uint32 NV_ray_tracing                  : 1;
 		uint32 NV_mesh_shader                  : 1;
 		uint32 NV_shading_rate_image           : 1;
 		uint32 NV_shader_texture_footprint     : 1;
@@ -45,6 +46,7 @@ namespace pathos {
 	public:
 		// Needed for texture view. Use createTextures() for normal case.
 		void genTextures(GLsizei n, GLuint* textures);
+		void genQueries(GLsizei n, GLuint* queries);
 
 		void createVertexArrays(GLsizei n, GLuint* arrays);
 		void createTextures(GLenum target, GLsizei n, GLuint* textures);
@@ -62,6 +64,8 @@ namespace pathos {
 		void deleteQueries(GLsizei n, const GLuint* ids);
 		void deleteBuffers(GLsizei n, const GLuint* buffers);
 		void deleteProgram(GLuint program);
+
+		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
 		GLint getUniformLocation(GLuint program, const GLchar* name);
 
@@ -82,6 +86,7 @@ namespace pathos {
 
 		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
 			{
+				// #todo-refactoring: Do I need this temp command list?
 				RenderCommandList& tempCmdList = gRenderDevice->getCommandListForHook();
 				lambda(tempCmdList);
 				tempCmdList.flushAllCommands();

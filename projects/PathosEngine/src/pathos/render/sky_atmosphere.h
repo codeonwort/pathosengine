@@ -18,7 +18,6 @@ namespace pathos {
 		virtual void onDestroy() override;
 
 	private:
-		GLuint program;
 		UniformBuffer ubo;
 		GLuint vao;
 

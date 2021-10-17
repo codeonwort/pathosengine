@@ -21,9 +21,15 @@
     <ClCompile Include="src\world_game1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\player_controller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\world_game1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\player_controller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

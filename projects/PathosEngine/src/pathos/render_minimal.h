@@ -3,6 +3,7 @@
 #include "pathos/util/resource_finder.h"
 
 #include "pathos/scene/scene.h"
+#include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 

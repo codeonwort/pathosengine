@@ -22,6 +22,7 @@ struct Rotator {
 	{}
 
 	matrix4 toMatrix() const;
+	vector3 toDirection() const;
 
 	void clampValues();
 

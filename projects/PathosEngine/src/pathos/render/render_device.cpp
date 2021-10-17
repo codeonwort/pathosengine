@@ -100,103 +100,97 @@ namespace pathos {
 
 	void OpenGLDevice::genTextures(GLsizei n, GLuint* textures) {
 		CHECK(isInRenderThread());
-
 		glGenTextures(n, textures);
+	}
+
+	void OpenGLDevice::genQueries(GLsizei n, GLuint* queries) {
+		CHECK(isInRenderThread());
+		glGenQueries(n, queries);
 	}
 
 	void OpenGLDevice::createTextures(GLenum target, GLsizei n, GLuint* textures) {
 		CHECK(isInRenderThread());
-
 		glCreateTextures(target, n, textures);
 	}
 
 	void OpenGLDevice::createFramebuffers(GLsizei n, GLuint* framebuffers) {
 		CHECK(isInRenderThread());
-
 		glCreateFramebuffers(n, framebuffers);
 	}
 
 	void OpenGLDevice::createVertexArrays(GLsizei n, GLuint* arrays) {
 		CHECK(isInRenderThread());
-
 		glCreateVertexArrays(n, arrays);
 	}
 
 	void OpenGLDevice::createSamplers(GLsizei n, GLuint* samplers) {
 		CHECK(isInRenderThread());
-
 		glCreateSamplers(n, samplers);
 	}
 
 	void OpenGLDevice::createQueries(GLenum target, GLsizei n, GLuint* ids) {
 		CHECK(isInRenderThread());
-
 		glCreateQueries(target, n, ids);
 	}
 
 	void OpenGLDevice::createTransformFeedbacks(GLsizei n, GLuint* ids) {
 		CHECK(isInRenderThread());
-
 		glCreateTransformFeedbacks(n, ids);
 	}
 
 	void OpenGLDevice::createBuffers(GLsizei n, GLuint* buffers) {
 		CHECK(isInRenderThread());
-
 		glCreateBuffers(n, buffers);
 	}
 
 	void OpenGLDevice::createRenderbuffers(GLsizei n, GLuint* renderbuffers) {
 		CHECK(isInRenderThread());
-
 		glCreateRenderbuffers(n, renderbuffers);
 	}
 
 	void OpenGLDevice::createProgramPipelines(GLsizei n, GLuint* pipelines) {
 		CHECK(isInRenderThread());
-
 		glCreateProgramPipelines(n, pipelines);
 	}
 
 	void OpenGLDevice::deleteQueries(GLsizei n, const GLuint* ids) {
 		CHECK(isInRenderThread());
-
 		glDeleteQueries(n, ids);
 	}
 
 	void OpenGLDevice::deleteBuffers(GLsizei n, const GLuint* buffers) {
 		CHECK(isInRenderThread());
-
 		glDeleteBuffers(n, buffers);
 	}
 
 	void OpenGLDevice::deleteProgram(GLuint program) {
 		CHECK(isInRenderThread());
-
 		glDeleteProgram(program);
+	}
+
+	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label)
+	{
+		CHECK(isInRenderThread());
+		glObjectLabel(identifier, name, length, label);
 	}
 
 	void OpenGLDevice::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
 		CHECK(isInRenderThread());
-
 		glDeleteFramebuffers(n, framebuffers);
 	}
 
 	void OpenGLDevice::deleteVertexArrays(GLsizei n, const GLuint* arrays) {
 		CHECK(isInRenderThread());
-
 		glDeleteVertexArrays(n, arrays);
 	}
 
 	void OpenGLDevice::deleteTextures(GLsizei n, const GLuint* textures) {
 		CHECK(isInRenderThread());
-
 		glDeleteTextures(n, textures);
 	}
 
 	GLint OpenGLDevice::getUniformLocation(GLuint program, const GLchar* name) {
 		CHECK(isInRenderThread());
-
 		return glGetUniformLocation(program, name);
 	}
 
@@ -221,6 +215,7 @@ namespace pathos {
 		};
 
 		// #todo-gl-extension: Utilize available extensions
+		extensionSupport.NV_ray_tracing                  = findExt("GL_NV_ray_tracing");
 		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
 		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
 		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
