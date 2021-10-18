@@ -69,7 +69,7 @@ void World1::setupInput()
 void World1::setupSky()
 {
 	{
-		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
 		glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
 		glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
@@ -101,18 +101,21 @@ void World1::setupSky()
 #if SKY_METHOD == 0
 #if DEBUG_SKYBOX
 	std::array<const char*, 6> cubeImgName = {
-		"resources/placeholder/cubemap_right.jpg",
-		"resources/placeholder/cubemap_left.jpg",
-		"resources/placeholder/cubemap_top.jpg",
-		"resources/placeholder/cubemap_bottom.jpg",
-		"resources/placeholder/cubemap_front.jpg",
-		"resources/placeholder/cubemap_back.jpg"
+		"resources/skybox/placeholder/cubemap_right.jpg",
+		"resources/skybox/placeholder/cubemap_left.jpg",
+		"resources/skybox/placeholder/cubemap_top.jpg",
+		"resources/skybox/placeholder/cubemap_bottom.jpg",
+		"resources/skybox/placeholder/cubemap_front.jpg",
+		"resources/skybox/placeholder/cubemap_back.jpg"
 	};
 #else
 	std::array<const char*, 6> cubeImgName = {
-		"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
-		"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
-		"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
+		"resources/skybox/cubemap1/pos_x.jpg",
+		"resources/skybox/cubemap1/neg_x.jpg",
+		"resources/skybox/cubemap1/pos_y.jpg",
+		"resources/skybox/cubemap1/neg_y.jpg",
+		"resources/skybox/cubemap1/pos_z.jpg",
+		"resources/skybox/cubemap1/neg_z.jpg"
 	};
 #endif
 	std::array<FIBITMAP*, 6> cubeImg;
@@ -128,11 +131,11 @@ void World1::setupSky()
 	scene.sky = spawnActor<AtmosphereScattering>();
 #elif SKY_METHOD == 2
 	AnselSkyRendering* ansel = spawnActor<AnselSkyRendering>();
-	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
 	ansel->initialize(anselTex);
 	scene.sky = ansel;
 #else
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr"));
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
 	Skybox* skybox = spawnActor<Skybox>();
 	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 	scene.sky = skybox;
@@ -145,8 +148,8 @@ void World1::setupScene()
 	// create materials
 	//---------------------------------------------------------------------------------------
 
-	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/154.jpg"), true, true);
-	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/154_norm.jpg"), true, false);
+	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/textures/154.jpg"), true, true);
+	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/textures/154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_color = new ColorMaterial;
@@ -162,11 +165,11 @@ void World1::setupScene()
 	{
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-albedo.png"), genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-normal-ue.png"), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-metalness.png"), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-roughness.png"), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(loadImage("resources/pbr_sandstone/sandstonecliff-ao.png"), genMipmap, !sRGB);
+		GLuint albedo = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-albedo.png"), genMipmap, sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-normal-ue.png"), genMipmap, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-metalness.png"), genMipmap, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-roughness.png"), genMipmap, !sRGB);
+		GLuint ao = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-ao.png"), genMipmap, !sRGB);
 
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
