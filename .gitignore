@@ -1,6 +1,8 @@
 
 # Log directory
 log/
+# Original resources that are exported for the project
+resources_raw/
 
 # Created by https://www.gitignore.io/api/visualstudio,c++
 
