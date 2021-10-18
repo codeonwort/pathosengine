@@ -2,6 +2,7 @@
 
 #include "sky.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/shader/uniform_buffer.h"
 #include "gl_core.h"
 
 namespace pathos {
@@ -14,20 +15,14 @@ namespace pathos {
 
 		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
 
-	protected:
+		virtual void onSpawn() override;
 		virtual void onDestroy() override;
 
 	private:
-		void createShader();
-
-		GLuint program = 0;
-		GLuint textureID = 0;
-		GLint uniform_transform = -1;
-		GLint uniform_lod = -1;
-
+		UniformBuffer ubo;
 		CubeGeometry* cube = nullptr;
+		GLuint textureID = 0;
 		float lod = 0.0f;
-
 	};
 
 }
