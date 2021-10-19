@@ -94,9 +94,16 @@ namespace pathos {
 		, nullptr, 0);
 	}
 
+	// Use this only when really needed. Temporary flushes use TEMP_FLUSH_RENDER_COMMAND().
 	inline void FLUSH_RENDER_COMMAND() {
 		CHECK(isInMainThread());
+		gRenderDevice->getImmediateCommandList().flushAllCommands();
+	}
 
+	// #todo-multi-thread: temp flush as there is no separate render thread for now.
+	// All temp flushes should use this, not FLUSH_RENDER_COMMAND().
+	inline void TEMP_FLUSH_RENDER_COMMAND() {
+		CHECK(isInMainThread());
 		gRenderDevice->getImmediateCommandList().flushAllCommands();
 	}
 

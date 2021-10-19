@@ -29,7 +29,7 @@ namespace pathos {
 		debugName = inDebugName;
 
 		if (debugName != nullptr && texture != 0) {
-			glObjectLabel(GL_TEXTURE, texture, -1, debugName);
+			gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, debugName);
 		}
 	}
 
@@ -60,33 +60,41 @@ namespace pathos {
 		default: CHECK_NO_ENTRY();
 		}
 
-		// #todo-texture: Remove direct GL call
 		uint32 numLODs = 1;
 		if (generateMipmaps) {
 			numLODs = static_cast<uint32>(floor(log2(std::max(std::max(textureWidth, textureHeight), textureDepth))) + 1);
 		}
 
-		glTextureStorage3D(texture, numLODs, internalFormat, textureWidth, textureHeight, textureDepth);
-		glTextureSubImage3D(
-			texture,
-			0,                                         // LOD
-			0, 0, 0,                                   // offset
-			textureWidth, textureHeight, textureDepth, // size
-			pixelFormat, GL_UNSIGNED_BYTE, rawBytes);  // pixels
-		
-		if (generateMipmaps) {
-			glGenerateTextureMipmap(texture);
-		}
+		auto This = this;
+		ENQUEUE_RENDER_COMMAND(
+			[This, generateMipmaps, numLODs, internalFormat, textureWidth, textureHeight, textureDepth, pixelFormat, rawBytes](RenderCommandList& cmdList) {
+				const GLuint texture = This->texture;
+				const char* debugName = This->debugName;
 
-		glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTextureParameteri(texture, GL_TEXTURE_WRAP_R, GL_REPEAT);
+				cmdList.textureStorage3D(texture, numLODs, internalFormat, textureWidth, textureHeight, textureDepth);
+				cmdList.textureSubImage3D(
+					texture,
+					0,                                         // LOD
+					0, 0, 0,                                   // offset
+					textureWidth, textureHeight, textureDepth, // size
+					pixelFormat, GL_UNSIGNED_BYTE, rawBytes);  // pixels
 
-		if (debugName != nullptr) {
-			glObjectLabel(GL_TEXTURE, texture, -1, debugName);
-		}
+				if (generateMipmaps) {
+					cmdList.generateTextureMipmap(texture);
+				}
+
+				cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+				if (debugName != nullptr) {
+					cmdList.objectLabel(GL_TEXTURE, texture, -1, debugName);
+				}
+			}
+		);
+		TEMP_FLUSH_RENDER_COMMAND();
 	}
 
 }
