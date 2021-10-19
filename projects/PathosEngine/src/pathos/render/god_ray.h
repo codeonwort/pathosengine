@@ -25,33 +25,30 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void createFBO(RenderCommandList& cmdList);
-		void createShaders(RenderCommandList& cmdList);
-
 		// #todo-godray: 'renderer' parameter is hack
 		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer);
 
-	private:
-		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* mesh, GLfloat* color);
+		// Quite arbitrary, not physically based
+		inline void setGodRayColor(const vector3& inColor) { godRayColor = inColor; }
 
 	private:
+		void createFBO(RenderCommandList& cmdList);
+		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* mesh);
+
+	private:
+		vector3 godRayColor;
+
 		bool destroyed = false;
 
 		GLuint fbo[2] = { 0, 0 };
 
-		// Program: silhouette
-		GLuint program_silhouette = 0;
-		GLint uniform_mvp;
-		GLint uniform_color;
-		
-		// Program: light scattering
+		UniformBuffer uboSilhouette;
 		UniformBuffer uboLightScattering;
-
 		// Program: gaussian blur
 		GLuint fboBlur1 = 0xffffffff;
 		GLuint fboBlur2 = 0xffffffff;
 
-		GLuint vao_dummy;
+		GLuint vao_dummy = 0;
 
 	};
 

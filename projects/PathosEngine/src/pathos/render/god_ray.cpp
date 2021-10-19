@@ -15,7 +15,32 @@
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
 
+static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
+static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.92f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
+static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Density of god ray scattering (> 1.0)");
+
 namespace pathos {
+
+	struct UBO_GodRaySilhouette {
+		matrix4 modelViewProj;
+		vector3 godRayColor;
+	};
+
+	class GodRaySilhouetteVS : public ShaderStage {
+	public:
+		GodRaySilhouetteVS() : ShaderStage(GL_VERTEX_SHADER, "GodRaySilhouetteVS") {
+			addDefine("VERTEX_SHADER 1");
+			setFilepath("god_ray_silhouette.glsl");
+		}
+	};
+
+	class GodRaySilhouetteFS : public ShaderStage {
+	public:
+		GodRaySilhouetteFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRaySilhouetteFS") {
+			addDefine("FRAGMENT_SHADER 1");
+			setFilepath("god_ray_silhouette.glsl");
+		}
+	};
 
 	struct UBO_GodRayLightScattering {
 		vector2 lightPos;
@@ -57,6 +82,7 @@ namespace pathos {
 		}
 	};
 
+	DEFINE_SHADER_PROGRAM2(Program_GodRaySilhouette, GodRaySilhouetteVS, GodRaySilhouetteFS);
 	DEFINE_SHADER_PROGRAM2(Program_GodRayLightScattering, GodRayLightScatteringVS, GodRayLightScatteringFS);
 	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingH, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<true>);
 	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingV, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<false>);
@@ -65,11 +91,9 @@ namespace pathos {
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
-	static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.92f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
-	static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Density of god ray scattering (> 1.0)");
-
-	GodRay::GodRay() {
+	GodRay::GodRay()
+		: godRayColor(vector3(1.0f, 0.5f, 0.0f))
+	{
 	}
 
 	GodRay::~GodRay() {
@@ -78,8 +102,8 @@ namespace pathos {
 
 	void GodRay::initializeResources(RenderCommandList& cmdList) {
 		createFBO(cmdList);
-		createShaders(cmdList);
 		cmdList.genVertexArrays(1, &vao_dummy);
+		uboSilhouette.init<UBO_GodRaySilhouette>();
 		uboLightScattering.init<UBO_GodRayLightScattering>();
 	}
 
@@ -88,7 +112,6 @@ namespace pathos {
 		if (!destroyed) {
 			gRenderDevice->deleteVertexArrays(1, &vao_dummy);
 			gRenderDevice->deleteFramebuffers(2, fbo);
-			gRenderDevice->deleteProgram(program_silhouette);
 		}
 		destroyed = true;
 	}
@@ -129,40 +152,6 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
-	void GodRay::createShaders(RenderCommandList& cmdList) {
-		std::string vshader, fshader;
-
-		/////////////////////////////////////////////////////////////////////////////////
-		// program - silhouette
-		vshader = R"(
-#version 430 core
-
-layout (location = 0) in vec3 position;
-
-layout (location = 0) uniform mat4 mvpTransform;
-
-void main() {
-	gl_Position = mvpTransform * vec4(position, 1.0);
-}
-)";
-
-		fshader = R"(
-#version 430 core
-
-layout (location = 4) uniform vec3 color;
-
-out vec4 out_color;
-
-void main() {
-	out_color = vec4(color, 1.0);
-}
-)";
-
-		program_silhouette = pathos::createProgram(vshader, fshader, "GodRay_silhouette");
-		uniform_mvp = 0;
-		uniform_color = 4;
-	}
-
 	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer) {
 		SCOPED_DRAW_EVENT(GodRay);
 
@@ -171,7 +160,6 @@ void main() {
 		// bind
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		GLfloat opaque_white[] = { 1.0f, 0.5f, 0.0f, 1.0f }; // #todo-godray: Parameterize
 		GLfloat depth_clear[] = { 0.0f };
 
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
@@ -194,14 +182,16 @@ void main() {
 		{
 			SCOPED_DRAW_EVENT(RenderSilhouette);
 
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRaySilhouette);
+
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
-			cmdList.useProgram(program_silhouette);
+			cmdList.useProgram(program.getGLName());
 
 			// Source
 			std::vector<StaticMeshProxy*> sourceProxyList;
 			scene->godRaySource->createRenderProxy_internal(sourceProxyList);
 			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
-				renderSilhouette(cmdList, camera, sourceProxy, opaque_white);
+				renderSilhouette(cmdList, camera, sourceProxy);
 			}
 		}
 
@@ -267,7 +257,7 @@ void main() {
 		}
 	}
 
-	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* meshProxy, GLfloat* color) {
+	void GodRay::renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* meshProxy) {
 		// #todo-godray: Ignore translucent materials completely for now.
 		// - Scaling the luminance proportional to the material's transmittance might produce a not so bad result.
 		// - No idea how to deal with refraction :/
@@ -275,10 +265,10 @@ void main() {
 			return;
 		}
 
-		matrix4 MVP = camera->getViewProjectionMatrix() * meshProxy->modelMatrix;
-
-		cmdList.uniform3fv(uniform_color, 1, color);
-		cmdList.uniformMatrix4fv(uniform_mvp, 1, false, &MVP[0][0]);
+		UBO_GodRaySilhouette uboData;
+		uboData.modelViewProj = camera->getViewProjectionMatrix() * meshProxy->modelMatrix;
+		uboData.godRayColor = godRayColor;
+		uboSilhouette.update(cmdList, 1, &uboData);
 
 		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
 		if (wireframe) {
