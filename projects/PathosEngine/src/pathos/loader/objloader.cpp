@@ -9,8 +9,8 @@
 #include <glm/gtx/hash.hpp>
 
 struct MetaVertex {
-	glm::vec3 position;
-	glm::vec2 texcoord;
+	vector3 position;
+	vector2 texcoord;
 
 	MetaVertex() = default;
 
@@ -23,8 +23,8 @@ namespace std {
 	template<> struct std::hash<MetaVertex> {
 		size_t operator()(MetaVertex const& vertex) const {
 			return
-				((std::hash<glm::vec3>()(vertex.position) >> 1) ^
-				(std::hash<glm::vec2>()(vertex.texcoord) << 1));
+				((std::hash<vector3>()(vertex.position) >> 1) ^
+				(std::hash<vector2>()(vertex.texcoord) << 1));
 		}
 	};
 }
@@ -35,49 +35,45 @@ namespace std {
 
 namespace pathos {
 
+	// #todo: Same as that in geometry.cpp
 	void calculateNormal(const std::vector<GLfloat>& positions, const std::vector<GLuint>& indices, std::vector<GLfloat>& outNormals) {
-		outNormals.clear();
+		CHECK(indices.size() % 3 == 0);
+		outNormals.resize(positions.size());
 
-		uint32 numPos = (uint32)(positions.size() / 3);
-		std::vector<glm::vec3> accum(numPos, glm::vec3(0.0f));
-		std::vector<uint32> counts(numPos, 0);
+		const uint32 numPos = (uint32)(positions.size() / 3);
+		std::vector<vector3> accum(numPos, vector3(0.0f, 0.0f, 0.0f));
 
-		const std::vector<float>& P = positions;
+		const auto& P = positions;
 
 		for (size_t i = 0u; i < indices.size(); i += 3) {
-			GLuint i0 = indices[i + 0], i1 = indices[i + 1], i2 = indices[i + 2];
+			GLuint i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
 			GLuint p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
-			glm::vec3 a = glm::vec3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
-			glm::vec3 b = glm::vec3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
-			if (a == b) {
-				// #todo-loader: Well... we have a problem.
-				a = glm::vec3(1.0f, 0.0f, 0.0f);
-				b = glm::vec3(0.0f, 1.0f, 0.0f);
-			}
-			//auto norm = glm::normalize(glm::cross(a, b));
-			glm::vec3 norm = glm::cross(a, b);
+			vector3 a = vector3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
+			vector3 b = vector3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
 
-			accum[i0] *= counts[i0];
-			accum[i1] *= counts[i1];
-			accum[i2] *= counts[i2];
+			// #todo-loader: Well... we have a problem.
+			if (a == b || i0 == i1 || i1 == i2 || i2 == i0) {
+				continue;
+			}
+
+			vector3 norm = glm::normalize(glm::cross(a, b));
+			if (isnan(norm.x) || isnan(norm.y) || isnan(norm.z)) {
+				continue;
+			}
 
 			accum[i0] += norm;
 			accum[i1] += norm;
 			accum[i2] += norm;
-
-			counts[i0] ++;
-			counts[i1] ++;
-			counts[i2] ++;
-
-			accum[i0] /= counts[i0];
-			accum[i1] /= counts[i1];
-			accum[i2] /= counts[i2];
 		}
+		const vector3 zero(0.0f);
 		for (uint32 i = 0u; i < accum.size(); i++) {
-			glm::vec3 N = glm::normalize(accum[i]);
-			outNormals.push_back(N.x);
-			outNormals.push_back(N.y);
-			outNormals.push_back(N.z);
+			vector3 N = glm::normalize(accum[i]);
+			if (accum[i] == zero) {
+				N = vector3(0, 1, 0);
+			}
+			outNormals[i * 3 + 0] = N.x;
+			outNormals[i * 3 + 1] = N.y;
+			outNormals[i * 3 + 2] = N.z;
 		}
 	}
 
@@ -194,7 +190,7 @@ namespace pathos {
 				translucentColor->setMetallic(t_mat.metallic);
 				translucentColor->setRoughness(t_mat.roughness);
 				translucentColor->setOpacity(t_mat.dissolve);
-				translucentColor->setTransmittance(glm::vec3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
+				translucentColor->setTransmittance(vector3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
 				
 				M = translucentColor;
 			}
@@ -279,8 +275,8 @@ namespace pathos {
 					}
 
 					MetaVertex metaV;
-					metaV.position = glm::vec3(posX, posY, posZ);
-					metaV.texcoord = glm::vec2(texU, texV);
+					metaV.position = vector3(posX, posY, posZ);
+					metaV.texcoord = vector2(texU, texV);
 
 					if (uniqueVertices[materialID].count(metaV) == 0) {
 						uniqueVertices[materialID][metaV] = static_cast<uint32>(metaVertices[materialID].size());
