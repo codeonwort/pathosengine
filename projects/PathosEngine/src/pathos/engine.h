@@ -19,8 +19,12 @@ namespace pathos {
 
 	class World;
 	class Renderer;
+	class GUIWindow;
 	class InputSystem;
+	class OpenGLDevice;
+	class ConsoleWindow;
 	class AssetStreamer;
+	class OverlayRenderer;
 
 	enum class ERendererType : uint8 {
 		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
@@ -53,7 +57,7 @@ namespace pathos {
 		friend class EngineUtil;
 
 		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
-		using GlobalRenderRoutine = std::function<void(class OpenGLDevice* renderDevice)>;
+		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice)>;
 
 	// Static members
 	public:
@@ -93,7 +97,7 @@ namespace pathos {
 
 		AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
 
-		inline class GUIWindow* getMainWindow() const { return mainWindow.get(); }
+		inline GUIWindow* getMainWindow() const { return mainWindow.get(); }
 
 		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
 		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
@@ -113,6 +117,7 @@ namespace pathos {
 		bool initializeOpenGL();
 		bool initializeImageLibrary();
 		bool initializeFontSystem();
+		bool initializeOverlayRenderer();
 		bool initializeConsole();
 		bool initializeRenderer();
 
@@ -155,14 +160,15 @@ namespace pathos {
 
 		std::map<std::string, ExecProc> execMap;
 
-		std::unique_ptr<class InputSystem> inputSystem;
+		std::unique_ptr<InputSystem> inputSystem;
 
-		std::unique_ptr<class GUIWindow> mainWindow;
+		std::unique_ptr<GUIWindow> mainWindow;
 
 	// Render thread
 	private:
-		class OpenGLDevice* render_device;
+		OpenGLDevice* render_device;
 		Renderer* renderer;
+		OverlayRenderer* renderer2D;
 
 		GLuint timer_query;
 		float elapsed_gpu; // in milliseconds
@@ -175,11 +181,11 @@ namespace pathos {
 
 	// Utility thread
 	private:
-		std::unique_ptr<class AssetStreamer> assetStreamer;
+		std::unique_ptr<AssetStreamer> assetStreamer;
 
 	};
 
 	extern Engine* gEngine;
-	extern class ConsoleWindow* gConsole;
+	extern ConsoleWindow* gConsole;
 
 }

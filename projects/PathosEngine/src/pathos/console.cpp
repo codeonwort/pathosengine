@@ -15,16 +15,21 @@ namespace pathos {
 	static constexpr size_t MAX_LINES = 18;
 	static constexpr size_t MAX_HISTORY = 64;
 
-	ConsoleWindow::ConsoleWindow() {
-		initialized = false;
-		visible = true;
-		renderer = nullptr;
-		root = nullptr;
-		background = nullptr;
+	ConsoleWindow::ConsoleWindow(OverlayRenderer* renderer2D)
+		: initialized(false)
+		, visible(true)
+		, windowWidth(0)
+		, windowHeight(0)
+		, renderer(renderer2D)
+		, root(nullptr)
+		, background(nullptr)
+		, inputText(nullptr)
+		, inputHistoryCursor(0)
+	{
+		CHECK(renderer != nullptr);
 	}
 
 	ConsoleWindow::~ConsoleWindow() {
-		if (renderer) delete renderer;
 		if (root) delete root;
 		if (background) delete background;
 	}
@@ -33,7 +38,6 @@ namespace pathos {
 		windowWidth = width;
 		windowHeight = height;
 
-		renderer = new OverlayRenderer;
 		root = DisplayObject2D::createRoot();
 
 		background = new Rectangle(windowWidth, windowHeight);

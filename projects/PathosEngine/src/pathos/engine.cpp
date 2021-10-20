@@ -15,6 +15,9 @@
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
+#include "render/render_overlay.h"
+
+#define CONSOLE_WINDOW_MIN_HEIGHT 400
 
 namespace pathos {
 
@@ -40,7 +43,6 @@ namespace pathos {
 
 		return initialized;
 	}
-
 
 	Engine::GlobalRenderRoutineContainer& Engine::getGlobalRenderRoutineContainer()
 	{
@@ -73,6 +75,7 @@ namespace pathos {
 		, currentWorld(nullptr)
 		, render_device(nullptr)
 		, renderer(nullptr)
+		, renderer2D(nullptr)
 		, timer_query(0)
 		, elapsed_gpu(0)
 	{
@@ -103,6 +106,7 @@ namespace pathos {
 		BailIfFalse( initializeOpenGL()               );
 		BailIfFalse( initializeImageLibrary()         );
 		BailIfFalse( initializeFontSystem()           );
+		BailIfFalse( initializeOverlayRenderer()      );
 		BailIfFalse( initializeConsole()              );
 		BailIfFalse( initializeRenderer()             );
 #undef BailIfFalse
@@ -254,10 +258,17 @@ namespace pathos {
 		return true;
 	}
 
+	bool Engine::initializeOverlayRenderer()
+	{
+		renderer2D = new OverlayRenderer;
+
+		return true;
+	}
+
 	bool Engine::initializeConsole()
 	{
-		gConsole = new ConsoleWindow;
-		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, 400)) == false) {
+		gConsole = new ConsoleWindow(renderer2D);
+		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, CONSOLE_WINDOW_MIN_HEIGHT)) == false) {
 			LOG(LogError, "Failed to initialize console window");
 			return false;
 		}

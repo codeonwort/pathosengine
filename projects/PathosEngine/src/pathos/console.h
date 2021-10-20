@@ -1,8 +1,8 @@
 #pragma once
 
+#include "badger/types/noncopyable.h"
 #include "render/render_command_list.h"
 
-#include <stdint.h>
 #include <memory>
 #include <string>
 #include <list>
@@ -11,12 +11,15 @@
 
 namespace pathos {
 
-	class ConsoleWindow {
+	class OverlayRenderer;
+	class DisplayObject2D;
+	class Rectangle;
+	class Label;
+
+	class ConsoleWindow : public Noncopyable {
 
 	public:
-		ConsoleWindow();
-		ConsoleWindow(const ConsoleWindow&) = delete;
-		ConsoleWindow& operator=(const ConsoleWindow&) = delete;
+		ConsoleWindow(OverlayRenderer* renderer2D);
 		~ConsoleWindow();
 
 		bool initialize(uint16 width, uint16 height);
@@ -31,8 +34,8 @@ namespace pathos {
 		void showPreviousHistory();
 		void showNextHistory();
 
-		class Label* addLine(const char* text, bool addToHistory = false);
-		class Label* addLine(const wchar_t* text, bool addToHistory = false);
+		Label* addLine(const char* text, bool addToHistory = false);
+		Label* addLine(const wchar_t* text, bool addToHistory = false);
 
 	private:
 		void updateInputLine();
@@ -44,14 +47,14 @@ namespace pathos {
 		uint16 windowWidth;
 		uint16 windowHeight;
 
-		class OverlayRenderer* renderer;
-		class DisplayObject2D* root;
-		class Rectangle* background;
-		class Label* inputText;
-		std::list<class Label*> textList;
+		OverlayRenderer* renderer;
+
+		DisplayObject2D* root;
+		Rectangle* background;
+		Label* inputText;
+		std::list<Label*> textList;
 
 		std::wstring currentInput;
-
 		int32 inputHistoryCursor;
 		std::vector<std::wstring> inputHistory;
 
@@ -74,7 +77,7 @@ namespace pathos {
 	public:
 		virtual void print(ConsoleWindow* window) const = 0;
 		virtual void parse(const char* msg, ConsoleWindow* window) = 0;
-		virtual int32_t getInt() const = 0;
+		virtual int32 getInt() const = 0;
 		virtual float getFloat() const = 0;
 	protected:
 		ConsoleVariableBase();
@@ -94,7 +97,7 @@ namespace pathos {
 		void setValue(T newValue) { value = newValue; }
 		virtual void print(ConsoleWindow* window) const override {}
 		virtual void parse(const char* msg, ConsoleWindow* window) override {}
-		virtual int32_t getInt() const override { return static_cast<int32_t>(value); }
+		virtual int32 getInt() const override { return static_cast<int32>(value); }
 		virtual float getFloat() const override { return static_cast<float>(value); }
 	private:
 		std::string help;
@@ -109,7 +112,7 @@ namespace pathos {
 		window->addLine(buffer);
 	}
 	template<>
-	inline void ConsoleVariable<int32_t>::print(ConsoleWindow* window) const override {
+	inline void ConsoleVariable<int32>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %d", value);
 		window->addLine(buffer);
@@ -125,8 +128,8 @@ namespace pathos {
 		}
 	}
 	template<>
-	inline void ConsoleVariable<int32_t>::parse(const char* msg, ConsoleWindow* window) override {
-		int32_t newValue;
+	inline void ConsoleVariable<int32>::parse(const char* msg, ConsoleWindow* window) override {
+		int32 newValue;
 		if (sscanf_s(msg, "%d", &newValue) == 1) {
 			setValue(newValue);
 		} else {
