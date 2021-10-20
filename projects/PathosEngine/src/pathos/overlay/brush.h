@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/wrapper/transform.h"
+#include "badger/types/vector_types.h"
 
 namespace pathos {
 
@@ -10,7 +11,7 @@ namespace pathos {
 	// Base class
 	class Brush {
 	public:
-		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) = 0;
+		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) = 0;
 	};
 
 	// Fill the object with a solid color
@@ -20,7 +21,7 @@ namespace pathos {
 		SolidColorBrush(uint32_t rgb);
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
-		float rgb[4];
+		vector4 color;
 	};
 
 	/*
@@ -38,7 +39,7 @@ namespace pathos {
 		TextBrush(uint32_t rgb);
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 	private:
-		float rgb[4];
+		vector4 color;
 	};
 
 }

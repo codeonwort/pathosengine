@@ -1,6 +1,7 @@
 #pragma once
 
 #include "overlaypass_base.h"
+#include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
 
@@ -9,20 +10,15 @@ namespace pathos {
 
 	public:
 		OverlayPass_Standard();
-		~OverlayPass_Standard();
+		~OverlayPass_Standard() = default;
 
 		virtual void renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) override;
 
-		void setUniform_color(float rgba[4]);
-
-	protected:
-		virtual void createProgram() override;
+		inline void setColor(const vector4& inColor) { rgba = inColor; }
 
 	private:
-		float rgba[4];
-
-		GLint uniform_transform;
-		GLint uniform_color;
+		UniformBuffer ubo;
+		vector4 rgba;
 
 	};
 

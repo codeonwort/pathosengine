@@ -1,12 +1,6 @@
 #include "overlaypass_base.h"
+#include "pathos/render/render_device.h"
 
 namespace pathos {
-
-	OverlayPass::~OverlayPass() {
-		if (program) {
-			glDeleteProgram(program);
-			program = 0;
-		}
-	}
 
 }

@@ -1,57 +1,70 @@
 #include "overlaypass_text.h"
 #include "pathos/overlay/label.h"
-#include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 
 namespace pathos {
 
-	static constexpr unsigned int TEXTURE_UNIT = 0;
+	static constexpr GLuint FONT_TEXTURE_UNIT = 0;
+	static constexpr GLuint UBO_BINDING_INDEX = 1;
+
+	struct UBO_OverlayText {
+		matrix4 transform;
+		vector4 color;
+	};
+
+	class OverlayTextVS : public ShaderStage {
+	public:
+		OverlayTextVS() : ShaderStage(GL_VERTEX_SHADER, "OverlayTextVS") {
+			addDefine("VERTEX_SHADER 1");
+			setFilepath("overlay_text.glsl");
+		}
+	};
+
+	class OverlayTextFS : public ShaderStage {
+	public:
+		OverlayTextFS() : ShaderStage(GL_FRAGMENT_SHADER, "OverlayTextFS") {
+			addDefine("FRAGMENT_SHADER 1");
+			setFilepath("overlay_text.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_OverlayText, OverlayTextVS, OverlayTextFS);
+
+}
+
+namespace pathos {
 
 	OverlayPass_Text::OverlayPass_Text() {
-		createProgram();
-	}
-
-	OverlayPass_Text::~OverlayPass_Text() {
-		glDeleteProgram(program);
-	}
-
-	void OverlayPass_Text::createProgram() {
-		Shader vs(GL_VERTEX_SHADER, "VS_OverlayPass_Text");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_OverlayPass_Text");
-		vs.loadSource("overlay_text_vs.glsl");
-		fs.loadSource("overlay_text_fs.glsl");
-		program = pathos::createProgram(vs, fs, "OverlayPass_Text");
-
-#define GETUNIFORM(uname) { uniform_##uname = glGetUniformLocation(program, #uname); assert(uniform_##uname != -1); }
-		GETUNIFORM(transform);
-		GETUNIFORM(color);
-#undef GETUNIFORM
+		ubo.init<UBO_OverlayText>();
 	}
 
 	void OverlayPass_Text::renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) {
 		Label* label = static_cast<Label*>(object);
 
-		cmdList.useProgram(program);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OverlayText);
+		cmdList.useProgram(program.getGLName());
 
 		MeshGeometry* geom = object->getGeometry();
-		glm::mat4 transform = transformAccum.getMatrix();
 
 		// uniform
-		cmdList.uniformMatrix4fv(uniform_transform, 1, false, &transform[0][0]);
-		cmdList.uniform4fv(uniform_color, 1, rgba);
-		cmdList.bindTextureUnit(TEXTURE_UNIT, label->getFontTexture());
+		UBO_OverlayText uboData;
+		uboData.transform = transformAccum.getMatrix();
+		uboData.color = color;
+		ubo.update(cmdList, UBO_BINDING_INDEX, &uboData);
+
+		// shader resources
+		cmdList.bindTextureUnit(FONT_TEXTURE_UNIT, label->getFontTexture());
 
 		cmdList.enable(GL_BLEND);
 		cmdList.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		geom->activate_position_uv(cmdList);
 		geom->activateIndexBuffer(cmdList);
 		geom->drawPrimitive(cmdList);
 		geom->deactivate(cmdList);
 		geom->deactivateIndexBuffer(cmdList);
+		
 		cmdList.disable(GL_BLEND);
-	}
-
-	void OverlayPass_Text::setUniform_color(float newRGBA[4]) {
-		memcpy_s(rgba, sizeof(float) * 4, newRGBA, sizeof(float) * 4);
 	}
 
 }
