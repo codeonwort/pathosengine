@@ -1,9 +1,8 @@
 #pragma once
 
-#include "badger/types/string_hash.h"
-
 #include "pathos/render/render_command_list.h"
 
+#include "badger/types/string_hash.h"
 #include <string>
 #include <vector>
 

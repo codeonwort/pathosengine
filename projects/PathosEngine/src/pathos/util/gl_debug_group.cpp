@@ -73,14 +73,14 @@ namespace pathos {
 		queryObjectPool.resize(maxQueryObjects);
 		queryCounterNames.resize(inMaxGpuCounters);
 
-		glGenQueries(maxQueryObjects, queryObjectPool.data());
+		gRenderDevice->createQueries(GL_TIMESTAMP, maxQueryObjects, queryObjectPool.data());
 	}
 
 	void ScopedGpuCounter::destroyQueryObjectPool() {
 		CHECKF(poolInitialized, "Pool was not initialized");
 		CHECKF(numUsedQueryObjects == 0, "There are queries not returned yet.");
 
-		glDeleteQueries(maxQueryObjects, queryObjectPool.data());
+		gRenderDevice->deleteQueries(maxQueryObjects, queryObjectPool.data());
 
 		queryObjectPool.clear();
 		queryCounterNames.clear();
@@ -110,12 +110,19 @@ namespace pathos {
 
 		outCounterNames.resize(numUsedQueryObjects / 2);
 		outElapsedMilliseconds.resize(numUsedQueryObjects / 2);
-		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
-			GLuint64 beginTimeNS, endTimeNS;
-			glGetQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNS);
-			glGetQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNS);
-			float elapsedMS = (float)((double)(endTimeNS - beginTimeNS) / 1000000.0);
+		std::vector<GLuint64> beginTimeNSArray(numUsedQueryObjects / 2, 0U);
+		std::vector<GLuint64> endTimeNSArray(numUsedQueryObjects / 2, 0U);
 
+		ENQUEUE_RENDER_COMMAND([&outCounterNames, &outElapsedMilliseconds, &beginTimeNSArray, &endTimeNSArray](RenderCommandList& cmdList) {
+			for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
+				cmdList.getQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNSArray[i / 2]);
+				cmdList.getQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNSArray[i / 2]);
+			}
+		});
+		FLUSH_RENDER_COMMAND();
+
+		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
+			float elapsedMS = (float)((double)(endTimeNSArray[i / 2] - beginTimeNSArray[i / 2]) / 1000000.0);
 			outCounterNames[i / 2] = queryCounterNames[i / 2];
 			outElapsedMilliseconds[i / 2] = elapsedMS;
 		}
