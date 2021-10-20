@@ -18,6 +18,53 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="atmosphere.glsl" />
+    <None Include="atmosphere_precompute.glsl" />
+    <None Include="bloom_setup.glsl" />
+    <None Include="brdf.glsl" />
+    <None Include="copy_texture.fs.glsl" />
+    <None Include="deferred_common.glsl" />
+    <None Include="deferred_common_fs.glsl" />
+    <None Include="deferred_pack_bumptexture_fs.glsl" />
+    <None Include="deferred_pack_bumptexture_vs.glsl" />
+    <None Include="deferred_pack_pbr_fs.glsl" />
+    <None Include="deferred_pack_pbr_vs.glsl" />
+    <None Include="deferred_pack_solidcolor_fs.glsl" />
+    <None Include="deferred_pack_solidcolor_vs.glsl" />
+    <None Include="deferred_pack_texture_fs.glsl" />
+    <None Include="deferred_pack_texture_vs.glsl" />
+    <None Include="deferred_pack_wireframe_fs.glsl" />
+    <None Include="deferred_pack_wireframe_vs.glsl" />
+    <None Include="deferred_unpack.glsl" />
+    <None Include="depth_of_field.glsl" />
+    <None Include="depth_prepass.glsl" />
+    <None Include="diffuse_irradiance.glsl" />
+    <None Include="equirectangular_to_cube.glsl" />
+    <None Include="fullscreen_quad.glsl" />
+    <None Include="fxaa_fs.glsl" />
+    <None Include="god_ray_fs.glsl" />
+    <None Include="god_ray_silhouette.glsl" />
+    <None Include="normal_visualizer.glsl" />
+    <None Include="nvidia_fxaa.glsl" />
+    <None Include="omni_shadow_map.glsl" />
+    <None Include="overlay_standard.glsl" />
+    <None Include="overlay_text.glsl" />
+    <None Include="prefix_sum.glsl" />
+    <None Include="shadow_mapping.glsl" />
+    <None Include="skybox.glsl" />
+    <None Include="sky_ansel.glsl" />
+    <None Include="specular_ibl.glsl" />
+    <None Include="ssao_ao.glsl" />
+    <None Include="ssao_downscale.glsl" />
+    <None Include="starfield.glsl" />
+    <None Include="tone_mapping.glsl" />
+    <None Include="translucency_fs.glsl" />
+    <None Include="translucency_vs.glsl" />
+    <None Include="two_pass_gaussian_blur.glsl" />
+    <None Include="visualize_depth.glsl" />
+    <None Include="volumetric_clouds.glsl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{B9F0F9D6-0F93-403C-8CF7-EA9318E01803}</ProjectGuid>
