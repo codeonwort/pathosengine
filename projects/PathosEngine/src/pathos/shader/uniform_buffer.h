@@ -3,6 +3,7 @@
 // #todo-persistent-map-buffer
 // https://www.bfilipek.com/2015/01/persistent-mapped-buffers-in-opengl.html
 
+#include "pathos/render/render_device.h"
 #include "badger/assertion/assertion.h"
 #include "gl_core.h"
 
@@ -19,7 +20,7 @@ namespace pathos {
 
 		~UniformBuffer() {
 			if (ubo != 0) {
-				glDeleteBuffers(1, &ubo);
+				gRenderDevice->deleteBuffers(1, &ubo);
 			}
 		}
 
@@ -29,8 +30,10 @@ namespace pathos {
 		template<typename T> void init() {
 			//bufferSize = (sizeof(T) + 255) & ~255;
 			bufferSize = sizeof(T);
-			glCreateBuffers(1, &ubo);
-			glNamedBufferStorage(ubo, bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
+			gRenderDevice->createBuffers(1, &ubo);
+			ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
+				cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
+			});
 		}
 
 		void update(RenderCommandList& cmdList, GLuint bindingIndex, void* data) {
