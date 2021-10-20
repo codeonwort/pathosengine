@@ -5,17 +5,18 @@
 #include "pathos/scene/scene.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_deferred.h"
+#include "pathos/render/render_overlay.h"
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/renderdoc_integration.h"
+#include "pathos/debug_overlay.h"
 
 #include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
-#include "render/render_overlay.h"
 
 #define CONSOLE_WINDOW_MIN_HEIGHT 400
 
@@ -76,6 +77,7 @@ namespace pathos {
 		, render_device(nullptr)
 		, renderer(nullptr)
 		, renderer2D(nullptr)
+		, debugOverlay(nullptr)
 		, timer_query(0)
 		, elapsed_gpu(0)
 	{
@@ -121,6 +123,9 @@ namespace pathos {
 		registerExec("profile_gpu", [](const std::string& command) {
 			gEngine->dumpGPUProfile();
 		});
+		registerExec("stat", [](const std::string& command) {
+			gEngine->debugOverlay->toggleFrameStat();
+		});
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");
@@ -132,6 +137,7 @@ namespace pathos {
 		LOG(LogInfo, "");
 		LOG(LogInfo, "=== Destroy PATHOS ===");
 
+		// #todo: Destroy other subsystems, but it's meaningless unless GLUT is dealt with.
 #define BailIfFalse(x) if(!(x)) { return false; }
 		BailIfFalse(destroyOpenGL());
 #undef BailIfFalse
@@ -261,6 +267,9 @@ namespace pathos {
 	bool Engine::initializeOverlayRenderer()
 	{
 		renderer2D = new OverlayRenderer;
+
+		debugOverlay = new DebugOverlay(renderer2D);
+		debugOverlay->initialize();
 
 		return true;
 	}
@@ -496,6 +505,9 @@ namespace pathos {
 			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
 			immediateContext.flushAllCommands();
 		}
+
+		debugOverlay->renderDebugOverlay(immediateContext, conf.windowWidth, conf.windowHeight);
+		immediateContext.flushAllCommands();
 
 		if (gConsole) {
 			SCOPED_CPU_COUNTER(ExecuteDebugConsole);

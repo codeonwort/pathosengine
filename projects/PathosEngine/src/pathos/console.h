@@ -16,6 +16,7 @@ namespace pathos {
 	class Rectangle;
 	class Label;
 
+	// Console GUI rendered on top of the 3D scene
 	class ConsoleWindow : public Noncopyable {
 
 	public:

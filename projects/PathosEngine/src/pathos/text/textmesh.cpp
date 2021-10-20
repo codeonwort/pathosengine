@@ -53,7 +53,7 @@ namespace pathos {
 	}
 
 	void TextGeometry::configure(FontTextureCache& cache, const std::wstring& newText) {
-		// TODO: prevent crash when newText is empty.
+		// #todo: prevent crash when newText is empty.
 
 		positions.clear();
 		uvs.clear();

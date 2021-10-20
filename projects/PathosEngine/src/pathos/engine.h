@@ -22,6 +22,7 @@ namespace pathos {
 	class GUIWindow;
 	class InputSystem;
 	class OpenGLDevice;
+	class DebugOverlay;
 	class ConsoleWindow;
 	class AssetStreamer;
 	class OverlayRenderer;
@@ -169,6 +170,7 @@ namespace pathos {
 		OpenGLDevice* render_device;
 		Renderer* renderer;
 		OverlayRenderer* renderer2D;
+		DebugOverlay* debugOverlay;
 
 		GLuint timer_query;
 		float elapsed_gpu; // in milliseconds
