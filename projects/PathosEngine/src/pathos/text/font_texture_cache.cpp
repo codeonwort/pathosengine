@@ -1,4 +1,5 @@
 #include "font_texture_cache.h"
+#include "pathos/render/render_device.h"
 #include <vector>
 
 #define DRAW_GLYPH_BORDER 0
@@ -43,48 +44,53 @@ namespace pathos {
 		}
 
 		// OpenGL
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
+
+		GLuint textureName = texture;
+		ENQUEUE_RENDER_COMMAND([textureName](RenderCommandList& cmdList) {
+			cmdList.textureStorage2D(textureName, 1, GL_R8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+			cmdList.textureParameteri(textureName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(textureName, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(textureName, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(textureName, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		});
 
 		return true;
 	}
 
 	void FontTextureCache::term() {
 		FT_Done_Face(face);
-		glDeleteTextures(1, &texture);
+		gRenderDevice->deleteTextures(1, &texture);
 		cache.used.clear();
 		cache.unused.clear();
 	}
 
-	const GlyphInTexture FontTextureCache::getGlyph(wchar_t x) {
-		// TODO: currently use only first cache
-		insert(x);
+	const GlyphInTexture FontTextureCache::getGlyph(RenderCommandList& cmdList, wchar_t x) {
+		// #todo-text: currently use only first cache
+		insert(cmdList, x);
 		const auto& v = cache.used;
 		for(auto& g : v) if (g.ch == x) return g;
 		return GlyphInTexture{};
 	}
 
 	bool FontTextureCache::contains(wchar_t x) {
-		// TODO: currently use only first cache
+		// #todo-text: currently use only first cache
 		const auto& v = cache.used;
 		for (auto& g : v) if (g.ch == x) return true;
 		return false;
 	}
 
-	bool FontTextureCache::insert(wchar_t x) {
-		if (contains(x)) return true;
+	bool FontTextureCache::insert(RenderCommandList& cmdList, wchar_t x) {
+		if (contains(x)) {
+			return true;
+		}
 
 		GlyphInTexture g;
 
-		// TODO: currently only use first cache
+		// #todo-text: currently only use first cache
 		Cache& c = cache;
 		if (isFull(c)) {
-			// TODO: profiling for cache miss
+			// #todo-text: profiling for cache miss
 			g = c.used.front();
 			c.used.pop_front();
 		} else {
@@ -138,12 +144,17 @@ namespace pathos {
 		}
 #endif
 
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexSubImage2D(GL_TEXTURE_2D, 0,
-			(GLint)(g.x * TEXTURE_WIDTH), (GLint)(g.y * TEXTURE_HEIGHT),
-			bmp.width, bmp.rows,
-			GL_RED, GL_UNSIGNED_BYTE,
-			glyphBuffer);
+		cmdList.textureSubImage2D(
+			texture,                          // texture
+			0,                                // level
+			(GLint)(g.x * TEXTURE_WIDTH),     // xoffset
+			(GLint)(g.y * TEXTURE_HEIGHT),    // yoffset
+			bmp.width, bmp.rows,              // width, heigth
+			GL_RED, GL_UNSIGNED_BYTE,         // format, type
+			glyphBuffer);                     // pixels
+		
+		// #todo-text: Hold glyphBuffer until all commands are finalized. Temp flush to make it work right now...
+		cmdList.flushAllCommands();
 
 #if DRAW_GLYPH_BORDER
 		delete[] glyphBuffer;

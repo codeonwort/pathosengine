@@ -9,6 +9,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "pathos/render/render_command_list.h"
+
 #include "gl_core.h"
 #include <list>
 #include <map>
@@ -49,9 +51,9 @@ namespace pathos {
 		bool init(FT_Library& library, const char* filename, unsigned int size);
 		void term();
 
-		inline void startGetGlyph() { glPixelStorei(GL_UNPACK_ALIGNMENT, 1); }
-		const GlyphInTexture getGlyph(wchar_t x);
-		inline void endGetGlyph() { glPixelStorei(GL_UNPACK_ALIGNMENT, 4); }
+		inline void startGetGlyph(RenderCommandList& cmdList) { cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 1); }
+		const GlyphInTexture getGlyph(RenderCommandList& cmdList, wchar_t x);
+		inline void endGetGlyph(RenderCommandList& cmdList) { cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 4); }
 
 		inline GLuint getTexture() { return texture; }
 		inline float getCellWidth() const { return static_cast<float>(maxWidth) / TEXTURE_WIDTH; }
@@ -62,7 +64,7 @@ namespace pathos {
 
 	protected:
 		bool contains(wchar_t x); // does it exist in one of caches?
-		bool insert(wchar_t x); // returns true if successful, false otherwise
+		bool insert(RenderCommandList& cmdList, wchar_t x); // returns true if successful, false otherwise
 		inline bool isFull(Cache& cache) const;
 
 	private:

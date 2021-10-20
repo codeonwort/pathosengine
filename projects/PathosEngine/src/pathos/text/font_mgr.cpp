@@ -3,19 +3,14 @@
 
 namespace pathos {
 
-	///////////////////////////////////////////////////////////////////////////////////////////
-	// static
-	FontManager* FontManager::instance = nullptr;
 	FontManager* FontManager::getInstance() {
-		if (instance == nullptr) {
-			instance = new FontManager;
-		}
-		return instance;
+		static FontManager instance;
+		return &instance;
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////
 	// non-static
-	FontManager::FontManager() { }
+	FontManager::FontManager() {}
 	FontManager::~FontManager() { if (initialized) _term(); }
 
 	bool FontManager::_init() {

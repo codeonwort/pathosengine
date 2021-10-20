@@ -2,57 +2,16 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"
+#include "pathos/util/string_conversion.h"
 
-#define DEBUG_FONT_CACHE 0
+#include "badger/types/int_types.h"
+
 #define COMPACT_FONT_GLYPH 1
 #define FLIP_GLYPH_V 0
 
 namespace pathos {
 
-	TextMesh::TextMesh(const std::string& tag_)
-		: Mesh(nullptr, nullptr)
-	{
-		tag = tag_;
-		doubleSided = true;
-
-		auto fontInfo = FontManager::getGlyphMap(tag);
-		cache.init(FontManager::getFTLibrary(), fontInfo->filename.c_str(), fontInfo->fontSize);
-
-		geometries.push_back(new TextGeometry);
-		auto mat = new AlphaOnlyTextureMaterial(cache.getTexture());
-		materials.push_back(mat);
-
-#if DEBUG_FONT_CACHE
-		geometries.push_back(new PlaneGeometry(1.0f, 1.0f));
-		materials.push_back(mat);
-#endif
-	}
-
-	// CAUTION: ASCII-only! MBCS is not supported.
-	void TextMesh::setText(const std::string& txt, unsigned int rgb) {
-		std::wstring w(txt.begin(), txt.end());
-		setText(w, rgb);
-	}
-
-	void TextMesh::setText(const std::wstring& txt, unsigned int rgb) {
-		text = txt;
-		configureGeometry(text);
-
-		GLfloat r = static_cast<float>(rgb >> 16) / 255.0f;
-		GLfloat g = static_cast<float>((rgb >> 8) & 0xff) / 255.0f;
-		GLfloat b = static_cast<float>(rgb & 0xff) / 255.0f;
-		static_cast<AlphaOnlyTextureMaterial*>(materials[0])->setColor(r, g, b);
-
-		transform.identity();
-		transform.setScale(glm::vec3(1.0f, -1.0f, 1.0f));
-	}
-
-	void TextMesh::configureGeometry(const std::wstring& newText) {
-		auto geom = static_cast<TextGeometry*>(geometries[0]);
-		geom->configure(cache, newText);
-	}
-
-	void TextGeometry::configure(FontTextureCache& cache, const std::wstring& newText) {
+	void TextGeometry::configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& newText) {
 		// #todo: prevent crash when newText is empty.
 
 		positions.clear();
@@ -65,14 +24,14 @@ namespace pathos {
 		GLfloat u, v, du, dv;
 		GLuint idx = 0;
 
-		cache.startGetGlyph();
+		cache.startGetGlyph(cmdList);
 		for (wchar_t x : newText) {
 			if (x == L'\n') {
 				penX = 0.0f;
 				penY += cache.getCellHeight();
 				continue;
 			}
-			const GlyphInTexture& glyph = cache.getGlyph(x);
+			const GlyphInTexture& glyph = cache.getGlyph(cmdList, x);
 			// order: top-left, top-right, bottom-right, bottom-left
 			penY -= glyph.offsetY;
 
@@ -143,11 +102,11 @@ namespace pathos {
 			}
 			idx += 4;
 		}
-		cache.endGetGlyph();
+		cache.endGetGlyph(cmdList);
 
-		updatePositionData(&positions[0], static_cast<uint32_t>(positions.size()));
-		updateUVData(&uvs[0], static_cast<uint32_t>(uvs.size()));
-		updateIndexData(&indices[0], static_cast<uint32_t>(indices.size()));
+		updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
+		updateUVData(&uvs[0], static_cast<uint32>(uvs.size()));
+		updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
 
 		if (normals.size() == 0) {
 			for (auto i = 0u; i < newText.size(); ++i) {
@@ -155,7 +114,7 @@ namespace pathos {
 				normals.push_back(0.0f);
 				normals.push_back(1.0f);
 			}
-			updateNormalData(&normals[0], static_cast<uint32_t>(normals.size()));
+			updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
 		}
 	}
 

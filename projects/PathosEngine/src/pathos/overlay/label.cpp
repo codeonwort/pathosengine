@@ -20,7 +20,9 @@ namespace pathos {
 		setScaleY(300.0f);
 	}
 
-	Label::Label(const wchar_t* text) : Label() {
+	Label::Label(const wchar_t* text)
+		: Label()
+	{
 		setText(text);
 	}
 
@@ -29,7 +31,11 @@ namespace pathos {
 	}
 
 	void Label::setText(const wchar_t* newText) {
-		geometry->configure(cache, newText);
+		text = newText;
+	}
+
+	void Label::onRender(RenderCommandList& cmdList) {
+		geometry->configure(cmdList, cache, text);
 	}
 
 	GLuint Label::getFontTexture() {

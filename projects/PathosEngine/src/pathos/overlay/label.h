@@ -2,6 +2,7 @@
 
 #include "display_object.h"
 #include "pathos/text/textmesh.h"
+#include <string>
 
 namespace pathos {
 
@@ -17,12 +18,15 @@ namespace pathos {
 
 		void setText(const wchar_t* newText);
 
+		virtual void onRender(RenderCommandList& cmdList) override;
+
 		virtual MeshGeometry* getGeometry() override { return geometry; }
 
 	protected:
 		virtual void updateTransform() override;
 
 	private:
+		std::wstring text;
 		TextGeometry* geometry;
 
 	};

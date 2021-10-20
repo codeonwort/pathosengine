@@ -45,7 +45,6 @@ namespace pathos {
 		static GlyphMap* getGlyphMap(const std::string& tag) { return getInstance()->_getGlyphMap(tag); }
 		static FT_Library& getFTLibrary() { return getInstance()->library; }
 	private:
-		static FontManager* instance;
 		static FontManager* getInstance();
 
 	// non-static
@@ -56,7 +55,7 @@ namespace pathos {
 		~FontManager();
 
 		bool initialized = false;
-		FT_Library library;
+		FT_Library library = nullptr;
 		FontDB fontDB;
 
 		bool _init();

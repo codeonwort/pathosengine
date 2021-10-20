@@ -11,8 +11,12 @@ namespace pathos {
 
 	public:
 		static DisplayObject2D* createRoot();
+
 		DisplayObject2D();
 		virtual ~DisplayObject2D();
+
+		// #todo-text: Temp callback. Configure anything for this object before rendering
+		virtual void onRender(RenderCommandList& cmdList) {}
 
 		bool addChild(DisplayObject2D* child);
 		bool removeChild(DisplayObject2D* child);
