@@ -8,6 +8,10 @@
 #include "pathos/util/string_conversion.h"
 #include "pathos/util/math_lib.h"
 
+#define MAX_HINT_LIST       8
+#define HINT_LABEL_WIDTH    300
+#define HINT_LABEL_HEIGHT   20
+
 namespace pathos {
 
 	static constexpr float LEFT_MARGIN = 10.0f;
@@ -24,6 +28,7 @@ namespace pathos {
 		, root(nullptr)
 		, background(nullptr)
 		, inputText(nullptr)
+		, hintBackground(nullptr)
 		, inputHistoryCursor(0)
 	{
 		CHECK(renderer != nullptr);
@@ -48,6 +53,21 @@ namespace pathos {
 		inputText->setX(10.0f);
 		inputText->setY(height - 30.0f);
 		root->addChild(inputText);
+
+		hintBackground = new Rectangle(HINT_LABEL_WIDTH, 10.0f + (MAX_HINT_LIST + 1) * HINT_LABEL_HEIGHT);
+		hintBackground->setBrush(new SolidColorBrush(0.0f, 0.1f, 0.1f));
+		hintBackground->setX(10.0f);
+		hintBackground->setY(windowHeight - 40.0f - (MAX_HINT_LIST + 1) * HINT_LABEL_HEIGHT);
+		hintBackground->setVisible(false);
+		root->addChild(hintBackground);
+		for (int32 i = 0; i <= MAX_HINT_LIST; ++i) {
+			Label* hint = new Label(L"...");
+			hint->setX(0.0f);
+			hint->setY((float)(i * HINT_LABEL_HEIGHT));
+			hint->setVisible(false);
+			hintList.push_back(hint);
+			root->addChild(hint);
+		}
 
 		initialized = true;
 		return initialized;
@@ -141,6 +161,80 @@ namespace pathos {
 		std::wstring input2 = L"> " + currentInput;
 		inputText->setVisible(true);
 		inputText->setText(input2.data());
+
+		updateHint(currentInput, currentInput.size() == 0);
+	}
+
+	void ConsoleWindow::updateHint(const std::wstring& currentText, bool forceHide) {
+		if (forceHide) {
+			hintBackground->setVisible(false);
+			for (int32 i = 0; i <= MAX_HINT_LIST; ++i) {
+				hintList[i]->setVisible(false);
+			}
+			return;
+		}
+
+		enum class HintCategory {
+			Exec = 0,
+			CVar = 1
+		};
+
+		std::vector<std::wstring> allCommands;
+		std::vector<HintCategory> hintCategories;
+
+		for (const auto& it : gEngine->getExecMap()) {
+			std::wstring wcmd;
+			pathos::MBCS_TO_WCHAR(it.first, wcmd);
+			allCommands.push_back(wcmd);
+			hintCategories.push_back(HintCategory::Exec);
+		}
+		std::string currentTextMBCS;
+		std::vector<std::string> matchingCVars;
+		pathos::WCHAR_TO_MBCS(currentText, currentTextMBCS);
+		ConsoleVariableManager::get().getCVarNamesWithPrefix(currentTextMBCS.c_str(), matchingCVars);
+		for (const auto& it : matchingCVars) {
+			std::wstring cvarNameW;
+			pathos::MBCS_TO_WCHAR(it, cvarNameW);
+			allCommands.push_back(cvarNameW);
+			hintCategories.push_back(HintCategory::CVar);
+		}
+
+		int32 hintIx = 0;
+		int32 totalMatching = 0;
+		for (int32 i = 0; i < allCommands.size(); ++i) {
+			const std::wstring& cmd = allCommands[i];
+			const HintCategory cat = hintCategories[i];
+			if (cmd.find(currentInput) == 0) {
+				totalMatching += 1;
+				if (hintIx > MAX_HINT_LIST) {
+					continue;
+				} else if (hintIx == MAX_HINT_LIST) {
+					hintList[MAX_HINT_LIST]->setText(L"...");
+					hintList[MAX_HINT_LIST]->setColor(vector3(1.0f, 1.0f, 1.0f));
+				} else {
+					hintList[hintIx]->setText(cmd.c_str());
+					vector3 c = (cat == HintCategory::Exec) ? vector3(1.0f, 1.0f, 0.0f) : vector3(1.0f, 1.0f, 1.0f);
+					hintList[hintIx]->setColor(c);
+				}
+				hintIx += 1;
+			}
+		}
+		if (totalMatching > MAX_HINT_LIST) {
+			wchar_t buffer[256];
+			swprintf_s(buffer, L"%d more...", totalMatching - MAX_HINT_LIST);
+			hintList[MAX_HINT_LIST]->setText(buffer);
+		}
+
+		float baseY = windowHeight - 40.0f - (HINT_LABEL_HEIGHT * hintIx);
+		for (int32 i = 0; i < hintIx; ++i) {
+			hintList[i]->setVisible(true);
+			hintList[i]->setX(20.0f);
+			hintList[i]->setY(baseY + i * HINT_LABEL_HEIGHT);
+		}
+		for (int32 i = hintIx; i <= MAX_HINT_LIST; ++i) {
+			hintList[i]->setVisible(false);
+		}
+		hintBackground->setVisible(hintIx != 0);
 	}
 
 	void ConsoleWindow::evaluate(const wchar_t* text) {
@@ -201,6 +295,16 @@ namespace pathos {
 	{
 		std::lock_guard<std::mutex> lockRegistry(registryLock);
 		registry.push_back(cvar);
+	}
+
+	void ConsoleVariableManager::getCVarNamesWithPrefix(const char* prefix, std::vector<std::string>& outNames)
+	{
+		outNames.clear();
+		for (const auto& it : registry) {
+			if (it->name.find(prefix) == 0) {
+				outNames.push_back(it->name);
+			}
+		}
 	}
 
 	ConsoleVariableBase::ConsoleVariableBase() {

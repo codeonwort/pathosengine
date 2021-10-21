@@ -17,6 +17,7 @@ namespace pathos {
 		~Label();
 
 		void setText(const wchar_t* newText);
+		void setColor(const vector3& newColor);
 
 		virtual void onRender(RenderCommandList& cmdList) override;
 

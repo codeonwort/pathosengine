@@ -40,6 +40,7 @@ namespace pathos {
 
 	private:
 		void updateInputLine();
+		void updateHint(const std::wstring& currentText, bool forceHide);
 		void evaluate(const wchar_t* text);
 		void addInputHistory(const wchar_t* inputText);
 
@@ -54,6 +55,8 @@ namespace pathos {
 		Rectangle* background;
 		Label* inputText;
 		std::list<Label*> textList;
+		Rectangle* hintBackground;
+		std::vector<Label*> hintList;
 
 		std::wstring currentInput;
 		int32 inputHistoryCursor;
@@ -63,11 +66,16 @@ namespace pathos {
 
 	class ConsoleVariableManager {
 		friend class ConsoleVariableBase;
+
 	public:
 		static ConsoleVariableManager& get();
 
 		ConsoleVariableBase* find(const char* name);
+
 		void registerCVar(ConsoleVariableBase* cvar);
+
+		void getCVarNamesWithPrefix(const char* prefix, std::vector<std::string>& outNames);
+
 	private:
 		std::vector<ConsoleVariableBase*> registry;
 		std::mutex registryLock;

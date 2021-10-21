@@ -1,4 +1,5 @@
 #include "rectangle.h"
+#include "badger/assertion/assertion.h"
 
 namespace pathos {
 
@@ -12,7 +13,7 @@ namespace pathos {
 	}
 
 	void Rectangle::setSize(float inWidth, float inHeight) {
-		assert(inWidth >= 0.0f && inHeight >= 0.0f);
+		CHECK(inWidth >= 0.0f && inHeight >= 0.0f);
 		width = inWidth;
 		height = inHeight;
 	}

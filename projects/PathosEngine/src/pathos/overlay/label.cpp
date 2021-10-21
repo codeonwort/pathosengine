@@ -34,6 +34,10 @@ namespace pathos {
 		text = newText;
 	}
 
+	void Label::setColor(const vector3& newColor) {
+		static_cast<TextBrush*>(getBrush())->setColor(newColor);
+	}
+
 	void Label::onRender(RenderCommandList& cmdList) {
 		geometry->configure(cmdList, cache, text);
 	}

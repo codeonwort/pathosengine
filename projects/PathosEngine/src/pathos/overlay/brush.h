@@ -34,12 +34,18 @@ namespace pathos {
 
 	// Brush for Label
 	class TextBrush : public Brush {
+
 	public:
 		TextBrush(float r, float g, float b);
 		TextBrush(uint32_t rgb);
+
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
+
+		inline void setColor(const vector3& inColor) { color = vector4(inColor, 1.0f); }
+
 	private:
 		vector4 color;
+
 	};
 
 }

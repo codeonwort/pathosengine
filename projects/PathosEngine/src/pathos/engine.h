@@ -105,6 +105,8 @@ namespace pathos {
 		inline GLuint getSystemTexture2DGrey()  const { return texture2D_grey;  }
 		inline GLuint getSystemTexture2DBlue()  const { return texture2D_blue;  }
 
+		inline const std::map<std::string, ExecProc>& getExecMap() const { return execMap; }
+
 	private:
 		Engine();
 		~Engine();

@@ -56,7 +56,7 @@ namespace pathos {
 		if (object->getVisible() == false) {
 			return;
 		}
-
+		
 		Transform accum(transformAccum.getMatrix() * object->getTransform().getMatrix());
 
 		auto brush = object->getBrush();
