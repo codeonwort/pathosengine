@@ -36,7 +36,6 @@ namespace pathos {
 
 	using FontDB = std::map<std::string, GlyphMap*>;
 
-	// Singleton
 	// #todo-text: First thought was this is redundant with FontTextureCache, but this is needed as a general FT wrapper.
 	class FontManager : public Noncopyable {
 		friend class FontTextureCache;
@@ -54,15 +53,11 @@ namespace pathos {
 		// Chance to cleanup resources related to render command execution
 		void onFrameEnd();
 
-		// #todo-text: Needed?
-		bool isAvailable() const { return initialized; }
-
-		// #todo-text: Better not to expose FT_Library
-		FT_Library& getFTLibrary() { return library; }
-
 	private:
 		FontManager();
 		~FontManager();
+
+		FT_Library& getFTLibrary() { return library; }
 
 		bool loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping);
 

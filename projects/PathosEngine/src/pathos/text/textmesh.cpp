@@ -12,7 +12,12 @@
 namespace pathos {
 
 	void TextGeometry::configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& newText) {
-		// #todo: prevent crash when newText is empty.
+		// #todo-text: prevent crash when newText is empty.
+
+		std::vector<GLfloat> positions;
+		std::vector<GLfloat> normals;
+		std::vector<GLfloat> uvs;
+		std::vector<GLuint> indices;
 
 		positions.clear();
 		uvs.clear();

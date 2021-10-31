@@ -20,13 +20,6 @@ namespace pathos {
 	public:
 		void configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& text);
 
-	private:
-		// #todo-text: Redundant with member variables of the superclass.
-		std::vector<GLfloat> positions;
-		std::vector<GLfloat> normals;
-		std::vector<GLfloat> uvs;
-		std::vector<GLuint> indices;
-
 	};
 
 }

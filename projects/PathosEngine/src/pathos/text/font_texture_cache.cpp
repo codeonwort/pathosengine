@@ -3,9 +3,8 @@
 #include "pathos/render/render_device.h"
 #include "pathos/util/log.h"
 
-#include <vector>
-
 #define DRAW_GLYPH_BORDER 0 // Debug
+#define FLIP_BITMAP_DATA  0 // No need for GLSL
 
 // Temporarily hold data for textureSubImage2D calls. Cleared on frame end.
 #define GLYPH_BUFFER_MAX_SIZE (2 * 1024 * 1024) // 2 MB
@@ -49,7 +48,7 @@ namespace pathos {
 				g.y = y * ratioY;
 				g.width = ratioX;
 				g.height = ratioY;
-				cache.unused.emplace_back(g);
+				cacheState.unused.emplace_back(g);
 			}
 		}
 
@@ -78,8 +77,8 @@ namespace pathos {
 		FT_Done_Face(face);
 		gRenderDevice->deleteTextures(1, &texture);
 		FontManager::get().unregisterCache(this);
-		cache.used.clear();
-		cache.unused.clear();
+		cacheState.used.clear();
+		cacheState.unused.clear();
 	}
 
 	void FontTextureCache::startGetGlyph(RenderCommandList& cmdList)
@@ -88,9 +87,8 @@ namespace pathos {
 	}
 
 	const GlyphInTexture FontTextureCache::getGlyph(RenderCommandList& cmdList, wchar_t x) {
-		// #todo-text: Currently using only first cache
 		insert(cmdList, x);
-		const auto& v = cache.used;
+		const auto& v = cacheState.used;
 		for (auto& g : v) {
 			if (g.ch == x) {
 				return g;
@@ -106,8 +104,7 @@ namespace pathos {
 	}
 
 	bool FontTextureCache::contains(wchar_t x) {
-		// #todo-text: currently use only first cache
-		const auto& v = cache.used;
+		const auto& v = cacheState.used;
 		for (auto& g : v) {
 			if (g.ch == x) {
 				return true;
@@ -123,15 +120,13 @@ namespace pathos {
 
 		GlyphInTexture g;
 
-		// #todo-text: currently only use first cache
-		CacheState& c = cache;
-		if (isFull(c)) {
+		if (isFull(cacheState)) {
 			// #todo-text: profiling for cache miss
-			g = c.used.front();
-			c.used.pop_front();
+			g = cacheState.used.front();
+			cacheState.used.pop_front();
 		} else {
-			g = c.unused.back();
-			c.unused.pop_back();
+			g = cacheState.unused.back();
+			cacheState.unused.pop_back();
 		}
 
 		// Overwrites previous glyph slot data.
@@ -150,20 +145,7 @@ namespace pathos {
 		g.glyphWidth = static_cast<float>(bmp.width) / TEXTURE_WIDTH;
 		g.glyphHeight = static_cast<float>(bmp.rows) / TEXTURE_HEIGHT;
 
-		c.used.push_back(g);
-
-		/* flip bmp
-		std::vector<unsigned char> flipped(bmp.width * bmp.rows, 0);
-		unsigned char* p = nullptr;
-		if(flipped.size() > 0) {
-			p = &flipped[0];
-			for (int i = bmp.rows - 1; i >= 0; --i) {
-				memcpy(p, bmp.buffer + i * bmp.width, bmp.width);
-				p += bmp.width;
-			}
-		}
-		p = flipped.size() == 0 ? nullptr : &flipped[0];
-		*/
+		cacheState.used.push_back(g);
 		
 		const uint32 glyphBufferSize = (uint32)(bmp.width * bmp.rows);
 		uint8* glyphBuffer = nullptr;
@@ -173,6 +155,16 @@ namespace pathos {
 			CHECKF(glyphBuffer != nullptr, "Glyph buffer is full. Please increase GLYPH_BUFFER_MAX_SIZE");
 			memcpy_s(glyphBuffer, glyphBufferSize, bmp.buffer, glyphBufferSize);
 		}
+
+#if FLIP_BITMAP_DATA
+		if (glyphBufferSize != 0 && glyphBuffer != nullptr) {
+			uint8* flipped = reinterpret_cast<uint8*>(glyphBufferAllocator.alloc(glyphBufferSize));
+			for (int32 i = bmp.rows - 1; i >= 0; --i) {
+				memcpy(flipped + (bmp.rows - i - 1) * bmp.width, bmp.buffer + i * bmp.width, bmp.width);
+			}
+			memcpy_s(glyphBuffer, glyphBufferSize, flipped, glyphBufferSize);
+		}
+#endif
 
 #if DRAW_GLYPH_BORDER
 		if (glyphBuffer != nullptr) {

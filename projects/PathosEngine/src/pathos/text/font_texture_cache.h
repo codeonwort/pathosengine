@@ -70,8 +70,8 @@ namespace pathos {
 		inline float getCellWidth() const { return static_cast<float>(maxWidth) / TEXTURE_WIDTH; }
 		inline float getCellHeight() const { return static_cast<float>(maxHeight) / TEXTURE_HEIGHT; }
 
-		inline unsigned int getTextureWidth() const { return TEXTURE_WIDTH; }
-		inline unsigned int getTextureHeight() const { return TEXTURE_HEIGHT; }
+		inline uint32 getTextureWidth() const { return TEXTURE_WIDTH; }
+		inline uint32 getTextureHeight() const { return TEXTURE_HEIGHT; }
 
 	protected:
 		bool contains(wchar_t x); // does it exist in one of caches?
@@ -82,13 +82,18 @@ namespace pathos {
 
 	private:
 		// A handle to a typographic face object. A face object models a given typeface, in a given style.
-		FT_Face face;
+		FT_Face face = nullptr;
 
-		unsigned int maxWidth, maxHeight; // max dimension among all glyphs in the font face
-		unsigned int cols, rows;
+		// Max dimension among all glyphs in the font face
+		uint32 maxWidth = 0;
+		uint32 maxHeight = 0;
 
-		GLuint texture;
-		CacheState cache;
+		// Num columns and rows of the glyph grid in the cache texture
+		uint32 cols = 0;
+		uint32 rows = 0;
+
+		GLuint texture = 0;
+		CacheState cacheState;
 		StackAllocator glyphBufferAllocator;
 
 	};

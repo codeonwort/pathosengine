@@ -35,7 +35,9 @@ namespace pathos {
 	}
 
 	bool FontManager::term() {
-		if (!initialized) return false;
+		if (!initialized) {
+			return false;
+		}
 		// Destroy all glyphs
 		for (auto it = fontDB.begin(); it != fontDB.end(); ++it) {
 			GlyphMap* glyphs = it->second;
@@ -85,6 +87,7 @@ namespace pathos {
 		return true;
 	}
 
+	// #todo-text: Am I utilizing GlyphMap for text rendering?
 	bool FontManager::loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping) {
 		if (FT_Load_Char(face, x, FT_LOAD_RENDER)) {
 			LOG(LogError, "Cannot load a character: %wc", x);
