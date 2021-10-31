@@ -1,8 +1,11 @@
 #pragma once
 
+// FreeType wrapper
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "badger/types/noncopyable.h"
 #include <map>
 #include <string>
 
@@ -32,38 +35,35 @@ namespace pathos {
 
 	using FontDB = std::map<std::string, GlyphMap*>;
 
-	// singleton
-	class FontManager {
-
-	// static
+	// Singleton
+	// #todo-text: First thought was this is redundant with FontTextureCache, but this is needed as a general FT wrapper.
+	class FontManager : public Noncopyable {
 	public:
-		static bool init() { return getInstance()->_init(); }
-		static bool term() { return getInstance()->_term(); }
-		static bool available() { return getInstance()->initialized; }
-		static bool loadFont(const std::string& tag, const char* name, unsigned int size) { return getInstance()->_loadFont(tag, name, size); }
-		static bool loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) { return getInstance()->_loadAdditionalGlyphs(tag, start, end); }
-		static GlyphMap* getGlyphMap(const std::string& tag) { return getInstance()->_getGlyphMap(tag); }
-		static FT_Library& getFTLibrary() { return getInstance()->library; }
-	private:
-		static FontManager* getInstance();
+		static FontManager& get();
 
-	// non-static
+	public:
+		bool init();
+		bool term();
+		bool loadFont(const std::string& tag, const char* name, unsigned int size);
+		bool loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end);
+		GlyphMap* getGlyphMap(const std::string& tag);
+
+		// #todo-text: Needed?
+		bool isAvailable() const { return initialized; }
+
+		// #todo-text: Better not to expose FT_Library
+		FT_Library& getFTLibrary() { return library; }
+
 	private:
 		FontManager();
-		FontManager(const FontManager& other) = delete;
-		FontManager(FontManager&& rhs) = delete;
 		~FontManager();
 
+		bool loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping);
+
+	private:
 		bool initialized = false;
 		FT_Library library = nullptr;
 		FontDB fontDB;
-
-		bool _init();
-		bool _term();
-		bool _loadFont(const std::string& tag, const char* name, unsigned int size);
-		bool _loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping);
-		bool _loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end);
-		GlyphMap* _getGlyphMap(const std::string& tag);
 	};
 
 }

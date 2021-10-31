@@ -14,12 +14,12 @@ namespace pathos {
 		term();
 	}
 
-	bool FontTextureCache::init(FT_Library& library, const char* filename, unsigned int size) {
+	bool FontTextureCache::init(FT_Library& library, const char* filename, uint32 pixelSize) {
 		// FreeType
 		if (FT_New_Face(library, filename, 0, &face) != 0) {
 			return false;
 		}
-		if (FT_Set_Pixel_Sizes(face, 0, size) != 0) {
+		if (FT_Set_Pixel_Sizes(face, 0, pixelSize) != 0) {
 			return false;
 		}
 
@@ -98,6 +98,7 @@ namespace pathos {
 			c.unused.pop_back();
 		}
 
+		// #todo-text: It overwrites previous face data. Need to batch all insert() in one frame.
 		if (FT_Load_Char(face, x, FT_LOAD_RENDER) != 0) {
 			return false;
 		}

@@ -3,18 +3,26 @@
 
 namespace pathos {
 
-	FontManager* FontManager::getInstance() {
+	FontManager& FontManager::get()
+	{
 		static FontManager instance;
-		return &instance;
+		return instance;
 	}
 	
 	///////////////////////////////////////////////////////////////////////////////////////////
 	// non-static
 	FontManager::FontManager() {}
-	FontManager::~FontManager() { if (initialized) _term(); }
+	FontManager::~FontManager() {
+		if (initialized) {
+			term();
+		}
+	}
 
-	bool FontManager::_init() {
-		if (initialized) return true;
+	bool FontManager::init() {
+		if (initialized) {
+			return true;
+		}
+
 		if (FT_Init_FreeType(&library)) {
 			LOG(LogError, "Cannot init FreeType library");
 			return false;
@@ -27,7 +35,7 @@ namespace pathos {
 		return initialized;
 	}
 
-	bool FontManager::_term() {
+	bool FontManager::term() {
 		if (!initialized) return false;
 		// Destroy all glyphs
 		for (auto it = fontDB.begin(); it != fontDB.end(); ++it) {
@@ -46,7 +54,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool FontManager::_loadFont(const std::string& tag, const char* name, unsigned int size) {
+	bool FontManager::loadFont(const std::string& tag, const char* name, unsigned int size) {
 		FT_Face face;
 		std::wstring ary = L" ";
 		for (wchar_t x = 33; x <= 126; ++x) ary += x;
@@ -67,7 +75,7 @@ namespace pathos {
 
 		for (auto it = ary.begin(); it != ary.end(); ++it) {
 			wchar_t x = *it;
-			if (_loadChar(face, x, map->mapping) == false) {
+			if (loadChar(face, x, map->mapping) == false) {
 				return false;
 			}
 		}
@@ -78,7 +86,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool FontManager::_loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping) {
+	bool FontManager::loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping) {
 		if (FT_Load_Char(face, x, FT_LOAD_RENDER)) {
 			LOG(LogError, "Cannot load a character: %wc", x);
 			return false;
@@ -99,7 +107,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool FontManager::_loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) {
+	bool FontManager::loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) {
 		if (fontDB.find(tag) == fontDB.end()) {
 			LOG(LogError, "Cannot find a font by tag: %s", tag.data());
 			return false;
@@ -122,14 +130,14 @@ namespace pathos {
 		}
 
 		for (wchar_t x = start; x <= end; ++x) {
-			if (_loadChar(face, x, glyphs->mapping) == false) {
+			if (loadChar(face, x, glyphs->mapping) == false) {
 				return false;
 			}
 		}
 		return true;
 	}
 
-	GlyphMap* FontManager::_getGlyphMap(const std::string& tag) {
+	GlyphMap* FontManager::getGlyphMap(const std::string& tag) {
 		return fontDB.find(tag)->second;
 	}
 

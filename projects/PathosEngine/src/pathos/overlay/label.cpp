@@ -9,12 +9,15 @@ namespace pathos {
 
 	Label::Label() {
 		setName("label");
+
 		if (!cacheInitialized) {
-			auto fontInfo = FontManager::getGlyphMap("default");
-			cache.init(FontManager::getFTLibrary(), fontInfo->filename.c_str(), fontInfo->fontSize);
+			auto fontInfo = FontManager::get().getGlyphMap("default");
+			cache.init(FontManager::get().getFTLibrary(), fontInfo->filename.c_str(), fontInfo->fontSize);
 			cacheInitialized = true;
 		}
+
 		geometry = new TextGeometry;
+
 		setBrush(new TextBrush(1.0f, 1.0f, 1.0f));
 		setScaleX(300.0f);
 		setScaleY(300.0f);

@@ -10,8 +10,9 @@
 #include FT_FREETYPE_H
 
 #include "pathos/render/render_command_list.h"
-
 #include "gl_core.h"
+
+#include "badger/types/int_types.h"
 #include <list>
 #include <map>
 #include <utility> // std::pair
@@ -36,11 +37,11 @@ namespace pathos {
 		std::list<GlyphInTexture> unused;
 	};
 
-	// Make an instance for each face with a size
+	// Usage strategy: Keep a global cache for general text rendering, but allow creation of private caches if needed.
 	class FontTextureCache {
 
-		constexpr static unsigned int TEXTURE_WIDTH = 512;
-		constexpr static unsigned int TEXTURE_HEIGHT = 512;
+		constexpr static uint32 TEXTURE_WIDTH = 512;
+		constexpr static uint32 TEXTURE_HEIGHT = 512;
 
 	public:
 		FontTextureCache();
@@ -48,7 +49,8 @@ namespace pathos {
 		FontTextureCache(FontTextureCache&& rhs) = delete;
 		~FontTextureCache();
 
-		bool init(FT_Library& library, const char* filename, unsigned int size);
+		// #todo-text: Remove pixelSize parameter
+		bool init(FT_Library& library, const char* filename, uint32 pixelSize);
 		void term();
 
 		inline void startGetGlyph(RenderCommandList& cmdList) { cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 1); }
