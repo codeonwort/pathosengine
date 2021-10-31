@@ -12,50 +12,59 @@
 #include "pathos/render/render_command_list.h"
 #include "gl_core.h"
 
+#include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
+#include "badger/memory/mem_alloc.h"
 #include <list>
 #include <map>
 #include <utility> // std::pair
 
 namespace pathos {
 
+	// A cache consists of cells of uniform size.
 	struct GlyphInTexture {
-		wchar_t ch;
-		float x, y; // position in texture space
-		float width, height; // cell size in texture space
+		wchar_t ch;              // Character
+		float x, y;              // Position in uv space
+		float width, height;     // Cell size in uv space (in fact same for all GlyphInTexture instances, for now)
 		float advanceX, offsetY;
-		//int age; // how long it had been not used
+		//int age;               // How long it had been not used
 
-		float glyphWidth;
-		float glyphHeight;
-		int glyphPixelsX;
-		int glyphPixelsY;
+		float glyphWidth;        // Width in uv space
+		float glyphHeight;       // Height in uv space
+		int glyphPixelsX;        // Width in texels
+		int glyphPixelsY;        // Height in texels
 	};
 
-	struct Cache {
+	struct CacheState {
 		std::list<GlyphInTexture> used;
 		std::list<GlyphInTexture> unused;
 	};
 
 	// Usage strategy: Keep a global cache for general text rendering, but allow creation of private caches if needed.
-	class FontTextureCache {
+	// #todo-text: Ideally wanna use just one bin-packing atlas for any font and size, but for now create a cache for each combination of font and size.
+	//             Accordingly a Label is only able to express single font and size at a time, for now.
+	class FontTextureCache : public Noncopyable {
+		friend class FontManager;
 
 		constexpr static uint32 TEXTURE_WIDTH = 512;
 		constexpr static uint32 TEXTURE_HEIGHT = 512;
 
 	public:
 		FontTextureCache();
-		FontTextureCache(const FontTextureCache& other) = delete;
-		FontTextureCache(FontTextureCache&& rhs) = delete;
 		~FontTextureCache();
 
-		// #todo-text: Remove pixelSize parameter
-		bool init(FT_Library& library, const char* filename, uint32 pixelSize);
+		// #todo-text: Ideal interface for bin-packing atlas
+		//bool init(uint32 textureWidth, uint32 textureHeight, uint32 numAtlases);
+		//bool insert(RenderCommandList& cmdList, wchar_t x, const SomeFontDesc& fontDesc);
+		//GLuint getCacheTexture() const; // could be a texture2d array
+
+		// #todo-text: Remove filename and pixelSize parameters
+		bool init(const char* filename, uint32 pixelSize);
 		void term();
 
-		inline void startGetGlyph(RenderCommandList& cmdList) { cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 1); }
+		void startGetGlyph(RenderCommandList& cmdList);
 		const GlyphInTexture getGlyph(RenderCommandList& cmdList, wchar_t x);
-		inline void endGetGlyph(RenderCommandList& cmdList) { cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 4); }
+		void endGetGlyph(RenderCommandList& cmdList);
 
 		inline GLuint getTexture() { return texture; }
 		inline float getCellWidth() const { return static_cast<float>(maxWidth) / TEXTURE_WIDTH; }
@@ -67,16 +76,21 @@ namespace pathos {
 	protected:
 		bool contains(wchar_t x); // does it exist in one of caches?
 		bool insert(RenderCommandList& cmdList, wchar_t x); // returns true if successful, false otherwise
-		inline bool isFull(Cache& cache) const;
+		inline bool isFull(CacheState& cache) const;
+
+		void onFrameEnd();
 
 	private:
+		// A handle to a typographic face object. A face object models a given typeface, in a given style.
 		FT_Face face;
 
 		unsigned int maxWidth, maxHeight; // max dimension among all glyphs in the font face
 		unsigned int cols, rows;
 
 		GLuint texture;
-		Cache cache;
+		CacheState cache;
+		StackAllocator glyphBufferAllocator;
+		uint32 flushCheckCounter = 0;
 
 	};
 

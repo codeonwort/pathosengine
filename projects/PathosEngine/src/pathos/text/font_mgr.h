@@ -7,6 +7,7 @@
 
 #include "badger/types/noncopyable.h"
 #include <map>
+#include <list>
 #include <string>
 
 #pragma comment(lib, "freetype.lib")
@@ -38,6 +39,8 @@ namespace pathos {
 	// Singleton
 	// #todo-text: First thought was this is redundant with FontTextureCache, but this is needed as a general FT wrapper.
 	class FontManager : public Noncopyable {
+		friend class FontTextureCache;
+
 	public:
 		static FontManager& get();
 
@@ -47,6 +50,9 @@ namespace pathos {
 		bool loadFont(const std::string& tag, const char* name, unsigned int size);
 		bool loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end);
 		GlyphMap* getGlyphMap(const std::string& tag);
+
+		// Chance to cleanup resources related to render command execution
+		void onFrameEnd();
 
 		// #todo-text: Needed?
 		bool isAvailable() const { return initialized; }
@@ -60,10 +66,14 @@ namespace pathos {
 
 		bool loadChar(FT_Face face, wchar_t x, std::map<wchar_t, FT_GlyphCache>& mapping);
 
+		void registerCache(FontTextureCache* cache);
+		void unregisterCache(FontTextureCache* cache);
+
 	private:
 		bool initialized = false;
 		FT_Library library = nullptr;
 		FontDB fontDB;
+		std::list<FontTextureCache*> cacheList;
 	};
 
 }

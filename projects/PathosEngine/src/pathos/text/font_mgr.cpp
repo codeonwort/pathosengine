@@ -1,4 +1,5 @@
 #include "font_mgr.h"
+#include "pathos/text/font_texture_cache.h"
 #include "pathos/util/log.h"
 
 namespace pathos {
@@ -9,8 +10,6 @@ namespace pathos {
 		return instance;
 	}
 	
-	///////////////////////////////////////////////////////////////////////////////////////////
-	// non-static
 	FontManager::FontManager() {}
 	FontManager::~FontManager() {
 		if (initialized) {
@@ -107,6 +106,16 @@ namespace pathos {
 		return true;
 	}
 
+	void FontManager::registerCache(FontTextureCache* cache)
+	{
+		cacheList.push_back(cache);
+	}
+
+	void FontManager::unregisterCache(FontTextureCache* cache)
+	{
+		cacheList.remove_if([cache](FontTextureCache* x) { return x == cache; });
+	}
+
 	bool FontManager::loadAdditionalGlyphs(const std::string& tag, wchar_t start, wchar_t end) {
 		if (fontDB.find(tag) == fontDB.end()) {
 			LOG(LogError, "Cannot find a font by tag: %s", tag.data());
@@ -139,6 +148,13 @@ namespace pathos {
 
 	GlyphMap* FontManager::getGlyphMap(const std::string& tag) {
 		return fontDB.find(tag)->second;
+	}
+
+	void FontManager::onFrameEnd()
+	{
+		for (FontTextureCache* cache : cacheList) {
+			cache->onFrameEnd();
+		}
 	}
 
 }

@@ -12,7 +12,7 @@ namespace pathos {
 
 		if (!cacheInitialized) {
 			auto fontInfo = FontManager::get().getGlyphMap("default");
-			cache.init(FontManager::get().getFTLibrary(), fontInfo->filename.c_str(), fontInfo->fontSize);
+			cache.init(fontInfo->filename.c_str(), fontInfo->fontSize);
 			cacheInitialized = true;
 		}
 

@@ -499,7 +499,7 @@ namespace pathos {
 
 		// #todo-cmd-list: deferred command lists here
 
-		// Renderer adds more immediate commands
+		// Renderer will add more immediate commands
 		if (renderer && currentWorld) {
 			SCOPED_CPU_COUNTER(ExecuteRenderer);
 			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
@@ -523,10 +523,15 @@ namespace pathos {
 		// Get GPU profile
 		const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(lastGpuCounterNames, lastGpuCounterTimes);
 
-		renderProxyAllocator.clear();
+		// Clear various render resources after all rendering is done
+		{
+			renderProxyAllocator.clear();
 
-		if (currentWorld != nullptr) {
-			currentWorld->getScene().clearRenderProxy();
+			if (currentWorld != nullptr) {
+				currentWorld->getScene().clearRenderProxy();
+			}
+
+			FontManager::get().onFrameEnd();
 		}
 
 		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
