@@ -2,23 +2,14 @@
 #include "pathos/text/font_mgr.h"
 #include "pathos/overlay/brush.h"
 
-namespace pathos {
+// Fallback font that must exist.
+#define DEFAULT_FONT_TAG    "default"
 
-	// #todo-text: Support multiple font types for Label instances
-	static FontTextureCache g_labelFontTextureCache;
-	static bool g_labelFontTextureCacheInitialized = false;
+namespace pathos {
 
 	Label::Label() {
 		setName("label");
-
-		if (!g_labelFontTextureCacheInitialized) {
-			FontDesc fontDesc;
-			bool validDesc = FontManager::get().getFontDesc("default", fontDesc);
-			CHECK(validDesc);
-
-			g_labelFontTextureCache.init(fontDesc.fullFilepath.c_str(), fontDesc.pixelSize);
-			g_labelFontTextureCacheInitialized = true;
-		}
+		setFont(DEFAULT_FONT_TAG);
 
 		geometry = new TextGeometry;
 
@@ -45,12 +36,24 @@ namespace pathos {
 		static_cast<TextBrush*>(getBrush())->setColor(newColor);
 	}
 
-	void Label::onRender(RenderCommandList& cmdList) {
-		geometry->configure(cmdList, g_labelFontTextureCache, text);
+	void Label::setFont(const std::string& tag) {
+		bool validDesc = FontManager::get().getFontDesc(tag, fontDesc);
+		if (!validDesc && tag != DEFAULT_FONT_TAG) {
+			validDesc = FontManager::get().getFontDesc(DEFAULT_FONT_TAG, fontDesc);
+		}
+		CHECK(validDesc);
+	}
+
+	bool Label::onRender(RenderCommandList& cmdList) {
+		if (text.size() > 0) {
+			geometry->configure(cmdList, *fontDesc.cacheTexture, text);
+			return true;
+		}
+		return false;
 	}
 
 	GLuint Label::getFontTexture() {
-		return g_labelFontTextureCache.getTexture();
+		return fontDesc.cacheTexture->getTexture();
 	}
 
 	void Label::updateTransform() {

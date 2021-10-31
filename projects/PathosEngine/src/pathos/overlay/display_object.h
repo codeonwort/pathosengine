@@ -15,8 +15,9 @@ namespace pathos {
 		DisplayObject2D();
 		virtual ~DisplayObject2D();
 
-		// #todo-text: Temp callback. Configure anything for this object before rendering
-		virtual void onRender(RenderCommandList& cmdList) {}
+		// #todo-text: Temp callback. Configure anything for this object before rendering.
+		//             Also, this object is skipped for rendering if false is returned.
+		virtual bool onRender(RenderCommandList& cmdList) { return true; }
 
 		bool addChild(DisplayObject2D* child);
 		bool removeChild(DisplayObject2D* child);

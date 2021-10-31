@@ -120,8 +120,8 @@ namespace pathos {
 
 		GlyphInTexture g;
 
+		// #todo-text: This strategy works only for uniform cells
 		if (isFull(cacheState)) {
-			// #todo-text: profiling for cache miss
 			g = cacheState.used.front();
 			cacheState.used.pop_front();
 		} else {

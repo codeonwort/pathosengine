@@ -15,9 +15,18 @@
 
 namespace pathos {
 
+	class FontTextureCache;
+
 	struct FontDesc {
+		FontDesc()
+			: fullFilepath()
+			, pixelSize(0)
+			, cacheTexture(nullptr)
+		{}
+
 		std::string fullFilepath;
 		uint32 pixelSize;
+		FontTextureCache* cacheTexture;
 	};
 
 	class FontManager : public Noncopyable {

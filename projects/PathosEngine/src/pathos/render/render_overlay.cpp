@@ -63,8 +63,9 @@ namespace pathos {
 		if (brush) {
 			auto renderpass = brush->configure(this, accum);
 			if (object->getGeometry() != nullptr) {
-				object->onRender(cmdList);
-				renderpass->renderOverlay(cmdList, object, accum);
+				if (object->onRender(cmdList)) {
+					renderpass->renderOverlay(cmdList, object, accum);
+				}
 			}
 		}
 		

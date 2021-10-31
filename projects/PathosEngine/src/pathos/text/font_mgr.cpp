@@ -64,6 +64,8 @@ namespace pathos {
 		FontDesc desc;
 		desc.fullFilepath = fullFilepath;
 		desc.pixelSize = pixelSize;
+		desc.cacheTexture = new FontTextureCache;
+		desc.cacheTexture->init(fullFilepath.c_str(), pixelSize);
 		fontDescDict[tag] = std::move(desc);
 
 		return true;

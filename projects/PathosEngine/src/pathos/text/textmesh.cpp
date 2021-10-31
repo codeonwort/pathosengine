@@ -12,7 +12,8 @@
 namespace pathos {
 
 	void TextGeometry::configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& newText) {
-		// #todo-text: prevent crash when newText is empty.
+		// You should not call this function with empty text. Just skip rendering from higher interface.
+		CHECK(newText.size() > 0);
 
 		std::vector<GLfloat> positions;
 		std::vector<GLfloat> normals;
