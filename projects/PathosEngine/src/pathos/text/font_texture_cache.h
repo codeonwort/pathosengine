@@ -6,10 +6,8 @@
 // But Unicode characters are too many that they cannot be stored in a single texture.
 // Only recently used glyphs are maintained in a limited number of textures.
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #include "pathos/render/render_command_list.h"
+#include "pathos/text/font_mgr.h"
 #include "gl_core.h"
 
 #include "badger/types/noncopyable.h"

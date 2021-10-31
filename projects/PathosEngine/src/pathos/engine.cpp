@@ -489,6 +489,10 @@ namespace pathos {
 		}
 
 		{
+			currentWorld->getScene().updateDynamicData_renderThread(immediateContext);
+		}
+
+		{
 			SceneRenderSettings settings;
 			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
 			settings.sceneHeight           = conf.windowHeight;

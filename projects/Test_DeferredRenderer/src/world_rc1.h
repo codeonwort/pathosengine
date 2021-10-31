@@ -12,6 +12,7 @@ namespace pathos {
 	class ProceduralGeometry;
 	class ColorMaterial;
 	class OBJLoader;
+	class TextMeshActor;
 }
 class PlayerController;
 class LightningActor;

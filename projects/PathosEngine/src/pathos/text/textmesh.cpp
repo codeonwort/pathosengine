@@ -6,8 +6,8 @@
 
 #include "badger/types/int_types.h"
 
-#define COMPACT_FONT_GLYPH 1
-#define FLIP_GLYPH_V 0
+#define COMPACT_FONT_GLYPH    1
+#define FLIP_GLYPH_V          0
 
 namespace pathos {
 

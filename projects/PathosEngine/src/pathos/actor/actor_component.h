@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pathos/render/render_command_list.h"
+
 namespace pathos {
 
 	class Actor;
@@ -23,6 +25,7 @@ namespace pathos {
 		virtual void onUnregister() {} // Called when unregistered from the owner actor
 
 		virtual void createRenderProxy(Scene* scene) {}
+		virtual void updateDynamicData_renderThread(RenderCommandList& cmdList) {}
 
 	private:
 		Actor* owner = nullptr;

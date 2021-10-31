@@ -37,4 +37,15 @@ namespace pathos {
 		}
 	}
 
+	void Scene::updateDynamicData_renderThread(RenderCommandList& cmdList)
+	{
+		for (auto& actor : getWorld()->actors) {
+			if (!actor->markedForDeath) {
+				for (ActorComponent* actorComponent : actor->components) {
+					actorComponent->updateDynamicData_renderThread(cmdList);
+				}
+			}
+		}
+	}
+
 }

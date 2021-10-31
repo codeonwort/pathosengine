@@ -1,5 +1,4 @@
 #include "font_texture_cache.h"
-#include "font_mgr.h"
 #include "pathos/render/render_device.h"
 #include "pathos/util/log.h"
 

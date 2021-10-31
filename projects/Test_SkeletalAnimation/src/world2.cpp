@@ -13,6 +13,9 @@
 #define DAE_MODEL_ID              2
 #define LOAD_SECOND_DAE_MODEL     0
 
+#define DEBUG_TEXT_ACTOR          1
+#include "pathos/text/text_actor.h"
+
 
 void World2::onInitialize()
 {
@@ -106,6 +109,7 @@ void World2::setupScene()
 	// create meshes
 	//---------------------------------------------------------------------------------------
 
+#if !DEBUG_TEXT_ACTOR
 	for (int32_t i = 0; i < 8; ++i) {
 		for (int32_t j = 0; j < 4; ++j) {
 			StaticMeshActor* cube = spawnActor<StaticMeshActor>();
@@ -122,6 +126,7 @@ void World2::setupScene()
 			boxes.push_back(cube);
 		}
 	}
+#endif
 
 	model = spawnActor<StaticMeshActor>();
 	model->setStaticMesh(new Mesh(geom_sphere_big, material_texture));
@@ -131,6 +136,15 @@ void World2::setupScene()
 	model2->setStaticMesh(new Mesh(geom_sphere, material_color));
 	model2->setActorScale(30.0f);
 	model2->setActorLocation(vector3(0.0f, 50.0f, -400.0f));
+
+#if DEBUG_TEXT_ACTOR
+	text1 = spawnActor<TextMeshActor>();
+	text1->setFont("hangul");
+	text1->setText(L"ABCDEFG TextTest ÇÑ±Û");
+	text1->setActorLocation(100.0f, 50.0f, 0.0f);
+	text1->setColor(0.1f, 0.9f, 0.1f);
+	text1->setActorScale(1000.0f);
+#endif
 
 	Skybox* sky = spawnActor<Skybox>();
 	sky->initialize(cubeTexture);

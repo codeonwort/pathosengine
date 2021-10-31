@@ -33,6 +33,8 @@ namespace pathos {
 		// #todo: Parameter might be further generalized
 		void createViewDependentRenderProxy(const matrix4& viewMatrix);
 
+		void updateDynamicData_renderThread(RenderCommandList& cmdList);
+
 		World* getWorld() const { return owner; }
 
 	public:

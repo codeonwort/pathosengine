@@ -247,12 +247,14 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 }
 
 vec4 calculateShading(fragment_info fragment) {
+	uint ID = fragment.material_id;
+
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
-	if(fragment.material_id == MATERIAL_ID_TEXTURE) {
+	if (ID == MATERIAL_ID_TEXTURE) {
 		result.rgb = phongShading(fragment);
-	} else if(fragment.material_id == MATERIAL_ID_WIREFRAME) {
+	} else if(ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
 		result.rgb = fragment.albedo;
-	} else if(fragment.material_id == MATERIAL_ID_SOLID_COLOR || fragment.material_id == MATERIAL_ID_PBR) {
+	} else if(ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR) {
 		result.rgb = CookTorranceBRDF(fragment);
 	} else {
 		discard;

@@ -124,6 +124,7 @@
     <ClCompile Include="src\pathos\overlay\display_object.cpp" />
     <ClCompile Include="src\pathos\overlay\label.cpp" />
     <ClCompile Include="src\pathos\overlay\rectangle.cpp" />
+    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp" />
@@ -164,6 +165,8 @@
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
     <ClCompile Include="src\pathos\text\textmesh.cpp" />
+    <ClCompile Include="src\pathos\text\text_actor.cpp" />
+    <ClCompile Include="src\pathos\text\text_component.cpp" />
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp" />
     <ClCompile Include="src\pathos\util\file_system.cpp" />
     <ClCompile Include="src\pathos\util\gl_debug_group.cpp" />
@@ -228,6 +231,7 @@
     <ClInclude Include="src\pathos\overlay\display_object.h" />
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
+    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.h" />
     <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\irradiance_baker.h" />
@@ -252,6 +256,8 @@
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />
     <ClInclude Include="src\pathos\texture\volume_texture.h" />
+    <ClInclude Include="src\pathos\text\text_actor.h" />
+    <ClInclude Include="src\pathos\text\text_component.h" />
     <ClInclude Include="src\pathos\thread\engine_thread.h" />
     <ClInclude Include="src\pathos\util\cpu_profiler.h" />
     <ClInclude Include="src\pathos\util\engine_util.h" />

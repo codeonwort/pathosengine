@@ -9,6 +9,7 @@
 #define MATERIAL_ID_SOLID_COLOR    1
 #define MATERIAL_ID_WIREFRAME      2
 #define MATERIAL_ID_TEXTURE        3
+#define MATERIAL_ID_ALPHAONLY      7
 #define MATERIAL_ID_PBR            8
 
 struct PointLight {

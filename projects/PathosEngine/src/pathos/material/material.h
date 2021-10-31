@@ -162,6 +162,7 @@ namespace pathos {
 		AlphaOnlyTextureMaterial(GLuint texture, GLfloat r = 1.0f, GLfloat g = 1.0f, GLfloat b = 1.0f);
 		inline const GLuint getTexture() { return texture; }
 		inline const GLfloat* getColor() const { return color; }
+		inline void setTexture(GLuint inTexture) { texture = inTexture; }
 		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
 	};
 

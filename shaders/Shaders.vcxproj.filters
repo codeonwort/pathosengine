@@ -60,5 +60,6 @@
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_depth.glsl" />
     <None Include="volumetric_clouds.glsl" />
+    <None Include="deferred_pack_alphaonly.glsl" />
   </ItemGroup>
 </Project>

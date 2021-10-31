@@ -11,6 +11,7 @@ namespace pathos {
 	class SkinnedMesh;
 	class DirectionalLightActor;
 	class PointLightActor;
+	class TextMeshActor;
 }
 class PlayerController;
 
@@ -34,5 +35,7 @@ private:
 	SkinnedMesh* daeModel = nullptr;
 	SkinnedMesh* daeModel2 = nullptr;
 	std::vector<StaticMeshActor*> boxes;
+
+	TextMeshActor* text1 = nullptr;
 
 };

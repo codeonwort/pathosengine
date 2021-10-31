@@ -7,7 +7,20 @@
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/material/material.h"
 
+// #todo-material
+#define SUPPORT_ALPHAONLY_DISCARD 0
+
 namespace pathos {
+
+#if SUPPORT_ALPHAONLY_DISCARD
+	static constexpr uint32 ALPHAONLY_TEXTURE_UNIT = 1;
+#endif
+
+	struct UBO_DepthPrepass {
+		matrix4 mvpTransform;
+		matrix3x4 mvMatrix3x3;
+		vector4 billboardParam;
+	};
 
 	class DepthPrepassVS : public ShaderStage {
 	public:
@@ -32,12 +45,6 @@ namespace pathos {
 }
 
 namespace pathos {
-
-	struct UBO_DepthPrepass {
-		matrix4 mvpTransform;
-		matrix3x4 mvMatrix3x3;
-		vector4 billboardParam;
-	};
 
 	void DepthPrepass::initializeResources(RenderCommandList& cmdList)
 	{
@@ -80,16 +87,28 @@ namespace pathos {
 					continue;
 				}
 
+				// Render state modifiers
+				bool doubleSided = proxy->doubleSided;
+				bool renderInternal = proxy->renderInternal;
 				bool wireframe = proxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
-				if (wireframe) {
-					cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				}
+
+				if (doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (renderInternal) cmdList.frontFace(GL_CW);
+				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				// #todo-material: temp billboard
 				ColorMaterial* colorMaterial = nullptr;
 				if (proxy->material->getMaterialID() == MATERIAL_ID::SOLID_COLOR) {
 					colorMaterial = static_cast<ColorMaterial*>(proxy->material);
 				}
+
+#if SUPPORT_ALPHAONLY_DISCARD
+				// #todo-material: temp alphaonly processing in prepass
+				if (proxy->material->getMaterialID() == MATERIAL_ID::ALPHA_ONLY_TEXTURE) {
+					AlphaOnlyTextureMaterial* M = static_cast<AlphaOnlyTextureMaterial*>(proxy->material);
+					cmdList.bindTextureUnit(ALPHAONLY_TEXTURE_UNIT, M->getTexture());
+				}
+#endif
 
 				UBO_DepthPrepass uboData;
 				{
@@ -110,9 +129,9 @@ namespace pathos {
 				proxy->geometry->deactivate(cmdList);
 				proxy->geometry->deactivateIndexBuffer(cmdList);
 
-				if (wireframe) {
-					cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				}
+				if (doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (renderInternal) cmdList.frontFace(GL_CCW);
+				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 	}
