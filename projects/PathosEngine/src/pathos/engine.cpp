@@ -257,8 +257,8 @@ namespace pathos {
 			LOG(LogError, "[ERROR] Failed to initialize font manager");
 			return false;
 		}
-		FontManager::get().loadFont("default", "../../resources/fonts/consola.ttf", 28);
-		FontManager::get().loadFont("hangul", "../../resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
+		FontManager::get().registerFont("default", "resources/fonts/consola.ttf", 28);
+		FontManager::get().registerFont("hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
 		LOG(LogInfo, "Initialize font subsystem");
 
 		return true;

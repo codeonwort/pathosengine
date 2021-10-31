@@ -4,16 +4,20 @@
 
 namespace pathos {
 
-	static FontTextureCache cache;
-	static bool cacheInitialized = false;
+	// #todo-text: Support multiple font types for Label instances
+	static FontTextureCache g_labelFontTextureCache;
+	static bool g_labelFontTextureCacheInitialized = false;
 
 	Label::Label() {
 		setName("label");
 
-		if (!cacheInitialized) {
-			auto fontInfo = FontManager::get().getGlyphMap("default");
-			cache.init(fontInfo->filename.c_str(), fontInfo->fontSize);
-			cacheInitialized = true;
+		if (!g_labelFontTextureCacheInitialized) {
+			FontDesc fontDesc;
+			bool validDesc = FontManager::get().getFontDesc("default", fontDesc);
+			CHECK(validDesc);
+
+			g_labelFontTextureCache.init(fontDesc.fullFilepath.c_str(), fontDesc.pixelSize);
+			g_labelFontTextureCacheInitialized = true;
 		}
 
 		geometry = new TextGeometry;
@@ -42,11 +46,11 @@ namespace pathos {
 	}
 
 	void Label::onRender(RenderCommandList& cmdList) {
-		geometry->configure(cmdList, cache, text);
+		geometry->configure(cmdList, g_labelFontTextureCache, text);
 	}
 
 	GLuint Label::getFontTexture() {
-		return cache.getTexture();
+		return g_labelFontTextureCache.getTexture();
 	}
 
 	void Label::updateTransform() {
