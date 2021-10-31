@@ -90,7 +90,6 @@ namespace pathos {
 		GLuint texture;
 		CacheState cache;
 		StackAllocator glyphBufferAllocator;
-		uint32 flushCheckCounter = 0;
 
 	};
 

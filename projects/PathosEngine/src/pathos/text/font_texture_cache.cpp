@@ -5,14 +5,14 @@
 
 #include <vector>
 
-#define DRAW_GLYPH_BORDER 0
+#define DRAW_GLYPH_BORDER 0 // Debug
 
-// Looks work well. Let's make it default and remove old implementation.
-#define USE_GLYPH_BUFFER  1
-
-#define GLYPH_BUFFER_MAX_SIZE (4 * 1024 * 1024) // 4 MB
+// Temporarily hold data for textureSubImage2D calls. Cleared on frame end.
+#define GLYPH_BUFFER_MAX_SIZE (2 * 1024 * 1024) // 2 MB
 
 namespace pathos {
+
+	static uint32 g_fontTextureCacheNumber = 0;
 
 	FontTextureCache::FontTextureCache()
 		: glyphBufferAllocator(GLYPH_BUFFER_MAX_SIZE)
@@ -55,6 +55,10 @@ namespace pathos {
 
 		// Prepare the cache texture
 		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
+
+		char textureObjectLabel[256];
+		sprintf_s(textureObjectLabel, "FontTextureCache%d", g_fontTextureCacheNumber++);
+		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, textureObjectLabel);
 
 		GLuint textureName = texture;
 		ENQUEUE_RENDER_COMMAND([textureName](RenderCommandList& cmdList) {
@@ -130,7 +134,7 @@ namespace pathos {
 			c.unused.pop_back();
 		}
 
-		// #todo-text: It overwrites previous face data. Need to batch all insert() in one frame.
+		// Overwrites previous glyph slot data.
 		if (FT_Load_Char(face, x, FT_LOAD_RENDER) != 0) {
 			return false;
 		}
@@ -162,7 +166,6 @@ namespace pathos {
 		*/
 		
 		const uint32 glyphBufferSize = (uint32)(bmp.width * bmp.rows);
-#if USE_GLYPH_BUFFER
 		uint8* glyphBuffer = nullptr;
 		// e.g., white spaces have only advanceX, no actual data
 		if (glyphBufferSize != 0) {
@@ -170,21 +173,17 @@ namespace pathos {
 			CHECKF(glyphBuffer != nullptr, "Glyph buffer is full. Please increase GLYPH_BUFFER_MAX_SIZE");
 			memcpy_s(glyphBuffer, glyphBufferSize, bmp.buffer, glyphBufferSize);
 		}
-#else
-		uint8* glyphBuffer = bmp.buffer;
-#endif
 
 #if DRAW_GLYPH_BORDER
-		const size_t bufferSize = bmp.width * bmp.rows;
-		glyphBuffer = new unsigned char[bufferSize];
-		memcpy_s(glyphBuffer, bufferSize, bmp.buffer, bufferSize);
-		for (auto y = 0u; y < bmp.rows; ++y) {
-			glyphBuffer[y * bmp.width] = 0xff;
-			glyphBuffer[y * bmp.width + bmp.width - 1] = 0xff;
-		}
-		for (auto x = 0u; x < bmp.width; ++x) {
-			glyphBuffer[x] = 0xff;
-			glyphBuffer[(bmp.rows - 1) * bmp.width + x] = 0xff;
+		if (glyphBuffer != nullptr) {
+			for (auto y = 0u; y < bmp.rows; ++y) {
+				glyphBuffer[y * bmp.width] = 0xff;
+				glyphBuffer[y * bmp.width + bmp.width - 1] = 0xff;
+			}
+			for (auto x = 0u; x < bmp.width; ++x) {
+				glyphBuffer[x] = 0xff;
+				glyphBuffer[(bmp.rows - 1) * bmp.width + x] = 0xff;
+			}
 		}
 #endif
 
@@ -199,30 +198,15 @@ namespace pathos {
 				glyphBuffer);                     // pixels
 		}
 
-#if USE_GLYPH_BUFFER
-		flushCheckCounter += 1;
-#else
-		// #todo-text: Hold glyphBuffer until all commands are finalized. Temp flush to make it work right now...
-		cmdList.flushAllCommands();
-#endif
-
-#if DRAW_GLYPH_BORDER
-		delete[] glyphBuffer;
-#endif
-
 		return true;
 	}
 
-	bool FontTextureCache::isFull(CacheState& cache_) const { return cache_.unused.size() == 0; }
+	bool FontTextureCache::isFull(CacheState& cache_) const {
+		return cache_.unused.size() == 0;
+	}
 
 	void FontTextureCache::onFrameEnd() {
-#if USE_GLYPH_BUFFER
-		if (flushCheckCounter != 0) {
-			LOG(LogDebug, "Avoided cmdlist flush count: %u", flushCheckCounter);
-		}
 		glyphBufferAllocator.clear();
-		flushCheckCounter = 0;
-#endif
 	}
 
 }
