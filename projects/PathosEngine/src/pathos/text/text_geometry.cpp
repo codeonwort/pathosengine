@@ -1,4 +1,4 @@
-#include "textmesh.h"
+#include "text_geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/engine.h"

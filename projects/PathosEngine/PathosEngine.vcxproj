@@ -164,7 +164,7 @@
     <ClCompile Include="src\pathos\texture\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
-    <ClCompile Include="src\pathos\text\textmesh.cpp" />
+    <ClCompile Include="src\pathos\text\text_geometry.cpp" />
     <ClCompile Include="src\pathos\text\text_actor.cpp" />
     <ClCompile Include="src\pathos\text\text_component.cpp" />
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp" />
@@ -301,7 +301,7 @@
     <ClInclude Include="src\pathos\shader\uniform_buffer.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />
-    <ClInclude Include="src\pathos\text\textmesh.h" />
+    <ClInclude Include="src\pathos\text\text_geometry.h" />
     <ClInclude Include="src\pathos\util\color_conversion.h" />
     <ClInclude Include="src\pathos\util\log.h" />
     <ClInclude Include="src\pathos\util\resource_finder.h" />

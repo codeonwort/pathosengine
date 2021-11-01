@@ -1,7 +1,7 @@
 #pragma once
 
 #include "display_object.h"
-#include "pathos/text/textmesh.h"
+#include "pathos/text/text_geometry.h"
 #include "pathos/text/font_mgr.h"
 #include <string>
 

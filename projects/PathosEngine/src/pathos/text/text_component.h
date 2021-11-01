@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/text/textmesh.h"
+#include "pathos/text/text_geometry.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/material/material.h"
 #include "pathos/actor/scene_component.h"
