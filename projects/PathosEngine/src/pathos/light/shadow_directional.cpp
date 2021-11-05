@@ -48,6 +48,8 @@ namespace pathos {
 			cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
 			cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 
+			pathos::checkFramebufferStatus(cmdList, fbo, "DirectionalShadowMap::renderShadowMap");
+
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
 			const matrix4& VP = viewProjectionMatrices[i];
 
@@ -84,19 +86,6 @@ namespace pathos {
 	{
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
-		// #todo-framebuffer: Can't check completeness now
-		//{
-		//	// Bind layer 0 for completeness check, but it will be reset for each layer.
-		//	cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, 0);
-		//	cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
-		//
-		//
-		//	GLenum fboCompleteness;
-		//	cmdList.checkNamedFramebufferStatus(fbo, GL_FRAMEBUFFER, &fboCompleteness);
-		//
-		//	cmdList.flushAllCommands();
-		//	CHECK(fboCompleteness == GL_FRAMEBUFFER_COMPLETE);
-		//}
 
 		// create shadow program
 		string vshader = R"(#version 430 core

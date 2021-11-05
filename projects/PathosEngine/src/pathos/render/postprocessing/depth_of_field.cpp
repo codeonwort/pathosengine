@@ -3,6 +3,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/util/engine_util.h"
 
 namespace pathos {
 	
@@ -54,7 +55,6 @@ namespace pathos {
 
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 		
 		uboBlur.init<UBO_DoF>();
 	}
@@ -116,6 +116,7 @@ namespace pathos {
 				// #todo-misc: I sometimes make a typo like cmdList.namedFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, output0, 0);
 				// and do not realize what I did wrong. Need a utility for validation.
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+				pathos::checkFramebufferStatus(cmdList, fbo, "depth_of_field");
 			}
 
 			cmdList.bindVertexArray(vao);

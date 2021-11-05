@@ -336,6 +336,9 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\util\engine_util.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">

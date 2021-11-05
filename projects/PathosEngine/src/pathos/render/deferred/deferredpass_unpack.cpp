@@ -5,6 +5,7 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/util/engine_util.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 
@@ -73,19 +74,8 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Unpack::createResource(RenderCommandList& cmdList) {
-		//auto checkFramebufferStatus = [&cmdList](GLuint fbo) -> void {
-		//	GLenum completeness;
-		//	cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, &completeness);
-		//	cmdList.flushAllCommands(); // #todo-cmd-list: Don't flush here
-		//	if (completeness != GL_FRAMEBUFFER_COMPLETE) {
-		//		LOG(LogFatal, "%s: Failed to initialize fbo", __FUNCTION__);
-		//		CHECK(0);
-		//	}
-		//};
-
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		//checkFramebufferStatus(fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList) {
@@ -107,6 +97,8 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+
+		pathos::checkFramebufferStatus(cmdList, fbo, "MeshDeferredRenderPass_Unpack::render() - sceneColor is invalid");
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);

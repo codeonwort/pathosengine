@@ -168,6 +168,7 @@
     <ClCompile Include="src\pathos\text\text_actor.cpp" />
     <ClCompile Include="src\pathos\text\text_component.cpp" />
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp" />
+    <ClCompile Include="src\pathos\util\engine_util.cpp" />
     <ClCompile Include="src\pathos\util\file_system.cpp" />
     <ClCompile Include="src\pathos\util\gl_debug_group.cpp" />
     <ClCompile Include="src\pathos\util\log.cpp" />

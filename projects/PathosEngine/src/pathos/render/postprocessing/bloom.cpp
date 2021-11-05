@@ -5,6 +5,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/console.h"
 #include "pathos/engine.h"
+#include "pathos/util/engine_util.h"
 
 #include "badger/math/minmax.h"
 
@@ -53,7 +54,6 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_BloomPass");
-		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void BloomPass::releaseResources(RenderCommandList& cmdList)
@@ -122,6 +122,8 @@ namespace pathos {
 
 			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomTempMip, 0);
+			pathos::checkFramebufferStatus(cmdList, fbo, "bloomTempMip");
+
 			cmdList.bindTextureUnit(0, sceneColorMip);
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
@@ -130,27 +132,12 @@ namespace pathos {
 
 			cmdList.useProgram(program_vertical.getGLName());
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomMip, 0);
+			pathos::checkFramebufferStatus(cmdList, fbo, "bloomMip");
 			cmdList.bindTextureUnit(0, bloomTempMip);
 			cmdList.bindTextureUnit(1, bloomMipPrev);
 			cmdList.uniform1f(0, additiveWeights[mipIndex]);
 			fullscreenQuad->drawPrimitive(cmdList);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-
-			/*
-			cmdList.useProgram(program_horizontal.getGLName());
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, input1, 0);
-			cmdList.bindTextureUnit(0, input0);
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-			fullscreenQuad->drawPrimitive(cmdList);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-
-			cmdList.useProgram(program_vertical.getGLName());
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, input0, 0);
-			cmdList.bindTextureUnit(0, input1);
-			fullscreenQuad->drawPrimitive(cmdList);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-			*/
 		}
 	}
 

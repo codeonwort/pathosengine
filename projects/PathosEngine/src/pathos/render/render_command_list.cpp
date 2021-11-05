@@ -33,7 +33,6 @@ namespace pathos {
 #endif
 	}
 
-	// #todo-cmd-list: Support nested flush?
 	void RenderCommandList::flushAllCommands()
 	{
 		++flushDepth;
@@ -41,7 +40,7 @@ namespace pathos {
 			executeAllCommands();
 			clearAllCommands();
 		} else {
-			CHECKF(0, "Can't nest flushAllCommands()");
+			CHECKF(0, "You must not nest flushAllCommands() calls");
 		}
 		--flushDepth;
 	}

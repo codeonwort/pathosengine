@@ -106,8 +106,6 @@ namespace pathos {
 		}
 
 	protected:
-		void checkFramebufferStatus(RenderCommandList& cmdList, GLuint fbo);
-
 		__forceinline void markDestroyed()
 		{
 			resourcesDestroyed = true;

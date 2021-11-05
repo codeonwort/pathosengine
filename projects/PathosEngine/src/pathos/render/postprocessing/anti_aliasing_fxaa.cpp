@@ -2,6 +2,7 @@
 #include "pathos/shader/shader.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/util/engine_util.h"
 
 namespace pathos {
 
@@ -54,7 +55,6 @@ void main() {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_FXAA");
-		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void FXAA::releaseResources(RenderCommandList& cmdList)
@@ -108,6 +108,8 @@ void main() {
 		} else {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+
+			pathos::checkFramebufferStatus(cmdList, fbo, "fxaa");
 		}
 
 		cmdList.textureParameteri(input0, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

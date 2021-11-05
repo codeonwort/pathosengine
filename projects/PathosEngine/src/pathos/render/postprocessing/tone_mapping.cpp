@@ -4,6 +4,7 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/util/engine_util.h"
 
 namespace pathos {
 
@@ -37,7 +38,6 @@ namespace pathos {
 		// tone mapping resource
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		//checkFramebufferStatus(cmdList, fbo); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void ToneMapping::releaseResources(RenderCommandList& cmdList)
@@ -64,6 +64,7 @@ namespace pathos {
 		} else {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+			pathos::checkFramebufferStatus(cmdList, fbo, "toneMapping");
 		}
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ToneMapping);

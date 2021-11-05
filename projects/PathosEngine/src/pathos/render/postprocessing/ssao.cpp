@@ -4,6 +4,7 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/util/engine_util.h"
 
 #include "badger/math/random.h"
 
@@ -70,11 +71,9 @@ namespace pathos {
 
 		gRenderDevice->createFramebuffers(1, &fboBlur);
 		cmdList.namedFramebufferDrawBuffer(fboBlur, GL_COLOR_ATTACHMENT0);
-		//checkFramebufferStatus(cmdList, fboBlur); // #todo-framebuffer: Can't check completeness now
 
 		gRenderDevice->createFramebuffers(1, &fboBlur2);
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
-		//checkFramebufferStatus(cmdList, fboBlur2); // #todo-framebuffer: Can't check completeness now
 	}
 
 	void SSAO::releaseResources(RenderCommandList& cmdList)
@@ -151,12 +150,14 @@ namespace pathos {
 			cmdList.useProgram(program_blur);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);
 			cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
+			pathos::checkFramebufferStatus(cmdList, fboBlur, "fboBlur is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMap);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.useProgram(program_blur2);
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
 			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
+			pathos::checkFramebufferStatus(cmdList, fboBlur2, "fboBlur2 is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
 			fullscreenQuad->drawPrimitive(cmdList);
 

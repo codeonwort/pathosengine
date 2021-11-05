@@ -141,11 +141,7 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
 			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
 
-			//GLenum framebufferCompleteness = 0;
-			//cmdList.checkNamedFramebufferStatus(gbufferFBO, GL_FRAMEBUFFER, &framebufferCompleteness);
-			//// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
-			//cmdList.flushAllCommands();
-			//CHECK(framebufferCompleteness == GL_FRAMEBUFFER_COMPLETE);
+			pathos::checkFramebufferStatus(cmdList, gbufferFBO, "gbuffer setup is invalid");
 		}
 	}
 

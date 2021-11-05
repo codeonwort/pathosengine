@@ -122,29 +122,12 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "FBO_GodRaySource");
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "FBO_GodRayResult");
 
-		// #todo-framebuffer: Can't check completeness now
-		//GLenum fboCompleteness0;
-		//GLenum fboCompleteness1;
-
 		// Silhoutte pass
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0);
-		//cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_SOURCE], GL_DRAW_FRAMEBUFFER, &fboCompleteness0);
 
 		// Light scattering pass
 		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0);
-		//cmdList.checkNamedFramebufferStatus(fbo[GOD_RAY_RESULT], GL_DRAW_FRAMEBUFFER, &fboCompleteness1);
-
-		// #todo-cmd-list: Define a render command that checks framebuffer completeness rather than flushing here
-		//cmdList.flushAllCommands();
-		//if (fboCompleteness0 != GL_FRAMEBUFFER_COMPLETE) {
-		//	LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_SOURCE]");
-		//	CHECK(0);
-		//}
-		//if (fboCompleteness1 != GL_FRAMEBUFFER_COMPLETE) {
-		//	LOG(LogFatal, "Failed to initialize fbo[GOD_RAY_RESULT]");
-		//	CHECK(0);
-		//}
-
+		
 		gRenderDevice->createFramebuffers(1, &fboBlur1);
 		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
 
@@ -165,6 +148,9 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+
+		pathos::checkFramebufferStatus(cmdList, fbo[GOD_RAY_SOURCE], "fbo[GOD_RAY_SOURCE] is invalid");
+		pathos::checkFramebufferStatus(cmdList, fbo[GOD_RAY_RESULT], "fbo[GOD_RAY_RESULT] is invalid");
 
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
