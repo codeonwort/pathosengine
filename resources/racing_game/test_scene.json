@@ -7,15 +7,15 @@
 		"name": "Skybox",
 		"flipPreference": "hlsl",
 		"textures": [
-			"resources/cubemap1/pos_x.jpg", "resources/cubemap1/neg_x.jpg",
-			"resources/cubemap1/pos_y.jpg", "resources/cubemap1/neg_y.jpg",
-			"resources/cubemap1/pos_z.jpg", "resources/cubemap1/neg_z.jpg"
+			"resources/skybox/cubemap1/pos_x.jpg", "resources/skybox/cubemap1/neg_x.jpg",
+			"resources/skybox/cubemap1/pos_y.jpg", "resources/skybox/cubemap1/neg_y.jpg",
+			"resources/skybox/cubemap1/pos_z.jpg", "resources/skybox/cubemap1/neg_z.jpg"
 		],
 		"generateMipmaps": true
 	},
 	"skyEquirectangularMap": {
 		"name": "SkyEquirectangularMap",
-		"texture": "resources/HDRI/Ridgecrest_Road/Ridgecrest_Road_Ref.hdr",
+		"texture": "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr",
 		"hdr": true
 	},
 	"directionalLight": {
