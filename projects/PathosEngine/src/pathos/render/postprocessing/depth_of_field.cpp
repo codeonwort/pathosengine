@@ -113,8 +113,6 @@ namespace pathos {
 			}
 			else {
 				cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-				// #todo-misc: I sometimes make a typo like cmdList.namedFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, output0, 0);
-				// and do not realize what I did wrong. Need a utility for validation.
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
 				pathos::checkFramebufferStatus(cmdList, fbo, "depth_of_field");
 			}

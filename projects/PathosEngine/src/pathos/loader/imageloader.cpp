@@ -9,7 +9,6 @@
 #pragma comment(lib, "FreeImage.lib")
 
 // #todo-image-loader: Cleanup image loading API
-// #todo-image-loader: Remove direct GL calls
 
 namespace pathos {
 
@@ -121,7 +120,7 @@ namespace pathos {
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND();
 
 		return tex_id;
 	}
@@ -175,7 +174,7 @@ namespace pathos {
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND();
 
 		return tex_id;
 	}
@@ -223,7 +222,7 @@ namespace pathos {
 			cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		});
 		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush here for now.
-		FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND();
 
 		if (deleteBlobData) {
 			stbi_image_free(metadata.data);
