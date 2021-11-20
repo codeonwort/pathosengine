@@ -26,6 +26,7 @@ namespace pathos {
 	class ConsoleWindow;
 	class AssetStreamer;
 	class OverlayRenderer;
+	class RenderThread;
 
 	enum class ERendererType : uint8 {
 		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
@@ -169,6 +170,7 @@ namespace pathos {
 
 	// Render thread
 	private:
+		RenderThread* renderThread;
 		OpenGLDevice* render_device;
 		Renderer* renderer;
 		OverlayRenderer* renderer2D;

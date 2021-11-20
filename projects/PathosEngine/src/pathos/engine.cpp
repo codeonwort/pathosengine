@@ -6,6 +6,7 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/render/render_overlay.h"
+#include "pathos/thread/render_thread.h"
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
@@ -74,6 +75,7 @@ namespace pathos {
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
+		, renderThread(nullptr)
 		, render_device(nullptr)
 		, renderer(nullptr)
 		, renderer2D(nullptr)
@@ -93,6 +95,8 @@ namespace pathos {
 		LOG(LogInfo, "");
 		LOG(LogInfo, "===      Initialize PATHOS      ===");
 		LOG(LogInfo, "Engine version: %d.%d.%d", PATHOS_MAJOR_VERSION, PATHOS_MINOR_VERSION, PATHOS_PATCH_VERSION);
+
+		renderThread = new RenderThread;
 
 		ResourceFinder::get().add("../");
 		ResourceFinder::get().add("../../");
@@ -318,6 +322,7 @@ namespace pathos {
 	void Engine::start() {
 		stopwatch_gameThread.start();
 		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
+		renderThread->run();
 		mainWindow->startMainLoop();
 	}
 
@@ -331,7 +336,10 @@ namespace pathos {
 			routine(render_device);
 		}
 
-		CHECKF(destroy(), "Failed to destroy the engine properly !!!");
+		renderThread->terminate();
+
+		bool engineDestroyed = destroy();
+		CHECKF(engineDestroyed, "Failed to destroy the engine properly !!!");
 	}
 
 	bool Engine::destroyOpenGL() {
@@ -426,6 +434,8 @@ namespace pathos {
 		FLUSH_RENDER_COMMAND();
 
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
+
+		renderThread->beginFrame(frameCounter_gameThread);
 
 		SCOPED_CPU_COUNTER(EngineTick);
 

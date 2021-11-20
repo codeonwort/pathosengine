@@ -13,6 +13,7 @@ public:
 	// #todo-cpu: If needed, search for GetLogicalProcessorInformation()
 	//static bool supportsSimultaneousMultithreading() const;
 
+	// #todo-cpu: Maybe uint64 for crossplatform?
 	static uint32 getCurrentThreadId();
 
 };

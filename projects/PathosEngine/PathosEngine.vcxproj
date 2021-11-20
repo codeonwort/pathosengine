@@ -167,6 +167,7 @@
     <ClCompile Include="src\pathos\text\text_geometry.cpp" />
     <ClCompile Include="src\pathos\text\text_actor.cpp" />
     <ClCompile Include="src\pathos\text\text_component.cpp" />
+    <ClCompile Include="src\pathos\thread\render_thread.cpp" />
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp" />
     <ClCompile Include="src\pathos\util\engine_util.cpp" />
     <ClCompile Include="src\pathos\util\file_system.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="src\pathos\text\text_actor.h" />
     <ClInclude Include="src\pathos\text\text_component.h" />
     <ClInclude Include="src\pathos\thread\engine_thread.h" />
+    <ClInclude Include="src\pathos\thread\render_thread.h" />
     <ClInclude Include="src\pathos\util\cpu_profiler.h" />
     <ClInclude Include="src\pathos\util\engine_util.h" />
     <ClInclude Include="src\pathos\util\file_system.h" />
