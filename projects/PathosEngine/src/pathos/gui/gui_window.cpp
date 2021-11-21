@@ -138,6 +138,13 @@ namespace pathos {
 		}
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(windowWidth, windowHeight);
+
+		// X*10000 + Y*100 + Z where X = major, Y = minor, and Z = patch.
+		const int32 glutVersion = glutGet(GLUT_VERSION);
+		int32 glutMajorVersion = glutVersion / 10000;
+		int32 glutMinorVersion = (glutVersion % 10000) / 100;
+		int32 glutPatchVersion = glutVersion % 100;
+		LOG(LogInfo, "[ThirdParty] GUI Backend: Freeglut %d.%d.%d", glutMajorVersion, glutMinorVersion, glutPatchVersion);
 		
 		nativeHandle = glutCreateWindow(title.c_str());
 
