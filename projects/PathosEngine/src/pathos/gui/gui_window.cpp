@@ -35,6 +35,11 @@ static void onGlutWarning(const char* fmt, va_list ap) {
 
 namespace pathos {
 
+	static void onGlutClose() {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->onClose();
+	}
+
 	static void onGlutIdle() {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
 		window->onIdle();
@@ -102,14 +107,15 @@ namespace pathos {
 		}
 		initialized = true;
 
-		int argc           = createParams.argc;
-		char** argv        = createParams.argv;
+		int argc                   = createParams.argc;
+		char** argv                = createParams.argv;
 
-		windowWidth  = createParams.width;
-		windowHeight = createParams.height;
-		bFullscreen  = createParams.fullscreen;
-		title        = createParams.title;
+		windowWidth                = createParams.width;
+		windowHeight               = createParams.height;
+		bFullscreen                = createParams.fullscreen;
+		title                      = createParams.title;
 
+		callback_onClose           = createParams.onClose;
 		callback_onIdle            = createParams.onIdle;
 		callback_onDisplay         = createParams.onDisplay;
 		callback_onKeyDown         = createParams.onKeyDown;
@@ -152,6 +158,7 @@ namespace pathos {
 			glutFullScreen();
 		}
 
+		glutCloseFunc(onGlutClose);
 		glutIdleFunc(onGlutIdle);
 		glutDisplayFunc(onGlutDisplay);
 		glutReshapeFunc(onGlutReshape);
@@ -180,6 +187,11 @@ namespace pathos {
 
 		glutLeaveMainLoop();
 		LOG(LogInfo, "Stop the main loop");
+	}
+
+	void GUIWindow::onClose()
+	{
+		callback_onClose();
 	}
 
 	void GUIWindow::onIdle()

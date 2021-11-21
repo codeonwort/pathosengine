@@ -130,6 +130,7 @@ namespace pathos {
 		void readConfigFile();
 
 		// GUI event listeners //
+		static void onCloseWindow();
 		static void onIdle();
 		static void onMainWindowDisplay();
 		static void onMainWindowReshape(int32 newWidth, int32 newHeight);

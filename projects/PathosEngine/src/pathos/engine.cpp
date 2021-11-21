@@ -167,6 +167,7 @@ namespace pathos {
 		createParams.glMinorVersion = REQUIRED_GL_MINOR_VERSION;
 		createParams.glDebugContext = GL_DEBUG_CONTEXT;
 
+		createParams.onClose           = Engine::onCloseWindow;
 		createParams.onIdle            = Engine::onIdle;
 		createParams.onDisplay         = Engine::onMainWindowDisplay;
 		createParams.onKeyDown         = Engine::onKeyDown;
@@ -554,6 +555,11 @@ namespace pathos {
 	/////////////////////////////////////////////////////////////////////
 	// GUI callback functions
 	/////////////////////////////////////////////////////////////////////
+
+	void Engine::onCloseWindow()
+	{
+		gEngine->stop();
+	}
 
 	void Engine::onIdle()
 	{
