@@ -563,10 +563,14 @@ namespace pathos {
 
 	void Engine::onIdle()
 	{
-		gEngine->tick();
+		// #todo-renderthread: No engine loop work in idle callback.
+		//gEngine->tick();
 	}
 
 	void Engine::onMainWindowDisplay() {
+		// #todo-renderthread: I looked into Freeglut source code and it seems I have to run both game tick and render thread here.
+		// Currently running them sequentially, but game (N) and render (N-1) should run simultaneously.
+		gEngine->tick();
 		gEngine->render();
 	}
 

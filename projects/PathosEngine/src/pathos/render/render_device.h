@@ -100,7 +100,7 @@ namespace pathos {
 		gRenderDevice->getImmediateCommandList().flushAllCommands();
 	}
 
-	// #todo-multi-thread: temp flush as there is no separate render thread for now.
+	// #todo-renderthread: temp flush as there is no separate render thread for now.
 	// All temp flushes should use this, not FLUSH_RENDER_COMMAND().
 	inline void TEMP_FLUSH_RENDER_COMMAND() {
 		CHECK(isInMainThread());
