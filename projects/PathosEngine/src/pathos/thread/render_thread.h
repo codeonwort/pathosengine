@@ -3,6 +3,7 @@
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 
+#include <mutex>
 #include <string>
 #include <thread>
 #include <condition_variable>
@@ -21,7 +22,11 @@ namespace pathos {
 
 		void beginFrame(uint32 frameNumber);
 
-		void endFrame();
+		// Consume all queued render commands.
+		// endFrame() and FLUSH_RENDER_COMMAND() will invoke this.
+		void waitForCompletion();
+
+		void endFrame(uint32 frameNumber);
 
 		void terminate();
 
@@ -32,6 +37,7 @@ namespace pathos {
 		uint32                     threadID;
 		std::string                threadName;
 		std::thread                nativeThread;
+		std::mutex                 loopMutex;
 		std::condition_variable    condVar;
 		std::atomic<bool>          pendingKill;
 

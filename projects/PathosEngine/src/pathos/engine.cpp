@@ -436,33 +436,44 @@ namespace pathos {
 
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
 
-		renderThread->beginFrame(frameCounter_gameThread);
+		// #todo-renderthread: Render thread shoult start here. It's empty now...
+		const uint32 frameNumber_renderThread = frameCounter_gameThread;
+		renderThread->beginFrame(frameNumber_renderThread);
 
-		SCOPED_CPU_COUNTER(EngineTick);
+		{
+			SCOPED_CPU_COUNTER(WorldTick);
 
-		float deltaSeconds = stopwatch_gameThread.stop();
+			float deltaSeconds = stopwatch_gameThread.stop();
 
-		// #todo-fps: It only controls the game thread. What about the render thread + GPU?
-		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
-			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
-			if (currentWorld != nullptr) {
-				currentWorld->getScene().createRenderProxy();
+			// #todo-fps: It only controls the game thread. What about the render thread + GPU?
+			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
+				elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+				if (currentWorld != nullptr) {
+					currentWorld->getScene().createRenderProxy();
+				}
+				return;
 			}
-			return;
-		}
 
-		stopwatch_gameThread.start();
+			stopwatch_gameThread.start();
 
-		inputSystem->tick();
+			//
+			// Process input
+			//
+			inputSystem->tick();
 
-		if (currentWorld != nullptr) {
-			SCOPED_CPU_COUNTER(CreateRenderProxy);
+			//
+			// Game tick
+			//
+			if (currentWorld != nullptr) {
+				SCOPED_CPU_COUNTER(CreateRenderProxy);
 
-			currentWorld->tick(deltaSeconds);
-			// #todo: More robust way to check if the main window is minimized
-			if (renderProxyAllocator.isClear() == false) {
-			} else {
-				currentWorld->getScene().createRenderProxy();
+				currentWorld->tick(deltaSeconds);
+
+				// #todo: More robust way to check if the main window is minimized
+				bool windowMinimized = renderProxyAllocator.isClear();
+				if (windowMinimized) {
+					currentWorld->getScene().createRenderProxy();
+				}
 			}
 		}
 
@@ -476,8 +487,18 @@ namespace pathos {
 		} else {
 			frameCounter_gameThread += 1;
 		}
+
+		// #todo-renderthread: renderThreadMain() should run render() and we just wait for its completion.
+		renderThread->endFrame(frameNumber_renderThread);
+
+		//
+		// Render tick
+		//
+		// #todo-renderthread: Currently running them sequentially, but game (N) and render (N-1) should run simultaneously.
+		render();
 	}
 
+	// All render thread operations are processed here
 	void Engine::render() {
 		// Render thread should be one frame behind of the game thread
 		if (frameCounter_renderThread >= frameCounter_gameThread) {
@@ -567,11 +588,9 @@ namespace pathos {
 		//gEngine->tick();
 	}
 
+	// #todo-renderthread: This might be not called when the window is minimized.
 	void Engine::onMainWindowDisplay() {
-		// #todo-renderthread: I looked into Freeglut source code and it seems I have to run both game tick and render thread here.
-		// Currently running them sequentially, but game (N) and render (N-1) should run simultaneously.
 		gEngine->tick();
-		gEngine->render();
 	}
 
 	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {
