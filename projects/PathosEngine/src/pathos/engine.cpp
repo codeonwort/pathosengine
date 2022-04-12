@@ -341,7 +341,6 @@ namespace pathos {
 			delete currentWorld;
 		}
 
-		// #todo-renderthread-fatal: Crashes here (OpenGL out of memory?)
 		currentWorld = inWorld;
 		currentWorld->initialize();
 	}

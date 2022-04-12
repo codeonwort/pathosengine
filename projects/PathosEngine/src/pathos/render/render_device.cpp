@@ -51,6 +51,14 @@ namespace pathos {
 
 	OpenGLDevice* gRenderDevice = nullptr;
 
+	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
+		CHECK(isInMainThread());
+
+		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void {
+			lambda(gRenderDevice->getImmediateCommandList());
+			}, nullptr, 0);
+	}
+
 	void FLUSH_RENDER_COMMAND() {
 		CHECK(isInMainThread());
 
@@ -63,7 +71,7 @@ namespace pathos {
 			{
 				flushCondVar.notify_all();
 			}
-		, &flushCondVar, sizeof(&flushCondVar));
+		, nullptr, 0);
 
 		flushCondVar.wait(cvLock);
 	}
@@ -80,7 +88,7 @@ namespace pathos {
 			{
 				flushCondVar.notify_all();
 			}
-		, &flushCondVar, sizeof(&flushCondVar));
+		, nullptr, 0);
 
 		flushCondVar.wait(cvLock);
 	}
@@ -111,9 +119,6 @@ namespace pathos {
 
 		// Create immediate command list
 		immediate_command_list = std::make_unique<RenderCommandList>();
-
-		// #todo-cmd-list: Is this good?
-		temp_command_list = std::make_unique<RenderCommandList>();
 
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);

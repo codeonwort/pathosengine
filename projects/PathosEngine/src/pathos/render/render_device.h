@@ -40,7 +40,6 @@ namespace pathos {
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
-		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
 		// API for GPU resource creation and deletion (not queued in command list)
 	public:
@@ -74,7 +73,6 @@ namespace pathos {
 
 		OpenGLExtensionSupport             extensionSupport;
 		std::unique_ptr<RenderCommandList> immediate_command_list;
-		std::unique_ptr<RenderCommandList> temp_command_list;
 
 	};
 
@@ -84,23 +82,14 @@ namespace pathos {
 
 namespace pathos {
 
-	// For game thread
-	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		CHECK(isInMainThread());
+	// Reserve a render command from the game thread.
+	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda);
 
-		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void
-			{
-				// #todo-refactoring: Do I need this temp command list?
-				RenderCommandList& tempCmdList = gRenderDevice->getCommandListForHook();
-				lambda(tempCmdList);
-				tempCmdList.flushAllCommands();
-			}
-		, nullptr, 0);
-	}
-
-	// Use this only when really needed. Temporary flushes use TEMP_FLUSH_RENDER_COMMAND().
+	// Block the game thread until all render commands so far are finished.
+	// CAUTION: Use only if must. Never use inside of game tick.
 	void FLUSH_RENDER_COMMAND();
 
+	// #todo-renderthread: Flushes by this might be not needed after multithreading is properly implemented.
 	void TEMP_FLUSH_RENDER_COMMAND();
 
 }

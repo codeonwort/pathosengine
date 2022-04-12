@@ -59,13 +59,25 @@ namespace pathos {
 			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
 		} else {
-			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList)
-				{
-					cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
-				}
-			);
+			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
+				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
+			});
 		}
 #endif
+	}
+
+	// #todo-renderthread
+	static GLuint createBufferHelper() {
+		GLuint buffer = 0;
+		if (isInRenderThread()) {
+			gRenderDevice->createBuffers(1, &buffer);
+		} else {
+			ENQUEUE_RENDER_COMMAND([bufferPtr = &buffer](RenderCommandList& cmdList) {
+				gRenderDevice->createBuffers(1, bufferPtr);
+			});
+			FLUSH_RENDER_COMMAND();
+		}
+		return buffer;
 	}
 
 	void MeshGeometry::deactivate(RenderCommandList& cmdList) {
@@ -78,7 +90,7 @@ namespace pathos {
 
 		positionData.assign(data2, data2 + length / 3);
 		if (!positionBuffer) {
-			gRenderDevice->createBuffers(1, &positionBuffer);
+			positionBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(positionBuffer, length * sizeof(GLfloat), positionData.data());
 	}
@@ -89,7 +101,7 @@ namespace pathos {
 
 		uvData.assign(data2, data2 + length / 2);
 		if (!uvBuffer) {
-			gRenderDevice->createBuffers(1, &uvBuffer);
+			uvBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(uvBuffer, length * sizeof(GLfloat), uvData.data());
 	}
@@ -100,7 +112,7 @@ namespace pathos {
 
 		normalData.assign(data2, data2 + length / 3);
 		if (!normalBuffer) {
-			gRenderDevice->createBuffers(1, &normalBuffer);
+			normalBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(normalBuffer, length * sizeof(GLfloat), normalData.data());
 	}
@@ -117,7 +129,7 @@ namespace pathos {
 
 		tangentData.assign(data2, data2 + length / 3);
 		if (!tangentBuffer) {
-			gRenderDevice->createBuffers(1, &tangentBuffer);
+			tangentBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(tangentBuffer, length * sizeof(GLfloat), tangentData.data());
 	}
@@ -127,14 +139,14 @@ namespace pathos {
 
 		bitangentData.assign(data2, data2 + length / 3);
 		if (!bitangentBuffer) {
-			gRenderDevice->createBuffers(1, &bitangentBuffer);
+			bitangentBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data());
 	}
 	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
 		indexData.assign(data, data + length);
 		if (!indexBuffer) {
-			gRenderDevice->createBuffers(1, &indexBuffer);
+			indexBuffer = createBufferHelper();
 		}
 		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
 	}
