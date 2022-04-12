@@ -39,7 +39,7 @@ namespace pathos {
 	public:
 		static void initializeQueryObjectPool(uint32 inMaxGpuCounters = MAX_GPU_COUNTERS);
 		static void destroyQueryObjectPool();
-		static uint32 flushQueries(std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds);
+		static uint32 flushQueries(RenderCommandList& cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds);
 
 		static bool enable; // #todo-gpu-counter: Support gpu counter in scene capture. This is a hack.
 

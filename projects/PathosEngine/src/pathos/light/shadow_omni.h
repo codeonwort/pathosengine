@@ -2,7 +2,6 @@
 
 #include "gl_core.h"
 #include "pathos/camera/camera.h"
-#include "pathos/scene/scene.h"
 #include "pathos/shader/uniform_buffer.h"
 
 #include "badger/types/noncopyable.h"
@@ -20,7 +19,7 @@ namespace pathos {
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
-		void renderShadowMaps(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
+		void renderShadowMaps(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera);
 
 	private:
 		GLuint fbo = 0;

@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "pathos/scene/scene.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/uniform_buffer.h"
+
+#include "badger/types/vector_types.h"
 #include "gl_core.h"
 
 namespace pathos {
@@ -26,7 +27,12 @@ namespace pathos {
 		void releaseResources(RenderCommandList& cmdList);
 
 		// #todo-godray: 'renderer' parameter is hack
-		void renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer);
+		void renderGodRay(
+			RenderCommandList& cmdList,
+			SceneProxy* scene,
+			Camera* camera,
+			MeshGeometry* fullscreenQuad,
+			DeferredRenderer* renderer);
 
 		// Quite arbitrary, not physically based
 		inline void setGodRayColor(const vector3& inColor) { godRayColor = inColor; }

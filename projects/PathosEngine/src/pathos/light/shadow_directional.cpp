@@ -25,7 +25,7 @@ namespace pathos {
 		lightDirection = direction;
 	}
 
-	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
+	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -120,7 +120,7 @@ void main() {
 		destroyed = true;
 	}
 
-	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
+	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		if (scene->proxyList_directionalLight.size() > 0) {
 			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);

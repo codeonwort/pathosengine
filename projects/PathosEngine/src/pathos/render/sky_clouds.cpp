@@ -11,7 +11,7 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
-	// #todo-cloud: Expose in VolumetricCloudActor
+	// #todo-cloud: Expose in VolumetricCloudComponent
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
@@ -44,17 +44,16 @@ namespace pathos {
 
 }
 
+// VolumetricCloudComponent
 namespace pathos {
 
-	void VolumetricCloudActor::setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise)
-	{
+	void VolumetricCloudComponent::setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
 		weatherTexture = inWeatherTexture;
 		shapeNoise = inShapeNoise;
 		erosionNoise = inErosionNoise;
 	}
 
-	bool VolumetricCloudActor::hasValidResources() const
-	{
+	bool VolumetricCloudComponent::hasValidResources() const {
 		return weatherTexture != 0
 			&& shapeNoise != nullptr && shapeNoise->isValid()
 			&& erosionNoise != nullptr && erosionNoise->isValid();
@@ -62,19 +61,34 @@ namespace pathos {
 
 }
 
+// VolumetricCloudActor
 namespace pathos {
 
-	void VolumetricCloud::initializeResources(RenderCommandList& cmdList)
+	VolumetricCloudActor::VolumetricCloudActor() {
+		cloudComponent = createDefaultComponent<VolumetricCloudComponent>();
+		setAsRootComponent(cloudComponent);
+	}
+
+	void VolumetricCloudActor::setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
+		cloudComponent->setTextures(inWeatherTexture, inShapeNoise, inErosionNoise);
+	}
+
+}
+
+// VolumetricCloudPass
+namespace pathos {
+
+	void VolumetricCloudPass::initializeResources(RenderCommandList& cmdList)
 	{
 		ubo.init<UBO_VolumetricCloud>();
 	}
 
-	void VolumetricCloud::destroyResources(RenderCommandList& cmdList)
+	void VolumetricCloudPass::destroyResources(RenderCommandList& cmdList)
 	{
 		//
 	}
 
-	void VolumetricCloud::render(RenderCommandList& cmdList, const VolumetricCloudSettings& settings)
+	void VolumetricCloudPass::render(RenderCommandList& cmdList, const VolumetricCloudSettings& settings)
 	{
 		SCOPED_DRAW_EVENT(VolumetricCloud);
 
@@ -116,7 +130,7 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void VolumetricCloud::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)
+	void VolumetricCloudPass::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)
 	{
 		CHECKF(inWidth != 0 && inHeight != 0, "Invalid size for cloud render target");
 

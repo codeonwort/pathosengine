@@ -8,7 +8,7 @@
 
 namespace pathos {
 
-	class Scene;
+	class SceneProxy;
 	class Camera;
 	class RenderTarget2D;
 
@@ -23,7 +23,7 @@ namespace pathos {
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) = 0;
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) = 0; // Default backbuffer or custom off-screen render target
-		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) = 0;
+		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) = 0;
 
 	};
 

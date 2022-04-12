@@ -3,11 +3,12 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
-#include "pathos/scene/scene.h"
-#include "pathos/camera/camera.h"
 #include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
+
+	class SceneProxy;
+	class Camera;
 
 	class MeshDeferredRenderPass_Unpack {
 
@@ -21,7 +22,7 @@ namespace pathos {
 		// Call before render()
 		void bindFramebuffer(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
 		void createResource(RenderCommandList& cmdList);

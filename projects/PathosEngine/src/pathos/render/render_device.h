@@ -20,18 +20,18 @@ namespace pathos {
 
 	// https://developer.nvidia.com/vulkan-turing
 	struct OpenGLExtensionSupport {
-		uint32 NV_ray_tracing                  : 1;
-		uint32 NV_mesh_shader                  : 1;
-		uint32 NV_shading_rate_image           : 1;
-		uint32 NV_shader_texture_footprint     : 1;
+		uint32 NV_ray_tracing : 1;
+		uint32 NV_mesh_shader : 1;
+		uint32 NV_shading_rate_image : 1;
+		uint32 NV_shader_texture_footprint : 1;
 		uint32 NV_representative_fragment_test : 1;
-		uint32 NV_fragment_shader_barycentric  : 1;
-		uint32 NV_compute_shader_derivatives   : 1;
-		uint32 NV_scissor_exclusive            : 1;
+		uint32 NV_fragment_shader_barycentric : 1;
+		uint32 NV_compute_shader_derivatives : 1;
+		uint32 NV_scissor_exclusive : 1;
 	};
 
 	class OpenGLDevice final : public Noncopyable {
-		
+
 	public:
 		OpenGLDevice();
 		~OpenGLDevice();
@@ -42,7 +42,7 @@ namespace pathos {
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		__forceinline RenderCommandList& getCommandListForHook() const { return *temp_command_list.get(); }
 
-	// API for GPU resource creation and deletion (not queued in command list)
+		// API for GPU resource creation and deletion (not queued in command list)
 	public:
 		// Needed for texture view. Use createTextures() for normal case.
 		void genTextures(GLsizei n, GLuint* textures);
@@ -80,6 +80,10 @@ namespace pathos {
 
 	extern OpenGLDevice* gRenderDevice;
 
+}
+
+namespace pathos {
+
 	// For game thread
 	inline void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
 		CHECK(isInMainThread());
@@ -95,16 +99,8 @@ namespace pathos {
 	}
 
 	// Use this only when really needed. Temporary flushes use TEMP_FLUSH_RENDER_COMMAND().
-	inline void FLUSH_RENDER_COMMAND() {
-		CHECK(isInMainThread());
-		gRenderDevice->getImmediateCommandList().flushAllCommands();
-	}
+	void FLUSH_RENDER_COMMAND();
 
-	// #todo-renderthread: temp flush as there is no separate render thread for now.
-	// All temp flushes should use this, not FLUSH_RENDER_COMMAND().
-	inline void TEMP_FLUSH_RENDER_COMMAND() {
-		CHECK(isInMainThread());
-		gRenderDevice->getImmediateCommandList().flushAllCommands();
-	}
+	void TEMP_FLUSH_RENDER_COMMAND();
 
 }

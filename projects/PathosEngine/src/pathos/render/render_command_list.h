@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <functional>
+#include <mutex>
 
 namespace pathos {
 
@@ -29,6 +30,7 @@ namespace pathos {
 		RenderCommandList(uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY, uint32 parametersAllocBytes = COMMAND_PARAMETERS_MAX_MEMORY)
 			: commands_alloc(StackAllocator(commandAllocBytes))
 			, parameters_alloc(StackAllocator(parametersAllocBytes))
+			, sceneProxy(nullptr)
 			, sceneRenderTargets(nullptr)
 		{
 		}
@@ -49,6 +51,7 @@ namespace pathos {
 		void registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes);
 
 		// Should be assigned by renderer before rendering anything of current frame
+		class SceneProxy* sceneProxy;
 		struct SceneRenderTargets* sceneRenderTargets;
 
 		uint32 debugCurrentCommandIx = 0;
@@ -68,6 +71,7 @@ namespace pathos {
 
 		StackAllocator commands_alloc;
 		StackAllocator parameters_alloc; // non-singular parameters should be mem-copied to this allocator, as source data could be a local variable
+		std::mutex commandListMutex;
 
 		std::vector<RenderCommandBase*> commands;
 		uint32 flushDepth = 0;

@@ -1,5 +1,5 @@
 #include "skybox.h"
-#include "pathos/scene/scene.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/util/math_lib.h"
@@ -33,6 +33,86 @@ namespace pathos {
 	};
 
 	DEFINE_SHADER_PROGRAM2(Program_Skybox, SkyboxVS, SkyboxFS);
+
+}
+
+namespace pathos {
+
+	void SkyboxPass::initializeResources(RenderCommandList& cmdList) {
+		ubo.init<UBO_Skybox>();
+	}
+
+	void SkyboxPass::destroyResources(RenderCommandList& cmdList) {
+		//
+	}
+
+	void SkyboxPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(Skybox);
+
+		const Camera& camera = scene->camera;
+		SkyboxProxy* skybox = scene->skybox;
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Skybox);
+		cmdList.useProgram(program.getGLName());
+
+		UBO_Skybox uboData;
+		{
+			matrix4 view = matrix4(matrix3(camera.getViewMatrix())); // view transform without transition
+			matrix4 proj = camera.getProjectionMatrix();
+			uboData.viewProj = proj * view;
+			uboData.skyboxLOD = skybox->textureLod;
+		}
+		ubo.update(cmdList, 1, &uboData);
+
+		cmdList.depthFunc(GL_GEQUAL);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		cmdList.bindTextureUnit(0, skybox->textureID);
+
+		skybox->cube->activate_position(cmdList);
+		skybox->cube->activateIndexBuffer(cmdList);
+		skybox->cube->drawPrimitive(cmdList);
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
+	}
+
+}
+
+namespace pathos {
+
+	SkyboxComponent::~SkyboxComponent() {
+		if (cube) {
+			delete cube;
+			cube = nullptr;
+		}
+	}
+
+	void SkyboxComponent::initialize(GLuint inTextureID) {
+		textureID = inTextureID;
+		lod = 0.0f;
+		cube = new CubeGeometry(vector3(1.0f));
+	}
+
+	void SkyboxComponent::setLOD(float inLOD) {
+		lod = pathos::max(0.0f, inLOD);
+	}
+
+	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
+		if (!hasValidResources()) {
+			scene->skybox = nullptr;
+			return;
+		}
+
+		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
+		proxy->cube = cube;
+		proxy->textureID = textureID;
+		proxy->textureLod = lod;
+
+		scene->skybox = proxy;
+	}
+
 }
 
 namespace pathos {
@@ -41,55 +121,11 @@ namespace pathos {
 	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
 	*/
 	void Skybox::initialize(GLuint inTextureID) {
-		textureID = inTextureID;
-		lod = 0.0f;
-
-		cube = new CubeGeometry(vector3(1.0f));
+		component->initialize(inTextureID);
 	}
 
 	void Skybox::setLOD(float inLOD) {
-		lod = pathos::max(0.0f, inLOD);
-	}
-
-	void Skybox::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
-		SCOPED_DRAW_EVENT(Skybox);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Skybox);
-		cmdList.useProgram(program.getGLName());
-
-		UBO_Skybox uboData;
-		{
-			matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
-			matrix4 proj = camera->getProjectionMatrix();
-			uboData.viewProj = proj * view;
-			uboData.skyboxLOD = lod;
-		}
-		ubo.update(cmdList, 1, &uboData);
-
-		cmdList.depthFunc(GL_GEQUAL);
-		cmdList.disable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_FRONT);
-		
-		cmdList.bindTextureUnit(0, textureID);
-
-		cube->activate_position(cmdList);
-		cube->activateIndexBuffer(cmdList);
-		cube->drawPrimitive(cmdList);
-		
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_BACK);
-	}
-
-	void Skybox::onSpawn()
-	{
-		ubo.init<UBO_Skybox>();
-	}
-
-	void Skybox::onDestroy() {
-		if (cube) {
-			delete cube;
-			cube = nullptr;
-		}
+		component->setLOD(inLOD);
 	}
 
 }

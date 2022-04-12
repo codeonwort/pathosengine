@@ -28,20 +28,7 @@ namespace pathos {
 		LogFatal   = 4
 	};
 
-	inline void LOG(LogSeverity severity, const char* format...) {
-#if ENABLE_LOGGER
-		printf("%s", severity_strings[(int)severity]);
-		va_list argptr;
-		va_start(argptr, format);
-		vfprintf(stderr, format, argptr);
-		va_end(argptr);
-		puts("");
-
-		if (severity == LogFatal) {
-			__debugbreak();
-		}
-#endif
-	}
+	void LOG(LogSeverity severity, const char* format...);
 
 	struct GlobalFileLogger
 	{

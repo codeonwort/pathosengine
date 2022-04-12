@@ -70,14 +70,15 @@ void World1::setupSky()
 {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
-		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512);
-		glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
-		glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
+		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+		// #todo-renderthread
+		//glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
 
 		// diffuse irradiance
 		{
 			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-			glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
+			// #todo-renderthread
+			//glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 			scene.irradianceMap = irradianceMap;
 		}
 
@@ -86,7 +87,8 @@ void World1::setupSky()
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-			glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
+			// #todo-renderthread
+			//glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.prefilterEnvMap = prefilteredEnvMap;
 			scene.prefilterEnvMapMipLevels = mipLevels;
@@ -130,7 +132,7 @@ void World1::setupSky()
 #elif SKY_METHOD == 1
 	scene.sky = spawnActor<AtmosphereScattering>();
 #elif SKY_METHOD == 2
-	AnselSkyRendering* ansel = spawnActor<AnselSkyRendering>();
+	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
 	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
 	ansel->initialize(anselTex);
 	scene.sky = ansel;

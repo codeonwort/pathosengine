@@ -5,6 +5,7 @@
 #include "pathos/render/render_deferred.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_target.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/util/gl_debug_group.h"
 
@@ -37,15 +38,16 @@ namespace pathos {
 		tempCamera.setYaw(componentRotation.yaw);
 		tempCamera.setPitch(componentRotation.pitch);
 
-		scene.createRenderProxy();
+		const uint32 sceneCaptureFrameNumber = 0xffffffff; // #todo-renderthread-fatal: frameNumber for sceneCapture?
+		SceneProxy* sceneProxy = scene.createRenderProxy(sceneCaptureFrameNumber, tempCamera);
 
 		ScopedGpuCounter::enable = false;
 
 		ENQUEUE_RENDER_COMMAND(
-			[renderer, &scene, &tempCamera](RenderCommandList& cmdList) {
+			[renderer, &sceneProxy](RenderCommandList& cmdList) {
 				SCOPED_DRAW_EVENT(SceneCapture);
 
-				renderer->render(cmdList, &scene, &tempCamera);
+				renderer->render(cmdList, sceneProxy, &sceneProxy->camera);
 			}
 		);
 
@@ -64,8 +66,6 @@ namespace pathos {
 
 		ScopedGpuCounter::enable = true;
 
-		scene.clearRenderProxy();
-		
 		delete renderer;
 
 	}

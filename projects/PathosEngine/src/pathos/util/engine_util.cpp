@@ -10,8 +10,8 @@ namespace pathos {
 		};
 
 		FBOStatusQuery query;
-		query.completeness = ALLOC_RENDER_PROXY<GLenum>();
-		query.message = ALLOC_PDO_STRING(message);
+		query.completeness = ALLOC_RENDER_PROXY<GLenum>(cmdList.sceneProxy);
+		query.message = ALLOC_PDO_STRING(cmdList.sceneProxy->renderProxyAllocator, message);
 		cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, query.completeness);
 
 		cmdList.registerHook([](void* param) {

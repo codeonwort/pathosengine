@@ -175,33 +175,33 @@ void World_RC1::onTick(float deltaSeconds)
 void World_RC1::setupSky()
 {
 	GalaxyGenerator::createStarField(starfield, 4096, 2048);
-	glObjectLabel(GL_TEXTURE, starfield, -1, "Texture: Starfield");
-
-	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512);
-	glObjectLabel(GL_TEXTURE, cubemapForIBL, -1, "Texture IBL: cubemapForIBL");
+	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512, "Texture IBL: cubemapForIBL");
 
 	// diffuse irradiance
 	GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-	glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
+	// #todo-renderthread
+	//glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 	scene.irradianceMap = irradianceMap;
 
 	// specular IBL
 	GLuint prefilteredEnvMap;
 	uint32 mipLevels;
 	IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-	glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
+	// #todo-renderthread
+	//glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 	scene.prefilterEnvMap = prefilteredEnvMap;
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
-	AnselSkyRendering* ansel = spawnActor<AnselSkyRendering>();
+	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
 	ansel->initialize(starfield);
 	scene.sky = ansel;
 
 	// Volumetric cloud
 	{
 		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false);
-		glObjectLabel(GL_TEXTURE, weatherTexture, -1, "Texture: WeatherMap");
+		// #todo-renderthread
+		//glObjectLabel(GL_TEXTURE, weatherTexture, -1, "Texture: WeatherMap");
 		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
 		{
 			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();

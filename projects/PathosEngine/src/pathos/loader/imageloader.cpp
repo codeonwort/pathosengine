@@ -204,22 +204,23 @@ namespace pathos {
 		static int32 label_counter = 0;
 
 		GLuint texture;
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
 
-		char label[256];
-		sprintf_s(label, "Texture HDR %d", label_counter);
-		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, label);
-		label_counter += 1;
+		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, &metadata](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 
-		ENQUEUE_RENDER_COMMAND([texture, &metadata](RenderCommandList& cmdList) {
-			cmdList.textureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
-			cmdList.textureSubImage2D(texture, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
-			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			char label[256];
+			sprintf_s(label, "Texture HDR %d", label_counter);
+			gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, label);
+			label_counter += 1;
+
+			cmdList.textureStorage2D(*texturePtr, 1, GL_RGB16F, metadata.width, metadata.height);
+			cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		});
 		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush here for now.
 		TEMP_FLUSH_RENDER_COMMAND();

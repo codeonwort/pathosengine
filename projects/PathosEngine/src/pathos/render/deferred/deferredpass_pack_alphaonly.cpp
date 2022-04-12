@@ -49,7 +49,7 @@ namespace pathos {
 
 	void MeshDeferredRenderPass_Pack_AlphaOnly::render(
 		RenderCommandList& cmdList,
-		Scene* inScene,
+		SceneProxy* inScene,
 		Camera* inCamera,
 		MeshGeometry* inMesh,
 		Material* inMaterial)

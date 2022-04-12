@@ -36,8 +36,6 @@ PlaneGeometry* GalaxyGenerator::fullscreenQuad = nullptr;
 void GalaxyGenerator::createStarField(GLuint& targetTexture, uint32 width, uint32 height) {
 	CHECK(isInMainThread());
 
-	FLUSH_RENDER_COMMAND();
-
 	ENQUEUE_RENDER_COMMAND([texturePtr = &targetTexture, width, height](RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(RenderStarfield);
 
@@ -45,6 +43,7 @@ void GalaxyGenerator::createStarField(GLuint& targetTexture, uint32 width, uint3
 
 		if (*texturePtr == 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
+			gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, "Texture: Starfield");
 			cmdList.textureStorage2D(*texturePtr, 1, GL_RGBA16F, width, height);
 		}
 
@@ -60,7 +59,6 @@ void GalaxyGenerator::createStarField(GLuint& targetTexture, uint32 width, uint3
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 	});
-
 	FLUSH_RENDER_COMMAND();
 }
 
@@ -79,6 +77,7 @@ void GalaxyGenerator::internal_destroyResources(OpenGLDevice* renderDevice) {
 	gRenderDevice->deleteFramebuffers(1, &dummyFBO);
 
 	delete fullscreenQuad;
+	fullscreenQuad = nullptr;
 }
 
 DEFINE_GLOBAL_RENDER_ROUTINE(GalaxyGenerator, GalaxyGenerator::internal_createResources, GalaxyGenerator::internal_destroyResources);

@@ -115,7 +115,7 @@ namespace pathos {
 				texture = pathos::createTextureFromBitmap(metadata, false, true);
 			}
 
-			AnselSkyRendering* actor = world->spawnActor<AnselSkyRendering>();
+			AnselSkyActor* actor = world->spawnActor<AnselSkyActor>();
 			actor->initialize(texture);
 
 			if (!skyBound) {

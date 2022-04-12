@@ -37,7 +37,6 @@ namespace pathos {
 	{
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		cmdList.flushAllCommands();
 	}
 
 	void TranslucencyRendering::releaseResources(RenderCommandList& cmdList)

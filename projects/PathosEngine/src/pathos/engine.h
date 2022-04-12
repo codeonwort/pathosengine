@@ -57,6 +57,7 @@ namespace pathos {
 
 	class Engine final : public Noncopyable {
 		friend class EngineUtil;
+		friend class RenderThread;
 
 		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
 		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice)>;
@@ -118,10 +119,9 @@ namespace pathos {
 		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeInput();
 		bool initializeAssetStreamer();
-		bool initializeOpenGL();
+		
 		bool initializeImageLibrary();
 		bool initializeFontSystem();
-		bool initializeOverlayRenderer();
 		bool initializeConsole();
 		bool initializeRenderer();
 
@@ -143,23 +143,17 @@ namespace pathos {
 
 	private:
 		void tick();
-		void render();
+		//void render();
 
 	// Game thread
 	private:
 		EngineConfig conf;
-		StackAllocator renderProxyAllocator;
 		Stopwatch stopwatch_gameThread;
-		Stopwatch stopwatch_renderThread;
 		Stopwatch stopwatch_app;
 
 		uint32 frameCounter_gameThread;
-		uint32 frameCounter_renderThread;
 		float elapsed_gameThread;
 		float elapsed_renderThread;
-
-		std::vector<std::string> lastGpuCounterNames;
-		std::vector<float> lastGpuCounterTimes;
 
 		World* currentWorld;
 
@@ -172,13 +166,12 @@ namespace pathos {
 	// Render thread
 	private:
 		RenderThread* renderThread;
-		OpenGLDevice* render_device;
-		Renderer* renderer;
-		OverlayRenderer* renderer2D;
-		DebugOverlay* debugOverlay;
 
 		GLuint timer_query;
-		float elapsed_gpu; // in milliseconds
+		// Render thread will fill in these
+		float elapsed_gpu;
+		std::vector<std::string> lastGpuCounterNames;
+		std::vector<float> lastGpuCounterTimes;
 
 		// System textures
 		GLuint texture2D_black = 0;

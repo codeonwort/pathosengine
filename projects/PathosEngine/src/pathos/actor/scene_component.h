@@ -9,8 +9,6 @@
 
 namespace pathos {
 
-	class Scene;
-
 	// SceneComponent metadata for render thread
 	struct SceneComponentProxy {
 		//

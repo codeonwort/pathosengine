@@ -8,7 +8,7 @@ namespace pathos {
 
 	public:
 		// Given a 2D texture, creates and returns a new cubemap texture
-		static GLuint bakeCubemap(GLuint equirectangularMap, uint32 size);
+		static GLuint bakeCubemap(GLuint equirectangularMap, uint32 size, const char* debugName = nullptr);
 
 		// cubemap : a texture returned by bakeCubemap()
 		// size    : size of the cubemap that will be returned
@@ -19,7 +19,7 @@ namespace pathos {
 		// Default BRDF integration map of 512 size
 		static GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
 
-		static GLuint bakeBRDFIntegrationMap(uint32 size);
+		static GLuint bakeBRDFIntegrationMap_renderThread(uint32 size);
 
 		static void internal_createIrradianceBakerResources(class OpenGLDevice* renderDevice);
 		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice);

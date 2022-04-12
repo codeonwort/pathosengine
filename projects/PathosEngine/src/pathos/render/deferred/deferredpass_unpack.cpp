@@ -3,11 +3,13 @@
 #include "pathos/console.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/irradiance_baker.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/shader/shader_program.h"
+#include "pathos/camera/camera.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
-#include "pathos/shader/shader_program.h"
-#include "pathos/render/render_device.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -88,7 +90,7 @@ namespace pathos {
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
 	}
 
-	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(UnpackHDR);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;

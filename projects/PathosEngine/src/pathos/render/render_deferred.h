@@ -1,12 +1,12 @@
 #pragma once
 
-#include "renderer.h"
-#include "scene_render_targets.h"
-#include "deferred/deferredpass.h"
-#include "postprocessing/anti_aliasing.h"
+#include "pathos/render/renderer.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/scene_render_targets.h"
+#include "pathos/render/deferred/deferredpass.h"
+#include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
-#include "pathos/scene/scene.h"
 #include "pathos/light/shadow_directional.h"
 #include "pathos/light/shadow_omni.h"
 
@@ -35,7 +35,10 @@ namespace pathos {
 		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
 		// sky & atmosphere
-		static std::unique_ptr<class VolumetricCloud> volumetricCloud;
+		static std::unique_ptr<class SkyboxPass>          skyboxPass;
+		static std::unique_ptr<class AnselSkyPass>        anselSkyPass;
+		static std::unique_ptr<class SkyAtmospherePass>   skyAtmospherePass;
+		static std::unique_ptr<class VolumetricCloudPass> volumetricCloud;
 
 		// full-screen processing
 		static std::unique_ptr<class DepthPrepass> depthPrepass;
@@ -61,7 +64,7 @@ namespace pathos {
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
-		virtual void render(RenderCommandList& cmdList, Scene* scene, Camera* camera) override;
+		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.
 		void copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target);
@@ -70,7 +73,7 @@ namespace pathos {
 		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
 		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
-		void updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 		void clearGBuffer(RenderCommandList& cmdList);
 		void packGBuffer(RenderCommandList& cmdList);
@@ -94,7 +97,7 @@ namespace pathos {
 		RenderTarget2D* finalRenderTarget = nullptr;
 
 		// temporary save
-		Scene* scene;
+		SceneProxy* scene;
 		Camera* camera;
 		matrix4 prevView;
 		matrix4 prevInverseView;

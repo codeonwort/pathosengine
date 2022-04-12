@@ -1,15 +1,22 @@
 #pragma once
 
+#include "badger/types/int_types.h"
+#include "badger/thread/cpu.h"
+#include "badger/assertion/assertion.h"
+
 namespace pathos {
 
-	// #todo-renderthread: PATHOS engine loop is single-threaded yet
+	extern uint32 gMainThreadId;
+	extern uint32 gRenderThreadId;
+
 	inline bool isInMainThread() {
-		return true;
+		CHECK(gMainThreadId != 0);
+		return (gMainThreadId == CPU::getCurrentThreadId());
 	}
 
-	// #todo-renderthread: PATHOS engine loop is single-threaded yet
 	inline bool isInRenderThread() {
-		return true;
+		CHECK(gRenderThreadId != 0);
+		return (gRenderThreadId == CPU::getCurrentThreadId());
 	}
 
 }

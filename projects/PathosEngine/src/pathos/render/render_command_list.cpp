@@ -56,6 +56,8 @@ namespace pathos {
 
 	RenderCommandBase* RenderCommandList::getNextPacket()
 	{
+		std::lock_guard<std::mutex> commandListLock(commandListMutex);
+
 		RenderCommandBase* packet = (RenderCommandBase*)commands_alloc.alloc(sizeof(RenderCommandPacketUnion));
 		CHECKF(packet != nullptr, "Not enough memory for render command list");
 		commands.push_back(packet);

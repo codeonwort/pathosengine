@@ -47,10 +47,25 @@ namespace pathos {
 #undef DEFINE_ACTIVATE_VAO
 
 	static void enqueueBufferUpload(GLuint bufferName, GLsizeiptr size, const void* data) {
+		// #todo-renderthread
+#if 0
+		CHECK(isInMainThread());
 		ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
 				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
 			}
 		);
+#else
+		if (isInRenderThread()) {
+			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
+		} else {
+			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList)
+				{
+					cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
+				}
+			);
+		}
+#endif
 	}
 
 	void MeshGeometry::deactivate(RenderCommandList& cmdList) {

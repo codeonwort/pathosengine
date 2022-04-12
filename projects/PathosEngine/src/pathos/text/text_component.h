@@ -14,8 +14,8 @@ namespace pathos {
 		TextMeshComponent();
 		~TextMeshComponent() = default;
 
-		virtual void createRenderProxy(Scene* scene);
-		virtual void updateDynamicData_renderThread(RenderCommandList& cmdList);
+		virtual void createRenderProxy(SceneProxy* scene) override;
+		virtual void updateDynamicData_renderThread(RenderCommandList& cmdList) override;
 
 		void setText(const wchar_t* text);
 		void setColor(float r, float g, float b);

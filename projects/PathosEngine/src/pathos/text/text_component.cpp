@@ -2,6 +2,7 @@
 // For static mesh proxy
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/render/render_device.h"
+#include "pathos/render/scene_proxy.h"
 
 // Fallback font that must exist.
 #define DEFAULT_FONT_TAG    "default"
@@ -21,14 +22,14 @@ namespace pathos {
 		setFont(DEFAULT_FONT_TAG);
 	}
 
-	void TextMeshComponent::createRenderProxy(Scene* scene) {
+	void TextMeshComponent::createRenderProxy(SceneProxy* scene) {
 		if (text.size() == 0 || getVisibility() == false) {
 			return;
 		}
 
 		uint16 materialID = static_cast<uint16>(material->getMaterialID());
 		
-		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>();
+		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
 		proxy->modelMatrix = getMatrix() * invertTextY;

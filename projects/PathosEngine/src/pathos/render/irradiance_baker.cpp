@@ -21,20 +21,23 @@ namespace pathos {
 	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
 	glm::mat4 IrradianceBaker::cubeTransforms[6];
 
-	GLuint IrradianceBaker::bakeCubemap(GLuint equirectangularMap, uint32 size) {
+	GLuint IrradianceBaker::bakeCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint cubemap = 0;
-
-		FLUSH_RENDER_COMMAND();
+		const std::string debugNameStr = debugName ? debugName : "";
 		
-		ENQUEUE_RENDER_COMMAND([equirectangularMap, size, cubemapPtr = &cubemap](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([equirectangularMap, size, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
 			SCOPED_DRAW_EVENT(EquirectangularMapToCubemap);
 
 			GLuint fbo = IrradianceBaker::dummyFBO;
 			CubeGeometry* cube = IrradianceBaker::dummyCube;
 			
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
+			if (debugNameStr.size() > 0) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *cubemapPtr, -1, debugNameStr.c_str());
+			}
+
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -184,34 +187,31 @@ namespace pathos {
 		outMipLevels = maxMipLevels;
 	}
 
-	GLuint IrradianceBaker::bakeBRDFIntegrationMap(uint32 size) {
-		CHECK(isInMainThread());
+	GLuint IrradianceBaker::bakeBRDFIntegrationMap_renderThread(uint32 size) {
+		CHECK(isInRenderThread());
 
+		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
+		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
+
+		const GLuint fbo = IrradianceBaker::dummyFBO;
 		GLuint brdfLUT = 0;
 
-		ENQUEUE_RENDER_COMMAND([size, brdfLUTPtr = &brdfLUT](RenderCommandList& cmdList) {
-			SCOPED_DRAW_EVENT(BRDFIntegrationMap);
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
 
-			const GLuint fbo = IrradianceBaker::dummyFBO;
-			
-			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, brdfLUTPtr);
-			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(*brdfLUTPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureStorage2D(*brdfLUTPtr, 1, GL_RG16F, size, size);
+		cmdList.viewport(0, 0, size, size);
+		cmdList.useProgram(BRDFIntegrationMapShader);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
 
-			cmdList.viewport(0, 0, size, size);
-			cmdList.useProgram(BRDFIntegrationMapShader);
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, *brdfLUTPtr, 0);
-
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-			fullscreenQuad->drawPrimitive(cmdList);
-		});
-
-		FLUSH_RENDER_COMMAND();
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
 
 		return brdfLUT;
 	}
@@ -229,8 +229,6 @@ namespace pathos {
 		// Dummy meshes
 		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
-
-		cmdList.flushAllCommands();
 
 		glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		glm::mat4 captureViews[] =
@@ -303,7 +301,7 @@ namespace pathos {
 
 			IrradianceBaker::BRDFIntegrationMapShader = pathos::createProgram(vs, fs, "BRDFIntegrationMap");
 
-			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap(512);
+			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512);
 			cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
 		}
 	}

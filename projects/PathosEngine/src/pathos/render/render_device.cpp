@@ -1,6 +1,9 @@
 #include "render_device.h"
 #include "gl_core.h"
 #include "pathos/util/log.h"
+#include "pathos/util/gl_context_manager.h"
+
+#include <mutex>
 
 #if GL_ERROR_CALLBACK
 void glErrorCallback(
@@ -47,6 +50,40 @@ void glErrorCallback(
 namespace pathos {
 
 	OpenGLDevice* gRenderDevice = nullptr;
+
+	void FLUSH_RENDER_COMMAND() {
+		CHECK(isInMainThread());
+
+		std::mutex flushMutex;
+		std::condition_variable flushCondVar;
+		std::unique_lock<std::mutex> cvLock(flushMutex);
+
+		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
+		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar](void* param) -> void
+			{
+				flushCondVar.notify_all();
+			}
+		, &flushCondVar, sizeof(&flushCondVar));
+
+		flushCondVar.wait(cvLock);
+	}
+
+	void TEMP_FLUSH_RENDER_COMMAND() {
+		CHECK(isInMainThread());
+		
+		std::mutex flushMutex;
+		std::condition_variable flushCondVar;
+		std::unique_lock<std::mutex> cvLock(flushMutex);
+
+		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
+		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar](void* param) -> void
+			{
+				flushCondVar.notify_all();
+			}
+		, &flushCondVar, sizeof(&flushCondVar));
+
+		flushCondVar.wait(cvLock);
+	}
 
 	OpenGLDevice::OpenGLDevice()
 	{
@@ -99,102 +136,102 @@ namespace pathos {
 namespace pathos {
 
 	void OpenGLDevice::genTextures(GLsizei n, GLuint* textures) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glGenTextures(n, textures);
 	}
 
 	void OpenGLDevice::genQueries(GLsizei n, GLuint* queries) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glGenQueries(n, queries);
 	}
 
 	void OpenGLDevice::createTextures(GLenum target, GLsizei n, GLuint* textures) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateTextures(target, n, textures);
 	}
 
 	void OpenGLDevice::createFramebuffers(GLsizei n, GLuint* framebuffers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateFramebuffers(n, framebuffers);
 	}
 
 	void OpenGLDevice::createVertexArrays(GLsizei n, GLuint* arrays) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateVertexArrays(n, arrays);
 	}
 
 	void OpenGLDevice::createSamplers(GLsizei n, GLuint* samplers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateSamplers(n, samplers);
 	}
 
 	void OpenGLDevice::createQueries(GLenum target, GLsizei n, GLuint* ids) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateQueries(target, n, ids);
 	}
 
 	void OpenGLDevice::createTransformFeedbacks(GLsizei n, GLuint* ids) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateTransformFeedbacks(n, ids);
 	}
 
 	void OpenGLDevice::createBuffers(GLsizei n, GLuint* buffers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateBuffers(n, buffers);
 	}
 
 	void OpenGLDevice::createRenderbuffers(GLsizei n, GLuint* renderbuffers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateRenderbuffers(n, renderbuffers);
 	}
 
 	void OpenGLDevice::createProgramPipelines(GLsizei n, GLuint* pipelines) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glCreateProgramPipelines(n, pipelines);
 	}
 
 	void OpenGLDevice::deleteQueries(GLsizei n, const GLuint* ids) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteQueries(n, ids);
 	}
 
 	void OpenGLDevice::deleteBuffers(GLsizei n, const GLuint* buffers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteBuffers(n, buffers);
 	}
 
 	void OpenGLDevice::deleteProgram(GLuint program) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteProgram(program);
 	}
 
-	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label)
-	{
-		CHECK(isInRenderThread());
+	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {
+		CHECK_GL_CONTEXT_TAKEN();
 		glObjectLabel(identifier, name, length, label);
 	}
 
 	void OpenGLDevice::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteFramebuffers(n, framebuffers);
 	}
 
 	void OpenGLDevice::deleteVertexArrays(GLsizei n, const GLuint* arrays) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteVertexArrays(n, arrays);
 	}
 
 	void OpenGLDevice::deleteTextures(GLsizei n, const GLuint* textures) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteTextures(n, textures);
 	}
 
 	GLint OpenGLDevice::getUniformLocation(GLuint program, const GLchar* name) {
-		CHECK(isInRenderThread());
+		CHECK_GL_CONTEXT_TAKEN();
 		return glGetUniformLocation(program, name);
 	}
 
 	void OpenGLDevice::checkExtensions() {
+		CHECK_GL_CONTEXT_TAKEN();
 		::memset(&extensionSupport, 0, sizeof(extensionSupport));
 
 		GLint n;

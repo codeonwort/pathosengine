@@ -71,10 +71,10 @@ namespace pathos {
 					// axis
 					state.leftTrigger = (float)rawState.Gamepad.bLeftTrigger / 255.0f;
 					state.rightTrigger = (float)rawState.Gamepad.bRightTrigger / 255.0f;
-					state.leftThumbX = clamp(-1.0f, (float)rawState.Gamepad.sThumbLX / 32767.0f, 1.0f);
-					state.leftThumbY = clamp(-1.0f, (float)rawState.Gamepad.sThumbLY / 32767.0f, 1.0f);
-					state.rightThumbX = clamp(-1.0f, (float)rawState.Gamepad.sThumbRX / 32767.0f, 1.0f);
-					state.rightThumbY = clamp(-1.0f, (float)rawState.Gamepad.sThumbRY / 32767.0f, 1.0f);
+					state.leftThumbX = badger::clamp(-1.0f, (float)rawState.Gamepad.sThumbLX / 32767.0f, 1.0f);
+					state.leftThumbY = badger::clamp(-1.0f, (float)rawState.Gamepad.sThumbLY / 32767.0f, 1.0f);
+					state.rightThumbX = badger::clamp(-1.0f, (float)rawState.Gamepad.sThumbRX / 32767.0f, 1.0f);
+					state.rightThumbY = badger::clamp(-1.0f, (float)rawState.Gamepad.sThumbRY / 32767.0f, 1.0f);
 
 					if (fabs(state.leftThumbX) <= deadzoneX) state.leftThumbX = 0.0f;
 					if (fabs(state.leftThumbY) <= deadzoneY) state.leftThumbY = 0.0f;

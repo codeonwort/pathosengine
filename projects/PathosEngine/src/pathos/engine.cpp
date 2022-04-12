@@ -10,6 +10,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
+#include "pathos/util/gl_context_manager.h"
 #include "pathos/util/renderdoc_integration.h"
 #include "pathos/debug_overlay.h"
 
@@ -24,8 +25,6 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
-
-	static constexpr uint32 RENDER_PROXY_MEMORY = 32 * 1024 * 1024; // 32 MB
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -69,17 +68,11 @@ namespace pathos {
 
 	//////////////////////////////////////////////////////////////////////////
 	Engine::Engine()
-		: renderProxyAllocator(RENDER_PROXY_MEMORY)
-		, frameCounter_gameThread(0)
-		, frameCounter_renderThread(0)
+		: frameCounter_gameThread(0)
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
 		, renderThread(nullptr)
-		, render_device(nullptr)
-		, renderer(nullptr)
-		, renderer2D(nullptr)
-		, debugOverlay(nullptr)
 		, timer_query(0)
 		, elapsed_gpu(0)
 	{
@@ -96,8 +89,6 @@ namespace pathos {
 		LOG(LogInfo, "===      Initialize PATHOS      ===");
 		LOG(LogInfo, "Engine version: %d.%d.%d", PATHOS_MAJOR_VERSION, PATHOS_MINOR_VERSION, PATHOS_PATCH_VERSION);
 
-		renderThread = new RenderThread;
-
 		ResourceFinder::get().add("../");
 		ResourceFinder::get().add("../../");
 		ResourceFinder::get().add("../../shaders/");
@@ -105,21 +96,35 @@ namespace pathos {
 
 		RenderDocIntegration::get().findInjectedDLL();
 
-#define BailIfFalse(x) if(!(x)) { return false; }
-		BailIfFalse( initializeMainWindow(argc, argv) );
-		BailIfFalse( initializeInput()                );
-		BailIfFalse( initializeAssetStreamer()        );
-		BailIfFalse( initializeOpenGL()               );
-		BailIfFalse( initializeImageLibrary()         );
-		BailIfFalse( initializeFontSystem()           );
-		BailIfFalse( initializeOverlayRenderer()      );
-		BailIfFalse( initializeConsole()              );
-		BailIfFalse( initializeRenderer()             );
-#undef BailIfFalse
-
 		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
 		cpuProfiler.initialize();
 		cpuProfiler.registerCurrentThread("main thread");
+
+		pathos::gMainThreadId = CPU::getCurrentThreadId();
+
+		renderThread = new RenderThread;
+
+		// Many pesky reasons for this order :/
+#define BailIfFalse(x) if(!(x)) { return false; }
+		BailIfFalse( initializeMainWindow(argc, argv)          );
+		BailIfFalse( initializeInput()                         );
+		BailIfFalse( initializeAssetStreamer()                 );
+		BailIfFalse( renderThread->initializeOpenGL()          );
+		BailIfFalse( initializeImageLibrary()                  );
+		BailIfFalse( initializeFontSystem()                    );
+		BailIfFalse( renderThread->initializeOverlayRenderer() );
+		BailIfFalse( initializeConsole()                       );
+		BailIfFalse( renderThread->initializeRenderer()        );
+#undef BailIfFalse
+		renderThread->run();
+
+		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) -> void
+			{
+				for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().initRoutines) {
+					routine(gRenderDevice);
+				}
+			});
+		FLUSH_RENDER_COMMAND();
 
 		readConfigFile();
 
@@ -128,7 +133,8 @@ namespace pathos {
 			gEngine->dumpGPUProfile();
 		});
 		registerExec("stat", [](const std::string& command) {
-			gEngine->debugOverlay->toggleFrameStat();
+			// #todo-renderthread
+			//gEngine->debugOverlay->toggleFrameStat();
 		});
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
@@ -199,65 +205,16 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeOpenGL()
-	{
-		render_device = new OpenGLDevice;
-		bool validDevice = render_device->initialize();
-
-		ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
-			render_device->genQueries(1, &timer_query);
-			CHECK(timer_query != 0);
-
-			// Create engine resources
-			GLuint systemTextures[4];
-			render_device->createTextures(GL_TEXTURE_2D, 4, systemTextures);
-
-			texture2D_black = systemTextures[0];
-			texture2D_white = systemTextures[1];
-			texture2D_grey = systemTextures[2];
-			texture2D_blue = systemTextures[3];
-
-			cmdList.textureStorage2D(texture2D_black, 1, GL_RGBA8, 1, 1);
-			cmdList.textureStorage2D(texture2D_white, 1, GL_RGBA8, 1, 1);
-			cmdList.textureStorage2D(texture2D_grey, 1, GL_RGBA8, 1, 1);
-			cmdList.textureStorage2D(texture2D_blue, 1, GL_RGBA8, 1, 1);
-
-			GLubyte black[4] = { 0, 0, 0, 0 };
-			GLubyte white[4] = { 0xff, 0xff, 0xff, 0xff };
-			GLubyte grey[4] = { 0x7f, 0x7f, 0x7f, 0x7f };
-			GLubyte blue[4] = { 0x00, 0x00, 0xff, 0xff };
-
-			cmdList.clearTexImage(texture2D_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
-			cmdList.clearTexImage(texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
-			cmdList.clearTexImage(texture2D_grey, 0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
-			cmdList.clearTexImage(texture2D_blue, 0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
-
-			cmdList.objectLabel(GL_TEXTURE, texture2D_black, -1, "system texture 2D (black)");
-			cmdList.objectLabel(GL_TEXTURE, texture2D_white, -1, "system texture 2D (white)");
-			cmdList.objectLabel(GL_TEXTURE, texture2D_grey, -1, "system texture 2D (grey)");
-			cmdList.objectLabel(GL_TEXTURE, texture2D_blue, -1, "system texture 2D (blue)");
-		});
-
-		FLUSH_RENDER_COMMAND();
-
-		for(GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().initRoutines) {
-			routine(render_device);
-		}
-
-		ScopedGpuCounter::initializeQueryObjectPool();
-
-		return validDevice;
-	}
-
 	bool Engine::initializeImageLibrary()
 	{
+		SCOPED_TAKE_GL_CONTEXT();
 		pathos::initializeImageLibrary();
-
 		return true;
 	}
 
 	bool Engine::initializeFontSystem()
 	{
+		SCOPED_TAKE_GL_CONTEXT();
 		if (FontManager::get().init() == false) {
 			LOG(LogError, "[ERROR] Failed to initialize font manager");
 			return false;
@@ -269,19 +226,10 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeOverlayRenderer()
-	{
-		renderer2D = new OverlayRenderer;
-
-		debugOverlay = new DebugOverlay(renderer2D);
-		debugOverlay->initialize();
-
-		return true;
-	}
-
 	bool Engine::initializeConsole()
 	{
-		gConsole = new ConsoleWindow(renderer2D);
+		SCOPED_TAKE_GL_CONTEXT();
+		gConsole = new ConsoleWindow(renderThread->getRenderer2D());
 		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, CONSOLE_WINDOW_MIN_HEIGHT)) == false) {
 			LOG(LogError, "Failed to initialize console window");
 			return false;
@@ -292,38 +240,10 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeRenderer()
-	{
-		switch (conf.rendererType) {
-		case ERendererType::Forward:
-			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-			renderer = new DeferredRenderer;
-			break;
-
-		case ERendererType::Deferred:
-			renderer = new DeferredRenderer;
-			break;
-		}
-
-		if (renderer) {
-			{
-				SceneRenderSettings settings;
-				settings.sceneWidth        = conf.windowWidth;
-				settings.sceneHeight       = conf.windowHeight;
-				settings.enablePostProcess = true;
-				renderer->setSceneRenderSettings(settings);
-			}
-			renderer->initializeResources(render_device->getImmediateCommandList());
-			render_device->getImmediateCommandList().flushAllCommands();
-		}
-
-		return renderer != nullptr;
-	}
-
 	void Engine::start() {
 		stopwatch_gameThread.start();
 		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
-		renderThread->run();
+		renderThread->markMainLoopStarted();
 		mainWindow->startMainLoop();
 	}
 
@@ -332,10 +252,6 @@ namespace pathos {
 
 		assetStreamer->destroy();
 		pathos::destroyImageLibrary();
-
-		for (GlobalRenderRoutine routine : getGlobalRenderRoutineContainer().destroyRoutines) {
-			routine(render_device);
-		}
 
 		renderThread->terminate();
 
@@ -425,21 +341,20 @@ namespace pathos {
 			delete currentWorld;
 		}
 
+		// #todo-renderthread-fatal: Crashes here (OpenGL out of memory?)
 		currentWorld = inWorld;
 		currentWorld->initialize();
 	}
 
 	void Engine::tick()
 	{
-		// Wait for previous frame
-		FLUSH_RENDER_COMMAND();
-
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
 
-		// #todo-renderthread: Render thread shoult start here. It's empty now...
+		// Start render thread with prev frame's scene proxy
 		const uint32 frameNumber_renderThread = frameCounter_gameThread;
 		renderThread->beginFrame(frameNumber_renderThread);
 
+		// Start world tick
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
@@ -448,9 +363,6 @@ namespace pathos {
 			// #todo-fps: It only controls the game thread. What about the render thread + GPU?
 			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
 				elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
-				if (currentWorld != nullptr) {
-					currentWorld->getScene().createRenderProxy();
-				}
 				return;
 			}
 
@@ -470,10 +382,12 @@ namespace pathos {
 				currentWorld->tick(deltaSeconds);
 
 				// #todo: More robust way to check if the main window is minimized
-				bool windowMinimized = renderProxyAllocator.isClear();
-				if (windowMinimized) {
-					currentWorld->getScene().createRenderProxy();
-				}
+				SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
+					frameCounter_gameThread,
+					currentWorld->getCamera());
+				CHECK(sceneProxy != nullptr);
+
+				renderThread->pushSceneProxy(sceneProxy);
 			}
 		}
 
@@ -488,89 +402,8 @@ namespace pathos {
 			frameCounter_gameThread += 1;
 		}
 
-		// #todo-renderthread: renderThreadMain() should run render() and we just wait for its completion.
+		// Wait for render thread to finish
 		renderThread->endFrame(frameNumber_renderThread);
-
-		//
-		// Render tick
-		//
-		// #todo-renderthread: Currently running them sequentially, but game (N) and render (N-1) should run simultaneously.
-		render();
-	}
-
-	// All render thread operations are processed here
-	void Engine::render() {
-		// Render thread should be one frame behind of the game thread
-		if (frameCounter_renderThread >= frameCounter_gameThread) {
-			return;
-		}
-		frameCounter_renderThread = frameCounter_gameThread - 1;
-
-		RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
-
-		GLuint64 elapsed_ns;
-		immediateContext.beginQuery(GL_TIME_ELAPSED, timer_query);
-
-		stopwatch_renderThread.start();
-
-		SCOPED_CPU_COUNTER(EngineRender);
-
-		{
-			SCOPED_CPU_COUNTER(FlushLoadedAssets);
-			assetStreamer->renderThread_flushLoadedAssets();
-		}
-
-		{
-			currentWorld->getScene().updateDynamicData_renderThread(immediateContext);
-		}
-
-		{
-			SceneRenderSettings settings;
-			settings.sceneWidth            = conf.windowWidth; // #todo: Current window size
-			settings.sceneHeight           = conf.windowHeight;
-			settings.frameCounter          = frameCounter_renderThread;
-			settings.enablePostProcess     = true;
-			renderer->setSceneRenderSettings(settings);
-		}
-
-		// #todo-cmd-list: deferred command lists here
-
-		// Renderer will add more immediate commands
-		if (renderer && currentWorld) {
-			SCOPED_CPU_COUNTER(ExecuteRenderer);
-			renderer->render(immediateContext, &currentWorld->getScene(), &currentWorld->getCamera());
-			immediateContext.flushAllCommands();
-		}
-
-		debugOverlay->renderDebugOverlay(immediateContext, conf.windowWidth, conf.windowHeight);
-		immediateContext.flushAllCommands();
-
-		if (gConsole) {
-			SCOPED_CPU_COUNTER(ExecuteDebugConsole);
-			gConsole->renderConsoleWindow(immediateContext);
-			immediateContext.flushAllCommands();
-		}
-
-		immediateContext.endQuery(GL_TIME_ELAPSED);
-		immediateContext.getQueryObjectui64v(timer_query, GL_QUERY_RESULT, &elapsed_ns);
-		immediateContext.flushAllCommands();
-		elapsed_gpu = (float)elapsed_ns / 1000000.0f;
-
-		// Get GPU profile
-		const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(lastGpuCounterNames, lastGpuCounterTimes);
-
-		// Clear various render resources after all rendering is done
-		{
-			renderProxyAllocator.clear();
-
-			if (currentWorld != nullptr) {
-				currentWorld->getScene().clearRenderProxy();
-			}
-
-			FontManager::get().onFrameEnd();
-		}
-
-		elapsed_renderThread = stopwatch_renderThread.stop() * 1000.0f;
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -589,6 +422,7 @@ namespace pathos {
 	}
 
 	// #todo-renderthread: This might be not called when the window is minimized.
+	//                     How to tick the world, but no draw when minimized?
 	void Engine::onMainWindowDisplay() {
 		gEngine->tick();
 	}

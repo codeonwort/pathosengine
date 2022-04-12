@@ -1,7 +1,7 @@
 #include "depth_prepass.h"
 #include "render_device.h"
 #include "scene_render_targets.h"
-#include "pathos/scene/scene.h"
+#include "scene_proxy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/mesh/static_mesh_component.h"
@@ -59,7 +59,7 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, Scene* scene, Camera* camera)
+	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		

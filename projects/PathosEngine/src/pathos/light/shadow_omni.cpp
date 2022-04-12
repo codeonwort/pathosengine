@@ -1,6 +1,6 @@
 #include "shadow_omni.h"
 #include "point_light_component.h"
-#include "pathos/scene/scene.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/shader/shader_program.h"
@@ -57,7 +57,7 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void OmniShadowPass::renderShadowMaps(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
+	void OmniShadowPass::renderShadowMaps(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(OmniShadowMaps);
 
