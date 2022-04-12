@@ -46,8 +46,8 @@ namespace pathos {
 			// Wait until the game thread launches the render thread.
 			//
 			// #todo-renderthread-fatal: deadlock if main thread waits for render thread!!!
-			std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
-			renderThread->loopCondVar.wait(cvLock);
+			//std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
+			//renderThread->loopCondVar.wait(cvLock);
 
 			//
 			// Start a frame!
@@ -254,49 +254,52 @@ namespace pathos {
 
 		ScopedGpuCounter::initializeQueryObjectPool();
 
+		// #todo-renderthread-fatal: glFinish to empty GPU works and safely detach the GL context from Main Thread.
+		glFinish();
+
 		return validDevice;
 	}
 
 	bool RenderThread::initializeOverlayRenderer() {
-		SCOPED_TAKE_GL_CONTEXT();
+		auto This = this;
+		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
+			This->renderer2D = new OverlayRenderer;
 
-		renderer2D = new OverlayRenderer;
-
-		debugOverlay = new DebugOverlay(renderer2D);
-		debugOverlay->initialize();
-
+			This->debugOverlay = new DebugOverlay(This->renderer2D);
+			This->debugOverlay->initialize();
+		});
+		FLUSH_RENDER_COMMAND();
 		return true;
 	}
 
 	bool RenderThread::initializeRenderer() {
-		SCOPED_TAKE_GL_CONTEXT();
+		auto This = this;
+		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
+			const auto& conf = gEngine->getConfig();
+			switch (conf.rendererType) {
+			case ERendererType::Forward:
+				LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
+				This->renderer = new DeferredRenderer;
+				break;
 
-		const EngineConfig& conf = gEngine->getConfig();
-
-		switch (conf.rendererType) {
-		case ERendererType::Forward:
-			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-			renderer = new DeferredRenderer;
-			break;
-
-		case ERendererType::Deferred:
-			renderer = new DeferredRenderer;
-			break;
-		}
-
-		if (renderer) {
-			SceneRenderSettings settings;
-			{
-				settings.sceneWidth = conf.windowWidth;
-				settings.sceneHeight = conf.windowHeight;
-				settings.enablePostProcess = true;
+			case ERendererType::Deferred:
+				This->renderer = new DeferredRenderer;
+				break;
 			}
-			renderer->setSceneRenderSettings(settings);
-			renderer->initializeResources(render_device->getImmediateCommandList());
-			render_device->getImmediateCommandList().flushAllCommands();
-		}
 
-		return renderer != nullptr;
+			if (This->renderer) {
+				SceneRenderSettings settings;
+				{
+					settings.sceneWidth = conf.windowWidth;
+					settings.sceneHeight = conf.windowHeight;
+					settings.enablePostProcess = true;
+				}
+				This->renderer->setSceneRenderSettings(settings);
+				This->renderer->initializeResources(cmdList);
+			}
+		});
+		FLUSH_RENDER_COMMAND();
+		return true;
 	}
 
 }

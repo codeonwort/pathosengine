@@ -12,6 +12,8 @@ namespace pathos {
 
 	void RenderCommandList::clearAllCommands()
 	{
+		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
+
 		commands_alloc.clear();
 		parameters_alloc.clear();
 		commands.clear();
@@ -19,6 +21,8 @@ namespace pathos {
 
 	void RenderCommandList::executeAllCommands()
 	{
+		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
+
 #if ASSERT_GL_NO_ERROR
 		glGetError();
 #endif
@@ -47,6 +51,8 @@ namespace pathos {
 
 	void RenderCommandList::registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes)
 	{
+		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
+
 		RenderCommand_registerHook* __restrict packet = (RenderCommand_registerHook*)getNextPacket();
 		memset(packet, 0, sizeof(RenderCommandPacketUnion));
 		packet->pfn_execute = PFN_EXECUTE(RenderCommand_registerHook::execute);
@@ -56,7 +62,7 @@ namespace pathos {
 
 	RenderCommandBase* RenderCommandList::getNextPacket()
 	{
-		std::lock_guard<std::mutex> commandListLock(commandListMutex);
+		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
 
 		RenderCommandBase* packet = (RenderCommandBase*)commands_alloc.alloc(sizeof(RenderCommandPacketUnion));
 		CHECKF(packet != nullptr, "Not enough memory for render command list");

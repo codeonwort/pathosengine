@@ -56,7 +56,7 @@ namespace pathos {
 
 		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void {
 			lambda(gRenderDevice->getImmediateCommandList());
-			}, nullptr, 0);
+		}, nullptr, 0);
 	}
 
 	void FLUSH_RENDER_COMMAND() {
@@ -65,15 +65,17 @@ namespace pathos {
 		std::mutex flushMutex;
 		std::condition_variable flushCondVar;
 		std::unique_lock<std::mutex> cvLock(flushMutex);
+		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar](void* param) -> void
-			{
-				flushCondVar.notify_all();
-			}
-		, nullptr, 0);
+		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
+			flushCondVar.notify_all();
+			alreadyFlushed = true;
+		}, nullptr, 0);
 
-		flushCondVar.wait(cvLock);
+		if (!alreadyFlushed) {
+			flushCondVar.wait(cvLock);
+		}
 	}
 
 	void TEMP_FLUSH_RENDER_COMMAND() {
@@ -82,15 +84,17 @@ namespace pathos {
 		std::mutex flushMutex;
 		std::condition_variable flushCondVar;
 		std::unique_lock<std::mutex> cvLock(flushMutex);
+		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar](void* param) -> void
-			{
-				flushCondVar.notify_all();
-			}
-		, nullptr, 0);
+		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
+			flushCondVar.notify_all();
+			alreadyFlushed = true;
+		}, nullptr, 0);
 
-		flushCondVar.wait(cvLock);
+		if (!alreadyFlushed) {
+			flushCondVar.wait(cvLock);
+		}
 	}
 
 	OpenGLDevice::OpenGLDevice()

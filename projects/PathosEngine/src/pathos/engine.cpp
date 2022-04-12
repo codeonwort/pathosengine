@@ -110,20 +110,20 @@ namespace pathos {
 		BailIfFalse( initializeInput()                         );
 		BailIfFalse( initializeAssetStreamer()                 );
 		BailIfFalse( renderThread->initializeOpenGL()          );
+		renderThread->run();
 		BailIfFalse( initializeImageLibrary()                  );
 		BailIfFalse( initializeFontSystem()                    );
 		BailIfFalse( renderThread->initializeOverlayRenderer() );
 		BailIfFalse( initializeConsole()                       );
 		BailIfFalse( renderThread->initializeRenderer()        );
 #undef BailIfFalse
-		renderThread->run();
 
-		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) -> void
-			{
-				for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().initRoutines) {
-					routine(gRenderDevice);
-				}
-			});
+		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) -> void {
+			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
+			for (Engine::GlobalRenderRoutine routine : initRoutines) {
+				routine(gRenderDevice);
+			}
+		});
 		FLUSH_RENDER_COMMAND();
 
 		readConfigFile();
@@ -207,28 +207,26 @@ namespace pathos {
 
 	bool Engine::initializeImageLibrary()
 	{
-		SCOPED_TAKE_GL_CONTEXT();
 		pathos::initializeImageLibrary();
 		return true;
 	}
 
 	bool Engine::initializeFontSystem()
 	{
-		SCOPED_TAKE_GL_CONTEXT();
-		if (FontManager::get().init() == false) {
-			LOG(LogError, "[ERROR] Failed to initialize font manager");
-			return false;
-		}
-		FontManager::get().registerFont("default", "resources/fonts/consola.ttf", 28);
-		FontManager::get().registerFont("hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
-		LOG(LogInfo, "Initialize font subsystem");
-
+		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
+			if (FontManager::get().init() == false) {
+				LOG(LogError, "[ERROR] Failed to initialize font manager");
+				return;
+			}
+			FontManager::get().registerFont("default", "resources/fonts/consola.ttf", 28);
+			FontManager::get().registerFont("hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
+			LOG(LogInfo, "Initialize font subsystem");
+		});
 		return true;
 	}
 
 	bool Engine::initializeConsole()
 	{
-		SCOPED_TAKE_GL_CONTEXT();
 		gConsole = new ConsoleWindow(renderThread->getRenderer2D());
 		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, CONSOLE_WINDOW_MIN_HEIGHT)) == false) {
 			LOG(LogError, "Failed to initialize console window");
@@ -237,6 +235,7 @@ namespace pathos {
 		gConsole->addLine(L"Built-in debug console. Press ` to toggle.");
 
 		LOG(LogInfo, "Initialize the debug console");
+
 		return true;
 	}
 

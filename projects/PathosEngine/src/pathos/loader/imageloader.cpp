@@ -89,7 +89,7 @@ namespace pathos {
 	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
 		int w, h;
 		uint8* data;
-		GLuint tex_id = 0;
+		GLuint texture = 0;
 
 		data = FreeImage_GetBits(dib);
 		w = FreeImage_GetWidth(dib);
@@ -97,32 +97,32 @@ namespace pathos {
 
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &tex_id);
+		ENQUEUE_RENDER_COMMAND([dib, data, w, h, texturePtr = &texture, generateMipmap, sRGB](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 
-		ENQUEUE_RENDER_COMMAND([dib, data, w, h, tex_id, generateMipmap, sRGB](RenderCommandList& cmdList) {
 			uint32 numLODs = 1;
 			if (generateMipmap) {
 				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 			}
 			unsigned int bpp = FreeImage_GetBPP(dib);
 			if (bpp == 32) {
-				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
-				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 			} else if (bpp == 24) {
-				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
-				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
+				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 			} else {
 				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 				//gRenderDevice->deleteTextures(1, &tex_id);
 			}
 			if (generateMipmap) {
-				cmdList.generateTextureMipmap(tex_id);
+				cmdList.generateTextureMipmap(*texturePtr);
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
 		TEMP_FLUSH_RENDER_COMMAND();
 
-		return tex_id;
+		return texture;
 	}
 
 	/**

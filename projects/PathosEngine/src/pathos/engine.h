@@ -123,7 +123,6 @@ namespace pathos {
 		bool initializeImageLibrary();
 		bool initializeFontSystem();
 		bool initializeConsole();
-		bool initializeRenderer();
 
 		bool destroyOpenGL();
 

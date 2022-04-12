@@ -45,4 +45,4 @@ namespace pathos {
 	};
 }
 #define SCOPED_TAKE_GL_CONTEXT() pathos::ScopedOpenGLContext __scoped_gl_context;
-#define CHECK_GL_CONTEXT_TAKEN() CHECK(pathos::OpenGLContextManager::isContextTaken());
+#define CHECK_GL_CONTEXT_TAKEN() CHECKF(pathos::OpenGLContextManager::isContextTaken(), "GL context not taken");

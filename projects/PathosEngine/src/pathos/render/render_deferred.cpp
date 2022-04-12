@@ -113,7 +113,11 @@ namespace pathos {
 
 	void DeferredRenderer::initializeResources(RenderCommandList& cmdList) {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
-		cmdList.flushAllCommands();
+		// #todo-renderthread-fatal: Nested flush
+		//cmdList.flushAllCommands();
+		// Then this is an infinite loop???
+		//cmdList.executeAllCommands();
+		//cmdList.clearAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 	}
 
