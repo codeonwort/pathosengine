@@ -20,8 +20,8 @@ namespace pathos {
 	class DeferredRenderer : public Renderer {
 
 	public:
-		static void internal_initGlobalResources(OpenGLDevice* renderDevice);
-		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice);
+		static void internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 	private:
 		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
 		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;

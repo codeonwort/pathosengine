@@ -282,6 +282,7 @@ void World1::setupScene()
 	}
 
 	static Actor* sceneCaptureActor = nullptr;
+#if 0 // #todo-renderthread-fatal
 	if (sceneCaptureActor == nullptr) {
 		sceneCaptureActor = spawnActor<Actor>();
 		sceneCaptureComponent = new SceneCaptureComponent;
@@ -293,6 +294,7 @@ void World1::setupScene()
 	}
 
 	sceneCaptureComponent->captureScene();
+#endif
 
 	auto material_sceneCapture = new TextureMaterial(tempRenderTarget->getGLName());
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();

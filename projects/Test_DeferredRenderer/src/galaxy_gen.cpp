@@ -62,18 +62,14 @@ void GalaxyGenerator::createStarField(GLuint& targetTexture, uint32 width, uint3
 	FLUSH_RENDER_COMMAND();
 }
 
-void GalaxyGenerator::internal_createResources(OpenGLDevice* renderDevice) {
-	RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+void GalaxyGenerator::internal_createResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 	gRenderDevice->createFramebuffers(1, &dummyFBO);
 	cmdList.namedFramebufferDrawBuffer(dummyFBO, GL_COLOR_ATTACHMENT0);
 
 	fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 }
 
-void GalaxyGenerator::internal_destroyResources(OpenGLDevice* renderDevice) {
-	RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+void GalaxyGenerator::internal_destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 	gRenderDevice->deleteFramebuffers(1, &dummyFBO);
 
 	delete fullscreenQuad;

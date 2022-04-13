@@ -187,10 +187,8 @@ namespace pathos {
 		outMipLevels = maxMipLevels;
 	}
 
-	GLuint IrradianceBaker::bakeBRDFIntegrationMap_renderThread(uint32 size) {
+	GLuint IrradianceBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
 		CHECK(isInRenderThread());
-
-		RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
@@ -216,9 +214,7 @@ namespace pathos {
 		return brdfLUT;
 	}
 
-	void IrradianceBaker::internal_createIrradianceBakerResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void IrradianceBaker::internal_createIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		// Dummy VAO
 		gRenderDevice->createVertexArrays(1, &IrradianceBaker::dummyVAO);
 
@@ -301,14 +297,12 @@ namespace pathos {
 
 			IrradianceBaker::BRDFIntegrationMapShader = pathos::createProgram(vs, fs, "BRDFIntegrationMap");
 
-			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512);
+			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512, cmdList);
 			cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
 		}
 	}
 
-	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
 		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
 		gRenderDevice->deleteProgram(IrradianceBaker::equirectangularToCubemap);

@@ -115,9 +115,6 @@ namespace pathos {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		// #todo-renderthread-fatal: Nested flush
 		//cmdList.flushAllCommands();
-		// Then this is an infinite loop???
-		//cmdList.executeAllCommands();
-		//cmdList.clearAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 	}
 
@@ -623,9 +620,7 @@ namespace pathos {
 	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
 	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
 
-	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial = std::make_unique<ColorMaterial>();
 		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
 		fallbackMaterial->setMetallic(0.0f);
@@ -701,9 +696,7 @@ namespace pathos {
 		}
 	}
 
-	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial.release();
 		fullscreenQuad->dispose();
 		gRenderDevice->deleteBuffers(1, &copyTextureFBO);

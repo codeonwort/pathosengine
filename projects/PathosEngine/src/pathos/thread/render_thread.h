@@ -69,6 +69,7 @@ namespace pathos {
 		std::atomic<bool>          mainLoopStarted;
 		std::mutex                 endFrameMutex;
 		std::condition_variable    endFrameCondVar;
+		std::atomic<bool>          endFrameMarker;
 
 		//std::atomic<bool>          initialized;
 		//std::mutex                 initMutex;

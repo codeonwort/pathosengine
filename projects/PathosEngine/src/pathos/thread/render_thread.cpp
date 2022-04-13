@@ -33,6 +33,9 @@ namespace pathos {
 			SCOPED_TAKE_GL_CONTEXT();
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 			immediateContext.flushAllCommands();
+
+			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
+			deferredContext.flushAllCommands();
 		}
 
 		while (renderThread->pendingKill == false) {
@@ -46,13 +49,14 @@ namespace pathos {
 			// Wait until the game thread launches the render thread.
 			//
 			// #todo-renderthread-fatal: deadlock if main thread waits for render thread!!!
-			//std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
-			//renderThread->loopCondVar.wait(cvLock);
+			std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
+			renderThread->loopCondVar.wait(cvLock);
 
 			//
 			// Start a frame!
 			//
 			OpenGLContextManager::takeContext();
+			renderThread->endFrameMarker = false;
 
 			SceneProxy* sceneProxy = renderThread->popSceneProxy();
 			Renderer* renderer = renderThread->renderer;;
@@ -77,7 +81,7 @@ namespace pathos {
 				//currentWorld->getScene().updateDynamicData_renderThread(immediateContext);
 			}
 
-			const EngineConfig& engineConfig = gEngine->getConfig();
+			const EngineConfig engineConfig(gEngine->getConfig());
 			if (renderer) {
 				SceneRenderSettings settings;
 				settings.sceneWidth = engineConfig.windowWidth; // #todo: Current window size
@@ -88,15 +92,32 @@ namespace pathos {
 			}
 
 			// #todo-cmd-list: deferred command lists here
+			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
+			deferredContext.flushAllCommands();
 
 			// Renderer will add more immediate commands
-			if (renderer && sceneProxy)
+			// #todo-renderthread-fatal: Crashes at checkFramebufferStatus()
+			if (false && renderer && sceneProxy)
 			{
 				SCOPED_CPU_COUNTER(ExecuteRenderer);
 				renderer->render(immediateContext, sceneProxy, &sceneProxy->camera);
 				immediateContext.flushAllCommands();
+
+#define FIXME_OVERLAY_RENDERING 1
+#if FIXME_OVERLAY_RENDERING
+				// #todo-renderthread-fatal: sceneRenderTargets invalid until DeferredRenderer::render() is not executed.
+				debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
+				immediateContext.flushAllCommands();
+
+				if (gConsole) {
+					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
+					gConsole->renderConsoleWindow(immediateContext);
+					immediateContext.flushAllCommands();
+				}
+#endif
 			}
 
+#if !FIXME_OVERLAY_RENDERING
 			debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
 			immediateContext.flushAllCommands();
 			
@@ -106,6 +127,7 @@ namespace pathos {
 				gConsole->renderConsoleWindow(immediateContext);
 				immediateContext.flushAllCommands();
 			}
+#endif
 
 			immediateContext.endQuery(GL_TIME_ELAPSED);
 			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
@@ -130,6 +152,15 @@ namespace pathos {
 			//
 			OpenGLContextManager::returnContext();
 			renderThread->endFrameCondVar.notify_all();
+			renderThread->endFrameMarker = true;
+		}
+
+		// Cleanup thread main
+		{
+			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
+			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
+			CHECKF(immediateContext.isEmpty(), "Immediate command list is not empty");
+			CHECKF(deferredContext.isEmpty(), "Deferred command list is not empty");
 		}
 
 		LOG(LogInfo, "[%s] Render thread terminated", __FUNCTION__);
@@ -174,7 +205,7 @@ namespace pathos {
 
 	void RenderThread::endFrame(uint32 frameNumber) {
 		CHECKF(currentFrame == frameNumber, "Frame number does not match!!!");
-		if (!pendingKill) {
+		if (!pendingKill && !endFrameMarker) {
 			std::unique_lock<std::mutex> cvLock(endFrameMutex);
 			endFrameCondVar.wait(cvLock);
 		}
@@ -182,7 +213,7 @@ namespace pathos {
 
 	void RenderThread::terminate() {
 		for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().destroyRoutines) {
-			routine(gRenderDevice);
+			routine(gRenderDevice, gRenderDevice->getDeferredCommandList());
 		}
 
 		// #todo-renderthread: Does this ensure the lock will break?
@@ -215,6 +246,10 @@ namespace pathos {
 
 		render_device = new OpenGLDevice;
 		bool validDevice = render_device->initialize();
+		
+		if (!validDevice) {
+			return false;
+		}
 
 		RenderCommandList& cmdList = render_device->getImmediateCommandList();
 

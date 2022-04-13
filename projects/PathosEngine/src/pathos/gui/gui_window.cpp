@@ -208,7 +208,7 @@ namespace pathos {
 	void GUIWindow::onDisplay()
 	{
 		callback_onDisplay();
-
+		
 		OpenGLContextManager::takeContext();
 		glutSwapBuffers();
 		glutPostRedisplay();

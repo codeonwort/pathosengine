@@ -1,5 +1,6 @@
 #include "render_command_list.h"
 #include "render_commands.h"
+#include "pathos/thread/engine_thread.h"
 
 #include "badger/assertion/assertion.h"
 
@@ -12,8 +13,6 @@ namespace pathos {
 
 	void RenderCommandList::clearAllCommands()
 	{
-		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
-
 		commands_alloc.clear();
 		parameters_alloc.clear();
 		commands.clear();
@@ -21,14 +20,11 @@ namespace pathos {
 
 	void RenderCommandList::executeAllCommands()
 	{
-		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
-
 #if ASSERT_GL_NO_ERROR
 		glGetError();
 #endif
 		uint32 n = (uint32)commands.size();
-		for(uint32 i = 0; i < n; ++i)
-		{
+		for (uint32 i = 0; i < n; ++i) {
 			debugCurrentCommandIx = i;
 			commands[i]->pfn_execute(commands[i]);
 		}
@@ -39,6 +35,8 @@ namespace pathos {
 
 	void RenderCommandList::flushAllCommands()
 	{
+		std::lock_guard<std::mutex> lockGuard(commandListLock);
+
 		++flushDepth;
 		if (flushDepth == 1) {
 			executeAllCommands();
@@ -51,7 +49,10 @@ namespace pathos {
 
 	void RenderCommandList::registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes)
 	{
-		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
+		std::lock_guard<std::mutex> lockGuard(commandListLock);
+
+		// #todo-renderthread: Needs rework if multiple non-render threads use the deferred command list.
+		// For now, it will be OK as only the main thread use it.
 
 		RenderCommand_registerHook* __restrict packet = (RenderCommand_registerHook*)getNextPacket();
 		memset(packet, 0, sizeof(RenderCommandPacketUnion));
@@ -62,8 +63,6 @@ namespace pathos {
 
 	RenderCommandBase* RenderCommandList::getNextPacket()
 	{
-		std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
-
 		RenderCommandBase* packet = (RenderCommandBase*)commands_alloc.alloc(sizeof(RenderCommandPacketUnion));
 		CHECKF(packet != nullptr, "Not enough memory for render command list");
 		commands.push_back(packet);

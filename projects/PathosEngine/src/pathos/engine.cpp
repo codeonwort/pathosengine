@@ -111,17 +111,19 @@ namespace pathos {
 		BailIfFalse( initializeAssetStreamer()                 );
 		BailIfFalse( renderThread->initializeOpenGL()          );
 		renderThread->run();
+		TEMP_FLUSH_RENDER_COMMAND();
 		BailIfFalse( initializeImageLibrary()                  );
 		BailIfFalse( initializeFontSystem()                    );
 		BailIfFalse( renderThread->initializeOverlayRenderer() );
 		BailIfFalse( initializeConsole()                       );
 		BailIfFalse( renderThread->initializeRenderer()        );
+		TEMP_FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
 
 		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) -> void {
 			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
 			for (Engine::GlobalRenderRoutine routine : initRoutines) {
-				routine(gRenderDevice);
+				routine(gRenderDevice, cmdList);
 			}
 		});
 		FLUSH_RENDER_COMMAND();
@@ -218,8 +220,8 @@ namespace pathos {
 				LOG(LogError, "[ERROR] Failed to initialize font manager");
 				return;
 			}
-			FontManager::get().registerFont("default", "resources/fonts/consola.ttf", 28);
-			FontManager::get().registerFont("hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
+			FontManager::get().registerFont(cmdList, "default", "resources/fonts/consola.ttf", 28);
+			FontManager::get().registerFont(cmdList, "hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
 			LOG(LogInfo, "Initialize font subsystem");
 		});
 		return true;

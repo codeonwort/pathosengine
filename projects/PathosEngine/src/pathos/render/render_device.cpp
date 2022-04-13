@@ -54,8 +54,8 @@ namespace pathos {
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
 		CHECK(isInMainThread());
 
-		gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void {
-			lambda(gRenderDevice->getImmediateCommandList());
+		gRenderDevice->getDeferredCommandList().registerHook([lambda](void* param) -> void {
+			lambda(gRenderDevice->getDeferredCommandList());
 		}, nullptr, 0);
 	}
 
@@ -68,7 +68,7 @@ namespace pathos {
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
 			flushCondVar.notify_all();
 			alreadyFlushed = true;
 		}, nullptr, 0);
@@ -87,7 +87,7 @@ namespace pathos {
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getImmediateCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
 			flushCondVar.notify_all();
 			alreadyFlushed = true;
 		}, nullptr, 0);
@@ -100,8 +100,9 @@ namespace pathos {
 	OpenGLDevice::OpenGLDevice()
 	{
 		CHECKF(gRenderDevice == nullptr, "Render device already exists");
-
 		gRenderDevice = this;
+
+		::memset(&extensionSupport, 0, sizeof(extensionSupport));
 	}
 
 	OpenGLDevice::~OpenGLDevice()
@@ -122,7 +123,8 @@ namespace pathos {
 		checkExtensions();
 
 		// Create immediate command list
-		immediate_command_list = std::make_unique<RenderCommandList>();
+		immediate_command_list = std::make_unique<RenderCommandList>("immediate");
+		deferred_command_list = std::make_unique<RenderCommandList>("deferred");
 
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);

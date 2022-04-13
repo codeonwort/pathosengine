@@ -27,8 +27,9 @@ namespace pathos {
 		};
 		
 	public:
-		RenderCommandList(uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY, uint32 parametersAllocBytes = COMMAND_PARAMETERS_MAX_MEMORY)
-			: commands_alloc(StackAllocator(commandAllocBytes))
+		RenderCommandList(const char* inDebugName, uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY, uint32 parametersAllocBytes = COMMAND_PARAMETERS_MAX_MEMORY)
+			: debugName(inDebugName)
+			, commands_alloc(StackAllocator(commandAllocBytes))
 			, parameters_alloc(StackAllocator(parametersAllocBytes))
 			, sceneProxy(nullptr)
 			, sceneRenderTargets(nullptr)
@@ -50,11 +51,14 @@ namespace pathos {
 		// For subsequent works related to GL calls that have return values
 		void registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes);
 
+		inline bool isEmpty() const { return commands.size() == 0; }
+
 		// Should be assigned by renderer before rendering anything of current frame
 		class SceneProxy* sceneProxy;
 		struct SceneRenderTargets* sceneRenderTargets;
 
 		uint32 debugCurrentCommandIx = 0;
+		const char* debugName;
 
 	private:
 		RenderCommandBase* getNextPacket();
@@ -62,8 +66,6 @@ namespace pathos {
 		template<typename T>
 		T* storeParameter(uint64 bytes, T* data)
 		{
-			std::lock_guard<std::recursive_mutex> commandListLock(commandListMutex);
-
 			CHECK(bytes <= 0xffffffff); // Well, who would do this?
 			T* mem = (T*)parameters_alloc.alloc((uint32)bytes);
 			CHECK(mem != nullptr);
@@ -73,8 +75,8 @@ namespace pathos {
 
 		StackAllocator commands_alloc;
 		StackAllocator parameters_alloc; // non-singular parameters should be mem-copied to this allocator, as source data could be a local variable
-		std::recursive_mutex commandListMutex;
-
+		
+		std::mutex commandListLock;
 		std::vector<RenderCommandBase*> commands;
 		uint32 flushDepth = 0;
 

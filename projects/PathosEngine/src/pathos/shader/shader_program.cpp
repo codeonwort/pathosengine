@@ -19,7 +19,7 @@ namespace pathos {
 			Engine::internal_registerGlobalRenderRoutine(InitRecompileShaders::recompileShaders, nullptr);
 		}
 		// Dirty but works anyway
-		static void recompileShaders(OpenGLDevice* device) {
+		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
 			gEngine->registerExec("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
 				ShaderDB::get().forEach([](ShaderProgram* program) -> void {

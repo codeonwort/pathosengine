@@ -39,7 +39,10 @@ namespace pathos {
 		bool initialize();
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
+		// #todo-renderthread-fatal: Render hooks should not able to access this.
+		// How to prevent using gRenderDevice->getImmediateCommandList() by mistake?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
+		__forceinline RenderCommandList& getDeferredCommandList() const { return *deferred_command_list.get(); }
 
 		// API for GPU resource creation and deletion (not queued in command list)
 	public:
@@ -72,7 +75,8 @@ namespace pathos {
 		void checkExtensions();
 
 		OpenGLExtensionSupport             extensionSupport;
-		std::unique_ptr<RenderCommandList> immediate_command_list;
+		std::unique_ptr<RenderCommandList> immediate_command_list; // For render thread itself
+		std::unique_ptr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 
 	};
 

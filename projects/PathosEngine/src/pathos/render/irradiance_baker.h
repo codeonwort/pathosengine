@@ -19,10 +19,10 @@ namespace pathos {
 		// Default BRDF integration map of 512 size
 		static GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
 
-		static GLuint bakeBRDFIntegrationMap_renderThread(uint32 size);
+		static GLuint bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList);
 
-		static void internal_createIrradianceBakerResources(class OpenGLDevice* renderDevice);
-		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice);
+		static void internal_createIrradianceBakerResources(class OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
 		static GLuint equirectangularToCubemap;

@@ -44,11 +44,9 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS, PASTransmittanceFS);
 	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS, AtmosphericScatteringFS);
 
-	void init_precomputeTransmittance(OpenGLDevice* device) {
+	void init_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
 		GLuint& lut = gTransmittanceLUT;
 		GLuint fbo;
-
-		RenderCommandList& cmdList = device->getImmediateCommandList();
 
 		device->createTextures(GL_TEXTURE_2D, 1, &lut);
 		device->objectLabel(GL_TEXTURE, lut, -1, "LUT_Transmittance");
@@ -79,7 +77,7 @@ namespace pathos {
 
 		LOG(LogDebug, "Generate transmittance LUT (%s)", "LUT_Transmittance");
 	}
-	void destroy_precomputeTransmittance(OpenGLDevice* device) {
+	void destroy_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
 		gRenderDevice->deleteTextures(1, &gTransmittanceLUT);
 		gTransmittanceLUT = 0;
 	}

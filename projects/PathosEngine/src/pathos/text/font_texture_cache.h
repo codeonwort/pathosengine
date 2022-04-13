@@ -57,7 +57,7 @@ namespace pathos {
 		//GLuint getCacheTexture() const; // could be a texture2d array
 
 		// #todo-text: Remove filename and pixelSize parameters
-		bool init(const char* filename, uint32 pixelSize);
+		bool init(RenderCommandList& cmdList, const char* filename, uint32 pixelSize);
 		void term();
 
 		void startGetGlyph(RenderCommandList& cmdList);

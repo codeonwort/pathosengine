@@ -60,7 +60,7 @@ namespace pathos {
 		friend class RenderThread;
 
 		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
-		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice)>;
+		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice, RenderCommandList& cmdList)>;
 
 	// Static members
 	public:
