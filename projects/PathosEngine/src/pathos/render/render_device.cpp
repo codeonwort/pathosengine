@@ -51,15 +51,22 @@ namespace pathos {
 
 	OpenGLDevice* gRenderDevice = nullptr;
 
-	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda) {
-		CHECK(isInMainThread());
+	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
+		//CHECK(isInMainThread());
 
-		gRenderDevice->getDeferredCommandList().registerHook([lambda](void* param) -> void {
-			lambda(gRenderDevice->getDeferredCommandList());
-		}, nullptr, 0);
+		if (isInRenderThread()) {
+			//lambda(gRenderDevice->getImmediateCommandList());
+			lambda(gRenderDevice->getHookCommandList());
+			gRenderDevice->getHookCommandList().flushAllCommands();
+		} else {
+			gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void {
+				lambda(gRenderDevice->getHookCommandList());
+				gRenderDevice->getHookCommandList().flushAllCommands();
+			}, nullptr, 0);
+		}
 	}
 
-	void FLUSH_RENDER_COMMAND() {
+	void FLUSH_RENDER_COMMAND(bool waitForGPU) {
 		CHECK(isInMainThread());
 
 		std::mutex flushMutex;
@@ -68,9 +75,12 @@ namespace pathos {
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
-			flushCondVar.notify_all();
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](void* param) -> void {
+			if (waitForGPU) {
+				glFinish();
+			}
 			alreadyFlushed = true;
+			flushCondVar.notify_all();
 		}, nullptr, 0);
 
 		if (!alreadyFlushed) {
@@ -78,18 +88,21 @@ namespace pathos {
 		}
 	}
 
-	void TEMP_FLUSH_RENDER_COMMAND() {
+	void TEMP_FLUSH_RENDER_COMMAND(bool waitForGPU) {
 		CHECK(isInMainThread());
-		
+
 		std::mutex flushMutex;
 		std::condition_variable flushCondVar;
 		std::unique_lock<std::mutex> cvLock(flushMutex);
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed](void* param) -> void {
-			flushCondVar.notify_all();
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](void* param) -> void {
+			if (waitForGPU) {
+				glFinish();
+			}
 			alreadyFlushed = true;
+			flushCondVar.notify_all();
 		}, nullptr, 0);
 
 		if (!alreadyFlushed) {
@@ -125,6 +138,7 @@ namespace pathos {
 		// Create immediate command list
 		immediate_command_list = std::make_unique<RenderCommandList>("immediate");
 		deferred_command_list = std::make_unique<RenderCommandList>("deferred");
+		hook_command_list = std::make_unique<RenderCommandList>("hook");
 
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);

@@ -28,14 +28,41 @@ namespace pathos {
 		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
 		cpuProfiler.registerCurrentThread("render thread");
 
+		// Initialize
+		{
+			SCOPED_TAKE_GL_CONTEXT();
+
+			renderThread->initializeOpenGL();
+
+			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
+			gEngine->initializeFontSystem(cmdList);
+			renderThread->initializeOverlayRenderer();
+			gEngine->initializeConsole();
+			renderThread->initializeRenderer(cmdList);
+
+			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
+			for (Engine::GlobalRenderRoutine routine : initRoutines) {
+				routine(gRenderDevice, cmdList);
+			}
+
+			// Notify end of initialization
+			glFinish(); // #todo-renderthread-fatal: glFinish to empty GPU works and safely detach the GL context from Main Thread.
+			renderThread->bInitialized = true;
+			renderThread->initCondVar.notify_all();
+		}
+
 		// Without this, calling FLUSH_RENDER_COMMAND() before the main loop causes deadlock.
 		while (!renderThread->mainLoopStarted) {
 			SCOPED_TAKE_GL_CONTEXT();
+
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 			immediateContext.flushAllCommands();
 
 			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 			deferredContext.flushAllCommands();
+
+			glFinish();
 		}
 
 		while (renderThread->pendingKill == false) {
@@ -49,6 +76,7 @@ namespace pathos {
 			// Wait until the game thread launches the render thread.
 			//
 			// #todo-renderthread-fatal: deadlock if main thread waits for render thread!!!
+			// Anyway to assert if it happens?
 			std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
 			renderThread->loopCondVar.wait(cvLock);
 
@@ -96,8 +124,7 @@ namespace pathos {
 			deferredContext.flushAllCommands();
 
 			// Renderer will add more immediate commands
-			// #todo-renderthread-fatal: Crashes at checkFramebufferStatus()
-			if (false && renderer && sceneProxy)
+			if (renderer && sceneProxy)
 			{
 				SCOPED_CPU_COUNTER(ExecuteRenderer);
 				renderer->render(immediateContext, sceneProxy, &sceneProxy->camera);
@@ -181,7 +208,7 @@ namespace pathos {
 		, gpuTimerQuery(0)
 		, elapsed_gpu(0.0f)
 	{
-		// #todo-renderthread: Set thread id and name (STL? Win32?)
+		// Thread id and name are set in the thread entry point (renderThreadMain()).
 	}
 
 	RenderThread::~RenderThread() {
@@ -190,13 +217,6 @@ namespace pathos {
 	void RenderThread::run() {
 		nativeThread = std::thread(renderThreadMain, this);
 	}
-
-	//void RenderThread::waitForInitialization() {
-	//	if (!initialized) {
-	//		std::unique_lock<std::mutex> cvLock(initMutex);
-	//		initCondVar.wait(cvLock);
-	//	}
-	//}
 
 	void RenderThread::beginFrame(uint32 frameNumber) {
 		currentFrame = frameNumber;
@@ -242,8 +262,6 @@ namespace pathos {
 	}
 
 	bool RenderThread::initializeOpenGL() {
-		SCOPED_TAKE_GL_CONTEXT();
-
 		render_device = new OpenGLDevice;
 		bool validDevice = render_device->initialize();
 		
@@ -289,52 +307,52 @@ namespace pathos {
 
 		ScopedGpuCounter::initializeQueryObjectPool();
 
-		// #todo-renderthread-fatal: glFinish to empty GPU works and safely detach the GL context from Main Thread.
-		glFinish();
-
 		return validDevice;
 	}
 
 	bool RenderThread::initializeOverlayRenderer() {
-		auto This = this;
-		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
-			This->renderer2D = new OverlayRenderer;
+		renderer2D = new OverlayRenderer;
 
-			This->debugOverlay = new DebugOverlay(This->renderer2D);
-			This->debugOverlay->initialize();
-		});
-		FLUSH_RENDER_COMMAND();
+		debugOverlay = new DebugOverlay(renderer2D);
+		debugOverlay->initialize();
+
 		return true;
 	}
 
-	bool RenderThread::initializeRenderer() {
-		auto This = this;
-		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
-			const auto& conf = gEngine->getConfig();
-			switch (conf.rendererType) {
-			case ERendererType::Forward:
-				LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-				This->renderer = new DeferredRenderer;
-				break;
+	bool RenderThread::initializeRenderer(RenderCommandList& cmdList) {
+		const auto& conf = gEngine->getConfig();
+		switch (conf.rendererType) {
+		case ERendererType::Forward:
+			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
+			renderer = new DeferredRenderer;
+			break;
 
-			case ERendererType::Deferred:
-				This->renderer = new DeferredRenderer;
-				break;
-			}
+		case ERendererType::Deferred:
+			renderer = new DeferredRenderer;
+			break;
+		}
 
-			if (This->renderer) {
-				SceneRenderSettings settings;
-				{
-					settings.sceneWidth = conf.windowWidth;
-					settings.sceneHeight = conf.windowHeight;
-					settings.enablePostProcess = true;
-				}
-				This->renderer->setSceneRenderSettings(settings);
-				This->renderer->initializeResources(cmdList);
+		if (renderer) {
+			SceneRenderSettings settings;
+			{
+				settings.sceneWidth = conf.windowWidth;
+				settings.sceneHeight = conf.windowHeight;
+				settings.enablePostProcess = true;
 			}
-		});
-		FLUSH_RENDER_COMMAND();
+			renderer->setSceneRenderSettings(settings);
+			renderer->initializeResources(cmdList);
+		}
+
+		LOG(LogInfo, "Initialize scene renderer");
 		return true;
+	}
+
+	// Wait for initialization of OpenGL and rendering-related subsystems.
+	void RenderThread::waitForInitialization() {
+		if (!bInitialized) {
+			std::unique_lock<std::mutex> cvLock(initMutex);
+			initCondVar.wait(cvLock);
+		}
 	}
 
 }

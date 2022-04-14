@@ -39,10 +39,12 @@ namespace pathos {
 		bool initialize();
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
-		// #todo-renderthread-fatal: Render hooks should not able to access this.
-		// How to prevent using gRenderDevice->getImmediateCommandList() by mistake?
+		// #todo-renderthread-fatal: I messed it up :/ Can I unify it?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		__forceinline RenderCommandList& getDeferredCommandList() const { return *deferred_command_list.get(); }
+		// Due to hooks appending commands at the rears of immediate/deferred and messing up command order,
+		// we pass a dedicated list to the current hook and immediately flush it. Dirty but at least does not fuck up the order.
+		__forceinline RenderCommandList& getHookCommandList() const { return *hook_command_list.get(); }
 
 		// API for GPU resource creation and deletion (not queued in command list)
 	public:
@@ -77,6 +79,7 @@ namespace pathos {
 		OpenGLExtensionSupport             extensionSupport;
 		std::unique_ptr<RenderCommandList> immediate_command_list; // For render thread itself
 		std::unique_ptr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
+		std::unique_ptr<RenderCommandList> hook_command_list;
 
 	};
 
@@ -91,9 +94,9 @@ namespace pathos {
 
 	// Block the game thread until all render commands so far are finished.
 	// CAUTION: Use only if must. Never use inside of game tick.
-	void FLUSH_RENDER_COMMAND();
+	void FLUSH_RENDER_COMMAND(bool waitForGPU = false);
 
 	// #todo-renderthread: Flushes by this might be not needed after multithreading is properly implemented.
-	void TEMP_FLUSH_RENDER_COMMAND();
+	void TEMP_FLUSH_RENDER_COMMAND(bool waitForGPU = false);
 
 }

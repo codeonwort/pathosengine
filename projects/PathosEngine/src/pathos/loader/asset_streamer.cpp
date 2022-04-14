@@ -85,6 +85,8 @@ namespace pathos {
 		loadedOBJs.clear();
 		mutex_loadedOBJs.unlock();
 
+		// #todo-renderthread-fatal: Now this is called in a real render thread,
+		// but callbacks try to do TEMP_FLUSH_RENDER_COMMAND() and boom.
 		for (AssetLoadInfoBase_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
 			assetInfo->invokeHandler();
 		}

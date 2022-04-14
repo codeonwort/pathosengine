@@ -19,7 +19,6 @@ namespace pathos {
 	class OverlayRenderer;
 	class DebugOverlay;
 
-	// #todo-renderthread: Designed only render thread in mind, but might be re-implemented with generalized Thread.
 	class RenderThread final : public Noncopyable {
 		static void renderThreadMain(RenderThread* renderThread);
 
@@ -29,9 +28,6 @@ namespace pathos {
 
 		// Launches the render thread.
 		void run();
-
-		// Call this before any rendering operations occur outside of the render thread.
-		//void waitForInitialization();
 
 		void beginFrame(uint32 frameNumber);
 		void endFrame(uint32 frameNumber);
@@ -51,11 +47,13 @@ namespace pathos {
 		void pushSceneProxy(SceneProxy* inSceneProxy);
 
 	// #todo-renderthread-fatal: Called by the main thread due to initialization order.
-	public:
+	private:
 		bool                       initializeOpenGL();
 		bool                       initializeOverlayRenderer();
-		bool                       initializeRenderer();
+		bool                       initializeRenderer(RenderCommandList& cmdList);
+	public:
 		inline void                markMainLoopStarted() { mainLoopStarted = true; }
+		void                       waitForInitialization();
 
 	// Render thread
 	private:
@@ -71,9 +69,9 @@ namespace pathos {
 		std::condition_variable    endFrameCondVar;
 		std::atomic<bool>          endFrameMarker;
 
-		//std::atomic<bool>          initialized;
-		//std::mutex                 initMutex;
-		//std::condition_variable    initCondVar;
+		std::atomic<bool>          bInitialized;
+		std::mutex                 initMutex;
+		std::condition_variable    initCondVar;
 
 		OpenGLDevice*              render_device;
 		Renderer*                  renderer;

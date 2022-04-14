@@ -179,7 +179,7 @@ void World_RC1::setupSky()
 
 	// diffuse irradiance
 	GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-	// #todo-renderthread
+	// #todo-renderthread-fatal
 	//glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 	scene.irradianceMap = irradianceMap;
 
@@ -187,7 +187,7 @@ void World_RC1::setupSky()
 	GLuint prefilteredEnvMap;
 	uint32 mipLevels;
 	IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-	// #todo-renderthread
+	// #todo-renderthread-fatal
 	//glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 	scene.prefilterEnvMap = prefilteredEnvMap;
@@ -200,7 +200,7 @@ void World_RC1::setupSky()
 	// Volumetric cloud
 	{
 		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false);
-		// #todo-renderthread
+		// #todo-renderthread-fatal
 		//glObjectLabel(GL_TEXTURE, weatherTexture, -1, "Texture: WeatherMap");
 		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
 		{

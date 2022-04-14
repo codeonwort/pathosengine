@@ -71,13 +71,13 @@ void World1::setupSky()
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
-		// #todo-renderthread
+		// #todo-renderthread-fatal
 		//glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
 
 		// diffuse irradiance
 		{
 			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-			// #todo-renderthread
+			// #todo-renderthread-fatal
 			//glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
 			scene.irradianceMap = irradianceMap;
 		}
@@ -87,7 +87,7 @@ void World1::setupSky()
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-			// #todo-renderthread
+			// #todo-renderthread-fatal
 			//glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.prefilterEnvMap = prefilteredEnvMap;
@@ -282,7 +282,7 @@ void World1::setupScene()
 	}
 
 	static Actor* sceneCaptureActor = nullptr;
-#if 0 // #todo-renderthread-fatal
+#if 0 // #todo-renderthread-fatal: Fix scene capture
 	if (sceneCaptureActor == nullptr) {
 		sceneCaptureActor = spawnActor<Actor>();
 		sceneCaptureComponent = new SceneCaptureComponent;

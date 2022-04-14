@@ -29,7 +29,7 @@ namespace pathos {
 			//bufferSize = (sizeof(T) + 255) & ~255;
 			bufferSize = sizeof(T);
 			gRenderDevice->createBuffers(1, &ubo);
-			// #todo-renderthread
+			// #todo-renderthread-fatal: UniformBuffer
 			if (isInRenderThread()) {
 				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 				cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);

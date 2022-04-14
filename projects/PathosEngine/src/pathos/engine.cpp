@@ -107,26 +107,15 @@ namespace pathos {
 		// Many pesky reasons for this order :/
 #define BailIfFalse(x) if(!(x)) { return false; }
 		BailIfFalse( initializeMainWindow(argc, argv)          );
+		// Subsystems that does not depend on the render thread.
 		BailIfFalse( initializeInput()                         );
 		BailIfFalse( initializeAssetStreamer()                 );
-		BailIfFalse( renderThread->initializeOpenGL()          );
-		renderThread->run();
-		TEMP_FLUSH_RENDER_COMMAND();
 		BailIfFalse( initializeImageLibrary()                  );
-		BailIfFalse( initializeFontSystem()                    );
-		BailIfFalse( renderThread->initializeOverlayRenderer() );
-		BailIfFalse( initializeConsole()                       );
-		BailIfFalse( renderThread->initializeRenderer()        );
+		// Launch the render thread and initialize remaining subsystems that require GL context.
+		renderThread->run();
+		renderThread->waitForInitialization();
 		TEMP_FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
-
-		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) -> void {
-			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
-			for (Engine::GlobalRenderRoutine routine : initRoutines) {
-				routine(gRenderDevice, cmdList);
-			}
-		});
-		FLUSH_RENDER_COMMAND();
 
 		readConfigFile();
 
@@ -135,7 +124,7 @@ namespace pathos {
 			gEngine->dumpGPUProfile();
 		});
 		registerExec("stat", [](const std::string& command) {
-			// #todo-renderthread
+			// #todo-renderthread-fatal
 			//gEngine->debugOverlay->toggleFrameStat();
 		});
 
@@ -213,17 +202,16 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeFontSystem()
+	bool Engine::initializeFontSystem(RenderCommandList& cmdList)
 	{
-		ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
-			if (FontManager::get().init() == false) {
-				LOG(LogError, "[ERROR] Failed to initialize font manager");
-				return;
-			}
-			FontManager::get().registerFont(cmdList, "default", "resources/fonts/consola.ttf", 28);
-			FontManager::get().registerFont(cmdList, "hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
-			LOG(LogInfo, "Initialize font subsystem");
-		});
+		if (FontManager::get().init() == false) {
+			LOG(LogError, "[ERROR] Failed to initialize font manager");
+			return false;
+		}
+		FontManager::get().registerFont(cmdList, "default", "resources/fonts/consola.ttf", 28);
+		FontManager::get().registerFont(cmdList, "hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
+		LOG(LogInfo, "Initialize font subsystem");
+
 		return true;
 	}
 

@@ -121,7 +121,7 @@ namespace pathos {
 		bool initializeAssetStreamer();
 		
 		bool initializeImageLibrary();
-		bool initializeFontSystem();
+		bool initializeFontSystem(RenderCommandList& cmdList);
 		bool initializeConsole();
 
 		bool destroyOpenGL();

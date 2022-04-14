@@ -119,8 +119,9 @@ namespace pathos {
 				cmdList.generateTextureMipmap(*texturePtr);
 			}
 		});
+
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return texture;
 	}
@@ -174,7 +175,7 @@ namespace pathos {
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return tex_id;
 	}
@@ -203,7 +204,7 @@ namespace pathos {
 	{
 		static int32 label_counter = 0;
 
-		GLuint texture;
+		GLuint texture = 0;
 
 		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, &metadata](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
@@ -222,8 +223,8 @@ namespace pathos {
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		});
-		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
+		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush GPU here.
+		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		if (deleteBlobData) {
 			stbi_image_free(metadata.data);
