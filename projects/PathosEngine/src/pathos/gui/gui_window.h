@@ -53,6 +53,8 @@ namespace pathos {
 		void startMainLoop();
 		void stopMainLoop();
 
+		void updateWindow_renderThread();
+
 		void onClose();
 		void onIdle();
 		void onDisplay();

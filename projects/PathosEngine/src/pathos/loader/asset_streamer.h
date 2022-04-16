@@ -91,7 +91,7 @@ namespace pathos {
 		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod);
 
 		// Should be called in render thread
-		void renderThread_flushLoadedAssets();
+		void flushLoadedAssets();
 
 		// #todo-asset-streamer
 		//void enqueueColladaDAE();

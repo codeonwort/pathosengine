@@ -3,6 +3,7 @@
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
 
+#include "pathos/engine.h"
 #include "pathos/util/log.h"
 #include "pathos/util/gl_context_manager.h"
 
@@ -195,6 +196,13 @@ namespace pathos {
 		LOG(LogInfo, "Stop the main loop");
 	}
 
+	void GUIWindow::updateWindow_renderThread() {
+		OpenGLContextManager::takeContext();
+		glutSwapBuffers();
+		glutPostRedisplay();
+		OpenGLContextManager::returnContext();
+	}
+
 	void GUIWindow::onClose()
 	{
 		callback_onClose();
@@ -207,12 +215,18 @@ namespace pathos {
 
 	void GUIWindow::onDisplay()
 	{
+		// #todo-renderthread-fatal: shit :/
+		//bool bNeedsUpdate = false;
+		//callback_onDisplay(bNeedsUpdate);
 		callback_onDisplay();
 		
-		OpenGLContextManager::takeContext();
-		glutSwapBuffers();
-		glutPostRedisplay();
-		OpenGLContextManager::returnContext();
+		//if (bNeedsUpdate) {
+		//	OpenGLContextManager::takeContext();
+		//	glutSwapBuffers();
+		//	glutPostRedisplay();
+		//	OpenGLContextManager::returnContext();
+		//	gEngine->resumeRenderThreadFromWaitOnGUI();
+		//}
 	}
 
 	void GUIWindow::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY)

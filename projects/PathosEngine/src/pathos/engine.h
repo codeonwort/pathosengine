@@ -83,6 +83,8 @@ namespace pathos {
 		void start();
 		void stop();
 
+		void updateMainWindow_renderThread();
+
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 
@@ -124,8 +126,6 @@ namespace pathos {
 		bool initializeFontSystem(RenderCommandList& cmdList);
 		bool initializeConsole();
 
-		bool destroyOpenGL();
-
 		void readConfigFile();
 
 		// GUI event listeners //
@@ -142,7 +142,6 @@ namespace pathos {
 
 	private:
 		void tick();
-		//void render();
 
 	// Game thread
 	private:

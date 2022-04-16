@@ -138,10 +138,7 @@ namespace pathos {
 		LOG(LogInfo, "");
 		LOG(LogInfo, "=== Destroy PATHOS ===");
 
-		// #todo: Destroy other subsystems, but it's meaningless unless GLUT is dealt with.
-#define BailIfFalse(x) if(!(x)) { return false; }
-		BailIfFalse(destroyOpenGL());
-#undef BailIfFalse
+		// #todo: Destroy subsystems managed on main thread.
 
 		LOG(LogInfo, "=== PATHOS has been destroyed ===");
 		LOG(LogInfo, "");
@@ -248,10 +245,8 @@ namespace pathos {
 		CHECKF(engineDestroyed, "Failed to destroy the engine properly !!!");
 	}
 
-	bool Engine::destroyOpenGL() {
-		ScopedGpuCounter::destroyQueryObjectPool();
-
-		return true;
+	void Engine::updateMainWindow_renderThread() {
+		mainWindow->updateWindow_renderThread();
 	}
 
 	// Read config line by line and add to the console window.
@@ -360,6 +355,11 @@ namespace pathos {
 			// Process input
 			//
 			inputSystem->tick();
+
+			{
+				SCOPED_CPU_COUNTER(FlushLoadedAssets);
+				gEngine->getAssetStreamer()->flushLoadedAssets();
+			}
 
 			//
 			// Game tick

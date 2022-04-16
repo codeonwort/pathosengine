@@ -1,6 +1,9 @@
 #include "asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/cpu_profiler.h"
+#include "pathos/thread/engine_thread.h"
+
+#include "badger/assertion/assertion.h"
 #include <sstream>
 
 namespace pathos {
@@ -75,8 +78,10 @@ namespace pathos {
 		threadPool.AddWorkSafe(work);
 	}
 
-	void AssetStreamer::renderThread_flushLoadedAssets()
+	// #todo-renderthread: To execute or not to execute this on the render thread?
+	void AssetStreamer::flushLoadedAssets()
 	{
+		CHECK(!isInRenderThread());
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> tempLoadedOBJs;
 
 		// Handlers can take long time, so clone the array and release the mutex
@@ -85,8 +90,6 @@ namespace pathos {
 		loadedOBJs.clear();
 		mutex_loadedOBJs.unlock();
 
-		// #todo-renderthread-fatal: Now this is called in a real render thread,
-		// but callbacks try to do TEMP_FLUSH_RENDER_COMMAND() and boom.
 		for (AssetLoadInfoBase_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
 			assetInfo->invokeHandler();
 		}

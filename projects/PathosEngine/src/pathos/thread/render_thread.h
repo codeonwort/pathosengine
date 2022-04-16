@@ -51,6 +51,8 @@ namespace pathos {
 		bool                       initializeOpenGL();
 		bool                       initializeOverlayRenderer();
 		bool                       initializeRenderer(RenderCommandList& cmdList);
+
+		bool                       destroyOpenGL();
 	public:
 		inline void                markMainLoopStarted() { mainLoopStarted = true; }
 		void                       waitForInitialization();
@@ -62,12 +64,9 @@ namespace pathos {
 		std::thread                nativeThread;
 		std::mutex                 loopMutex;
 		std::condition_variable    loopCondVar;
-		std::atomic<bool>          pendingKill;
+		std::atomic<bool>          bPendingKill;
 
 		std::atomic<bool>          mainLoopStarted;
-		std::mutex                 endFrameMutex;
-		std::condition_variable    endFrameCondVar;
-		std::atomic<bool>          endFrameMarker;
 
 		std::atomic<bool>          bInitialized;
 		std::mutex                 initMutex;

@@ -60,11 +60,11 @@ namespace pathos {
 			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
 		} else {
 			RenderCommandList& cmdList = gRenderDevice->getDeferredCommandList();
-			//ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
+			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
 				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
-			//});
+			});
 			// 'data' could be volatile, so flush here
-			TEMP_FLUSH_RENDER_COMMAND();
+			TEMP_FLUSH_RENDER_COMMAND(true);
 		}
 #endif
 	}
@@ -76,6 +76,7 @@ namespace pathos {
 		if (isInRenderThread()) {
 			gRenderDevice->createBuffers(1, &buffer);
 			gRenderDevice->objectLabel(GL_BUFFER, buffer, -1, debugName);
+			CHECK(buffer != 0);
 		} else {
 			std::string debugNameStr(debugName);
 			ENQUEUE_RENDER_COMMAND([bufferPtr = &buffer, debugNameStr](RenderCommandList& cmdList) {
@@ -83,7 +84,8 @@ namespace pathos {
 				gRenderDevice->objectLabel(GL_BUFFER, *bufferPtr, -1, debugNameStr.c_str());
 			});
 			// 'data' could be volatile, so flush here
-			TEMP_FLUSH_RENDER_COMMAND();
+			TEMP_FLUSH_RENDER_COMMAND(true);
+			CHECK(buffer != 0);
 		}
 		return buffer;
 	}

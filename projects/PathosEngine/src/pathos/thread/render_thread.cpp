@@ -52,6 +52,7 @@ namespace pathos {
 			renderThread->initCondVar.notify_all();
 		}
 
+		// #todo-renderthread-fatal: Maybe not needed anymore as I removed begin/end locks from the render thread main loop?
 		// Without this, calling FLUSH_RENDER_COMMAND() before the main loop causes deadlock.
 		while (!renderThread->mainLoopStarted) {
 			SCOPED_TAKE_GL_CONTEXT();
@@ -65,7 +66,7 @@ namespace pathos {
 			glFinish();
 		}
 
-		while (renderThread->pendingKill == false) {
+		while (renderThread->bPendingKill == false) {
 			// 1. Main thread inform the render thread to render frame N.
 			// 2. Main thread do game tick for frame (N+1).
 			// 3. Main thread create render proxies for frame (N+1).
@@ -73,21 +74,13 @@ namespace pathos {
 			// 5. Flip the backbuffer and go to the next frame.
 
 			//
-			// Wait until the game thread launches the render thread.
-			//
-			// #todo-renderthread-fatal: deadlock if main thread waits for render thread!!!
-			// Anyway to assert if it happens?
-			std::unique_lock<std::mutex> cvLock(renderThread->loopMutex);
-			renderThread->loopCondVar.wait(cvLock);
-
-			//
 			// Start a frame!
 			//
 			OpenGLContextManager::takeContext();
-			renderThread->endFrameMarker = false;
+			bool bNewSceneRendered = false;
 
 			SceneProxy* sceneProxy = renderThread->popSceneProxy();
-			Renderer* renderer = renderThread->renderer;;
+			Renderer* renderer = renderThread->renderer;
 			OverlayRenderer* renderer2D = renderThread->renderer2D;
 			DebugOverlay* debugOverlay = renderThread->debugOverlay;
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
@@ -99,13 +92,9 @@ namespace pathos {
 
 			SCOPED_CPU_COUNTER(EngineRender);
 
-			{
-				SCOPED_CPU_COUNTER(FlushLoadedAssets);
-				gEngine->getAssetStreamer()->renderThread_flushLoadedAssets();
-			}
-
 			// #todo-renderthread-fatal: How to do updateDynamicData_renderThread()
 			{
+				// Hold ref. to actor component in scene proxy, call updateDynamicData_renderThread() for the component?
 				//currentWorld->getScene().updateDynamicData_renderThread(immediateContext);
 			}
 
@@ -119,7 +108,6 @@ namespace pathos {
 				renderer->setSceneRenderSettings(settings);
 			}
 
-			// #todo-cmd-list: deferred command lists here
 			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 			deferredContext.flushAllCommands();
 
@@ -142,6 +130,7 @@ namespace pathos {
 					immediateContext.flushAllCommands();
 				}
 #endif
+				bNewSceneRendered = true;
 			}
 
 #if !FIXME_OVERLAY_RENDERING
@@ -159,6 +148,7 @@ namespace pathos {
 			immediateContext.endQuery(GL_TIME_ELAPSED);
 			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
 			immediateContext.flushAllCommands();
+			deferredContext.flushAllCommands();
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
 			// Get GPU profile
@@ -177,9 +167,12 @@ namespace pathos {
 			//
 			// End a frame
 			//
+			glFinish();
 			OpenGLContextManager::returnContext();
-			renderThread->endFrameCondVar.notify_all();
-			renderThread->endFrameMarker = true;
+			// Wait here and let GUI to take GL context and swap buffers.
+			if (bNewSceneRendered) {
+				gEngine->updateMainWindow_renderThread();
+			}
 		}
 
 		// Cleanup thread main
@@ -218,16 +211,16 @@ namespace pathos {
 		nativeThread = std::thread(renderThreadMain, this);
 	}
 
+	// #todo-renderthread: Was used for frame sync, but does nothing now.
 	void RenderThread::beginFrame(uint32 frameNumber) {
 		currentFrame = frameNumber;
-		loopCondVar.notify_all();
 	}
 
+	// #todo-renderthread: Was used for frame sync, but does nothing now.
 	void RenderThread::endFrame(uint32 frameNumber) {
 		CHECKF(currentFrame == frameNumber, "Frame number does not match!!!");
-		if (!pendingKill && !endFrameMarker) {
-			std::unique_lock<std::mutex> cvLock(endFrameMutex);
-			endFrameCondVar.wait(cvLock);
+		if (!bPendingKill) {
+			//
 		}
 	}
 
@@ -236,8 +229,10 @@ namespace pathos {
 			routine(gRenderDevice, gRenderDevice->getDeferredCommandList());
 		}
 
+		CHECK(destroyOpenGL());
+
 		// #todo-renderthread: Does this ensure the lock will break?
-		pendingKill = true;
+		bPendingKill = true;
 		loopCondVar.notify_all();
 	}
 	
@@ -344,6 +339,11 @@ namespace pathos {
 		}
 
 		LOG(LogInfo, "Initialize scene renderer");
+		return true;
+	}
+
+	bool RenderThread::destroyOpenGL() {
+		ScopedGpuCounter::destroyQueryObjectPool();
 		return true;
 	}
 
