@@ -26,7 +26,7 @@ namespace pathos {
 		CPU::setCurrentThreadName(L"Render Thread");
 
 		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
-		cpuProfiler.registerCurrentThread("render thread");
+		cpuProfiler.registerCurrentThread(renderThread->getThreadName().c_str());
 
 		// Initialize
 		{
@@ -163,6 +163,9 @@ namespace pathos {
 			FontManager::get().onFrameEnd();
 
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop() * 1000.0f;
+			{
+				gEngine->updateGPUQuery_renderThread(renderThread->elapsed_renderThread, renderThread->elapsed_gpu, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
+			}
 
 			//
 			// End a frame
@@ -191,7 +194,7 @@ namespace pathos {
 	RenderThread::RenderThread()
 		: nativeThread()
 		, threadID(0xffffffff)
-		, threadName("render_thread")
+		, threadName("Render Thread")
 		, render_device(nullptr)
 		, renderer(nullptr)
 		, renderer2D(nullptr)
@@ -236,6 +239,10 @@ namespace pathos {
 		loopCondVar.notify_all();
 	}
 	
+	void RenderThread::toggleFrameStat() {
+		debugOverlay->toggleFrameStat();
+	}
+
 	bool RenderThread::isSceneProxyQueueEmpty() {
 		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
 		return sceneProxyQueue.empty();

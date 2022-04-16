@@ -34,6 +34,8 @@ namespace pathos {
 
 		void terminate();
 
+		void toggleFrameStat();
+
 		inline uint32 getThreadID() const { return threadID; }
 		inline const std::string& getThreadName() const { return threadName; }
 

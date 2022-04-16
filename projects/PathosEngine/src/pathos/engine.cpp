@@ -73,7 +73,6 @@ namespace pathos {
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
 		, renderThread(nullptr)
-		, timer_query(0)
 		, elapsed_gpu(0)
 	{
 	}
@@ -124,8 +123,7 @@ namespace pathos {
 			gEngine->dumpGPUProfile();
 		});
 		registerExec("stat", [](const std::string& command) {
-			// #todo-renderthread-fatal
-			//gEngine->debugOverlay->toggleFrameStat();
+			gEngine->toggleFrameStat();
 		});
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
@@ -249,6 +247,20 @@ namespace pathos {
 		mainWindow->updateWindow_renderThread();
 	}
 
+	void Engine::updateGPUQuery_renderThread(
+		float inElapsedRenderThread,
+		float inElapsedGpu,
+		const std::vector<std::string>& inGpuCounterNames,
+		const std::vector<float>& inGpuCounterTimes)
+	{
+		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
+
+		elapsed_renderThread = inElapsedRenderThread;
+		elapsed_gpu = inElapsedGpu;
+		lastGpuCounterNames = inGpuCounterNames;
+		lastGpuCounterTimes = inGpuCounterTimes;
+	}
+
 	// Read config line by line and add to the console window.
 	void Engine::readConfigFile()
 	{
@@ -291,9 +303,15 @@ namespace pathos {
 		return false;
 	}
 
+	void Engine::toggleFrameStat() {
+		renderThread->toggleFrameStat();
+	}
+
 	// #todo-gpu-counter: Show this in debug GUI
 	void Engine::dumpGPUProfile()
 	{
+		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
+
 		std::string filepath = pathos::getSolutionDir();
 		filepath += "log/";
 		pathos::createDirectory(filepath.c_str());

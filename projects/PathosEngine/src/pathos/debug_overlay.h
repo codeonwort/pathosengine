@@ -35,9 +35,11 @@ namespace pathos {
 
 		DisplayObject2D* root;
 
-		float cpuTime;
+		float gameThreadTime;
+		float renderThreadTime;
 		float gpuTime;
-		Label* cpuTimeLabel;
+		Label* gameThreadTimeLabel;
+		Label* renderThreadTimeLabel;
 		Label* gpuTimeLabel;
 	};
 

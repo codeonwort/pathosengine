@@ -53,8 +53,11 @@ void World2::onTick(float deltaSeconds)
 	// Update window title
 	{
 		char title[256];
-		sprintf_s(title, "%s (CPU Time: %.2f ms, GPU Time: %.2f ms)",
-			gEngine->getConfig().title, gEngine->getCPUTime(), gEngine->getGPUTime());
+		sprintf_s(title, "%s (GameThread: %.2f ms, RenderThread: %.2f ms, GPU: %.2f ms)",
+			gEngine->getConfig().title,
+			gEngine->getGameThreadCPUTime(),
+			gEngine->getRenderThreadCPUTime(),
+			gEngine->getGPUTime());
 		gEngine->getMainWindow()->setTitle(title);
 	}
 }

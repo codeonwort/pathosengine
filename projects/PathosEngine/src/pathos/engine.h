@@ -84,10 +84,16 @@ namespace pathos {
 		void stop();
 
 		void updateMainWindow_renderThread();
+		void updateGPUQuery_renderThread(
+			float inElapsedRenderThread,
+			float inElapsedGpu,
+			const std::vector<std::string>& inGpuCounterNames,
+			const std::vector<float>& inGpuCounterTimes);
 
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 
+		void toggleFrameStat();
 		void dumpGPUProfile();
 
 		void setWorld(World* inWorld);
@@ -95,7 +101,8 @@ namespace pathos {
 		const EngineConfig& getConfig() const { return conf; }
 
 		inline float getWorldTime() { return stopwatch_app.stop(); }
-		inline float getCPUTime() const { return elapsed_gameThread + elapsed_renderThread; } // Currently single-threaded (in milliseconds)
+		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
+		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
 
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
@@ -151,7 +158,6 @@ namespace pathos {
 
 		uint32 frameCounter_gameThread;
 		float elapsed_gameThread;
-		float elapsed_renderThread;
 
 		World* currentWorld;
 
@@ -165,11 +171,12 @@ namespace pathos {
 	private:
 		RenderThread* renderThread;
 
-		GLuint timer_query;
 		// Render thread will fill in these
+		float elapsed_renderThread;
 		float elapsed_gpu;
 		std::vector<std::string> lastGpuCounterNames;
 		std::vector<float> lastGpuCounterTimes;
+		std::mutex gpuQueryMutex;
 
 		// System textures
 		GLuint texture2D_black = 0;

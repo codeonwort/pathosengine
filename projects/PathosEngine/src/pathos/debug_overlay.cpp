@@ -12,9 +12,11 @@ namespace pathos {
 		, showFrameStat(false)
 		, renderer(renderer2D)
 		, root(nullptr)
-		, cpuTime(0.0f)
+		, gameThreadTime(0.0f)
+		, renderThreadTime(0.0f)
 		, gpuTime(0.0f)
-		, cpuTimeLabel(nullptr)
+		, gameThreadTimeLabel(nullptr)
+		, renderThreadTimeLabel(nullptr)
 		, gpuTimeLabel(nullptr)
 	{
 	}
@@ -25,7 +27,8 @@ namespace pathos {
 
 	void DebugOverlay::initialize() {
 		root = DisplayObject2D::createRoot();
-		root->addChild(cpuTimeLabel = new Label(L"cpu: 0.0 ms"));
+		root->addChild(gameThreadTimeLabel = new Label(L"game thread: 0.0 ms"));
+		root->addChild(renderThreadTimeLabel = new Label(L"render thread: 0.0 ms"));
 		root->addChild(gpuTimeLabel = new Label(L"gpu: 0.0 ms"));
 	}
 
@@ -34,26 +37,33 @@ namespace pathos {
 			return;
 		}
 
-		cpuTimeLabel->setVisible(showFrameStat);
+		gameThreadTimeLabel->setVisible(showFrameStat);
+		renderThreadTimeLabel->setVisible(showFrameStat);
 		gpuTimeLabel->setVisible(showFrameStat);
 		if (showFrameStat) {
-			const float newCpuTime = gEngine->getCPUTime();
+			const float newGameThreadTime = gEngine->getGameThreadCPUTime();
+			const float newRenderThreadTime = gEngine->getRenderThreadCPUTime();
 			const float newGpuTime = gEngine->getGPUTime();
-			cpuTime += 0.1f * (newCpuTime - cpuTime);
+			gameThreadTime += 0.1f * (newGameThreadTime - gameThreadTime);
+			renderThreadTime += 0.1f * (newRenderThreadTime - gameThreadTime);
 			gpuTime += 0.1f * (newGpuTime - gpuTime);
 
 			wchar_t buffer[256];
-			swprintf_s(buffer, L"cpu: %.2f ms", cpuTime);
-			cpuTimeLabel->setText(buffer);
-			swprintf_s(buffer, L"gpu: %.2f ms", gpuTime);
+			swprintf_s(buffer, L"game thread   : %.2f ms", gameThreadTime);
+			gameThreadTimeLabel->setText(buffer);
+			swprintf_s(buffer, L"render thread : %.2f ms", renderThreadTime);
+			renderThreadTimeLabel->setText(buffer);
+			swprintf_s(buffer, L"gpu           : %.2f ms", gpuTime);
 			gpuTimeLabel->setText(buffer);
 			
-			const float baseX = pathos::max(0.0f, (float)screenWidth - 150.0f);
+			const float baseX = pathos::max(0.0f, (float)screenWidth - 220.0f);
 			const float baseY = pathos::min(400.0f, (float)screenHeight);
-			cpuTimeLabel->setX(baseX);
-			cpuTimeLabel->setY(baseY);
+			gameThreadTimeLabel->setX(baseX);
+			gameThreadTimeLabel->setY(baseY);
+			renderThreadTimeLabel->setX(baseX);
+			renderThreadTimeLabel->setY(baseY + 20);
 			gpuTimeLabel->setX(baseX);
-			gpuTimeLabel->setY(baseY + 20);
+			gpuTimeLabel->setY(baseY + 40);
 		}
 
 		renderer->renderOverlay(cmdList, root);
