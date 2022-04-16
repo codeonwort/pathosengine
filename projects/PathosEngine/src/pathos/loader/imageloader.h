@@ -31,12 +31,12 @@ namespace pathos {
 	// Load bitmap images for cubemap. Return value is the number of faces successfully loaded.
 	int32 loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference, std::array<FIBITMAP*,6>& outImages);
 
-	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB);
+	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB, const char* debugName = nullptr);
 	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap = true);
 
 	// Load HDR image by stb_image
 	HDRImageMetadata loadHDRImage(const char* inFilename);
-	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData = true);
+	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData = true, const char* debugName = nullptr);
 	void unloadHDRImage(const HDRImageMetadata& metadata);
 
 	// NOTE: You should call VolumeTexture::initGLResource() manually.

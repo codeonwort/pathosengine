@@ -12,9 +12,9 @@ namespace pathos {
 
 		// cubemap : a texture returned by bakeCubemap()
 		// size    : size of the cubemap that will be returned
-		static GLuint bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap);
+		static GLuint bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap, const char* debugName = nullptr);
 
-		static void bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels);
+		static void bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName = nullptr);
 
 		// Default BRDF integration map of 512 size
 		static GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }

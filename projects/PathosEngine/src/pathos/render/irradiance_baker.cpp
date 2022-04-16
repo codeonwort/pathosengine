@@ -74,18 +74,21 @@ namespace pathos {
 		return cubemap;
 	}
 
-	GLuint IrradianceBaker::bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap) {
+	GLuint IrradianceBaker::bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint irradianceMap = 0;
 
-		ENQUEUE_RENDER_COMMAND([cubemap, size, autoDestroyCubemap, irradianceMapPtr = &irradianceMap](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([cubemap, size, autoDestroyCubemap, irradianceMapPtr = &irradianceMap, debugName](RenderCommandList& cmdList) {
 			SCOPED_DRAW_EVENT(IrradianceMapFromCubemap);
 
 			GLuint fbo = IrradianceBaker::dummyFBO;
 			CubeGeometry* cube = IrradianceBaker::dummyCube;
 
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *irradianceMapPtr, -1, debugName);
+			}
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -126,13 +129,13 @@ namespace pathos {
 		return irradianceMap;
 	}
 
-	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels) {
+	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint envMap = 0;
 		uint32 maxMipLevels = pathos::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
 
-		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
 			SCOPED_DRAW_EVENT(PrefilteredEnvMap);
 
 			GLuint fbo = IrradianceBaker::dummyFBO;
@@ -141,6 +144,9 @@ namespace pathos {
 			constexpr GLint uniform_roughness = 1;
 
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *envMapPtr, -1, debugName);
+			}
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

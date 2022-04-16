@@ -34,12 +34,11 @@ namespace pathos {
 
 		void terminate();
 
-		void toggleFrameStat();
-
 		inline uint32 getThreadID() const { return threadID; }
 		inline const std::string& getThreadName() const { return threadName; }
 
 		inline OverlayRenderer* getRenderer2D() const { return renderer2D; }
+		inline DebugOverlay* getDebugOverlay() const { return debugOverlay; }
 
 		//
 		// sceneProxyQueue helper methods.

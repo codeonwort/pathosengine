@@ -239,10 +239,6 @@ namespace pathos {
 		loopCondVar.notify_all();
 	}
 	
-	void RenderThread::toggleFrameStat() {
-		debugOverlay->toggleFrameStat();
-	}
-
 	bool RenderThread::isSceneProxyQueueEmpty() {
 		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
 		return sceneProxyQueue.empty();

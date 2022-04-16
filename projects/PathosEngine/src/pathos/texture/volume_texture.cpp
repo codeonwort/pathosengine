@@ -41,14 +41,7 @@ namespace pathos {
 			return;
 		}
 
-		if (texture != 0) {
-			gRenderDevice->deleteTextures(1, &texture);
-			texture = 0;
-		}
-
 		uint8* rawBytes = FreeImage_GetBits(bitmapInfo);
-
-		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texture);
 
 		GLenum internalFormat = GL_RGBA8;
 		GLenum pixelFormat = GL_RGBA;
@@ -68,6 +61,12 @@ namespace pathos {
 		auto This = this;
 		ENQUEUE_RENDER_COMMAND(
 			[This, generateMipmaps, numLODs, internalFormat, textureWidth, textureHeight, textureDepth, pixelFormat, rawBytes](RenderCommandList& cmdList) {
+				if (This->texture != 0) {
+					gRenderDevice->deleteTextures(1, &This->texture);
+					This->texture = 0;
+				}
+				gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &This->texture);
+
 				const GLuint texture = This->texture;
 				const char* debugName = This->debugName;
 

@@ -304,7 +304,7 @@ namespace pathos {
 	}
 
 	void Engine::toggleFrameStat() {
-		renderThread->toggleFrameStat();
+		renderThread->getDebugOverlay()->toggleFrameStat();
 	}
 
 	// #todo-gpu-counter: Show this in debug GUI

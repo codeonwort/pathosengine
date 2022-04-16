@@ -86,7 +86,7 @@ namespace pathos {
 		return ret;
 	}
 
-	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
+	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB, const char* debugName /*= nullptr*/) {
 		int w, h;
 		uint8* data;
 		GLuint texture = 0;
@@ -97,8 +97,11 @@ namespace pathos {
 
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 
-		ENQUEUE_RENDER_COMMAND([dib, data, w, h, texturePtr = &texture, generateMipmap, sRGB](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([dib, data, w, h, texturePtr = &texture, generateMipmap, sRGB, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
 
 			uint32 numLODs = 1;
 			if (generateMipmap) {
@@ -200,19 +203,23 @@ namespace pathos {
 		return metadata;
 	}
 
-	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/)
+	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/, const char* debugName /*= nullptr*/)
 	{
-		static int32 label_counter = 0;
+		static int32 debugNameAutoCounter = 0;
 
 		GLuint texture = 0;
 
-		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, &metadata](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, &metadata, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 
-			char label[256];
-			sprintf_s(label, "Texture HDR %d", label_counter);
-			gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, label);
-			label_counter += 1;
+			if (debugName == nullptr) {
+				char debugNameAuto[256];
+				sprintf_s(debugNameAuto, "Texture HDR %d", debugNameAutoCounter);
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugNameAuto);
+				debugNameAutoCounter += 1;
+			} else {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
 
 			cmdList.textureStorage2D(*texturePtr, 1, GL_RGB16F, metadata.width, metadata.height);
 			cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);

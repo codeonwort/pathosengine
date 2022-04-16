@@ -69,16 +69,12 @@ void World1::setupInput()
 void World1::setupSky()
 {
 	{
-		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
+		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"), true, "Texture IBL: equirectangularMap");
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
-		// #todo-renderthread-fatal
-		//glObjectLabel(GL_TEXTURE, equirectangularMap, -1, "Texture IBL: equirectangularMap");
 
 		// diffuse irradiance
 		{
-			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false);
-			// #todo-renderthread-fatal
-			//glObjectLabel(GL_TEXTURE, irradianceMap, -1, "Texture IBL: diffuse irradiance");
+			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
 			scene.irradianceMap = irradianceMap;
 		}
 
@@ -86,9 +82,7 @@ void World1::setupSky()
 		{
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
-			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels);
-			// #todo-renderthread-fatal
-			//glObjectLabel(GL_TEXTURE, prefilteredEnvMap, -1, "Texture IBL: specular IBL (prefiltered env map)");
+			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.prefilterEnvMap = prefilteredEnvMap;
 			scene.prefilterEnvMapMipLevels = mipLevels;
