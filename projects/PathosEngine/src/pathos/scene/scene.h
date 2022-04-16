@@ -28,8 +28,6 @@ namespace pathos {
 		// Generate frame-invariant proxy data.
 		SceneProxy* createRenderProxy(uint32 frameNumber, const Camera& camera);
 
-		void updateDynamicData_renderThread(RenderCommandList& cmdList);
-
 		World* getWorld() const { return owner; }
 
 	public:

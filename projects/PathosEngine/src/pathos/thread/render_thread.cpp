@@ -92,12 +92,6 @@ namespace pathos {
 
 			SCOPED_CPU_COUNTER(EngineRender);
 
-			// #todo-renderthread-fatal: How to do updateDynamicData_renderThread()
-			{
-				// Hold ref. to actor component in scene proxy, call updateDynamicData_renderThread() for the component?
-				//currentWorld->getScene().updateDynamicData_renderThread(immediateContext);
-			}
-
 			const EngineConfig engineConfig(gEngine->getConfig());
 			if (renderer) {
 				SceneRenderSettings settings;

@@ -6,13 +6,26 @@
 #include "pathos/light/directional_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/render/render_device.h"
 
 namespace pathos {
 
 	SceneProxy* Scene::createRenderProxy(uint32 frameNumber, const Camera& camera) {
 		SceneProxy* proxy = new SceneProxy(frameNumber, camera);
 
-		for (auto& actor : getWorld()->actors) {
+		World* const world = getWorld();
+
+		ENQUEUE_RENDER_COMMAND([world](RenderCommandList& cmdList) {
+			for (auto& actor : world->actors) {
+				if (!actor->markedForDeath) {
+					for (ActorComponent* actorComponent : actor->components) {
+						actorComponent->updateDynamicData_renderThread(cmdList);
+					}
+				}
+			}
+		});
+
+		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {
 				for (ActorComponent* actorComponent : actor->components) {
 					actorComponent->createRenderProxy(proxy);
@@ -30,17 +43,6 @@ namespace pathos {
 		proxy->prefilterEnvMapMipLevels = prefilterEnvMapMipLevels;
 
 		return proxy;
-	}
-
-	void Scene::updateDynamicData_renderThread(RenderCommandList& cmdList)
-	{
-		for (auto& actor : getWorld()->actors) {
-			if (!actor->markedForDeath) {
-				for (ActorComponent* actorComponent : actor->components) {
-					actorComponent->updateDynamicData_renderThread(cmdList);
-				}
-			}
-		}
 	}
 
 }
