@@ -276,6 +276,8 @@ void World1::setupScene()
 	}
 
 	static Actor* sceneCaptureActor = nullptr;
+	// #todo-renderthread-fatal: Broken again... hook command list wanna use secondary command list, which is prohibited.
+#if 0
 	if (sceneCaptureActor == nullptr) {
 		sceneCaptureActor = spawnActor<Actor>();
 		sceneCaptureComponent = new SceneCaptureComponent;
@@ -292,6 +294,7 @@ void World1::setupScene()
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
 	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);
 	sceneCaptureViewer->setActorScale(3.0f * vector3(16.0f, 9.0f, 1.0f));
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// bloom test

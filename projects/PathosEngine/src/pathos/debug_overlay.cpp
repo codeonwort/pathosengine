@@ -45,7 +45,7 @@ namespace pathos {
 			const float newRenderThreadTime = gEngine->getRenderThreadCPUTime();
 			const float newGpuTime = gEngine->getGPUTime();
 			gameThreadTime += 0.1f * (newGameThreadTime - gameThreadTime);
-			renderThreadTime += 0.1f * (newRenderThreadTime - gameThreadTime);
+			renderThreadTime += 0.1f * (newRenderThreadTime - renderThreadTime);
 			gpuTime += 0.1f * (newGpuTime - gpuTime);
 
 			wchar_t buffer[256];

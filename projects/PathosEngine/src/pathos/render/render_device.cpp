@@ -55,14 +55,9 @@ namespace pathos {
 		//CHECK(isInMainThread());
 
 		if (isInRenderThread()) {
-			//lambda(gRenderDevice->getImmediateCommandList());
-			lambda(gRenderDevice->getHookCommandList());
-			gRenderDevice->getHookCommandList().flushAllCommands();
+			lambda(gRenderDevice->getImmediateCommandList());
 		} else {
-			gRenderDevice->getImmediateCommandList().registerHook([lambda](void* param) -> void {
-				lambda(gRenderDevice->getHookCommandList());
-				gRenderDevice->getHookCommandList().flushAllCommands();
-			}, nullptr, 0);
+			gRenderDevice->getDeferredCommandList().registerHook(lambda);
 		}
 	}
 
@@ -75,13 +70,13 @@ namespace pathos {
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](void* param) -> void {
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](RenderCommandList& cmdList) -> void {
 			if (waitForGPU) {
 				glFinish();
 			}
 			alreadyFlushed = true;
 			flushCondVar.notify_all();
-		}, nullptr, 0);
+		});
 
 		if (!alreadyFlushed) {
 			flushCondVar.wait(cvLock);
@@ -97,13 +92,13 @@ namespace pathos {
 		std::atomic<bool> alreadyFlushed = false;
 
 		// #todo-renderthread-fatal: Is it safe to pass flushCondVar like this?
-		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](void* param) -> void {
+		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](RenderCommandList& cmdList) -> void {
 			if (waitForGPU) {
 				glFinish();
 			}
 			alreadyFlushed = true;
 			flushCondVar.notify_all();
-		}, nullptr, 0);
+		});
 
 		if (!alreadyFlushed) {
 			flushCondVar.wait(cvLock);
@@ -136,10 +131,13 @@ namespace pathos {
 
 		checkExtensions();
 
-		// Create immediate command list
+		// #todo-renderthread: Wanna get rid of deferred_command_list :/
+		// Create command lists
 		immediate_command_list = std::make_unique<RenderCommandList>("immediate");
 		deferred_command_list = std::make_unique<RenderCommandList>("deferred");
 		hook_command_list = std::make_unique<RenderCommandList>("hook");
+		immediate_command_list->setHookCommandList(hook_command_list.get());
+		deferred_command_list->setHookCommandList(hook_command_list.get());
 
 #if GL_ERROR_CALLBACK
 		glEnable(GL_DEBUG_OUTPUT);

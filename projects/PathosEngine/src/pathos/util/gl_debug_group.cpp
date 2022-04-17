@@ -33,6 +33,8 @@ namespace pathos {
 		, queryObject1(0)
 		, queryObject2(0)
 	{
+		CHECK(isInRenderThread());
+
 		if (!ScopedGpuCounter::enable) {
 			return;
 		}
@@ -49,6 +51,8 @@ namespace pathos {
 	}
 
 	ScopedGpuCounter::~ScopedGpuCounter() {
+		CHECK(isInRenderThread());
+
 		if (!ScopedGpuCounter::enable) {
 			return;
 		}

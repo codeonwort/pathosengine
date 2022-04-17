@@ -36,34 +36,22 @@ namespace pathos {
 
 			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 
+			// Initialize subsystems
 			gEngine->initializeFontSystem(cmdList);
 			renderThread->initializeOverlayRenderer();
 			gEngine->initializeConsole();
 			renderThread->initializeRenderer(cmdList);
 
+			// Invoke global init routines
 			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
 			for (Engine::GlobalRenderRoutine routine : initRoutines) {
 				routine(gRenderDevice, cmdList);
 			}
 
 			// Notify end of initialization
-			glFinish(); // #todo-renderthread-fatal: glFinish to empty GPU works and safely detach the GL context from Main Thread.
+			glFinish(); // glFinish to empty GPU works and safely detach the GL context.
 			renderThread->bInitialized = true;
 			renderThread->initCondVar.notify_all();
-		}
-
-		// #todo-renderthread-fatal: Maybe not needed anymore as I removed begin/end locks from the render thread main loop?
-		// Without this, calling FLUSH_RENDER_COMMAND() before the main loop causes deadlock.
-		while (!renderThread->mainLoopStarted) {
-			SCOPED_TAKE_GL_CONTEXT();
-
-			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
-			immediateContext.flushAllCommands();
-
-			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
-			deferredContext.flushAllCommands();
-
-			glFinish();
 		}
 
 		while (renderThread->bPendingKill == false) {
@@ -111,20 +99,20 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ExecuteRenderer);
 				renderer->render(immediateContext, sceneProxy, &sceneProxy->camera);
 				immediateContext.flushAllCommands();
-				deferredContext.flushAllCommands();
+				//deferredContext.flushAllCommands();
 
 #define FIXME_OVERLAY_RENDERING 1
 #if FIXME_OVERLAY_RENDERING
 				// #todo-renderthread-fatal: sceneRenderTargets invalid until DeferredRenderer::render() is not executed.
 				debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
 				immediateContext.flushAllCommands();
-				deferredContext.flushAllCommands();
+				//deferredContext.flushAllCommands();
 
 				if (gConsole) {
 					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
 					gConsole->renderConsoleWindow(immediateContext);
 					immediateContext.flushAllCommands();
-					deferredContext.flushAllCommands();
+					//deferredContext.flushAllCommands();
 				}
 #endif
 				bNewSceneRendered = true;
@@ -144,6 +132,7 @@ namespace pathos {
 
 			immediateContext.endQuery(GL_TIME_ELAPSED);
 			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+
 			immediateContext.flushAllCommands();
 			deferredContext.flushAllCommands();
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
@@ -151,18 +140,18 @@ namespace pathos {
 			// Get GPU profile
 			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(immediateContext, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
 
-			// Clear various render resources after all rendering is done
+			// Clear render resources for current frame.
 			if (sceneProxy != nullptr) {
 				delete sceneProxy;
 				sceneProxy = nullptr;
 			}
 
+			// Let subsystems handle the end of rendering.
 			FontManager::get().onFrameEnd();
 
+			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop() * 1000.0f;
-			{
-				gEngine->updateGPUQuery_renderThread(renderThread->elapsed_renderThread, renderThread->elapsed_gpu, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
-			}
+			gEngine->updateGPUQuery_renderThread(renderThread->elapsed_renderThread, renderThread->elapsed_gpu, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
 
 			//
 			// End a frame

@@ -14,13 +14,12 @@ namespace pathos {
 		query.message = ALLOC_PDO_STRING(cmdList.sceneProxy->renderProxyAllocator, message);
 		cmdList.checkNamedFramebufferStatus(fbo, GL_DRAW_FRAMEBUFFER, query.completeness);
 
-		cmdList.registerHook([](void* param) {
-			FBOStatusQuery* query = reinterpret_cast<FBOStatusQuery*>(param);
-			if (*(query->completeness) != GL_FRAMEBUFFER_COMPLETE) {
-				LOG(LogFatal, "Failed to initialize fbo: %s", query->message != nullptr ? query->message : "<noname>");
+		cmdList.registerHook([query](RenderCommandList& cmdList) {
+			if (*(query.completeness) != GL_FRAMEBUFFER_COMPLETE) {
+				LOG(LogFatal, "Failed to initialize fbo: %s", query.message != nullptr ? query.message : "<noname>");
 				CHECK_NO_ENTRY();
 			}
-		}, &query, sizeof(query));
+		});
 	}
 
 }
