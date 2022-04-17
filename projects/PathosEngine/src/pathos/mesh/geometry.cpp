@@ -59,7 +59,6 @@ namespace pathos {
 			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
 		} else {
-			RenderCommandList& cmdList = gRenderDevice->getDeferredCommandList();
 			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
 				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
 			});
@@ -69,7 +68,6 @@ namespace pathos {
 #endif
 	}
 
-	// #todo-renderthread-fatal: createBufferHelper()
 	static GLuint createBufferHelper(const char* debugName) {
 		CHECK(debugName != nullptr);
 		GLuint buffer = 0;
@@ -85,7 +83,13 @@ namespace pathos {
 			});
 			// 'data' could be volatile, so flush here
 			TEMP_FLUSH_RENDER_COMMAND(true);
-			CHECK(buffer != 0);
+
+			// #todo-renderthread-fatal: createBufferHelper() asserts here even when buffer is valid?
+			if (buffer == 0) {
+				char msg[256];
+				sprintf_s(msg, "Buffer is null: %s=%d", debugName, buffer);
+				CHECKF(false, msg);
+			}
 		}
 		return buffer;
 	}

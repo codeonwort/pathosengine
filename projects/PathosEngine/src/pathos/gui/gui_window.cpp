@@ -215,18 +215,13 @@ namespace pathos {
 
 	void GUIWindow::onDisplay()
 	{
-		// #todo-renderthread-fatal: shit :/
-		//bool bNeedsUpdate = false;
-		//callback_onDisplay(bNeedsUpdate);
 		callback_onDisplay();
 		
-		//if (bNeedsUpdate) {
-		//	OpenGLContextManager::takeContext();
-		//	glutSwapBuffers();
-		//	glutPostRedisplay();
-		//	OpenGLContextManager::returnContext();
-		//	gEngine->resumeRenderThreadFromWaitOnGUI();
-		//}
+		// NOTE: Processed by render thread.
+		//OpenGLContextManager::takeContext();
+		//glutSwapBuffers();
+		//glutPostRedisplay();
+		//OpenGLContextManager::returnContext();
 	}
 
 	void GUIWindow::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY)

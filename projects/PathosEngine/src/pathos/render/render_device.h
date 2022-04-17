@@ -81,6 +81,7 @@ namespace pathos {
 		std::unique_ptr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		std::unique_ptr<RenderCommandList> hook_command_list;
 
+		int32                              glObjectLabelMaxLength;
 	};
 
 	extern OpenGLDevice* gRenderDevice;

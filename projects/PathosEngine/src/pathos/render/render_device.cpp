@@ -111,6 +111,7 @@ namespace pathos {
 	}
 
 	OpenGLDevice::OpenGLDevice()
+		: glObjectLabelMaxLength(-1)
 	{
 		CHECKF(gRenderDevice == nullptr, "Render device already exists");
 		gRenderDevice = this;
@@ -147,6 +148,8 @@ namespace pathos {
 #endif
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+		glGetIntegerv(GL_MAX_LABEL_LENGTH, &glObjectLabelMaxLength);
 
 		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));
 		LOG(LogInfo, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -232,6 +235,7 @@ namespace pathos {
 
 	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {
 		CHECK_GL_CONTEXT_TAKEN();
+		CHECKF(::strlen(label) <= glObjectLabelMaxLength, "objectLabel is too long");
 		glObjectLabel(identifier, name, length, label);
 	}
 

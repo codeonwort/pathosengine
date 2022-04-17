@@ -84,6 +84,7 @@ namespace pathos {
 			OverlayRenderer* renderer2D = renderThread->renderer2D;
 			DebugOverlay* debugOverlay = renderThread->debugOverlay;
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
+			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 
 			GLuint64 gpu_elapsed_ns;
 			immediateContext.beginQuery(GL_TIME_ELAPSED, renderThread->gpuTimerQuery);
@@ -101,8 +102,7 @@ namespace pathos {
 				settings.enablePostProcess = true;
 				renderer->setSceneRenderSettings(settings);
 			}
-
-			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
+			
 			deferredContext.flushAllCommands();
 
 			// Renderer will add more immediate commands
@@ -111,17 +111,20 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ExecuteRenderer);
 				renderer->render(immediateContext, sceneProxy, &sceneProxy->camera);
 				immediateContext.flushAllCommands();
+				deferredContext.flushAllCommands();
 
 #define FIXME_OVERLAY_RENDERING 1
 #if FIXME_OVERLAY_RENDERING
 				// #todo-renderthread-fatal: sceneRenderTargets invalid until DeferredRenderer::render() is not executed.
 				debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
 				immediateContext.flushAllCommands();
+				deferredContext.flushAllCommands();
 
 				if (gConsole) {
 					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
 					gConsole->renderConsoleWindow(immediateContext);
 					immediateContext.flushAllCommands();
+					deferredContext.flushAllCommands();
 				}
 #endif
 				bNewSceneRendered = true;
@@ -222,6 +225,7 @@ namespace pathos {
 	}
 
 	void RenderThread::terminate() {
+		// #todo-renderthread: Should end RT loop first, then destroy RT resources.
 		for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().destroyRoutines) {
 			routine(gRenderDevice, gRenderDevice->getDeferredCommandList());
 		}
