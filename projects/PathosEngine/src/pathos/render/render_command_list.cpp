@@ -29,14 +29,9 @@ namespace pathos {
 		glGetError();
 #endif
 
-		// #todo-renderthread-fatal: Hooks pushing more commands in the same type of cmdList... is it OK?
-#if 0
-		uint32 n = (uint32)commands.size();
-		for (uint32 i = 0; i < n; ++i) {
-			debugCurrentCommandIx = i;
-			commands[i]->pfn_execute(commands[i]);
-		}
-#else
+		// #todo-renderthread: Allow or forbid this?
+		static constexpr bool bAllowAppendWhileExecuting = false;
+
 		uint32 p = 0;
 		while (true) {
 			uint32 n = (uint32)commands.size();
@@ -47,8 +42,10 @@ namespace pathos {
 			if (n == commands.size()) {
 				break;
 			}
+			if (!bAllowAppendWhileExecuting) {
+				CHECK_NO_ENTRY();
+			}
 		}
-#endif
 
 #if ASSERT_GL_NO_ERROR
 		assert(GL_NO_ERROR == glGetError());

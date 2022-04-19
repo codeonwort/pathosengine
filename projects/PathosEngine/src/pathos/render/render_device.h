@@ -39,10 +39,12 @@ namespace pathos {
 		bool initialize();
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
-		// #todo-renderthread-fatal: I messed it up :/ Can I unify it?
+
+		// #todo-renderthread: I messed it up :/ Can I unify it?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
+		// Used for queueing commands from non-render threads.
 		__forceinline RenderCommandList& getDeferredCommandList() const { return *deferred_command_list.get(); }
-		// Due to hooks appending commands at the rears of immediate/deferred and messing up command order,
+		// Due to hooks appending commands at the rear of immediate list and messing up command order,
 		// we pass a dedicated list to the current hook and immediately flush it. Dirty but at least does not fuck up the order.
 		__forceinline RenderCommandList& getHookCommandList() const { return *hook_command_list.get(); }
 

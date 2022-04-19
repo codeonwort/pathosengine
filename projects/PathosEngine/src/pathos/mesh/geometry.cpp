@@ -46,15 +46,8 @@ namespace pathos {
 	DEFINE_ACTIVATE_VAO(position_uv_normal_tangent_bitangent)
 #undef DEFINE_ACTIVATE_VAO
 
-	// #todo-renderthread-fatal: enqueueBufferUpload()
+	// #todo-renderthread: No flush when called in non-render thread
 	static void enqueueBufferUpload(GLuint bufferName, GLsizeiptr size, const void* data) {
-#if 0
-		CHECK(isInMainThread());
-		ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
-				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
-			}
-		);
-#else
 		if (isInRenderThread()) {
 			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
@@ -65,9 +58,9 @@ namespace pathos {
 			// 'data' could be volatile, so flush here
 			TEMP_FLUSH_RENDER_COMMAND(true);
 		}
-#endif
 	}
 
+	// #todo-renderthread: No flush when called in non-render thread
 	static GLuint createBufferHelper(const char* debugName) {
 		CHECK(debugName != nullptr);
 		GLuint buffer = 0;
@@ -83,13 +76,6 @@ namespace pathos {
 			});
 			// 'data' could be volatile, so flush here
 			TEMP_FLUSH_RENDER_COMMAND(true);
-
-			// #todo-renderthread-fatal: createBufferHelper() asserts here even when buffer is valid?
-			if (buffer == 0) {
-				char msg[256];
-				sprintf_s(msg, "Buffer is null: %s=%d", debugName, buffer);
-				CHECKF(false, msg);
-			}
 		}
 		return buffer;
 	}

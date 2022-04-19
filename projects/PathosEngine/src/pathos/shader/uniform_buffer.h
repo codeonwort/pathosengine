@@ -29,11 +29,12 @@ namespace pathos {
 			//bufferSize = (sizeof(T) + 255) & ~255;
 			bufferSize = sizeof(T);
 			gRenderDevice->createBuffers(1, &ubo);
-			// #todo-renderthread-fatal: UniformBuffer
+
 			if (isInRenderThread()) {
 				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 				cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
 			} else {
+				// #todo-renderthread: No issue with order of commands?
 				ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
 					cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
 				});
@@ -41,7 +42,8 @@ namespace pathos {
 		}
 
 		void update(RenderCommandList& cmdList, GLuint bindingIndex, void* data) {
-			CHECK(ubo);
+			CHECK(isInRenderThread());
+			CHECK(ubo != 0);
 			cmdList.namedBufferSubData(ubo, 0, bufferSize, data);
 			cmdList.bindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, ubo);
 		}
