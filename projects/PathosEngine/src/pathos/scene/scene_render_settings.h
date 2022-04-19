@@ -5,6 +5,8 @@
 
 namespace pathos {
 
+	class RenderTarget2D;
+
 	struct SceneRenderSettings {
 
 		bool isValid() const {
@@ -15,6 +17,8 @@ namespace pathos {
 		uint32 sceneHeight = 0;
 		uint32 frameCounter = 0;
 		bool enablePostProcess = true;
+
+		RenderTarget2D* finalRenderTarget = nullptr;
 
 	};
 

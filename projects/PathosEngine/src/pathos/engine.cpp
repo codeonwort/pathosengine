@@ -243,6 +243,11 @@ namespace pathos {
 		CHECKF(engineDestroyed, "Failed to destroy the engine properly !!!");
 	}
 
+	// For scene capture
+	void Engine::pushSceneProxy(SceneProxy* newSceneProxy) {
+		renderThread->pushSceneProxy(newSceneProxy);
+	}
+
 	void Engine::updateMainWindow_renderThread() {
 		mainWindow->updateWindow_renderThread();
 	}
@@ -387,13 +392,17 @@ namespace pathos {
 
 				currentWorld->tick(deltaSeconds);
 
-				// #todo: More robust way to check if the main window is minimized
-				SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
-					frameCounter_gameThread,
-					currentWorld->getCamera());
-				CHECK(sceneProxy != nullptr);
+				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
+				// which makes you feel like there is input lag.
+				if (renderThread->mainSceneInSceneProxyQueue() == false) {
+					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
+						SceneProxySource::MainScene,
+						frameCounter_gameThread,
+						currentWorld->getCamera());
+					CHECK(sceneProxy != nullptr);
 
-				renderThread->pushSceneProxy(sceneProxy);
+					renderThread->pushSceneProxy(sceneProxy);
+				}
 			}
 		}
 

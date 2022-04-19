@@ -54,13 +54,8 @@ namespace pathos {
 			renderThread->initCondVar.notify_all();
 		}
 
+		// Main loop for render thread
 		while (renderThread->bPendingKill == false) {
-			// 1. Main thread inform the render thread to render frame N.
-			// 2. Main thread do game tick for frame (N+1).
-			// 3. Main thread create render proxies for frame (N+1).
-			// 4. Main thread waits for render thread to finish rendering frame N.
-			// 5. Flip the backbuffer and go to the next frame.
-
 			//
 			// Start a frame!
 			//
@@ -68,9 +63,9 @@ namespace pathos {
 			bool bNewSceneRendered = false;
 
 			SceneProxy* sceneProxy = renderThread->popSceneProxy();
+			bool bMainScene = (sceneProxy == nullptr) || (sceneProxy->sceneProxySource == SceneProxySource::MainScene);
+
 			Renderer* renderer = renderThread->renderer;
-			OverlayRenderer* renderer2D = renderThread->renderer2D;
-			DebugOverlay* debugOverlay = renderThread->debugOverlay;
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
 			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 
@@ -85,12 +80,19 @@ namespace pathos {
 			const int32 screenWidth = engineConfig.windowWidth; // #todo: Current window size
 			const int32 screenHeight = engineConfig.windowHeight;
 			if (renderer) {
-				SceneRenderSettings settings;
-				settings.sceneWidth = screenWidth; // #todo: Upscaling
-				settings.sceneHeight = screenHeight;
-				settings.frameCounter = renderThread->currentFrame;
-				settings.enablePostProcess = true;
-				renderer->setSceneRenderSettings(settings);
+				if (sceneProxy && sceneProxy->bSceneRenderSettingsOverriden) {
+					// Probably scene capture
+					renderer->setSceneRenderSettings(sceneProxy->sceneRenderSettingsOverride);
+				} else {
+					// Main scene
+					SceneRenderSettings settings;
+					settings.sceneWidth = screenWidth; // #todo-renderer: Upscaling
+					settings.sceneHeight = screenHeight;
+					settings.frameCounter = renderThread->currentFrame;
+					settings.enablePostProcess = true;
+					renderer->setSceneRenderSettings(settings);
+					renderer->setFinalRenderTargetToBackbuffer();
+				}
 			}
 			
 			deferredContext.flushAllCommands();
@@ -103,19 +105,24 @@ namespace pathos {
 				immediateContext.flushAllCommands();
 				//deferredContext.flushAllCommands();
 
-				bNewSceneRendered = true;
+				// Update backbuffer only if main scene was actually rendered
+				if (sceneProxy->sceneProxySource == SceneProxySource::MainScene) {
+					bNewSceneRendered = true;
+				}
 			}
 
-			// Render Debug overlay and command console
-			{
-				SCOPED_CPU_COUNTER(ExecuteDebugOverlay);
-				debugOverlay->renderDebugOverlay(immediateContext, screenWidth, screenHeight);
-				immediateContext.flushAllCommands();
-			}
-			if (gConsole) {
-				SCOPED_CPU_COUNTER(ExecuteDebugConsole);
-				gConsole->renderConsoleWindow(immediateContext);
-				immediateContext.flushAllCommands();
+			// Render debug overlay and command console
+			if (bMainScene) {
+				{
+					SCOPED_CPU_COUNTER(ExecuteDebugOverlay);
+					renderThread->debugOverlay->renderDebugOverlay(immediateContext, screenWidth, screenHeight);
+					immediateContext.flushAllCommands();
+				}
+				if (gConsole) {
+					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
+					gConsole->renderConsoleWindow(immediateContext);
+					immediateContext.flushAllCommands();
+				}
 			}
 
 			immediateContext.endQuery(GL_TIME_ELAPSED);
@@ -216,7 +223,19 @@ namespace pathos {
 	
 	bool RenderThread::isSceneProxyQueueEmpty() {
 		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
-		return sceneProxyQueue.empty();
+		return sceneProxyQueue.size() == 0;
+	}
+
+	bool RenderThread::mainSceneInSceneProxyQueue() {
+		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
+		bool bContains = false;
+		for (SceneProxy* proxy : sceneProxyQueue) {
+			if (proxy->sceneProxySource == SceneProxySource::MainScene) {
+				bContains = true;
+				break;
+			}
+		}
+		return bContains;
 	}
 
 	SceneProxy* RenderThread::popSceneProxy() {
@@ -225,13 +244,13 @@ namespace pathos {
 			return nullptr;
 		}
 		SceneProxy* sceneProxy = sceneProxyQueue.front();
-		sceneProxyQueue.pop();
+		sceneProxyQueue.pop_front();
 		return sceneProxy;
 	}
 
 	void RenderThread::pushSceneProxy(SceneProxy* inSceneProxy) {
 		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
-		sceneProxyQueue.push(inSceneProxy);
+		sceneProxyQueue.push_back(inSceneProxy);
 	}
 
 	bool RenderThread::initializeOpenGL() {

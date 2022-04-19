@@ -83,6 +83,8 @@ namespace pathos {
 		void start();
 		void stop();
 
+		// #todo: Ad-hoc communication to render thread. Needs clearer interface.
+		void pushSceneProxy(SceneProxy* newSceneProxy);
 		void updateMainWindow_renderThread();
 		void updateGPUQuery_renderThread(
 			float inElapsedRenderThread,

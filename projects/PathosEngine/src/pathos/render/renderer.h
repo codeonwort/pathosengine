@@ -22,7 +22,8 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) = 0;
-		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) = 0; // Default backbuffer or custom off-screen render target
+		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) = 0; // For custom off-screen render target
+		virtual void setFinalRenderTargetToBackbuffer() = 0; // Final render to the default backbuffer
 		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) = 0;
 
 	};

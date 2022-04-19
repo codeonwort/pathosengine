@@ -64,6 +64,7 @@ namespace pathos {
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
 		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
+		virtual void setFinalRenderTargetToBackbuffer() override;
 		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.

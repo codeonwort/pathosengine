@@ -6,6 +6,7 @@
 #include "badger/memory/mem_alloc.h"
 #include <vector>
 
+#include "pathos/scene/scene_render_settings.h"
 #include "pathos/render/render_command_list.h"
 #include "pathos/material/material_id.h"
 #include "pathos/camera/camera.h"
@@ -17,11 +18,18 @@
 
 namespace pathos {
 
+	enum class SceneProxySource : uint8 {
+		MainScene    = 0,
+		SceneCapture = 1,
+	};
+
 	class SceneProxy final {
 		
 	public:
-		SceneProxy(uint32 inFrameNumber, const Camera& inCamera);
+		SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera);
 		~SceneProxy();
+
+		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
 		// This should be called for each view.
 		// #todo: Parameter might be further generalized
@@ -37,8 +45,12 @@ namespace pathos {
 		inline bool isVolumetricCloudValid() const { return cloud != nullptr; }
 
 	public:
+		SceneProxySource                           sceneProxySource;
 		uint32                                     frameNumber; // number in game thread
 		Camera                                     camera;
+
+		SceneRenderSettings                        sceneRenderSettingsOverride;
+		bool                                       bSceneRenderSettingsOverriden;
 
 		// #todo-renderthread: Needs allocator pool.
 		StackAllocator                             renderProxyAllocator;
@@ -49,10 +61,10 @@ namespace pathos {
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
 		
-		struct SkyboxProxy*                         skybox = nullptr;
-		struct AnselSkyProxy*                       anselSky = nullptr;
-		struct SkyAtmosphereProxy*                  skyAtmosphere = nullptr;
-		struct VolumetricCloudProxy*                cloud = nullptr;
+		struct SkyboxProxy*                        skybox = nullptr;
+		struct AnselSkyProxy*                      anselSky = nullptr;
+		struct SkyAtmosphereProxy*                 skyAtmosphere = nullptr;
+		struct VolumetricCloudProxy*               cloud = nullptr;
 
 		// #todo-godray: Wrap with GodRayProxy class.
 		//               These are filled by Scene::createRenderProxy() for now.

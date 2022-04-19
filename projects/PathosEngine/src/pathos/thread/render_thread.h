@@ -4,8 +4,8 @@
 #include "badger/types/int_types.h"
 #include "badger/system/stopwatch.h"
 
+#include <list>
 #include <mutex>
-#include <queue>
 #include <string>
 #include <thread>
 #include <condition_variable>
@@ -44,6 +44,7 @@ namespace pathos {
 		// sceneProxyQueue helper methods.
 		//
 		bool isSceneProxyQueueEmpty();
+		bool mainSceneInSceneProxyQueue();
 		SceneProxy* popSceneProxy();
 		void pushSceneProxy(SceneProxy* inSceneProxy);
 
@@ -82,7 +83,7 @@ namespace pathos {
 		Stopwatch                  stopwatch; // for render thread
 		float                      elapsed_renderThread;
 
-		std::queue<SceneProxy*>    sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
+		std::list<SceneProxy*>     sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
 		std::mutex                 sceneProxyQueueMutex;
 
 	// GPU

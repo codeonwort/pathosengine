@@ -6,9 +6,11 @@ namespace pathos
 {
 	static constexpr uint32 RENDER_PROXY_ALLOCATOR_BYTES = 32 * 1024 * 1024; // 32 MB
 
-	SceneProxy::SceneProxy(uint32 inFrameNumber, const Camera& inCamera)
-		: frameNumber(inFrameNumber)
+	SceneProxy::SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera)
+		: sceneProxySource(inSource)
+		, frameNumber(inFrameNumber)
 		, camera(inCamera)
+		, bSceneRenderSettingsOverriden(false)
 		, renderProxyAllocator(RENDER_PROXY_ALLOCATOR_BYTES)
 	{
 		//
@@ -26,6 +28,11 @@ namespace pathos
 		cloud = nullptr;
 
 		renderProxyAllocator.clear();
+	}
+
+	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {
+		sceneRenderSettingsOverride = inSettings;
+		bSceneRenderSettingsOverriden = true;
 	}
 
 	void SceneProxy::createViewDependentRenderProxy(const matrix4& viewMatrix) {

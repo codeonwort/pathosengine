@@ -11,6 +11,7 @@
 namespace pathos {
 
 	// Forward declaration
+	enum class SceneProxySource : uint8;
 	class SceneProxy;
 	class StaticMeshComponent;
 	class SkyActor;
@@ -26,7 +27,7 @@ namespace pathos {
 		Scene& operator=(const Scene&) = delete;
 
 		// Generate frame-invariant proxy data.
-		SceneProxy* createRenderProxy(uint32 frameNumber, const Camera& camera);
+		SceneProxy* createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera);
 
 		World* getWorld() const { return owner; }
 

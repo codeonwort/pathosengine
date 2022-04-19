@@ -10,8 +10,8 @@
 
 namespace pathos {
 
-	SceneProxy* Scene::createRenderProxy(uint32 frameNumber, const Camera& camera) {
-		SceneProxy* proxy = new SceneProxy(frameNumber, camera);
+	SceneProxy* Scene::createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera) {
+		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera);
 
 		World* const world = getWorld();
 

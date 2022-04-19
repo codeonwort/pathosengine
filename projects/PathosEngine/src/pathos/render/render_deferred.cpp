@@ -129,6 +129,20 @@ namespace pathos {
 
 		sceneRenderSettings = settings;
 		frameCounter = sceneRenderSettings.frameCounter;
+		
+		if (settings.finalRenderTarget != nullptr) {
+			setFinalRenderTarget(settings.finalRenderTarget);
+		}
+	}
+
+	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+		CHECKF(inFinalRenderTarget != nullptr, "null is not accepted. Use setFinalRenderTargetToBackbuffer() for backbuffer");
+		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
+		finalRenderTarget = inFinalRenderTarget;
+	}
+
+	void DeferredRenderer::setFinalRenderTargetToBackbuffer() {
+		finalRenderTarget = 0;
 	}
 
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
@@ -391,11 +405,6 @@ namespace pathos {
 
 		scene = nullptr;
 		camera = nullptr;
-	}
-
-	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
-		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
-		finalRenderTarget = inFinalRenderTarget;
 	}
 
 	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
