@@ -6,5 +6,5 @@
  * - Increase engine version when a work is finished and merged to master branch.
  */
 #define PATHOS_MAJOR_VERSION 0
-#define PATHOS_MINOR_VERSION 5
-#define PATHOS_PATCH_VERSION 9
+#define PATHOS_MINOR_VERSION 6
+#define PATHOS_PATCH_VERSION 0
