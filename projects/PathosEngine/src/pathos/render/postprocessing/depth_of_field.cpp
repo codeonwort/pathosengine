@@ -78,6 +78,8 @@ namespace pathos {
 		ShaderProgram& program_prefix_sum = FIND_SHADER_PROGRAM(Program_DOF_PrefixSum);
 		ShaderProgram& program_blur = FIND_SHADER_PROGRAM(Program_DOF_Blur);
 
+		// #todo-dof: DoF is broken if screen width or height exceeds 2048 :/
+		// Reason: (local_size_x = 1024) in prefix_sum.glsl
 		{
 			SCOPED_DRAW_EVENT(DepthOfField_Subsum);
 

@@ -352,6 +352,11 @@ namespace pathos {
 		currentWorld->initialize();
 	}
 
+	void Engine::updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
+		conf.windowWidth = inScreenWidth;
+		conf.windowHeight = inScreenHeight;
+	}
+
 	void Engine::tick()
 	{
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
@@ -389,6 +394,9 @@ namespace pathos {
 			//
 			if (currentWorld != nullptr) {
 				SCOPED_CPU_COUNTER(CreateRenderProxy);
+
+				const float ar = (float)conf.windowWidth / conf.windowHeight;
+				currentWorld->getCamera().getLens().setAspectRatio(ar);
 
 				currentWorld->tick(deltaSeconds);
 
@@ -457,7 +465,9 @@ namespace pathos {
 		gEngine->inputSystem->processRawKeyUp(ascii);
 	}
 
-	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) { }
+	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) {
+		gEngine->updateScreenSize(newWidth, newHeight);
+	}
 
 	void Engine::onSpecialKeyDown(InputConstants specialKey) {
 		if (gConsole->isVisible()) {

@@ -31,6 +31,11 @@ namespace pathos {
 		updateProjectionMatrix();
 	}
 
+	void PerspectiveLens::setAspectRatio(float inAspectRatio) {
+		aspect = inAspectRatio;
+		updateProjectionMatrix();
+	}
+
 	void PerspectiveLens::updateProjectionMatrix() {
 #if 1 // Reverse-Z
 		float f = 1.0f / tan(fovY_radians / 2.0f);

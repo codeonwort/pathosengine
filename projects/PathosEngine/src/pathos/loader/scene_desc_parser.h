@@ -3,7 +3,7 @@
 
 #pragma once
 
-// #todo: Due to ECubemapImagePreference, but this includes FreeImage
+// #todo-refactoring: For ECubemapImagePreference, but this includes FreeImage.
 #include "imageloader.h"
 
 #include "badger/types/vector_types.h"

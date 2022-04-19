@@ -83,7 +83,7 @@ namespace pathos {
 		void start();
 		void stop();
 
-		// #todo: Ad-hoc communication to render thread. Needs clearer interface.
+		// #todo-renderthread: Ad-hoc communication to render thread. Needs clearer interface.
 		void pushSceneProxy(SceneProxy* newSceneProxy);
 		void updateMainWindow_renderThread();
 		void updateGPUQuery_renderThread(
@@ -101,6 +101,7 @@ namespace pathos {
 		void setWorld(World* inWorld);
 
 		const EngineConfig& getConfig() const { return conf; }
+		void updateScreenSize(int32 inScreenWidth, int32 inScreenHeight);
 
 		inline float getWorldTime() { return stopwatch_app.stop(); }
 		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }

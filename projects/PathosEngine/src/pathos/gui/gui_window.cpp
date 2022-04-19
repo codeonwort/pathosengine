@@ -314,7 +314,7 @@ namespace pathos {
 			: InputConstants::UNDEFINED;
 
 		if (button == 3 || button == 4) {
-			// #todo: These are mouse wheel input, but it seems there are no constants for them.
+			// #todo-input: These are mouse wheel input, but it seems there are no constants for them.
 		} else {
 			CHECKF(input != InputConstants::UNDEFINED, "Unexpected mouse button input");
 		}

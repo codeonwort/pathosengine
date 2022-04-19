@@ -21,6 +21,7 @@ namespace pathos {
 		inline float getZFar() const { return z_far; }
 
 		void setFovY(float inFovY_degrees);
+		void setAspectRatio(float inAspectRatio);
 
 	private:
 		void updateProjectionMatrix();
