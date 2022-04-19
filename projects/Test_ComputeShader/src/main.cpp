@@ -1,5 +1,6 @@
 #include "pathos/core_minimal.h"
 #include "pathos/shader/shader.h"
+#include "pathos/render/render_device.h"
 using namespace pathos;
 
 #include <stdio.h>
@@ -14,7 +15,10 @@ int main(int argc, char** argv) {
 	config.title        = "Test: Compute Shader";
 	Engine::init(argc, argv, config);
 
-	initComputeShader();
+	ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
+		initComputeShader();
+	});
+	FLUSH_RENDER_COMMAND(true);
 
 	gEngine->start();
 
