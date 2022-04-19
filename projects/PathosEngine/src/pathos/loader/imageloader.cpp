@@ -144,14 +144,15 @@ namespace pathos {
 			return 0;
 		}
 
-		GLuint tex_id;
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
+		GLuint tex_id = 0;
 
-		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, tex_id](RenderCommandList& cmdList) {
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, texturePtr = &tex_id](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
+
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 			unsigned int bpp = FreeImage_GetBPP(dib[0]);
 			if (bpp == 32 || bpp == 24) {
@@ -159,7 +160,7 @@ namespace pathos {
 				if (generateMipmap) {
 					numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 				}
-				cmdList.textureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
+				cmdList.textureStorage2D(*texturePtr, numLODs, GL_RGBA8, w, h);
 			} else {
 				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			}
@@ -167,14 +168,14 @@ namespace pathos {
 			for (int32 i = 0; i < 6; i++) {
 				uint8* data = FreeImage_GetBits(dib[i]);
 				GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
-				cmdList.textureSubImage3D(tex_id, 0,
+				cmdList.textureSubImage3D(*texturePtr, 0,
 					0, 0, i,
 					w, h, 1,
 					format, GL_UNSIGNED_BYTE, data);
 			}
 
 			if (generateMipmap) {
-				cmdList.generateTextureMipmap(tex_id);
+				cmdList.generateTextureMipmap(*texturePtr);
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
