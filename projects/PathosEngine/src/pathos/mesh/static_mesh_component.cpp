@@ -1,9 +1,10 @@
 #include "static_mesh_component.h"
-#include "mesh.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/render/scene_proxy.h"
 
 namespace pathos {
 
-	void StaticMeshComponent::createRenderProxy(Scene* scene) {
+	void StaticMeshComponent::createRenderProxy(SceneProxy* scene) {
 		if (mesh == nullptr || getVisibility() == false) {
 			return;
 		}
@@ -18,7 +19,7 @@ namespace pathos {
 				MeshGeometry* G = geoms[i];
 				Material* M = materials[i];
 
-				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>();
+				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>(scene);
 				proxy->modelMatrix = getMatrix();
 				proxy->geometry = geoms[i];
 
@@ -36,7 +37,7 @@ namespace pathos {
 			uint8 materialID = static_cast<uint8>(M->getMaterialID());
 			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
 
-			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>();
+			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getMatrix();
@@ -47,7 +48,7 @@ namespace pathos {
 		}
 	}
 
-	void StaticMeshComponent::createRenderProxy_internal(std::vector<StaticMeshProxy*>& outProxyList) {
+	void StaticMeshComponent::createRenderProxy_internal(SceneProxy* scene, std::vector<StaticMeshProxy*>& outProxyList) {
 		if (mesh == nullptr || getVisibility() == false) {
 			return;
 		}
@@ -63,7 +64,7 @@ namespace pathos {
 			uint8 materialID = static_cast<uint8>(M->getMaterialID());
 			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
 
-			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>();
+			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getMatrix();

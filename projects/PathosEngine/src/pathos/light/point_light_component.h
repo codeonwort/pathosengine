@@ -19,9 +19,9 @@ namespace pathos {
 	class PointLightComponent : public SceneComponent {
 		
 	public:
-		virtual void createRenderProxy(Scene* scene) override
+		virtual void createRenderProxy(SceneProxy* scene) override
 		{
-			PointLightProxy* proxy = ALLOC_RENDER_PROXY<PointLightProxy>();
+			PointLightProxy* proxy = ALLOC_RENDER_PROXY<PointLightProxy>(scene);
 
 			proxy->worldPosition     = getLocation();
 			proxy->attenuationRadius = attenuationRadius;

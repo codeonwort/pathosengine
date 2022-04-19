@@ -14,6 +14,10 @@ namespace pathos {
 	// #todo-atmosphere: better lifecycle management
 	GLuint gTransmittanceLUT = 0;
 
+	struct UBO_Atmosphere {
+		glm::vec4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
+	};
+
 	class PASFullscreenVS : public ShaderStage {
 	public:
 		PASFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "PASFullscreenVS") {
@@ -40,57 +44,60 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS, PASTransmittanceFS);
 	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS, AtmosphericScatteringFS);
 
-	void init_precomputeTransmittance(OpenGLDevice* device) {
+	void init_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
 		GLuint& lut = gTransmittanceLUT;
 		GLuint fbo;
 
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &lut);
-		gRenderDevice->objectLabel(GL_TEXTURE, lut, -1, "LUT_Transmittance");
-		gRenderDevice->createFramebuffers(1, &fbo);
-		gRenderDevice->objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_LUT_Transmittance");
+		device->createTextures(GL_TEXTURE_2D, 1, &lut);
+		device->objectLabel(GL_TEXTURE, lut, -1, "LUT_Transmittance");
+		device->createFramebuffers(1, &fbo);
+		device->objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_LUT_Transmittance");
 
 		PlaneGeometry* fullscreenQuad = new PlaneGeometry(1.0, 1.0);
 
-		ENQUEUE_RENDER_COMMAND([lut, fbo, fullscreenQuad](RenderCommandList& cmdList) {
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
-			const int32 WIDTH = 64;
-			const int32 HEIGHT = 256;
-			// This does matter; transmittance is 1 outside of atmosphere.
-			//GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
+		const int32 WIDTH = 64;
+		const int32 HEIGHT = 256;
+		// This does matter; transmittance is 1 outside of atmosphere.
+		//GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-			cmdList.textureStorage2D(lut, 1, GL_RGBA32F, WIDTH, HEIGHT);
-			cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-			cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
+		cmdList.textureStorage2D(lut, 1, GL_RGBA32F, WIDTH, HEIGHT);
+		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-			cmdList.viewport(0, 0, WIDTH, HEIGHT);
-			cmdList.useProgram(program.getGLName());
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-			fullscreenQuad->drawPrimitive(cmdList);
-		});
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.viewport(0, 0, WIDTH, HEIGHT);
+		cmdList.useProgram(program.getGLName());
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
 
 		LOG(LogDebug, "Generate transmittance LUT (%s)", "LUT_Transmittance");
 	}
-	void destroy_precomputeTransmittance(OpenGLDevice* device) {
+	void destroy_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
 		gRenderDevice->deleteTextures(1, &gTransmittanceLUT);
 		gTransmittanceLUT = 0;
 	}
 
 	DEFINE_GLOBAL_RENDER_ROUTINE(PAS, init_precomputeTransmittance, destroy_precomputeTransmittance);
+
 }
 
 namespace pathos {
 
-	struct UBO_Atmosphere {
-		glm::vec4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
-	};
+	void SkyAtmospherePass::initializeResources(RenderCommandList& cmdList) {
+		ubo.init<UBO_Atmosphere>();
+		gRenderDevice->createVertexArrays(1, &vao);
+	}
 
-	void AtmosphereScattering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera)
-	{
+	void SkyAtmospherePass::destroyResources(RenderCommandList& cmdList) {
+		gRenderDevice->deleteVertexArrays(1, &vao);
+	}
+
+	void SkyAtmospherePass::render(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(AtmosphereScattering);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
@@ -107,15 +114,6 @@ namespace pathos {
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		cmdList.bindVertexArray(0);
-	}
-
-	void AtmosphereScattering::onSpawn() {
-		ubo.init<UBO_Atmosphere>();
-		gRenderDevice->createVertexArrays(1, &vao);
-	}
-
-	void AtmosphereScattering::onDestroy() {
-		gRenderDevice->deleteVertexArrays(1, &vao);
 	}
 
 }

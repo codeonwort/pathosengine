@@ -1,10 +1,14 @@
 #include "gui_window.h"
-#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/math/minmax.h"
+
+#include "pathos/engine.h"
+#include "pathos/util/log.h"
+#include "pathos/util/gl_context_manager.h"
+
 #include "GL/freeglut.h"
 #include <stdio.h>
-#include <algorithm>
 #include <array>
 
 #pragma comment(lib, "freeglut.lib")
@@ -34,6 +38,11 @@ static void onGlutWarning(const char* fmt, va_list ap) {
 }
 
 namespace pathos {
+
+	static void onGlutClose() {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->onClose();
+	}
 
 	static void onGlutIdle() {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
@@ -102,14 +111,15 @@ namespace pathos {
 		}
 		initialized = true;
 
-		int argc           = createParams.argc;
-		char** argv        = createParams.argv;
+		int argc                   = createParams.argc;
+		char** argv                = createParams.argv;
 
-		windowWidth  = createParams.width;
-		windowHeight = createParams.height;
-		bFullscreen  = createParams.fullscreen;
-		title        = createParams.title;
+		windowWidth                = createParams.width;
+		windowHeight               = createParams.height;
+		bFullscreen                = createParams.fullscreen;
+		title                      = createParams.title;
 
+		callback_onClose           = createParams.onClose;
 		callback_onIdle            = createParams.onIdle;
 		callback_onDisplay         = createParams.onDisplay;
 		callback_onKeyDown         = createParams.onKeyDown;
@@ -124,8 +134,8 @@ namespace pathos {
 		CHECKF(title.size() > 0, "Invalid window title");
 
 		// Silently fix window size
-		windowWidth = std::max(400, windowWidth);
-		windowHeight = std::max(300, windowHeight);
+		windowWidth = badger::max<int32>(400, windowWidth);
+		windowHeight = badger::max<int32>(300, windowHeight);
 		if (title.empty()) title = "Title here";
 
 		glutInitErrorFunc(onGlutError);
@@ -138,13 +148,22 @@ namespace pathos {
 		}
 		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 		glutInitWindowSize(windowWidth, windowHeight);
+
+		// X*10000 + Y*100 + Z where X = major, Y = minor, and Z = patch.
+		const int32 glutVersion = glutGet(GLUT_VERSION);
+		int32 glutMajorVersion = glutVersion / 10000;
+		int32 glutMinorVersion = (glutVersion % 10000) / 100;
+		int32 glutPatchVersion = glutVersion % 100;
+		LOG(LogInfo, "[ThirdParty] GUI Backend: Freeglut %d.%d.%d", glutMajorVersion, glutMinorVersion, glutPatchVersion);
 		
 		nativeHandle = glutCreateWindow(title.c_str());
+		OpenGLContextManager::initialize();
 
 		if (bFullscreen) {
 			glutFullScreen();
 		}
 
+		glutCloseFunc(onGlutClose);
 		glutIdleFunc(onGlutIdle);
 		glutDisplayFunc(onGlutDisplay);
 		glutReshapeFunc(onGlutReshape);
@@ -155,6 +174,8 @@ namespace pathos {
 		glutMouseFunc(onGlutMouseFunc);
 
 		GUIWindow::handleToWindow[nativeHandle] = this;
+
+		OpenGLContextManager::returnContext();
 	}
 
 	void GUIWindow::startMainLoop()
@@ -175,6 +196,18 @@ namespace pathos {
 		LOG(LogInfo, "Stop the main loop");
 	}
 
+	void GUIWindow::updateWindow_renderThread() {
+		OpenGLContextManager::takeContext();
+		glutSwapBuffers();
+		glutPostRedisplay();
+		OpenGLContextManager::returnContext();
+	}
+
+	void GUIWindow::onClose()
+	{
+		callback_onClose();
+	}
+
 	void GUIWindow::onIdle()
 	{
 		callback_onIdle();
@@ -183,9 +216,12 @@ namespace pathos {
 	void GUIWindow::onDisplay()
 	{
 		callback_onDisplay();
-
-		glutSwapBuffers();
-		glutPostRedisplay();
+		
+		// NOTE: Processed by render thread.
+		//OpenGLContextManager::takeContext();
+		//glutSwapBuffers();
+		//glutPostRedisplay();
+		//OpenGLContextManager::returnContext();
 	}
 
 	void GUIWindow::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY)

@@ -90,7 +90,7 @@ namespace pathos {
 			0.03125f
 		};
 		static const float* additiveWeightsPtr[3] = { additiveWeightsPreset0, additiveWeightsPreset1, additiveWeightsPreset2 };
-		int32 bloomPresetIndex = clamp(0, cvar_bloom_preset.getInt(), 2);
+		int32 bloomPresetIndex = badger::clamp(0, cvar_bloom_preset.getInt(), 2);
 		const float* additiveWeights = additiveWeightsPtr[bloomPresetIndex];
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;

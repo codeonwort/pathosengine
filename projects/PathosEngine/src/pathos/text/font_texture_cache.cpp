@@ -21,7 +21,7 @@ namespace pathos {
 		term();
 	}
 
-	bool FontTextureCache::init(const char* filename, uint32 pixelSize) {
+	bool FontTextureCache::init(RenderCommandList& cmdList, const char* filename, uint32 pixelSize) {
 		// FreeType
 		FT_Library& library = FontManager::get().getFTLibrary();
 		if (FT_New_Face(library, filename, 0, &face) != 0) {
@@ -58,14 +58,11 @@ namespace pathos {
 		sprintf_s(textureObjectLabel, "FontTextureCache%d", g_fontTextureCacheNumber++);
 		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, textureObjectLabel);
 
-		GLuint textureName = texture;
-		ENQUEUE_RENDER_COMMAND([textureName](RenderCommandList& cmdList) {
-			cmdList.textureStorage2D(textureName, 1, GL_R8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-			cmdList.textureParameteri(textureName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(textureName, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(textureName, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(textureName, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		});
+		cmdList.textureStorage2D(texture, 1, GL_R8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+		cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		FontManager::get().registerCache(this);
 

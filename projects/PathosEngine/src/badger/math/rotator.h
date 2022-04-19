@@ -1,6 +1,5 @@
 #pragma once
 
-#include "badger/math/minmax.h"
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
 

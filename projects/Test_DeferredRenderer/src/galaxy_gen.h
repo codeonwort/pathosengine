@@ -13,8 +13,8 @@ class GalaxyGenerator {
 public:
 	static void createStarField(GLuint& targetTexture, uint32 width, uint32 height);
 
-	static void internal_createResources(OpenGLDevice* renderDevice);
-	static void internal_destroyResources(OpenGLDevice* renderDevice);
+	static void internal_createResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+	static void internal_destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 private:
 	static GLuint dummyFBO;

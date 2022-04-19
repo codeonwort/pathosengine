@@ -7,7 +7,7 @@
 
 namespace pathos {
 
-	class Scene;
+	class SceneProxy;
 	class Camera;
 
 	// Render only scene depth without any shading.
@@ -22,7 +22,7 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void renderPreDepth(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
 		GLuint fbo = 0xffffffff;

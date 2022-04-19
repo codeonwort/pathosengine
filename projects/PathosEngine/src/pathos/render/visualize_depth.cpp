@@ -1,6 +1,8 @@
 #include "visualize_depth.h"
 #include "scene_render_targets.h"
 #include "render_device.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 
@@ -42,7 +44,7 @@ namespace pathos {
 		gRenderDevice->deleteVertexArrays(1, &dummyVAO);
 	}
 
-	void VisualizeDepth::render(RenderCommandList& cmdList, Scene* scene, Camera* camera)
+	void VisualizeDepth::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(VisualizeDepth);
 

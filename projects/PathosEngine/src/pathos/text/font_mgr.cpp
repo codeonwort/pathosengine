@@ -50,7 +50,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool FontManager::registerFont(const std::string& tag, const char* filepath, uint32 pixelSize) {
+	bool FontManager::registerFont(RenderCommandList& cmdList, const std::string& tag, const char* filepath, uint32 pixelSize) {
 		if (fontDescDict.find(tag) != fontDescDict.end()) {
 			LOG(LogError, "Tag is already registered: %s (filepath=%s, pixelSize=%u)", tag.c_str(), filepath, pixelSize);
 			return false;
@@ -65,7 +65,7 @@ namespace pathos {
 		desc.fullFilepath = fullFilepath;
 		desc.pixelSize = pixelSize;
 		desc.cacheTexture = new FontTextureCache;
-		desc.cacheTexture->init(fullFilepath.c_str(), pixelSize);
+		desc.cacheTexture->init(cmdList, fullFilepath.c_str(), pixelSize);
 		fontDescDict[tag] = std::move(desc);
 
 		return true;

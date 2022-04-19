@@ -35,3 +35,11 @@ uint32 CPU::getCurrentThreadId()
 	#error "Not implemented"
 #endif
 }
+
+void CPU::setCurrentThreadName(const wchar_t* name) {
+#if PLATFORM_WINDOWS
+	::SetThreadDescription(GetCurrentThread(), name);
+#else
+	#error "Not implemented"
+#endif
+}

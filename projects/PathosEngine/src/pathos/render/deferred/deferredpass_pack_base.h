@@ -1,9 +1,8 @@
 #pragma once
 
-//#include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
-#include "pathos/scene/scene.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/uniform_buffer.h"
 
@@ -19,7 +18,7 @@ namespace pathos {
 
 		void bindProgram(RenderCommandList& cmdList);
 
-		virtual void render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) = 0;
+		virtual void render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera, MeshGeometry* inMesh, Material* inMaterial) = 0;
 
 	protected:
 		virtual void createProgram() = 0;

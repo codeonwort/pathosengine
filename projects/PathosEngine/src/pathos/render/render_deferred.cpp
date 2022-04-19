@@ -3,6 +3,9 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/depth_prepass.h"
 #include "pathos/render/sky.h"
+#include "pathos/render/skybox.h"
+#include "pathos/render/sky_ansel.h"
+#include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/sky_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_depth.h"
@@ -126,6 +129,20 @@ namespace pathos {
 
 		sceneRenderSettings = settings;
 		frameCounter = sceneRenderSettings.frameCounter;
+		
+		if (settings.finalRenderTarget != nullptr) {
+			setFinalRenderTarget(settings.finalRenderTarget);
+		}
+	}
+
+	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+		CHECKF(inFinalRenderTarget != nullptr, "null is not accepted. Use setFinalRenderTargetToBackbuffer() for backbuffer");
+		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
+		finalRenderTarget = inFinalRenderTarget;
+	}
+
+	void DeferredRenderer::setFinalRenderTargetToBackbuffer() {
+		finalRenderTarget = 0;
 	}
 
 	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
@@ -150,12 +167,13 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 	}
 
-	void DeferredRenderer::render(RenderCommandList& cmdList, Scene* inScene, Camera* inCamera) {
+	void DeferredRenderer::render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
 		CHECK(sceneRenderSettings.isValid());
 
+		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
@@ -206,10 +224,11 @@ namespace pathos {
 		}
 
 		// Volumetric clouds
-		const bool bRenderClouds = scene->cloud != nullptr && scene->cloud->hasValidResources();
+		const bool bRenderClouds = scene->isVolumetricCloudValid();
 		if (bRenderClouds) {
-			SCOPED_GPU_COUNTER(VolumetricCloud);
+			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 
+			// #todo-renderthread: Is this needed? We now have VolumetricCloudProxy.
 			VolumetricCloudSettings settings;
 			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
 			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
@@ -388,11 +407,6 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
-		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
-		finalRenderTarget = inFinalRenderTarget;
-	}
-
 	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(ClearGBuffer);
 
@@ -472,11 +486,23 @@ namespace pathos {
 
 		unpack_pass->bindFramebuffer(cmdList);
 
-		// actually not an unpack work, but rendering order is here...
-		if (scene->sky && !scene->sky->isDestroyed()) {
-			scene->sky->render(cmdList, scene, camera);
+		// #todo-refactoring: Actually not an unpack work, but rendering order is here
+		const bool bRenderSkybox = scene->isSkyboxValid();
+		const bool bRenderAnsel = scene->isAnselSkyValid();
+		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
+		{
+			// #todo-sky: What to choose when multiple sky proxies are active?
+			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderAnsel + (int32)bRenderAtmosphere;
+			//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 		}
-
+		if (scene->isSkyboxValid()) {
+			skyboxPass->render(cmdList, scene);
+		} else if (scene->isAnselSkyValid()) {
+			anselSkyPass->render(cmdList, scene);
+		} else if (scene->isSkyAtmosphereValid()) {
+			skyAtmospherePass->render(cmdList, scene);
+		}
+		
 		unpack_pass->render(cmdList, scene, camera);
 	}
 	
@@ -515,7 +541,7 @@ namespace pathos {
 		return finalRenderTarget->getGLName();
 	}
 
-	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, Scene* scene, Camera* camera) {
+	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		UBO_PerFrame data;
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
@@ -587,7 +613,10 @@ namespace pathos {
 	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
-	std::unique_ptr<class VolumetricCloud>         DeferredRenderer::volumetricCloud;
+	std::unique_ptr<class SkyboxPass>              DeferredRenderer::skyboxPass;
+	std::unique_ptr<class AnselSkyPass>            DeferredRenderer::anselSkyPass;
+	std::unique_ptr<class SkyAtmospherePass>       DeferredRenderer::skyAtmospherePass;
+	std::unique_ptr<class VolumetricCloudPass>     DeferredRenderer::volumetricCloud;
 
 	std::unique_ptr<class DepthPrepass>            DeferredRenderer::depthPrepass;
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
@@ -602,9 +631,7 @@ namespace pathos {
 	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
 	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
 
-	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial = std::make_unique<ColorMaterial>();
 		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
 		fallbackMaterial->setMetallic(0.0f);
@@ -636,7 +663,16 @@ namespace pathos {
 		}
 
 		{
-			volumetricCloud = std::make_unique<VolumetricCloud>();
+			skyboxPass = std::make_unique<SkyboxPass>();
+			skyboxPass->initializeResources(cmdList);
+
+			anselSkyPass = std::make_unique<AnselSkyPass>();
+			anselSkyPass->initializeResources(cmdList);
+
+			skyAtmospherePass = std::make_unique<SkyAtmospherePass>();
+			skyAtmospherePass->initializeResources(cmdList);
+
+			volumetricCloud = std::make_unique<VolumetricCloudPass>();
 			volumetricCloud->initializeResources(cmdList);
 		}
 
@@ -669,16 +705,9 @@ namespace pathos {
 			fxaa->initializeResources(cmdList);
 			depthOfField->initializeResources(cmdList);
 		}
-
-		cmdList.flushAllCommands();
 	}
 
-	// #todo-system: Oh my fucking god. Freeglut does not support callback on close window.
-	// Engine::stop() will not be called thus this method will not also, but std::unique_ptr's destructor will be called,
-	// which invalidates the CHECK() in PostProcess' destructor.
-	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice) {
-		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
-
+	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial.release();
 		fullscreenQuad->dispose();
 		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
@@ -697,6 +726,9 @@ namespace pathos {
 		}
 
 		{
+			skyboxPass->destroyResources(cmdList);
+			anselSkyPass->destroyResources(cmdList);
+			skyAtmospherePass->destroyResources(cmdList);
 			volumetricCloud->destroyResources(cmdList);
 		}
 

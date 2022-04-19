@@ -2,10 +2,34 @@
 
 #include "sky.h"
 #include "pathos/mesh/geometry.h"
+#include "pathos/actor/scene_component.h"
 #include "gl_core.h"
 
 namespace pathos {
 
+	struct AnselSkyProxy : SceneComponentProxy {
+		MeshGeometry* sphere;
+		GLuint textureID;
+	};
+
+	class AnselSkyPass : public Noncopyable {
+		
+	public:
+		void initializeResources(RenderCommandList& cmdList);
+		void destroyResources(RenderCommandList& cmdList);
+
+		void render(RenderCommandList& cmdList, SceneProxy* scene);
+
+	private:
+		GLint uniform_transform = 0xffffffff;
+
+	};
+
+}
+
+namespace pathos {
+
+	// #todo-refactoring: Move to another folder
 	class IcosahedronGeometry : public MeshGeometry {
 
 		static constexpr uint32_t INITIAL_NUM_VERTICES = 12;
@@ -29,20 +53,36 @@ namespace pathos {
 		
 	};
 
-	class AnselSkyRendering : public SkyActor {
-		
+	class AnselSkyComponent : public SceneComponent {
+
 	public:
+		~AnselSkyComponent();
+
 		void initialize(GLuint textureID);
-		void render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) override;
+
+		inline bool hasValidResources() const { return textureID != 0 && sphere != nullptr; }
 
 	protected:
-		virtual void onDestroy() override;
+		virtual void createRenderProxy(SceneProxy* scene) override;
 
 	private:
-		GLint uniform_transform = 0;
-		GLuint texture = 0;
-
+		GLuint textureID = 0;
 		MeshGeometry* sphere = nullptr;
+
+	};
+
+	class AnselSkyActor : public SkyActor {
+		
+	public:
+		AnselSkyActor() {
+			component = createDefaultComponent<AnselSkyComponent>();
+			setAsRootComponent(component);
+		}
+
+		void initialize(GLuint textureID);
+
+	private:
+		AnselSkyComponent* component;
 
 	};
 

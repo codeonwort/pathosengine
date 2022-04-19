@@ -1,10 +1,10 @@
 #include "sky_ansel.h"
-#include "scene_render_targets.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 
 #include <string>
-#include <assert.h>
 
 namespace pathos {
 	
@@ -30,9 +30,48 @@ namespace pathos {
 
 namespace pathos {
 
+	void AnselSkyPass::initializeResources(RenderCommandList& cmdList) {
+		uniform_transform = 0;
+	}
+
+	void AnselSkyPass::destroyResources(RenderCommandList& cmdList) {
+		//
+	}
+
+	void AnselSkyPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(AnselSkyActor);
+
+		const Camera& camera = scene->camera;
+		AnselSkyProxy* anselSky = scene->anselSky;
+
+		const matrix4 view = matrix4(matrix3(camera.getViewMatrix())); // view transform without transition
+		const matrix4& proj = camera.getProjectionMatrix();
+		const matrix4 transform = proj * view;
+
+		cmdList.depthFunc(GL_GREATER);
+		cmdList.disable(GL_DEPTH_TEST);
+
+		anselSky->sphere->activate_position(cmdList);
+		anselSky->sphere->activateIndexBuffer(cmdList);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AnselSky);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
+		cmdList.bindTextureUnit(0, anselSky->textureID);
+
+		anselSky->sphere->drawPrimitive(cmdList);
+	}
+
+}
+
+namespace pathos {
+
 	IcosahedronGeometry::IcosahedronGeometry(uint32_t subdivisionStep /*= 0*/) {
 		buildGeometry();
-		while (subdivisionStep-- > 0) subdivide();
+		while (subdivisionStep --> 0) {
+			subdivide();
+		}
 		uploadToGPU();
 	}
 
@@ -149,41 +188,41 @@ namespace pathos {
 		updateIndexData(indexData, numTriangles * 3);
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////
+}
 
-	void AnselSkyRendering::initialize(GLuint textureID) {
-		texture = textureID;
-		sphere = new IcosahedronGeometry(0);
-		uniform_transform = 0;
-	}
+namespace pathos {
 
-	void AnselSkyRendering::render(RenderCommandList& cmdList, const Scene* scene, const Camera* camera) {
-		SCOPED_DRAW_EVENT(AnselSkyRendering);
-
-		const matrix4 view = matrix4(matrix3(camera->getViewMatrix())); // view transform without transition
-		const matrix4& proj = camera->getProjectionMatrix();
-		const matrix4 transform = proj * view;
-
-		cmdList.depthFunc(GL_GREATER);
-		cmdList.disable(GL_DEPTH_TEST);
-
-		sphere->activate_position(cmdList);
-		sphere->activateIndexBuffer(cmdList);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AnselSky);
-		cmdList.useProgram(program.getGLName());
-
-		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		cmdList.bindTextureUnit(0, texture);
-
-		sphere->drawPrimitive(cmdList);
-	}
-
-	void AnselSkyRendering::onDestroy() {
+	AnselSkyComponent::~AnselSkyComponent() {
 		if (sphere) {
 			delete sphere;
 			sphere = nullptr;
 		}
+	}
+
+	void AnselSkyComponent::initialize(GLuint inTextureID) {
+		textureID = inTextureID;
+		sphere = new IcosahedronGeometry(0);
+	}
+
+	void AnselSkyComponent::createRenderProxy(SceneProxy* scene) {
+		if (!hasValidResources()) {
+			scene->anselSky = nullptr;
+			return;
+		}
+
+		AnselSkyProxy* proxy = ALLOC_RENDER_PROXY<AnselSkyProxy>(scene);
+		proxy->sphere = sphere;
+		proxy->textureID = textureID;
+
+		scene->anselSky = proxy;
+	}
+
+}
+
+namespace pathos {
+
+	void AnselSkyActor::initialize(GLuint textureID) {
+		component->initialize(textureID);
 	}
 
 }

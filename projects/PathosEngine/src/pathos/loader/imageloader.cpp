@@ -86,10 +86,10 @@ namespace pathos {
 		return ret;
 	}
 
-	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB) {
+	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB, const char* debugName /*= nullptr*/) {
 		int w, h;
 		uint8* data;
-		GLuint tex_id = 0;
+		GLuint texture = 0;
 
 		data = FreeImage_GetBits(dib);
 		w = FreeImage_GetWidth(dib);
@@ -97,32 +97,36 @@ namespace pathos {
 
 		LOG(LogDebug, "%s: Create texture %dx%d", __FUNCTION__, w, h);
 
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &tex_id);
+		ENQUEUE_RENDER_COMMAND([dib, data, w, h, texturePtr = &texture, generateMipmap, sRGB, debugName](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
 
-		ENQUEUE_RENDER_COMMAND([dib, data, w, h, tex_id, generateMipmap, sRGB](RenderCommandList& cmdList) {
 			uint32 numLODs = 1;
 			if (generateMipmap) {
 				numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 			}
 			unsigned int bpp = FreeImage_GetBPP(dib);
 			if (bpp == 32) {
-				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
-				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
 			} else if (bpp == 24) {
-				cmdList.textureStorage2D(tex_id, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
-				cmdList.textureSubImage2D(tex_id, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
+				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, data);
 			} else {
 				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 				//gRenderDevice->deleteTextures(1, &tex_id);
 			}
 			if (generateMipmap) {
-				cmdList.generateTextureMipmap(tex_id);
+				cmdList.generateTextureMipmap(*texturePtr);
 			}
 		});
-		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
 
-		return tex_id;
+		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
+		TEMP_FLUSH_RENDER_COMMAND(true);
+
+		return texture;
 	}
 
 	/**
@@ -132,7 +136,7 @@ namespace pathos {
 	* - Image order: +X, -X, +Y, -Y, +Z, -Z
 	* - All images must have same width/height/bpp.
 	*/
-	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap) {
+	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap /*= true*/, const char* debugName /*= nullptr*/) {
 		int w = FreeImage_GetWidth(dib[0]);
 		int h = FreeImage_GetHeight(dib[0]);
 		if (w != h){
@@ -140,14 +144,18 @@ namespace pathos {
 			return 0;
 		}
 
-		GLuint tex_id;
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_id);
+		GLuint tex_id = 0;
 
-		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, tex_id](RenderCommandList& cmdList) {
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(tex_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, texturePtr = &tex_id, debugName](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
+
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 			unsigned int bpp = FreeImage_GetBPP(dib[0]);
 			if (bpp == 32 || bpp == 24) {
@@ -155,7 +163,7 @@ namespace pathos {
 				if (generateMipmap) {
 					numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
 				}
-				cmdList.textureStorage2D(tex_id, numLODs, GL_RGBA8, w, h);
+				cmdList.textureStorage2D(*texturePtr, numLODs, GL_RGBA8, w, h);
 			} else {
 				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 			}
@@ -163,18 +171,18 @@ namespace pathos {
 			for (int32 i = 0; i < 6; i++) {
 				uint8* data = FreeImage_GetBits(dib[i]);
 				GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
-				cmdList.textureSubImage3D(tex_id, 0,
+				cmdList.textureSubImage3D(*texturePtr, 0,
 					0, 0, i,
 					w, h, 1,
 					format, GL_UNSIGNED_BYTE, data);
 			}
 
 			if (generateMipmap) {
-				cmdList.generateTextureMipmap(tex_id);
+				cmdList.generateTextureMipmap(*texturePtr);
 			}
 		});
 		// #todo-image-loader: dib is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
+		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return tex_id;
 	}
@@ -199,30 +207,35 @@ namespace pathos {
 		return metadata;
 	}
 
-	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/)
+	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData /*= true*/, const char* debugName /*= nullptr*/)
 	{
-		static int32 label_counter = 0;
+		static int32 debugNameAutoCounter = 0;
 
-		GLuint texture;
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
+		GLuint texture = 0;
 
-		char label[256];
-		sprintf_s(label, "Texture HDR %d", label_counter);
-		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, label);
-		label_counter += 1;
+		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, &metadata, debugName](RenderCommandList& cmdList) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 
-		ENQUEUE_RENDER_COMMAND([texture, &metadata](RenderCommandList& cmdList) {
-			cmdList.textureStorage2D(texture, 1, GL_RGB16F, metadata.width, metadata.height);
-			cmdList.textureSubImage2D(texture, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
-			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			if (debugName == nullptr) {
+				char debugNameAuto[256];
+				sprintf_s(debugNameAuto, "Texture HDR %d", debugNameAutoCounter);
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugNameAuto);
+				debugNameAutoCounter += 1;
+			} else {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
+
+			cmdList.textureStorage2D(*texturePtr, 1, GL_RGB16F, metadata.width, metadata.height);
+			cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, metadata.width, metadata.height, GL_RGB, GL_FLOAT, metadata.data);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		});
-		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush here for now.
-		TEMP_FLUSH_RENDER_COMMAND();
+		// #todo-image-loader: metadata is not guaranteed to be alive, so we should flush GPU here.
+		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		if (deleteBlobData) {
 			stbi_image_free(metadata.data);

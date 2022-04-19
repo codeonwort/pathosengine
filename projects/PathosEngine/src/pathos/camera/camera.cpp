@@ -140,7 +140,7 @@ namespace pathos {
 		viewDirty = true;
 	}
 	void Camera::rotatePitch(float angleDegree) {
-		rotationX = clamp(MIN_PITCH, rotationX + glm::radians(angleDegree), MAX_PITCH);
+		rotationX = badger::clamp(MIN_PITCH, rotationX + glm::radians(angleDegree), MAX_PITCH);
 		viewDirty = true;
 	}
 	

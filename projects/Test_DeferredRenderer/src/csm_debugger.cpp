@@ -1,8 +1,10 @@
 #include "csm_debugger.h"
-#include "badger/math/minmax.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/camera/camera.h"
 #include "pathos/util/math_lib.h"
+
+// #todo-shadow: Make it variable?
+constexpr uint32 NUM_CSM_FRUSTUMS = 4;
 
 CSMDebugger::CSMDebugger() {
 	setStaticMesh(new Mesh);
@@ -20,9 +22,8 @@ CSMDebugger::CSMDebugger() {
 }
 
 void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDirection) {
-	constexpr uint32 numFrustum = 4;
 	std::vector<vector3> frustumPlanes;
-	camera.getFrustum(frustumPlanes, numFrustum);
+	camera.getFrustum(frustumPlanes, NUM_CSM_FRUSTUMS);
 
 	bool cascadeMasks[4] = { true, true, true, true };
 
@@ -30,7 +31,7 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 	{
 		G->clear();
 
-		constexpr uint32 iMax = 4 * (numFrustum + 1);
+		constexpr uint32 iMax = 4 * (NUM_CSM_FRUSTUMS + 1);
 		for (uint32 i = 0; i < iMax; i += 4) {
 			if (cascadeMasks[i / 4] == false || (i / 4 == 4 && cascadeMasks[3] == false)) {
 				continue;
@@ -94,7 +95,7 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 		};
 
 		std::vector<vector3> lightViewVertices;
-		for (uint32 i = 0u; i <= numFrustum; ++i) {
+		for (uint32 i = 0u; i <= NUM_CSM_FRUSTUMS; ++i) {
 			calcBounds(&frustumPlanes[i * 4], lightViewVertices);
 		}
 		for (uint32 i = 0; i < (uint32)lightViewVertices.size(); i += 8) {

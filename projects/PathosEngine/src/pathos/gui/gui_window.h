@@ -27,6 +27,7 @@ namespace pathos {
 		bool glDebugContext;
 
 		// Callbacks
+		std::function<void()> onClose;
 		std::function<void()> onIdle;
 		std::function<void()> onDisplay;
 		std::function<void(int w, int h)> onReshape;
@@ -52,6 +53,9 @@ namespace pathos {
 		void startMainLoop();
 		void stopMainLoop();
 
+		void updateWindow_renderThread();
+
+		void onClose();
 		void onIdle();
 		void onDisplay();
 		void onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY);
@@ -76,6 +80,7 @@ namespace pathos {
 
 		int nativeHandle;
 
+		std::function<void()> callback_onClose;
 		std::function<void()> callback_onIdle;
 		std::function<void()> callback_onDisplay;
 		std::function<void(int32, int32)> callback_onReshape;

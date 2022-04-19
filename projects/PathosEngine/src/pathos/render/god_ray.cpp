@@ -2,6 +2,7 @@
 #include "pathos/render/render_deferred.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
@@ -135,7 +136,13 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
-	void GodRay::renderGodRay(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* fullscreenQuad, DeferredRenderer* renderer) {
+	void GodRay::renderGodRay(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		MeshGeometry* fullscreenQuad,
+		DeferredRenderer* renderer)
+	{
 		SCOPED_DRAW_EVENT(GodRay);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -156,7 +163,7 @@ namespace pathos {
 		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
 
 		// special case: no light source
-		if (scene->godRaySource == nullptr || scene->godRaySource->getStaticMesh() == nullptr || scene->godRaySource->getStaticMesh()->getGeometries().size() == 0) {
+		if (!scene->isGodRayValid()) {
 			return;
 		}
 
@@ -174,8 +181,7 @@ namespace pathos {
 			cmdList.useProgram(program.getGLName());
 
 			// Source
-			std::vector<StaticMeshProxy*> sourceProxyList;
-			scene->godRaySource->createRenderProxy_internal(sourceProxyList);
+			std::vector<StaticMeshProxy*>& sourceProxyList = scene->godRayMeshes;
 			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
 				renderSilhouette(cmdList, camera, sourceProxy);
 			}
@@ -195,10 +201,10 @@ namespace pathos {
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayLightScattering);
 
-			vector3 lightPos = scene->godRaySource->getLocation();
+			vector3 lightPos = scene->godRayLocation;
 			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
 			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
-			lightPos = glm::vec3(lightPos_homo) / lightPos_homo.w;
+			lightPos = vector3(lightPos_homo) / lightPos_homo.w;
 
 			UBO_GodRayLightScattering uboData;
 			uboData.lightPos.x = (lightPos.x + 1.0f) / 2.0f;

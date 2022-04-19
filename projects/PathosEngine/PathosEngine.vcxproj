@@ -151,6 +151,7 @@
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
+    <ClCompile Include="src\pathos\render\scene_proxy.cpp" />
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp" />
     <ClCompile Include="src\pathos\render\sky_clouds.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
@@ -167,9 +168,12 @@
     <ClCompile Include="src\pathos\text\text_geometry.cpp" />
     <ClCompile Include="src\pathos\text\text_actor.cpp" />
     <ClCompile Include="src\pathos\text\text_component.cpp" />
+    <ClCompile Include="src\pathos\thread\engine_thread.cpp" />
+    <ClCompile Include="src\pathos\thread\render_thread.cpp" />
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp" />
     <ClCompile Include="src\pathos\util\engine_util.cpp" />
     <ClCompile Include="src\pathos\util\file_system.cpp" />
+    <ClCompile Include="src\pathos\util\gl_context_manager.cpp" />
     <ClCompile Include="src\pathos\util\gl_debug_group.cpp" />
     <ClCompile Include="src\pathos\util\log.cpp" />
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
@@ -250,6 +254,7 @@
     <ClInclude Include="src\pathos\render\render_command_list.h" />
     <ClInclude Include="src\pathos\render\render_device.h" />
     <ClInclude Include="src\pathos\render\render_target.h" />
+    <ClInclude Include="src\pathos\render\scene_proxy.h" />
     <ClInclude Include="src\pathos\render\sky_atmosphere.h" />
     <ClInclude Include="src\pathos\render\sky_clouds.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
@@ -260,9 +265,11 @@
     <ClInclude Include="src\pathos\text\text_actor.h" />
     <ClInclude Include="src\pathos\text\text_component.h" />
     <ClInclude Include="src\pathos\thread\engine_thread.h" />
+    <ClInclude Include="src\pathos\thread\render_thread.h" />
     <ClInclude Include="src\pathos\util\cpu_profiler.h" />
     <ClInclude Include="src\pathos\util\engine_util.h" />
     <ClInclude Include="src\pathos\util\file_system.h" />
+    <ClInclude Include="src\pathos\util\gl_context_manager.h" />
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\math_lib.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />

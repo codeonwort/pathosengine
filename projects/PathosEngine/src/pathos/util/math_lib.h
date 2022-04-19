@@ -21,6 +21,7 @@ namespace pathos {
 		outT = glm::cross(outB, N);
 	}
 
+	// #todo-refactoring: Duplicate to badger::min() and badger::max()
 	template<typename T>
 	T min(T x, T y) {
 		return (x < y) ? x : y;

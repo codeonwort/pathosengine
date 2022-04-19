@@ -26,6 +26,7 @@ namespace pathos {
 	class ConsoleWindow;
 	class AssetStreamer;
 	class OverlayRenderer;
+	class RenderThread;
 
 	enum class ERendererType : uint8 {
 		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
@@ -56,9 +57,10 @@ namespace pathos {
 
 	class Engine final : public Noncopyable {
 		friend class EngineUtil;
+		friend class RenderThread;
 
 		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
-		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice)>;
+		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice, RenderCommandList& cmdList)>;
 
 	// Static members
 	public:
@@ -81,9 +83,19 @@ namespace pathos {
 		void start();
 		void stop();
 
+		// #todo: Ad-hoc communication to render thread. Needs clearer interface.
+		void pushSceneProxy(SceneProxy* newSceneProxy);
+		void updateMainWindow_renderThread();
+		void updateGPUQuery_renderThread(
+			float inElapsedRenderThread,
+			float inElapsedGpu,
+			const std::vector<std::string>& inGpuCounterNames,
+			const std::vector<float>& inGpuCounterTimes);
+
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 
+		void toggleFrameStat();
 		void dumpGPUProfile();
 
 		void setWorld(World* inWorld);
@@ -91,7 +103,8 @@ namespace pathos {
 		const EngineConfig& getConfig() const { return conf; }
 
 		inline float getWorldTime() { return stopwatch_app.stop(); }
-		inline float getCPUTime() const { return elapsed_gameThread + elapsed_renderThread; } // Currently single-threaded (in milliseconds)
+		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
+		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
 
 		InputSystem* getInputSystem() const { return inputSystem.get(); }
@@ -117,18 +130,15 @@ namespace pathos {
 		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeInput();
 		bool initializeAssetStreamer();
-		bool initializeOpenGL();
+		
 		bool initializeImageLibrary();
-		bool initializeFontSystem();
-		bool initializeOverlayRenderer();
+		bool initializeFontSystem(RenderCommandList& cmdList);
 		bool initializeConsole();
-		bool initializeRenderer();
-
-		bool destroyOpenGL();
 
 		void readConfigFile();
 
 		// GUI event listeners //
+		static void onCloseWindow();
 		static void onIdle();
 		static void onMainWindowDisplay();
 		static void onMainWindowReshape(int32 newWidth, int32 newHeight);
@@ -141,23 +151,15 @@ namespace pathos {
 
 	private:
 		void tick();
-		void render();
 
 	// Game thread
 	private:
 		EngineConfig conf;
-		StackAllocator renderProxyAllocator;
 		Stopwatch stopwatch_gameThread;
-		Stopwatch stopwatch_renderThread;
 		Stopwatch stopwatch_app;
 
 		uint32 frameCounter_gameThread;
-		uint32 frameCounter_renderThread;
 		float elapsed_gameThread;
-		float elapsed_renderThread;
-
-		std::vector<std::string> lastGpuCounterNames;
-		std::vector<float> lastGpuCounterTimes;
 
 		World* currentWorld;
 
@@ -169,13 +171,14 @@ namespace pathos {
 
 	// Render thread
 	private:
-		OpenGLDevice* render_device;
-		Renderer* renderer;
-		OverlayRenderer* renderer2D;
-		DebugOverlay* debugOverlay;
+		RenderThread* renderThread;
 
-		GLuint timer_query;
-		float elapsed_gpu; // in milliseconds
+		// Render thread will fill in these
+		float elapsed_renderThread;
+		float elapsed_gpu;
+		std::vector<std::string> lastGpuCounterNames;
+		std::vector<float> lastGpuCounterTimes;
+		std::mutex gpuQueryMutex;
 
 		// System textures
 		GLuint texture2D_black = 0;

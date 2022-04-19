@@ -11,6 +11,8 @@
 #include <list>
 #include <string>
 
+#include "pathos/render/render_command_list.h"
+
 #pragma comment(lib, "freetype.lib")
 
 namespace pathos {
@@ -39,7 +41,7 @@ namespace pathos {
 		bool init();
 		bool term();
 
-		bool registerFont(const std::string& tag, const char* filepath, uint32 pixelSize);
+		bool registerFont(RenderCommandList& cmdList, const std::string& tag, const char* filepath, uint32 pixelSize);
 		bool getFontDesc(const std::string& tag, FontDesc& outDesc);
 
 		// Chance to cleanup resources related to render command execution

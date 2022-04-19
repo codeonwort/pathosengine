@@ -21,8 +21,8 @@ namespace pathos {
 			, radiance(vector3(1.0f, 1.0f, 1.0f))
 		{}
 
-		virtual void createRenderProxy(Scene* scene) override {
-			DirectionalLightProxy* proxy = ALLOC_RENDER_PROXY<DirectionalLightProxy>();
+		virtual void createRenderProxy(SceneProxy* scene) override {
+			DirectionalLightProxy* proxy = ALLOC_RENDER_PROXY<DirectionalLightProxy>(scene);
 
 			proxy->wsDirection = direction;
 			proxy->padding0    = 0.0f;

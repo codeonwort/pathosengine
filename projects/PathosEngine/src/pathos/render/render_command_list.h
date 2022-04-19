@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <functional>
+#include <mutex>
 
 namespace pathos {
 
@@ -17,21 +18,28 @@ namespace pathos {
 
 	private:
 		struct RenderCommand_registerHook : RenderCommandBase {
-			std::function<void(void*)> hook;
-			void* argument;
+			std::function<void(RenderCommandList& cmdList)> hook;
+			RenderCommandList* hookCommandList;
 
 			static void APIENTRY execute(const RenderCommand_registerHook* __restrict params) {
-				params->hook(params->argument);
+				params->hook(*(params->hookCommandList));
+				params->hookCommandList->flushAllCommands();
 			}
 		};
 		
 	public:
-		RenderCommandList(uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY, uint32 parametersAllocBytes = COMMAND_PARAMETERS_MAX_MEMORY)
-			: commands_alloc(StackAllocator(commandAllocBytes))
+		RenderCommandList(const char* inDebugName, uint32 commandAllocBytes = RENDER_COMMAND_LIST_MAX_MEMORY, uint32 parametersAllocBytes = COMMAND_PARAMETERS_MAX_MEMORY)
+			: debugName(inDebugName)
+			, debugCurrentCommandIx(0)
+			, commands_alloc(StackAllocator(commandAllocBytes))
 			, parameters_alloc(StackAllocator(parametersAllocBytes))
+			, sceneProxy(nullptr)
 			, sceneRenderTargets(nullptr)
+			, hookCommandList(nullptr)
 		{
 		}
+
+		void setHookCommandList(RenderCommandList* secondaryCommandList);
 
 		// Clear all commands in the list.
 		void clearAllCommands();
@@ -46,12 +54,17 @@ namespace pathos {
 		void flushAllCommands();
 
 		// For subsequent works related to GL calls that have return values
-		void registerHook(std::function<void(void*)> hook, void* argument, uint64 argumentBytes);
+		void registerHook(std::function<void(RenderCommandList& cmdList)> hook);
+
+		inline bool isEmpty() const { return commands.size() == 0; }
+
+		// Debug only
+		const char* debugName;
+		uint32 debugCurrentCommandIx;
 
 		// Should be assigned by renderer before rendering anything of current frame
+		class SceneProxy* sceneProxy;
 		struct SceneRenderTargets* sceneRenderTargets;
-
-		uint32 debugCurrentCommandIx = 0;
 
 	private:
 		RenderCommandBase* getNextPacket();
@@ -68,9 +81,12 @@ namespace pathos {
 
 		StackAllocator commands_alloc;
 		StackAllocator parameters_alloc; // non-singular parameters should be mem-copied to this allocator, as source data could be a local variable
-
+		
+		std::mutex commandListLock;
 		std::vector<RenderCommandBase*> commands;
 		uint32 flushDepth = 0;
+
+		RenderCommandList* hookCommandList;
 
 	public:
 		#include "render_command_list.generated.h"

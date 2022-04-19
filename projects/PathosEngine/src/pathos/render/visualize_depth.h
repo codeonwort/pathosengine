@@ -1,9 +1,11 @@
 #pragma once
 
-#include "pathos/scene/scene.h"
-#include "pathos/camera/camera.h"
+#include "pathos/core_minimal.h"
 
 namespace pathos {
+
+	class SceneProxy;
+	class Camera;
 
 	class VisualizeDepth {
 		
@@ -13,7 +15,7 @@ namespace pathos {
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
-		void render(RenderCommandList& cmdList, Scene* scene, Camera* camera);
+		void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
 		GLuint dummyVAO;

@@ -5,12 +5,12 @@
 namespace pathos {
 
 	class Actor;
-	class Scene;
+	class SceneProxy;
 
 	class ActorComponent
 	{
 		friend class Actor;
-		friend class Scene; // For render proxy
+		friend class Scene;
 
 	public:
 		ActorComponent() = default;
@@ -24,7 +24,7 @@ namespace pathos {
 		virtual void onRegister() {}   // Called when registered to an owner actor
 		virtual void onUnregister() {} // Called when unregistered from the owner actor
 
-		virtual void createRenderProxy(Scene* scene) {}
+		virtual void createRenderProxy(SceneProxy* scene) {}
 		virtual void updateDynamicData_renderThread(RenderCommandList& cmdList) {}
 
 	private:

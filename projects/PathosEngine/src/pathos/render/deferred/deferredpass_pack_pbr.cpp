@@ -55,8 +55,14 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_PBR>();
 	}
 
-	void MeshDeferredRenderPass_Pack_PBR::render(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
-		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(material_);
+	void MeshDeferredRenderPass_Pack_PBR::render(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		MeshGeometry* geometry,
+		Material* inMaterial)
+	{
+		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(inMaterial);
 
 		// #todo-material: hack and it increases overhead of shader changes.
 		if (material->useTriplanarMapping) {

@@ -2,7 +2,7 @@
 
 #include "gl_core.h"
 #include "pathos/camera/camera.h"
-#include "pathos/scene/scene.h"
+#include "pathos/render/scene_proxy.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
@@ -21,9 +21,9 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void updateUniformBufferData(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
+		void updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera);
 		
-		void renderShadowMap(RenderCommandList& cmdList, const Scene* scene, const Camera* camera);
+		void renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera);
 
 		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
 

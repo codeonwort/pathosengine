@@ -33,6 +33,8 @@ namespace pathos {
 		, queryObject1(0)
 		, queryObject2(0)
 	{
+		CHECK(isInRenderThread());
+
 		if (!ScopedGpuCounter::enable) {
 			return;
 		}
@@ -49,6 +51,8 @@ namespace pathos {
 	}
 
 	ScopedGpuCounter::~ScopedGpuCounter() {
+		CHECK(isInRenderThread());
+
 		if (!ScopedGpuCounter::enable) {
 			return;
 		}
@@ -105,21 +109,20 @@ namespace pathos {
 		return true;
 	}
 
-	uint32 ScopedGpuCounter::flushQueries(std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds) {
+	uint32 ScopedGpuCounter::flushQueries(RenderCommandList& cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds) {
 		CHECKF(poolInitialized, "Pool was not initialized");
+		CHECK(isInRenderThread());
 
 		outCounterNames.resize(numUsedQueryObjects / 2);
 		outElapsedMilliseconds.resize(numUsedQueryObjects / 2);
 		std::vector<GLuint64> beginTimeNSArray(numUsedQueryObjects / 2, 0U);
 		std::vector<GLuint64> endTimeNSArray(numUsedQueryObjects / 2, 0U);
-
-		ENQUEUE_RENDER_COMMAND([&outCounterNames, &outElapsedMilliseconds, &beginTimeNSArray, &endTimeNSArray](RenderCommandList& cmdList) {
-			for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
-				cmdList.getQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNSArray[i / 2]);
-				cmdList.getQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNSArray[i / 2]);
-			}
-		});
-		FLUSH_RENDER_COMMAND();
+		
+		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
+			cmdList.getQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNSArray[i / 2]);
+			cmdList.getQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNSArray[i / 2]);
+		}
+		cmdList.flushAllCommands();
 
 		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
 			float elapsedMS = (float)((double)(endTimeNSArray[i / 2] - beginTimeNSArray[i / 2]) / 1000000.0);

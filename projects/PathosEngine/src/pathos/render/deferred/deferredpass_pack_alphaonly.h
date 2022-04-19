@@ -11,7 +11,7 @@ namespace pathos {
 
 		virtual void render(
 			RenderCommandList& cmdList,
-			Scene* inScene,
+			SceneProxy* inScene,
 			Camera* inCamera,
 			MeshGeometry* inMesh,
 			Material* inMaterial) override;

@@ -24,9 +24,15 @@ namespace pathos {
 		ubo.init<UBO_Deferred_Pack_Texture>();
 	}
 
-	void MeshDeferredRenderPass_Pack_FlatTexture::render(RenderCommandList& cmdList, Scene* scene, Camera* camera, MeshGeometry* geometry, Material* material_) {
+	void MeshDeferredRenderPass_Pack_FlatTexture::render(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		MeshGeometry* geometry,
+		Material* inMaterial)
+	{
 		static_cast<void>(scene);
-		TextureMaterial* material = static_cast<TextureMaterial*>(material_);
+		TextureMaterial* material = static_cast<TextureMaterial*>(inMaterial);
 
 		geometry->activate_position_uv_normal(cmdList);
 		geometry->activateIndexBuffer(cmdList);
