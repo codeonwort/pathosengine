@@ -490,8 +490,11 @@ namespace pathos {
 		const bool bRenderSkybox = scene->isSkyboxValid();
 		const bool bRenderAnsel = scene->isAnselSkyValid();
 		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
-		int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderAnsel + (int32)bRenderAtmosphere;
-		CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
+		{
+			// #todo-sky: What to choose when multiple sky proxies are active?
+			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderAnsel + (int32)bRenderAtmosphere;
+			//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
+		}
 		if (scene->isSkyboxValid()) {
 			skyboxPass->render(cmdList, scene);
 		} else if (scene->isAnselSkyValid()) {

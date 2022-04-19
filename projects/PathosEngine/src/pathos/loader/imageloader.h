@@ -32,7 +32,7 @@ namespace pathos {
 	int32 loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference, std::array<FIBITMAP*,6>& outImages);
 
 	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB, const char* debugName = nullptr);
-	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap = true);
+	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap = true, const char* debugName = nullptr);
 
 	// Load HDR image by stb_image
 	HDRImageMetadata loadHDRImage(const char* inFilename);

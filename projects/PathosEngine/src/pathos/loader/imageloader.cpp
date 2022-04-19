@@ -136,7 +136,7 @@ namespace pathos {
 	* - Image order: +X, -X, +Y, -Y, +Z, -Z
 	* - All images must have same width/height/bpp.
 	*/
-	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap) {
+	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap /*= true*/, const char* debugName /*= nullptr*/) {
 		int w = FreeImage_GetWidth(dib[0]);
 		int h = FreeImage_GetHeight(dib[0]);
 		if (w != h){
@@ -146,8 +146,11 @@ namespace pathos {
 
 		GLuint tex_id = 0;
 
-		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, texturePtr = &tex_id](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, texturePtr = &tex_id, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
+			if (debugName != nullptr) {
+				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+			}
 
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

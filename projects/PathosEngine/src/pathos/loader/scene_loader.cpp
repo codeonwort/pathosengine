@@ -93,8 +93,7 @@ namespace pathos {
 			// #todo: Don't use FIBITMAP* directly
 			std::array<FIBITMAP*, 6> textureDataArray;
 			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
-			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps);
-			gRenderDevice->objectLabel(GL_TEXTURE, cubeTexture, -1, sceneDesc.skybox.name.c_str());
+			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps, sceneDesc.skybox.name.c_str());
 
 			Skybox* actor = world->spawnActor<Skybox>();
 			actor->initialize(cubeTexture);
