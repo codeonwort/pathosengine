@@ -28,7 +28,7 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 	* Tone mapping
 	* FXAA
 * System
-  * Render command list
+  * Render thread
   * Asynchronous asset loader
   * Runtime shader recompilation
   * Actor system (component-based development)
