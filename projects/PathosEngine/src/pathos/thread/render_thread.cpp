@@ -82,10 +82,12 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(EngineRender);
 
 			const EngineConfig engineConfig(gEngine->getConfig());
+			const int32 screenWidth = engineConfig.windowWidth; // #todo: Current window size
+			const int32 screenHeight = engineConfig.windowHeight;
 			if (renderer) {
 				SceneRenderSettings settings;
-				settings.sceneWidth = engineConfig.windowWidth; // #todo: Current window size
-				settings.sceneHeight = engineConfig.windowHeight;
+				settings.sceneWidth = screenWidth; // #todo: Upscaling
+				settings.sceneHeight = screenHeight;
 				settings.frameCounter = renderThread->currentFrame;
 				settings.enablePostProcess = true;
 				renderer->setSceneRenderSettings(settings);
@@ -101,34 +103,20 @@ namespace pathos {
 				immediateContext.flushAllCommands();
 				//deferredContext.flushAllCommands();
 
-#define FIXME_OVERLAY_RENDERING 1
-#if FIXME_OVERLAY_RENDERING
-				// #todo-renderthread-fatal: sceneRenderTargets invalid until DeferredRenderer::render() is not executed.
-				debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
-				immediateContext.flushAllCommands();
-				//deferredContext.flushAllCommands();
-
-				if (gConsole) {
-					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
-					gConsole->renderConsoleWindow(immediateContext);
-					immediateContext.flushAllCommands();
-					//deferredContext.flushAllCommands();
-				}
-#endif
 				bNewSceneRendered = true;
 			}
 
-#if !FIXME_OVERLAY_RENDERING
-			debugOverlay->renderDebugOverlay(immediateContext, engineConfig.windowWidth, engineConfig.windowHeight);
-			immediateContext.flushAllCommands();
-			
-			if (gConsole)
+			// Render Debug overlay and command console
 			{
+				SCOPED_CPU_COUNTER(ExecuteDebugOverlay);
+				debugOverlay->renderDebugOverlay(immediateContext, screenWidth, screenHeight);
+				immediateContext.flushAllCommands();
+			}
+			if (gConsole) {
 				SCOPED_CPU_COUNTER(ExecuteDebugConsole);
 				gConsole->renderConsoleWindow(immediateContext);
 				immediateContext.flushAllCommands();
 			}
-#endif
 
 			immediateContext.endQuery(GL_TIME_ELAPSED);
 			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
