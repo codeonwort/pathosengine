@@ -339,6 +339,8 @@ namespace pathos {
 		}
 
 		LOG(LogDebug, "Dump GPU profile to: %s", filepath.c_str());
+		gConsole->addLine("Dump GPU profile to:", false);
+		gConsole->addLine(filepath.c_str(), false);
 	}
 
 	void Engine::setWorld(World* inWorld)
