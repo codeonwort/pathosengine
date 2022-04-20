@@ -44,7 +44,7 @@ namespace pathos {
 		static std::unique_ptr<class DepthPrepass> depthPrepass;
 		static std::unique_ptr<DirectionalShadowMap> sunShadowMap;
 		static std::unique_ptr<OmniShadowPass> omniShadowPass;
-		static std::unique_ptr<class VisualizeDepth> visualizeDepth;
+		static std::unique_ptr<class VisualizeBufferPass> visualizeBuffer;
 
 		// post-processing
 		static std::unique_ptr<class GodRay> godRay;

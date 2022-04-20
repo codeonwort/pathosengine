@@ -8,7 +8,7 @@
 #include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/sky_clouds.h"
 #include "pathos/render/god_ray.h"
-#include "pathos/render/visualize_depth.h"
+#include "pathos/render/visualize_buffer.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
@@ -391,10 +391,9 @@ namespace pathos {
 
 		}
 
-		// #todo-debugview: For depth visualization, no need to render anything other than prepass.
-		// but this will be a generalized debug pass for everything (sceneDepth, albedo, metallic, roughness, ...)
+		// #todo-debugview: Visualize all buffers
 		if (cvar_visualize_depth.getValue() != 0) {
-			visualizeDepth->render(cmdList, scene, camera);
+			visualizeBuffer->render(cmdList, scene, camera);
 		}
 
 		scene = nullptr;
@@ -615,7 +614,7 @@ namespace pathos {
 	std::unique_ptr<class DepthPrepass>            DeferredRenderer::depthPrepass;
 	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
 	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
-	std::unique_ptr<class VisualizeDepth>          DeferredRenderer::visualizeDepth;
+	std::unique_ptr<class VisualizeBufferPass>     DeferredRenderer::visualizeBuffer;
 
 	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
 	std::unique_ptr<class SSAO>                    DeferredRenderer::ssao;
@@ -674,12 +673,12 @@ namespace pathos {
 			depthPrepass = std::make_unique<DepthPrepass>();
 			sunShadowMap = std::make_unique<DirectionalShadowMap>();
 			omniShadowPass = std::make_unique<OmniShadowPass>();
-			visualizeDepth = std::make_unique<VisualizeDepth>();
+			visualizeBuffer = std::make_unique<VisualizeBufferPass>();
 
 			depthPrepass->initializeResources(cmdList);
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
-			visualizeDepth->initializeResources(cmdList);
+			visualizeBuffer->initializeResources(cmdList);
 		}
 
 		{
@@ -730,7 +729,7 @@ namespace pathos {
 			depthPrepass->destroyResources(cmdList);
 			sunShadowMap->destroyResources(cmdList);
 			omniShadowPass->destroyResources(cmdList);
-			visualizeDepth->destroyResources(cmdList);
+			visualizeBuffer->destroyResources(cmdList);
 		}
 
 		{

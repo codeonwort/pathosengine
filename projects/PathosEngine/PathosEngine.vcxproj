@@ -158,7 +158,7 @@
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
     <ClCompile Include="src\pathos\render\skybox.cpp" />
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
-    <ClCompile Include="src\pathos\render\visualize_depth.cpp" />
+    <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
     <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
@@ -303,7 +303,7 @@
     <ClInclude Include="src\pathos\scene\scene.h" />
     <ClInclude Include="src\pathos\render\skybox.h" />
     <ClInclude Include="src\pathos\render\sky_ansel.h" />
-    <ClInclude Include="src\pathos\render\visualize_depth.h" />
+    <ClInclude Include="src\pathos\render\visualize_buffer.h" />
     <ClInclude Include="src\pathos\render_minimal.h" />
     <ClInclude Include="src\pathos\shader\shader.h" />
     <ClInclude Include="src\pathos\shader\uniform_buffer.h" />

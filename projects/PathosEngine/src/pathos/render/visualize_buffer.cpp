@@ -1,4 +1,4 @@
-#include "visualize_depth.h"
+#include "visualize_buffer.h"
 #include "scene_render_targets.h"
 #include "render_device.h"
 #include "pathos/render/scene_proxy.h"
@@ -8,48 +8,48 @@
 
 namespace pathos {
 
-	class VisualizeDepthVS : public ShaderStage {
+	class VisualizeBufferVS : public ShaderStage {
 	public:
-		VisualizeDepthVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeDepthVS")
+		VisualizeBufferVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeBufferVS")
 		{
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
 
-	class VisualizeDepthFS : public ShaderStage {
+	class VisualizeBufferFS : public ShaderStage {
 	public:
-		VisualizeDepthFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeDepthFS")
+		VisualizeBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeBufferFS")
 		{
-			setFilepath("visualize_depth.glsl");
+			setFilepath("visualize_buffer.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_VisualizeDepth, VisualizeDepthVS, VisualizeDepthFS);
+	DEFINE_SHADER_PROGRAM2(Program_VisualizeBuffer, VisualizeBufferVS, VisualizeBufferFS);
 
 }
 
 namespace pathos {
 
-	VisualizeDepth::VisualizeDepth()
+	VisualizeBufferPass::VisualizeBufferPass()
 		: dummyVAO(0)
 	{
 	}
-	VisualizeDepth::~VisualizeDepth() {}
+	VisualizeBufferPass::~VisualizeBufferPass() {}
 
-	void VisualizeDepth::initializeResources(RenderCommandList& cmdList) {
+	void VisualizeBufferPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createVertexArrays(1, &dummyVAO);
 	}
 
-	void VisualizeDepth::destroyResources(RenderCommandList& cmdList) {
+	void VisualizeBufferPass::destroyResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &dummyVAO);
 	}
 
-	void VisualizeDepth::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
+	void VisualizeBufferPass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
 	{
-		SCOPED_DRAW_EVENT(VisualizeDepth);
+		SCOPED_DRAW_EVENT(VisualizeBufferPass);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeDepth);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeBuffer);
 
 		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 

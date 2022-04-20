@@ -63,7 +63,7 @@
     <None Include="translucency_fs.glsl" />
     <None Include="translucency_vs.glsl" />
     <None Include="two_pass_gaussian_blur.glsl" />
-    <None Include="visualize_depth.glsl" />
+    <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
