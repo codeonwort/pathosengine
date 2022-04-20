@@ -1,6 +1,7 @@
 #include "sky_clouds.h"
-#include "render_device.h"
-#include "scene_render_targets.h"
+#include "pathos/render/render_device.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/thread/engine_thread.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
@@ -88,15 +89,18 @@ namespace pathos {
 		//
 	}
 
-	void VolumetricCloudPass::render(RenderCommandList& cmdList, const VolumetricCloudSettings& settings)
+	void VolumetricCloudPass::render(RenderCommandList& cmdList, SceneProxy* scene)
 	{
 		SCOPED_DRAW_EVENT(VolumetricCloud);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloud);
 
+		const uint32 sceneWidth = sceneContext.sceneWidth;
+		const uint32 sceneHeight = sceneContext.sceneHeight;
+
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
-		recreateRenderTarget(cmdList, settings.renderTargetWidth, settings.renderTargetHeight, resolutionScale);
+		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
 
 		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
@@ -112,19 +116,19 @@ namespace pathos {
 			uboData.weatherScale   = cvar_cloud_weatherScale.getFloat();
 			uboData.cloudScale     = cvar_cloud_cloudScale.getFloat();
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
-			uboData.frameCounter   = settings.frameCounter;
+			uboData.frameCounter   = scene->frameNumber;
 		}
 		ubo.update(cmdList, 1, &uboData);
-
-		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
-		cmdList.bindTextureUnit(1, settings.weatherTexture);
-		cmdList.bindTextureUnit(2, settings.shapeNoiseTexture);
-		cmdList.bindTextureUnit(3, settings.erosionNoiseTexture);
-		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(settings.frameCounter));
-		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(settings.frameCounter), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 		
-		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetWidth) / 16.0f);
-		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * settings.renderTargetHeight) / 16.0f);
+		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture);
+		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->getGLName());
+		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->getGLName());
+		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
+		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		
+		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
+		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

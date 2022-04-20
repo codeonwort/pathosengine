@@ -26,7 +26,6 @@ namespace pathos {
 
 		const float aspectRatio = (float)renderTarget->getWidth() / (float)renderTarget->getHeight();
 
-		// #todo-renderer: Let Renderer::render() take a view family parameter, not a camera.
 		Camera tempCamera(PerspectiveLens(fovY, aspectRatio, zNear, zFar));
 		tempCamera.moveToPosition(getLocation());
 
@@ -34,11 +33,13 @@ namespace pathos {
 		tempCamera.setYaw(componentRotation.yaw);
 		tempCamera.setPitch(componentRotation.pitch);
 
-		const uint32 sceneCaptureFrameNumber = 0xffffffff; // #todo-renderthread: frameNumber for sceneCapture?
 		SceneProxy* sceneProxy = scene.createRenderProxy(SceneProxySource::SceneCapture, sceneCaptureFrameNumber, tempCamera);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
 		gEngine->pushSceneProxy(sceneProxy);
+
+		// #todo: Increment or always zero?
+		sceneCaptureFrameNumber++;
 	}
 
 }

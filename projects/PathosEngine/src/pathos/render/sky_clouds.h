@@ -70,15 +70,6 @@ namespace pathos {
 
 namespace pathos {
 
-	struct VolumetricCloudSettings {
-		GLuint weatherTexture;
-		GLuint shapeNoiseTexture;
-		GLuint erosionNoiseTexture;
-		uint32 renderTargetWidth;
-		uint32 renderTargetHeight;
-		uint32 frameCounter;
-	};
-
 	// Rendering logic used by renderer
 	class VolumetricCloudPass : public Noncopyable {
 
@@ -88,7 +79,9 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, const VolumetricCloudSettings& settings);
+		void render(RenderCommandList& cmdList, SceneProxy* scene);
+
+	private:
 		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);
 
 	private:

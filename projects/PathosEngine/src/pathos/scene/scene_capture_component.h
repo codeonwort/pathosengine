@@ -29,6 +29,7 @@ namespace pathos {
 
 	private:
 		std::vector<Actor*> actorsToCapture;
+		uint32 sceneCaptureFrameNumber = 0;
 
 	};
 

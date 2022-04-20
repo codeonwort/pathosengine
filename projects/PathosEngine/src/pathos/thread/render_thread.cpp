@@ -329,7 +329,9 @@ namespace pathos {
 			{
 				settings.sceneWidth = conf.windowWidth;
 				settings.sceneHeight = conf.windowHeight;
+				settings.frameCounter = 0;
 				settings.enablePostProcess = true;
+				settings.finalRenderTarget = nullptr;
 			}
 			renderer->setSceneRenderSettings(settings);
 			renderer->initializeResources(cmdList);

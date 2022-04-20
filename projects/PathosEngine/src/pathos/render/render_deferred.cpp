@@ -128,7 +128,7 @@ namespace pathos {
 		CHECK(settings.isValid());
 
 		sceneRenderSettings = settings;
-		frameCounter = sceneRenderSettings.frameCounter;
+		frameCounter = sceneRenderSettings.frameCounter; // #todo: Duplicate with SceneProxy::frameNumber
 		
 		if (settings.finalRenderTarget != nullptr) {
 			setFinalRenderTarget(settings.finalRenderTarget);
@@ -231,17 +231,7 @@ namespace pathos {
 		const bool bRenderClouds = scene->isVolumetricCloudValid();
 		if (bRenderClouds) {
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
-
-			// #todo-renderthread: Is this needed? We now have VolumetricCloudProxy.
-			VolumetricCloudSettings settings;
-			settings.renderTargetWidth   = sceneRenderSettings.sceneWidth;
-			settings.renderTargetHeight  = sceneRenderSettings.sceneHeight;
-			settings.weatherTexture      = scene->cloud->weatherTexture;
-			settings.shapeNoiseTexture   = scene->cloud->shapeNoise->getGLName();
-			settings.erosionNoiseTexture = scene->cloud->erosionNoise->getGLName();
-			settings.frameCounter        = frameCounter;
-
-			volumetricCloud->render(cmdList, settings);
+			volumetricCloud->render(cmdList, scene);
 		}
 
 		// GodRay
