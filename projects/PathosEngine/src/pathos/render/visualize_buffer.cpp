@@ -8,6 +8,10 @@
 
 namespace pathos {
 
+	struct UBO_VisualizeBuffer {
+		int32 viewmode;
+	};
+
 	class VisualizeBufferVS : public ShaderStage {
 	public:
 		VisualizeBufferVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeBufferVS")
@@ -30,6 +34,10 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_viewmode("r.viewmode", 0,
+		"0 = disable visualization, 1 = sceneDepth, 2 = albedo, 3 = worldNormal,\
+		 4 = metallic, 5 = roughness, 6 = emissive, 7 = ssao");
+
 	VisualizeBufferPass::VisualizeBufferPass()
 		: dummyVAO(0)
 	{
@@ -38,6 +46,7 @@ namespace pathos {
 
 	void VisualizeBufferPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createVertexArrays(1, &dummyVAO);
+		ubo.init<UBO_VisualizeBuffer>();
 	}
 
 	void VisualizeBufferPass::destroyResources(RenderCommandList& cmdList) {
@@ -46,10 +55,18 @@ namespace pathos {
 
 	void VisualizeBufferPass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
 	{
+		if (cvar_viewmode.getInt() == 0) {
+			return;
+		}
+
 		SCOPED_DRAW_EVENT(VisualizeBufferPass);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeBuffer);
+
+		UBO_VisualizeBuffer uboData;
+		uboData.viewmode = cvar_viewmode.getInt();
+		ubo.update(cmdList, 1, &uboData);
 
 		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
@@ -59,7 +76,14 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_TEST);
 
 		cmdList.bindVertexArray(dummyVAO);
+
+		// Bind buffers as SRVs
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+		cmdList.bindTextureUnit(1, sceneContext.gbufferA);
+		cmdList.bindTextureUnit(2, sceneContext.gbufferB);
+		cmdList.bindTextureUnit(3, sceneContext.gbufferC);
+		cmdList.bindTextureUnit(4, sceneContext.ssaoMap);
+
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		cmdList.bindVertexArray(0);

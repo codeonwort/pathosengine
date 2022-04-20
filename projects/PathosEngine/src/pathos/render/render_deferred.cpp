@@ -60,8 +60,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
-	static ConsoleVariable<int32> cvar_visualize_depth("r.visualize_depth", 0, "0 = disable, 1 = enable");
-
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
 	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
@@ -391,10 +389,8 @@ namespace pathos {
 
 		}
 
-		// #todo-debugview: Visualize all buffers
-		if (cvar_visualize_depth.getValue() != 0) {
-			visualizeBuffer->render(cmdList, scene, camera);
-		}
+		// Debug pass (r.viewmode)
+		visualizeBuffer->render(cmdList, scene, camera);
 
 		scene = nullptr;
 		camera = nullptr;

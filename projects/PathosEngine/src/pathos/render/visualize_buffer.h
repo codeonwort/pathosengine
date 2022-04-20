@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/core_minimal.h"
+#include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
 
@@ -19,6 +20,7 @@ namespace pathos {
 
 	private:
 		GLuint dummyVAO;
+		UniformBuffer ubo;
 
 	};
 
