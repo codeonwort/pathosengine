@@ -36,47 +36,6 @@ float getFogBottom()      { return ubo.fogParams.x; }
 float getFogTop()         { return ubo.fogParams.y; }
 float getFogAttenuation() { return ubo.fogParams.z; }
 
-struct fragment_info {
-	vec3 albedo;
-	vec3 normal;
-	float specular_power;
-	vec3 vs_coords; // in view space
-	vec3 ws_coords; // in world space
-	uint material_id;
-	float metallic;
-	float roughness;
-	float ao;
-	vec3 emissive;
-
-	vec3 ws_normal;
-};
-
-void unpackGBuffer(ivec2 coord, out fragment_info fragment) {
-	uvec4 data0 = texelFetch(gbuf0, coord, 0);
-	vec4 data1 = texelFetch(gbuf1, coord, 0);
-	uvec4 data2 = texelFetch(gbuf2, coord, 0);
-
-	vec2 albedoZ_normalX = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
-	vec2 metal_roughness = unpackHalf2x16(data2.x);
-	vec2 localAO_emissiveX = unpackHalf2x16(data2.y);
-	vec2 emissiveYZ = unpackHalf2x16(data2.z);
-
-	fragment.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
-	fragment.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
-	fragment.material_id    = data0.w;
-
-	fragment.vs_coords      = data1.xyz;
-	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
-	fragment.specular_power = data1.w;
-
-	fragment.metallic       = metal_roughness.x;
-	fragment.roughness      = metal_roughness.y;
-	fragment.ao             = localAO_emissiveX.x;
-	fragment.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
-
-	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
-}
-
 float getShadowing(fragment_info fragment) {
 	ShadowQuery query;
 	query.vPos    = fragment.vs_coords;
@@ -276,7 +235,7 @@ vec3 applyFog(fragment_info fragment, vec3 color) {
 
 void main() {
 	fragment_info fragment;
-	unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
+	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, fragment);
 
 	vec4 luminance = calculateShading(fragment);
 

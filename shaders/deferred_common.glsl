@@ -1,5 +1,7 @@
 //? #version 460 core
 
+#define SLOT_UBO_PER_FRAME         0
+
 // should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 #define MAX_DIRECTIONAL_LIGHTS     4
 #define MAX_POINT_LIGHTS           8
@@ -41,7 +43,7 @@ float pointLightAttenuation(PointLight L, float d) {
 }
 
 // Position components of camera and lights are in view space
-layout (std140, binding = 0) uniform UBO_PerFrame {
+layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 prevViewTransform; // For reprojection
 	mat4x4 prevInverseViewTransform; // For reprojection
 	mat4x4 viewTransform;
@@ -116,4 +118,49 @@ float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	vec3 vPos = getViewPositionFromSceneDepth(screenUV, sceneDepth);
 	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 	return linearDepth;
+}
+
+// GBuffer unpack info
+struct fragment_info {
+	vec3 albedo;
+	vec3 normal;
+	float specular_power;
+	vec3 vs_coords; // in view space
+	vec3 ws_coords; // in world space
+	uint material_id;
+	float metallic;
+	float roughness;
+	float ao;
+	vec3 emissive;
+
+	vec3 ws_normal;
+};
+
+void unpackGBuffer(
+	ivec2 coord, usampler2D gbufferA, sampler2D gbufferB, usampler2D gbufferC,
+	out fragment_info fragment)
+{
+	uvec4 data0 = texelFetch(gbufferA, coord, 0);
+	vec4 data1 = texelFetch(gbufferB, coord, 0);
+	uvec4 data2 = texelFetch(gbufferC, coord, 0);
+
+	vec2 albedoZ_normalX = unpackHalf2x16(data0.y); // (albedo.z, normal.x)
+	vec2 metal_roughness = unpackHalf2x16(data2.x);
+	vec2 localAO_emissiveX = unpackHalf2x16(data2.y);
+	vec2 emissiveYZ = unpackHalf2x16(data2.z);
+
+	fragment.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
+	fragment.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
+	fragment.material_id    = data0.w;
+
+	fragment.vs_coords      = data1.xyz;
+	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
+	fragment.specular_power = data1.w;
+
+	fragment.metallic       = metal_roughness.x;
+	fragment.roughness      = metal_roughness.y;
+	fragment.ao             = localAO_emissiveX.x;
+	fragment.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
+
+	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
 }
