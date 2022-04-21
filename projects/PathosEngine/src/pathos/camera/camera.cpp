@@ -1,6 +1,7 @@
 #include "pathos/camera/camera.h"
-#include "badger/assertion/assertion.h"
+
 #include "badger/math/minmax.h"
+#include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
@@ -8,9 +9,9 @@ namespace pathos {
 	static const float MAX_PITCH = glm::radians(80.0f);
 	static const float MIN_PITCH = glm::radians(-80.0f);
 
-	static const glm::vec3 forward0(0.0f, 0.0f, 1.0f);
-	static const glm::vec3 right0(1.0f, 0.0f, 0.0f);
-	static const glm::vec3 up0(0.0f, 1.0f, 0.0f);
+	static const vector3 forward0(0.0f, 0.0f, 1.0f);
+	static const vector3 right0(1.0f, 0.0f, 0.0f);
+	static const vector3 up0(0.0f, 1.0f, 0.0f);
 
 	// PerspectiveLens
 	PerspectiveLens::PerspectiveLens(float fovY_degrees, float aspect_wh, float znear, float zfar) {
@@ -22,7 +23,7 @@ namespace pathos {
 		updateProjectionMatrix();
 	}
 
-	glm::mat4 PerspectiveLens::getProjectionMatrix() const {
+	matrix4 PerspectiveLens::getProjectionMatrix() const {
 		return transform;
 	}
 
@@ -39,7 +40,7 @@ namespace pathos {
 	void PerspectiveLens::updateProjectionMatrix() {
 #if 1 // Reverse-Z
 		float f = 1.0f / tan(fovY_radians / 2.0f);
-		transform = glm::mat4(
+		transform = matrix4(
 			f / aspect, 0.0f, 0.0f,   0.0f,
 			0.0f,       f,    0.0f,   0.0f,
 			0.0f,       0.0f, 0.0f,   -1.0f,
@@ -55,7 +56,7 @@ namespace pathos {
 		, viewDirty(true)
 	{
 		rotationX = rotationY = 0.0f;
-		_position = glm::vec3(0.0f, 0.0f, 0.0f);
+		_position = vector3(0.0f, 0.0f, 0.0f);
 	}
 
 	void Camera::changeLens(const PerspectiveLens& newLens) {
@@ -71,28 +72,28 @@ namespace pathos {
 			viewDirty = false;
 		}
 	}
-	glm::mat4 Camera::getViewMatrix() const {
+	matrix4 Camera::getViewMatrix() const {
 		calculateViewMatrix();
 		return transform.getMatrix();
 	}
-	glm::mat4 Camera::getViewProjectionMatrix() const {
+	matrix4 Camera::getViewProjectionMatrix() const {
 		return lens.getProjectionMatrix() * getViewMatrix();
 	}
-	glm::mat4 Camera::getProjectionMatrix() const {
+	matrix4 Camera::getProjectionMatrix() const {
 		return lens.getProjectionMatrix();
 	}
-	glm::vec3 Camera::getEyeVector() const {
+	vector3 Camera::getEyeVector() const {
 		// eye direction in world space
 		calculateViewMatrix();
 		return transform.inverseTransformVector(-forward0);
 	}
-	glm::vec3 Camera::getPosition() const {
+	vector3 Camera::getPosition() const {
 		return _position;
 	}
 
-	void Camera::lookAt(const glm::vec3& position, const glm::vec3& target, const glm::vec3& up) {
-		glm::mat3 L = glm::transpose(glm::mat3(glm::lookAt(position, target, up)));
-		glm::vec3 v = glm::normalize(L * forward0);
+	void Camera::lookAt(const vector3& position, const vector3& target, const vector3& up) {
+		matrix3 L = glm::transpose(matrix3(glm::lookAt(position, target, up)));
+		vector3 v = glm::normalize(L * forward0);
 		rotationX = asin(v.y);
 		if (v.z >= 0.0f)
 		{
@@ -107,7 +108,7 @@ namespace pathos {
 	}
 
 	// move direction is alongside the camera's view direction
-	void Camera::move(const glm::vec3& forwardRightUp) {
+	void Camera::move(const vector3& forwardRightUp) {
 		calculateViewMatrix();
 		_position += transform.inverseTransformVector(forwardRightUp.x * -forward0 + forwardRightUp.y * right0 + forwardRightUp.z * up0);
 		viewDirty = true;
@@ -134,7 +135,7 @@ namespace pathos {
 		viewDirty = true;
 	}
 
-	void Camera::moveToPosition(const glm::vec3& newPosition)
+	void Camera::moveToPosition(const vector3& newPosition)
 	{
 		_position = newPosition;
 		viewDirty = true;
@@ -162,7 +163,7 @@ namespace pathos {
 	float Camera::getYaw() const { return glm::degrees(rotationY); }
 	float Camera::getPitch() const { return glm::degrees(rotationX); }
 
-	void Camera::getFrustum(std::vector<glm::vec3>& outFrustum, uint32 numCascades) const {
+	void Camera::getFrustum(std::vector<vector3>& outFrustum, uint32 numCascades) const {
 		CHECK(numCascades >= 1);
 
 		const float zn = lens.getZNear();
@@ -172,8 +173,8 @@ namespace pathos {
 		const float hh_far = zf * tanf(lens.getFovYRadians() * 0.5f);
 		const float hw_far = hh_far * lens.getAspectRatioWH();
 
-		const glm::vec3 P0 = getPosition();
-		const glm::mat3 viewInv = glm::transpose(glm::mat3(getViewMatrix()));
+		const vector3 P0 = getPosition();
+		const matrix3 viewInv = glm::transpose(matrix3(getViewMatrix()));
 
 		float zi, hwi, hhi;
 		outFrustum.resize(4 * (1 + numCascades));
