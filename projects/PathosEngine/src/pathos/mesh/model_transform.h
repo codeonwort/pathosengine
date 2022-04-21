@@ -1,11 +1,12 @@
 #pragma once
 
 #include "badger/types/vector_types.h"
+#include "badger/types/matrix_types.h"
 #include "badger/math/rotator.h"
 
 namespace pathos {
 
-	// Traditional scale-rotation-translation matrix
+	// Traditional rigid transform (scale-rotation-translation matrix)
 	struct ModelTransform {
 
 		ModelTransform();
@@ -25,7 +26,7 @@ namespace pathos {
 		void setScale(const vector3& inScale);
 		void setScale(float inScale);
 
-		const glm::mat4& getMatrix() const;
+		const matrix4& getMatrix() const;
 
 	private:
 		vector3 location;
@@ -33,7 +34,7 @@ namespace pathos {
 		vector3 scale;
 
 		mutable bool bDirty;
-		mutable glm::mat4 rawMatrix;
+		mutable matrix4 rawMatrix;
 
 	};
 

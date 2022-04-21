@@ -3,72 +3,72 @@
 
 namespace pathos {
 
-	Transform::Transform() :matrix(glm::mat4(1.0f)) {}
-	Transform::Transform(const glm::mat4& _matrix) { matrix = _matrix; }
+	Transform::Transform() :matrix(matrix4(1.0f)) {}
+	Transform::Transform(const matrix4& _matrix) { matrix = _matrix; }
 
-	const glm::mat4& Transform::getMatrix() const { return matrix; }
+	const matrix4& Transform::getMatrix() const { return matrix; }
 
-	void Transform::identity() { matrix = glm::mat4(1.0f); }
+	void Transform::identity() { matrix = matrix4(1.0f); }
 
-	void Transform::append(const glm::mat4& t) { matrix = t * matrix; }
+	void Transform::append(const matrix4& t) { matrix = t * matrix; }
 
-	//void Transform::appendMove(const glm::vec3& movement) { matrix = glm::translate(matrix, movement); }
-	void Transform::appendMove(const glm::vec3& movement) {
-		matrix = glm::translate(glm::mat4(1.0f), movement) * matrix;
+	//void Transform::appendMove(const vector3& movement) { matrix = glm::translate(matrix, movement); }
+	void Transform::appendMove(const vector3& movement) {
+		matrix = glm::translate(matrix4(1.0f), movement) * matrix;
 	}
 	void Transform::appendMove(float dx, float dy, float dz) {
-		appendMove(glm::vec3(dx, dy, dz));
+		appendMove(vector3(dx, dy, dz));
 	}
 
-	void Transform::appendRotation(float angle, const glm::vec3& axis) {
-		matrix = glm::rotate(glm::mat4(1.0f), angle, axis) * matrix;
+	void Transform::appendRotation(float angle, const vector3& axis) {
+		matrix = glm::rotate(matrix4(1.0f), angle, axis) * matrix;
 	}
 
-	void Transform::appendScale(const glm::vec3& scale) {
-		matrix = glm::scale(glm::mat4(1.0f), scale) * matrix;
+	void Transform::appendScale(const vector3& scale) {
+		matrix = glm::scale(matrix4(1.0f), scale) * matrix;
 	}
-	//void Transform::appendScale(const glm::vec3& scale) { matrix = glm::scale(matrix, scale); }
+	//void Transform::appendScale(const vector3& scale) { matrix = glm::scale(matrix, scale); }
 	void Transform::appendScale(float sx, float sy, float sz) {
-		appendScale(glm::vec3(sx, sy, sz));
+		appendScale(vector3(sx, sy, sz));
 	}
 
-	void Transform::prepend(const glm::mat4& t) {
+	void Transform::prepend(const matrix4& t) {
 		matrix = matrix * t;
 	}
 
-	void Transform::prependMove(const glm::vec3& movement) {
+	void Transform::prependMove(const vector3& movement) {
 		//matrix = glm::translate(matrix, movement);
-		prepend(glm::translate(glm::mat4(1.0f), movement));
+		prepend(glm::translate(matrix4(1.0f), movement));
 	}
 
 	void Transform::prependMove(float dx, float dy, float dz) {
-		prependMove(glm::vec3(dx, dy, dz));
+		prependMove(vector3(dx, dy, dz));
 	}
 
-	void Transform::prependRotation(float angle, const glm::vec3& axis) {
+	void Transform::prependRotation(float angle, const vector3& axis) {
 		matrix = glm::rotate(matrix, angle, axis);
 	}
 
-	void Transform::prependScale(const glm::vec3& scale) {
+	void Transform::prependScale(const vector3& scale) {
 		matrix = glm::scale(matrix, scale);
 	}
 
 	void Transform::prependScale(float sx, float sy, float sz) {
-		prependScale(glm::vec3(sx, sy, sz));
+		prependScale(vector3(sx, sy, sz));
 	}
 
-	glm::vec3 Transform::transformVector(glm::vec3 v) {
-		return glm::vec3(matrix * glm::vec4(v, 0.0f));
+	vector3 Transform::transformVector(const vector3& v) const {
+		return vector3(matrix * vector4(v, 0.0f));
 	}
-	glm::vec3 Transform::inverseTransformVector(glm::vec3 v) const {
-		return glm::vec3(glm::transpose(matrix) * glm::vec4(v, 0.0f));
+	vector3 Transform::inverseTransformVector(const vector3& v) const {
+		return vector3(glm::transpose(matrix) * vector4(v, 0.0f));
 	}
 
-	glm::vec3 Transform::transformPoint(glm::vec3 v) {
-		return glm::vec3(matrix * glm::vec4(v, 1.0f));
+	vector3 Transform::transformPoint(const vector3& v) const {
+		return vector3(matrix * vector4(v, 1.0f));
 	}
-	glm::vec3 Transform::inverseTransformPoint(glm::vec3 v) {
-		return glm::vec3(glm::transpose(matrix) * glm::vec4(v, 1.0f));
+	vector3 Transform::inverseTransformPoint(const vector3& v) const {
+		return vector3(glm::transpose(matrix) * vector4(v, 1.0f));
 	}
 
 }

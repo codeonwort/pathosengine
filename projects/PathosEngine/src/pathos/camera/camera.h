@@ -81,7 +81,7 @@ namespace pathos {
 		mutable Transform transform; // view transform
 
 		PerspectiveLens lens; // projection transform
-		// #todo-transform: Just use Rotator...
+		// #todo-camera: Just use Rotator...
 		float rotationX; // pitch
 		float rotationY; // yaw
 		vector3 _position;

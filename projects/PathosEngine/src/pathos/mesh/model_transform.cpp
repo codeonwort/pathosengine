@@ -54,7 +54,7 @@ namespace pathos {
 		setScale(vector3(inScale));
 	}
 
-	const glm::mat4& ModelTransform::getMatrix() const
+	const matrix4& ModelTransform::getMatrix() const
 	{
 		if (bDirty) {
 			rawMatrix = glm::scale(glm::translate(location) * rotation.toMatrix(), scale);
