@@ -56,7 +56,7 @@ namespace pathos {
 		, viewDirty(true)
 	{
 		rotationX = rotationY = 0.0f;
-		_position = vector3(0.0f, 0.0f, 0.0f);
+		position = vector3(0.0f, 0.0f, 0.0f);
 	}
 
 	void Camera::changeLens(const PerspectiveLens& newLens) {
@@ -66,7 +66,7 @@ namespace pathos {
 	void Camera::calculateViewMatrix() const {
 		if (viewDirty) {
 			transform.identity();
-			transform.appendMove(-_position);
+			transform.appendMove(-position);
 			transform.appendRotation(rotationY, up0);
 			transform.appendRotation(rotationX, right0);
 			viewDirty = false;
@@ -88,11 +88,11 @@ namespace pathos {
 		return transform.inverseTransformVector(-forward0);
 	}
 	vector3 Camera::getPosition() const {
-		return _position;
+		return position;
 	}
 
-	void Camera::lookAt(const vector3& position, const vector3& target, const vector3& up) {
-		matrix3 L = glm::transpose(matrix3(glm::lookAt(position, target, up)));
+	void Camera::lookAt(const vector3& origin, const vector3& target, const vector3& up) {
+		matrix3 L = glm::transpose(matrix3(glm::lookAt(origin, target, up)));
 		vector3 v = glm::normalize(L * forward0);
 		rotationX = asin(v.y);
 		if (v.z >= 0.0f)
@@ -103,41 +103,41 @@ namespace pathos {
 		{
 			rotationY = glm::pi<float>() + asin(v.x);
 		}
-		_position = position;
+		position = origin;
 		viewDirty = true;
 	}
 
 	// move direction is alongside the camera's view direction
 	void Camera::move(const vector3& forwardRightUp) {
 		calculateViewMatrix();
-		_position += transform.inverseTransformVector(forwardRightUp.x * -forward0 + forwardRightUp.y * right0 + forwardRightUp.z * up0);
+		position += transform.inverseTransformVector(forwardRightUp.x * -forward0 + forwardRightUp.y * right0 + forwardRightUp.z * up0);
 		viewDirty = true;
 	}
 
 	void Camera::moveForward(float amount)
 	{
 		calculateViewMatrix();
-		_position += transform.inverseTransformVector(amount * -forward0); // #todo-camera: Dunno why the hell I have to flip the sign
+		position += transform.inverseTransformVector(amount * -forward0); // #todo-camera: Dunno why the hell I have to flip the sign
 		viewDirty = true;
 	}
 
 	void Camera::moveRight(float amount)
 	{
 		calculateViewMatrix();
-		_position += transform.inverseTransformVector(amount * right0);
+		position += transform.inverseTransformVector(amount * right0);
 		viewDirty = true;
 	}
 
 	void Camera::moveUp(float amount)
 	{
 		calculateViewMatrix();
-		_position += transform.inverseTransformVector(amount * up0);
+		position += transform.inverseTransformVector(amount * up0);
 		viewDirty = true;
 	}
 
 	void Camera::moveToPosition(const vector3& newPosition)
 	{
-		_position = newPosition;
+		position = newPosition;
 		viewDirty = true;
 	}
 

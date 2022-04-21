@@ -52,7 +52,7 @@ namespace pathos {
 		inline float getFovYRadians() const { return lens.getFovYRadians(); }
 		inline float getAspectRatio() const { return lens.getAspectRatioWH(); }
 
-		void lookAt(const vector3& position, const vector3& target, const vector3& up);
+		void lookAt(const vector3& origin, const vector3& target, const vector3& up);
 
 		void move(const vector3& forwardRightUp);
 		void moveForward(float amount);
@@ -81,9 +81,8 @@ namespace pathos {
 		mutable Transform transform; // view transform
 
 		PerspectiveLens lens; // projection transform
-		// #todo-camera: Just use Rotator...
-		float rotationX; // pitch
-		float rotationY; // yaw
-		vector3 _position;
+		float rotationX; // pitch (radians)
+		float rotationY; // yaw (radians)
+		vector3 position;
 	};
 }
