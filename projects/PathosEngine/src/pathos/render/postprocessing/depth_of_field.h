@@ -23,6 +23,7 @@ namespace pathos {
 
 		GLuint vao = 0;
 		GLuint fbo = 0;
+		UniformBuffer uboPrefixSum;
 		UniformBuffer uboBlur;
 
 	};

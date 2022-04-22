@@ -106,7 +106,6 @@ namespace pathos {
 	}
 
 	OpenGLDevice::OpenGLDevice()
-		: glObjectLabelMaxLength(-1)
 	{
 		CHECKF(gRenderDevice == nullptr, "Render device already exists");
 		gRenderDevice = this;
@@ -129,6 +128,7 @@ namespace pathos {
 			return false;
 		}
 
+		queryCapabilities();
 		checkExtensions();
 
 		// #todo-renderthread: Wanna get rid of deferred_command_list :/
@@ -147,12 +147,54 @@ namespace pathos {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-		glGetIntegerv(GL_MAX_LABEL_LENGTH, &glObjectLabelMaxLength);
-
 		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));
 		LOG(LogInfo, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		return true;
+	}
+
+	void OpenGLDevice::queryCapabilities() {
+		glGetIntegerv(GL_MAX_LABEL_LENGTH, &capabilities.glObjectLabelMaxLength);
+		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &capabilities.glMaxComputeWorkGroupInvocations);
+		glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &capabilities.glMaxComputeSharedMemorySize);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, capabilities.glMaxComputeWorkGroupCount + 0);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, capabilities.glMaxComputeWorkGroupCount + 1);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, capabilities.glMaxComputeWorkGroupCount + 2);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, capabilities.glMaxComputeWorkGroupSize + 0);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, capabilities.glMaxComputeWorkGroupSize + 1);
+		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, capabilities.glMaxComputeWorkGroupSize + 2);
+	}
+
+	void OpenGLDevice::checkExtensions() {
+		CHECK_GL_CONTEXT_TAKEN();
+		::memset(&extensionSupport, 0, sizeof(extensionSupport));
+
+		GLint n;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+
+		std::vector<const char*> extNames(n, nullptr);
+		for (GLint i = 0; i < n; ++i) {
+			extNames[i] = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		}
+		
+		auto findExt = [&](const char* desiredExt) -> bool {
+			for (GLint i = 0; i < n; ++i) {
+				if (strcmp(extNames[i], desiredExt)) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		// #todo-gl-extension: Utilize available extensions
+		extensionSupport.NV_ray_tracing                  = findExt("GL_NV_ray_tracing");
+		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
+		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
+		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
+		extensionSupport.NV_representative_fragment_test = findExt("GL_NV_representative_fragment_test");
+		extensionSupport.NV_fragment_shader_barycentric  = findExt("GL_NV_fragment_shader_barycentric");
+		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
+		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
 	}
 
 }
@@ -233,7 +275,7 @@ namespace pathos {
 
 	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {
 		CHECK_GL_CONTEXT_TAKEN();
-		CHECKF(::strlen(label) <= glObjectLabelMaxLength, "objectLabel is too long");
+		CHECKF(::strlen(label) <= capabilities.glObjectLabelMaxLength, "objectLabel is too long");
 		glObjectLabel(identifier, name, length, label);
 	}
 
@@ -255,38 +297,6 @@ namespace pathos {
 	GLint OpenGLDevice::getUniformLocation(GLuint program, const GLchar* name) {
 		CHECK_GL_CONTEXT_TAKEN();
 		return glGetUniformLocation(program, name);
-	}
-
-	void OpenGLDevice::checkExtensions() {
-		CHECK_GL_CONTEXT_TAKEN();
-		::memset(&extensionSupport, 0, sizeof(extensionSupport));
-
-		GLint n;
-		glGetIntegerv(GL_NUM_EXTENSIONS, &n);
-
-		std::vector<const char*> extNames(n, nullptr);
-		for (GLint i = 0; i < n; ++i) {
-			extNames[i] = (const char*)glGetStringi(GL_EXTENSIONS, i);
-		}
-		
-		auto findExt = [&](const char* desiredExt) -> bool {
-			for (GLint i = 0; i < n; ++i) {
-				if (strcmp(extNames[i], desiredExt)) {
-					return true;
-				}
-			}
-			return false;
-		};
-
-		// #todo-gl-extension: Utilize available extensions
-		extensionSupport.NV_ray_tracing                  = findExt("GL_NV_ray_tracing");
-		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
-		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
-		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
-		extensionSupport.NV_representative_fragment_test = findExt("GL_NV_representative_fragment_test");
-		extensionSupport.NV_fragment_shader_barycentric  = findExt("GL_NV_fragment_shader_barycentric");
-		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
-		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
 	}
 
 }

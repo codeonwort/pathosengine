@@ -1,13 +1,24 @@
 #version 430 core
 
-// Calculate prefix sum table for depth of field
+// Calculate prefix sum table for depth of field.
 
-layout (local_size_x = 1024) in;
+#ifndef BUCKET_SIZE
+	// Minimum work group size that OpenGL specification guarantees.
+	#define BUCKET_SIZE 1024
+#endif
 
-shared vec3 shared_data[gl_WorkGroupSize.x * 2];
+layout (local_size_x = BUCKET_SIZE) in;
+
+shared vec3 shared_data[BUCKET_SIZE * 2];
 
 layout (binding = 0, rgba32f) readonly uniform image2D input_image;
-layout (binding = 1, rgba32f) writeonly uniform image2D output_image;
+// Remove writeonly as we need to access image region processed by previous bucket.
+layout (binding = 1, rgba32f) /*writeonly*/ uniform image2D output_image;
+
+layout (std140, binding = 1) uniform UBO_PrefixSum {
+	int fetchOffset;
+	int maxImageLength;
+} ubo;
 
 void main() {
 	uint id = gl_LocalInvocationID.x;
@@ -15,14 +26,19 @@ void main() {
 	uint wr_id;
 	uint mask;
 
+	if (id > ubo.maxImageLength) {
+		return;
+	}
+
 	ivec2 P0 = ivec2(id * 2, gl_WorkGroupID.x);
 	ivec2 P1 = ivec2(id * 2 + 1, gl_WorkGroupID.x);
+	ivec2 fetchOffset = ivec2(ubo.fetchOffset, 0);
 
 	const uint steps = uint(log2(gl_WorkGroupSize.x)) + 1;
 	uint step = 0;
 
-	vec4 i0 = imageLoad(input_image, P0);
-	vec4 i1 = imageLoad(input_image, P1);
+	vec4 i0 = imageLoad(input_image, P0 + fetchOffset);
+	vec4 i1 = imageLoad(input_image, P1 + fetchOffset);
 
 	shared_data[P0.x] = i0.rgb;
 	shared_data[P1.x] = i1.rgb;
@@ -41,6 +57,12 @@ void main() {
 		memoryBarrierShared();
 	}
 
-	imageStore(output_image, P0.yx, vec4(shared_data[P0.x], i0.a));
-	imageStore(output_image, P1.yx, vec4(shared_data[P1.x], i1.a));
+	vec3 prevRunResult = vec3(0.0);
+	if (ubo.fetchOffset != 0) {
+		prevRunResult = imageLoad(output_image, ivec2(gl_WorkGroupID.x, ubo.fetchOffset - 1)).xyz;
+	}
+
+	ivec2 storeOffset = ivec2(0, ubo.fetchOffset);
+	imageStore(output_image, storeOffset + P0.yx, vec4(prevRunResult + shared_data[P0.x], i0.a));
+	imageStore(output_image, storeOffset + P1.yx, vec4(prevRunResult + shared_data[P1.x], i1.a));
 }

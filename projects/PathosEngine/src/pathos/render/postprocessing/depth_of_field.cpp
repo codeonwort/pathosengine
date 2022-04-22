@@ -6,13 +6,30 @@
 #include "pathos/util/engine_util.h"
 
 namespace pathos {
+
+	struct UBO_PrefixSum {
+		int32 fetchOffset;
+		int32 maxImageLength;
+	};
 	
 	// Output is transposed
 	class DOF_PrefixSum : public ShaderStage {
 	public:
 		DOF_PrefixSum() : ShaderStage(GL_COMPUTE_SHADER, "DOF_PrefixSum") {
 			setFilepath("prefix_sum.glsl");
+
+			int32 maxBucketSize = gRenderDevice->getCapabilities().glMaxComputeWorkGroupSize[0];
+			char msg[256];
+			sprintf_s(msg, "BUCKET_SIZE %d", maxBucketSize);
+			// #todo-shader: More clean API like "addDefine_int("BUCKET_SIZE", maxBucketSize);
+			addDefine(msg);
 		}
+	};
+
+	struct UBO_DoF {
+		float focalDistance;
+		float focalDepth;
+		float maxRadius;
 	};
 
 	class DOF_BlurVS : public ShaderStage {
@@ -39,12 +56,6 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_focal_depth("r.dof.focal_depth", 1000.0f, "focal depth of DoF");
 	static ConsoleVariable<float> cvar_max_radius("r.dof.max_radius", 4.5f, "max radius of DoF kernel");
 
-	struct UBO_DoF {
-		float focalDistance;
-		float focalDepth;
-		float maxRadius;
-	};
-
 	DepthOfField::~DepthOfField() {
 		markDestroyed();
 	}
@@ -56,6 +67,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		
+		uboPrefixSum.init<UBO_PrefixSum>();
 		uboBlur.init<UBO_DoF>();
 	}
 
@@ -78,21 +90,49 @@ namespace pathos {
 		ShaderProgram& program_prefix_sum = FIND_SHADER_PROGRAM(Program_DOF_PrefixSum);
 		ShaderProgram& program_blur = FIND_SHADER_PROGRAM(Program_DOF_Blur);
 
-		// #todo-dof: DoF is broken if screen width or height exceeds 2048 :/
-		// Reason: (local_size_x = 1024) in prefix_sum.glsl
 		{
 			SCOPED_DRAW_EVENT(DepthOfField_Subsum);
 
+			// Actually we can process a double of workGroupSizeX on one dispatch,
+			// so bucketSize here is twice of BUCKET_SIZE.
+			const int32 bucketSize = 2 * gRenderDevice->getCapabilities().glMaxComputeWorkGroupSize[0];
 			cmdList.useProgram(program_prefix_sum.getGLName());
-			cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-			cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
-			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-			cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
-			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			// Prefix sum shader can process only 2048 columns at once, so we split up the work into buckets.
+			{
+				const int32 numRuns = (int32)(::ceilf((float)sceneContext.sceneWidth / bucketSize));
+				UBO_PrefixSum uboData;
+				uboData.fetchOffset = 0;
+				uboData.maxImageLength = sceneContext.sceneWidth;
+				
+				for (int32 i = 0; i < numRuns; ++i) {
+					uboPrefixSum.update(cmdList, 1, &uboData);
+
+					cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+					cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+					cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
+					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+					uboData.fetchOffset += bucketSize;
+				}
+			}
+			{
+				const int32 numRuns = (int32)(::ceilf((float)sceneContext.sceneHeight / bucketSize));
+				UBO_PrefixSum uboData;
+				uboData.fetchOffset = 0;
+				uboData.maxImageLength = sceneContext.sceneHeight;
+
+				for (int32 i = 0; i < numRuns; ++i) {
+					uboPrefixSum.update(cmdList, 1, &uboData);
+
+					cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+					cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+					cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
+					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+					uboData.fetchOffset += bucketSize;
+				}
+			}
 		}
 
 		/* sceneContext.dofSubsum1 now holds prefix sum table */

@@ -30,6 +30,18 @@ namespace pathos {
 		uint32 NV_scissor_exclusive : 1;
 	};
 
+	struct OpenGLDriverCapabilities {
+		int32 glObjectLabelMaxLength;
+		// The number of invocations in a single local work group (i.e., the product of the three dimensions) that may be dispatched to a compute shader.
+		int32 glMaxComputeWorkGroupInvocations;
+		// Limit on the total storage size (in bytes) for all shared variables in a compute shader.
+		int32 glMaxComputeSharedMemorySize;
+		// The maximum number of work groups that may be dispatched to a compute shader.
+		int32 glMaxComputeWorkGroupCount[3];
+		// The maximum size of a work groups that may be used during compilation of a compute shader.
+		int32 glMaxComputeWorkGroupSize[3];
+	};
+
 	class OpenGLDevice final : public Noncopyable {
 
 	public:
@@ -39,6 +51,7 @@ namespace pathos {
 		bool initialize();
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
+		const OpenGLDriverCapabilities& getCapabilities() const { return capabilities; }
 
 		// #todo-renderthread: I messed it up :/ Can I unify it?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
@@ -76,14 +89,15 @@ namespace pathos {
 		GLint getUniformLocation(GLuint program, const GLchar* name);
 
 	private:
+		void queryCapabilities();
 		void checkExtensions();
 
+		OpenGLDriverCapabilities           capabilities;
 		OpenGLExtensionSupport             extensionSupport;
+
 		std::unique_ptr<RenderCommandList> immediate_command_list; // For render thread itself
 		std::unique_ptr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		std::unique_ptr<RenderCommandList> hook_command_list;
-
-		int32                              glObjectLabelMaxLength;
 	};
 
 	extern OpenGLDevice* gRenderDevice;
