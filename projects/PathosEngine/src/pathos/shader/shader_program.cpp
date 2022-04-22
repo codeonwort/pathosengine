@@ -1,5 +1,6 @@
 #include "shader_program.h"
 #include "pathos/engine.h"
+#include "pathos/console.h"
 #include "pathos/render/render_device.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
@@ -9,10 +10,12 @@
 #include <fstream>
 #include <sstream>
 
-#define DUMP_SHADER_SOURCE 0
 #define IGNORE_SAME_SHADERS_ON_RECOMPILE 1
 
 namespace pathos {
+
+	// Turn this on EngineConfig.ini as shaders are compiled on startup and you don't have a chance to change this through console.
+	static ConsoleVariable<int32> cvar_dumpShaders("r.dumpShaderSources", 0, "Dump shader sources to log/shader_dump");
 
 	static struct InitRecompileShaders {
 		InitRecompileShaders() {
@@ -234,8 +237,7 @@ namespace pathos {
 		return true;
 	}
 
-	ShaderStage::CompileResponse ShaderStage::tryCompile()
-	{
+	ShaderStage::CompileResponse ShaderStage::tryCompile() {
 		std::vector<std::string> sourceCodeBackup = sourceCode;
 		loadSource();
 
@@ -261,10 +263,22 @@ namespace pathos {
 			glDeleteShader(pendingGLName);
 		}
 
-		// #todo-shader-rework: Output shader code to intermediate/shader_dump
-#if DUMP_SHADER_SOURCE
-		//
-#endif
+		// Dump final shader source to log/shader_dump/
+		if (cvar_dumpShaders.getInt() != 0) {
+			std::string basedir = pathos::getSolutionDir();
+			basedir += "log/shader_dump/";
+			pathos::createDirectory(basedir.c_str());
+
+			std::string dumpPath = basedir + filepath;
+
+			std::fstream fs(dumpPath, std::fstream::out);
+			if (fs.is_open()) {
+				for (uint32 i = 0; i < sourceCode.size(); ++i) {
+					fs << sourceCode[i] << std::endl;
+				}
+				fs.close();
+			}
+		}
 		
 		std::vector<const char*> sourceList;
 		for (const auto& s : sourceCode) {
