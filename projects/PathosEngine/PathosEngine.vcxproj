@@ -261,6 +261,7 @@
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />
+    <ClInclude Include="src\pathos\shader\shader_storage_buffer.h" />
     <ClInclude Include="src\pathos\texture\volume_texture.h" />
     <ClInclude Include="src\pathos\text\text_actor.h" />
     <ClInclude Include="src\pathos\text\text_component.h" />
