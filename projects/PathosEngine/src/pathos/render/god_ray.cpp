@@ -75,10 +75,10 @@ namespace pathos {
 	public:
 		GodRayBilateralSamplingFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayBilateralSamplingFS") {
 			if (horizontal) {
-				addDefine("HORIZONTAL 1");
+				addDefine("HORIZONTAL", 1);
 			}
-			addDefine("KERNEL_SIZE 5");
-			//addDefine("TONAL_WEIGHT 1");
+			addDefine("KERNEL_SIZE", 5);
+			//addDefine("TONAL_WEIGHT", 1);
 			setFilepath("two_pass_gaussian_blur.glsl");
 		}
 	};

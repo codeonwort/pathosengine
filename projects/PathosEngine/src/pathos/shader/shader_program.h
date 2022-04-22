@@ -95,6 +95,7 @@ namespace pathos {
 	protected:
 		inline void addDefine(const char* define) { defines.push_back(define); }
 		inline void addDefine(const std::string& define) { defines.push_back(define); }
+		void addDefine(const char* define, int32 value);
 		inline void setFilepath(const char* inFilepath) { filepath = inFilepath; }
 
 	private:

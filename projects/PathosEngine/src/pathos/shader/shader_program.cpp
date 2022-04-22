@@ -147,6 +147,13 @@ namespace pathos {
 		}
 	}
 
+	void ShaderStage::addDefine(const char* define, int32 value) {
+		CHECK(define != nullptr);
+		char msg[256];
+		sprintf_s(msg, "%s %d", define, value);
+		addDefine(msg);
+	}
+
 	bool ShaderStage::loadSource()
 	{
 		CHECK(filepath != nullptr);

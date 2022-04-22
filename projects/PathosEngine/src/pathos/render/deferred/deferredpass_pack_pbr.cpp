@@ -20,7 +20,7 @@ namespace pathos {
 		DefaultLitFS() : ShaderStage(GL_FRAGMENT_SHADER, "Material_DefaultLitFS")
 		{
 			if (TriplanarMapping) {
-				addDefine("TRIPLANAR_MAPPING 1");
+				addDefine("TRIPLANAR_MAPPING", 1);
 			}
 			setFilepath("deferred_pack_pbr_fs.glsl");
 		}

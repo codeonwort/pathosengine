@@ -19,10 +19,7 @@ namespace pathos {
 			setFilepath("prefix_sum.glsl");
 
 			int32 maxBucketSize = gRenderDevice->getCapabilities().glMaxComputeWorkGroupSize[0];
-			char msg[256];
-			sprintf_s(msg, "BUCKET_SIZE %d", maxBucketSize);
-			// #todo-shader: More clean API like "addDefine_int("BUCKET_SIZE", maxBucketSize);
-			addDefine(msg);
+			addDefine("BUCKET_SIZE", maxBucketSize);
 		}
 	};
 

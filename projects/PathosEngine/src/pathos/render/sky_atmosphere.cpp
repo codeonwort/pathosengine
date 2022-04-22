@@ -30,7 +30,7 @@ namespace pathos {
 	public:
 		PASTransmittanceFS() : ShaderStage(GL_FRAGMENT_SHADER, "PASTransmittanceFS") {
 			setFilepath("atmosphere_precompute.glsl");
-			addDefine("PRECOMPUTE_TRANSMITTANCE 1");
+			addDefine("PRECOMPUTE_TRANSMITTANCE", 1);
 		}
 	};
 
