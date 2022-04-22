@@ -75,6 +75,9 @@ namespace pathos {
 
 	void ConsoleWindow::renderConsoleWindow(RenderCommandList& cmdList) {
 		if (visible) {
+			windowWidth = gEngine->getConfig().windowWidth;
+			background->setSize(windowWidth, windowHeight);
+
 			renderer->renderOverlay(cmdList, root);
 		}
 	}
