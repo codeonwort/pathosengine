@@ -10,17 +10,11 @@
 #include "badger/math/minmax.h"
 
 // Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4"
-//                                               (Wojciech Sterna, GPU Zen)
-// It's said that this impl. was used in <Shadow Warrior> and <Shadow Warrior 2>
+// (Wojciech Sterna, GPU Zen)
 
-// Algorithm overview
-// [v] 1. Compute SSAO in a quater-resolution buffer
-// [v] 2. Blur the SSAO output in two depth-aware, separable passes.
-// [ ] 3. Upsample the blurred SSAO with a bilateral filter.
-//     -> Not bilateral upsample yet
-
-// Screen Space Ambient Occlusion
-// https://learnopengl.com/Advanced-Lighting/SSAO
+// #todo-ssao: Upsample the blurred SSAO with a bilateral filter.
+// But... looks not bad with mere bilinear filtering
+// and I don't wanna make an additional full-resolution texture.
 
 namespace pathos {
 
