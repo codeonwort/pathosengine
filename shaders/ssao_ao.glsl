@@ -22,9 +22,6 @@
 // Enable if LDS is cheaper than imageLoad. (heard that some GPUs can't benefit from it)
 #define USE_SHARED_SAMPLES 1
 
-// GPU Zen 1. Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4
-#define SHADOW_WARRIOR_SSAO 1
-
 // -------------------------------------------------------
 // Shader Resources
 
@@ -73,6 +70,24 @@ vec3 getRandomRotation(ivec2 texel) {
 	return uboRandom.randomRotations[ix].xyz;
 }
 
+vec4 fetchNeighbor(ivec2 currentTexel, ivec2 neighborTexel) {
+	vec4 neighbor;
+
+#if USE_SHARED_SAMPLES
+	ivec2 neighborID = ivec2(gl_LocalInvocationID.xy) + neighborTexel - currentTexel;
+	if (0 <= neighborID.x && neighborID.x < gl_WorkGroupSize.x && 0 <= neighborID.y && neighborID.y < gl_WorkGroupSize.y) {
+		int neighborLocalInvocationIndex = neighborID.y * int(gl_WorkGroupSize.x) + neighborID.x;
+		neighbor = shared_samples[neighborLocalInvocationIndex];
+	} else {
+		neighbor = imageLoad(halfNormalAndDepth, neighborTexel);
+	}
+#else
+	neighbor = imageLoad(halfNormalAndDepth, neighborTexel);
+#endif
+
+	return neighbor;
+}
+
 float computeAO(ivec2 texel, vec2 uv) {
 	if (!uboSSAO.enable) {
 		return 1.0;
@@ -87,49 +102,6 @@ float computeAO(ivec2 texel, vec2 uv) {
 	float currentDepth = normalAndDepth.w;
 	vec3 currentPosVS = getViewPositionFromSceneDepth(uv, currentDepth);
 
-#if !SHADOW_WARRIOR_SSAO
-	vec3 randomRot = getRandomRotation(texel);
-	vec3 tangent = normalize(randomRot - currentNormal * dot(randomRot, currentNormal));
-	vec3 bitangent = cross(currentNormal, tangent);
-	mat3 TBN = mat3(tangent, bitangent, currentNormal);
-
-	float occlusion = 0.0;
-
-	for (int i = 0; i < uboSSAO.sampleCount; i++) {
-		vec3 samplePos = TBN * uboRandom.samplePoints[i].xyz;
-		samplePos = currentPosVS + samplePos * uboSSAO.ssaoRadius;
-
-		vec4 offset = vec4(samplePos, 1.0);
-		offset = uboPerFrame.projTransform * offset;
-		offset.xyz /= offset.w;
-		offset.xyz = offset.xyz * 0.5 + 0.5;
-
-		vec2 neighborUV = offset.xy;
-		ivec2 neighborTexel = ivec2(neighborUV * imageSize(ssaoMap).xy);
-
-#if USE_SHARED_SAMPLES
-		float neighborDepth;
-		ivec2 neighborID = ivec2(gl_LocalInvocationID.xy) + neighborTexel - texel;
-		if (0 <= neighborID.x && neighborID.x < gl_WorkGroupSize.x && 0 <= neighborID.y && neighborID.y < gl_WorkGroupSize.y) {
-			int neighborLocalInvocationIndex = neighborID.y * int(gl_WorkGroupSize.x) + neighborID.x;
-			neighborDepth = shared_samples[neighborLocalInvocationIndex].w;
-		} else {
-			neighborDepth = imageLoad(halfNormalAndDepth, neighborTexel).w;
-		}
-#else
-		float neighborDepth = imageLoad(halfNormalAndDepth, neighborTexel).w;
-#endif
-		float neighborZ = getViewPositionFromSceneDepth(neighborUV, neighborDepth).z;
-			
-		const float bias = 0.025;
-		float rangeCheck = smoothstep(0.0, 1.0, uboSSAO.ssaoRadius / abs(currentPosVS.z - neighborZ));
-		occlusion += (neighborZ >= currentPosVS.z + bias ? 1.0 : 0.0) * rangeCheck;
-	}
-
-	float finalAO = 1.0 - (occlusion / uboSSAO.sampleCount);
-#endif
-
-#if SHADOW_WARRIOR_SSAO
 	float ao = 0.0;
 	float vdNoise = noise_ig(texel); // per-texel random number for Vogel disk
 	
@@ -146,7 +118,7 @@ float computeAO(ivec2 texel, vec2 uv) {
 
 		ivec2 inputTextureSize = imageSize(halfNormalAndDepth);
 		ivec2 neighborTexel = ivec2(neighborUV * inputTextureSize);
-		float neighborDepth = imageLoad(halfNormalAndDepth, neighborTexel).w;
+		float neighborDepth = fetchNeighbor(texel, neighborTexel).w;
 		vec3 samplePositionVS = getViewPositionFromSceneDepth(neighborUV, neighborDepth);
 
 		vec3 v = samplePositionVS - currentPosVS;
@@ -159,10 +131,7 @@ float computeAO(ivec2 texel, vec2 uv) {
 	// #todo: Add contrast parameter
 	//ao = pow(ao, uboSSAO.contrast);
 
-	float finalAO = ao;
-#endif
-
-	return finalAO;
+	return ao;
 }
 
 void main() {
