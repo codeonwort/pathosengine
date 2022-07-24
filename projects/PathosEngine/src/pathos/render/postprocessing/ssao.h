@@ -13,9 +13,7 @@ namespace pathos {
 	class SSAO : public PostProcess {
 
 		struct UBO_SSAO_Random {
-			// Sample kernel in tangent space
-			vector4 samplePoints[SSAO_MAX_SAMPLE_POINTS];
-			// w component is not used
+			// For Vogel disk. w component is not used.
 			vector4 randomRotations[SSAO_NUM_ROTATION_NOISE];
 		};
 

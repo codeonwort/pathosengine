@@ -17,11 +17,8 @@
 // Algorithm overview
 // [v] 1. Compute SSAO in a quater-resolution buffer
 // [v] 2. Blur the SSAO output in two depth-aware, separable passes.
-//     -> Not depth-aware yet
 // [ ] 3. Upsample the blurred SSAO with a bilateral filter.
 //     -> Not bilateral upsample yet
-
-// #todo-postprocess-ssao: SSAO is really noisy. Check 'r.viewmode 7'
 
 // Screen Space Ambient Occlusion
 // https://learnopengl.com/Advanced-Lighting/SSAO
@@ -31,22 +28,23 @@ namespace pathos {
 	static constexpr GLuint UBO_SSAO_BINDING_POINT = 1;
 	static constexpr GLuint UBO_SSAO_RANDOM_BINDING_POINT = 2;
 
-	static ConsoleVariable<float> cvar_ssao_radius("r.ssao.radius", 0.5f, "Radius of sample space");
 	static ConsoleVariable<int32> cvar_ssao_enable("r.ssao.enable", 1, "Enable SSAO");
-	static ConsoleVariable<int32> cvar_ssao_spp("r.ssao.samplesPerPixel", 32, "Determines SPP");
-	static ConsoleVariable<int32> cvar_ssao_randomize_points("r.ssao.randomizePoints", 1, "Randomize sample points");
+	static ConsoleVariable<int32> cvar_ssao_spp("r.ssao.samplesPerPixel", 32, "Determines SPP(Samples Per Pixel)");
+	static ConsoleVariable<float> cvar_ssao_worldRadius("r.ssao.worldRadius", 5.0f, "World radius of sample space");
+	static ConsoleVariable<float> cvar_ssao_maxScreenRadius("r.ssao.maxScreenRadius", 0.2f, "Screen space max radius");
+	static ConsoleVariable<float> cvar_ssao_contrast("r.ssao.contrast", 1.0f, "Contrast of AO effect");
 
 	struct UBO_SSAO {
-		float ssaoRadius;
 		uint32 enable;
-		uint32 spp;             // samples per pixel
-		uint32 randomizePoints; // bool in shader
+		uint32 spp;
+		float worldRadius;
+		float maxScreenRadius;
+		float contrast;
 	};
 
 	class SSAO_Compute : public ShaderStage {
 	public:
 		SSAO_Compute() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute") {
-			addDefine("SSAO_MAX_SAMPLE_POINTS", SSAO_MAX_SAMPLE_POINTS);
 			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO_NUM_ROTATION_NOISE);
 			setFilepath("ssao_ao.glsl");
 		}
@@ -139,25 +137,14 @@ namespace pathos {
 			cmdList.useProgram(program_computeAO.getGLName());
 
 			UBO_SSAO uboData;
-			uboData.ssaoRadius      = cvar_ssao_radius.getFloat();
 			uboData.enable          = cvar_ssao_enable.getInt() == 0 ? 0 : 1;
 			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), SSAO_MAX_SAMPLE_POINTS);
-			uboData.randomizePoints = (cvar_ssao_randomize_points.getInt() == 0) ? 0 : 1;
+			uboData.worldRadius     = cvar_ssao_worldRadius.getFloat();
+			uboData.maxScreenRadius = cvar_ssao_maxScreenRadius.getFloat();
+			uboData.contrast        = cvar_ssao_contrast.getFloat();
 			ubo.update(cmdList, UBO_SSAO_BINDING_POINT, &uboData);
 
 			if (bRandomDataValid == false) {
-				for (uint32 i = 0; i < SSAO_MAX_SAMPLE_POINTS; ++i) {
-					// Sample kernel: random points inside unit hemisphere around +z axis
-					vector3 p = RandomInUnitSphere();
-					if (p.z < 0.0f) p.z = -p.z;
-
-					// Put more samples closer to the origin
-					float weight = (float)i / SSAO_MAX_SAMPLE_POINTS;
-					weight = pathos::lerp(0.5f, 1.0f, weight * weight);
-					p *= weight;
-
-					randomData.samplePoints[i] = vector4(p.x, p.y, p.z, 0.0f);
-				}
 				for (uint32 i = 0; i < SSAO_NUM_ROTATION_NOISE; ++i) {
 					vector4 v(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f, 0.0f);
 					randomData.randomRotations[i] = v;
