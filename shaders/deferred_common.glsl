@@ -1,8 +1,11 @@
 //? #version 460 core
 
+// UBO binding slots reserved globally.
+// Each pass should use binding slots after these.
 #define SLOT_UBO_PER_FRAME         0
 
-// should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
+// Should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
+// #todo-light: Support unlimit number of light sources
 #define MAX_DIRECTIONAL_LIGHTS     4
 #define MAX_POINT_LIGHTS           8
 
@@ -50,6 +53,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
+	mat4x4 projTransform;
 	mat4x4 inverseProjTransform;
 
 	vec4 projParams;
@@ -80,6 +84,7 @@ vec2 CubeToEquirectangular(vec3 v)
 }
 
 float getWorldTime() { return uboPerFrame.time.x; }
+float getAspectRatio() { return uboPerFrame.zRange.w; }
 
 vec3 getWorldPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
 	//float z = sceneDepth * 2.0 - 1.0; // Use this if not Reverse-Z
@@ -113,20 +118,21 @@ vec3 getViewPositionFromWorldPosition(vec3 wPos) {
 	return (uboPerFrame.viewTransform * vec4(wPos, 1.0)).xyz;
 }
 
-// Near is 0.0, Far is 1.0
+// zNear is mapped to 0.0, zFar is mapped to 1.0
 float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	vec3 vPos = getViewPositionFromSceneDepth(screenUV, sceneDepth);
 	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 	return linearDepth;
 }
 
+// #todo: Rename as something like GBufferData
 // GBuffer unpack info
 struct fragment_info {
 	vec3 albedo;
 	vec3 normal;
 	float specular_power;
-	vec3 vs_coords; // in view space
-	vec3 ws_coords; // in world space
+	vec3 vs_coords; // position in view space
+	vec3 ws_coords; // position in world space
 	uint material_id;
 	float metallic;
 	float roughness;

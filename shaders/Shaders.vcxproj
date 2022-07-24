@@ -23,6 +23,7 @@
     <None Include="atmosphere_precompute.glsl" />
     <None Include="bloom_setup.glsl" />
     <None Include="brdf.glsl" />
+    <None Include="common.glsl" />
     <None Include="copy_texture.fs.glsl" />
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
@@ -57,6 +58,7 @@
     <None Include="sky_ansel.glsl" />
     <None Include="specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />
+    <None Include="ssao_blur.glsl" />
     <None Include="ssao_downscale.glsl" />
     <None Include="starfield.glsl" />
     <None Include="tone_mapping.glsl" />

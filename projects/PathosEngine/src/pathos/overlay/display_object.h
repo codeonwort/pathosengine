@@ -7,6 +7,8 @@
 
 namespace pathos {
 
+	class Brush;
+
 	class DisplayObject2D : public NamedObject {
 
 	public:
@@ -34,7 +36,10 @@ namespace pathos {
 		inline void setScaleY(float value) { scaleY = value; }
 
 		virtual MeshGeometry* getGeometry() { return nullptr; }
-		inline const Transform& getTransform() { updateTransform(); return transform; }
+		inline const Transform& getTransform() {
+			updateTransform();
+			return transform;
+		}
 
 		inline bool isRoot() { return root == this; }
 		inline DisplayObject2D* getRoot() { return root; }
@@ -50,7 +55,7 @@ namespace pathos {
 		float scaleX = 1.0f, scaleY = 1.0f;
 
 		Transform transform;
-		bool transformDirty = false; // TODO: utilize this
+		bool transformDirty = false; // #todo-overlay: Utilize this
 
 		void setRoot(DisplayObject2D* root);
 		virtual void updateTransform() {}
@@ -60,7 +65,7 @@ namespace pathos {
 		DisplayObject2D* root = nullptr;
 		DisplayObject2D* parent = nullptr;
 		std::vector<DisplayObject2D*> children;
-		class Brush* brush = nullptr;
+		Brush* brush = nullptr;
 
 	};
 

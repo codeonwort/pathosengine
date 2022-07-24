@@ -4,6 +4,10 @@
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
 
+// https://developer.nvidia.com/content/depth-precision-visualized
+// https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/
+#define REVERSE_Z_PROJECTION 1
+
 namespace pathos {
 
 	static const float MAX_PITCH = glm::radians(80.0f);
@@ -38,8 +42,9 @@ namespace pathos {
 	}
 
 	void PerspectiveLens::updateProjectionMatrix() {
-#if 1 // Reverse-Z
+#if REVERSE_Z_PROJECTION
 		float f = 1.0f / tan(fovY_radians / 2.0f);
+		// NOTE: glm matrix is column-major!
 		transform = matrix4(
 			f / aspect, 0.0f, 0.0f,   0.0f,
 			0.0f,       f,    0.0f,   0.0f,
@@ -110,14 +115,18 @@ namespace pathos {
 	// move direction is alongside the camera's view direction
 	void Camera::move(const vector3& forwardRightUp) {
 		calculateViewMatrix();
-		position += transform.inverseTransformVector(forwardRightUp.x * -forward0 + forwardRightUp.y * right0 + forwardRightUp.z * up0);
+		position += transform.inverseTransformVector(
+			(forwardRightUp.x * -forward0)
+			+ (forwardRightUp.y * right0)
+			+ (forwardRightUp.z * up0));
 		viewDirty = true;
 	}
 
 	void Camera::moveForward(float amount)
 	{
 		calculateViewMatrix();
-		position += transform.inverseTransformVector(amount * -forward0); // #todo-camera: Dunno why the hell I have to flip the sign
+		// #todo-camera: Dunno why the hell I have to flip the sign
+		position += transform.inverseTransformVector(amount * -forward0);
 		viewDirty = true;
 	}
 

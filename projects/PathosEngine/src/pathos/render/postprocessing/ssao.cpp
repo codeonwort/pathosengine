@@ -1,42 +1,83 @@
 #include "ssao.h"
 #include "pathos/console.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/math/random.h"
+#include "badger/math/minmax.h"
+
+// Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4"
+// (Wojciech Sterna, GPU Zen)
+
+// #todo-ssao: Upsample the blurred SSAO with a bilateral filter.
+// But... looks not bad with mere bilinear filtering
+// and I don't wanna make an additional full-resolution texture.
 
 namespace pathos {
 
 	static constexpr GLuint UBO_SSAO_BINDING_POINT = 1;
 	static constexpr GLuint UBO_SSAO_RANDOM_BINDING_POINT = 2;
 
-	static ConsoleVariable<float> cvar_ssao_radius("r.ssao.radius", 0.1f, "Radius of sample space");
 	static ConsoleVariable<int32> cvar_ssao_enable("r.ssao.enable", 1, "Enable SSAO");
-	static ConsoleVariable<int32> cvar_ssao_point_count("r.ssao.pointCount", 32, "Determines sample count for occlusion calculation");
-	static ConsoleVariable<int32> cvar_ssao_randomize_points("r.ssao.randomizePoints", 1, "Randomize sample points");
+	static ConsoleVariable<int32> cvar_ssao_spp("r.ssao.samplesPerPixel", 32, "Determines SPP(Samples Per Pixel)");
+	static ConsoleVariable<float> cvar_ssao_worldRadius("r.ssao.worldRadius", 5.0f, "World radius of sample space");
+	static ConsoleVariable<float> cvar_ssao_maxScreenRadius("r.ssao.maxScreenRadius", 0.2f, "Screen space max radius");
+	static ConsoleVariable<float> cvar_ssao_contrast("r.ssao.contrast", 1.0f, "Contrast of AO effect");
 
+	// For SSAO_Compute
 	struct UBO_SSAO {
-		float ssaoRadius;
 		uint32 enable;
-		uint32 pointCount;
-		uint32 randomizePoints; // bool in shader
+		uint32 spp;
+		float worldRadius;
+		float maxScreenRadius;
+		float contrast;
+	};
+
+	class SSAO_Downscale : public ShaderStage {
+	public:
+		SSAO_Downscale() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Downscale") {
+			setFilepath("ssao_downscale.glsl");
+		}
 	};
 
 	class SSAO_Compute : public ShaderStage {
-		
 	public:
-		SSAO_Compute()
-			: ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute")
-		{
+		SSAO_Compute() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute") {
+			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO_NUM_ROTATION_NOISE);
 			setFilepath("ssao_ao.glsl");
 		}
-
 	};
 
+	class SSAO_BlurVS : public ShaderStage {
+	public:
+		SSAO_BlurVS() : ShaderStage(GL_VERTEX_SHADER, "SSAO_BlurVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+
+	class SSAO_BlurHorizontalFS : public ShaderStage {
+	public:
+		SSAO_BlurHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSAO_BlurHorizontalFS") {
+			addDefine("HORIZONTAL", 1);
+			setFilepath("ssao_blur.glsl");
+		}
+	};
+
+	class SSAO_BlurVerticalFS : public ShaderStage {
+	public:
+		SSAO_BlurVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSAO_BlurVerticalFS") {
+			addDefine("HORIZONTAL", 0);
+			setFilepath("ssao_blur.glsl");
+		}
+	};
+
+	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Downscale, SSAO_Downscale);
 	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurHorizontal, SSAO_BlurVS, SSAO_BlurHorizontalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurVertical, SSAO_BlurVS, SSAO_BlurVerticalFS);
 
 }
 
@@ -44,28 +85,6 @@ namespace pathos {
 
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
-		{
-			Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
-			cs_downscale.loadSource("ssao_downscale.glsl");
-			program_downscale = pathos::createProgram(cs_downscale, "SSAO_Downscale");
-		}
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "VS_SSAO_BLUR_1");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "FS_SSAO_BLUR_1");
-			fs_blur.addDefine("HORIZONTAL 1");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur = pathos::createProgram(vs_blur, fs_blur, "SSAO_Blur_1");
-		}
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "VS_SSAO_BLUR_2");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "FS_SSAO_BLUR_2");
-			fs_blur.addDefine("HORIZONTAL 0");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "SSAO_Blur_2");
-		}
-
 		ubo.init<UBO_SSAO>();
 		uboRandom.init<UBO_SSAO_Random>();
 
@@ -78,9 +97,6 @@ namespace pathos {
 
 	void SSAO::releaseResources(RenderCommandList& cmdList)
 	{
-		gRenderDevice->deleteProgram(program_downscale);
-		gRenderDevice->deleteProgram(program_blur);
-		gRenderDevice->deleteProgram(program_blur2);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur2);
 
@@ -94,21 +110,23 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		{
-			SCOPED_DRAW_EVENT(Downsample);
+			SCOPED_DRAW_EVENT(SSAODownsample);
 
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 64.0f);
 
-			cmdList.useProgram(program_downscale);
-
-			cmdList.bindImageTexture(0, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
-			cmdList.bindImageTexture(1, sceneContext.gbufferB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(2, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSAO_Downscale);
+			cmdList.useProgram(program.getGLName());
+			
+			cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+			cmdList.bindImageTexture(1, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+			cmdList.bindImageTexture(2, sceneContext.gbufferB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(3, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			cmdList.dispatchCompute(workGroupsX, sceneContext.sceneHeight / 2, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 
 		{
-			SCOPED_DRAW_EVENT(AO);
+			SCOPED_DRAW_EVENT(SSAOCompute);
 
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 16.0f);
 			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 16.0f);
@@ -117,20 +135,19 @@ namespace pathos {
 			cmdList.useProgram(program_computeAO.getGLName());
 
 			UBO_SSAO uboData;
-			uboData.ssaoRadius      = cvar_ssao_radius.getFloat();
 			uboData.enable          = cvar_ssao_enable.getInt() == 0 ? 0 : 1;
-			uboData.pointCount      = (uint32)cvar_ssao_point_count.getInt();
-			uboData.randomizePoints = cvar_ssao_randomize_points.getInt() == 0 ? 0 : 1;
+			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), SSAO_MAX_SAMPLE_POINTS);
+			uboData.worldRadius     = cvar_ssao_worldRadius.getFloat();
+			uboData.maxScreenRadius = cvar_ssao_maxScreenRadius.getFloat();
+			uboData.contrast        = cvar_ssao_contrast.getFloat();
 			ubo.update(cmdList, UBO_SSAO_BINDING_POINT, &uboData);
 
-			if (randomGenerated == false) {
-				for (uint32 i = 0; i < 256; i++) {
-					glm::vec3 p = RandomInUnitSphere();
-					glm::vec3 v = RandomInUnitSphere();
-					randomData.points[i] = glm::vec4(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, Random(), 0.0f);
-					randomData.randomVectors[i] = glm::vec4(Random(), Random(), Random(), Random());
+			if (bRandomDataValid == false) {
+				for (uint32 i = 0; i < SSAO_NUM_ROTATION_NOISE; ++i) {
+					vector4 v(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f, 0.0f);
+					randomData.randomRotations[i] = v;
 				}
-				randomGenerated = true;
+				bRandomDataValid = true;
 			}
 			uboRandom.update(cmdList, UBO_SSAO_RANDOM_BINDING_POINT, &randomData);
 
@@ -141,24 +158,29 @@ namespace pathos {
 		}
 
 		{
-			SCOPED_DRAW_EVENT(Blur);
+			SCOPED_DRAW_EVENT(SSAOBlur);
+
+			ShaderProgram& program_horizontal = FIND_SHADER_PROGRAM(Program_SSAO_BlurHorizontal);
+			ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_SSAO_BlurVertical);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			cmdList.useProgram(program_blur);
+			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);
 			cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
 			pathos::checkFramebufferStatus(cmdList, fboBlur, "fboBlur is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMap);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 			fullscreenQuad->drawPrimitive(cmdList);
 
-			cmdList.useProgram(program_blur2);
+			cmdList.useProgram(program_vertical.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
 			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
 			pathos::checkFramebufferStatus(cmdList, fboBlur2, "fboBlur2 is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
