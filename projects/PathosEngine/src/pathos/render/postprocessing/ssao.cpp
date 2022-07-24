@@ -16,7 +16,7 @@
 
 // Algorithm overview
 // [v] 1. Compute SSAO in a quater-resolution buffer
-// [ ] 2. Blur the SSAO output in two depth-aware, separable passes.
+// [v] 2. Blur the SSAO output in two depth-aware, separable passes.
 //     -> Not depth-aware yet
 // [ ] 3. Upsample the blurred SSAO with a bilateral filter.
 //     -> Not bilateral upsample yet
@@ -44,19 +44,40 @@ namespace pathos {
 	};
 
 	class SSAO_Compute : public ShaderStage {
-		
 	public:
-		SSAO_Compute()
-			: ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute")
-		{
+		SSAO_Compute() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute") {
 			addDefine("SSAO_MAX_SAMPLE_POINTS", SSAO_MAX_SAMPLE_POINTS);
 			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO_NUM_ROTATION_NOISE);
 			setFilepath("ssao_ao.glsl");
 		}
+	};
 
+	class SSAO_BlurVS : public ShaderStage {
+	public:
+		SSAO_BlurVS() : ShaderStage(GL_VERTEX_SHADER, "SSAO_BlurVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+
+	class SSAO_BlurHorizontalFS : public ShaderStage {
+	public:
+		SSAO_BlurHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSAO_BlurHorizontalFS") {
+			addDefine("HORIZONTAL", 1);
+			setFilepath("ssao_blur.glsl");
+		}
+	};
+
+	class SSAO_BlurVerticalFS : public ShaderStage {
+	public:
+		SSAO_BlurVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSAO_BlurVerticalFS") {
+			addDefine("HORIZONTAL", 0);
+			setFilepath("ssao_blur.glsl");
+		}
 	};
 
 	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurHorizontal, SSAO_BlurVS, SSAO_BlurHorizontalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurVertical, SSAO_BlurVS, SSAO_BlurVerticalFS);
 
 }
 
@@ -64,27 +85,9 @@ namespace pathos {
 
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
-		{
-			Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
-			cs_downscale.loadSource("ssao_downscale.glsl");
-			program_downscale = pathos::createProgram(cs_downscale, "SSAO_Downscale");
-		}
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "VS_SSAO_BLUR_1");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "FS_SSAO_BLUR_1");
-			fs_blur.addDefine("HORIZONTAL 1");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur = pathos::createProgram(vs_blur, fs_blur, "SSAO_Blur_1");
-		}
-		{
-			Shader vs_blur(GL_VERTEX_SHADER, "VS_SSAO_BLUR_2");
-			Shader fs_blur(GL_FRAGMENT_SHADER, "FS_SSAO_BLUR_2");
-			fs_blur.addDefine("HORIZONTAL 0");
-			vs_blur.loadSource("fullscreen_quad.glsl");
-			fs_blur.loadSource("two_pass_gaussian_blur.glsl");
-			program_blur2 = pathos::createProgram(vs_blur, fs_blur, "SSAO_Blur_2");
-		}
+		Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
+		cs_downscale.loadSource("ssao_downscale.glsl");
+		program_downscale = pathos::createProgram(cs_downscale, "SSAO_Downscale");
 
 		ubo.init<UBO_SSAO>();
 		uboRandom.init<UBO_SSAO_Random>();
@@ -99,8 +102,6 @@ namespace pathos {
 	void SSAO::releaseResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->deleteProgram(program_downscale);
-		gRenderDevice->deleteProgram(program_blur);
-		gRenderDevice->deleteProgram(program_blur2);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur2);
 
@@ -174,22 +175,27 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(SSAOBlur);
 
+			ShaderProgram& program_horizontal = FIND_SHADER_PROGRAM(Program_SSAO_BlurHorizontal);
+			ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_SSAO_BlurVertical);
+
 			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			cmdList.useProgram(program_blur);
+			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);
 			cmdList.namedFramebufferTexture(fboBlur, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMapTemp, 0);
 			pathos::checkFramebufferStatus(cmdList, fboBlur, "fboBlur is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMap);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 			fullscreenQuad->drawPrimitive(cmdList);
 
-			cmdList.useProgram(program_blur2);
+			cmdList.useProgram(program_vertical.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
 			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
 			pathos::checkFramebufferStatus(cmdList, fboBlur2, "fboBlur2 is invalid");
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);

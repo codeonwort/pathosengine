@@ -6,6 +6,7 @@
 
 layout (binding = 0) uniform sampler2D src;
 #if ADDITIVE
+// For bloom
 layout (binding = 1) uniform sampler2D additive;
 layout (location = 0) uniform float additiveWeight;
 #endif

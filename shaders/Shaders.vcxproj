@@ -58,6 +58,7 @@
     <None Include="sky_ansel.glsl" />
     <None Include="specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />
+    <None Include="ssao_blur.glsl" />
     <None Include="ssao_downscale.glsl" />
     <None Include="starfield.glsl" />
     <None Include="tone_mapping.glsl" />

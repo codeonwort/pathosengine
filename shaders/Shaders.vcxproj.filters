@@ -62,5 +62,6 @@
     <None Include="volumetric_clouds.glsl" />
     <None Include="deferred_pack_alphaonly.glsl" />
     <None Include="common.glsl" />
+    <None Include="ssao_blur.glsl" />
   </ItemGroup>
 </Project>
