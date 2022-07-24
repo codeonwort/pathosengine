@@ -23,8 +23,6 @@ namespace pathos {
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
 
 	private:
-		GLuint program_downscale = 0xffffffff;
-
 		GLuint fboBlur = 0;
 		GLuint fboBlur2 = 0;
 

@@ -1,6 +1,5 @@
 #include "ssao.h"
 #include "pathos/console.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
@@ -34,12 +33,20 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_ssao_maxScreenRadius("r.ssao.maxScreenRadius", 0.2f, "Screen space max radius");
 	static ConsoleVariable<float> cvar_ssao_contrast("r.ssao.contrast", 1.0f, "Contrast of AO effect");
 
+	// For SSAO_Compute
 	struct UBO_SSAO {
 		uint32 enable;
 		uint32 spp;
 		float worldRadius;
 		float maxScreenRadius;
 		float contrast;
+	};
+
+	class SSAO_Downscale : public ShaderStage {
+	public:
+		SSAO_Downscale() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Downscale") {
+			setFilepath("ssao_downscale.glsl");
+		}
 	};
 
 	class SSAO_Compute : public ShaderStage {
@@ -73,6 +80,7 @@ namespace pathos {
 		}
 	};
 
+	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Downscale, SSAO_Downscale);
 	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
 	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurHorizontal, SSAO_BlurVS, SSAO_BlurHorizontalFS);
 	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurVertical, SSAO_BlurVS, SSAO_BlurVerticalFS);
@@ -83,10 +91,6 @@ namespace pathos {
 
 	void SSAO::initializeResources(RenderCommandList& cmdList)
 	{
-		Shader cs_downscale(GL_COMPUTE_SHADER, "CS_SSAO_Downscale");
-		cs_downscale.loadSource("ssao_downscale.glsl");
-		program_downscale = pathos::createProgram(cs_downscale, "SSAO_Downscale");
-
 		ubo.init<UBO_SSAO>();
 		uboRandom.init<UBO_SSAO_Random>();
 
@@ -99,7 +103,6 @@ namespace pathos {
 
 	void SSAO::releaseResources(RenderCommandList& cmdList)
 	{
-		gRenderDevice->deleteProgram(program_downscale);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur2);
 
@@ -117,7 +120,8 @@ namespace pathos {
 
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 64.0f);
 
-			cmdList.useProgram(program_downscale);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSAO_Downscale);
+			cmdList.useProgram(program.getGLName());
 			
 			cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 			cmdList.bindImageTexture(1, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
