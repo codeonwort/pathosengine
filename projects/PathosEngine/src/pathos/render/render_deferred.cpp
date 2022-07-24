@@ -70,6 +70,7 @@ namespace pathos {
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
 		matrix4               viewProj;
+		matrix4               proj;
 		matrix4               inverseProj;
 
 		vector4               projParams;
@@ -546,6 +547,7 @@ namespace pathos {
 		data.inverseView  = glm::inverse(data.view);
 		data.view3x3      = matrix3x4(data.view);
 		data.viewProj     = camera->getViewProjectionMatrix();
+		data.proj         = projMatrix;
 		data.inverseProj  = glm::inverse(projMatrix);
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);

@@ -3,13 +3,20 @@
 #include "post_process.h"
 #include "pathos/shader/uniform_buffer.h"
 
+#include "badger/types/vector_types.h"
+
+#define SSAO_MAX_SAMPLE_POINTS  64u
+#define SSAO_NUM_ROTATION_NOISE 16u
+
 namespace pathos {
 
 	class SSAO : public PostProcess {
 
 		struct UBO_SSAO_Random {
-			glm::vec4 points[256];
-			glm::vec4 randomVectors[256];
+			// Sample kernel in tangent space
+			vector4 samplePoints[SSAO_MAX_SAMPLE_POINTS];
+			// w component is not used
+			vector4 randomRotations[SSAO_NUM_ROTATION_NOISE];
 		};
 
 	public:
@@ -21,13 +28,15 @@ namespace pathos {
 		GLuint program_downscale = 0xffffffff;
 		GLuint program_blur = 0xffffffff;
 		GLuint program_blur2 = 0xffffffff;
+
 		GLuint fboBlur = 0;
 		GLuint fboBlur2 = 0;
+
 		UniformBuffer ubo;
 		UniformBuffer uboRandom;
 
 		UBO_SSAO_Random randomData;
-		bool randomGenerated = false;
+		bool bRandomDataValid = false;
 
 	};
 

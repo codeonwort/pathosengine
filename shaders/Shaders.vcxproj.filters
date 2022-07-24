@@ -61,5 +61,6 @@
     <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />
     <None Include="deferred_pack_alphaonly.glsl" />
+    <None Include="common.glsl" />
   </ItemGroup>
 </Project>

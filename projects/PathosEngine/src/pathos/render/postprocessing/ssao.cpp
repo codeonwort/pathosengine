@@ -4,24 +4,42 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/math/random.h"
+#include "badger/math/minmax.h"
+
+// Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4"
+//                                               (Wojciech Sterna, GPU Zen)
+// It's said that this impl. was used in <Shadow Warrior> and <Shadow Warrior 2>
+
+// Algorithm overview
+// [v] 1. Compute SSAO in a quater-resolution buffer
+// [ ] 2. Blur the SSAO output in two depth-aware, separable passes.
+//     -> Not depth-aware yet
+// [ ] 3. Upsample the blurred SSAO with a bilateral filter.
+//     -> Not bilateral upsample yet
+
+// #todo-postprocess-ssao: SSAO is really noisy. Check 'r.viewmode 7'
+
+// Screen Space Ambient Occlusion
+// https://learnopengl.com/Advanced-Lighting/SSAO
 
 namespace pathos {
 
 	static constexpr GLuint UBO_SSAO_BINDING_POINT = 1;
 	static constexpr GLuint UBO_SSAO_RANDOM_BINDING_POINT = 2;
 
-	static ConsoleVariable<float> cvar_ssao_radius("r.ssao.radius", 0.1f, "Radius of sample space");
+	static ConsoleVariable<float> cvar_ssao_radius("r.ssao.radius", 0.5f, "Radius of sample space");
 	static ConsoleVariable<int32> cvar_ssao_enable("r.ssao.enable", 1, "Enable SSAO");
-	static ConsoleVariable<int32> cvar_ssao_point_count("r.ssao.pointCount", 32, "Determines sample count for occlusion calculation");
+	static ConsoleVariable<int32> cvar_ssao_spp("r.ssao.samplesPerPixel", 32, "Determines SPP");
 	static ConsoleVariable<int32> cvar_ssao_randomize_points("r.ssao.randomizePoints", 1, "Randomize sample points");
 
 	struct UBO_SSAO {
 		float ssaoRadius;
 		uint32 enable;
-		uint32 pointCount;
+		uint32 spp;             // samples per pixel
 		uint32 randomizePoints; // bool in shader
 	};
 
@@ -31,6 +49,8 @@ namespace pathos {
 		SSAO_Compute()
 			: ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute")
 		{
+			addDefine("SSAO_MAX_SAMPLE_POINTS", SSAO_MAX_SAMPLE_POINTS);
+			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO_NUM_ROTATION_NOISE);
 			setFilepath("ssao_ao.glsl");
 		}
 
@@ -94,21 +114,22 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		{
-			SCOPED_DRAW_EVENT(Downsample);
+			SCOPED_DRAW_EVENT(SSAODownsample);
 
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 64.0f);
 
 			cmdList.useProgram(program_downscale);
-
-			cmdList.bindImageTexture(0, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
-			cmdList.bindImageTexture(1, sceneContext.gbufferB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-			cmdList.bindImageTexture(2, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+			
+			cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+			cmdList.bindImageTexture(1, sceneContext.gbufferA, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+			cmdList.bindImageTexture(2, sceneContext.gbufferB, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+			cmdList.bindImageTexture(3, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			cmdList.dispatchCompute(workGroupsX, sceneContext.sceneHeight / 2, 1);
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 
 		{
-			SCOPED_DRAW_EVENT(AO);
+			SCOPED_DRAW_EVENT(SSAOCompute);
 
 			GLuint workGroupsX = (GLuint)ceilf((float)(sceneContext.sceneWidth / 2) / 16.0f);
 			GLuint workGroupsY = (GLuint)ceilf((float)(sceneContext.sceneHeight / 2) / 16.0f);
@@ -119,18 +140,28 @@ namespace pathos {
 			UBO_SSAO uboData;
 			uboData.ssaoRadius      = cvar_ssao_radius.getFloat();
 			uboData.enable          = cvar_ssao_enable.getInt() == 0 ? 0 : 1;
-			uboData.pointCount      = (uint32)cvar_ssao_point_count.getInt();
-			uboData.randomizePoints = cvar_ssao_randomize_points.getInt() == 0 ? 0 : 1;
+			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), SSAO_MAX_SAMPLE_POINTS);
+			uboData.randomizePoints = (cvar_ssao_randomize_points.getInt() == 0) ? 0 : 1;
 			ubo.update(cmdList, UBO_SSAO_BINDING_POINT, &uboData);
 
-			if (randomGenerated == false) {
-				for (uint32 i = 0; i < 256; i++) {
-					glm::vec3 p = RandomInUnitSphere();
-					glm::vec3 v = RandomInUnitSphere();
-					randomData.points[i] = glm::vec4(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, Random(), 0.0f);
-					randomData.randomVectors[i] = glm::vec4(Random(), Random(), Random(), Random());
+			if (bRandomDataValid == false) {
+				for (uint32 i = 0; i < SSAO_MAX_SAMPLE_POINTS; ++i) {
+					// Sample kernel: random points inside unit hemisphere around +z axis
+					vector3 p = RandomInUnitSphere();
+					if (p.z < 0.0f) p.z = -p.z;
+
+					// Put more samples closer to the origin
+					float weight = (float)i / SSAO_MAX_SAMPLE_POINTS;
+					weight = pathos::lerp(0.5f, 1.0f, weight * weight);
+					p *= weight;
+
+					randomData.samplePoints[i] = vector4(p.x, p.y, p.z, 0.0f);
 				}
-				randomGenerated = true;
+				for (uint32 i = 0; i < SSAO_NUM_ROTATION_NOISE; ++i) {
+					vector4 v(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f, 0.0f);
+					randomData.randomRotations[i] = v;
+				}
+				bRandomDataValid = true;
 			}
 			uboRandom.update(cmdList, UBO_SSAO_RANDOM_BINDING_POINT, &randomData);
 
@@ -141,7 +172,7 @@ namespace pathos {
 		}
 
 		{
-			SCOPED_DRAW_EVENT(Blur);
+			SCOPED_DRAW_EVENT(SSAOBlur);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 			fullscreenQuad->activate_position_uv(cmdList);

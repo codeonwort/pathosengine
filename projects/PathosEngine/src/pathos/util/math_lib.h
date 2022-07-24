@@ -32,4 +32,9 @@ namespace pathos {
 		return (x < y) ? y : x;
 	}
 
+	template<typename T>
+	T lerp(T x, T y, float a) {
+		return x + a * (y - x);
+	}
+
 }
