@@ -22,13 +22,15 @@ namespace pathos {
 			Engine::internal_registerGlobalRenderRoutine(InitRecompileShaders::recompileShaders, nullptr);
 		}
 		// Dirty but works anyway
-		// #todo-shader: Suddenly this doesn't work? Fails at glLinkProgram().
 		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
 			gEngine->registerExec("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
-				ShaderDB::get().forEach([](ShaderProgram* program) -> void {
-					program->reload();
+				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
+					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
+						program->reload();
+					});
 				});
+				FLUSH_RENDER_COMMAND();
 				LOG(LogInfo, "End reloading shaders.");
 			});
 		}
