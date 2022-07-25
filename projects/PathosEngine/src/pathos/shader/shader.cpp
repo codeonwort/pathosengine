@@ -1,5 +1,6 @@
 // Pathos
 #include "shader.h"
+#include "shader_program.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
@@ -180,81 +181,21 @@ namespace pathos {
 		glDeleteShader(glName);
 	}
 
-	void Shader::setSource(const std::string& newSource) { source = { newSource }; }
-	void Shader::setSource(const char* newSource) { source = { newSource }; }
+	void Shader::setSource(const std::string& newSource) {
+		source = { newSource };
+	}
+	void Shader::setSource(const char* newSource) {
+		source = { newSource };
+	}
 
-	bool Shader::loadSource(const std::string& filepath) { return loadSource(filepath.c_str()); }
+	bool Shader::loadSource(const std::string& filepath) {
+		return loadSource(filepath.c_str());
+	}
 	bool Shader::loadSource(const char* filepath_) {
-		std::string filepath = ResourceFinder::get().find(filepath_);
-		CHECK(filepath.size() > 0);
-
-		std::ifstream file(filepath);
-		if (!file.is_open()) {
-			LOG(LogError, "Couldn't open a shader file: %s", filepath.c_str());
-			return false;
-		}
-
-		std::ostringstream codestream;
-		codestream << file.rdbuf();
-		std::string fullcode = std::move(codestream.str());
-
-		{
-			size_t version_start = fullcode.find("#version");
-			CHECK(version_start != string::npos);
-
-			size_t version_end = fullcode.find_first_of('\n', version_start);
-
-			// Add defines
-			if (defines.size() > 0) {
-				codestream.clear();
-				codestream.str("");
-				// Put #version back
-				codestream << fullcode.substr(version_start, version_end - version_start + 1);
-				for (const std::string& def : defines) {
-					codestream << "#define " << def << '\n';
-				}
-				codestream << fullcode.substr(version_end + 1);
-				fullcode = std::move(codestream.str());
-			}
-		}
+		CHECK(filepath_ != nullptr);
 
 		source.clear();
-
-#if PARSE_INCLUDES_IN_GLSL
-		size_t find_offset = 0u;
-		while (true) {
-			// #todo-shader: Need to skip '#include' in comments!!!
-			size_t include_start = fullcode.find("#include", find_offset);
-			if (include_start == string::npos) {
-				break;
-			}
-
-			size_t include_end = fullcode.find_first_of('\n', include_start);
-			source.emplace_back(fullcode.substr(0, include_start));
-			std::string include_line = fullcode.substr(include_start, include_end - include_start);
-
-			size_t quote_start = include_line.find('"');
-			size_t quote_end = include_line.find('"', quote_start + 1);
-			CHECKF(quote_start != string::npos && quote_end != string::npos, "#include statement is ill-formed.");
-
-			// #todo-shader: Support recursive include?
-			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
-			std::string include_filepath = ResourceFinder::get().find(include_file);
-			std::ifstream subfile(include_filepath);
-			if (!subfile.is_open()) {
-				LOG(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
-				return false;
-			}
-			std::ostringstream substream;
-			substream << subfile.rdbuf();
-			source.emplace_back(substream.str());
-
-			fullcode = fullcode.substr(include_end + 1);
-		}
-		source.emplace_back(fullcode);
-#endif
-
-		return true;
+		return ShaderStage::loadSourceInternal(filepath_, defines, 0, source);
 	}
 
 	bool Shader::compile() {

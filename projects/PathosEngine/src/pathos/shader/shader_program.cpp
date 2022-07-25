@@ -165,10 +165,19 @@ namespace pathos {
 	}
 
 	// #todo-shader: This is getting too dirty
-	bool ShaderStage::loadSource()
-	{
+	bool ShaderStage::loadSource() {
 		CHECK(filepath != nullptr);
 
+		sourceCode.clear();
+		return ShaderStage::loadSourceInternal(filepath, defines, 0, sourceCode);
+	}
+
+	bool ShaderStage::loadSourceInternal(
+		const std::string& filepath,
+		const std::vector<std::string>& defines,
+		int32 recursionDepth,
+		std::vector<std::string>& outSourceCode)
+	{
 		std::string fullFilepath = ResourceFinder::get().find(filepath);
 
 		if (fullFilepath.size() == 0) {
@@ -186,28 +195,28 @@ namespace pathos {
 		codeStream << fileStream.rdbuf();
 		std::string fullCode = std::move(codeStream.str());
 
-		size_t version_start = fullCode.find("#version");
-		if (version_start == std::string::npos) {
-			LOG(LogError, "[%s]: GLSL source file should contain '#version' statement", __FUNCTION__);
-			return false;
-		}
-
-		size_t version_end = fullCode.find_first_of('\n', version_start);
-
-		// Add defines
-		if (defines.size() > 0) {
-			codeStream.clear();
-			codeStream.str("");
-			// Put #version back
-			codeStream << fullCode.substr(version_start, version_end - version_start + 1);
-			for (const std::string& def : defines) {
-				codeStream << "#define " << def << '\n';
+		if (recursionDepth == 0) {
+			size_t version_start = fullCode.find("#version");
+			if (version_start == std::string::npos) {
+				LOG(LogError, "[%s]: GLSL source file should contain '#version' statement", __FUNCTION__);
+				return false;
 			}
-			codeStream << fullCode.substr(version_end + 1);
-			fullCode = std::move(codeStream.str());
-		}
 
-		sourceCode.clear();
+			size_t version_end = fullCode.find_first_of('\n', version_start);
+
+			// Add defines
+			if (defines.size() > 0) {
+				codeStream.clear();
+				codeStream.str("");
+				// Put #version back
+				codeStream << fullCode.substr(version_start, version_end - version_start + 1);
+				for (const std::string& def : defines) {
+					codeStream << "#define " << def << '\n';
+				}
+				codeStream << fullCode.substr(version_end + 1);
+				fullCode = std::move(codeStream.str());
+			}
+		}
 
 		// Parse include statements
 		size_t find_offset = 0u;
@@ -229,34 +238,25 @@ namespace pathos {
 			size_t include_end = fullCode.find_first_of('\n', include_start);
 
 			if (isComment) {
-				sourceCode.emplace_back(fullCode.substr(0, include_end));
+				outSourceCode.emplace_back(fullCode.substr(0, include_end));
 				fullCode = fullCode.substr(include_end + 1);
 				continue;
 			}
 			
-			sourceCode.emplace_back(fullCode.substr(0, include_start));
+			outSourceCode.emplace_back(fullCode.substr(0, include_start));
 			std::string include_line = fullCode.substr(include_start, include_end - include_start);
 
 			size_t quote_start = include_line.find('"');
 			size_t quote_end = include_line.find('"', quote_start + 1);
 			CHECK(quote_start != std::string::npos && quote_end != std::string::npos);
 
-			// #todo-shader: Support recursive include?
 			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
-			std::string include_filepath = ResourceFinder::get().find(include_file);
-			std::ifstream subfile(include_filepath);
-			if (!subfile.is_open()) {
-				LOG(LogError, "Couldn't open a #include file: %s", include_filepath.c_str());
-				return false;
-			}
-			std::ostringstream substream;
-			substream << subfile.rdbuf();
-			sourceCode.emplace_back(substream.str());
+			ShaderStage::loadSourceInternal(include_file, defines, recursionDepth + 1, outSourceCode);
 
 			fullCode = fullCode.substr(include_end + 1);
 		}
 
-		sourceCode.emplace_back(fullCode);
+		outSourceCode.emplace_back(fullCode);
 
 		return true;
 	}

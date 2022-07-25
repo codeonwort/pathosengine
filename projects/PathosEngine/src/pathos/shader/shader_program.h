@@ -98,6 +98,14 @@ namespace pathos {
 		void addDefine(const char* define, int32 value);
 		inline void setFilepath(const char* inFilepath) { filepath = inFilepath; }
 
+	// #todo-shader-rework: Expose as public to temp use in shader.cpp
+	// shader.cpp really should be deprecated but it's a big tech dept cannot be handled easily :/
+	public:
+		static bool loadSourceInternal(
+			const std::string& filepath,
+			const std::vector<std::string>& defines,
+			int32 recursionDepth,
+			std::vector<std::string>& outSourceCode);
 	private:
 		bool loadSource();
 		ShaderStage::CompileResponse tryCompile();
