@@ -125,18 +125,17 @@ float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	return linearDepth;
 }
 
-// #todo: Rename as something like GBufferData
 // GBuffer unpack info
-struct fragment_info {
+struct GBufferData {
 	vec3 albedo;
-	vec3 normal;
-	float specular_power;
-	vec3 vs_coords; // position in view space
-	vec3 ws_coords; // position in world space
-	uint material_id;
+	vec3 normal;          // Vertex normal in view space
+	float specular_power; // #todo: Deprecated property for phong shading
+	vec3 vs_coords;       // Position in view space
+	vec3 ws_coords;       // Position in world space
+	uint material_id;     // Shading model ID
 	float metallic;
 	float roughness;
-	float ao;
+	float ao;             // material local AO
 	vec3 emissive;
 
 	vec3 ws_normal;
@@ -144,7 +143,7 @@ struct fragment_info {
 
 void unpackGBuffer(
 	ivec2 coord, usampler2D gbufferA, sampler2D gbufferB, usampler2D gbufferC,
-	out fragment_info fragment)
+	out GBufferData outGBufferData)
 {
 	uvec4 data0 = texelFetch(gbufferA, coord, 0);
 	vec4 data1 = texelFetch(gbufferB, coord, 0);
@@ -155,18 +154,18 @@ void unpackGBuffer(
 	vec2 localAO_emissiveX = unpackHalf2x16(data2.y);
 	vec2 emissiveYZ = unpackHalf2x16(data2.z);
 
-	fragment.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
-	fragment.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
-	fragment.material_id    = data0.w;
+	outGBufferData.albedo         = vec3(unpackHalf2x16(data0.x), albedoZ_normalX.x);
+	outGBufferData.normal         = normalize(vec3(albedoZ_normalX.y, unpackHalf2x16(data0.z)));
+	outGBufferData.material_id    = data0.w;
 
-	fragment.vs_coords      = data1.xyz;
-	fragment.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.vs_coords, 1.0));
-	fragment.specular_power = data1.w;
+	outGBufferData.vs_coords      = data1.xyz;
+	outGBufferData.ws_coords      = vec3(uboPerFrame.inverseViewTransform * vec4(outGBufferData.vs_coords, 1.0));
+	outGBufferData.specular_power = data1.w;
 
-	fragment.metallic       = metal_roughness.x;
-	fragment.roughness      = metal_roughness.y;
-	fragment.ao             = localAO_emissiveX.x;
-	fragment.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
+	outGBufferData.metallic       = metal_roughness.x;
+	outGBufferData.roughness      = metal_roughness.y;
+	outGBufferData.ao             = localAO_emissiveX.x;
+	outGBufferData.emissive       = vec3(localAO_emissiveX.y, emissiveYZ.x, emissiveYZ.y);
 
-	fragment.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(fragment.normal, 0.0));
+	outGBufferData.ws_normal      = vec3(uboPerFrame.inverseViewTransform * vec4(outGBufferData.normal, 0.0));
 }

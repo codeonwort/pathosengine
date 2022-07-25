@@ -36,42 +36,42 @@ float getFogBottom()      { return ubo.fogParams.x; }
 float getFogTop()         { return ubo.fogParams.y; }
 float getFogAttenuation() { return ubo.fogParams.z; }
 
-float getShadowing(fragment_info fragment) {
+float getShadowing(GBufferData gbufferData) {
 	ShadowQuery query;
-	query.vPos    = fragment.vs_coords;
-	query.wPos    = fragment.ws_coords;
-	query.vNormal = fragment.normal;
-	query.wNormal = fragment.ws_normal;
+	query.vPos    = gbufferData.vs_coords;
+	query.wPos    = gbufferData.ws_coords;
+	query.vNormal = gbufferData.normal;
+	query.wNormal = gbufferData.ws_normal;
 	
 	return getShadowingFactor(csm, query);
 }
 
-float getShadowingByPointLight(fragment_info fragment, PointLight light, int shadowMapIndex) {
+float getShadowingByPointLight(GBufferData gbufferData, PointLight light, int shadowMapIndex) {
 	OmniShadowQuery query;
 	query.shadowMapIndex    = shadowMapIndex;
 	query.lightPos          = light.worldPosition;
 	query.attenuationRadius = light.attenuationRadius;
-	query.wPos              = fragment.ws_coords;
+	query.wPos              = gbufferData.ws_coords;
 
 	return getOmniShadowingFactor(pointLightShadowMaps, query);
 }
 
 // #todo: Too old model to be deprecated.
-vec3 phongShading(fragment_info fragment) {
+vec3 phongShading(GBufferData gbufferData) {
 	vec3 result = vec3(0.0);
-	vec3 N = fragment.normal;
+	vec3 N = gbufferData.normal;
 
 	for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
 		DirectionalLight light = uboPerFrame.directionalLights[i];
 
 		vec3 radiance = light.intensity;
 		if (i == 0 && isShadowEnabled()) {
-			radiance = radiance * getShadowing(fragment);
+			radiance = radiance * getShadowing(gbufferData);
 		}
 
 		vec3 L = -light.vsDirection;
 		float cosTheta = max(0.0, dot(N, L));
-		vec3 diffuse_color = radiance * (fragment.albedo * cosTheta);
+		vec3 diffuse_color = radiance * (gbufferData.albedo * cosTheta);
 		result += diffuse_color;
 	}
 
@@ -79,7 +79,7 @@ vec3 phongShading(fragment_info fragment) {
 	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
-		vec3 L = light.viewPosition - fragment.vs_coords;
+		vec3 L = light.viewPosition - gbufferData.vs_coords;
 		float dist = length(L);
 		float attenuation = pointLightAttenuation(light, dist);
 		L = normalize(L);
@@ -89,12 +89,12 @@ vec3 phongShading(fragment_info fragment) {
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 		if (light.castsShadow != 0 && isShadowEnabled()) {
-			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
+			radiance *= getShadowingByPointLight(gbufferData, light, omniShadowMapIndex);
 			omniShadowMapIndex += 1;
 		}
 
-		vec3 specular_color = radiance * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), fragment.specular_power);
-		vec3 diffuse_color = radiance * fragment.albedo * cosTheta;
+		vec3 specular_color = radiance * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), gbufferData.specular_power);
+		vec3 diffuse_color = radiance * gbufferData.albedo * cosTheta;
 		result += diffuse_color + specular_color;
 	}
 
@@ -104,18 +104,18 @@ vec3 phongShading(fragment_info fragment) {
 	return result;
 }
 
-vec3 CookTorranceBRDF(fragment_info fragment) {
-	vec3 N = fragment.normal;
-	vec3 V = normalize(uboPerFrame.eyePosition - fragment.vs_coords);
+vec3 CookTorranceBRDF(GBufferData gbufferData) {
+	vec3 N = gbufferData.normal;
+	vec3 V = normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
 
-	vec3 N_world = fragment.ws_normal;
-	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - fragment.ws_coords);
+	vec3 N_world = gbufferData.ws_normal;
+	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - gbufferData.ws_coords);
 	vec3 R = reflect(-V_world, N_world);
 
-	vec3 albedo = fragment.albedo;
-	float metallic = fragment.metallic;
-	float roughness = fragment.roughness;
-	float ao = fragment.ao;
+	vec3 albedo = gbufferData.albedo;
+	float metallic = gbufferData.metallic;
+	float roughness = gbufferData.roughness;
+	float ao = gbufferData.ao;
 
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
@@ -131,7 +131,7 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 		vec3 radiance = light.intensity;
 		// #todo: Support shadow by each directional light
 		if (i == 0 && isShadowEnabled()) {
-			radiance *= getShadowing(fragment);
+			radiance *= getShadowing(gbufferData);
 		}
 
 		float NDF = distributionGGX(N, H, roughness);
@@ -154,15 +154,15 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
 		PointLight light = uboPerFrame.pointLights[i];
 
-		vec3 L = normalize(light.viewPosition - fragment.vs_coords);
+		vec3 L = normalize(light.viewPosition - gbufferData.vs_coords);
 		vec3 H = normalize(V + L);
-		float distance = length(light.viewPosition - fragment.vs_coords);
+		float distance = length(light.viewPosition - gbufferData.vs_coords);
 		float attenuation = pointLightAttenuation(light, distance);
 
 		vec3 radiance = light.intensity;
 		radiance *= attenuation;
 		if (light.castsShadow != 0 && isShadowEnabled()) {
-			radiance *= getShadowingByPointLight(fragment, light, omniShadowMapIndex);
+			radiance *= getShadowingByPointLight(gbufferData, light, omniShadowMapIndex);
 			omniShadowMapIndex += 1;
 		}
 
@@ -205,16 +205,16 @@ vec3 CookTorranceBRDF(fragment_info fragment) {
 	return finalColor;
 }
 
-vec4 calculateShading(fragment_info fragment) {
-	uint ID = fragment.material_id;
+vec4 calculateShading(GBufferData gbufferData) {
+	uint ID = gbufferData.material_id;
 
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
 	if (ID == MATERIAL_ID_TEXTURE) {
-		result.rgb = phongShading(fragment);
+		result.rgb = phongShading(gbufferData);
 	} else if(ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
-		result.rgb = fragment.albedo;
+		result.rgb = gbufferData.albedo;
 	} else if(ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR) {
-		result.rgb = CookTorranceBRDF(fragment);
+		result.rgb = CookTorranceBRDF(gbufferData);
 	} else {
 		discard;
 	}
@@ -223,29 +223,29 @@ vec4 calculateShading(fragment_info fragment) {
 
 // From HLSL Development Cookbook
 // #todo: better height fog implementation
-vec3 applyFog(fragment_info fragment, vec3 color) {
+vec3 applyFog(GBufferData gbufferData, vec3 color) {
 	const float magic_number = getFogAttenuation(); // proper physical meaning?
-	float z = length(fragment.vs_coords) * magic_number;
-	float de = 0.025 * smoothstep(0.0, 6.0, getFogBottom() - fragment.ws_coords.y);
-	float di = 0.045 * smoothstep(0.0, 40.0, getFogTop() - fragment.ws_coords.y);
+	float z = length(gbufferData.vs_coords) * magic_number;
+	float de = 0.025 * smoothstep(0.0, 6.0, getFogBottom() - gbufferData.ws_coords.y);
+	float di = 0.045 * smoothstep(0.0, 40.0, getFogTop() - gbufferData.ws_coords.y);
 	float extinction = exp(-z * de);
 	float inscattering = exp(-z * di);
 	return color * extinction + getFogColor() * (1.0 - inscattering);
 }
 
 void main() {
-	fragment_info fragment;
-	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, fragment);
+	GBufferData gbufferData;
+	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
-	vec4 luminance = calculateShading(fragment);
+	vec4 luminance = calculateShading(gbufferData);
 
 	if (isFogEnabled()) {
-		luminance.rgb = applyFog(fragment, luminance.rgb);
+		luminance.rgb = applyFog(gbufferData, luminance.rgb);
 	}
 
 // shadow_mapping.glsl
 #if DEBUG_CSM_ID
-	luminance.rgb = vec3(getShadowing(fragment));
+	luminance.rgb = vec3(getShadowing(gbufferData));
 #endif
 
 	// #todo: Sometimes luminance.rgb is NaN, which results in vec3(65536.0) by bloom setup pass,
@@ -254,9 +254,9 @@ void main() {
 
 	// output: standard shading
 	out_color = luminance;
-	out_color.rgb += fragment.emissive;
+	out_color.rgb += gbufferData.emissive;
 
 	// #todo-shader: Write real opacity. Output this value in another place for depth-of-field.
 	// Continue to depth_of_field.glsl
-	out_color.a = -fragment.vs_coords.z;
+	out_color.a = -gbufferData.vs_coords.z;
 }
