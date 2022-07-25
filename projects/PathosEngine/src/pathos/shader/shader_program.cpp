@@ -59,6 +59,8 @@ namespace pathos {
 
 	void ShaderProgram::reload()
 	{
+		CHECK(isInRenderThread());
+
 		GLuint oldGLName = glName;
 		bool oldValid = isValid();
 
@@ -148,6 +150,8 @@ namespace pathos {
 
 	ShaderStage::~ShaderStage()
 	{
+		CHECK(isInRenderThread());
+
 		if (glName != 0) {
 			glDeleteShader(glName);
 		}
@@ -160,6 +164,7 @@ namespace pathos {
 		addDefine(msg);
 	}
 
+	// #todo-shader: This is getting too dirty
 	bool ShaderStage::loadSource()
 	{
 		CHECK(filepath != nullptr);
@@ -204,15 +209,31 @@ namespace pathos {
 
 		sourceCode.clear();
 
+		// Parse include statements
 		size_t find_offset = 0u;
 		while (true) {
-			// #todo-shader: Need to skip '#include' in comments
 			size_t include_start = fullCode.find("#include", find_offset);
 			if (include_start == std::string::npos) {
 				break;
 			}
 
+			bool isComment = false;
+			size_t include_line_start = include_start;
+			while (include_line_start > 0 && fullCode[include_line_start - 1] != '\n') {
+				include_line_start -= 1;
+			}
+			// Same as std::isspace() https://en.cppreference.com/w/cpp/string/byte/isspace
+			include_line_start = fullCode.find_first_not_of(" \t\n\r\f\v", include_line_start);
+			isComment = (fullCode[include_line_start] == '/' && fullCode[include_line_start + 1] == '/');
+
 			size_t include_end = fullCode.find_first_of('\n', include_start);
+
+			if (isComment) {
+				sourceCode.emplace_back(fullCode.substr(0, include_end));
+				fullCode = fullCode.substr(include_end + 1);
+				continue;
+			}
+			
 			sourceCode.emplace_back(fullCode.substr(0, include_start));
 			std::string include_line = fullCode.substr(include_start, include_end - include_start);
 
@@ -246,7 +267,7 @@ namespace pathos {
 
 		bool sourceChanged = false;
 		if (sourceCode.size() == sourceCodeBackup.size()) {
-			for (uint32 i = 0; i < sourceCode.size(); ++i) {
+			for (size_t i = 0; i < sourceCode.size(); ++i) {
 				if (sourceCode[i] != sourceCodeBackup[i]) {
 					sourceChanged = true;
 					break;
