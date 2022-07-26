@@ -17,16 +17,20 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 
 ## Features
 * Rendering
-  * PBR materials
-  * Scene capture
+  * Depth prepass
   * Global Illumination
     * Cascaded shadow map
     * Screen-space ambient occlusion
+    * Basic IBL (sky irradiance sampling on diffuse/glossy/specular surfaces, without sky occlusion)
+  * Volumetric clouds
   * Post processing
+    * God ray
     * Bloom
-	* Depth of field
 	* Tone mapping
 	* FXAA
+	* Depth of field
+  * PBR materials
+  * Scene capture
 * System
   * Render thread
   * Asynchronous asset loader
