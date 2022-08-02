@@ -64,16 +64,19 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		uint32 numLights = 0;
+		const uint32 numTotalLights = (uint32)scene->proxyList_pointLight.size();
+		uint32 numShadowCastingLights = 0;
 		for (PointLightProxy* light : scene->proxyList_pointLight) {
-			if (light->castsShadow) numLights += 1;
+			if (light->castsShadow) {
+				numShadowCastingLights += 1;
+			}
 		}
 
-		sceneContext.reallocOmniShadowMaps(cmdList, numLights, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+		sceneContext.reallocOmniShadowMaps(cmdList, numShadowCastingLights, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 		GLuint shadowMaps = sceneContext.omniShadowMaps; // cubemap array
 
 		// Early exit
-		if (numLights == 0) {
+		if (numShadowCastingLights == 0) {
 			return;
 		}
 
@@ -97,7 +100,7 @@ namespace pathos {
 			vector3(0.0f, -1.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f)
 		};
 
-		for (uint32 lightIx = 0; lightIx < numLights; ++lightIx) {
+		for (uint32 lightIx = 0; lightIx < numTotalLights; ++lightIx) {
 			SCOPED_DRAW_EVENT(OmniShadowMap);
 
 			PointLightProxy* light = scene->proxyList_pointLight[lightIx];
@@ -107,7 +110,6 @@ namespace pathos {
 
 			constexpr float zNear = 0.0f;
 			const float zFar = pathos::max(1.0f, light->attenuationRadius);
-			const vector3 up(0.0f, 1.0f, 0.0f);
 			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
 
 			for (uint32 faceIx = 0; faceIx < 6; ++faceIx) {
