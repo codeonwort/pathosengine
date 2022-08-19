@@ -5,16 +5,21 @@
 #include "pathos/material/material.h"
 #include "pathos/shader/uniform_buffer.h"
 
+// #todo-ssr: This pass perform lighting calculation from gbuffers.
+// 1. Rename the class.
+// 2. Separate local illumination and global illumination passes.
+// 3. Implement screen space reflection.
+
 namespace pathos {
 
 	class SceneProxy;
 	class Camera;
 
-	class MeshDeferredRenderPass_Unpack {
+	class DirectLightingPass {
 
 	public:
-		MeshDeferredRenderPass_Unpack();
-		~MeshDeferredRenderPass_Unpack();
+		DirectLightingPass();
+		~DirectLightingPass();
 
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
@@ -29,7 +34,7 @@ namespace pathos {
 
 	private:
 		GLuint fbo;
-		UniformBuffer ubo_unpack;
+		UniformBuffer ubo_directLighting;
 
 		PlaneGeometry* quad = nullptr;
 

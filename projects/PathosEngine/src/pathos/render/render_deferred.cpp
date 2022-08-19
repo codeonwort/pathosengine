@@ -474,7 +474,7 @@ namespace pathos {
 	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(UnpackGBuffer);
 
-		unpack_pass->bindFramebuffer(cmdList);
+		directLightingPass->bindFramebuffer(cmdList);
 
 		// #todo-refactoring: Actually not an unpack work, but rendering order is here
 		const bool bRenderSkybox = scene->isSkyboxValid();
@@ -493,7 +493,7 @@ namespace pathos {
 			skyAtmospherePass->render(cmdList, scene);
 		}
 		
-		unpack_pass->render(cmdList, scene, camera);
+		directLightingPass->render(cmdList, scene, camera);
 	}
 	
 	// #todo-translucency: Implement
@@ -601,7 +601,7 @@ namespace pathos {
 	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
 	
 	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-	std::unique_ptr<MeshDeferredRenderPass_Unpack> DeferredRenderer::unpack_pass;
+	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
 	std::unique_ptr<class SkyboxPass>              DeferredRenderer::skyboxPass;
@@ -645,11 +645,16 @@ namespace pathos {
 			pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
 			pack_passes[(uint8)MATERIAL_ID::ALPHA_ONLY_TEXTURE] = new MeshDeferredRenderPass_Pack_AlphaOnly;
 			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
-			// #todo: Notify absent pack passes by log?
-			unpack_pass = std::make_unique<MeshDeferredRenderPass_Unpack>();
+			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
+				if (pack_passes[i] == nullptr) {
+					LOG(LogWarning, "BasePass not present for material id: %u", i);
+				}
+			}
+
+			directLightingPass = std::make_unique<DirectLightingPass>();
 			translucency_pass = std::make_unique<TranslucencyRendering>();
 
-			unpack_pass->initializeResources(cmdList);
+			directLightingPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
 
@@ -712,7 +717,7 @@ namespace pathos {
 					pack_passes[i] = nullptr;
 				}
 			}
-			unpack_pass->destroyResources(cmdList);
+			directLightingPass->destroyResources(cmdList);
 			translucency_pass->releaseResources(cmdList);
 		}
 

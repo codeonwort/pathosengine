@@ -131,7 +131,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp" />
+    <ClCompile Include="src\pathos\render\direct_lighting.cpp" />
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
@@ -281,7 +281,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h" />
+    <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\sky.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />

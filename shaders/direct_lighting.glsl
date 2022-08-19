@@ -13,6 +13,7 @@ layout (binding = 2) uniform usampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
 layout (binding = 7) uniform samplerCubeArrayShadow pointLightShadowMaps;
+// #todo: Separate GI pass
 layout (binding = 8) uniform samplerCube irradianceMap;    // for Diffuse IBL
 layout (binding = 9) uniform samplerCube prefilterEnvMap;  // for Specular IBL
 layout (binding = 10) uniform sampler2D brdfIntegrationMap; // for Specular IBL

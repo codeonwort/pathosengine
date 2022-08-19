@@ -3,6 +3,7 @@
 #include "pathos/render/renderer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/direct_lighting.h"
 #include "pathos/render/deferred/deferredpass.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
@@ -22,6 +23,7 @@ namespace pathos {
 	public:
 		static void internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+
 	private:
 		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
 		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
@@ -29,31 +31,33 @@ namespace pathos {
 
 		static std::unique_ptr<UniformBuffer> ubo_perFrame;
 
-		// mesh rendering
-		static MeshDeferredRenderPass_Pack* pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-		static std::unique_ptr<MeshDeferredRenderPass_Unpack> unpack_pass;
+		// Mesh rendering
+		static MeshDeferredRenderPass_Pack*                 pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
 		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
-		// sky & atmosphere
-		static std::unique_ptr<class SkyboxPass>          skyboxPass;
-		static std::unique_ptr<class AnselSkyPass>        anselSkyPass;
-		static std::unique_ptr<class SkyAtmospherePass>   skyAtmospherePass;
-		static std::unique_ptr<class VolumetricCloudPass> volumetricCloud;
+		// Local illumination
+		static std::unique_ptr<DirectLightingPass>          directLightingPass;
 
-		// full-screen processing
-		static std::unique_ptr<class DepthPrepass> depthPrepass;
-		static std::unique_ptr<DirectionalShadowMap> sunShadowMap;
-		static std::unique_ptr<OmniShadowPass> omniShadowPass;
-		static std::unique_ptr<class VisualizeBufferPass> visualizeBuffer;
+		// Sky & atmosphere
+		static std::unique_ptr<class SkyboxPass>            skyboxPass;
+		static std::unique_ptr<class AnselSkyPass>          anselSkyPass;
+		static std::unique_ptr<class SkyAtmospherePass>     skyAtmospherePass;
+		static std::unique_ptr<class VolumetricCloudPass>   volumetricCloud;
 
-		// post-processing
-		static std::unique_ptr<class GodRay> godRay;
-		static std::unique_ptr<class SSAO> ssao;
-		static std::unique_ptr<class BloomSetup> bloomSetup;
-		static std::unique_ptr<class BloomPass> bloomPass;
-		static std::unique_ptr<class ToneMapping> toneMapping;
-		static std::unique_ptr<class FXAA> fxaa;
-		static std::unique_ptr<class DepthOfField> depthOfField;
+		// Full-screen processing
+		static std::unique_ptr<class DepthPrepass>          depthPrepass;
+		static std::unique_ptr<DirectionalShadowMap>        sunShadowMap;
+		static std::unique_ptr<OmniShadowPass>              omniShadowPass;
+		static std::unique_ptr<class VisualizeBufferPass>   visualizeBuffer;
+
+		// Post-processing
+		static std::unique_ptr<class GodRay>                godRay;
+		static std::unique_ptr<class SSAO>                  ssao;
+		static std::unique_ptr<class BloomSetup>            bloomSetup;
+		static std::unique_ptr<class BloomPass>             bloomPass;
+		static std::unique_ptr<class ToneMapping>           toneMapping;
+		static std::unique_ptr<class FXAA>                  fxaa;
+		static std::unique_ptr<class DepthOfField>          depthOfField;
 
 	public:
 		DeferredRenderer();

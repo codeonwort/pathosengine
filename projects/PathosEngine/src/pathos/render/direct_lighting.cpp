@@ -1,4 +1,5 @@
-#include "deferredpass_unpack.h"
+#include "direct_lighting.h"
+
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/render/scene_render_targets.h"
@@ -22,51 +23,51 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
 	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
 
-	struct UBO_Unpack {
-		glm::ivec4 enabledTechniques1; // (shadow, fog, ?, ?)
-		glm::vec4 fogColor;
-		glm::vec4 fogParams;           // (bottomY, topY, ?, ?)
+	struct UBO_DirectLighting {
+		vector4i enabledTechniques1; // (shadow, fog, ?, ?)
+		vector4 fogColor;
+		vector4 fogParams;           // (bottomY, topY, ?, ?)
 		float prefilterEnvMapMaxLOD;
 	};
 
-	class UnpackGBufferVS : public ShaderStage {
+	class DirectLightingVS : public ShaderStage {
 	public:
-		UnpackGBufferVS() : ShaderStage(GL_VERTEX_SHADER, "UnpackGBufferVS")
+		DirectLightingVS() : ShaderStage(GL_VERTEX_SHADER, "DirectLightingVS")
 		{
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
-	class UnpackGBufferFS : public ShaderStage {
+	class DirectLightingFS : public ShaderStage {
 	public:
-		UnpackGBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "UnpackGBufferFS")
+		DirectLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "DirectLightingFS")
 		{
-			setFilepath("deferred_unpack.glsl");
+			setFilepath("direct_lighting.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_UnpackGBuffer, UnpackGBufferVS, UnpackGBufferFS);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting, DirectLightingVS, DirectLightingFS);
 
 }
 
 namespace pathos {
 
-	MeshDeferredRenderPass_Unpack::MeshDeferredRenderPass_Unpack()
+	DirectLightingPass::DirectLightingPass()
 		: fbo(0xffffffff)
 	{
 	}
 
-	MeshDeferredRenderPass_Unpack::~MeshDeferredRenderPass_Unpack() {
+	DirectLightingPass::~DirectLightingPass() {
 		CHECK(destroyed);
 	}
 
-	void MeshDeferredRenderPass_Unpack::initializeResources(RenderCommandList& cmdList) {
+	void DirectLightingPass::initializeResources(RenderCommandList& cmdList) {
 		// fullscreen quad
 		quad = new PlaneGeometry(2.0f, 2.0f);
 		createResource(cmdList);
 
-		ubo_unpack.init<UBO_Unpack>();
+		ubo_directLighting.init<UBO_DirectLighting>();
 	}
 
-	void MeshDeferredRenderPass_Unpack::destroyResources(RenderCommandList& cmdList) {
+	void DirectLightingPass::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 			quad->dispose();
@@ -75,12 +76,12 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void MeshDeferredRenderPass_Unpack::createResource(RenderCommandList& cmdList) {
+	void DirectLightingPass::createResource(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 	}
 
-	void MeshDeferredRenderPass_Unpack::bindFramebuffer(RenderCommandList& cmdList) {
+	void DirectLightingPass::bindFramebuffer(RenderCommandList& cmdList) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -90,12 +91,12 @@ namespace pathos {
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
 	}
 
-	void MeshDeferredRenderPass_Unpack::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void DirectLightingPass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(UnpackHDR);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_UnpackGBuffer);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting);
 		cmdList.useProgram(program.getGLName());
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
@@ -113,7 +114,7 @@ namespace pathos {
 
 		cmdList.disable(GL_DEPTH_TEST);
 
-		UBO_Unpack uboData;
+		UBO_DirectLighting uboData;
 		uboData.enabledTechniques1.x  = cvar_enable_shadow.getInt();
 		uboData.enabledTechniques1.y  = cvar_enable_fog.getInt();
 		uboData.fogColor              = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
@@ -121,7 +122,7 @@ namespace pathos {
 		uboData.fogParams.y           = cvar_fog_top.getFloat();
 		uboData.fogParams.z           = cvar_fog_attenuation.getFloat();
 		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
-		ubo_unpack.update(cmdList, 1, &uboData);
+		ubo_directLighting.update(cmdList, 1, &uboData);
 
 		quad->activate_position_uv(cmdList);
 		quad->activateIndexBuffer(cmdList);

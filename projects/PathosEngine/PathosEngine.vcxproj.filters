@@ -96,7 +96,7 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_unpack.cpp">
+    <ClCompile Include="src\pathos\render\direct_lighting.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp">
@@ -410,7 +410,7 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_unpack.h">
+    <ClInclude Include="src\pathos\render\direct_lighting.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h">

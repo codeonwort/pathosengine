@@ -38,7 +38,7 @@
     <None Include="deferred_pack_texture_vs.glsl" />
     <None Include="deferred_pack_wireframe_fs.glsl" />
     <None Include="deferred_pack_wireframe_vs.glsl" />
-    <None Include="deferred_unpack.glsl" />
+    <None Include="direct_lighting.glsl" />
     <None Include="depth_of_field.glsl" />
     <None Include="depth_prepass.glsl" />
     <None Include="diffuse_irradiance.glsl" />
