@@ -24,10 +24,11 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
 
 	struct UBO_DirectLighting {
+		static const uint32 BINDING_SLOT = 1;
+
 		vector4i enabledTechniques1; // (shadow, fog, ?, ?)
 		vector4 fogColor;
 		vector4 fogParams;           // (bottomY, topY, ?, ?)
-		float prefilterEnvMapMaxLOD;
 	};
 
 	class DirectLightingVS : public ShaderStage {
@@ -62,9 +63,11 @@ namespace pathos {
 	void DirectLightingPass::initializeResources(RenderCommandList& cmdList) {
 		// fullscreen quad
 		quad = new PlaneGeometry(2.0f, 2.0f);
-		createResource(cmdList);
+		
+		gRenderDevice->createFramebuffers(1, &fbo);
+		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		ubo_directLighting.init<UBO_DirectLighting>();
+		ubo.init<UBO_DirectLighting>();
 	}
 
 	void DirectLightingPass::destroyResources(RenderCommandList& cmdList) {
@@ -76,23 +79,24 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void DirectLightingPass::createResource(RenderCommandList& cmdList) {
-		gRenderDevice->createFramebuffers(1, &fbo);
-		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-	}
-
 	void DirectLightingPass::bindFramebuffer(RenderCommandList& cmdList) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		
+		// #note-lighting: Clear sceneColor as direct lighting is first
+		// and then indirect lighting comes. This may change in future.
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
 	}
 
-	void DirectLightingPass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
-		SCOPED_DRAW_EVENT(UnpackHDR);
+	void DirectLightingPass::renderDirectLighting(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera)
+	{
+		SCOPED_DRAW_EVENT(DirectLighting);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
@@ -101,7 +105,7 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 
-		pathos::checkFramebufferStatus(cmdList, fbo, "MeshDeferredRenderPass_Unpack::render() - sceneColor is invalid");
+		pathos::checkFramebufferStatus(cmdList, fbo, "[DirectLighting] FBO is invalid");
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
 		cmdList.bindTextures(0, 3, gbuffer_textures);
@@ -121,8 +125,7 @@ namespace pathos {
 		uboData.fogParams.x           = cvar_fog_bottom.getFloat();
 		uboData.fogParams.y           = cvar_fog_top.getFloat();
 		uboData.fogParams.z           = cvar_fog_attenuation.getFloat();
-		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
-		ubo_directLighting.update(cmdList, 1, &uboData);
+		ubo.update(cmdList, UBO_DirectLighting::BINDING_SLOT, &uboData);
 
 		quad->activate_position_uv(cmdList);
 		quad->activateIndexBuffer(cmdList);

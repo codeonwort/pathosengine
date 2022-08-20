@@ -4,6 +4,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/direct_lighting.h"
+#include "pathos/render/indirect_lighting.h"
 #include "pathos/render/deferred/deferredpass.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
@@ -35,8 +36,9 @@ namespace pathos {
 		static MeshDeferredRenderPass_Pack*                 pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
 		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
-		// Local illumination
+		// Local & global illumination
 		static std::unique_ptr<DirectLightingPass>          directLightingPass;
+		static std::unique_ptr<IndirectLightingPass>        indirectLightingPass;
 
 		// Sky & atmosphere
 		static std::unique_ptr<class SkyboxPass>            skyboxPass;
@@ -82,7 +84,7 @@ namespace pathos {
 
 		void clearGBuffer(RenderCommandList& cmdList);
 		void packGBuffer(RenderCommandList& cmdList);
-		void unpackGBuffer(RenderCommandList& cmdList);
+		void renderDirectLighting(RenderCommandList& cmdList);
 
 		void renderTranslucency(RenderCommandList& cmdList);
 

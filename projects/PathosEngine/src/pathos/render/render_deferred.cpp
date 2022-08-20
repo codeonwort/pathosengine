@@ -242,6 +242,7 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
+		// #todo-ssr: Rename to renderBasePass
 		{
 			SCOPED_GPU_COUNTER(PackGBuffer);
 
@@ -251,16 +252,20 @@ namespace pathos {
 
 		{
 			SCOPED_GPU_COUNTER(SSAO);
-
 			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
 		}
 
 		{
 			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
-			SCOPED_GPU_COUNTER(UnpackGBuffer);
+			SCOPED_GPU_COUNTER(DirectLighting);
 
-			// #todo-renderer: Sometimes NaN pixels are generated and enlarged in the bloom pass.
-			unpackGBuffer(cmdList);
+			renderDirectLighting(cmdList);
+		}
+
+		{
+			SCOPED_GPU_COUNTER(IndirectLighting);
+
+			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
 		// Translucency pass
@@ -362,6 +367,7 @@ namespace pathos {
 				// Do nothing
 				break;
 
+			// #todo-fxaa: Is FXAA working well?
 			case EAntiAliasingMethod::FXAA:
 				{
 					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
@@ -471,8 +477,8 @@ namespace pathos {
 		cmdList.depthMask(GL_TRUE);
 	}
 
-	void DeferredRenderer::unpackGBuffer(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(UnpackGBuffer);
+	void DeferredRenderer::renderDirectLighting(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(DirectLighting);
 
 		directLightingPass->bindFramebuffer(cmdList);
 
@@ -493,7 +499,7 @@ namespace pathos {
 			skyAtmospherePass->render(cmdList, scene);
 		}
 		
-		directLightingPass->render(cmdList, scene, camera);
+		directLightingPass->renderDirectLighting(cmdList, scene, camera);
 	}
 	
 	// #todo-translucency: Implement
@@ -601,7 +607,10 @@ namespace pathos {
 	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
 	
 	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
+	
 	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
+	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
+
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
 	std::unique_ptr<class SkyboxPass>              DeferredRenderer::skyboxPass;
@@ -652,9 +661,11 @@ namespace pathos {
 			}
 
 			directLightingPass = std::make_unique<DirectLightingPass>();
+			indirectLightingPass = std::make_unique<IndirectLightingPass>();
 			translucency_pass = std::make_unique<TranslucencyRendering>();
 
 			directLightingPass->initializeResources(cmdList);
+			indirectLightingPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
 
@@ -718,6 +729,7 @@ namespace pathos {
 				}
 			}
 			directLightingPass->destroyResources(cmdList);
+			indirectLightingPass->destroyResources(cmdList);
 			translucency_pass->releaseResources(cmdList);
 		}
 

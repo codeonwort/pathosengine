@@ -4,7 +4,7 @@
 #include "shadow_mapping.glsl"
 #include "brdf.glsl"
 
-layout (location = 0) out vec4 out_color;
+layout (location = 0) out vec4 outSceneColor;
 
 layout (binding = 0) uniform usampler2D gbuf0;
 layout (binding = 1) uniform sampler2D gbuf1;
@@ -13,20 +13,15 @@ layout (binding = 2) uniform usampler2D gbuf2;
 layout (binding = 5) uniform sampler2D ssaoMap;
 layout (binding = 6) uniform sampler2DArrayShadow csm;
 layout (binding = 7) uniform samplerCubeArrayShadow pointLightShadowMaps;
-// #todo: Separate GI pass
-layout (binding = 8) uniform samplerCube irradianceMap;    // for Diffuse IBL
-layout (binding = 9) uniform samplerCube prefilterEnvMap;  // for Specular IBL
-layout (binding = 10) uniform sampler2D brdfIntegrationMap; // for Specular IBL
 
 in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
-layout (std140, binding = 1) uniform UBO_Unpack {
+layout (std140, binding = 1) uniform UBO_DirectLighting {
 	ivec4 enabledTechniques1;
 	vec4 fogColor;
 	vec4 fogParams;
-	float prefilterEnvMapMaxLOD;
 } ubo;
 
 // Getters for UBO
@@ -183,30 +178,13 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-
-	vec3 kS = F;
-	vec3 kD = 1.0 - kS;
-	kD *= 1.0 - metallic;
-
-	vec3 irradiance = texture(irradianceMap, N_world).rgb;
-	vec3 diffuse    = irradiance * albedo;
-
-	vec3 prefilteredColor = textureLod(prefilterEnvMap, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
-	vec2 envBRDF  = texture(brdfIntegrationMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
-	vec3 specular = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
-
-	vec3 ambient    = (kD * diffuse + specular) * ao;
-
-	vec3 finalColor = ambient + Lo;
-
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
-	finalColor *= ssao;
 
-	return finalColor;
+	vec3 finalRadiance = Lo * ssao;
+	return finalRadiance;
 }
 
-vec4 calculateShading(GBufferData gbufferData) {
+vec4 getLocalIllumination(GBufferData gbufferData) {
 	uint ID = gbufferData.material_id;
 
 	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
@@ -238,26 +216,26 @@ void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
-	vec4 luminance = calculateShading(gbufferData);
+	vec4 radiance = getLocalIllumination(gbufferData);
 
 	if (isFogEnabled()) {
-		luminance.rgb = applyFog(gbufferData, luminance.rgb);
+		radiance.rgb = applyFog(gbufferData, radiance.rgb);
 	}
 
 // shadow_mapping.glsl
 #if DEBUG_CSM_ID
-	luminance.rgb = vec3(getShadowing(gbufferData));
+	radiance.rgb = vec3(getShadowing(gbufferData));
 #endif
 
-	// #todo: Sometimes luminance.rgb is NaN, which results in vec3(65536.0) by bloom setup pass,
+	// #todo: Sometimes radiance.rgb is NaN, which results in vec3(65536.0) by bloom setup pass,
 	// which results in a big white circle by bloom pass.
-	luminance.rgb = max(vec3(0.0), luminance.rgb);
+	radiance.rgb = max(vec3(0.0), radiance.rgb);
 
 	// output: standard shading
-	out_color = luminance;
-	out_color.rgb += gbufferData.emissive;
+	outSceneColor = radiance;
+	outSceneColor.rgb += gbufferData.emissive;
 
 	// #todo-shader: Write real opacity. Output this value in another place for depth-of-field.
 	// Continue to depth_of_field.glsl
-	out_color.a = -gbufferData.vs_coords.z;
+	outSceneColor.a = -gbufferData.vs_coords.z;
 }
