@@ -36,7 +36,7 @@ public:
 	HermiteSpline& getSpline() { return spline; }
 	void setSpline(const HermiteSpline& inSpline) { spline = inSpline; }
 private:
-	void onLoadOBJ(OBJLoader* loader);
+	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 	HermiteSpline spline;
 };
@@ -52,7 +52,7 @@ public:
 
 	void updateStarfield();
 
-	void onLoadOBJ(OBJLoader* loader);
+	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
 	PlayerController* playerController = nullptr;

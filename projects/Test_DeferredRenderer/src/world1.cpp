@@ -12,8 +12,30 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
 
-#define OBJ_FILE "models/fireplace_room/fireplace_room.obj"
-#define OBJ_DIR  "models/fireplace_room/"
+struct WavefrontModelDesc {
+	std::string filepath;
+	std::string dir;
+	vector3 location;
+	Rotator rotation;
+	vector3 scale;
+};
+
+std::vector<WavefrontModelDesc> wavefrontModels = {
+	{
+		"models/fireplace_room/fireplace_room.obj",
+		"models/fireplace_room/",
+		vector3(-100.0f, -10.0f, 0.0f),
+		Rotator(-90.0f, 0.0f, 0.0f),
+		vector3(50.0f)
+	},
+	{
+		"breakfast_room/breakfast_room.obj",
+		"breakfast_room/",
+		vector3(800.0f, -10.0f, 50.0f),
+		Rotator(90.0f, 0.0f, 0.0f),
+		vector3(30.0f)
+	},
+};
 
 
 const vector3       CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
@@ -31,8 +53,12 @@ void World1::onInitialize()
 {
 	SCOPED_CPU_COUNTER(World1_initialize);
 
-	AssetReferenceWavefrontOBJ assetRef(OBJ_FILE, OBJ_DIR);
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ);
+	for (auto i = 0u; i < wavefrontModels.size(); ++i) {
+		AssetReferenceWavefrontOBJ assetRef(
+			wavefrontModels[i].filepath.c_str(),
+			wavefrontModels[i].dir.c_str());
+		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ, i);
+	}
 
 	setupInput();
 	setupSky();
@@ -303,13 +329,20 @@ void World1::setupScene()
 	bloomActor->setStaticMesh(new Mesh(geom_sphere, material_tooBright));
 }
 
-void World1::onLoadOBJ(OBJLoader* loader)
+void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 {
-	objModel = spawnActor<StaticMeshActor>();
+	const WavefrontModelDesc& desc = wavefrontModels[payload];
+
+	if (!loader->isValid()) {
+		LOG(LogError, "Failed to load a wavefront model: %s", desc.filepath.c_str());
+		return;
+	}
+
+	StaticMeshActor* objModel = spawnActor<StaticMeshActor>();
 	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
-	objModel->setActorRotation(Rotator(-90.0f, 0.0f, 0.0f));
-	objModel->setActorScale(50.0f);
-	objModel->setActorLocation(vector3(-100.0f, -10.0f, 0.0f));
+	objModel->setActorRotation(desc.rotation);
+	objModel->setActorScale(desc.scale);
+	objModel->setActorLocation(desc.location);
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
 		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
@@ -317,6 +350,8 @@ void World1::onLoadOBJ(OBJLoader* loader)
 			CM->setRoughness(1.0f);
 		}
 	}
+
+	objModels.push_back(objModel);
 }
 
 void World1::setupCSMDebugger()

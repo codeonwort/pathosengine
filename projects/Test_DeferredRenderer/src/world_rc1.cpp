@@ -40,7 +40,7 @@ void World_RC1::onInitialize()
 	//////////////////////////////////////////////////////////////////////////
 	// Async load assets
 	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ, 0);
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
 	spaceship1->setActorScale(30.0f);
@@ -296,7 +296,7 @@ void World_RC1::updateStarfield()
 	GalaxyGenerator::createStarField(starfield, 2048, 1024);
 }
 
-void World_RC1::onLoadOBJ(OBJLoader* loader)
+void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 {
 	LOG(LogInfo, "Load guard tower model");
 
@@ -409,10 +409,10 @@ vector3 RingActor::getRandomInnerPosition() const
 void SpaceshipActor::onSpawn()
 {
 	AssetReferenceWavefrontOBJ assetRef(OBJ_SPACESHIP_FILE, OBJ_SPACESHIP_DIR);
-	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &SpaceshipActor::onLoadOBJ);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &SpaceshipActor::onLoadOBJ, 0);
 }
 
-void SpaceshipActor::onLoadOBJ(OBJLoader* loader)
+void SpaceshipActor::onLoadOBJ(OBJLoader* loader, uint64 payload)
 {
 	LOG(LogInfo, "Load spaceship model");
 

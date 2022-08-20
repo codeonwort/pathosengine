@@ -79,26 +79,31 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	OBJLoader::OBJLoader() {}
-
-	OBJLoader::OBJLoader(const char* objFile, const char* mtlDir) {
-		bool ok = load(objFile, mtlDir);
-		CHECK(ok);
+	OBJLoader::OBJLoader()
+		: bIsValid(false)
+	{
 	}
 
-	bool OBJLoader::load(const char* _objFile, const char* _mtlDir) {
-		std::string objFile = ResourceFinder::get().find(_objFile);
-		mtlDir = ResourceFinder::get().find(_mtlDir);
+	OBJLoader::OBJLoader(const char* inObjFile, const char* inMtlDir) {
+		load(inObjFile, inMtlDir);
+	}
+
+	bool OBJLoader::load(const char* inObjFile, const char* inMtlDir) {
+		objFile = ResourceFinder::get().find(inObjFile);
+		mtlDir = ResourceFinder::get().find(inMtlDir);
 
 		// Read data using tinyobjloader
 		std::string err;
-		bool loaded = tinyobj::LoadObj(&t_attrib, &t_shapes, &t_materials, &err, objFile.c_str(), mtlDir.c_str());
+		bool loaded = tinyobj::LoadObj(
+			&t_attrib, &t_shapes, &t_materials, &err,
+			objFile.c_str(), mtlDir.c_str());
 
 		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
 		if (!err.empty()) {
 			LOG(LogError, "Error while loading OBJ file: %s", err.data());
 			if (!loaded) {
-				return false;
+				bIsValid = false;
+				return bIsValid;
 			}
 		}
 		LOG(LogInfo, "Number of shapes: %d", (int32)t_shapes.size());
@@ -108,7 +113,8 @@ namespace pathos {
 		analyzeMaterials(t_materials, materials);
 		reconstructShapes(t_shapes, t_attrib, pendingShapes);
 
-		return true;
+		bIsValid = true;
+		return bIsValid;
 	}
 
 	void OBJLoader::unload() {

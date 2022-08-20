@@ -93,6 +93,7 @@ namespace pathos {
 		ResourceFinder::get().add("../../");
 		ResourceFinder::get().add("../../shaders/");
 		ResourceFinder::get().add("../../resources/");
+		ResourceFinder::get().add("../../resources_external/");
 
 		RenderDocIntegration::get().findInjectedDLL();
 

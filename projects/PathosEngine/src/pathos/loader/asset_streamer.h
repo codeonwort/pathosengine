@@ -15,11 +15,11 @@ namespace pathos {
 	class AssetStreamer;
 	class OBJLoader;
 	
-	using WavefrontOBJHandler = std::function<void(OBJLoader* objLoader)>;
+	using WavefrontOBJHandler = std::function<void(OBJLoader* objLoader, uint64 payload)>;
 
 	// #todo-asset-streamer: poor man's WTF delegate for asset streamer :(
 	template<typename UserClass>
-	using WavefrontOBJHandlerMethod = void (UserClass::*)(OBJLoader* loader);
+	using WavefrontOBJHandlerMethod = void (UserClass::*)(OBJLoader* loader, uint64 payload);
 
 	// Do not use
 	void internal_loadWavefrontOBJ(const WorkItemParam* param);
@@ -54,6 +54,8 @@ namespace pathos {
 		OBJLoader* loader;
 		const char* filepath;
 		const char* mtlDir;
+
+		uint64 payload;
 	};
 
 	template<typename UserClass>
@@ -65,9 +67,9 @@ namespace pathos {
 
 		void invokeHandler() override {
 			if (handlerOwner == nullptr) {
-				handler(loader);
+				handler(loader, payload);
 			} else {
-				(handlerOwner->*handlerMethod)(loader);
+				(handlerOwner->*handlerMethod)(loader, payload);
 			}
 		}
 	};
@@ -87,10 +89,10 @@ namespace pathos {
 
 		void wakeThreadPool();
 
-		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler);
+		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler, uint64 payload);
 
 		template<typename UserClass>
-		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod);
+		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
 		// Should be called in render thread
 		void flushLoadedAssets();
@@ -111,7 +113,7 @@ namespace pathos {
 	};
 
 	template<typename UserClass>
-	void AssetStreamer::enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod)
+	void AssetStreamer::enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod, uint64 payload)
 	{
 		using LoadInfoType = AssetLoadInfo_WavefrontOBJ<UserClass>;
 		LoadInfoType* arg = reinterpret_cast<LoadInfoType*>(loadInfoAllocator.alloc(sizeof(LoadInfoType)));
@@ -121,6 +123,8 @@ namespace pathos {
 		arg->streamer = this;
 		arg->filepath = assetRef.filepath;
 		arg->mtlDir = assetRef.baseDir;
+
+		arg->payload = payload;
 
 		arg->handlerOwner = handlerOwner;
 		arg->handlerMethod = handlerMethod;

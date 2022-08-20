@@ -43,19 +43,22 @@ namespace pathos {
 
 	public:
 		OBJLoader();
-		OBJLoader(const char* objFile, const char* mtlDir);
+		OBJLoader(const char* inObjFile, const char* inMtlDir);
 		OBJLoader(const OBJLoader& other) = delete;
 		OBJLoader(OBJLoader&& rhs) = delete;
 
 		// May called in worker threads
-		bool load(const char* objFile, const char* mtlDir);
+		bool load(const char* inObjFile, const char* inMtlDir);
 		void unload();
 
+		inline const std::string& getSourceFilepath() const { return objFile; }
+		inline bool isValid() const { return bIsValid; }
+
 		inline uint32 numShapes() const { return static_cast<uint32>(pendingShapes.size()); }
-		inline const string& getShapeName(uint32 index) const { return t_shapes[index].name; }
+		inline const std::string& getShapeName(uint32 index) const { return t_shapes[index].name; }
 		
 		// CAUTION: Must be called in render thread
-		Mesh* craftMeshFrom(const string& shapeName);
+		Mesh* craftMeshFrom(const std::string& shapeName);
 
 		// CAUTION: Must be called in render thread
 		Mesh* craftMeshFrom(uint32 shapeIndex);
@@ -72,7 +75,9 @@ namespace pathos {
 		Mesh* craftMesh(uint32 from, uint32 to); // both inclusive
 
 	private:
+		std::string objFile;
 		std::string mtlDir;
+		bool bIsValid;
 
 		// Fallback material if there's no matching material for that within .mtl
 		ColorMaterial* defaultMaterial = nullptr;

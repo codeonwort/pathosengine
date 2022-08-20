@@ -42,10 +42,10 @@ public:
 	void setupSky();
 	void setupScene();
 	void setupCSMDebugger();
-	void onLoadOBJ(OBJLoader* loader);
+	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	StaticMeshActor* objModel = nullptr;
+	std::vector<StaticMeshActor*> objModels;
 	std::vector<StaticMeshActor*> balls;
 	std::vector<StaticMeshActor*> boxes;
 	StaticMeshActor* godRaySource = nullptr;
