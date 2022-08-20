@@ -3,6 +3,8 @@
 log/
 # Original resources that are exported for the project
 resources_raw/
+# External resources downloaded by the setup script
+resources_external/
 
 # Created by https://www.gitignore.io/api/visualstudio,c++
 
