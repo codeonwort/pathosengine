@@ -163,6 +163,7 @@ namespace pathos {
 		float elapsed_gameThread;
 
 		World* currentWorld;
+		World* pendingNewWorld;
 
 		std::map<std::string, ExecProc> execMap;
 

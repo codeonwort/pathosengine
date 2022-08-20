@@ -58,6 +58,10 @@ namespace pathos {
 		threadPool.Stop();
 	}
 
+	void AssetStreamer::wakeThreadPool() {
+		threadPool.WakeAllWorkers();
+	}
+
 	void AssetStreamer::enqueueWavefrontOBJ(const char* inFilepath, const char* inMtlDir, WavefrontOBJHandler handler)
 	{
 		using LoadInfoType = AssetLoadInfo_WavefrontOBJ<AssetLoadInfoBase::DummyType>;

@@ -227,11 +227,18 @@ namespace pathos {
 		}
 
 		// Volumetric clouds
+#if 0
 		const bool bRenderClouds = scene->isVolumetricCloudValid();
 		if (bRenderClouds) {
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
-			volumetricCloud->render(cmdList, scene);
+			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
+#else
+		{
+			SCOPED_GPU_COUNTER(VolumetricCloudPass);
+			volumetricCloud->renderVolumetricCloud(cmdList, scene);
+		}
+#endif
 
 		// GodRay
 		// input: static meshes

@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "badger/thread/cpu.h"
 #include "badger/system/platform.h"
 #include "badger/assertion/assertion.h"
 
@@ -11,6 +12,10 @@ static void* PooledThreadMain(void* _param)
 	PooledThreadParam* param = reinterpret_cast<PooledThreadParam*>(_param);
 	int32 threadID           = param->threadID;
 	ThreadPool* pool         = param->pool;
+
+	wchar_t threadName[128];
+	swprintf_s(threadName, L"AssetStreamer Worker %d", threadID);
+	CPU::setCurrentThreadName(threadName);
 
 	while (true)
 	{
@@ -93,6 +98,12 @@ void ThreadPool::Stop()
 	WaitForAllWorks();
 
 	state = ThreadPoolState::Destroyed;
+}
+
+void ThreadPool::WakeAllWorkers() {
+	if (state == ThreadPoolState::Active) {
+		cond_var.notify_all();
+	}
 }
 
 void ThreadPool::WaitForAllWorks()

@@ -1,10 +1,13 @@
 #include "world.h"
+#include "pathos/engine.h"
+#include "pathos/input/input_system.h"
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
 
 	World::World()
 		: camera(PerspectiveLens(60.0f, 16.0f / 9.0f, 1.0f, 5000.0f))
+		, inputManager(nullptr)
 	{
 		scene.owner = this;
 	}
@@ -61,6 +64,8 @@ namespace pathos {
 	}
 
 	void World::initialize() {
+		inputManager = gEngine->getInputSystem()->createInputManager();
+
 		onInitialize();
 	}
 
@@ -75,6 +80,8 @@ namespace pathos {
 			delete actor;
 		}
 		actors.clear();
+
+		gEngine->getInputSystem()->destroyInputManager(inputManager);
 
 		onDestroy();
 	}

@@ -64,5 +64,6 @@
     <None Include="common.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />
+    <None Include="volumetric_clouds_clear.glsl" />
   </ItemGroup>
 </Project>

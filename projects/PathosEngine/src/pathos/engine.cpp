@@ -72,6 +72,7 @@ namespace pathos {
 		, elapsed_gameThread(0.0f)
 		, elapsed_renderThread(0.0f)
 		, currentWorld(nullptr)
+		, pendingNewWorld(nullptr)
 		, renderThread(nullptr)
 		, elapsed_gpu(0)
 	{
@@ -343,15 +344,8 @@ namespace pathos {
 		gConsole->addLine(filepath.c_str(), false);
 	}
 
-	void Engine::setWorld(World* inWorld)
-	{
-		if (currentWorld != nullptr) {
-			currentWorld->destroy();
-			delete currentWorld;
-		}
-
-		currentWorld = inWorld;
-		currentWorld->initialize();
+	void Engine::setWorld(World* inWorld) {
+		pendingNewWorld = inWorld;
 	}
 
 	void Engine::updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
@@ -366,6 +360,21 @@ namespace pathos {
 		// Start render thread with prev frame's scene proxy
 		const uint32 frameNumber_renderThread = frameCounter_gameThread;
 		renderThread->beginFrame(frameNumber_renderThread);
+
+		// Change world if necessary
+		if (pendingNewWorld != nullptr) {
+			if (currentWorld != nullptr) {
+				currentWorld->destroy();
+				delete currentWorld;
+			}
+			currentWorld = pendingNewWorld;
+			currentWorld->initialize();
+
+			pendingNewWorld = nullptr;
+
+			// #todo-asset-streamer: Pending works for old world should be cancelled.
+			assetStreamer->wakeThreadPool();
+		}
 
 		// Start world tick
 		{

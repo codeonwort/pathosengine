@@ -7,6 +7,8 @@
 
 namespace pathos {
 
+	class InputManager;
+
 	class World : public Noncopyable {
 		friend class Scene;
 		friend class Engine;
@@ -14,6 +16,8 @@ namespace pathos {
 	public:
 		World();
 		virtual ~World() {}
+
+		inline InputManager* getInputManager() const { return inputManager; }
 
 	public:
 		template<typename T>
@@ -55,6 +59,7 @@ namespace pathos {
 		std::vector<Actor*> actors;          // Actors in this world
 		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
 
+		InputManager* inputManager;
 	};
 
 }

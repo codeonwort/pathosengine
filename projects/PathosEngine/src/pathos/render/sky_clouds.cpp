@@ -10,6 +10,8 @@
 
 namespace pathos {
 
+	static constexpr GLenum PF_volumetricCloud = GL_RGBA16F;
+
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
 	// #todo-cloud: Expose in VolumetricCloudComponent
@@ -32,7 +34,17 @@ namespace pathos {
 		float cloudScale;
 		float cloudCurliness;
 		uint32 frameCounter;
+		uint32 enabled;
 	};
+
+	// #todo-cloud: Use clearTexImage instead of dispatching a CS...
+	class VolumetricCloudClearCS : public ShaderStage {
+	public:
+		VolumetricCloudClearCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudClearCS") {
+			setFilepath("volumetric_clouds_clear.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloudClear, VolumetricCloudClearCS);
 
 	class VolumetricCloudCS : public ShaderStage {
 	public:
@@ -40,7 +52,6 @@ namespace pathos {
 			setFilepath("volumetric_clouds.glsl");
 		}
 	};
-
 	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud, VolumetricCloudCS);
 
 }
@@ -89,7 +100,7 @@ namespace pathos {
 		//
 	}
 
-	void VolumetricCloudPass::render(RenderCommandList& cmdList, SceneProxy* scene)
+	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene)
 	{
 		SCOPED_DRAW_EVENT(VolumetricCloud);
 
@@ -101,6 +112,25 @@ namespace pathos {
 
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
 		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
+
+		const bool bRenderClouds = scene->isVolumetricCloudValid();
+		if (!bRenderClouds) {
+#if 0
+			// #todo-cloud: How to do this correctly?
+			// (GL_RGBA, GL_HALF_FLOAT) for (PF_volumetricCloud = GL_RGBA16F)
+			GLhalf clearValues[] = { 0, 0, 0, 1 }; // ???
+			cmdList.clearTexImage(sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_RGBA, GL_HALF_FLOAT, clearValues);
+#else
+			ShaderProgram& clearProgram = FIND_SHADER_PROGRAM(Program_VolumetricCloudClear);
+			cmdList.useProgram(clearProgram.getGLName());
+			GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
+			GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
+			cmdList.bindImageTexture(0, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
+			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+#endif
+			return;
+		}
 
 		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
@@ -125,7 +155,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->getGLName());
 		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->getGLName());
 		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
-		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 		
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
@@ -163,8 +193,8 @@ namespace pathos {
 			renderTargetWidth = targetWidth;
 			renderTargetHeight = targetHeight;
 
-			cmdList.textureStorage2D(sceneContext.volumetricCloudA, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
-			cmdList.textureStorage2D(sceneContext.volumetricCloudB, 1, GL_RGBA16F, renderTargetWidth, renderTargetHeight);
+			cmdList.textureStorage2D(sceneContext.volumetricCloudA, 1, PF_volumetricCloud, renderTargetWidth, renderTargetHeight);
+			cmdList.textureStorage2D(sceneContext.volumetricCloudB, 1, PF_volumetricCloud, renderTargetWidth, renderTargetHeight);
 		}
 	}
 

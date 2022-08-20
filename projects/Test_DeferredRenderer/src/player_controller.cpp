@@ -18,7 +18,7 @@ void PlayerController::onTick(float deltaSeconds)
 	static int32 prevMouseX = 0;
 	static int32 prevMouseY = 0;
 
-	InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* input = getWorld()->getInputManager();
 
 	int32 currMouseX = input->getMouseX();
 	int32 currMouseY = input->getMouseY();
@@ -89,7 +89,7 @@ void PlayerController::setupInput()
 	ButtonBinding rmb;
 	rmb.addInput(InputConstants::MOUSE_RIGHT_BUTTON);
 
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* inputManager = getWorld()->getInputManager();
 	inputManager->bindAxis("moveForward", moveForward);
 	inputManager->bindAxis("moveRight", moveRight);
 	inputManager->bindAxis("moveUp", moveUp);

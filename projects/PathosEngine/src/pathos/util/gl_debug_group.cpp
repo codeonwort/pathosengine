@@ -113,6 +113,11 @@ namespace pathos {
 		CHECKF(poolInitialized, "Pool was not initialized");
 		CHECK(isInRenderThread());
 
+		// #todo-renderthread: Sometimes 'numUsedQueryObjects' is zero therefore 'profile_gpu' prints nothing?
+		if (numUsedQueryObjects == 0) {
+			return 0;
+		}
+
 		outCounterNames.resize(numUsedQueryObjects / 2);
 		outElapsedMilliseconds.resize(numUsedQueryObjects / 2);
 		std::vector<GLuint64> beginTimeNSArray(numUsedQueryObjects / 2, 0U);

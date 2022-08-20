@@ -49,7 +49,7 @@ void World1::setupInput()
 	ButtonBinding updateSceneCapture;
 	updateSceneCapture.addInput(InputConstants::KEYBOARD_G);
 
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* inputManager = getInputManager();
 	inputManager->bindButtonPressed("drawShadowFrustum", drawShadowFrustum, [this]()
 		{
 			setupCSMDebugger();
@@ -268,14 +268,12 @@ void World1::setupScene()
 
 	//////////////////////////////////////////////////////////////////////////
 	// scene capture test
-	static RenderTarget2D* tempRenderTarget = nullptr;
 	if (tempRenderTarget == nullptr) {
 		tempRenderTarget = new RenderTarget2D;
 		tempRenderTarget->respecTexture(1920, 1080, RenderTargetFormat::RGBA16F);
 		tempRenderTarget->immediateUpdateResource();
 	}
 
-	static Actor* sceneCaptureActor = nullptr;
 	if (sceneCaptureActor == nullptr) {
 		sceneCaptureActor = spawnActor<Actor>();
 		sceneCaptureComponent = new SceneCaptureComponent;
@@ -324,12 +322,9 @@ void World1::onLoadOBJ(OBJLoader* loader)
 void World1::setupCSMDebugger()
 {
 #if VISUALIZE_CSM_FRUSTUM
-	static bool firstRun = true;
-	if (firstRun) {
+	if (csmDebugger == nullptr) {
 		csmDebugger = spawnActor<CSMDebugger>();
-		firstRun = false;
 	}
-
 	csmDebugger->drawCameraFrustum(camera, SUN_DIRECTION);
 #endif
 }

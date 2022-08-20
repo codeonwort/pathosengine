@@ -19,7 +19,12 @@ namespace pathos {
 		InputSystem();
 		~InputSystem();
 
+		// CAUTION: Usually each world instance should acquire its own manager by World::getInputManager().
 		InputManager* getDefaultInputManager() const { return defaultInputManager; }
+
+		// Created for current world instance.
+		InputManager* createInputManager();
+		void destroyInputManager(InputManager* inputManager);
 
 		void tick();
 
@@ -32,6 +37,9 @@ namespace pathos {
 		void processButtonUp(InputConstants input);
 
 	private:
+		// - Shared by every aspects of the engine instance.
+		// - Can be shared across different worlds, so it's better that each world instance
+		//   create its own input manager.
 		InputManager* defaultInputManager;
 		std::list<InputManager*> inputChain;
 	};

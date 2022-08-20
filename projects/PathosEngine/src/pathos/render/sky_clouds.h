@@ -79,7 +79,7 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void destroyResources(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
 		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);

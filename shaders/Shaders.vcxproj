@@ -68,6 +68,7 @@
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />
+    <None Include="volumetric_clouds_clear.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

@@ -81,7 +81,7 @@ void World_RC1::onInitialize()
 	ButtonBinding traceCamera;
 	traceCamera.addInput(InputConstants::KEYBOARD_C);
 
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* inputManager = getInputManager();
 	inputManager->bindButtonPressed("updateSky", updateSky, [this]()
 		{
 			updateStarfield();

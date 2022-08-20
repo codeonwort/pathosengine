@@ -85,6 +85,8 @@ namespace pathos {
 		
 		void destroy();
 
+		void wakeThreadPool();
+
 		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler);
 
 		template<typename UserClass>

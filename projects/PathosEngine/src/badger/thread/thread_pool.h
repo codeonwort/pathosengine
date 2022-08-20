@@ -73,6 +73,8 @@ public:
 	// Discard pending works and destroy this thread pool. Call WaitForAllWorks() first if you want to process all pending works.
 	void Stop();
 
+	void WakeAllWorkers();
+
 	// #todo-thread-pool: Implement a mechanism to cancel active works.
 	//void CancelActiveWorks();
 

@@ -22,6 +22,16 @@ namespace pathos {
 		}
 	}
 
+	pathos::InputManager* InputSystem::createInputManager() {
+		InputManager* im = new InputManager;
+		inputChain.push_back(im);
+		return im;
+	}
+
+	void InputSystem::destroyInputManager(InputManager* inputManager) {
+		inputChain.remove(inputManager);
+	}
+
 	void InputSystem::tick()
 	{
 		g_xinputManager->update();

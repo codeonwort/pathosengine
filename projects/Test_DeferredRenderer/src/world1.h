@@ -56,4 +56,7 @@ private:
 #endif
 	PlayerController* playerController = nullptr;
 
+	// For scene capture
+	RenderTarget2D* tempRenderTarget = nullptr;
+	Actor* sceneCaptureActor = nullptr;
 };
