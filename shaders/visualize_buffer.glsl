@@ -34,23 +34,23 @@ void main() {
 	int viewmode = ubo.viewmode;
 	outColor = vec4(0.5, 0.5, 0.5, 1.0);
 
-	fragment_info fragmentInfo;
-	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, fragmentInfo);
+	GBufferData gbufferData;
+	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
 	if (viewmode == VIEWMODE_SCENEDEPTH) {
 		float depth = texture(sceneDepth, screenUV).r;
 		float linearDepth = sceneDepthToLinearDepth(vs_in.screenUV, depth);
 		outColor = vec4(vec3(linearDepth), 1.0);
 	} else if (viewmode == VIEWMODE_ALBEDO) {
-		outColor = vec4(fragmentInfo.albedo, 1.0);
+		outColor = vec4(gbufferData.albedo, 1.0);
 	} else if (viewmode == VIEWMODE_WORLDNORMAL) {
-		outColor = vec4((fragmentInfo.ws_normal + vec3(1.0)) * 0.5, 1.0);
+		outColor = vec4((gbufferData.ws_normal + vec3(1.0)) * 0.5, 1.0);
 	} else if (viewmode == VIEWMODE_METALLIC) {
-		outColor = vec4(vec3(fragmentInfo.metallic), 1.0);
+		outColor = vec4(vec3(gbufferData.metallic), 1.0);
 	} else if (viewmode == VIEWMODE_ROUGHNESS) {
-		outColor = vec4(vec3(fragmentInfo.roughness), 1.0);
+		outColor = vec4(vec3(gbufferData.roughness), 1.0);
 	} else if (viewmode == VIEWMODE_EMISSIVE) {
-		outColor = vec4(fragmentInfo.emissive, 1.0);
+		outColor = vec4(gbufferData.emissive, 1.0);
 	} else if (viewmode == VIEWMODE_SSAO) {
 		float ssao = texture2D(ssaoMap, screenUV).r;
 		outColor = vec4(vec3(ssao), 1.0);
