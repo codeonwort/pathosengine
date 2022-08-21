@@ -48,7 +48,6 @@
     <None Include="god_ray_fs.glsl" />
     <None Include="god_ray_silhouette.glsl" />
     <None Include="indirect_lighting.glsl" />
-    <None Include="normal_visualizer.glsl" />
     <None Include="nvidia_fxaa.glsl" />
     <None Include="omni_shadow_map.glsl" />
     <None Include="overlay_standard.glsl" />
