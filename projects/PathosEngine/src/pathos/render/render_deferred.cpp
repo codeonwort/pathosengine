@@ -374,7 +374,6 @@ namespace pathos {
 				// Do nothing
 				break;
 
-			// #todo-fxaa: Is FXAA working well?
 			case EAntiAliasingMethod::FXAA:
 				{
 					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)

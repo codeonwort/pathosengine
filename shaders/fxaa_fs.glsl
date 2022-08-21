@@ -1,44 +1,66 @@
-#version 430 core
+#version 450 core
+
+// Just to prevent syntax error highlighting
+#ifndef FXAA_PC
+	#define FXAA_PC              1
+	#define FXAA_GLSL_130        1
+	#define FXAA_GREEN_AS_LUMA   1
+	#define FXAA_QUALITY__PRESET 23
+#endif
 
 #include "nvidia_fxaa.glsl"
 #include "deferred_common.glsl"
 
+// --------------------------------------------------------
+// Input
+
+in VS_OUT {
+	vec2 screenUV;
+} fs_in;
+
+layout (std140, binding = 1) uniform UBO_FXAA {
+	FxaaFloat4 fxaaConsoleRcpFrameOpt;
+	FxaaFloat4 fxaaConsoleRcpFrameOpt2;
+	FxaaFloat4 fxaaConsole360RcpFrameOpt2;
+	FxaaFloat4 fxaaConsole360ConstDir;
+	FxaaFloat2 fxaaQualityRcpFrame;
+	FxaaFloat fxaaQualitySubpix;
+	FxaaFloat fxaaQualityEdgeThreshold;
+	FxaaFloat fxaaQualityEdgeThresholdMin;
+	FxaaFloat fxaaConsoleEdgeSharpness;
+	FxaaFloat fxaaConsoleEdgeThreshold;
+	FxaaFloat fxaaConsoleEdgeThresholdMin;
+} ubo;
+
 layout (binding = 0) uniform sampler2D sceneColor;
 
-in vec2 uv;
+// --------------------------------------------------------
+// Output
 
-uniform FxaaFloat2 fxaaQualityRcpFrame;
-uniform FxaaFloat4 fxaaConsoleRcpFrameOpt;
-uniform FxaaFloat4 fxaaConsoleRcpFrameOpt2;
-uniform FxaaFloat4 fxaaConsole360RcpFrameOpt2;
-uniform FxaaFloat fxaaQualitySubpix;
-uniform FxaaFloat fxaaQualityEdgeThreshold;
-uniform FxaaFloat fxaaQualityEdgeThresholdMin;
-uniform FxaaFloat fxaaConsoleEdgeSharpness;
-uniform FxaaFloat fxaaConsoleEdgeThreshold;
-uniform FxaaFloat fxaaConsoleEdgeThresholdMin;
-uniform FxaaFloat4 fxaaConsole360ConstDir;
+layout (location = 0) out vec4 outSceneColor;
 
-out vec4 out_color;
+// --------------------------------------------------------
+// Shader
 
 void main() {
+	vec2 screenUV = fs_in.screenUV;
 	vec2 inv_size = uboPerFrame.screenResolution.zw;
 
-	vec2 pos = uv + 0.5 * inv_size;
-	vec4 consolePosPos = vec4(uv.x, uv.y, uv.x + inv_size.x, uv.y + inv_size.y);
+	vec2 pos = screenUV + 0.5 * inv_size;
+	vec4 consolePosPos = vec4(screenUV.x, screenUV.y, screenUV.x + inv_size.x, screenUV.y + inv_size.y);
 
-	out_color = FxaaPixelShader(
+	outSceneColor = FxaaPixelShader(
 		pos, consolePosPos,
 		sceneColor, sceneColor, sceneColor,
-		fxaaQualityRcpFrame,
-		fxaaConsoleRcpFrameOpt,
-		fxaaConsoleRcpFrameOpt2,
-		fxaaConsole360RcpFrameOpt2,
-		fxaaQualitySubpix,
-		fxaaQualityEdgeThreshold,
-		fxaaQualityEdgeThresholdMin,
-		fxaaConsoleEdgeSharpness,
-		fxaaConsoleEdgeThreshold,
-		fxaaConsoleEdgeThresholdMin,
-		fxaaConsole360ConstDir);
+		ubo.fxaaQualityRcpFrame,
+		ubo.fxaaConsoleRcpFrameOpt,
+		ubo.fxaaConsoleRcpFrameOpt2,
+		ubo.fxaaConsole360RcpFrameOpt2,
+		ubo.fxaaQualitySubpix,
+		ubo.fxaaQualityEdgeThreshold,
+		ubo.fxaaQualityEdgeThresholdMin,
+		ubo.fxaaConsoleEdgeSharpness,
+		ubo.fxaaConsoleEdgeThreshold,
+		ubo.fxaaConsoleEdgeThresholdMin,
+		ubo.fxaaConsole360ConstDir);
 }

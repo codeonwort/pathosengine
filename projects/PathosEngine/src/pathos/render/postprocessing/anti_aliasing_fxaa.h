@@ -1,6 +1,9 @@
 #pragma once
 
 #include "post_process.h"
+#include "pathos/shader/uniform_buffer.h"
+
+// NVidia FXAA wrapper
 
 namespace pathos {
 
@@ -12,21 +15,8 @@ namespace pathos {
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
 
 	private:
-		GLuint program = 0xffffffff;
 		GLuint fbo = 0;
-
-		// pixel shader parameters
-		GLint fxaaQualityRcpFrame;
-		GLint fxaaConsoleRcpFrameOpt;
-		GLint fxaaConsoleRcpFrameOpt2;
-		GLint fxaaConsole360RcpFrameOpt2;
-		GLint fxaaQualitySubpix;
-		GLint fxaaQualityEdgeThreshold;
-		GLint fxaaQualityEdgeThresholdMin;
-		GLint fxaaConsoleEdgeSharpness;
-		GLint fxaaConsoleEdgeThreshold;
-		GLint fxaaConsoleEdgeThresholdMin;
-		GLint fxaaConsole360ConstDir;
+		UniformBuffer ubo;
 
 	};
 
