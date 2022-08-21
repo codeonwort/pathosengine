@@ -2,6 +2,7 @@
 #include "render_device.h"
 #include "scene_render_targets.h"
 #include "scene_proxy.h"
+#include "pathos/engine_policy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/mesh/static_mesh_component.h"
@@ -70,8 +71,9 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-		// Reverse-Z
-		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		}
 		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 

@@ -1,12 +1,9 @@
 #include "pathos/camera/camera.h"
+#include "pathos/engine_policy.h"
 
 #include "badger/math/minmax.h"
 #include "badger/assertion/assertion.h"
 #include "glm/gtc/matrix_transform.hpp"
-
-// https://developer.nvidia.com/content/depth-precision-visualized
-// https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/
-#define REVERSE_Z_PROJECTION 1
 
 namespace pathos {
 
@@ -42,17 +39,17 @@ namespace pathos {
 	}
 
 	void PerspectiveLens::updateProjectionMatrix() {
-#if REVERSE_Z_PROJECTION
-		float f = 1.0f / tan(fovY_radians / 2.0f);
-		// NOTE: glm matrix is column-major!
-		transform = matrix4(
-			f / aspect, 0.0f, 0.0f,   0.0f,
-			0.0f,       f,    0.0f,   0.0f,
-			0.0f,       0.0f, 0.0f,   -1.0f,
-			0.0f,       0.0f, z_near, 0.0f);
-#else
-		transform = glm::perspective(fovY_radians, aspect, znear, zfar);
-#endif
+		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+			float f = 1.0f / tan(fovY_radians / 2.0f);
+			// NOTE: glm matrix is column-major!
+			transform = matrix4(
+				f / aspect, 0.0f, 0.0f,   0.0f,
+				0.0f,       f,    0.0f,   0.0f,
+				0.0f,       0.0f, 0.0f,   -1.0f,
+				0.0f,       0.0f, z_near, 0.0f);
+		} else {
+			transform = glm::perspective(fovY_radians, aspect, z_near, z_far);
+		}
 	}
 
 	// Camera

@@ -1,5 +1,7 @@
 #include "render_deferred.h"
 
+#include "pathos/engine_policy.h"
+
 #include "pathos/render/render_device.h"
 #include "pathos/render/depth_prepass.h"
 #include "pathos/render/sky.h"
@@ -192,8 +194,9 @@ namespace pathos {
 			updateSceneUniformBuffer(cmdList, scene, camera);
 		}
 
-		// Reverse-Z
-		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		}
 
 		{
 			SCOPED_CPU_COUNTER(RenderPreDepth);
@@ -221,24 +224,20 @@ namespace pathos {
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			cmdList.clearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			cmdList.clearDepth(0.0f); // zero for Reverse-Z
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				cmdList.clearDepth(0.0f);
+			} else {
+				cmdList.clearDepth(1.0f);
+			}
 			cmdList.clearStencil(0);
 			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		}
 
 		// Volumetric clouds
-#if 0
-		const bool bRenderClouds = scene->isVolumetricCloudValid();
-		if (bRenderClouds) {
-			SCOPED_GPU_COUNTER(VolumetricCloudPass);
-			volumetricCloud->renderVolumetricCloud(cmdList, scene);
-		}
-#else
 		{
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
-#endif
 
 		// GodRay
 		// input: static meshes

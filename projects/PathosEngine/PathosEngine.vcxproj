@@ -100,6 +100,7 @@
     <ClCompile Include="src\pathos\camera\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\debug_overlay.cpp" />
+    <ClCompile Include="src\pathos\engine_policy.cpp" />
     <ClCompile Include="src\pathos\gui\gui_window.cpp" />
     <ClCompile Include="src\pathos\input\input_manager.cpp" />
     <ClCompile Include="src\pathos\input\input_system.cpp" />
@@ -207,6 +208,7 @@
     <ClInclude Include="src\pathos\camera\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\debug_overlay.h" />
+    <ClInclude Include="src\pathos\engine_policy.h" />
     <ClInclude Include="src\pathos\engine_version.h" />
     <ClInclude Include="src\pathos\gui\gui_window.h" />
     <ClInclude Include="src\pathos\input\input_manager.h" />
