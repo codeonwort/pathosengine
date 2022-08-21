@@ -5,28 +5,41 @@
 #include "pathos/input/input_manager.h"
 using namespace pathos;
 
-const char* WINDOW_TITLE         = "Test: Rendering Challenge 1";
+const char* WINDOW_TITLE         = "Deferred Shading Renderer";
 const int32 WINDOW_WIDTH         = 1920;
 const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
-const float FOVY                 = 60.0f;
+const float FOV_Y                = 60.0f;
 const float CAMERA_Z_NEAR        = 1.0f;
 const float CAMERA_Z_FAR         = 5000.0f;
 
 void changeWorld() {
-	static bool enterRC = true;
+	static const int32 numWorlds = 2;
+	static int32 worldIndex = 0;
 
-	enterRC = !enterRC;
 	World* newWorld = nullptr;
-	if (enterRC) {
+	switch (worldIndex) {
+	case 0:
 		newWorld = new World_RC1;
 		gEngine->getMainWindow()->setTitle("Test: Rendering Challenge 1");
-	} else {
+		break;
+	case 1:
 		newWorld = new World1;
 		gEngine->getMainWindow()->setTitle("Test: Deferred Rendering");
+		break;
+	case 2:
+		// More worlds here...
+		break;
+	default:
+		CHECK_NO_ENTRY();
+		break;
 	}
 
-	newWorld->getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
+	worldIndex = (worldIndex + 1) % numWorlds;
+
+	float aspectRatio = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT); // Will be updated in the engine loop anyway.
+	newWorld->getCamera().changeLens(PerspectiveLens(FOV_Y, aspectRatio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
+
 	gEngine->setWorld(newWorld);
 }
 
@@ -39,13 +52,7 @@ int main(int argc, char** argv) {
 	conf.rendererType = ERendererType::Deferred;
 	Engine::init(argc, argv, conf);
 
-	const float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);
-
-	World* world1 = new World_RC1;
-	world1->getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
-	world1->getCamera().changeLens(PerspectiveLens(FOVY, aspect_ratio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
-
-	gEngine->setWorld(world1);
+	changeWorld();
 
 	// Allow switching between worlds
 	{

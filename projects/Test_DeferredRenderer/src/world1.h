@@ -6,7 +6,7 @@ using namespace pathos;
 
 #include <vector>
 
-//////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 #define VISUALIZE_CSM_FRUSTUM 1
 #define DEBUG_SKYBOX          0
@@ -14,11 +14,6 @@ using namespace pathos;
 #if VISUALIZE_CSM_FRUSTUM
 #include "csm_debugger.h"
 #endif
-
-extern const vector3       CAMERA_POSITION;
-extern const vector3       CAMERA_LOOK_AT;
-extern const vector3       SUN_DIRECTION;
-extern const vector3       SUN_RADIANCE;
 
 // Forward declaration
 namespace pathos {

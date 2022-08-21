@@ -22,22 +22,39 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
+// --------------------------------------------------------
+// Constants
+
 #define OBJ_GUARD_TOWER_FILE     "render_challenge_1/medieval_tower.obj"
 #define OBJ_GUARD_TOWER_DIR      "render_challenge_1/"
 #define OBJ_SPACESHIP_FILE       "render_challenge_1/spaceship.obj"
 #define OBJ_SPACESHIP_DIR        "render_challenge_1/"
 
+#define GUARD_TOWER_ALBEDO       "resources/render_challenge_1/T_Brick.png"
+#define GUARD_TOWER_NORMAL       "resources/render_challenge_1/N_Brick.png"
+#define GUARD_TOWER_METALLIC     "resources/render_challenge_1/M_Brick.png"
+#define GUARD_TOWER_ROUGHNESS    "resources/render_challenge_1/R_Brick.png"
+#define GUARD_TOWER_LOCAL_AO     "resources/render_challenge_1/A_Brick.png"
+
+#define SPLINE_1                 "render_challenge_1/SpaceshipCurve1.spline"
+#define SPLINE_2                 "render_challenge_1/SpaceshipCurve2.spline"
+
 #define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.png"
 #define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
 #define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
-const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
-const vector3       SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
-constexpr float     Y_OFFSET             = 6500.0f; // Offset every actor to match with cloud layer
+static const vector3      CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
+static const vector3      CAMERA_LOOK_AT       = vector3(20.0f, 25.0f, 190.0f);
+static const vector3      SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, 0.0f));
+static const vector3      SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
+static constexpr float    Y_OFFSET             = 6500.0f; // Offset every actor to match with cloud layer
+
+// --------------------------------------------------------
+// World
 
 void World_RC1::onInitialize()
 {
-	//////////////////////////////////////////////////////////////////////////
+	// --------------------------------------------------------
 	// Async load assets
 	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ, 0);
@@ -50,7 +67,7 @@ void World_RC1::onInitialize()
 		SplineLoader loader;
 		std::string splineName;
 		HermiteSpline spline1;
-		CHECK(loader.load("render_challenge_1/SpaceshipCurve1.spline", true, splineName, spline1));
+		CHECK(loader.load(SPLINE_1, true, splineName, spline1));
 		spaceship1->setSpline(std::move(spline1));
 	}
 	spaceship2 = spawnActor<SpaceshipActor>();
@@ -61,19 +78,20 @@ void World_RC1::onInitialize()
 		SplineLoader loader;
 		std::string splineName;
 		HermiteSpline spline2;
-		CHECK(loader.load("render_challenge_1/SpaceshipCurve2.spline", true, splineName, spline2));
+		CHECK(loader.load(SPLINE_2, true, splineName, spline2));
 		spaceship2->setSpline(std::move(spline2));
 	}
 
-	//////////////////////////////////////////////////////////////////////////
+	// --------------------------------------------------------
 	// Spawn actors
 	playerController = spawnActor<PlayerController>();
 	setupSky();
 	setupScene();
 
+	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 	getCamera().moveToPosition(0.0f, Y_OFFSET - 100.0f, 4000.0f);
 
-	//////////////////////////////////////////////////////////////////////////
+	// --------------------------------------------------------
 	// Setup input
 	ButtonBinding updateSky;
 	updateSky.addInput(InputConstants::KEYBOARD_R);
@@ -239,13 +257,13 @@ void World_RC1::setupScene()
 
 	PBRTextureMaterial* material_pbr;
 	{
-		constexpr bool genMipmap = true;
+		constexpr bool genMips = true;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/T_Brick.png"), genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/N_Brick.png"), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/M_Brick.png"), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/R_Brick.png"), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(loadImage("resources/render_challenge_1/A_Brick.png"), genMipmap, !sRGB);
+		GLuint albedo = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_ALBEDO), genMips, sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_NORMAL), genMips, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_METALLIC), genMips, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_ROUGHNESS), genMips, !sRGB);
+		GLuint ao = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_LOCAL_AO), genMips, !sRGB);
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
 

@@ -12,6 +12,24 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
 
+// --------------------------------------------------------
+// Constants
+
+static const vector3 CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
+static const vector3 CAMERA_LOOK_AT       = vector3(20.0f, 25.0f, 190.0f);
+static const vector3 SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
+static const vector3 SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
+
+#define              SKY_METHOD           2
+static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
+
+static const uint32  NUM_BALLS            = 10;
+static const char*   SANDSTONE_ALBEDO     = "resources/textures/pbr_sandstone/sandstonecliff-albedo.png";
+static const char*   SANDSTONE_NORMAL     = "resources/textures/pbr_sandstone/sandstonecliff-normal-ue.png";
+static const char*   SANDSTONE_METALLIC   = "resources/textures/pbr_sandstone/sandstonecliff-metalness.png";
+static const char*   SANDSTONE_ROUGHNESS  = "resources/textures/pbr_sandstone/sandstonecliff-roughness.png";
+static const char*   SANDSTONE_LOCAL_AO   = "resources/textures/pbr_sandstone/sandstonecliff-ao.png";
+
 struct WavefrontModelDesc {
 	std::string filepath;
 	std::string dir;
@@ -37,13 +55,8 @@ std::vector<WavefrontModelDesc> wavefrontModels = {
 	},
 };
 
-
-const vector3       CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
-const vector3       CAMERA_LOOK_AT       = vector3(20.0f, 25.0f, 190.0f);
-const vector3       SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-const vector3       SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
-const uint32        NUM_BALLS            = 10;
-
+// --------------------------------------------------------
+// World
 
 World1::World1()
 {
@@ -59,6 +72,8 @@ void World1::onInitialize()
 			wavefrontModels[i].dir.c_str());
 		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ, i);
 	}
+
+	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 
 	setupInput();
 	setupSky();
@@ -95,7 +110,7 @@ void World1::setupInput()
 void World1::setupSky()
 {
 	{
-		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"), true, "Texture IBL: equirectangularMap");
+		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
 		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
@@ -115,11 +130,8 @@ void World1::setupSky()
 		}
 	}
 
-	//---------------------------------------------------------------------------------------
-	// sky
-	//---------------------------------------------------------------------------------------
-#define SKY_METHOD 2
-
+	// --------------------------------------------------------
+	// Sky
 #if SKY_METHOD == 0
 #if DEBUG_SKYBOX
 	std::array<const char*, 6> cubeImgName = {
@@ -153,11 +165,11 @@ void World1::setupSky()
 	scene.sky = spawnActor<AtmosphereScattering>();
 #elif SKY_METHOD == 2
 	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
+	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	ansel->initialize(anselTex);
 	scene.sky = ansel;
 #else
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage("resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr"));
+	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	Skybox* skybox = spawnActor<Skybox>();
 	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 	scene.sky = skybox;
@@ -166,9 +178,8 @@ void World1::setupSky()
 
 void World1::setupScene()
 {
-	//---------------------------------------------------------------------------------------
-	// create materials
-	//---------------------------------------------------------------------------------------
+	// --------------------------------------------------------
+	// Create materials
 
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/textures/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/textures/154_norm.jpg"), true, false);
@@ -187,19 +198,18 @@ void World1::setupScene()
 	{
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-albedo.png"), genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-normal-ue.png"), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-metalness.png"), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-roughness.png"), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(loadImage("resources/textures/pbr_sandstone/sandstonecliff-ao.png"), genMipmap, !sRGB);
+		GLuint albedo = pathos::createTextureFromBitmap(loadImage(SANDSTONE_ALBEDO), genMipmap, sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
+		GLuint ao = pathos::createTextureFromBitmap(loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
 
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 	}
 
 
-	//---------------------------------------------------------------------------------------
-	// create geometries
-	//---------------------------------------------------------------------------------------
+	// --------------------------------------------------------
+	// Create geometries
 
 	auto geom_sphere_big = new SphereGeometry(15.0f, 30);
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
@@ -207,7 +217,7 @@ void World1::setupScene()
 	auto geom_plane_big = new PlaneGeometry(10.0f, 10.0f, 20, 20);
 	auto geom_cube = new CubeGeometry(vector3(5.0f));
 
-	//////////////////////////////////////////////////////////////////////////
+	// --------------------------------------------------------
 	// Lighting
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
@@ -234,7 +244,7 @@ void World1::setupScene()
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	getScene().godRaySource = godRaySource->getStaticMeshComponent();
 
-	//////////////////////////////////////////////////////////////////////////
+	// --------------------------------------------------------
 	// Static meshes
 
 	ground = spawnActor<StaticMeshActor>();
@@ -292,8 +302,8 @@ void World1::setupScene()
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	// scene capture test
+	// --------------------------------------------------------
+	// Scene capture test
 	if (tempRenderTarget == nullptr) {
 		tempRenderTarget = new RenderTarget2D;
 		tempRenderTarget->respecTexture(1920, 1080, RenderTargetFormat::RGBA16F);
@@ -317,8 +327,8 @@ void World1::setupScene()
 	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);
 	sceneCaptureViewer->setActorScale(3.0f * vector3(16.0f, 9.0f, 1.0f));
 
-	//////////////////////////////////////////////////////////////////////////
-	// bloom test
+	// --------------------------------------------------------
+	// Bloom test
 	ColorMaterial* material_tooBright = new ColorMaterial;
 	material_tooBright->setAlbedo(10.0f, 0.5f, 0.5f);
 	material_tooBright->setMetallic(0.2f);
