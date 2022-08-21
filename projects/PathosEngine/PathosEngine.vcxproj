@@ -154,6 +154,7 @@
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
     <ClCompile Include="src\pathos\render\scene_proxy.cpp" />
+    <ClCompile Include="src\pathos\render\screen_space_reflection.cpp" />
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp" />
     <ClCompile Include="src\pathos\render\sky_clouds.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
@@ -259,6 +260,7 @@
     <ClInclude Include="src\pathos\render\render_device.h" />
     <ClInclude Include="src\pathos\render\render_target.h" />
     <ClInclude Include="src\pathos\render\scene_proxy.h" />
+    <ClInclude Include="src\pathos\render\screen_space_reflection.h" />
     <ClInclude Include="src\pathos\render\sky_atmosphere.h" />
     <ClInclude Include="src\pathos\render\sky_clouds.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />

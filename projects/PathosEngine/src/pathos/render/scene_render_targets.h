@@ -27,6 +27,10 @@ namespace pathos {
 		uint32 sceneColorDownsampleMipmapCount; // # of mipmaps of sceneColorDownsampleChain
 		std::vector<GLuint> sceneColorDownsampleViews;
 
+		GLuint sceneDepthHiZ = 0;
+		uint32 sceneDepthHiZMipmapCount = 0;
+		std::vector<GLuint> sceneDepthHiZViews;
+
 		GLuint volumetricCloudA; // Prev and current, rotated
 		GLuint volumetricCloudB; // Prev and current, rotated
 

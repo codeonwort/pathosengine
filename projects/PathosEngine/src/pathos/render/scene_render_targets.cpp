@@ -110,6 +110,11 @@ namespace pathos {
 			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
 
+		// HiZ
+		sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+		reallocTexture2DMips(sceneDepthHiZ, GL_DEPTH_COMPONENT24, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
+		reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, GL_DEPTH_COMPONENT24, "view_sceneDepthHiZMip");
+
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -181,6 +186,7 @@ namespace pathos {
 			}
 		};
 		releaseViews(sceneColorDownsampleViews);
+		releaseViews(sceneDepthHiZViews);
 		releaseViews(sceneBloomViews);
 		releaseViews(sceneBloomTempViews);
 
@@ -189,6 +195,7 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
 		safe_release(sceneColorDownsampleChain);
+		safe_release(sceneDepthHiZ);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);

@@ -274,6 +274,11 @@ namespace pathos {
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
+		{
+			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
+			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
+		}
+
 		// Translucency pass
 		{
 			SCOPED_GPU_COUNTER(Translucency);
@@ -615,6 +620,7 @@ namespace pathos {
 	
 	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
 	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
+	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
 
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
@@ -667,10 +673,12 @@ namespace pathos {
 
 			directLightingPass = std::make_unique<DirectLightingPass>();
 			indirectLightingPass = std::make_unique<IndirectLightingPass>();
+			screenSpaceReflectionPass = std::make_unique<ScreenSpaceReflectionPass>();
 			translucency_pass = std::make_unique<TranslucencyRendering>();
 
 			directLightingPass->initializeResources(cmdList);
 			indirectLightingPass->initializeResources(cmdList);
+			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
 
@@ -735,6 +743,7 @@ namespace pathos {
 			}
 			directLightingPass->destroyResources(cmdList);
 			indirectLightingPass->destroyResources(cmdList);
+			screenSpaceReflectionPass->destroyResources(cmdList);
 			translucency_pass->releaseResources(cmdList);
 		}
 
