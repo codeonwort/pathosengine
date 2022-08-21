@@ -28,6 +28,7 @@ namespace pathos {
 		uint32 NV_fragment_shader_barycentric : 1;
 		uint32 NV_compute_shader_derivatives : 1;
 		uint32 NV_scissor_exclusive : 1;
+		uint32 NVX_gpu_memory_info : 1;
 	};
 
 	struct OpenGLDriverCapabilities {
@@ -40,6 +41,12 @@ namespace pathos {
 		int32 glMaxComputeWorkGroupCount[3];
 		// The maximum size of a work groups that may be used during compilation of a compute shader.
 		int32 glMaxComputeWorkGroupSize[3];
+
+		bool bMemoryInfoAvailable = false;
+		int32 dedicatedVideoMemoryKiB = 0; // Total size of the VRAM
+		int32 dedicatedVideoMemoryMiB = 0;
+		int32 dedicatedVideoMemoryAvailableKiB = 0; // Available size of the VRAM
+		int32 dedicatedVideoMemoryAvailableMiB = 0;
 	};
 
 	class OpenGLDevice final : public Noncopyable {

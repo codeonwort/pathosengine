@@ -120,16 +120,16 @@ namespace pathos {
 	bool OpenGLDevice::initialize()
 	{
 		if (gl3wInit()) {
-			LOG(LogError, "Failed to initialize GL3W");
+			LOG(LogError, "[RenderDevice] Failed to initialize GL3W");
 			return false;
 		}
 		if (!gl3wIsSupported(REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION)) {
-			LOG(LogError, "GL %d.%d is not supported", REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION);
+			LOG(LogError, "[RenderDevice] GL %d.%d is not supported", REQUIRED_GL_MAJOR_VERSION, REQUIRED_GL_MINOR_VERSION);
 			return false;
 		}
 
-		queryCapabilities();
 		checkExtensions();
+		queryCapabilities();
 
 		// #todo-renderthread: Wanna get rid of deferred_command_list :/
 		// Create command lists
@@ -147,8 +147,16 @@ namespace pathos {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-		LOG(LogInfo, "GL version: %s", glGetString(GL_VERSION));
-		LOG(LogInfo, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+		LOG(LogInfo, "[RenderDevice] GL version: %s", glGetString(GL_VERSION));
+		LOG(LogInfo, "[RenderDevice] GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+		if (capabilities.bMemoryInfoAvailable) {
+			LOG(LogInfo, "[RenderDevice] VRAM: %d MiB (available: %d MiB)",
+				capabilities.dedicatedVideoMemoryMiB, capabilities.dedicatedVideoMemoryAvailableMiB);
+		} else {
+			// #todo: Support AMD driver
+			LOG(LogInfo, "[RenderDevice] VRAM: unknown ('NVX_gpu_memory_info' extension is missing)");
+		}
 
 		return true;
 	}
@@ -163,6 +171,22 @@ namespace pathos {
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, capabilities.glMaxComputeWorkGroupSize + 0);
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, capabilities.glMaxComputeWorkGroupSize + 1);
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, capabilities.glMaxComputeWorkGroupSize + 2);
+
+		// https://registry.khronos.org/OpenGL/extensions/NVX/NVX_gpu_memory_info.txt
+		if (extensionSupport.NVX_gpu_memory_info != 0) {
+			capabilities.bMemoryInfoAvailable = true;
+
+			const GLenum GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX          = 0x9047;
+			const GLenum GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX    = 0x9048;
+			const GLenum GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX  = 0x9049;
+			const GLenum GPU_MEMORY_INFO_EVICTION_COUNT_NVX            = 0x904A;
+			const GLenum GPU_MEMORY_INFO_EVICTED_MEMORY_NVX            = 0x904B;
+
+			glGetIntegerv(GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &capabilities.dedicatedVideoMemoryKiB);
+			glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &capabilities.dedicatedVideoMemoryAvailableKiB);
+			capabilities.dedicatedVideoMemoryMiB = capabilities.dedicatedVideoMemoryKiB >> 10;
+			capabilities.dedicatedVideoMemoryAvailableMiB = capabilities.dedicatedVideoMemoryAvailableKiB >> 10;
+		}
 	}
 
 	void OpenGLDevice::checkExtensions() {
@@ -195,6 +219,7 @@ namespace pathos {
 		extensionSupport.NV_fragment_shader_barycentric  = findExt("GL_NV_fragment_shader_barycentric");
 		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
 		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
+		extensionSupport.NVX_gpu_memory_info             = findExt("GL_NVX_gpu_memory_info");
 	}
 
 }
