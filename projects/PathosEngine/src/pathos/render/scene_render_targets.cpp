@@ -199,6 +199,7 @@ namespace pathos {
 		};
 		releaseViews(sceneColorDownsampleViews);
 		releaseViews(sceneDepthHiZViews);
+		releaseViews(ssrPreintegrationViews);
 		releaseViews(sceneBloomViews);
 		releaseViews(sceneBloomTempViews);
 
@@ -208,6 +209,7 @@ namespace pathos {
 		safe_release(sceneDepth);
 		safe_release(sceneColorDownsampleChain);
 		safe_release(sceneDepthHiZ);
+		safe_release(ssrPreintegration);
 		safe_release(ssrRayTracing);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
