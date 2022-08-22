@@ -6,12 +6,14 @@
 
 namespace pathos {
 
-	class HiZBufferVS : public ShaderStage {
+	// #todo-ssr: Unify every fullscreen vertex shaders
+	class SSRFullscreenVS : public ShaderStage {
 	public:
-		HiZBufferVS() : ShaderStage(GL_VERTEX_SHADER, "HiZBufferVS") {
+		SSRFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "SSRFullscreenVS") {
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
+
 	class HiZBufferInitFS : public ShaderStage {
 	public:
 		HiZBufferInitFS() : ShaderStage(GL_FRAGMENT_SHADER, "HiZBufferInitFS") {
@@ -26,8 +28,18 @@ namespace pathos {
 			setFilepath("hierarchical_z_buffer.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_HiZ_Init, HiZBufferVS, HiZBufferInitFS);
-	DEFINE_SHADER_PROGRAM2(Program_HiZ_Downsample, HiZBufferVS, HiZBufferDownsampleFS);
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Init, SSRFullscreenVS, HiZBufferInitFS);
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Downsample, SSRFullscreenVS, HiZBufferDownsampleFS);
+
+	// Calculates the scene visibility input
+	// for the cone-tracing pass in a hierarchical fashion.
+	class PreintegrationFS : public ShaderStage {
+	public:
+		PreintegrationFS() : ShaderStage(GL_FRAGMENT_SHADER, "PreintegrationFS") {
+			setFilepath("ssr_preintegration.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, SSRFullscreenVS, PreintegrationFS);
 
 }
 
@@ -41,12 +53,19 @@ namespace pathos {
 
 	void ScreenSpaceReflectionPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo_HiZ);
+		gRenderDevice->createFramebuffers(1, &fbo_preintegration);
+
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_HiZ, -1, "FBO_SSR_HiZ");
+		cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
+
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preintegration, -1, "FBO_SSR_Preintegration");
+		cmdList.namedFramebufferDrawBuffer(fbo_preintegration, GL_COLOR_ATTACHMENT0);
 	}
 
 	void ScreenSpaceReflectionPass::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
+			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);
 		}
 		destroyed = true;
 	}
@@ -61,7 +80,7 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		// Generate HiZ
+		// 1. HiZ Pass
 		{
 			SCOPED_DRAW_EVENT(HiZ);
 
@@ -70,7 +89,6 @@ namespace pathos {
 				cmdList.useProgram(program_init.getGLName());
 
 				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_HiZ);
-				cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
 
 				cmdList.depthMask(GL_FALSE);
 				cmdList.disable(GL_DEPTH_TEST);
@@ -114,6 +132,60 @@ namespace pathos {
 
 				cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, 0, 0);
 			}
+		}
+
+		// 2. Pre-integration Pass
+		{
+			SCOPED_DRAW_EVENT(Preintegration);
+
+			static const float clearValue = 1.0f;
+			cmdList.clearTexSubImage(sceneContext.ssrPreintegration, 0,
+				0, 0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight, 1,
+				GL_RED, GL_FLOAT, &clearValue);
+
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_Preintegration);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_preintegration);
+			
+			uint32 prevWidth = sceneContext.sceneWidth;
+			uint32 prevHeight = sceneContext.sceneHeight;
+			uint32 currentWidth, currentHeight;
+			for (uint32 currentMip = 1; currentMip < sceneContext.ssrPreintegrationMipmapCount; ++currentMip) {
+				currentWidth = pathos::max(1u, prevWidth >> 1);
+				currentHeight = pathos::max(1u, prevHeight >> 1);
+
+				cmdList.viewport(0, 0, currentWidth, currentHeight);
+
+				cmdList.bindTextureUnit(0, sceneContext.ssrPreintegrationViews[currentMip - 1]);
+				cmdList.bindTextureUnit(1, sceneContext.sceneDepthHiZViews[currentMip - 1]);
+				cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZViews[currentMip]);
+				cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreintegration, currentMip);
+
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
+
+				prevWidth = currentWidth;
+				prevHeight = currentHeight;
+			}
+
+			cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, 0, 0);
+		}
+
+		// 3. Ray-Tracing Pass
+		{
+			//
+		}
+
+		// 4. Pre-convolution Pass
+		{
+			//
+		}
+
+		// 5. Cone-Tracing Pass
+		{
+			//
 		}
 	}
 

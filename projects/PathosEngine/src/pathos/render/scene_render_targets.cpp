@@ -110,11 +110,19 @@ namespace pathos {
 			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
 
-		// HiZ
-		constexpr GLenum PF_HiZ = GL_RG32F;
-		sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
-		reallocTexture2DMips(sceneDepthHiZ, PF_HiZ, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
-		reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, PF_HiZ, "view_sceneDepthHiZMip");
+		// Screen space reflection
+		{
+			// HiZ
+			constexpr GLenum PF_HiZ = GL_RG32F;
+			sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			reallocTexture2DMips(sceneDepthHiZ, PF_HiZ, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
+			reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, PF_HiZ, "view_sceneDepthHiZMip");
+			// Preintegration
+			constexpr GLenum PF_preintegration = GL_R8;
+			ssrPreintegrationMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			reallocTexture2DMips(ssrPreintegration, PF_preintegration, sceneWidth, sceneHeight, ssrPreintegrationMipmapCount, "ssrPreintegration");
+			reallocTexture2DViews(ssrPreintegrationViews, ssrPreintegrationMipmapCount, ssrPreintegration, PF_preintegration, "ssrPreintegrationMip");
+		}
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
