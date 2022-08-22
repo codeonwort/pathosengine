@@ -41,6 +41,13 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, SSRFullscreenVS, PreintegrationFS);
 
+	class ScreenSpaceRayTracingFS : public ShaderStage {
+	public:
+		ScreenSpaceRayTracingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ScreenSpaceRayTracingFS") {
+			setFilepath("ssr_raytracing.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
 }
 
 namespace pathos {
@@ -54,18 +61,23 @@ namespace pathos {
 	void ScreenSpaceReflectionPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo_HiZ);
 		gRenderDevice->createFramebuffers(1, &fbo_preintegration);
+		gRenderDevice->createFramebuffers(1, &fbo_raytracing);
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_HiZ, -1, "FBO_SSR_HiZ");
 		cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preintegration, -1, "FBO_SSR_Preintegration");
 		cmdList.namedFramebufferDrawBuffer(fbo_preintegration, GL_COLOR_ATTACHMENT0);
+
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
+		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
 	}
 
 	void ScreenSpaceReflectionPass::destroyResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);
+			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
 		}
 		destroyed = true;
 	}
@@ -175,7 +187,21 @@ namespace pathos {
 
 		// 3. Ray-Tracing Pass
 		{
-			//
+			SCOPED_DRAW_EVENT(ScreenSpaceRayTracing);
+
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_RayTracing);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_raytracing);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
+			cmdList.namedFramebufferTexture(fbo_raytracing, GL_COLOR_ATTACHMENT0, sceneContext.ssrRayTracing, 0);
+
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
 		}
 
 		// 4. Pre-convolution Pass

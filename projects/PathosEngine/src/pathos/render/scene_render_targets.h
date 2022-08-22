@@ -34,6 +34,7 @@ namespace pathos {
 		GLuint ssrPreintegration = 0;
 		uint32 ssrPreintegrationMipmapCount = 0;
 		std::vector<GLuint> ssrPreintegrationViews;
+		GLuint ssrRayTracing = 0;
 
 		GLuint volumetricCloudA; // Prev and current, rotated
 		GLuint volumetricCloudB; // Prev and current, rotated

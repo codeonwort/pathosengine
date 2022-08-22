@@ -27,6 +27,7 @@ namespace pathos {
 	private:
 		GLuint fbo_HiZ = 0xffffffff;
 		GLuint fbo_preintegration = 0xffffffff;
+		GLuint fbo_raytracing = 0xffffffff;
 
 		bool destroyed = false;
 

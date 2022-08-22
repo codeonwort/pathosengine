@@ -66,5 +66,6 @@
     <None Include="volumetric_clouds_clear.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="ssr_preintegration.glsl" />
+    <None Include="ssr_raytracing.glsl" />
   </ItemGroup>
 </Project>

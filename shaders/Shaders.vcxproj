@@ -62,6 +62,7 @@
     <None Include="ssao_blur.glsl" />
     <None Include="ssao_downscale.glsl" />
     <None Include="ssr_preintegration.glsl" />
+    <None Include="ssr_raytracing.glsl" />
     <None Include="starfield.glsl" />
     <None Include="tone_mapping.glsl" />
     <None Include="translucency_fs.glsl" />

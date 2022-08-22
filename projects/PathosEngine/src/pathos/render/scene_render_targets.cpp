@@ -122,6 +122,9 @@ namespace pathos {
 			ssrPreintegrationMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
 			reallocTexture2DMips(ssrPreintegration, PF_preintegration, sceneWidth, sceneHeight, ssrPreintegrationMipmapCount, "ssrPreintegration");
 			reallocTexture2DViews(ssrPreintegrationViews, ssrPreintegrationMipmapCount, ssrPreintegration, PF_preintegration, "ssrPreintegrationMip");
+			// Ray tracing
+			constexpr GLenum PF_raytracing = GL_RGB16F;
+			reallocTexture2D(ssrRayTracing, PF_raytracing, sceneWidth, sceneHeight, "ssrRayTracing");
 		}
 
 		// CSM
@@ -205,6 +208,7 @@ namespace pathos {
 		safe_release(sceneDepth);
 		safe_release(sceneColorDownsampleChain);
 		safe_release(sceneDepthHiZ);
+		safe_release(ssrRayTracing);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);
