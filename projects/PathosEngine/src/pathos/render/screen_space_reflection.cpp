@@ -12,13 +12,22 @@ namespace pathos {
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
-	class HiZBufferFS : public ShaderStage {
+	class HiZBufferInitFS : public ShaderStage {
 	public:
-		HiZBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "HiZBufferFS") {
+		HiZBufferInitFS() : ShaderStage(GL_FRAGMENT_SHADER, "HiZBufferInitFS") {
+			addDefine("FIRST_MIP 1");
 			setFilepath("hierarchical_z_buffer.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_HiZ, HiZBufferVS, HiZBufferFS);
+	class HiZBufferDownsampleFS : public ShaderStage {
+	public:
+		HiZBufferDownsampleFS() : ShaderStage(GL_FRAGMENT_SHADER, "HiZBufferDownsampleFS") {
+			addDefine("FIRST_MIP 0");
+			setFilepath("hierarchical_z_buffer.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Init, HiZBufferVS, HiZBufferInitFS);
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Downsample, HiZBufferVS, HiZBufferDownsampleFS);
 
 }
 
@@ -56,55 +65,54 @@ namespace pathos {
 		{
 			SCOPED_DRAW_EVENT(HiZ);
 
-			// Copy sceneDepth to HiZ mip0
-			cmdList.copyImageSubData(
-				sceneContext.sceneDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
-				sceneContext.sceneDepthHiZ, GL_TEXTURE_2D, 0, 0, 0, 0,
-				sceneContext.sceneWidth, sceneContext.sceneHeight, 1);
-
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_HiZ);
-			cmdList.useProgram(program.getGLName());
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_HiZ);
-			cmdList.namedFramebufferDrawBuffers(fbo_HiZ, 0, nullptr);
-
 			{
-				cmdList.depthMask(GL_TRUE);
-#if 0
-				// Hmm... Depth write does not work if depth test is disabled?
+				ShaderProgram& program_init = FIND_SHADER_PROGRAM(Program_HiZ_Init);
+				cmdList.useProgram(program_init.getGLName());
+
+				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_HiZ);
+				cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
+
+				cmdList.depthMask(GL_FALSE);
 				cmdList.disable(GL_DEPTH_TEST);
-#else
-				cmdList.enable(GL_DEPTH_TEST);
-				cmdList.depthFunc(GL_ALWAYS);
-#endif
 				cmdList.disable(GL_BLEND);
-			}
 
-			constexpr GLenum PF_HiZ = GL_DEPTH_COMPONENT24;
-			uint32 prevWidth = sceneContext.sceneWidth;
-			uint32 prevHeight = sceneContext.sceneHeight;
-			uint32 currentWidth, currentHeight;
-			for (uint32 currentMip = 1; currentMip < sceneContext.sceneDepthHiZMipmapCount; ++currentMip) {
-				currentWidth = pathos::max(1u, prevWidth >> 1);
-				currentHeight = pathos::max(1u, prevHeight >> 1);
+				cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
-				cmdList.viewport(0, 0, currentWidth, currentHeight);
-
-				cmdList.bindTextureUnit(0, sceneContext.sceneDepthHiZViews[currentMip - 1]);
-				//cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepthHiZViews[currentMip], 0);
-				cmdList.namedFramebufferTexture(fbo_HiZ, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepthHiZ, currentMip);
+				cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
+				cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, 0);
 
 				fullscreenQuad->activate_position_uv(cmdList);
 				fullscreenQuad->activateIndexBuffer(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 
-				prevWidth = currentWidth;
-				prevHeight = currentHeight;
+				cmdList.bindTextureUnit(0, 0);
 			}
 
 			{
-				cmdList.namedFramebufferTexture(fbo_HiZ, GL_DEPTH_ATTACHMENT, 0, 0);
-				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+				ShaderProgram& program_downsample = FIND_SHADER_PROGRAM(Program_HiZ_Downsample);
+				cmdList.useProgram(program_downsample.getGLName());
+
+				uint32 prevWidth = sceneContext.sceneWidth;
+				uint32 prevHeight = sceneContext.sceneHeight;
+				uint32 currentWidth, currentHeight;
+				for (uint32 currentMip = 1; currentMip < sceneContext.sceneDepthHiZMipmapCount; ++currentMip) {
+					currentWidth = pathos::max(1u, prevWidth >> 1);
+					currentHeight = pathos::max(1u, prevHeight >> 1);
+
+					cmdList.viewport(0, 0, currentWidth, currentHeight);
+
+					cmdList.bindTextureUnit(0, sceneContext.sceneDepthHiZViews[currentMip - 1]);
+					cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, currentMip);
+
+					fullscreenQuad->activate_position_uv(cmdList);
+					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->drawPrimitive(cmdList);
+
+					prevWidth = currentWidth;
+					prevHeight = currentHeight;
+				}
+
+				cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, 0, 0);
 			}
 		}
 	}

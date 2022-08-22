@@ -111,9 +111,10 @@ namespace pathos {
 		}
 
 		// HiZ
+		constexpr GLenum PF_HiZ = GL_RG32F;
 		sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
-		reallocTexture2DMips(sceneDepthHiZ, GL_DEPTH_COMPONENT24, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
-		reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, GL_DEPTH_COMPONENT24, "view_sceneDepthHiZMip");
+		reallocTexture2DMips(sceneDepthHiZ, PF_HiZ, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
+		reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, PF_HiZ, "view_sceneDepthHiZMip");
 
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
