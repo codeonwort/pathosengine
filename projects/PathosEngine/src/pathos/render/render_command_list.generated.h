@@ -6375,7 +6375,11 @@ void bindSamplers(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_bindSamplers::execute);
 	packet->first = first;
 	packet->count = count;
-	packet->samplers = storeParameter(count * sizeof(GLuint), samplers);
+	if (samplers != nullptr) {
+		packet->samplers = storeParameter(count * sizeof(GLuint), samplers);
+	} else {
+		packet->samplers = nullptr;
+	}
 }
 void bindImageTextures(
 	GLuint first,
