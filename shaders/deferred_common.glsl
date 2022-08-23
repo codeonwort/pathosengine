@@ -45,6 +45,7 @@ float pointLightAttenuation(PointLight L, float d) {
 	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
 }
 
+// #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
 layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 prevViewTransform; // For reprojection
@@ -63,9 +64,9 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	mat4x4 sunViewProjection[4];
 	
-	vec3 eyeDirection;
-	vec3 eyePosition;
-	vec3 ws_eyePosition;
+	vec3 eyeDirection;   // view space
+	vec3 eyePosition;    // view space
+	vec3 ws_eyePosition; // world space
 
 	uint numDirLights;
 	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];

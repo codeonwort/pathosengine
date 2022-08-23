@@ -3,6 +3,8 @@
 #include "pathos/render/render_command_list.h"
 #include "pathos/shader/uniform_buffer.h"
 
+// Based on GPU Pro 5, "HiZ Screen-Space Cone-Traced Reflections", Yasin Uludag.
+
 namespace pathos {
 
 	class Camera;
@@ -28,6 +30,9 @@ namespace pathos {
 		GLuint fbo_HiZ = 0xffffffff;
 		GLuint fbo_preintegration = 0xffffffff;
 		GLuint fbo_raytracing = 0xffffffff;
+
+		UniformBuffer uboHiZ;
+		UniformBuffer uboRayTracing;
 
 		bool destroyed = false;
 

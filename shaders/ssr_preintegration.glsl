@@ -26,13 +26,21 @@ layout (location = 0) out float outVisibility;
 void main() {
 	vec2 screenUV = fs_in.screenUV;
 
+	// Near is 0.0, far is 1.0 no matter if sceneDepth is Reverse-Z or not.
 	vec4 fineZ = textureGather(inPrevHiZ, screenUV);
+#if REVERSE_Z
+	// Currently sceneDepthToLinearDepth() assumes Reverse-Z.
+	fineZ = vec4(1.0) - fineZ;
+#endif
 	fineZ.x = sceneDepthToLinearDepth(screenUV, fineZ.x);
 	fineZ.y = sceneDepthToLinearDepth(screenUV, fineZ.y);
 	fineZ.z = sceneDepthToLinearDepth(screenUV, fineZ.z);
 	fineZ.w = sceneDepthToLinearDepth(screenUV, fineZ.w);
 
 	vec2 minmaxZ = texture(inCurrentHiZ, screenUV).xy;
+#if REVERSE_Z
+	minmaxZ = vec2(1.0) - minmaxZ;
+#endif
 	float minZ = sceneDepthToLinearDepth(screenUV, minmaxZ.x);
 	float maxZ = sceneDepthToLinearDepth(screenUV, minmaxZ.y);
 

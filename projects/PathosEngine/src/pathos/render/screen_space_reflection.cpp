@@ -3,6 +3,7 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/engine_policy.h"
 
 namespace pathos {
 
@@ -14,10 +15,25 @@ namespace pathos {
 		}
 	};
 
+	struct UBO_HiZ {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		// #todo-math: ivector2
+		uint32 prevSizeX;
+		uint32 prevSizeY;
+		uint32 currentSizeX;
+		uint32 currentSizeY;
+		uint32 needsExtraSampleX;
+		uint32 needsExtraSampleY;
+	};
+
 	class HiZBufferInitFS : public ShaderStage {
 	public:
 		HiZBufferInitFS() : ShaderStage(GL_FRAGMENT_SHADER, "HiZBufferInitFS") {
 			addDefine("FIRST_MIP 1");
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("REVERSE_Z 1");
+			}
 			setFilepath("hierarchical_z_buffer.glsl");
 		}
 	};
@@ -36,14 +52,27 @@ namespace pathos {
 	class PreintegrationFS : public ShaderStage {
 	public:
 		PreintegrationFS() : ShaderStage(GL_FRAGMENT_SHADER, "PreintegrationFS") {
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("REVERSE_Z 1");
+			}
 			setFilepath("ssr_preintegration.glsl");
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, SSRFullscreenVS, PreintegrationFS);
 
+	struct UBO_ScreenSpaceRayTracing {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		vector2 sceneSize;
+		uint32 hiZMipCount;
+	};
+
 	class ScreenSpaceRayTracingFS : public ShaderStage {
 	public:
 		ScreenSpaceRayTracingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ScreenSpaceRayTracingFS") {
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("REVERSE_Z 1");
+			}
 			setFilepath("ssr_raytracing.glsl");
 		}
 	};
@@ -71,6 +100,9 @@ namespace pathos {
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
 		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
+
+		uboHiZ.init<UBO_HiZ>();
+		uboRayTracing.init<UBO_ScreenSpaceRayTracing>();
 	}
 
 	void ScreenSpaceReflectionPass::destroyResources(RenderCommandList& cmdList) {
@@ -131,8 +163,19 @@ namespace pathos {
 
 					cmdList.viewport(0, 0, currentWidth, currentHeight);
 
+					UBO_HiZ uboData;
+					uboData.prevSizeX = prevWidth;
+					uboData.prevSizeY = prevHeight;
+					uboData.currentSizeX = currentWidth;
+					uboData.currentSizeY = currentHeight;
+					uboData.needsExtraSampleX = (currentWidth * 2) < prevWidth;
+					uboData.needsExtraSampleY = (currentHeight * 2) < prevHeight;
+					uboHiZ.update(cmdList, UBO_HiZ::BINDING_POINT, &uboData);
+
 					cmdList.bindTextureUnit(0, sceneContext.sceneDepthHiZViews[currentMip - 1]);
+					// This is more convenient to insepct in RenderDoc.
 					cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, currentMip);
+					//cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZViews[currentMip], 0);
 
 					fullscreenQuad->activate_position_uv(cmdList);
 					fullscreenQuad->activateIndexBuffer(cmdList);
@@ -192,12 +235,22 @@ namespace pathos {
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_RayTracing);
 			cmdList.useProgram(program.getGLName());
 
+			UBO_ScreenSpaceRayTracing uboData;
+			uboData.sceneSize = vector2(sceneContext.sceneWidth, sceneContext.sceneHeight);
+			uboData.hiZMipCount = sceneContext.sceneDepthHiZMipmapCount;
+			uboRayTracing.update(cmdList, UBO_ScreenSpaceRayTracing::BINDING_POINT, &uboData);
+
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_raytracing);
+			cmdList.namedFramebufferTexture(fbo_raytracing, GL_COLOR_ATTACHMENT0, sceneContext.ssrRayTracing, 0);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
-			cmdList.namedFramebufferTexture(fbo_raytracing, GL_COLOR_ATTACHMENT0, sceneContext.ssrRayTracing, 0);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
+			cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZ);
+			cmdList.bindTextureUnit(3, sceneContext.gbufferA);
+			cmdList.bindTextureUnit(4, sceneContext.gbufferB);
+			cmdList.bindTextureUnit(5, sceneContext.gbufferC);
 
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
