@@ -1,5 +1,6 @@
 #include "deferredpass_pack_solidcolor.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/shader/shader.h"
 
 #include "badger/types/vector_types.h"
 

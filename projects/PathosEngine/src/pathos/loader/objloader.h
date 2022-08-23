@@ -66,7 +66,7 @@ namespace pathos {
 		// CAUTION: Must be called in render thread
 		Mesh* craftMeshFromAllShapes();
 
-		const vector<Material*>& getMaterials() { return materials; }
+		const std::vector<Material*>& getMaterials() { return materials; }
 
 	protected:
 		void analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output);

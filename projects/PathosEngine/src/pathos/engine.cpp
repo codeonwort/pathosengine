@@ -299,7 +299,7 @@ namespace pathos {
 	bool Engine::execute(const std::string& command)
 	{
 		auto ix = command.find(' ');
-		std::string header = ix == string::npos ? command : command.substr(0, ix);
+		std::string header = ix == std::string::npos ? command : command.substr(0, ix);
 
 		auto it = execMap.find(header);
 		if (it != execMap.end()) {

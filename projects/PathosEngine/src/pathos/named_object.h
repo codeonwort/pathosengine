@@ -4,6 +4,7 @@
 
 namespace pathos {
 	
+	// #todo: Is this really needed?
 	class NamedObject {
 	
 	public:

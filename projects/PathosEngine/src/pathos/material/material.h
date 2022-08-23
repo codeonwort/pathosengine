@@ -1,15 +1,15 @@
 #pragma once
 
-#include "badger/types/vector_types.h"
-
 #include "pathos/named_object.h"
 #include "pathos/material/material_id.h"
-#include "pathos/camera/camera.h"
-#include "pathos/shader/shader.h"
-#include "pathos/mesh/geometry.h"
 
-#include "gl_core.h"
+#include "badger/types/vector_types.h"
+
+//#include "gl_core.h"
 #include <vector>
+
+// #todo: Don't expose GLuint here
+typedef unsigned int GLuint;
 
 namespace pathos {
 
@@ -38,15 +38,15 @@ namespace pathos {
 	public:
 		ColorMaterial();
 
-		void setAlbedo(GLfloat r, GLfloat g, GLfloat b);
-		inline void setMetallic(GLfloat inMetallic)   { metallic = inMetallic; }
-		inline void setRoughness(GLfloat inRoughness) { roughness = inRoughness; }
-		void setEmissive(GLfloat r, GLfloat g, GLfloat b);
+		void setAlbedo(float r, float g, float b);
+		void setMetallic(float inMetallic);
+		void setRoughness(float inRoughness);
+		void setEmissive(float r, float g, float b);
 
-		inline const vector3 getAlbedo()   const { return albedo; }
-		inline GLfloat getMetallic()       const { return metallic; }
-		inline GLfloat getRoughness()      const { return roughness; }
-		inline const vector3 getEmissive() const { return emissive; }
+		inline vector3 getAlbedo() const { return albedo; }
+		inline float getMetallic() const { return metallic; }
+		inline float getRoughness() const { return roughness; }
+		inline vector3 getEmissive() const { return emissive; }
 
 	// #todo-material: Hard-coded for now
 	public:
@@ -55,9 +55,9 @@ namespace pathos {
 
 	private:
 		vector3 albedo;
-		GLfloat metallic;
+		float metallic;
 		vector3 emissive;
-		GLfloat roughness;
+		float roughness;
 
 	};
 
@@ -73,25 +73,25 @@ namespace pathos {
 			opacity = 0.5f;
 		}
 
-		inline glm::vec3 getAlbedo() const        { return albedo; }
-		inline float getMetallic() const          { return metallic; }
-		inline float getRoughness() const         { return roughness; }
-		inline float getOpacity() const           { return opacity; }
-		inline glm::vec3 getTransmittance() const { return transmittance; }
+		inline vector3 getAlbedo() const        { return albedo; }
+		inline float getMetallic() const        { return metallic; }
+		inline float getRoughness() const       { return roughness; }
+		inline float getOpacity() const         { return opacity; }
+		inline vector3 getTransmittance() const { return transmittance; }
 	
-		inline void setAlbedo(GLfloat r, GLfloat g, GLfloat b)         { albedo.x = r; albedo.y = g; albedo.z = b; }
-		inline void setAlbedo(const glm::vec3& rgb)                    { albedo = rgb; }
-		inline void setMetallic(GLfloat inMetallic)                    { metallic = inMetallic; }
-		inline void setRoughness(GLfloat inRoughness)                  { roughness = inRoughness; }
-		inline void setOpacity(GLfloat inOpacity)                      { opacity = inOpacity; }
-		inline void setTransmittance(const glm::vec3& inTransmittance) { transmittance = inTransmittance; }
+		inline void setAlbedo(float r, float g, float b)             { albedo.x = r; albedo.y = g; albedo.z = b; }
+		inline void setAlbedo(const vector3& rgb)                    { albedo = rgb; }
+		inline void setMetallic(float inMetallic)                    { metallic = inMetallic; }
+		inline void setRoughness(float inRoughness)                  { roughness = inRoughness; }
+		inline void setOpacity(float inOpacity)                      { opacity = inOpacity; }
+		inline void setTransmittance(const vector3& inTransmittance) { transmittance = inTransmittance; }
 	
 	private:
-		glm::vec3 albedo;
-		GLfloat metallic;
-		GLfloat roughness;
-		GLfloat opacity;
-		glm::vec3 transmittance;
+		vector3 albedo;
+		float metallic;
+		float roughness;
+		float opacity;
+		vector3 transmittance;
 	
 	};
 	
@@ -99,7 +99,7 @@ namespace pathos {
 
 	private:
 		GLuint texture;
-		GLfloat specular[3];
+		float specular[3];
 		bool useLighting = true;
 		bool useAlpha = false;
 
@@ -109,8 +109,8 @@ namespace pathos {
 		inline GLuint getTexture() { return texture; }
 		inline void setTexture(GLuint _texture) { texture = _texture; }
 
-		void setSpecular(GLfloat r, GLfloat g, GLfloat b);
-		inline const GLfloat* getSpecular() const { return specular; }
+		void setSpecular(float r, float g, float b);
+		inline const float* getSpecular() const { return specular; }
 
 		inline bool getLighting() { return useLighting; }
 		inline void setLighting(bool value) { useLighting = value; } // determine whether this texture will be lit
@@ -135,11 +135,11 @@ namespace pathos {
 	class WireframeMaterial : public Material {
 
 	private:
-		GLfloat rgba[4];
+		float rgba[4];
 
 	public:
-		WireframeMaterial(GLfloat, GLfloat, GLfloat, GLfloat = 1.0f);
-		inline const GLfloat* getColor() const { return rgba; }
+		WireframeMaterial(float, float, float, float = 1.0f);
+		inline const float* getColor() const { return rgba; }
 	};
 	
 	class CubeEnvMapMaterial : public Material {
@@ -156,14 +156,14 @@ namespace pathos {
 
 	protected:
 		GLuint texture;
-		GLfloat color[3];
+		float color[3];
 
 	public:
-		AlphaOnlyTextureMaterial(GLuint texture, GLfloat r = 1.0f, GLfloat g = 1.0f, GLfloat b = 1.0f);
+		AlphaOnlyTextureMaterial(GLuint texture, float r = 1.0f, float g = 1.0f, float b = 1.0f);
 		inline const GLuint getTexture() { return texture; }
-		inline const GLfloat* getColor() const { return color; }
+		inline const float* getColor() const { return color; }
 		inline void setTexture(GLuint inTexture) { texture = inTexture; }
-		inline void setColor(GLfloat r, GLfloat g, GLfloat b) { color[0] = r; color[1] = g; color[2] = b; }
+		inline void setColor(float r, float g, float b) { color[0] = r; color[1] = g; color[2] = b; }
 	};
 
 	// Cook-Torrance BRDF

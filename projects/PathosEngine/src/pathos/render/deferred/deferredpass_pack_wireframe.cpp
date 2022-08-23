@@ -1,4 +1,6 @@
 #include "deferredpass_pack_wireframe.h"
+#include "pathos/shader/shader.h"
+
 #include "glm/gtc/type_ptr.hpp"
 
 namespace pathos {

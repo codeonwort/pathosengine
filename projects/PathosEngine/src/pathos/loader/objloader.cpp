@@ -184,7 +184,7 @@ namespace pathos {
 #else
 				M = new TextureMaterial(0);
 #endif
-				pendingTextureData.insert(make_pair(static_cast<int32>(i), pending));
+				pendingTextureData.insert(std::make_pair(static_cast<int32>(i), pending));
 			}
 			else if (t_mat.dissolve < 1.0f
 				|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
@@ -325,7 +325,7 @@ namespace pathos {
 		}
 	}
 
-	Mesh* OBJLoader::craftMeshFrom(const string& shapeName) {
+	Mesh* OBJLoader::craftMeshFrom(const std::string& shapeName) {
 		for (size_t i = 0; i < t_shapes.size(); ++i) {
 			if (t_shapes[i].name == shapeName) {
 				return craftMeshFrom(static_cast<uint32>(i));

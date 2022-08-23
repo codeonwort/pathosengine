@@ -5,6 +5,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/material/material.h"
 

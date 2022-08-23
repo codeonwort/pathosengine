@@ -1,4 +1,6 @@
 #include "deferredpass_pack_texture.h"
+#include "pathos/shader/shader.h"
+
 #include "glm/gtc/type_ptr.hpp"
 
 static constexpr unsigned int TEXTURE_UNIT = 0;
