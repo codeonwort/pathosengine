@@ -100,6 +100,15 @@ namespace pathos {
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
 		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
+		
+		const GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		gRenderDevice->createSamplers(1, &pointSampler);
+		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		cmdList.samplerParameterfv(pointSampler, GL_TEXTURE_BORDER_COLOR, borderColor);
+		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		cmdList.objectLabel(GL_SAMPLER, pointSampler, -1, "Sampler_pointClamped");
 
 		uboHiZ.init<UBO_HiZ>();
 		uboRayTracing.init<UBO_ScreenSpaceRayTracing>();
@@ -110,6 +119,7 @@ namespace pathos {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);
 			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
+			gRenderDevice->deleteSamplers(1, &pointSampler);
 		}
 		destroyed = true;
 	}
@@ -173,6 +183,7 @@ namespace pathos {
 					uboHiZ.update(cmdList, UBO_HiZ::BINDING_POINT, &uboData);
 
 					cmdList.bindTextureUnit(0, sceneContext.sceneDepthHiZViews[currentMip - 1]);
+					cmdList.bindSampler(0, pointSampler);
 					// This is more convenient to insepct in RenderDoc.
 					cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, currentMip);
 					//cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZViews[currentMip], 0);
@@ -183,6 +194,7 @@ namespace pathos {
 
 					prevWidth = currentWidth;
 					prevHeight = currentHeight;
+					cmdList.bindSampler(0, 0);
 				}
 
 				cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, 0, 0);
@@ -212,9 +224,11 @@ namespace pathos {
 
 				cmdList.viewport(0, 0, currentWidth, currentHeight);
 
+				const GLuint pointSamplers3[] = { pointSampler, pointSampler, pointSampler };
 				cmdList.bindTextureUnit(0, sceneContext.ssrPreintegrationViews[currentMip - 1]);
 				cmdList.bindTextureUnit(1, sceneContext.sceneDepthHiZViews[currentMip - 1]);
 				cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZViews[currentMip]);
+				cmdList.bindSamplers(0, 3, pointSamplers3);
 				cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreintegration, currentMip);
 
 				fullscreenQuad->activate_position_uv(cmdList);
@@ -223,6 +237,7 @@ namespace pathos {
 
 				prevWidth = currentWidth;
 				prevHeight = currentHeight;
+				cmdList.bindSamplers(0, 3, nullptr);
 			}
 
 			cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, 0, 0);
@@ -251,10 +266,16 @@ namespace pathos {
 			cmdList.bindTextureUnit(3, sceneContext.gbufferA);
 			cmdList.bindTextureUnit(4, sceneContext.gbufferB);
 			cmdList.bindTextureUnit(5, sceneContext.gbufferC);
+			const GLuint pointSamplers6[] = {
+				pointSampler, pointSampler, pointSampler,
+				pointSampler, pointSampler, pointSampler };
+			cmdList.bindSamplers(0, 6, pointSamplers6);
 
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
+
+			cmdList.bindSamplers(0, 6, nullptr);
 		}
 
 		// 4. Pre-convolution Pass
