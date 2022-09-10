@@ -101,7 +101,9 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
 		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
 		
-		const GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		GLfloat* borderColor = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
+		borderColor[0] = borderColor[1] = borderColor[2] = borderColor[3] = 0.0f;
+
 		gRenderDevice->createSamplers(1, &pointSampler);
 		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
