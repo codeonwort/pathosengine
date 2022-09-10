@@ -8,10 +8,10 @@
 #include "deferred_common.glsl"
 
 // Start tracing in this level.
-#define HIZ_START_LEVEL      0
+#define HIZ_START_LEVEL      2
 // Stop tracing if current level is higher than this. (higher level means lower value)
 #define HIZ_STOP_LEVEL       0
-#define MAX_ITERATIONS       128
+#define MAX_ITERATIONS       48
 #define MAX_THICKNESS        0.001
 
 #define CROSS_OFFSET_TEST    0
@@ -197,10 +197,15 @@ bool traceHiZ_autodesk(vec3 p, vec3 v, out vec3 hitPointSS) {
 	return level < HIZ_STOP_LEVEL;
 }
 
-// p: Screen space position
-// v: Screen space reflection direction
-// Returns screen space hit point
-bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
+// p            : Screen space position
+// v            : Screen space reflection direction
+// hitPointSS   : Returns screen space hit point
+// Return value : Whether RT actually hit a surface
+bool traceHiZ(
+	vec3 p, vec3 v, out vec3 hitPointSS,
+	// Debug output, preferably compiled out.
+	out int debugFinalLevel, out uint debugIterations)
+{
 	const int maxLevel = int(ubo.hiZMipCount) - 1; // Last mip level
 	float maxTraceDistance = getMaxTraceDistance(p, v);
 
@@ -209,7 +214,8 @@ bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
 	vec2 crossStep, crossOffset;
 	crossStep.x = (v.x >= 0) ? 1.0 : -1.0;
 	crossStep.y = (v.y >= 0) ? 1.0 : -1.0;
-	crossOffset.xy = crossStep * (16.0 / ubo.sceneSize);
+	// #todo-ssr: This scaling feels so random. Needs concrete math.
+	crossOffset.xy = crossStep * (8.0 / ubo.sceneSize);
 #if CROSS_OFFSET_TEST
 	// #todo-ssr: Why are we saturating it?
 	crossStep = clamp(crossStep, vec2(0.0), vec2(1.0));
@@ -262,7 +268,7 @@ bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
 		
 		if (crossed) {
 #if !CROSS_OFFSET_TEST
-			crossOffset.xy = crossStep * 8.0 / vec2(cellCount);
+			//crossOffset.xy = crossStep * 16.0 / vec2(cellCount);
 #endif
 			ray = intersectCellBoundary(o, d, oldCellIx, cellCount, crossStep, crossOffset);
 			level = min(maxLevel, level + 1);
@@ -271,13 +277,12 @@ bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
 			level = level - 1;
 		}
 
-		// #todo-ssr: Descending is not working well...
-		if (level > 0) level = 0;
-		
 		iterations += 1;
 	}
 
 	// Results
+	debugFinalLevel = level;
+	debugIterations = iterations;
 	hitPointSS = ray;
 	return level < HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS;
 }
@@ -334,7 +339,9 @@ void main() {
 #if AUTODESK
 	bool intersects = traceHiZ_autodesk(positionSS, reflectionDirSS, hitPointSS);
 #else
-	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS);
+	int debugFinalLevel;
+	uint debugIterations;
+	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS, debugFinalLevel, debugIterations);
 #endif
 
 	vec3 finalRadiance = vec3(0.0);
@@ -349,6 +356,10 @@ void main() {
 	// DEBUG: Reflection direction
 	//outRayTracingResult = vec3(0.5) + 0.5 * reflectionDirSS;
 	// DEBUG: Hit point
-	outRayTracingResult = hitPointSS;
+	//outRayTracingResult = hitPointSS;
+	// DEBUG: Num iterations
+	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugIterations) / float(MAX_ITERATIONS));
+	// DEBUG: mip level
+	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugFinalLevel) / float(ubo.hiZMipCount - 1));
 #endif
 }
