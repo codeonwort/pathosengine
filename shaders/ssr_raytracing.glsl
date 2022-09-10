@@ -14,9 +14,6 @@
 #define MAX_ITERATIONS       48
 #define MAX_THICKNESS        0.001
 
-#define CROSS_OFFSET_TEST    0
-#define AUTODESK             0
-
 // --------------------------------------------------------
 // Input
 
@@ -48,15 +45,11 @@ vec3 intersectDepthPlane(vec3 o, vec3 d, float z) {
 	return o + d * z;
 }
 
-// CONFIRM
 // Index of the cell that contains the given 2D position.
 ivec2 getCell(vec2 screenUV, ivec2 cellCount) {
-	// #todo-ssr
-	//screenUV = clamp(screenUV, vec2(0.0), vec2(1.0));
 	return ivec2(screenUV * cellCount);
 }
 
-// CONFIRM
 // The number of cells in the quad tree at the given level.
 ivec2 getCellCount(int level) {
 	return textureSize(inHiZ, level);
@@ -69,13 +62,6 @@ vec3 intersectCellBoundary(
 	ivec2 cell, ivec2 cellCount,
 	vec2 crossStep, vec2 crossOffset)
 {
-#if AUTODESK
-	vec2 cellUVSize = 1.0 / vec2(cellCount);
-	vec2 planes = vec2(cell) / vec2(cellCount) + cellUVSize * crossStep;
-	vec2 solutions = (planes - pos.xy) / dir.xy;
-	vec3 intersection = pos + dir * min(solutions.x, solutions.y);
-	intersection.xy += (solutions.x < solutions.y) ? vec2(crossOffset.x, 0.0) : vec2(0.0, crossOffset.y);
-#else
 	vec3 intersection = vec3(0.0);
 
 	vec2 index = cell + crossStep;
@@ -87,7 +73,6 @@ vec3 intersectCellBoundary(
 	float t = min(delta.x, delta.y);
 
 	intersection = intersectDepthPlane(pos, dir, t);
-#endif
 	return intersection;
 }
 
@@ -122,81 +107,6 @@ float getMaxTraceDistance(vec3 p, vec3 v) {
 	return min(traceDistances.x, min(traceDistances.y, traceDistances.z));
 }
 
-bool traceHiZ_autodesk(vec3 p, vec3 v, out vec3 hitPointSS) {
-	const int maxLevel = int(ubo.hiZMipCount) - 1; // Last mip level
-	float maxTraceDistance = getMaxTraceDistance(p, v);
-
-	vec2 crossStep, crossOffset;
-	crossStep.x = (v.x >= 0) ? 1.0 : -1.0;
-	crossStep.y = (v.y >= 0) ? 1.0 : -1.0;
-	crossOffset.xy = crossStep.xy * 0.00001;
-	crossStep = clamp(crossStep, vec2(0.0), vec2(1.0));
-
-	// Set current ray to the original screen coordinate and depth.
-	vec3 ray = p;
-	float minZ = ray.z;
-	float maxZ = ray.z + v.z * maxTraceDistance;
-	float deltaZ = maxZ - minZ;
-
-	vec3 d = v.xyz / v.z;
-	vec3 o = intersectDepthPlane(p, d, -p.z);
-	vec3 v_z = v / v.z;
-
-	int level = HIZ_START_LEVEL;
-	uint iterations = 0;
-	bool isBackwardRay = v.z < 0;
-	float rayDir = isBackwardRay ? -1.0 : 1.0;
-
-	// Cross to next cell s.t. we don't get a self-intersection immediately.
-	ivec2 startCellCount = getCellCount(level);
-	ivec2 rayCell = getCell(ray.xy, startCellCount);
-	ray = intersectCellBoundary(ray, v, rayCell, startCellCount, crossStep, crossOffset);
-
-	while (level >= HIZ_STOP_LEVEL
-		//&& ray.z * rayDir <= maxZ * rayDir
-		&& iterations < MAX_ITERATIONS) {
-		// Get the cell number of our current ray.
-		ivec2 cellCount = getCellCount(level);
-		ivec2 oldCellIx = getCell(ray.xy, cellCount);
-
-		// Get the minimum depth plane in which the current ray resides.
-		//vec2 minZSampleUV = (vec2(oldCellIx) + vec2(0.5)) / vec2(cellCount);
-		float cellMinZ = getMinimumDepthPlane(oldCellIx, level);
-
-		// Intersect only if ray depth is below the minimum depth plane.
-		vec3 tempRay = ray;
-
-		if (v.z > 0) {
-			float minMinusRay = cellMinZ - ray.z;
-			tempRay = minMinusRay > 0 ? ray + v_z * minMinusRay : tempRay;
-			ivec2 newCellIx = getCell(tempRay.xy, cellCount);
-			if (crossedCellBoundary(oldCellIx, newCellIx)) {
-				tempRay = intersectCellBoundary(ray, v, oldCellIx, cellCount, crossStep, crossOffset);
-				level = min(maxLevel, level + 2);
-			} else {
-				if (level == 1 && abs(minMinusRay) > 0.0001) {
-					tempRay = intersectCellBoundary(ray, v, oldCellIx, cellCount, crossStep, crossOffset);
-					level = 2;
-				}
-			}
-		} else if (ray.z < cellMinZ) {
-			tempRay = intersectCellBoundary(ray, v, oldCellIx, cellCount, crossStep, crossOffset);
-			level = min(maxLevel, level + 2);
-		}
-		ray.xyz = tempRay.xyz;
-
-		// #todo-ssr:
-		level = 0;
-
-		iterations += 1;
-	}
-
-	// Results
-	hitPointSS = ray;
-	hitPointSS.xyz = vec3(float(iterations));
-	return level < HIZ_STOP_LEVEL;
-}
-
 // p            : Screen space position
 // v            : Screen space reflection direction
 // hitPointSS   : Returns screen space hit point
@@ -216,10 +126,6 @@ bool traceHiZ(
 	crossStep.y = (v.y >= 0) ? 1.0 : -1.0;
 	// #todo-ssr: This scaling feels so random. Needs concrete math.
 	crossOffset.xy = crossStep * (8.0 / ubo.sceneSize);
-#if CROSS_OFFSET_TEST
-	// #todo-ssr: Why are we saturating it?
-	crossStep = clamp(crossStep, vec2(0.0), vec2(1.0));
-#endif
 
 	// Set current ray to the original screen coordinate and depth.
 	vec3 ray = p;
@@ -267,9 +173,6 @@ bool traceHiZ(
 					|| crossedCellBoundary(oldCellIx, newCellIx);
 		
 		if (crossed) {
-#if !CROSS_OFFSET_TEST
-			//crossOffset.xy = crossStep * 16.0 / vec2(cellCount);
-#endif
 			ray = intersectCellBoundary(o, d, oldCellIx, cellCount, crossStep, crossOffset);
 			level = min(maxLevel, level + 1);
 		} else {
@@ -332,17 +235,12 @@ void main() {
 #endif
 	position2SS.xy = vec2(0.5) + 0.5 * position2SS.xy;
 
-	// CONFIRM(maybe): reflection direction in SS seems right.
 	vec3 reflectionDirSS = normalize(position2SS - positionSS);
 
 	vec3 hitPointSS;
-#if AUTODESK
-	bool intersects = traceHiZ_autodesk(positionSS, reflectionDirSS, hitPointSS);
-#else
 	int debugFinalLevel;
 	uint debugIterations;
 	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS, debugFinalLevel, debugIterations);
-#endif
 
 	vec3 finalRadiance = vec3(0.0);
 	if (intersects) {
@@ -356,7 +254,7 @@ void main() {
 	// DEBUG: Reflection direction
 	//outRayTracingResult = vec3(0.5) + 0.5 * reflectionDirSS;
 	// DEBUG: Hit point
-	//outRayTracingResult = hitPointSS;
+	outRayTracingResult = hitPointSS;
 	// DEBUG: Num iterations
 	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugIterations) / float(MAX_ITERATIONS));
 	// DEBUG: mip level
