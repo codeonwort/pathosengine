@@ -9,8 +9,8 @@
 
 // Start tracing in this level.
 #define HIZ_START_LEVEL      0
-// Stop tracing if current level is higher than this.
-#define HIZ_STOP_LEVEL       2
+// Stop tracing if current level is higher than this. (higher level means lower value)
+#define HIZ_STOP_LEVEL       0
 #define MAX_ITERATIONS       128
 #define MAX_THICKNESS        0.001
 
@@ -234,7 +234,7 @@ bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
 	ivec2 rayCell = getCell(ray.xy, startCellCount);
 	ray = intersectCellBoundary(o, d, rayCell, startCellCount, crossStep, crossOffset);
 
-	while (level <= HIZ_STOP_LEVEL
+	while (level >= HIZ_STOP_LEVEL
 			&& ray.z * rayDir <= maxZ * rayDir
 			&& iterations < MAX_ITERATIONS)
 	{
@@ -279,7 +279,7 @@ bool traceHiZ(vec3 p, vec3 v, out vec3 hitPointSS) {
 
 	// Results
 	hitPointSS = ray;
-	return level < HIZ_STOP_LEVEL;
+	return level < HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS;
 }
 
 void main() {
@@ -338,10 +338,10 @@ void main() {
 #endif
 
 	vec3 finalRadiance = vec3(0.0);
-	//if (intersects) {
+	if (intersects) {
 		vec3 sceneColorSample = texture(inSceneColor, hitPointSS.xy).xyz;
 		finalRadiance = (1.0 - roughness) * sceneColorSample;
-	//}
+	}
 
 	outRayTracingResult = finalRadiance;
 
