@@ -64,5 +64,10 @@
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />
     <None Include="volumetric_clouds_clear.glsl" />
+    <None Include="hierarchical_z_buffer.glsl" />
+    <None Include="ssr_preintegration.glsl" />
+    <None Include="ssr_raytracing.glsl" />
+    <None Include="ssr_preconvolution.glsl" />
+    <None Include="ssr_composite.glsl" />
   </ItemGroup>
 </Project>

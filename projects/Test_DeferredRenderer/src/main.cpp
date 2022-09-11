@@ -15,7 +15,7 @@ const float CAMERA_Z_FAR         = 5000.0f;
 
 void changeWorld() {
 	static const int32 numWorlds = 2;
-	static int32 worldIndex = 0;
+	static int32 worldIndex = 1;
 
 	World* newWorld = nullptr;
 	switch (worldIndex) {

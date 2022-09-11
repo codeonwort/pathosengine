@@ -110,6 +110,39 @@ namespace pathos {
 			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
 
+		// Screen space reflection
+		{
+			// HiZ
+			constexpr GLenum PF_HiZ = GL_RG32F;
+			sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			reallocTexture2DMips(sceneDepthHiZ, PF_HiZ, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
+			reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, PF_HiZ, "view_sceneDepthHiZMip");
+			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			// Preintegration
+			constexpr GLenum PF_preintegration = GL_R8;
+			ssrPreintegrationMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			reallocTexture2DMips(ssrPreintegration, PF_preintegration, sceneWidth, sceneHeight, ssrPreintegrationMipmapCount, "ssrPreintegration");
+			reallocTexture2DViews(ssrPreintegrationViews, ssrPreintegrationMipmapCount, ssrPreintegration, PF_preintegration, "ssrPreintegrationMip");
+			cmdList.textureParameteri(ssrPreintegration, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(ssrPreintegration, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(ssrPreintegration, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(ssrPreintegration, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			// Ray tracing
+			constexpr GLenum PF_raytracing = GL_RGB16F;
+			reallocTexture2D(ssrRayTracing, PF_raytracing, sceneWidth, sceneHeight, "ssrRayTracing");
+			// Preconvolution (NOTE: starts at half res)
+			constexpr GLenum PF_preconvolution = GL_RGB16F;
+			const uint32 preconvWidth = sceneWidth / 2, preconvHeight = sceneHeight / 2;
+			ssrPreconvolutionMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(preconvWidth, preconvHeight))));
+			reallocTexture2DMips(ssrPreconvolution, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolution");
+			reallocTexture2DMips(ssrPreconvolutionTemp, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolutionTemp");
+			reallocTexture2DViews(ssrPreconvolutionViews, ssrPreconvolutionMipmapCount, ssrPreconvolution, PF_preconvolution, "ssrPreconvolutionMip");
+			reallocTexture2DViews(ssrPreconvolutionTempViews, ssrPreconvolutionMipmapCount, ssrPreconvolutionTemp, PF_preconvolution, "ssrPreconvolutionTempMip");
+		}
+
 		// CSM
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -181,6 +214,10 @@ namespace pathos {
 			}
 		};
 		releaseViews(sceneColorDownsampleViews);
+		releaseViews(sceneDepthHiZViews);
+		releaseViews(ssrPreintegrationViews);
+		releaseViews(ssrPreconvolutionViews);
+		releaseViews(ssrPreconvolutionTempViews);
 		releaseViews(sceneBloomViews);
 		releaseViews(sceneBloomTempViews);
 
@@ -189,6 +226,11 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
 		safe_release(sceneColorDownsampleChain);
+		safe_release(sceneDepthHiZ);
+		safe_release(ssrPreintegration);
+		safe_release(ssrRayTracing);
+		safe_release(ssrPreconvolution);
+		safe_release(ssrPreconvolutionTemp);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);

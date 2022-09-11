@@ -1,8 +1,6 @@
 #pragma once
 
-#include "pathos/mesh/geometry.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/material/material.h"
+#include "pathos/render/render_command_list.h"
 #include "pathos/shader/uniform_buffer.h"
 
 // - Calculate indirect lighting (global illumination) and write to sceneColor.

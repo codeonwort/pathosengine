@@ -2,7 +2,7 @@
 ## Introduction
 OpenGL rendering library (for 3d graphics study)
 
-* IDE: Visual Studio 2019, Visual Studio Code
+* IDE: Visual Studio 2022, Visual Studio Code
 * Language: C++
 * GL version: OpenGL 4.6 Core Profile
 

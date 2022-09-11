@@ -56,6 +56,14 @@ namespace pathos {
 		// For subsequent works related to GL calls that have return values
 		void registerHook(std::function<void(RenderCommandList& cmdList)> hook);
 
+		// Returns a memory region that will be invalidated after all commands are executed.
+		void* allocateSingleFrameMemory(uint64 bytes) {
+			CHECK(bytes <= 0xffffffff); // Well, who would do this?
+			void* mem = parameters_alloc.alloc((uint32)bytes);
+			CHECK(mem != nullptr);
+			return mem;
+		}
+
 		inline bool isEmpty() const { return commands.size() == 0; }
 
 		// Debug only
@@ -69,6 +77,7 @@ namespace pathos {
 	private:
 		RenderCommandBase* getNextPacket();
 
+		// #todo-refactoring: Use allocateSingleFrameMemory() instead.
 		template<typename T>
 		T* storeParameter(uint64 bytes, T* data)
 		{

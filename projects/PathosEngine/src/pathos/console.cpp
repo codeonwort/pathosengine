@@ -245,7 +245,7 @@ namespace pathos {
 		pathos::WCHAR_TO_MBCS(text, command);
 
 		auto ix = command.find(' ');
-		std::string header = ix == string::npos ? command : command.substr(0, ix);
+		std::string header = ix == std::string::npos ? command : command.substr(0, ix);
 
 		// Execute registered procedure if exists
 		if (gEngine->execute(command)) {
@@ -255,7 +255,7 @@ namespace pathos {
 		// Is it a cvar?
 		if (auto cvar = ConsoleVariableManager::get().find(header.data())) {
 			std::string msg = command.substr(ix + 1);
-			if (ix == string::npos) {
+			if (ix == std::string::npos) {
 				cvar->print(this);
 			} else {
 				cvar->parse(msg.data(), this);

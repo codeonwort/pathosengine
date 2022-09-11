@@ -87,6 +87,7 @@ namespace pathos {
 		void deleteTextures(GLsizei n, const GLuint* textures);
 		void deleteVertexArrays(GLsizei n, const GLuint* arrays);
 		void deleteFramebuffers(GLsizei n, const GLuint* framebuffers);
+		void deleteSamplers(GLsizei n, const GLuint* samplers);
 		void deleteQueries(GLsizei n, const GLuint* ids);
 		void deleteBuffers(GLsizei n, const GLuint* buffers);
 		void deleteProgram(GLuint program);

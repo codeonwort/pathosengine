@@ -55,6 +55,7 @@ namespace pathos {
 			cmdList.enable(GL_BLEND);
 			cmdList.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 
+			cmdList.depthMask(GL_TRUE);
 			cmdList.enable(GL_DEPTH_TEST);
 			cmdList.depthFunc(GL_GREATER); 
 		}

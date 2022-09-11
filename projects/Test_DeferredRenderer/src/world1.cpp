@@ -42,14 +42,14 @@ std::vector<WavefrontModelDesc> wavefrontModels = {
 	{
 		"models/fireplace_room/fireplace_room.obj",
 		"models/fireplace_room/",
-		vector3(-100.0f, -10.0f, 0.0f),
+		vector3(600.0f, -10.0f, 0.0f),
 		Rotator(-90.0f, 0.0f, 0.0f),
 		vector3(50.0f)
 	},
 	{
 		"breakfast_room/breakfast_room.obj",
 		"breakfast_room/",
-		vector3(800.0f, -10.0f, 50.0f),
+		vector3(-100.0f, -10.0f, 50.0f),
 		Rotator(90.0f, 0.0f, 0.0f),
 		vector3(30.0f)
 	},
@@ -188,9 +188,16 @@ void World1::setupScene()
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(2.0f, 0.2f, 0.2f);
-		color->setMetallic(0.2f);
+		color->setAlbedo(0.9f, 0.2f, 0.2f);
+		color->setMetallic(0.0f);
 		color->setRoughness(0.1f);
+	}
+	Material* material_mirrorGround = new ColorMaterial;
+	{
+		auto color = static_cast<ColorMaterial*>(material_mirrorGround);
+		color->setAlbedo(0.9f, 0.9f, 0.9f);
+		color->setMetallic(0.0f);
+		color->setRoughness(0.0f);
 	}
 
 	// PBR material
@@ -227,10 +234,10 @@ void World1::setupScene()
 	PointLightActor* pointLight2 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight3 = spawnActor<PointLightActor>();
 
-	pointLight0->setActorLocation(vector3(-50.0f, 60.0f, 170.0f));
-	pointLight1->setActorLocation(vector3(0.0f, 30.0f, 150.0f));
-	pointLight2->setActorLocation(vector3(-20.0f, 50.0f, 50.0f));
-	pointLight3->setActorLocation(vector3(-20.0f, 50.0f, 150.0f));
+	pointLight0->setActorLocation(vector3(-50.0f, 700.0f + 60.0f, 170.0f));
+	pointLight1->setActorLocation(vector3(0.0f, 700.0f + 30.0f, 150.0f));
+	pointLight2->setActorLocation(vector3(-20.0f, 700.0f + 50.0f, 50.0f));
+	pointLight3->setActorLocation(vector3(-20.0f, 700.0f + 50.0f, 150.0f));
 
 	pointLight0->setLightParameters(15.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f, true);
 	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f, true);
@@ -240,7 +247,7 @@ void World1::setupScene()
 	godRaySource = spawnActor<StaticMeshActor>();
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
 	godRaySource->setActorScale(20.0f);
-	godRaySource->setActorLocation(vector3(0.0f, 300.0f, -500.0f));
+	godRaySource->setActorLocation(vector3(0.0f, 500.0f, -1500.0f));
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	getScene().godRaySource = godRaySource->getStaticMeshComponent();
 
@@ -248,7 +255,7 @@ void World1::setupScene()
 	// Static meshes
 
 	ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new Mesh(geom_plane_big, material_texture));
+	ground->setStaticMesh(new Mesh(geom_plane_big, material_mirrorGround));
 	ground->setActorScale(1000.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
@@ -274,14 +281,14 @@ void World1::setupScene()
 		balls.push_back(ball);
 	}
 
-	constexpr float box_x0 = 200.0f;
+	constexpr float box_x0 = 250.0f;
 	constexpr float box_y0 = 60.0f;
 	constexpr float box_spaceX = 20.0f;
 	constexpr float box_spaceY = 20.0f;
 	float sinT = 0.0f;
 	ColorMaterial* box_material = new ColorMaterial;
-	box_material->setAlbedo(1.0f, 1.0f, 1.0f);
-	box_material->setMetallic(0.2f);
+	box_material->setAlbedo(0.9f, 0.9f, 0.9f);
+	box_material->setMetallic(0.0f);
 	box_material->setRoughness(0.5f);
 	for (uint32 i = 0; i < 16; ++i)
 	{
@@ -294,9 +301,9 @@ void World1::setupScene()
 			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 50.0f, box_y0 + j * box_spaceY));
 			box->setActorScale(vector3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
 
-			if (i == 0 && j == 0) {
-				box->setActorLocation(0.0f, 20.0f, 180.0f);
-			}
+			//if (i == 0 && j == 0) {
+			//	box->setActorLocation(0.0f, 20.0f, 180.0f);
+			//}
 
 			boxes.push_back(box);
 		}
@@ -330,9 +337,10 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Bloom test
 	ColorMaterial* material_tooBright = new ColorMaterial;
-	material_tooBright->setAlbedo(10.0f, 0.5f, 0.5f);
-	material_tooBright->setMetallic(0.2f);
-	material_tooBright->setRoughness(0.1f);
+	material_tooBright->setAlbedo(0.0f, 0.0f, 0.0f);
+	material_tooBright->setMetallic(0.0f);
+	material_tooBright->setRoughness(1.0f);
+	material_tooBright->setEmissive(256.0f, 0.0f, 0.0f);
 	StaticMeshActor* bloomActor = spawnActor<StaticMeshActor>();
 	bloomActor->setActorLocation(200.0f, 80.0f, 600.0f);
 	bloomActor->setActorScale(20.0f);

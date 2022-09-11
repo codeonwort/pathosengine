@@ -12,6 +12,7 @@ namespace badger {
 		return (x < y) ? y : x;
 	}
 
+	// #todo-math: Exotic order? Is (value, minValue, maxValue) more common?
 	template<typename T>
 	T clamp(T minValue, T value, T maxValue) {
 		return (value < minValue) ? minValue : value > maxValue ? maxValue : value;

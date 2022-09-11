@@ -1,4 +1,5 @@
 #include "pathos/material/material.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 	
@@ -6,6 +7,7 @@ namespace pathos {
 	// ColorMaterial
 	ColorMaterial::ColorMaterial() {
 		materialID = MATERIAL_ID::SOLID_COLOR;
+
 		setMetallic(0.5f);
 		setRoughness(0.1f);
 		setAlbedo(0.5f, 0.5f, 0.5f);
@@ -15,13 +17,21 @@ namespace pathos {
 		billboardWidth = 10.0f;
 	}
 
-	void ColorMaterial::setAlbedo(GLfloat r, GLfloat g, GLfloat b) {
-		albedo.x = r;
-		albedo.y = g;
-		albedo.z = b;
+	void ColorMaterial::setAlbedo(float r, float g, float b) {
+		albedo.x = badger::clamp(0.0f, r, 1.0f);
+		albedo.y = badger::clamp(0.0f, r, 1.0f);
+		albedo.z = badger::clamp(0.0f, r, 1.0f);
 	}
 
-	void ColorMaterial::setEmissive(GLfloat r, GLfloat g, GLfloat b) {
+	void ColorMaterial::setMetallic(float inMetallic) {
+		metallic = badger::clamp(0.0f, inMetallic, 1.0f);
+	}
+
+	void ColorMaterial::setRoughness(float inRoughness) {
+		roughness = badger::clamp(0.0f, inRoughness, 1.0f);
+	}
+
+	void ColorMaterial::setEmissive(float r, float g, float b) {
 		emissive.x = r;
 		emissive.y = g;
 		emissive.z = b;
@@ -34,7 +44,7 @@ namespace pathos {
 		setSpecular(1.0f, 1.0f, 1.0f);
 	}
 
-	void TextureMaterial::setSpecular(GLfloat r, GLfloat g, GLfloat b) { specular[0] = r; specular[1] = g; specular[2] = b; }
+	void TextureMaterial::setSpecular(float r, float g, float b) { specular[0] = r; specular[1] = g; specular[2] = b; }
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// BumpTextureMaterial
@@ -47,7 +57,7 @@ namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// WireframeMaterial
-	WireframeMaterial::WireframeMaterial(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+	WireframeMaterial::WireframeMaterial(float r, float g, float b, float a) {
 		materialID = MATERIAL_ID::WIREFRAME;
 		rgba[0] = r; rgba[1] = g; rgba[2] = b; rgba[3] = a;
 	}
@@ -60,7 +70,7 @@ namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// AlphaOnlyTextureMaterial
-	AlphaOnlyTextureMaterial::AlphaOnlyTextureMaterial(GLuint texture, GLfloat r, GLfloat g, GLfloat b) :texture(texture) {
+	AlphaOnlyTextureMaterial::AlphaOnlyTextureMaterial(GLuint texture, float r, float g, float b) :texture(texture) {
 		materialID = MATERIAL_ID::ALPHA_ONLY_TEXTURE;
 		setColor(r, g, b);
 	}

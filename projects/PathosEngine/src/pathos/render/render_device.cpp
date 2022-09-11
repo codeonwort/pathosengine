@@ -309,6 +309,11 @@ namespace pathos {
 		glDeleteFramebuffers(n, framebuffers);
 	}
 
+	void OpenGLDevice::deleteSamplers(GLsizei n, const GLuint* samplers) {
+		CHECK_GL_CONTEXT_TAKEN();
+		glDeleteSamplers(n, samplers);
+	}
+
 	void OpenGLDevice::deleteVertexArrays(GLsizei n, const GLuint* arrays) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteVertexArrays(n, arrays);

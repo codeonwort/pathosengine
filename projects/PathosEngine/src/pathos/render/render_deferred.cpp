@@ -57,6 +57,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -248,7 +249,7 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
-		// #todo-ssr: Rename to renderBasePass
+		// #todo-refactoring: Rename to renderBasePass
 		{
 			SCOPED_GPU_COUNTER(PackGBuffer);
 
@@ -272,6 +273,11 @@ namespace pathos {
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
+		}
+
+		if (cvar_enable_ssr.getInt() != 0) {
+			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
+			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
 		// Translucency pass
@@ -615,6 +621,7 @@ namespace pathos {
 	
 	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
 	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
+	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
 
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
@@ -667,10 +674,12 @@ namespace pathos {
 
 			directLightingPass = std::make_unique<DirectLightingPass>();
 			indirectLightingPass = std::make_unique<IndirectLightingPass>();
+			screenSpaceReflectionPass = std::make_unique<ScreenSpaceReflectionPass>();
 			translucency_pass = std::make_unique<TranslucencyRendering>();
 
 			directLightingPass->initializeResources(cmdList);
 			indirectLightingPass->initializeResources(cmdList);
+			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
 
@@ -735,6 +744,7 @@ namespace pathos {
 			}
 			directLightingPass->destroyResources(cmdList);
 			indirectLightingPass->destroyResources(cmdList);
+			screenSpaceReflectionPass->destroyResources(cmdList);
 			translucency_pass->releaseResources(cmdList);
 		}
 
