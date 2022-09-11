@@ -18,9 +18,10 @@ note: Requires 'Visual C++ 2013 Redistributable Package' because I used pre-buil
 ## Features
 * Rendering
   * Depth prepass
-  * Global Illumination
+  * Global illumination
     * Cascaded shadow map
     * Screen-space ambient occlusion
+    * Screen-space reflection
     * Basic IBL (sky irradiance sampling on diffuse/glossy/specular surfaces, without sky occlusion)
   * Volumetric clouds
   * Post processing
