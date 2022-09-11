@@ -60,24 +60,6 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, SSRFullscreenVS, PreintegrationFS);
 
-	struct UBO_ScreenSpaceRayTracing {
-		static constexpr uint32 BINDING_POINT = 1;
-
-		vector2 sceneSize;
-		uint32 hiZMipCount;
-	};
-
-	class ScreenSpaceRayTracingFS : public ShaderStage {
-	public:
-		ScreenSpaceRayTracingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ScreenSpaceRayTracingFS") {
-			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
-				addDefine("REVERSE_Z 1");
-			}
-			setFilepath("ssr_raytracing.glsl");
-		}
-	};
-	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
-
 	class SSRPreconvolutionInitFS : public ShaderStage {
 	public:
 		SSRPreconvolutionInitFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSRPreconvolutionInitFS") {
@@ -104,6 +86,25 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Init, SSRFullscreenVS, SSRPreconvolutionInitFS);
 	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Horizontal, SSRFullscreenVS, SSRPreconvolutionHorizontalFS);
 	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Vertical, SSRFullscreenVS, SSRPreconvolutionVerticalFS);
+
+	// Performs Hi-Z tracing and cone tracing.
+	struct UBO_ScreenSpaceRayTracing {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		vector2 sceneSize;
+		vector2 preconvolutionSize;
+		uint32 hiZMipCount;
+	};
+	class ScreenSpaceRayTracingFS : public ShaderStage {
+	public:
+		ScreenSpaceRayTracingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ScreenSpaceRayTracingFS") {
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("REVERSE_Z 1");
+			}
+			setFilepath("ssr_raytracing.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
 }
 
 namespace pathos {
@@ -143,6 +144,14 @@ namespace pathos {
 		cmdList.samplerParameteri(pointSampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		cmdList.objectLabel(GL_SAMPLER, pointSampler, -1, "Sampler_pointClamped");
 
+		gRenderDevice->createSamplers(1, &linearSampler);
+		cmdList.samplerParameteri(linearSampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.samplerParameteri(linearSampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.samplerParameterfv(linearSampler, GL_TEXTURE_BORDER_COLOR, borderColor);
+		cmdList.samplerParameteri(linearSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.samplerParameteri(linearSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		cmdList.objectLabel(GL_SAMPLER, linearSampler, -1, "Sampler_linearClamped");
+
 		uboHiZ.init<UBO_HiZ>();
 		uboRayTracing.init<UBO_ScreenSpaceRayTracing>();
 	}
@@ -154,6 +163,7 @@ namespace pathos {
 			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preconvolution);
 			gRenderDevice->deleteSamplers(1, &pointSampler);
+			gRenderDevice->deleteSamplers(1, &linearSampler);
 		}
 		destroyed = true;
 	}
@@ -258,11 +268,14 @@ namespace pathos {
 
 				cmdList.viewport(0, 0, currentWidth, currentHeight);
 
-				const GLuint pointSamplers3[] = { pointSampler, pointSampler, pointSampler };
+				constexpr uint32 NUM_SAMPLERS = 3;
+				GLuint* samplers = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * NUM_SAMPLERS);
+				for (uint32 i = 0; i < NUM_SAMPLERS; ++i) samplers[i] = pointSampler;
+
 				cmdList.bindTextureUnit(0, sceneContext.ssrPreintegrationViews[currentMip - 1]);
 				cmdList.bindTextureUnit(1, sceneContext.sceneDepthHiZViews[currentMip - 1]);
 				cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZViews[currentMip]);
-				cmdList.bindSamplers(0, 3, pointSamplers3);
+				cmdList.bindSamplers(0, 3, samplers);
 				cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreintegration, currentMip);
 
 				fullscreenQuad->activate_position_uv(cmdList);
@@ -277,42 +290,7 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, 0, 0);
 		}
 
-		// 3. Ray-Tracing Pass
-		{
-			SCOPED_DRAW_EVENT(ScreenSpaceRayTracing);
-
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_RayTracing);
-			cmdList.useProgram(program.getGLName());
-
-			UBO_ScreenSpaceRayTracing uboData;
-			uboData.sceneSize = vector2(sceneContext.sceneWidth, sceneContext.sceneHeight);
-			uboData.hiZMipCount = sceneContext.sceneDepthHiZMipmapCount;
-			uboRayTracing.update(cmdList, UBO_ScreenSpaceRayTracing::BINDING_POINT, &uboData);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_raytracing);
-			cmdList.namedFramebufferTexture(fbo_raytracing, GL_COLOR_ATTACHMENT0, sceneContext.ssrRayTracing, 0);
-
-			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
-			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
-			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
-			cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZ);
-			cmdList.bindTextureUnit(3, sceneContext.gbufferA);
-			cmdList.bindTextureUnit(4, sceneContext.gbufferB);
-			cmdList.bindTextureUnit(5, sceneContext.gbufferC);
-			const GLuint pointSamplers6[] = {
-				pointSampler, pointSampler, pointSampler,
-				pointSampler, pointSampler, pointSampler };
-			cmdList.bindSamplers(0, 6, pointSamplers6);
-
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-			fullscreenQuad->drawPrimitive(cmdList);
-
-			cmdList.bindSamplers(0, 6, nullptr);
-		}
-
-		// 4. Pre-convolution Pass
+		// 3. Pre-convolution Pass
 		{
 			SCOPED_DRAW_EVENT(Preconvolution);
 
@@ -376,9 +354,44 @@ namespace pathos {
 			}
 		}
 
-		// 5. Cone-Tracing Pass
+		// 4. Ray-Tracing Pass (Hi-Z tracing + cone tracing)
 		{
-			//
+			SCOPED_DRAW_EVENT(ScreenSpaceRayTracing);
+
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_RayTracing);
+			cmdList.useProgram(program.getGLName());
+
+			UBO_ScreenSpaceRayTracing uboData;
+			uboData.sceneSize = vector2(sceneContext.sceneWidth, sceneContext.sceneHeight);
+			uboData.preconvolutionSize = vector2(sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+			uboData.hiZMipCount = sceneContext.sceneDepthHiZMipmapCount;
+			uboRayTracing.update(cmdList, UBO_ScreenSpaceRayTracing::BINDING_POINT, &uboData);
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_raytracing);
+			cmdList.namedFramebufferTexture(fbo_raytracing, GL_COLOR_ATTACHMENT0, sceneContext.ssrRayTracing, 0);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
+			cmdList.bindTextureUnit(2, sceneContext.sceneDepthHiZ);
+			cmdList.bindTextureUnit(3, sceneContext.gbufferA);
+			cmdList.bindTextureUnit(4, sceneContext.gbufferB);
+			cmdList.bindTextureUnit(5, sceneContext.gbufferC);
+			cmdList.bindTextureUnit(6, sceneContext.ssrPreintegration);
+			cmdList.bindTextureUnit(7, sceneContext.ssrPreconvolution);
+
+			constexpr uint32 NUM_SAMPLERS = 8;
+			GLuint* samplers = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * NUM_SAMPLERS);
+			for (uint32 i = 0; i < NUM_SAMPLERS - 1; ++i) samplers[i] = pointSampler;
+			samplers[NUM_SAMPLERS - 1] = linearSampler;
+			cmdList.bindSamplers(0, NUM_SAMPLERS, samplers);
+
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			cmdList.bindSamplers(0, NUM_SAMPLERS, nullptr);
 		}
 	}
 

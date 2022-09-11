@@ -2,9 +2,11 @@
 // - GPU Pro 5, "Hi-Z Screen Space Cone-Traced Reflections"
 // - https://sugulee.wordpress.com/2021/01/19/screen-space-reflections-implementation-and-optimization-part-2-hi-z-tracing-method/
 // - http://bitsquid.blogspot.com/2017/08/notes-on-screen-space-hiz-tracing.html
+// - http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
 
 #version 450 core
 
+#include "common.glsl"
 #include "deferred_common.glsl"
 
 // Start tracing in this level.
@@ -23,6 +25,7 @@ in VS_OUT {
 
 layout (std140, binding = 1) uniform UBO_RayTracing {
 	vec2 sceneSize;
+	vec2 preconvolutionSize;
 	uint hiZMipCount;
 } ubo;
 
@@ -32,6 +35,8 @@ layout (binding = 2) uniform sampler2D inHiZ;
 layout (binding = 3) uniform sampler2D inGBufferA;
 layout (binding = 4) uniform sampler2D inGBufferB;
 layout (binding = 5) uniform sampler2D inGBufferC;
+layout (binding = 6) uniform sampler2D inPreintegration;
+layout (binding = 7) uniform sampler2D inPreconvolution;
 
 // --------------------------------------------------------
 // Output
@@ -190,6 +195,59 @@ bool traceHiZ(
 	return level < HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS;
 }
 
+vec3 traceCone(vec2 startUV, vec2 endUV, float roughness) {
+	// Roughness to specular power
+	roughness = max(0.001, roughness);
+	float shininess = min(1024.0, 2.0 / (roughness * roughness) - 2.0);
+
+	// Well, the formula in GPU Pro 5 makes zero sense.
+	// I'm doing my own random mapping here.
+	shininess = 1.0 / (1.0 + exp(-shininess * 0.160944));
+	float coneAngle = 2.0 * TWO_PI * (1.0 - shininess);
+
+	vec2 dir = normalize(startUV - endUV);
+	vec2 currentUV;
+
+	float h = length(endUV - startUV);
+	float a = 2.0 * tan(coneAngle) * h;
+
+	vec3 result = vec3(0.0);
+	float totalVisibility = 0.0;
+	for (int i = 0; i < 7; ++i) {
+		float r;
+		if (i == 0) {
+			r = a;
+			currentUV = endUV;
+		} else {
+			r = a * (sqrt(a * a + 4 * h * h) - a) / (4 * h);
+			currentUV -= dir * r;
+		}
+		
+		float mipLevel = log2(r * max(ubo.preconvolutionSize.x, ubo.preconvolutionSize.y));
+		vec3 preconvSample = texture(inPreconvolution, currentUV, mipLevel).rgb;
+
+		mipLevel = log2(r * max(ubo.sceneSize.x, ubo.sceneSize.y));
+		float visibility = texture(inPreintegration, currentUV, mipLevel).r;
+
+		result += visibility * preconvSample;
+		totalVisibility += visibility;
+
+		if (totalVisibility > 1.0) {
+			break;
+		}
+
+		if (i == 0) {
+			h -= r;
+		} else {
+			h -= 2.0 * r;
+		}
+		a = 2.0 * tan(coneAngle) * h;
+		currentUV -= dir * r;
+	}
+
+	return result;
+}
+
 void main() {
 	vec2 screenUV = fs_in.screenUV;
 
@@ -202,6 +260,12 @@ void main() {
 	float sceneDepth = texture(inSceneDepth, screenUV).x;
 	float roughness = gbufferData.roughness;
 	
+	// roughness 0.4 ~= shininess 10.5
+	if (roughness > 0.4) {
+		outRayTracingResult = vec3(0.0);
+		return;
+	}
+
 	// Nomenclature
 	// SS: Screen space
 	// CS: Clip space
@@ -237,15 +301,18 @@ void main() {
 
 	vec3 reflectionDirSS = normalize(position2SS - positionSS);
 
+	// Trace HiZ to find the hit point.
 	vec3 hitPointSS;
 	int debugFinalLevel;
 	uint debugIterations;
 	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS, debugFinalLevel, debugIterations);
 
+	// Trace cone to accumulate reflected radiances.
 	vec3 finalRadiance = vec3(0.0);
 	if (intersects) {
-		vec3 sceneColorSample = texture(inSceneColor, hitPointSS.xy).xyz;
-		finalRadiance = (1.0 - roughness) * sceneColorSample;
+		//vec3 sceneColorSample = texture(inSceneColor, hitPointSS.xy).xyz;
+		//finalRadiance = (1.0 - roughness) * sceneColorSample;
+		finalRadiance = traceCone(screenUV, hitPointSS.xy, roughness);
 	}
 
 	outRayTracingResult = finalRadiance;

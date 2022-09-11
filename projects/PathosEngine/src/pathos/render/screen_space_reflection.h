@@ -33,6 +33,7 @@ namespace pathos {
 		GLuint fbo_preconvolution = 0xffffffff;
 
 		GLuint pointSampler = 0;
+		GLuint linearSampler = 0;
 
 		UniformBuffer uboHiZ;
 		UniformBuffer uboRayTracing;
