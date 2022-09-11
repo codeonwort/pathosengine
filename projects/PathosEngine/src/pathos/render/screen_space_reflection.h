@@ -29,8 +29,9 @@ namespace pathos {
 	private:
 		GLuint fbo_HiZ = 0xffffffff;
 		GLuint fbo_preintegration = 0xffffffff;
-		GLuint fbo_raytracing = 0xffffffff;
 		GLuint fbo_preconvolution = 0xffffffff;
+		GLuint fbo_raytracing = 0xffffffff;
+		GLuint fbo_composite = 0xffffffff;
 
 		GLuint pointSampler = 0;
 		GLuint linearSampler = 0;

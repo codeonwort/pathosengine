@@ -68,5 +68,6 @@
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
     <None Include="ssr_preconvolution.glsl" />
+    <None Include="ssr_composite.glsl" />
   </ItemGroup>
 </Project>

@@ -61,6 +61,7 @@
     <None Include="ssao_ao.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="ssao_downscale.glsl" />
+    <None Include="ssr_composite.glsl" />
     <None Include="ssr_preconvolution.glsl" />
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />

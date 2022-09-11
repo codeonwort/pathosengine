@@ -105,6 +105,14 @@ namespace pathos {
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
+
+	class SSRCompositeFS : public ShaderStage {
+	public:
+		SSRCompositeFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSRCompositeFS") {
+			setFilepath("ssr_composite.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_SSR_Composite, SSRFullscreenVS, SSRCompositeFS);
 }
 
 namespace pathos {
@@ -118,8 +126,9 @@ namespace pathos {
 	void ScreenSpaceReflectionPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo_HiZ);
 		gRenderDevice->createFramebuffers(1, &fbo_preintegration);
-		gRenderDevice->createFramebuffers(1, &fbo_raytracing);
 		gRenderDevice->createFramebuffers(1, &fbo_preconvolution);
+		gRenderDevice->createFramebuffers(1, &fbo_raytracing);
+		gRenderDevice->createFramebuffers(1, &fbo_composite);
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_HiZ, -1, "FBO_SSR_HiZ");
 		cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
@@ -127,11 +136,14 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preintegration, -1, "FBO_SSR_Preintegration");
 		cmdList.namedFramebufferDrawBuffer(fbo_preintegration, GL_COLOR_ATTACHMENT0);
 
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preconvolution, -1, "FBO_SSR_Preconvolution");
+		cmdList.namedFramebufferDrawBuffer(fbo_preconvolution, GL_COLOR_ATTACHMENT0);
+
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
 		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
 
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preconvolution, -1, "FBO_SSR_Preconvolution");
-		cmdList.namedFramebufferDrawBuffer(fbo_preconvolution, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_composite, -1, "FBO_SSR_Composite");
+		cmdList.namedFramebufferDrawBuffer(fbo_composite, GL_COLOR_ATTACHMENT0);
 		
 		GLfloat* borderColor = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 		borderColor[0] = borderColor[1] = borderColor[2] = borderColor[3] = 0.0f;
@@ -160,8 +172,9 @@ namespace pathos {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);
-			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preconvolution);
+			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
+			gRenderDevice->deleteFramebuffers(1, &fbo_composite);
 			gRenderDevice->deleteSamplers(1, &pointSampler);
 			gRenderDevice->deleteSamplers(1, &linearSampler);
 		}
@@ -392,6 +405,41 @@ namespace pathos {
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.bindSamplers(0, NUM_SAMPLERS, nullptr);
+			cmdList.bindTextures(1, 7, nullptr);
+		}
+
+		// 5. Add to scene color.
+		{
+			SCOPED_DRAW_EVENT(SSRComposite);
+
+			const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSR_Composite);
+			const GLuint fbo = fbo_composite;
+
+			cmdList.useProgram(program.getGLName());
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+			{
+				cmdList.disable(GL_DEPTH_TEST);
+				cmdList.enable(GL_BLEND);
+				cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+			}
+
+			cmdList.bindTextureUnit(0, sceneContext.ssrRayTracing);
+			cmdList.bindSampler(0, linearSampler);
+
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			{
+				cmdList.disable(GL_BLEND);
+				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+				cmdList.bindSampler(0, 0);
+				cmdList.bindTextureUnit(0, 0);
+			}
 		}
 	}
 

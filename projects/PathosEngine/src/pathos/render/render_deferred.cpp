@@ -57,6 +57,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -274,7 +275,7 @@ namespace pathos {
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
-		{
+		if (cvar_enable_ssr.getInt() != 0) {
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
 		}
