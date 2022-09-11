@@ -7,7 +7,7 @@
 
 namespace pathos {
 
-	// #todo-ssr: Unify every fullscreen vertex shaders
+	// #todo-refactoring: Unify every fullscreen vertex shaders
 	class SSRFullscreenVS : public ShaderStage {
 	public:
 		SSRFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "SSRFullscreenVS") {

@@ -249,7 +249,7 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
-		// #todo-ssr: Rename to renderBasePass
+		// #todo-refactoring: Rename to renderBasePass
 		{
 			SCOPED_GPU_COUNTER(PackGBuffer);
 
