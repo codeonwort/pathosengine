@@ -133,6 +133,14 @@ namespace pathos {
 			// Ray tracing
 			constexpr GLenum PF_raytracing = GL_RGB16F;
 			reallocTexture2D(ssrRayTracing, PF_raytracing, sceneWidth, sceneHeight, "ssrRayTracing");
+			// Preconvolution (NOTE: starts at half res)
+			constexpr GLenum PF_preconvolution = GL_RGB16F;
+			const uint32 preconvWidth = sceneWidth / 2, preconvHeight = sceneHeight / 2;
+			ssrPreconvolutionMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(preconvWidth, preconvHeight))));
+			reallocTexture2DMips(ssrPreconvolution, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolution");
+			reallocTexture2DMips(ssrPreconvolutionTemp, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolutionTemp");
+			reallocTexture2DViews(ssrPreconvolutionViews, ssrPreconvolutionMipmapCount, ssrPreconvolution, PF_preconvolution, "ssrPreconvolutionMip");
+			reallocTexture2DViews(ssrPreconvolutionTempViews, ssrPreconvolutionMipmapCount, ssrPreconvolutionTemp, PF_preconvolution, "ssrPreconvolutionTempMip");
 		}
 
 		// CSM
@@ -208,6 +216,8 @@ namespace pathos {
 		releaseViews(sceneColorDownsampleViews);
 		releaseViews(sceneDepthHiZViews);
 		releaseViews(ssrPreintegrationViews);
+		releaseViews(ssrPreconvolutionViews);
+		releaseViews(ssrPreconvolutionTempViews);
 		releaseViews(sceneBloomViews);
 		releaseViews(sceneBloomTempViews);
 
@@ -219,6 +229,8 @@ namespace pathos {
 		safe_release(sceneDepthHiZ);
 		safe_release(ssrPreintegration);
 		safe_release(ssrRayTracing);
+		safe_release(ssrPreconvolution);
+		safe_release(ssrPreconvolutionTemp);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);

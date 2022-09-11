@@ -67,5 +67,6 @@
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
+    <None Include="ssr_preconvolution.glsl" />
   </ItemGroup>
 </Project>

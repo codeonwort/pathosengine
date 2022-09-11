@@ -77,6 +77,33 @@ namespace pathos {
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
+
+	class SSRPreconvolutionInitFS : public ShaderStage {
+	public:
+		SSRPreconvolutionInitFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSRPreconvolutionInitFS") {
+			addDefine("FIRST_MIP", 1);
+			setFilepath("ssr_preconvolution.glsl");
+		}
+	};
+	class SSRPreconvolutionHorizontalFS : public ShaderStage {
+	public:
+		SSRPreconvolutionHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSRPreconvolutionHorizontalFS") {
+			addDefine("FIRST_MIP", 0);
+			addDefine("HORIZONTAL", 1);
+			setFilepath("ssr_preconvolution.glsl");
+		}
+	};
+	class SSRPreconvolutionVerticalFS : public ShaderStage {
+	public:
+		SSRPreconvolutionVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSRPreconvolutionVerticalFS") {
+			addDefine("FIRST_MIP", 0);
+			addDefine("HORIZONTAL", 0);
+			setFilepath("ssr_preconvolution.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Init, SSRFullscreenVS, SSRPreconvolutionInitFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Horizontal, SSRFullscreenVS, SSRPreconvolutionHorizontalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Vertical, SSRFullscreenVS, SSRPreconvolutionVerticalFS);
 }
 
 namespace pathos {
@@ -91,6 +118,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo_HiZ);
 		gRenderDevice->createFramebuffers(1, &fbo_preintegration);
 		gRenderDevice->createFramebuffers(1, &fbo_raytracing);
+		gRenderDevice->createFramebuffers(1, &fbo_preconvolution);
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_HiZ, -1, "FBO_SSR_HiZ");
 		cmdList.namedFramebufferDrawBuffer(fbo_HiZ, GL_COLOR_ATTACHMENT0);
@@ -100,6 +128,9 @@ namespace pathos {
 
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_raytracing, -1, "FBO_SSR_RayTracing");
 		cmdList.namedFramebufferDrawBuffer(fbo_raytracing, GL_COLOR_ATTACHMENT0);
+
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo_preconvolution, -1, "FBO_SSR_Preconvolution");
+		cmdList.namedFramebufferDrawBuffer(fbo_preconvolution, GL_COLOR_ATTACHMENT0);
 		
 		GLfloat* borderColor = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 		borderColor[0] = borderColor[1] = borderColor[2] = borderColor[3] = 0.0f;
@@ -121,6 +152,7 @@ namespace pathos {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);
 			gRenderDevice->deleteFramebuffers(1, &fbo_raytracing);
+			gRenderDevice->deleteFramebuffers(1, &fbo_preconvolution);
 			gRenderDevice->deleteSamplers(1, &pointSampler);
 		}
 		destroyed = true;
@@ -282,7 +314,66 @@ namespace pathos {
 
 		// 4. Pre-convolution Pass
 		{
-			//
+			SCOPED_DRAW_EVENT(Preconvolution);
+
+			// First mip size
+			const uint32 preconvWidth = sceneContext.sceneWidth / 2;
+			const uint32 preconvHeight = sceneContext.sceneHeight / 2;
+
+			{
+				const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SSRPreconvolution_Init);
+				const GLuint fbo = fbo_preconvolution;
+
+				cmdList.useProgram(program.getGLName());
+				cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+				cmdList.depthMask(GL_FALSE);
+				cmdList.disable(GL_DEPTH_TEST);
+				cmdList.disable(GL_BLEND);
+
+				cmdList.viewport(0, 0, preconvWidth, preconvHeight);
+
+				cmdList.bindTextureUnit(0, sceneContext.sceneColor);
+				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolution, 0);
+
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
+
+				cmdList.bindTextureUnit(0, 0);
+			}
+			{
+				const ShaderProgram& programH = FIND_SHADER_PROGRAM(Program_SSRPreconvolution_Horizontal);
+				const ShaderProgram& programV = FIND_SHADER_PROGRAM(Program_SSRPreconvolution_Vertical);
+				const GLuint fbo = fbo_preconvolution;
+
+				uint32 prevWidth = preconvWidth;
+				uint32 prevHeight = preconvHeight;
+				uint32 currentWidth, currentHeight;
+				for (uint32 currentMip = 1; currentMip < sceneContext.ssrPreconvolutionMipmapCount; ++currentMip) {
+					currentWidth = std::max(1u, prevWidth >> 1);
+					currentHeight = std::max(1u, prevHeight >> 1);
+
+					cmdList.viewport(0, 0, currentWidth, currentHeight);
+
+					cmdList.useProgram(programH.getGLName());
+					cmdList.bindTextureUnit(0, sceneContext.ssrPreconvolutionViews[currentMip - 1]);
+					cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolutionTemp, currentMip);
+					fullscreenQuad->activate_position_uv(cmdList);
+					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->drawPrimitive(cmdList);
+
+					cmdList.useProgram(programV.getGLName());
+					cmdList.bindTextureUnit(0, sceneContext.ssrPreconvolutionTempViews[currentMip]);
+					cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolution, currentMip);
+					fullscreenQuad->activate_position_uv(cmdList);
+					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->drawPrimitive(cmdList);
+
+					prevWidth = currentWidth;
+					prevHeight = currentHeight;
+				}
+			}
 		}
 
 		// 5. Cone-Tracing Pass

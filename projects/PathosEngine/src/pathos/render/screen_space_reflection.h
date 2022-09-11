@@ -30,6 +30,7 @@ namespace pathos {
 		GLuint fbo_HiZ = 0xffffffff;
 		GLuint fbo_preintegration = 0xffffffff;
 		GLuint fbo_raytracing = 0xffffffff;
+		GLuint fbo_preconvolution = 0xffffffff;
 
 		GLuint pointSampler = 0;
 
