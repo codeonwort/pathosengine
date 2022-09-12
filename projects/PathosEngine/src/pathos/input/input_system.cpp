@@ -11,7 +11,7 @@ namespace pathos {
 		inputChain.push_back(defaultInputManager);
 
 		g_xinputManager = new XInputManager;
-		defaultInputManager->bindXInput(XInputUserIndex::USER0);
+		//defaultInputManager->bindXInput(XInputUserIndex::USER0);
 	}
 
 	InputSystem::~InputSystem()

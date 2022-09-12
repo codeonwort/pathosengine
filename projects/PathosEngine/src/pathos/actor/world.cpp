@@ -1,6 +1,8 @@
 #include "world.h"
 #include "pathos/engine.h"
 #include "pathos/input/input_system.h"
+#include "pathos/input/input_manager.h"
+#include "pathos/input/xinput_manager.h"
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
@@ -65,6 +67,7 @@ namespace pathos {
 
 	void World::initialize() {
 		inputManager = gEngine->getInputSystem()->createInputManager();
+		inputManager->bindXInput(XInputUserIndex::USER0);
 
 		onInitialize();
 	}

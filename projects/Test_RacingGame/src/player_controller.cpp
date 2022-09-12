@@ -2,9 +2,9 @@
 
 #include "pathos/engine.h"
 #include "pathos/actor/world.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/camera/camera.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/util/math_lib.h"
 #include "pathos/util/log.h"
 
 void PlayerController::onSpawn()
@@ -66,7 +66,7 @@ void PlayerController::setupInput()
 	ButtonBinding rmb;
 	rmb.addInput(InputConstants::MOUSE_RIGHT_BUTTON);
 
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* inputManager = getWorld()->getInputManager();
 	inputManager->bindUniqueAxis("moveForward", moveForward);
 	inputManager->bindUniqueAxis("moveRight", moveRight);
 	inputManager->bindUniqueAxis("moveUp", moveUp);
@@ -80,7 +80,7 @@ void PlayerController::setupInput()
 void PlayerController::tickGameplay(float deltaSeconds)
 {
 	Camera& camera = getWorld()->getCamera();
-	InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* input = getWorld()->getInputManager();
 
 	float powerForward = input->getAxis("moveForward") * 500.0f;
 	float powerTurn = input->getAxis("moveRight") * 50.0f;
@@ -115,7 +115,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 void PlayerController::tickPhotoMode(float deltaSeconds)
 {
 	Camera& camera = getWorld()->getCamera();
-	InputManager* input = gEngine->getInputSystem()->getDefaultInputManager();
+	InputManager* input = getWorld()->getInputManager();
 
 	static int32 prevMouseX = 0;
 	static int32 prevMouseY = 0;
