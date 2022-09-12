@@ -21,6 +21,6 @@ if %ValidConfig%==0 (
 )
 
 xcopy /y /d "%SolutionDir%\thirdparty\freeglut\binary\freeglut.dll" "%SolutionDir%\bin\%SolutionConfig%\"
-xcopy /y /d "%SolutionDir%\thirdparty\freeimage\binary\freeimage.dll" "%SolutionDir%\bin\%SolutionConfig%\"
+xcopy /y /d "%SolutionDir%\thirdparty\freeimage-3.18.0\binary\freeimage.dll" "%SolutionDir%\bin\%SolutionConfig%\"
 
 endlocal
