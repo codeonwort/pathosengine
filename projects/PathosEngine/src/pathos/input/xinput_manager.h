@@ -48,8 +48,8 @@ namespace pathos {
 		float rightThumbY;
 
 		uint32 numActiveKeys;
-		InputConstants activeKeys[32];
-		float activeKeysMultiplier[32];
+		InputConstants activeKeys[32] = { InputConstants::UNDEFINED, };
+		float activeKeysMultiplier[32] = { 0.0f, };
 
 		uint32 numPressed;
 		uint32 numReleased;
