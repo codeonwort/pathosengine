@@ -7,11 +7,11 @@
 #include "pathos/util/log.h"
 #include "pathos/util/gl_context_manager.h"
 
-#include "GL/freeglut.h"
+// #todo-gui: Use another thirdparty for GUI?
+#include "pathos/gui/freeglut_wrapper.h"
+
 #include <stdio.h>
 #include <array>
-
-#pragma comment(lib, "freeglut.lib")
 
 static void onGlutError(const char* fmt, va_list ap) {
 	fprintf(stderr, "onGlutError:");
@@ -20,7 +20,7 @@ static void onGlutError(const char* fmt, va_list ap) {
 
 	/* deInitialize the freeglut state */
 	fprintf(stderr, "onGlutError: Calling glutExit()\n");
-	glutExit();
+	FreeGLUT::fn_glutExit();
 
 	exit(1);
 }
@@ -32,7 +32,7 @@ static void onGlutWarning(const char* fmt, va_list ap) {
 
 	/* deInitialize the freeglut state */
 	fprintf(stderr, "onGlutWarning: Calling glutExit()\n");
-	glutExit();
+	FreeGLUT::fn_glutExit();
 
 	exit(1);
 }
@@ -40,17 +40,17 @@ static void onGlutWarning(const char* fmt, va_list ap) {
 namespace pathos {
 
 	static void onGlutClose() {
-		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		GUIWindow* window = GUIWindow::handleToWindow[FreeGLUT::fn_glutGetWindow()];
 		window->onClose();
 	}
 
 	static void onGlutIdle() {
-		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		GUIWindow* window = GUIWindow::handleToWindow[FreeGLUT::fn_glutGetWindow()];
 		window->onIdle();
 	}
 
 	static void onGlutDisplay() {
-		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		GUIWindow* window = GUIWindow::handleToWindow[FreeGLUT::fn_glutGetWindow()];
 		window->onDisplay();
 	}
 
@@ -96,11 +96,12 @@ namespace pathos {
 		, title("title here")
 		, nativeHandle(-1)
 	{
-		//
+		FreeGLUT::loadDLL();
 	}
 
 	GUIWindow::~GUIWindow()
 	{
+		FreeGLUT::unloadDLL();
 	}
 
 	void GUIWindow::create(const GUIWindowCreateParams& createParams)
@@ -138,16 +139,16 @@ namespace pathos {
 		windowHeight = badger::max<int32>(300, windowHeight);
 		if (title.empty()) title = "Title here";
 
-		glutInitErrorFunc(onGlutError);
-		glutInitWarningFunc(onGlutWarning);
-		glutInit(&argc, argv);
-		glutInitContextVersion(createParams.glMajorVersion, createParams.glMinorVersion);
-		glutInitContextProfile(GLUT_CORE_PROFILE);
+		FreeGLUT::fn_glutInitErrorFunc(onGlutError);
+		FreeGLUT::fn_glutInitWarningFunc(onGlutWarning);
+		FreeGLUT::fn_glutInit(&argc, argv);
+		FreeGLUT::fn_glutInitContextVersion(createParams.glMajorVersion, createParams.glMinorVersion);
+		FreeGLUT::fn_glutInitContextProfile(GLUT_CORE_PROFILE);
 		if (createParams.glDebugContext) {
-			glutInitContextFlags(GLUT_DEBUG);
+			FreeGLUT::fn_glutInitContextFlags(GLUT_DEBUG);
 		}
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
-		glutInitWindowSize(windowWidth, windowHeight);
+		FreeGLUT::fn_glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
+		FreeGLUT::fn_glutInitWindowSize(windowWidth, windowHeight);
 
 		// X*10000 + Y*100 + Z where X = major, Y = minor, and Z = patch.
 		const int32 glutVersion = glutGet(GLUT_VERSION);
@@ -160,18 +161,18 @@ namespace pathos {
 		OpenGLContextManager::initialize();
 
 		if (bFullscreen) {
-			glutFullScreen();
+			FreeGLUT::fn_glutFullScreen();
 		}
 
-		glutCloseFunc(onGlutClose);
-		glutIdleFunc(onGlutIdle);
-		glutDisplayFunc(onGlutDisplay);
-		glutReshapeFunc(onGlutReshape);
-		glutKeyboardFunc(onGlutKeyDown);
-		glutKeyboardUpFunc(onGlutKeyUp);
-		glutSpecialFunc(onGlutSpecialKeyDown);
-		glutSpecialUpFunc(onGlutSpecialKeyUp);
-		glutMouseFunc(onGlutMouseFunc);
+		FreeGLUT::fn_glutCloseFunc(onGlutClose);
+		FreeGLUT::fn_glutIdleFunc(onGlutIdle);
+		FreeGLUT::fn_glutDisplayFunc(onGlutDisplay);
+		FreeGLUT::fn_glutReshapeFunc(onGlutReshape);
+		FreeGLUT::fn_glutKeyboardFunc(onGlutKeyDown);
+		FreeGLUT::fn_glutKeyboardUpFunc(onGlutKeyUp);
+		FreeGLUT::fn_glutSpecialFunc(onGlutSpecialKeyDown);
+		FreeGLUT::fn_glutSpecialUpFunc(onGlutSpecialKeyUp);
+		FreeGLUT::fn_glutMouseFunc(onGlutMouseFunc);
 
 		GUIWindow::handleToWindow[nativeHandle] = this;
 
@@ -183,7 +184,7 @@ namespace pathos {
 		CHECK(initialized);
 
 		LOG(LogInfo, "Start the main loop");
-		glutMainLoop();
+		FreeGLUT::fn_glutMainLoop();
 	}
 
 	void GUIWindow::stopMainLoop()
@@ -192,14 +193,14 @@ namespace pathos {
 
 		GUIWindow::handleToWindow[nativeHandle] = nullptr;
 
-		glutLeaveMainLoop();
+		FreeGLUT::fn_glutLeaveMainLoop();
 		LOG(LogInfo, "Stop the main loop");
 	}
 
 	void GUIWindow::updateWindow_renderThread() {
 		OpenGLContextManager::takeContext();
-		glutSwapBuffers();
-		glutPostRedisplay();
+		FreeGLUT::fn_glutSwapBuffers();
+		FreeGLUT::fn_glutPostRedisplay();
 		OpenGLContextManager::returnContext();
 	}
 
@@ -243,22 +244,22 @@ namespace pathos {
 	{
 		title = newTitle;
 
-		glutSetWindow(nativeHandle);
-		glutSetWindowTitle(title.c_str());
+		FreeGLUT::fn_glutSetWindow(nativeHandle);
+		FreeGLUT::fn_glutSetWindowTitle(title.c_str());
 	}
 
 	void GUIWindow::setTitle(std::string&& newTitle)
 	{
 		title = std::move(newTitle);
 
-		glutSetWindow(nativeHandle);
-		glutSetWindowTitle(title.c_str());
+		FreeGLUT::fn_glutSetWindow(nativeHandle);
+		FreeGLUT::fn_glutSetWindowTitle(title.c_str());
 	}
 
 	void GUIWindow::checkSpecialKeyDown(int specialKey)
 	{
 		// Modifiers
-		int modifiers = glutGetModifiers();
+		int modifiers = FreeGLUT::fn_glutGetModifiers();
 		if (modifiers & GLUT_ACTIVE_SHIFT) {
 			callback_onSpecialKeyDown(InputConstants::SHIFT);
 		}
@@ -284,7 +285,7 @@ namespace pathos {
 	void GUIWindow::checkSpecialKeyUp(int specialKey)
 	{
 		// Modifiers
-		int modifiers = glutGetModifiers();
+		int modifiers = FreeGLUT::fn_glutGetModifiers();
 		if (0 == (modifiers & GLUT_ACTIVE_SHIFT)) {
 			callback_onSpecialKeyUp(InputConstants::SHIFT);
 		}

@@ -17,7 +17,7 @@
       </AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\assimp\binary;$(SolutionDir)thirdparty\freetype-2.9.1\binary;$(SolutionDir)thirdparty\freeimage\binary;$(SolutionDir)thirdparty\freeglut\binary</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\assimp\binary;$(SolutionDir)thirdparty\freetype-2.9.1\binary;$(SolutionDir)thirdparty\freeimage\binary</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>call "$(SolutionDir)thirdparty\CopyBinaries.bat" "$(SolutionDir)" $(Configuration)</Command>
