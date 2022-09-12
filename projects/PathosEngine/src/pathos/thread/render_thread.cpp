@@ -133,7 +133,7 @@ namespace pathos {
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
 			// Get GPU profile
-			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(immediateContext, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
+			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(&immediateContext, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
 
 			// Clear render resources for current frame.
 			if (sceneProxy != nullptr) {

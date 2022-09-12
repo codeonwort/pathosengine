@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gl_core.h"
+#include "badger/types/string_hash.h"
 
 #include <string>
 #include <vector>

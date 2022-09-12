@@ -15,7 +15,7 @@ private:
 	GLuint createSubsumShader();
 	GLuint createBlurShader();
 
-	GLuint program_subsum2D;
-	GLuint program_blur;
+	GLuint program_subsum2D = 0;
+	GLuint program_blur = 0;
 
 };

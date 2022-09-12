@@ -3,6 +3,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/util/gl_debug_group.h"
 
 #include <string>
 

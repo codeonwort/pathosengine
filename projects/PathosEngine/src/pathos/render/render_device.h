@@ -4,6 +4,7 @@
 
 #include "render_command_list.h"
 #include "pathos/thread/engine_thread.h"
+#include "pathos/util/gl_debug_group.h"
 
 #include <functional>
 #include <memory>

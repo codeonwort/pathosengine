@@ -1,4 +1,5 @@
 #include "shaders.h"
+#include "badger/assertion/assertion.h"
 #include <string>
 #include <cassert>
 

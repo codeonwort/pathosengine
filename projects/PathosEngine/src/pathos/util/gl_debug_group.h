@@ -1,20 +1,20 @@
 #pragma once
 
-#include "pathos/render/render_command_list.h"
-
 #include "badger/types/string_hash.h"
 #include <string>
 #include <vector>
 
 namespace pathos {
 
+	class RenderCommandList;
+
 	struct DebugGroupMarker {
 
-		DebugGroupMarker(class RenderCommandList* cmdList, const char* eventName);
+		DebugGroupMarker(RenderCommandList* cmdList, const char* eventName);
 		~DebugGroupMarker();
 
 	private:
-		class RenderCommandList* command_list;
+		RenderCommandList* command_list;
 
 	};
 
@@ -28,18 +28,18 @@ namespace pathos {
 
 		static const uint32 MAX_GPU_COUNTERS;
 
-		ScopedGpuCounter(class RenderCommandList* cmdList, const char* inCounterName);
+		ScopedGpuCounter(RenderCommandList* cmdList, const char* inCounterName);
 		~ScopedGpuCounter();
 
 	private:
-		class RenderCommandList* command_list;
+		RenderCommandList* command_list;
 		std::string counterName;
 		GLuint queryObject1, queryObject2; // begin timestamp, end timestamp
 
 	public:
 		static void initializeQueryObjectPool(uint32 inMaxGpuCounters = MAX_GPU_COUNTERS);
 		static void destroyQueryObjectPool();
-		static uint32 flushQueries(RenderCommandList& cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds);
+		static uint32 flushQueries(RenderCommandList* cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds);
 
 		static bool enable; // #todo-gpu-counter: Support gpu counter in scene capture. This is a hack.
 

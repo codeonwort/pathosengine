@@ -11,6 +11,9 @@
       <AdditionalIncludeDirectories>$(ProjectDir)src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\renderdoc;$(SolutionDir)thirdparty\freeimage-3.18.0\source;$(SolutionDir)thirdparty\freetype-2.9.1\source;$(SolutionDir)thirdparty\freeglut\source;$(SolutionDir)thirdparty\assimp\source;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\tinygltf-2.5.0;$(SolutionDir)thirdparty\rapidjson-1.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>

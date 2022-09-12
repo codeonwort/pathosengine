@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gl_core.h"
+#include "pathos/render/render_command_list.h"
 using namespace pathos;
 
 namespace pathos {

@@ -1,5 +1,6 @@
 #include "gl_debug_group.h"
 #include "pathos/render/render_device.h"
+#include "pathos/render/render_command_list.h"
 
 namespace pathos {
 
@@ -109,7 +110,7 @@ namespace pathos {
 		return true;
 	}
 
-	uint32 ScopedGpuCounter::flushQueries(RenderCommandList& cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds) {
+	uint32 ScopedGpuCounter::flushQueries(RenderCommandList* cmdList, std::vector<std::string>& outCounterNames, std::vector<float>& outElapsedMilliseconds) {
 		CHECKF(poolInitialized, "Pool was not initialized");
 		CHECK(isInRenderThread());
 
@@ -124,10 +125,10 @@ namespace pathos {
 		std::vector<GLuint64> endTimeNSArray(numUsedQueryObjects / 2, 0U);
 		
 		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
-			cmdList.getQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNSArray[i / 2]);
-			cmdList.getQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNSArray[i / 2]);
+			cmdList->getQueryObjectui64v(queryObjectPool[i + 0], GL_QUERY_RESULT, &beginTimeNSArray[i / 2]);
+			cmdList->getQueryObjectui64v(queryObjectPool[i + 1], GL_QUERY_RESULT, &endTimeNSArray[i / 2]);
 		}
-		cmdList.flushAllCommands();
+		cmdList->flushAllCommands();
 
 		for (uint32 i = 0; i < numUsedQueryObjects; i += 2) {
 			float elapsedMS = (float)((double)(endTimeNSArray[i / 2] - beginTimeNSArray[i / 2]) / 1000000.0);

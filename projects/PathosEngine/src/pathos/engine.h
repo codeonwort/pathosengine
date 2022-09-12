@@ -6,9 +6,11 @@
 #include "badger/system/stopwatch.h"
 
 #include "pathos/input/input_system.h"
+#include "pathos/render/render_command_list.h"
 
 #include <map>
 #include <list>
+#include <vector>
 #include <mutex>
 #include <memory>
 #include <string>
