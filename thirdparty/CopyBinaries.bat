@@ -20,7 +20,10 @@ if %ValidConfig%==0 (
 	exit
 )
 
-xcopy /y /d "%SolutionDir%\thirdparty\freeglut\binary\freeglut.dll" "%SolutionDir%\bin\%SolutionConfig%\"
+if "%SolutionConfig%" == "Debug" set FreeGLUTFile=freeglutd.dll
+if "%SolutionConfig%" == "Release" set FreeGLUTFile=freeglut.dll
+
+xcopy /y /d "%SolutionDir%\thirdparty\freeglut\binary\%FreeGLUTFile%" "%SolutionDir%\bin\%SolutionConfig%\"
 xcopy /y /d "%SolutionDir%\thirdparty\freeimage-3.18.0\binary\freeimage.dll" "%SolutionDir%\bin\%SolutionConfig%\"
 
 endlocal

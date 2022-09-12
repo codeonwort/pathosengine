@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <array>
 
-#pragma comment(lib, "freeglut.lib")
-
 static void onGlutError(const char* fmt, va_list ap) {
 	fprintf(stderr, "onGlutError:");
 	vfprintf(stderr, fmt, ap);
