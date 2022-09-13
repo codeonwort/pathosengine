@@ -60,6 +60,7 @@ namespace pathos {
 		if (flushDepth == 1) {
 			executeAllCommands();
 			clearAllCommands();
+			performDeferredCleanup();
 		} else {
 			CHECKF(0, "You must not nest flushAllCommands() calls");
 		}
@@ -80,6 +81,18 @@ namespace pathos {
 		packet->pfn_execute = PFN_EXECUTE(RenderCommand_registerHook::execute);
 		packet->hook = hook;
 		packet->hookCommandList = hookCommandList;
+	}
+
+	void RenderCommandList::registerDeferredCleanup(void* dynamicMemory) {
+		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
+		deferredCleanups.push_back(dynamicMemory);
+	}
+	void RenderCommandList::performDeferredCleanup() {
+		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
+		for (void* memory : deferredCleanups) {
+			delete memory;
+		}
+		deferredCleanups.clear();
 	}
 
 	RenderCommandBase* RenderCommandList::getNextPacket()

@@ -12,12 +12,6 @@ namespace pathos {
 	void initializeImageLibrary();
 	void destroyImageLibrary();
 
-	struct HDRImageMetadata {
-		float* data;
-		uint32 width;
-		uint32 height;
-	};
-
 	// - Wrapper for FreeImage's FIBITMAP.
 	// - If its data is uploaded to GPU and not accessed from CPU anymore, it should be freed.
 	//   It can be achieved by trasnfering memory ownership of a BitmapBlob to cmdList.
@@ -31,6 +25,15 @@ namespace pathos {
 		uint32 width = 0;
 		uint32 height = 0;
 		uint32 bpp = 0;
+	};
+
+	// Wrapper for stbi_image
+	struct HDRImageBlob {
+		~HDRImageBlob();
+
+		float* rawData;
+		uint32 width;
+		uint32 height;
 	};
 
 	enum class ECubemapImagePreference : uint8 {
@@ -55,17 +58,18 @@ namespace pathos {
 		BitmapBlob* dib,
 		bool generateMipmap,
 		bool sRGB,
-		const char* debugName = nullptr);
+		const char* debugName = nullptr,
+		bool autoDestroyBlob = true);
 
 	GLuint createCubemapTextureFromBitmap(
 		BitmapBlob* dib[], // Assumes length of 6
 		bool generateMipmap = true,
-		const char* debugName = nullptr);
+		const char* debugName = nullptr,
+		bool autoDestroyBlob = true);
 
 	// Load HDR image by stb_image
-	HDRImageMetadata loadHDRImage(const char* inFilename);
-	GLuint createTextureFromHDRImage(const HDRImageMetadata& metadata, bool deleteBlobData = true, const char* debugName = nullptr);
-	void unloadHDRImage(const HDRImageMetadata& metadata);
+	HDRImageBlob* loadHDRImage(const char* inFilename);
+	GLuint createTextureFromHDRImage(HDRImageBlob* blob, bool deleteBlobData = true, const char* debugName = nullptr);
 
 	// NOTE: You should call VolumeTexture::initGLResource() manually.
 	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);

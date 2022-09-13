@@ -64,6 +64,13 @@ namespace pathos {
 			return mem;
 		}
 
+		// Frees the memory after all commands are executed.
+		// CAUTION: The parameter should point a dynamically allocated memory and not free'd in other places.
+		void registerDeferredCleanup(void* dynamicMemory);
+
+		// Free all memory that came from registerDeferredCleanup().
+		void performDeferredCleanup();
+
 		inline bool isEmpty() const { return commands.size() == 0; }
 
 		// Debug only
@@ -96,6 +103,9 @@ namespace pathos {
 		uint32 flushDepth = 0;
 
 		RenderCommandList* hookCommandList;
+
+		std::mutex deferredCleanupLock;
+		std::vector<void*> deferredCleanups;
 
 	public:
 		#include "render_command_list.generated.h"
