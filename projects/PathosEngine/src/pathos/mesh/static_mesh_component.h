@@ -26,6 +26,7 @@ namespace pathos {
 	struct ShadowMeshProxy : public SceneComponentProxy {
 		matrix4 modelMatrix;
 		MeshGeometry* geometry;
+		AABB worldBounds;
 	};
 
 	class StaticMeshComponent : public SceneComponent {

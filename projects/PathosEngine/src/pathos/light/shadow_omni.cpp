@@ -13,6 +13,8 @@
 namespace pathos {
 
 	struct UBO_OmniShadow {
+		static constexpr GLuint BINDING_POINT = 1;
+
 		matrix4 model;
 		matrix4 viewproj;
 		vector4 lightPositionAndZFar;
@@ -22,7 +24,7 @@ namespace pathos {
 	public:
 		OmniShadowVS() : ShaderStage(GL_VERTEX_SHADER, "OmniShadowVS")
 		{
-			addDefine("VERTEX_SHADER 1");
+			addDefine("VERTEX_SHADER", 1);
 			setFilepath("omni_shadow_map.glsl");
 		}
 	};
@@ -31,7 +33,7 @@ namespace pathos {
 	public:
 		OmniShadowFS() : ShaderStage(GL_FRAGMENT_SHADER, "OmniShadowFS")
 		{
-			addDefine("FRAGMENT_SHADER 1");
+			addDefine("FRAGMENT_SHADER", 1);
 			setFilepath("omni_shadow_map.glsl");
 		}
 	};
@@ -100,6 +102,9 @@ namespace pathos {
 			vector3(0.0f, -1.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f)
 		};
 
+		int32 totalCount = 0;
+		int32 culledCount = 0;
+
 		for (uint32 lightIx = 0; lightIx < numTotalLights; ++lightIx) {
 			SCOPED_DRAW_EVENT(OmniShadowMap);
 
@@ -123,10 +128,18 @@ namespace pathos {
 				uboData.viewproj = viewproj;
 				uboData.lightPositionAndZFar = vector4(light->worldPosition, zFar);
 
-				// #todo-shadow: Discard geometries too far from the light source
 				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
+					// #todo-frustum-culling: Simple distance culling for now.
+					float r = glm::distance(light->worldPosition, batch->worldBounds.getCenter());
+					float R = light->attenuationRadius + glm::length(batch->worldBounds.getHalfSize());
+					totalCount++;
+					if (r > R) {
+						culledCount++;
+						continue;
+					}
+
 					uboData.model = batch->modelMatrix;
-					ubo.update(cmdList, 1, &uboData);
+					ubo.update(cmdList, UBO_OmniShadow::BINDING_POINT, &uboData);
 					
 					batch->geometry->activate_position(cmdList);
 					batch->geometry->activateIndexBuffer(cmdList);

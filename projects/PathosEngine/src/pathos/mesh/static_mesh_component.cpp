@@ -42,6 +42,7 @@ namespace pathos {
 				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>(scene);
 				proxy->modelMatrix = getMatrix();
 				proxy->geometry = geoms[i];
+				proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
 				if (M->getMaterialID() == MATERIAL_ID::WIREFRAME) {
 					scene->proxyList_wireframeShadowMesh.push_back(proxy);
