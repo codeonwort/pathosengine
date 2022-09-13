@@ -9,6 +9,7 @@
 #include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/math/hit_test.h"
 
 namespace pathos {
 
@@ -102,8 +103,9 @@ namespace pathos {
 			vector3(0.0f, -1.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f)
 		};
 
-		int32 totalCount = 0;
-		int32 culledCount = 0;
+		// #todo-frustum-culling: Stat for culling.
+		int32 totalDrawcall = 0;
+		int32 culledDrawcall = 0;
 
 		for (uint32 lightIx = 0; lightIx < numTotalLights; ++lightIx) {
 			SCOPED_DRAW_EVENT(OmniShadowMap);
@@ -113,9 +115,12 @@ namespace pathos {
 				continue;
 			}
 
-			constexpr float zNear = 0.0f;
+			constexpr float zNear = 0.1f;
 			const float zFar = pathos::max(1.0f, light->attenuationRadius);
 			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
+
+			PerspectiveLens shadowLens(90.0f, 1.0f, zNear, zFar);
+			Camera shadowCamera(shadowLens);
 
 			for (uint32 faceIx = 0; faceIx < 6; ++faceIx) {
 				cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, shadowMaps, 0, lightIx * 6 + faceIx);
@@ -124,17 +129,19 @@ namespace pathos {
 				matrix4 lightView = glm::lookAt(light->worldPosition, light->worldPosition + faceDirections[faceIx], upDirections[faceIx]);
 				matrix4 viewproj = projection * lightView;
 
+				Frustum3D shadowFrustum;
+				shadowCamera.lookAt(light->worldPosition, light->worldPosition + faceDirections[faceIx], upDirections[faceIx]);
+				shadowCamera.getFrustumPlanes(shadowFrustum);
+
 				UBO_OmniShadow uboData;
 				uboData.viewproj = viewproj;
 				uboData.lightPositionAndZFar = vector4(light->worldPosition, zFar);
 
 				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
-					// #todo-frustum-culling: Simple distance culling for now.
-					float r = glm::distance(light->worldPosition, batch->worldBounds.getCenter());
-					float R = light->attenuationRadius + glm::length(batch->worldBounds.getHalfSize());
-					totalCount++;
-					if (r > R) {
-						culledCount++;
+					totalDrawcall++;
+					bool bInFrustum = badger::hitTest::AABB_frustum(batch->worldBounds, shadowFrustum);
+					if (!bInFrustum) {
+						culledDrawcall++;
 						continue;
 					}
 
