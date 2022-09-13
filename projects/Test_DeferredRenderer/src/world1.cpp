@@ -233,10 +233,10 @@ void World1::setupScene()
 	PointLightActor* pointLight2 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight3 = spawnActor<PointLightActor>();
 
-	pointLight0->setActorLocation(vector3(-50.0f, 700.0f + 60.0f, 170.0f));
-	pointLight1->setActorLocation(vector3(0.0f, 700.0f + 30.0f, 150.0f));
-	pointLight2->setActorLocation(vector3(-20.0f, 700.0f + 50.0f, 50.0f));
-	pointLight3->setActorLocation(vector3(-20.0f, 700.0f + 50.0f, 150.0f));
+	pointLight0->setActorLocation(vector3(-50.0f + 700.0f, 60.0f, 170.0f));
+	pointLight1->setActorLocation(vector3(0.0f + 700.0f, 30.0f, 150.0f));
+	pointLight2->setActorLocation(vector3(-20.0f + 700.0f, 50.0f, 50.0f));
+	pointLight3->setActorLocation(vector3(-20.0f + 700.0f, 50.0f, 150.0f));
 
 	pointLight0->setLightParameters(15.0f * vector3(0.2f, 2.0f, 1.0f), 100.0f, 0.001f, true);
 	pointLight1->setLightParameters(5.0f * vector3(2.0f, 0.2f, 1.0f), 100.0f, 0.001f, true);
