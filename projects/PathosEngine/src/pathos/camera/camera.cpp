@@ -169,7 +169,7 @@ namespace pathos {
 	float Camera::getYaw() const { return glm::degrees(rotationY); }
 	float Camera::getPitch() const { return glm::degrees(rotationX); }
 
-	void Camera::getFrustum(std::vector<vector3>& outFrustum, uint32 numCascades) const {
+	void Camera::getFrustumVertices(std::vector<vector3>& outFrustum, uint32 numCascades) const {
 		CHECK(numCascades >= 1);
 
 		const float zn = lens.getZNear();
@@ -206,6 +206,26 @@ namespace pathos {
 			outFrustum[i * 4 + 2] = P0 + (viewInv * outFrustum[i * 4 + 2]);
 			outFrustum[i * 4 + 3] = P0 + (viewInv * outFrustum[i * 4 + 3]);
 		}
+	}
+
+	void Camera::getFrustumPlanes(Frustum3D& outFrustum) const {
+		// near RT, LT, RB, LB
+		// far RT, LT, RB, LB
+		std::vector<vector3> vs;
+		getFrustumVertices(vs, 1);
+
+		vector3 o = getPosition(); // camera origin
+		vector3 n = getEyeVector(); // camera forward vector
+		float zn = lens.getZNear();
+		float zf = lens.getZFar();
+
+		// 0: top, 1: bottom, 2: left, 3: right, 4: near, 5: far
+		outFrustum.planes[0] = Plane3D::fromThreePoints(vs[0], vs[1], vs[4]);
+		outFrustum.planes[1] = Plane3D::fromThreePoints(vs[2], vs[6], vs[3]);
+		outFrustum.planes[2] = Plane3D::fromThreePoints(vs[1], vs[3], vs[5]);
+		outFrustum.planes[3] = Plane3D::fromThreePoints(vs[0], vs[4], vs[2]);
+		outFrustum.planes[4] = Plane3D::fromPointAndNormal(o + n * zn, n);
+		outFrustum.planes[5] = Plane3D::fromPointAndNormal(o + n * zf, -n);
 	}
 
 }

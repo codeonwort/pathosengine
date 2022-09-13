@@ -3,6 +3,8 @@
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/plane.h"
+
 #include "pathos/wrapper/transform.h"
 
 #include <vector>
@@ -70,7 +72,9 @@ namespace pathos {
 		float getPitch() const;
 
 		// get vertices of camera frustum in world space
-		void getFrustum(std::vector<vector3>& outFrustum, uint32 numCascades) const;
+		void getFrustumVertices(std::vector<vector3>& outFrustum, uint32 numCascades) const;
+
+		void getFrustumPlanes(Frustum3D& outFrustum) const;
 
 		inline PerspectiveLens& getLens() { return lens; }
 

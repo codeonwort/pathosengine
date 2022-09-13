@@ -154,7 +154,7 @@ void main() {
 		};
 
 		std::vector<vector3> frustumPlanes;
-		camera.getFrustum(frustumPlanes, numCascades);
+		camera.getFrustumVertices(frustumPlanes, numCascades);
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
 		}
