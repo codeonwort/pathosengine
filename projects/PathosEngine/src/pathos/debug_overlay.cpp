@@ -6,10 +6,23 @@
 #include "pathos/overlay/brush.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/util/math_lib.h"
+#include "pathos/util/cpu_profiler.h"
+#include "pathos/util/string_conversion.h"
+#include "pathos/thread/engine_thread.h"
+
+#include <algorithm>
 
 namespace pathos {
 
+	constexpr float FRAME_STAT_BASE_Y = 400.0f;
+	constexpr float FRAME_STAT_WIDTH = 220.0f;
+	constexpr float FRAME_STAT_SPACE_Y = 20.0f;
+
 	constexpr int32 MAX_CYCLE_COUNTER_DISPLAY = 10;
+	constexpr float CYCLE_COUNTER_WIDTH = 400.0f;
+	constexpr float CYCLE_COUNTER_BASE_Y = 500.0f;
+	constexpr float CYCLE_COUNTER_LABEL_SPACE = 320.0f;
+	constexpr float CYCLE_COUNTER_SPAN_X = 10.0f;
 	constexpr float CYCLE_COUNTER_SPACE_Y = 20.0f;
 
 	DebugOverlay::DebugOverlay(OverlayRenderer* renderer2D)
@@ -28,16 +41,21 @@ namespace pathos {
 		root->addChild(renderThreadTimeLabel = new Label(L"render thread: 0.0 ms"));
 		root->addChild(gpuTimeLabel = new Label(L"gpu: 0.0 ms"));
 		
-		cycleCounterBackground = new Rectangle(400.0f, MAX_CYCLE_COUNTER_DISPLAY * CYCLE_COUNTER_SPACE_Y);
+		cycleCounterBackground = new Rectangle(CYCLE_COUNTER_WIDTH, MAX_CYCLE_COUNTER_DISPLAY * CYCLE_COUNTER_SPACE_Y);
 		cycleCounterBackground->setBrush(new SolidColorBrush(0.1f, 0.1f, 0.1f));
 		root->addChild(cycleCounterBackground);
 
+		cycleCounterGroupLabel = new Label(L"[main thread]");
+		cycleCounterGroupLabel->setX(CYCLE_COUNTER_SPAN_X);
+		cycleCounterBackground->addChild(cycleCounterGroupLabel);
+
 		for (int32 i = 0; i < MAX_CYCLE_COUNTER_DISPLAY; ++i) {
 			Label* nameLabel = new Label(L"name: ");
-			nameLabel->setY(i * CYCLE_COUNTER_SPACE_Y);
+			nameLabel->setX(CYCLE_COUNTER_SPAN_X);
+			nameLabel->setY((i + 1) * CYCLE_COUNTER_SPACE_Y);
 			Label* valueLabel = new Label(L"0 ms");
-			valueLabel->setX(300.0f);
-			valueLabel->setY(i * CYCLE_COUNTER_SPACE_Y);
+			valueLabel->setX(CYCLE_COUNTER_LABEL_SPACE);
+			valueLabel->setY((i + 1) * CYCLE_COUNTER_SPACE_Y);
 			cycleCounterBackground->addChild(nameLabel);
 			cycleCounterBackground->addChild(valueLabel);
 			cycleCounterNames.push_back(nameLabel);
@@ -78,17 +96,41 @@ namespace pathos {
 			swprintf_s(buffer, L"gpu           : %.2f ms", gpuTime);
 			gpuTimeLabel->setText(buffer);
 			
-			const float baseX = std::max(0.0f, (float)screenWidth - 220.0f);
-			const float baseY = std::min(400.0f, (float)screenHeight);
+			const float baseX = std::max(0.0f, (float)screenWidth - FRAME_STAT_WIDTH);
+			const float baseY = std::min(FRAME_STAT_BASE_Y, (float)screenHeight);
 			gameThreadTimeLabel->setX(baseX);
 			gameThreadTimeLabel->setY(baseY);
 			renderThreadTimeLabel->setX(baseX);
-			renderThreadTimeLabel->setY(baseY + 20);
+			renderThreadTimeLabel->setY(baseY + FRAME_STAT_SPACE_Y);
 			gpuTimeLabel->setX(baseX);
-			gpuTimeLabel->setY(baseY + 40);
+			gpuTimeLabel->setY(baseY + 2.0f * FRAME_STAT_SPACE_Y);
 
-			cycleCounterBackground->setX(std::max(0.0f, (float)screenWidth - 400.0f));
-			cycleCounterBackground->setY(std::min(500.0f, (float)screenHeight));
+			cycleCounterBackground->setX(std::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
+			cycleCounterBackground->setY(std::min(CYCLE_COUNTER_BASE_Y, (float)screenHeight));
+
+			std::vector<ProfileItem> profileSnapshot;
+			CpuProfiler::getInstance().getLastFrameSnapshot(pathos::gMainThreadId, profileSnapshot);
+			std::sort(profileSnapshot.begin(), profileSnapshot.end(),
+				[](const ProfileItem& x, const ProfileItem& y) {
+					return x.elapsedMS > y.elapsedMS;
+				});
+			const int32 numValidCounters = std::min(MAX_CYCLE_COUNTER_DISPLAY, (int32)profileSnapshot.size());
+			for (int32 i = 0; i < numValidCounters; ++i) {
+				const ProfileItem& item = profileSnapshot[i];
+				std::wstring wname;
+				pathos::MBCS_TO_WCHAR(item.name, wname);
+				wchar_t buffer[32];
+				swprintf_s(buffer, L"%.3f ms", item.elapsedMS);
+
+				cycleCounterNames[i]->setVisible(true);
+				cycleCounterNames[i]->setText(wname.c_str());
+				cycleCounterValues[i]->setVisible(true);
+				cycleCounterValues[i]->setText(buffer);
+			}
+			for (int32 i = numValidCounters; i < MAX_CYCLE_COUNTER_DISPLAY; ++i) {
+				cycleCounterNames[i]->setVisible(false);
+				cycleCounterValues[i]->setVisible(false);
+			}
 		}
 
 		renderer->renderOverlay(cmdList, rootProxy);

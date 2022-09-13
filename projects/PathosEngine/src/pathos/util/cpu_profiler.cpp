@@ -123,6 +123,28 @@ namespace pathos {
 		currentProfile.currentTab -= 1;
 	}
 
+	void CpuProfiler::getLastFrameSnapshot(uint32 threadID, std::vector<ProfileItem>& outSnapshot) {
+		outSnapshot.clear();
+		if (profiles.find(threadID) == profiles.end()) {
+			return;
+		}
+		ProfilePerThread& profile = profiles[threadID];
+		const int32 numItems = (int32)profile.items.size();
+		int32 rootIx = -1;
+		for (int32 i = numItems - 1; i >= 0; --i) {
+			if (profile.items[i].tab == 0) {
+				rootIx = i;
+				break;
+			}
+		}
+		if (rootIx != -1) {
+			outSnapshot.reserve(profile.items.size() - rootIx);
+			for (int32 i = rootIx; i < numItems; ++i) {
+				outSnapshot.push_back(profile.items[i]);
+			}
+		}
+	}
+
 	void CpuProfiler::purgeEverything() {
 		LOG(LogDebug, "[TEMP] Purge cpu profiles");
 

@@ -14,6 +14,7 @@ namespace pathos {
 		~ScopedCpuCounter();
 
 		uint32 threadId;
+		// #todo-stat: Assumes string literal
 		const char* name;
 		uint32 itemHandle;
 
@@ -70,7 +71,7 @@ namespace pathos {
 	public:
 		ProfilePerThread()
 			: threadId(0xffffffff)
-			, debugName(nullptr)
+			, debugName("")
 			, currentTab(0)
 		{
 		}
@@ -97,6 +98,8 @@ namespace pathos {
 
 		uint32 beginItem(uint32 threadId, const char* counterName);
 		void finishItem(uint32 frameHandle, uint32 threadId);
+
+		void getLastFrameSnapshot(uint32 threadID, std::vector<ProfileItem>& outSnapshot);
 
 		// #todo-cpu: Temp
 		std::atomic<uint32> purge_milestone;

@@ -54,6 +54,7 @@ namespace pathos {
 		Label* renderThreadTimeLabel = nullptr;
 		Label* gpuTimeLabel = nullptr;
 		Rectangle* cycleCounterBackground = nullptr;
+		Label* cycleCounterGroupLabel = nullptr;
 		std::vector<Label*> cycleCounterNames;
 		std::vector<Label*> cycleCounterValues;
 	};
