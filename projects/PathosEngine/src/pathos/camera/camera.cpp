@@ -214,18 +214,13 @@ namespace pathos {
 		std::vector<vector3> vs;
 		getFrustumVertices(vs, 1);
 
-		vector3 o = getPosition(); // camera origin
-		vector3 n = getEyeVector(); // camera forward vector
-		float zn = lens.getZNear();
-		float zf = lens.getZFar();
-
 		// 0: top, 1: bottom, 2: left, 3: right, 4: near, 5: far
 		outFrustum.planes[0] = Plane3D::fromThreePoints(vs[0], vs[1], vs[4]);
 		outFrustum.planes[1] = Plane3D::fromThreePoints(vs[2], vs[6], vs[3]);
 		outFrustum.planes[2] = Plane3D::fromThreePoints(vs[1], vs[3], vs[5]);
 		outFrustum.planes[3] = Plane3D::fromThreePoints(vs[0], vs[4], vs[2]);
-		outFrustum.planes[4] = Plane3D::fromPointAndNormal(o + n * zn, n);
-		outFrustum.planes[5] = Plane3D::fromPointAndNormal(o + n * zf, -n);
+		outFrustum.planes[4] = Plane3D::fromThreePoints(vs[2], vs[3], vs[0]);
+		outFrustum.planes[5] = Plane3D::fromThreePoints(vs[6], vs[4], vs[7]);
 	}
 
 }

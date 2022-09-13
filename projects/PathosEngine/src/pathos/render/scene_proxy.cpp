@@ -1,4 +1,5 @@
 #include "scene_proxy.h"
+#include "pathos/engine_policy.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/light/directional_light_component.h"
@@ -55,12 +56,17 @@ namespace pathos
 		// #todo-frustum-culling: Stat command for culling status
 		int32 totalCount = 0;
 		int32 culledCount = 0;
+		const bool bIgnoreFarPlane = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse);
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 materialID = 0; materialID < numMaterialIDs; ++materialID) {
 			auto& proxies = proxyList_staticMesh[materialID];
 			for (int32 i = 0; i < proxies.size(); ++i) {
-				proxies[i]->bInFrustum = badger::hitTest::AABB_frustum(proxies[i]->worldBounds, frustum);
+				if (bIgnoreFarPlane) {
+					proxies[i]->bInFrustum = badger::hitTest::AABB_frustum_noFarPlane(proxies[i]->worldBounds, frustum);
+				} else {
+					proxies[i]->bInFrustum = badger::hitTest::AABB_frustum(proxies[i]->worldBounds, frustum);
+				}
 
 				if (!proxies[i]->bInFrustum) {
 					culledCount++;

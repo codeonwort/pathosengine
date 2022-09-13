@@ -26,6 +26,14 @@ namespace badger {
 			}
 			return true;
 		}
+		inline bool AABB_frustum_noFarPlane(const AABB& box, const Frustum3D& frustum) {
+			for (int32 i = 0; i < 5; ++i) {
+				if (!AABB_plane(box, frustum.planes[i])) {
+					return false;
+				}
+			}
+			return true;
+		}
 
 	}
 
