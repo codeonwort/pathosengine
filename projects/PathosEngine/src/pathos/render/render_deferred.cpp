@@ -418,6 +418,8 @@ namespace pathos {
 	}
 
 	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(BasePass);
+
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
