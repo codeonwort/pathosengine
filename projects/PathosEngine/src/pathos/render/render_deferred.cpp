@@ -57,6 +57,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
@@ -195,7 +196,9 @@ namespace pathos {
 			updateSceneUniformBuffer(cmdList, scene, camera);
 		}
 
-		scene->checkFrustumCulling(*camera);
+		if (cvar_frustum_culling.getInt() != 0) {
+			scene->checkFrustumCulling(*camera);
+		}
 
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
@@ -440,6 +443,8 @@ namespace pathos {
 		cmdList.depthMask(GL_FALSE);
 #endif
 
+		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
+
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
@@ -465,9 +470,8 @@ namespace pathos {
 				const StaticMeshProxy& item = *(proxyList[j]);
 				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
 
-				if (!item.bInFrustum) {
-					// #todo-frustum-culling: Math bug
-					//continue;
+				if (bEnableFrustumCulling && !item.bInFrustum) {
+					continue;
 				}
 
 				// #todo-renderer: Batching by same state
