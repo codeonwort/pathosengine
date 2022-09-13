@@ -71,6 +71,7 @@ namespace pathos {
 
 	void CpuProfiler::beginCheckpoint(uint32 frameCounter)
 	{
+		// #todo-stat: Using logical core ID is simply wrong. Use thread ID.
 		const uint32 coreIndex = CPU::getCurrentLogicalCoreIndex();
 
 		ProfileCheckpoint cp;

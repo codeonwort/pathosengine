@@ -39,8 +39,11 @@ namespace pathos {
 
 	DisplayObject2DProxy* DisplayObject2D::createRenderProxy(OverlaySceneProxy* sceneProxy) {
 		// Just contains child proxies to makeup the hierarchy.
-		DisplayObject2DProxy* emptyProxy = sceneProxy->allocate<DisplayObject2DProxy>();
-		return emptyProxy;
+		if (getVisible()) {
+			DisplayObject2DProxy* emptyProxy = sceneProxy->allocate<DisplayObject2DProxy>();
+			return emptyProxy;
+		}
+		return nullptr;
 	}
 
 	bool DisplayObject2D::addChild(DisplayObject2D* child) {
@@ -59,7 +62,7 @@ namespace pathos {
 		children.push_back(child);
 
 		child->parent = this;
-		child->setRoot(this);
+		child->setRoot(getRoot());
 
 		return true;
 	}

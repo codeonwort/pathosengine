@@ -6,7 +6,7 @@ namespace pathos {
 
 	Rectangle::Rectangle(float inWidth, float inHeight) {
 		setSize(inWidth, inHeight);
-		geom = new PlaneGeometry(1.0f, 1.0f);
+		geom = new PlaneGeometry(2.0f, 2.0f);
 	}
 
 	Rectangle::~Rectangle() {
@@ -15,7 +15,7 @@ namespace pathos {
 
 	DisplayObject2DProxy* Rectangle::createRenderProxy(OverlaySceneProxy* sceneProxy) {
 		if (getVisible()) {
-			updateTransform();
+			updateTransform(sceneProxy->viewportWidth, sceneProxy->viewportHeight);
 
 			RectangleProxy* proxy = sceneProxy->allocate<RectangleProxy>();
 			proxy->x = x;
@@ -38,12 +38,15 @@ namespace pathos {
 		height = inHeight;
 	}
 
-	void Rectangle::updateTransform() {
+	void Rectangle::updateTransform(uint32 viewportWidth, uint32 viewportHeight) {
 		transform.identity();
-		transform.appendMove(0.5f, 0.5f, 0.0f);
-		transform.appendScale(width * scaleX, -height * scaleY, 1.0f);
-		transform.appendMove(x, -y, 0.0f);
-		transform.appendScale(1.0f, -1.0f, 1.0f);
+
+		// Bring plane geometry that covers entire NDC to entire viewport
+		transform.prependMove(1.0f, -1.0f, 0.0f);
+		transform.prependScale(0.5f * viewportWidth, -0.5f * viewportHeight, 1.0f);
+
+		transform.prependScale(width * scaleX / viewportWidth, height * scaleY / viewportHeight, 1.0f);
+		transform.prependMove(x, y, 0.0f);
 	}
 
 }

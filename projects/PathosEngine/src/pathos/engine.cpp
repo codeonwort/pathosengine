@@ -316,7 +316,7 @@ namespace pathos {
 		renderThread->getDebugOverlay()->toggleFrameStat();
 	}
 
-	// #todo-gpu-counter: Show this in debug GUI
+	// #todo-stat: Show this in debug GUI
 	void Engine::dumpGPUProfile()
 	{
 		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
@@ -436,7 +436,7 @@ namespace pathos {
 				DisplayObject2D* debugOverlayRoot = renderThread->getDebugOverlay()->internal_getRoot();
 				DisplayObject2D* consoleWindowRoot = gConsole->internal_getRoot();
 
-				OverlaySceneProxy* overlayProxy = new OverlaySceneProxy;
+				OverlaySceneProxy* overlayProxy = new OverlaySceneProxy(conf.windowWidth, conf.windowHeight);
 				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
 				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
 				renderThread->pushOverlayProxy(overlayProxy);

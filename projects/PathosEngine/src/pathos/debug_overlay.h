@@ -3,7 +3,10 @@
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 
-#include "render/render_command_list.h"
+#include "pathos/render/render_command_list.h"
+#include "pathos/smart_pointer.h"
+
+#include <vector>
 
 namespace pathos {
 
@@ -11,6 +14,7 @@ namespace pathos {
 	class DisplayObject2D;
 	class DisplayObject2DProxy;
 	class Label;
+	class Rectangle;
 
 	// Debug 2D rendering after 3D scene is done (like ConsoleWindow)
 	class DebugOverlay : public Noncopyable {
@@ -33,22 +37,25 @@ namespace pathos {
 
 		inline void toggleFrameStat() { showFrameStat = !showFrameStat; }
 
-		inline DisplayObject2D* internal_getRoot() const { return root; }
+		inline DisplayObject2D* internal_getRoot() const { return root.get(); }
 
 	private:
-		bool enabled; // Controls all visibility
-		bool showFrameStat;
-
 		OverlayRenderer* renderer;
 
-		DisplayObject2D* root;
+		bool enabled = true; // Controls all visibility
+		bool showFrameStat = false;
 
-		float gameThreadTime;
-		float renderThreadTime;
-		float gpuTime;
-		Label* gameThreadTimeLabel;
-		Label* renderThreadTimeLabel;
-		Label* gpuTimeLabel;
+		float gameThreadTime = 0.0f;
+		float renderThreadTime = 0.0f;
+		float gpuTime = 0.0f;
+
+		uniquePtr<DisplayObject2D> root;
+		Label* gameThreadTimeLabel = nullptr;
+		Label* renderThreadTimeLabel = nullptr;
+		Label* gpuTimeLabel = nullptr;
+		Rectangle* cycleCounterBackground = nullptr;
+		std::vector<Label*> cycleCounterNames;
+		std::vector<Label*> cycleCounterValues;
 	};
 
 }

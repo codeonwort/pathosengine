@@ -32,7 +32,7 @@ namespace pathos {
 
 	DisplayObject2DProxy* Label::createRenderProxy(OverlaySceneProxy* sceneProxy) {
 		if (getVisible() && text.size() > 0) {
-			updateTransform();
+			updateTransform(sceneProxy->viewportWidth, sceneProxy->viewportHeight);
 
 			LabelProxy* proxy = sceneProxy->allocate<LabelProxy>();
 			proxy->x = x;
@@ -65,10 +65,10 @@ namespace pathos {
 		CHECK(validDesc);
 	}
 
-	void Label::updateTransform() {
+	void Label::updateTransform(uint32 viewportWidth, uint32 viewportHeight) {
 		transform.identity();
-		transform.appendScale(scaleX, scaleY, 1.0f);
-		transform.appendMove(x, y, 0.0f);
+		transform.prependScale(scaleX, scaleY, 1.0f);
+		transform.prependMove(x, y, 0.0f);
 	}
 
 }

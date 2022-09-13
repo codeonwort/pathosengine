@@ -68,9 +68,9 @@ namespace pathos {
 	void Camera::calculateViewMatrix() const {
 		if (viewDirty) {
 			transform.identity();
-			transform.appendMove(-position);
-			transform.appendRotation(rotationY, up0);
 			transform.appendRotation(rotationX, right0);
+			transform.appendRotation(rotationY, up0);
+			transform.appendMove(-position);
 			viewDirty = false;
 		}
 	}

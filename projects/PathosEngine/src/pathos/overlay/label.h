@@ -23,7 +23,7 @@ namespace pathos {
 		virtual MeshGeometry* getGeometry() override { return geometry; }
 
 	protected:
-		virtual void updateTransform() override;
+		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) override;
 
 	private:
 		std::wstring text;

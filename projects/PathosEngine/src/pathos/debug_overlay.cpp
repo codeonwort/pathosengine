@@ -2,22 +2,18 @@
 #include "pathos/engine.h"
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/display_object.h"
+#include "pathos/overlay/rectangle.h"
+#include "pathos/overlay/brush.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/util/math_lib.h"
 
 namespace pathos {
 
+	constexpr int32 MAX_CYCLE_COUNTER_DISPLAY = 10;
+	constexpr float CYCLE_COUNTER_SPACE_Y = 20.0f;
+
 	DebugOverlay::DebugOverlay(OverlayRenderer* renderer2D)
-		: enabled(true)
-		, showFrameStat(false)
-		, renderer(renderer2D)
-		, root(nullptr)
-		, gameThreadTime(0.0f)
-		, renderThreadTime(0.0f)
-		, gpuTime(0.0f)
-		, gameThreadTimeLabel(nullptr)
-		, renderThreadTimeLabel(nullptr)
-		, gpuTimeLabel(nullptr)
+		: renderer(renderer2D)
 	{
 	}
 
@@ -26,10 +22,27 @@ namespace pathos {
 	}
 
 	void DebugOverlay::initialize() {
-		root = DisplayObject2D::createRoot();
+		root = uniquePtr<DisplayObject2D>(DisplayObject2D::createRoot());
+
 		root->addChild(gameThreadTimeLabel = new Label(L"game thread: 0.0 ms"));
 		root->addChild(renderThreadTimeLabel = new Label(L"render thread: 0.0 ms"));
 		root->addChild(gpuTimeLabel = new Label(L"gpu: 0.0 ms"));
+		
+		cycleCounterBackground = new Rectangle(400.0f, MAX_CYCLE_COUNTER_DISPLAY * CYCLE_COUNTER_SPACE_Y);
+		cycleCounterBackground->setBrush(new SolidColorBrush(0.1f, 0.1f, 0.1f));
+		root->addChild(cycleCounterBackground);
+
+		for (int32 i = 0; i < MAX_CYCLE_COUNTER_DISPLAY; ++i) {
+			Label* nameLabel = new Label(L"name: ");
+			nameLabel->setY(i * CYCLE_COUNTER_SPACE_Y);
+			Label* valueLabel = new Label(L"0 ms");
+			valueLabel->setX(300.0f);
+			valueLabel->setY(i * CYCLE_COUNTER_SPACE_Y);
+			cycleCounterBackground->addChild(nameLabel);
+			cycleCounterBackground->addChild(valueLabel);
+			cycleCounterNames.push_back(nameLabel);
+			cycleCounterValues.push_back(valueLabel);
+		}
 	}
 
 	void DebugOverlay::renderDebugOverlay(
@@ -45,6 +58,10 @@ namespace pathos {
 		gameThreadTimeLabel->setVisible(showFrameStat);
 		renderThreadTimeLabel->setVisible(showFrameStat);
 		gpuTimeLabel->setVisible(showFrameStat);
+
+		// #todo-stat:
+		cycleCounterBackground->setVisible(showFrameStat);
+
 		if (showFrameStat) {
 			const float newGameThreadTime = gEngine->getGameThreadCPUTime();
 			const float newRenderThreadTime = gEngine->getRenderThreadCPUTime();
@@ -61,14 +78,17 @@ namespace pathos {
 			swprintf_s(buffer, L"gpu           : %.2f ms", gpuTime);
 			gpuTimeLabel->setText(buffer);
 			
-			const float baseX = pathos::max(0.0f, (float)screenWidth - 220.0f);
-			const float baseY = pathos::min(400.0f, (float)screenHeight);
+			const float baseX = std::max(0.0f, (float)screenWidth - 220.0f);
+			const float baseY = std::min(400.0f, (float)screenHeight);
 			gameThreadTimeLabel->setX(baseX);
 			gameThreadTimeLabel->setY(baseY);
 			renderThreadTimeLabel->setX(baseX);
 			renderThreadTimeLabel->setY(baseY + 20);
 			gpuTimeLabel->setX(baseX);
 			gpuTimeLabel->setY(baseY + 40);
+
+			cycleCounterBackground->setX(std::max(0.0f, (float)screenWidth - 400.0f));
+			cycleCounterBackground->setY(std::min(500.0f, (float)screenHeight));
 		}
 
 		renderer->renderOverlay(cmdList, rootProxy);

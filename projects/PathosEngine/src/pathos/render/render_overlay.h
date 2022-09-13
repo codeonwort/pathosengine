@@ -38,7 +38,7 @@ namespace pathos {
 		DisplayObject2DProxy* root = nullptr;
 
 	private:
-		void calculateTransformNDC(uint16 windowWidth, uint16 windowHeight);
+		void calculateTransformNDC(uint32 windowWidth, uint32 windowHeight);
 
 		Transform toNDC; // screen coordinates to NDC
 

@@ -159,11 +159,13 @@ namespace pathos {
 
 			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop() * 1000.0f;
-			gEngine->updateGPUQuery_renderThread(
-				renderThread->elapsed_renderThread,
-				renderThread->elapsed_gpu,
-				renderThread->lastGpuCounterNames,
-				renderThread->lastGpuCounterTimes);
+			if (bNewSceneRendered) {
+				gEngine->updateGPUQuery_renderThread(
+					renderThread->elapsed_renderThread,
+					renderThread->elapsed_gpu,
+					renderThread->lastGpuCounterNames,
+					renderThread->lastGpuCounterTimes);
+			}
 
 			//
 			// End a frame

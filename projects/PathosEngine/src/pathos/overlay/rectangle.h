@@ -22,7 +22,7 @@ namespace pathos {
 		float height;
 		PlaneGeometry *geom = nullptr;
 
-		virtual void updateTransform() override;
+		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) override;
 
 	};
 

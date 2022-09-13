@@ -15,12 +15,13 @@ namespace pathos {
 		Transform();
 		Transform(const matrix4& matrix);
 
-		const matrix4& getMatrix() const;
+		inline const matrix4& getMatrix() const { return matrix; }
 		inline void copyFrom(const matrix4& m) { matrix = m; }
 		inline vector3 getPosition() const { return vector3(matrix[3]); }
 
 		void identity();
 
+		// A.append(B) = A * B
 		void append(const matrix4& t);
 		void appendMove(const vector3& movement);
 		void appendMove(float dx, float dy, float dz);
@@ -29,6 +30,7 @@ namespace pathos {
 		void appendScale(float sx, float sy, float sz);
 		inline void appendScale(float s) { appendScale(s, s, s); }
 
+		// A.prepend(B) = B * A
 		void prepend(const matrix4& t);
 		void prependMove(const vector3& movement);
 		void prependMove(float dx, float dy, float dz);

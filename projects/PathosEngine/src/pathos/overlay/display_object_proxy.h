@@ -21,6 +21,8 @@ namespace pathos {
 		//             Also, this object is skipped for rendering if false is returned.
 		virtual bool onRender(RenderCommandList* cmdList) { return true; }
 
+		matrix4 getLocalTransform();
+
 		float x = 0.0f;
 		float y = 0.0f;
 		float scaleX = 1.0f;
@@ -50,7 +52,7 @@ namespace pathos {
 	class OverlaySceneProxy final {
 
 	public:
-		OverlaySceneProxy();
+		OverlaySceneProxy(uint32 inViewportWidth, uint32 inViewportHeight);
 
 		template<typename T>
 		T* allocate() {
@@ -61,6 +63,10 @@ namespace pathos {
 		}
 
 		StackAllocator renderProxyAllocator;
+
+		uint32 viewportWidth;
+		uint32 viewportHeight;
+
 		DisplayObject2DProxy* debugOverlayRootProxy = nullptr;
 		DisplayObject2DProxy* consoleWindowRootProxy = nullptr;
 	};

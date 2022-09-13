@@ -53,28 +53,30 @@ namespace pathos {
 		root = nullptr;
 	}
 
-	void OverlayRenderer::render_recurse(RenderCommandList& cmdList, DisplayObject2DProxy* object, const Transform& transformAccum) {
-		Transform accum(transformAccum.getMatrix() * object->transform.getMatrix());
+	void OverlayRenderer::render_recurse(RenderCommandList& cmdList, DisplayObject2DProxy* object, const Transform& accumTransform) {
+		Transform finalTransform = accumTransform;
+		finalTransform.append(object->transform.getMatrix());
 
-		Brush* brush = object->brush;
-		if (brush) {
-			auto renderpass = brush->configure(this, accum);
-			if (object->geometry != nullptr) {
-				if (object->onRender(&cmdList)) {
-					renderpass->renderOverlay(cmdList, object, accum);
-				}
+		if (object->brush != nullptr && object->geometry != nullptr) {
+			OverlayPass* renderpass = object->brush->configure(this, finalTransform);
+			if (object->onRender(&cmdList)) {
+				renderpass->renderOverlay(cmdList, object, finalTransform);
 			}
 		}
 		
+		Transform newAccumTransform = accumTransform;
+		newAccumTransform.append(object->getLocalTransform());
 		for (DisplayObject2DProxy* child : object->children) {
-			render_recurse(cmdList, child, accum);
+			render_recurse(cmdList, child, newAccumTransform);
 		}
 	}
 
-	void OverlayRenderer::calculateTransformNDC(uint16 sceneWidth, uint16 sceneHeight) {
+	void OverlayRenderer::calculateTransformNDC(uint32 sceneWidth, uint32 sceneHeight) {
+		// From viewport convention to NDC
+		// Viewport: (0,0) is top left, +x to right, +y to bottom
 		toNDC.identity();
-		toNDC.appendScale(2.0f / sceneWidth, -2.0f / sceneHeight, 1.0f);
 		toNDC.appendMove(-1.0f, 1.0f, 0.0f);
+		toNDC.appendScale(2.0f / sceneWidth, -2.0f / sceneHeight, 1.0f);
 	}
 
 }
