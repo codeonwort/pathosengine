@@ -84,8 +84,8 @@ namespace pathos {
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
-		void clearGBuffer(RenderCommandList& cmdList);
-		void packGBuffer(RenderCommandList& cmdList);
+		void renderBasePass(RenderCommandList& cmdList);
+
 		void renderDirectLighting(RenderCommandList& cmdList);
 
 		void renderTranslucency(RenderCommandList& cmdList);

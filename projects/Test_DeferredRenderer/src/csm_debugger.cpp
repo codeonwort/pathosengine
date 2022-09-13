@@ -23,7 +23,7 @@ CSMDebugger::CSMDebugger() {
 
 void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDirection) {
 	std::vector<vector3> frustumPlanes;
-	camera.getFrustum(frustumPlanes, NUM_CSM_FRUSTUMS);
+	camera.getFrustumVertices(frustumPlanes, NUM_CSM_FRUSTUMS);
 
 	bool cascadeMasks[4] = { true, true, true, true };
 

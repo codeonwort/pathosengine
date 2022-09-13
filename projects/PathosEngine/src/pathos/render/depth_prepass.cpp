@@ -8,6 +8,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/material/material.h"
+#include "pathos/console.h"
 
 // #todo-material
 #define SUPPORT_ALPHAONLY_DISCARD 0
@@ -83,10 +84,18 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		cmdList.clearNamedFramebufferfv(fbo, GL_DEPTH, 0, zeroDepth);
 
+		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
+		CHECK(cvarFrustum != nullptr);
+		bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
+
 		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
 			const auto& proxyList = scene->proxyList_staticMesh[i];
 			for (StaticMeshProxy* proxy : proxyList) {
 				if (proxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+					continue;
+				}
+
+				if (bEnableFrustumCulling && !proxy->bInFrustum) {
 					continue;
 				}
 

@@ -2,6 +2,7 @@
 
 #include "pathos/actor/scene_component.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/aabb.h"
 
 namespace pathos {
 
@@ -16,6 +17,10 @@ namespace pathos {
 		matrix4 modelMatrix;
 		MeshGeometry* geometry;
 		Material* material;
+		AABB worldBounds;
+
+		// Derived in render thread
+		bool bInFrustum = true;
 	};
 
 	struct ShadowMeshProxy : public SceneComponentProxy {
@@ -31,6 +36,8 @@ namespace pathos {
 
 		inline Mesh* getStaticMesh() const { return mesh; }
 		inline void setStaticMesh(Mesh* inMesh) { mesh = inMesh; }
+
+		AABB getWorldBounds() const;
 
 	private:
 		// #todo-godray: Hack

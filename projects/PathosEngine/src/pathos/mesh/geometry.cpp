@@ -93,6 +93,10 @@ namespace pathos {
 			positionBuffer = createBufferHelper("Buffer_position");
 		}
 		enqueueBufferUpload(positionBuffer, length * sizeof(GLfloat), positionData.data());
+
+		if (bCalculateLocalBounds) {
+			calculateLocalBounds();
+		}
 	}
 
 	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length) {
@@ -260,6 +264,22 @@ namespace pathos {
 
 		updateTangentData(tangents.data(), numPos * 3);
 		updateBitangentData(bitangents.data(), numPos * 3);
+	}
+
+	void MeshGeometry::calculateLocalBounds() {
+		vector3 minV(0.0f), maxV(0.0f);
+		if (positionData.size() > 0) {
+			minV = vector3(FLT_MAX);
+			maxV = vector3(-FLT_MAX);
+			for (const vector3& v : positionData) {
+				minV = glm::min(minV, v);
+				maxV = glm::max(maxV, v);
+			}
+		}
+		localBounds = AABB::fromMinMax(minV, maxV);
+		//LOG(LogInfo, "LocalBounds");
+		//LOG(LogInfo, "\tmin: %f %f %f", minV.x, minV.y, minV.z);
+		//LOG(LogInfo, "\tmax: %f %f %f", maxV.x, maxV.y, maxV.z);
 	}
 
 	void MeshGeometry::dispose() {

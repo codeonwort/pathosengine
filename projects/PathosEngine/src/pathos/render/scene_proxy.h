@@ -35,6 +35,8 @@ namespace pathos {
 		// #todo: Parameter might be further generalized
 		void createViewDependentRenderProxy(const matrix4& viewMatrix);
 
+		void checkFrustumCulling(const Camera& camera);
+
 		//
 		// Utilities to check if various proxies are valid.
 		//

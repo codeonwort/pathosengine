@@ -57,6 +57,7 @@ namespace pathos {
 
 namespace pathos {
 
+	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
@@ -195,6 +196,10 @@ namespace pathos {
 			updateSceneUniformBuffer(cmdList, scene, camera);
 		}
 
+		if (cvar_frustum_culling.getInt() != 0) {
+			scene->checkFrustumCulling(*camera);
+		}
+
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		}
@@ -251,10 +256,8 @@ namespace pathos {
 
 		// #todo-refactoring: Rename to renderBasePass
 		{
-			SCOPED_GPU_COUNTER(PackGBuffer);
-
-			clearGBuffer(cmdList);
-			packGBuffer(cmdList);
+			SCOPED_GPU_COUNTER(BasePass);
+			renderBasePass(cmdList);
 		}
 
 		{
@@ -414,24 +417,20 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(ClearGBuffer);
+	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(BasePass);
 
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
 		static const GLfloat zero_depth[] = { 0.0f };
-		
+
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
 		// Should not clear here due to depth prepass
 		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
-	}
-
-	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(PackGBuffer);
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
@@ -445,6 +444,8 @@ namespace pathos {
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthMask(GL_FALSE);
 #endif
+
+		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
@@ -463,7 +464,6 @@ namespace pathos {
 
 			{
 				SCOPED_DRAW_EVENT(BindMaterialProgram);
-
 				pass->bindProgram(cmdList);
 			}
 
@@ -471,6 +471,10 @@ namespace pathos {
 			for (auto j = 0u; j < proxyList.size(); ++j) {
 				const StaticMeshProxy& item = *(proxyList[j]);
 				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
+
+				if (bEnableFrustumCulling && !item.bInFrustum) {
+					continue;
+				}
 
 				// #todo-renderer: Batching by same state
 				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);

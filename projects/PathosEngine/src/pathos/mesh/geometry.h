@@ -5,6 +5,7 @@
 #include "gl_core.h"
 
 #include "badger/types/vector_types.h"
+#include "badger/math/aabb.h"
 
 namespace pathos {
 
@@ -37,6 +38,9 @@ namespace pathos {
 		void calculateNormals();
 		void calculateTangentBasis();
 
+		void calculateLocalBounds();
+		inline const AABB& getLocalBounds() const { return localBounds; }
+
 		void activate_position(RenderCommandList& cmdList);
 		void activate_position_uv(RenderCommandList& cmdList);
 		void activate_position_normal(RenderCommandList& cmdList);
@@ -59,6 +63,9 @@ namespace pathos {
 		void calculateNormals_array();
 		void calculateNormals_indexed();
 
+	public:
+		bool bCalculateLocalBounds = true;
+
 	private:
 		std::vector<vector3> positionData;
 		std::vector<vector2> uvData;
@@ -68,6 +75,8 @@ namespace pathos {
 
 		// #todo-vao: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
 		std::vector<GLuint>  indexData;
+
+		AABB localBounds;
 
 		// VBOs
 		GLuint positionBuffer  = 0;
