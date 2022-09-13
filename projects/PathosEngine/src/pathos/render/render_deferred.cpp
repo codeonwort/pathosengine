@@ -195,6 +195,8 @@ namespace pathos {
 			updateSceneUniformBuffer(cmdList, scene, camera);
 		}
 
+		scene->checkFrustumCulling(*camera);
+
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		}
@@ -455,7 +457,6 @@ namespace pathos {
 
 			{
 				SCOPED_DRAW_EVENT(BindMaterialProgram);
-
 				pass->bindProgram(cmdList);
 			}
 
@@ -463,6 +464,11 @@ namespace pathos {
 			for (auto j = 0u; j < proxyList.size(); ++j) {
 				const StaticMeshProxy& item = *(proxyList[j]);
 				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
+
+				if (!item.bInFrustum) {
+					// #todo-frustum-culling: Math bug
+					//continue;
+				}
 
 				// #todo-renderer: Batching by same state
 				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);

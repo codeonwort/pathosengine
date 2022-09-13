@@ -17,7 +17,7 @@ struct AABB
 	inline vector3 getHalfSize() const {
 		return 0.5f * (maxBounds - minBounds);
 	}
-	inline vector3 getExtent() const {
+	inline vector3 getSize() const {
 		return (maxBounds - minBounds);
 	}
 

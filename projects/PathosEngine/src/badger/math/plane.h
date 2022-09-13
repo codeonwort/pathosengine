@@ -19,8 +19,9 @@ struct Plane3D {
 	// = 0: On plane
 	// > 0: Positive side (where surface normal directs)
 	inline float getSignedDistance(const vector3& p) const {
-		vector3 origin = normal * distance;
-		return glm::dot(p - origin, normal);
+		//vector3 origin = normal * distance;
+		//return glm::dot(p - origin, normal);
+		return glm::dot(p, normal) - distance;
 	}
 
 	vector3 normal; // Surface normal

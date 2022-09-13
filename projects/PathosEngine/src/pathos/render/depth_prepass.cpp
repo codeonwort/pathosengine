@@ -90,6 +90,11 @@ namespace pathos {
 					continue;
 				}
 
+				if (!proxy->bInFrustum) {
+					// #todo-frustum-culling: Math bug
+					//continue;
+				}
+
 				// Render state modifiers
 				bool doubleSided = proxy->doubleSided;
 				bool renderInternal = proxy->renderInternal;

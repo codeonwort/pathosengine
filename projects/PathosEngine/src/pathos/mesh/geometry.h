@@ -39,6 +39,7 @@ namespace pathos {
 		void calculateTangentBasis();
 
 		void calculateLocalBounds();
+		inline const AABB& getLocalBounds() const { return localBounds; }
 
 		void activate_position(RenderCommandList& cmdList);
 		void activate_position_uv(RenderCommandList& cmdList);
