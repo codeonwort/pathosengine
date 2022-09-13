@@ -52,11 +52,20 @@ namespace pathos
 		Frustum3D frustum;
 		camera.getFrustumPlanes(frustum);
 
+		// #todo-frustum-culling: Stat command for culling status
+		int32 totalCount = 0;
+		int32 culledCount = 0;
+
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 		for (uint8 materialID = 0; materialID < numMaterialIDs; ++materialID) {
 			auto& proxies = proxyList_staticMesh[materialID];
 			for (int32 i = 0; i < proxies.size(); ++i) {
 				proxies[i]->bInFrustum = badger::hitTest::AABB_frustum(proxies[i]->worldBounds, frustum);
+
+				if (!proxies[i]->bInFrustum) {
+					culledCount++;
+				}
+				totalCount++;
 			}
 		}
 	}
