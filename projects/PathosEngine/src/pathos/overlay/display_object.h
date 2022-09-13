@@ -8,18 +8,23 @@
 namespace pathos {
 
 	class Brush;
+	class OverlaySceneProxy;
+	class DisplayObject2DProxy;
 
 	class DisplayObject2D : public NamedObject {
 
 	public:
 		static DisplayObject2D* createRoot();
 
+		static DisplayObject2DProxy* createRenderProxyHierarchy(
+			DisplayObject2D* root,
+			OverlaySceneProxy* overlaySceneProxy);
+
+	public:
 		DisplayObject2D();
 		virtual ~DisplayObject2D();
 
-		// #todo-text: Temp callback. Configure anything for this object before rendering.
-		//             Also, this object is skipped for rendering if false is returned.
-		virtual bool onRender(RenderCommandList& cmdList) { return true; }
+		virtual DisplayObject2DProxy* createRenderProxy(OverlaySceneProxy* sceneProxy);
 
 		bool addChild(DisplayObject2D* child);
 		bool removeChild(DisplayObject2D* child);
@@ -47,8 +52,8 @@ namespace pathos {
 		inline bool getVisible() { return visible; }
 		inline void setVisible(bool value) { visible = value; }
 
-		inline class Brush* getBrush() { return brush; }
-		inline void setBrush(class Brush* newBrush) { brush = newBrush; }
+		inline Brush* getBrush() { return brush; }
+		inline void setBrush(Brush* newBrush) { brush = newBrush; }
 
 	protected:
 		float x = 0.0f, y = 0.0f;

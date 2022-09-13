@@ -10,6 +10,7 @@ namespace pathos {
 	class OverlayPass_Standard;
 	class OverlayPass_Text;
 	class DisplayObject2D;
+	class DisplayObject2DProxy;
 
 	// Renders the overlay (2D display over 3D scene)
 	class OverlayRenderer : public Noncopyable {
@@ -18,8 +19,8 @@ namespace pathos {
 		OverlayRenderer();
 		virtual ~OverlayRenderer();
 
-		void renderOverlay(RenderCommandList& cmdList, class DisplayObject2D* inRoot);
-		void render_recurse(RenderCommandList& cmdList, class DisplayObject2D* object, const Transform& transformAccum);
+		void renderOverlay(RenderCommandList& cmdList, DisplayObject2DProxy* inRootProxy);
+		void render_recurse(RenderCommandList& cmdList, DisplayObject2DProxy* objectProxy, const Transform& transformAccum);
 
 		// Brushes retrieve desired shader programs in the renderer, configure them, and draw the geometry.
 		inline OverlayPass_Standard* getStandardProgram() const { return renderpass_standard; }
@@ -34,7 +35,7 @@ namespace pathos {
 		OverlayPass_Text* renderpass_text = nullptr;
 
 		// Temporary variables (nullified after rendering is done each frame)
-		DisplayObject2D* root = nullptr;
+		DisplayObject2DProxy* root = nullptr;
 
 	private:
 		void calculateTransformNDC(uint16 windowWidth, uint16 windowHeight);

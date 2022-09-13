@@ -32,7 +32,12 @@ namespace pathos {
 		root->addChild(gpuTimeLabel = new Label(L"gpu: 0.0 ms"));
 	}
 
-	void DebugOverlay::renderDebugOverlay(RenderCommandList& cmdList, int32 screenWidth, int32 screenHeight) {
+	void DebugOverlay::renderDebugOverlay(
+		RenderCommandList& cmdList,
+		DisplayObject2DProxy* rootProxy,
+		int32 screenWidth,
+		int32 screenHeight)
+	{
 		if (!enabled) {
 			return;
 		}
@@ -66,7 +71,7 @@ namespace pathos {
 			gpuTimeLabel->setY(baseY + 40);
 		}
 
-		renderer->renderOverlay(cmdList, root);
+		renderer->renderOverlay(cmdList, rootProxy);
 	}
 
 }

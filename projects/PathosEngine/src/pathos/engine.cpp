@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "engine_version.h"
 #include "console.h"
+#include "debug_overlay.h"
 #include "pathos/actor/world.h"
 #include "pathos/scene/scene.h"
 #include "pathos/render/render_device.h"
@@ -12,7 +13,8 @@
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/gl_context_manager.h"
 #include "pathos/util/renderdoc_integration.h"
-#include "pathos/debug_overlay.h"
+#include "pathos/overlay/display_object_proxy.h"
+#include "pathos/overlay/display_object.h"
 
 #include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
@@ -402,7 +404,7 @@ namespace pathos {
 			}
 
 			//
-			// Game tick
+			// World tick
 			//
 			if (currentWorld != nullptr) {
 				SCOPED_CPU_COUNTER(CreateRenderProxy);
@@ -423,6 +425,21 @@ namespace pathos {
 
 					renderThread->pushSceneProxy(sceneProxy);
 				}
+			}
+
+			//
+			// UI tick
+			//
+			if (renderThread->isOverlayProxyQueueEmpty()) {
+				SCOPED_CPU_COUNTER(CreateOverlayProxy);
+
+				DisplayObject2D* debugOverlayRoot = renderThread->getDebugOverlay()->internal_getRoot();
+				DisplayObject2D* consoleWindowRoot = gConsole->internal_getRoot();
+
+				OverlaySceneProxy* overlayProxy = new OverlaySceneProxy;
+				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
+				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
+				renderThread->pushOverlayProxy(overlayProxy);
 			}
 		}
 

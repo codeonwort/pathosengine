@@ -17,6 +17,7 @@
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/gl_context_manager.h"
+#include "pathos/overlay/display_object_proxy.h"
 
 namespace pathos {
 
@@ -112,15 +113,20 @@ namespace pathos {
 			}
 
 			// Render debug overlay and command console
-			if (bMainScene) {
-				{
+			OverlaySceneProxy* overlayProxy = renderThread->popOverlayProxy();
+			if (bMainScene && overlayProxy != nullptr) {
+				if (overlayProxy->debugOverlayRootProxy != nullptr) {
 					SCOPED_CPU_COUNTER(ExecuteDebugOverlay);
-					renderThread->debugOverlay->renderDebugOverlay(immediateContext, screenWidth, screenHeight);
+					renderThread->debugOverlay->renderDebugOverlay(
+						immediateContext,
+						overlayProxy->debugOverlayRootProxy,
+						screenWidth,
+						screenHeight);
 					immediateContext.flushAllCommands();
 				}
-				if (gConsole) {
+				if (gConsole && overlayProxy->consoleWindowRootProxy != nullptr) {
 					SCOPED_CPU_COUNTER(ExecuteDebugConsole);
-					gConsole->renderConsoleWindow(immediateContext);
+					gConsole->renderConsoleWindow(immediateContext, overlayProxy->consoleWindowRootProxy);
 					immediateContext.flushAllCommands();
 				}
 			}
@@ -133,12 +139,19 @@ namespace pathos {
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
 			// Get GPU profile
-			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(&immediateContext, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
+			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(
+				&immediateContext,
+				renderThread->lastGpuCounterNames,
+				renderThread->lastGpuCounterTimes);
 
 			// Clear render resources for current frame.
 			if (sceneProxy != nullptr) {
 				delete sceneProxy;
 				sceneProxy = nullptr;
+			}
+			if (overlayProxy != nullptr) {
+				delete overlayProxy;
+				overlayProxy = nullptr;
 			}
 
 			// Let subsystems handle the end of rendering.
@@ -146,7 +159,11 @@ namespace pathos {
 
 			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop() * 1000.0f;
-			gEngine->updateGPUQuery_renderThread(renderThread->elapsed_renderThread, renderThread->elapsed_gpu, renderThread->lastGpuCounterNames, renderThread->lastGpuCounterTimes);
+			gEngine->updateGPUQuery_renderThread(
+				renderThread->elapsed_renderThread,
+				renderThread->elapsed_gpu,
+				renderThread->lastGpuCounterNames,
+				renderThread->lastGpuCounterTimes);
 
 			//
 			// End a frame
@@ -251,6 +268,26 @@ namespace pathos {
 	void RenderThread::pushSceneProxy(SceneProxy* inSceneProxy) {
 		std::lock_guard<std::mutex> guard(sceneProxyQueueMutex);
 		sceneProxyQueue.push_back(inSceneProxy);
+	}
+
+	bool RenderThread::isOverlayProxyQueueEmpty() {
+		std::lock_guard<std::mutex> guard(overlayProxyQueueMutex);
+		return overlayProxyQueue.size() == 0;
+	}
+
+	OverlaySceneProxy* RenderThread::popOverlayProxy() {
+		std::lock_guard<std::mutex> guard(overlayProxyQueueMutex);
+		if (overlayProxyQueue.empty()) {
+			return nullptr;
+		}
+		OverlaySceneProxy* overlayProxy = overlayProxyQueue.front();
+		overlayProxyQueue.pop_front();
+		return overlayProxy;
+	}
+
+	void RenderThread::pushOverlayProxy(OverlaySceneProxy* inOverlayProxy) {
+		std::lock_guard<std::mutex> guard(overlayProxyQueueMutex);
+		overlayProxyQueue.push_back(inOverlayProxy);
 	}
 
 	bool RenderThread::initializeOpenGL() {

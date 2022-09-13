@@ -1,6 +1,7 @@
 #include "label.h"
+#include "brush.h"
+#include "display_object_proxy.h"
 #include "pathos/text/font_mgr.h"
-#include "pathos/overlay/brush.h"
 
 // Fallback font that must exist.
 #define DEFAULT_FONT_TAG    "default"
@@ -28,6 +29,25 @@ namespace pathos {
 		delete geometry;
 	}
 
+	DisplayObject2DProxy* Label::createRenderProxy(OverlaySceneProxy* sceneProxy) {
+		if (getVisible() && text.size() > 0) {
+			updateTransform();
+
+			LabelProxy* proxy = sceneProxy->allocate<LabelProxy>();
+			proxy->x = x;
+			proxy->y = y;
+			proxy->scaleX = scaleX;
+			proxy->scaleY = scaleY;
+			proxy->geometry = geometry;
+			proxy->brush = getBrush();
+			proxy->transform = transform;
+			proxy->text = text;
+			proxy->fontDesc = fontDesc;
+			return proxy;
+		}
+		return nullptr;
+	}
+
 	void Label::setText(const wchar_t* newText) {
 		text = newText;
 	}
@@ -42,18 +62,6 @@ namespace pathos {
 			validDesc = FontManager::get().getFontDesc(DEFAULT_FONT_TAG, fontDesc);
 		}
 		CHECK(validDesc);
-	}
-
-	bool Label::onRender(RenderCommandList& cmdList) {
-		if (text.size() > 0) {
-			geometry->configure(cmdList, *fontDesc.cacheTexture, text);
-			return true;
-		}
-		return false;
-	}
-
-	GLuint Label::getFontTexture() {
-		return fontDesc.cacheTexture->getTexture();
 	}
 
 	void Label::updateTransform() {

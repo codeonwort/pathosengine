@@ -73,12 +73,13 @@ namespace pathos {
 		return initialized;
 	}
 
-	void ConsoleWindow::renderConsoleWindow(RenderCommandList& cmdList) {
+	void ConsoleWindow::renderConsoleWindow(RenderCommandList& cmdList, DisplayObject2DProxy* rootProxy) {
+		CHECK(initialized);
 		if (visible) {
 			windowWidth = gEngine->getConfig().windowWidth;
 			background->setSize(windowWidth, windowHeight);
 
-			renderer->renderOverlay(cmdList, root);
+			renderer->renderOverlay(cmdList, rootProxy);
 		}
 	}
 

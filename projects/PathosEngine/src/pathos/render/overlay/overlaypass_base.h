@@ -8,12 +8,17 @@
 
 namespace pathos {
 
+	class DisplayObject2DProxy;
+
 	class OverlayPass : public Noncopyable {
 
 	public:
 		virtual ~OverlayPass() = default;
 
-		virtual void renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) = 0;
+		virtual void renderOverlay(
+			RenderCommandList& cmdList,
+			DisplayObject2DProxy* object,
+			const Transform& transformAccum) = 0;
 
 	};
 

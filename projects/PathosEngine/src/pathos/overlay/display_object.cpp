@@ -1,4 +1,5 @@
 #include "display_object.h"
+#include "display_object_proxy.h"
 #include <assert.h>
 
 namespace pathos {
@@ -9,11 +10,38 @@ namespace pathos {
 		return root;
 	}
 
+	DisplayObject2DProxy* DisplayObject2D::createRenderProxyHierarchy(
+		DisplayObject2D* root,
+		OverlaySceneProxy* overlaySceneProxy)
+	{
+		DisplayObject2DProxy* rootProxy = nullptr;
+
+		if (root != nullptr) {
+			rootProxy = root->createRenderProxy(overlaySceneProxy);
+			if (rootProxy != nullptr) {
+				for (DisplayObject2D* child : root->getChildren()) {
+					DisplayObject2DProxy* childProxy = createRenderProxyHierarchy(child, overlaySceneProxy);
+					if (childProxy != nullptr) {
+						rootProxy->children.push_back(childProxy);
+					}
+				}
+			}
+		}
+
+		return rootProxy;
+	}
+
 	DisplayObject2D::DisplayObject2D() {
 		transform.identity();
 	}
 
 	DisplayObject2D::~DisplayObject2D() {}
+
+	DisplayObject2DProxy* DisplayObject2D::createRenderProxy(OverlaySceneProxy* sceneProxy) {
+		// Just contains child proxies to makeup the hierarchy.
+		DisplayObject2DProxy* emptyProxy = sceneProxy->allocate<DisplayObject2DProxy>();
+		return emptyProxy;
+	}
 
 	bool DisplayObject2D::addChild(DisplayObject2D* child) {
 		CHECK(child != nullptr && child->isRoot() == false);

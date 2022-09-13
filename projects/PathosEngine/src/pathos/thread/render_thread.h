@@ -18,6 +18,7 @@ namespace pathos {
 	class Renderer;
 	class OverlayRenderer;
 	class DebugOverlay;
+	class OverlaySceneProxy;
 
 	class RenderThread final : public Noncopyable {
 		static void renderThreadMain(RenderThread* renderThread);
@@ -47,6 +48,13 @@ namespace pathos {
 		bool mainSceneInSceneProxyQueue();
 		SceneProxy* popSceneProxy();
 		void pushSceneProxy(SceneProxy* inSceneProxy);
+
+		//
+		// overlayProxyQueue helpers.
+		//
+		bool isOverlayProxyQueueEmpty();
+		OverlaySceneProxy* popOverlayProxy();
+		void pushOverlayProxy(OverlaySceneProxy* inOverlayProxy);
 
 	// #todo-renderthread: Called by the main thread due to initialization order.
 	private:
@@ -85,6 +93,9 @@ namespace pathos {
 
 		std::list<SceneProxy*>     sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
 		std::mutex                 sceneProxyQueueMutex;
+
+		std::list<OverlaySceneProxy*>     overlayProxyQueue; // CAUTION: No direct access!!! Use helper methods.
+		std::mutex                        overlayProxyQueueMutex;
 
 	// GPU
 	private:

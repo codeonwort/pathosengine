@@ -7,13 +7,18 @@
 
 namespace pathos {
 
+	class DisplayObject2DProxy;
+
 	class OverlayPass_Text : public OverlayPass {
 
 	public:
 		OverlayPass_Text();
 		~OverlayPass_Text() = default;
 
-		virtual void renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) override;
+		virtual void renderOverlay(
+			RenderCommandList& cmdList,
+			DisplayObject2DProxy* object,
+			const Transform& transformAccum) override;
 
 		inline void setColor(const vector4& inColor) { color = inColor; }
 

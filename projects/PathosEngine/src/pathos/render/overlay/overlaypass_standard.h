@@ -5,6 +5,8 @@
 
 namespace pathos {
 
+	class DisplayObject2DProxy;
+
 	// standard render pass that uses color and texture
 	class OverlayPass_Standard : public OverlayPass {
 
@@ -12,7 +14,10 @@ namespace pathos {
 		OverlayPass_Standard();
 		~OverlayPass_Standard() = default;
 
-		virtual void renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) override;
+		virtual void renderOverlay(
+			RenderCommandList& cmdList,
+			DisplayObject2DProxy* object,
+			const Transform& transformAccum) override;
 
 		inline void setColor(const vector4& inColor) { rgba = inColor; }
 

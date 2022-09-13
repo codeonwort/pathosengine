@@ -3,6 +3,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/overlay/overlaypass.h"
 #include "pathos/overlay/display_object.h"
+#include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/brush.h"
 
 #include "badger/assertion/assertion.h"
@@ -27,15 +28,15 @@ namespace pathos {
 #undef release
 	}
 
-	void OverlayRenderer::renderOverlay(RenderCommandList& cmdList, class DisplayObject2D* inRoot) {
+	void OverlayRenderer::renderOverlay(RenderCommandList& cmdList, DisplayObject2DProxy* inRootProxy) {
 		SCOPED_DRAW_EVENT(Overlay);
 
 		CHECK(cmdList.sceneRenderTargets);
 		const uint32 sceneWidth = cmdList.sceneRenderTargets->sceneWidth;
 		const uint32 sceneHeight = cmdList.sceneRenderTargets->sceneHeight;
 
-		root = inRoot;
-		CHECK(root && root->isRoot());
+		root = inRootProxy;
+		//CHECK(root && root->isRoot());
 
 		cmdList.viewport(0, 0, sceneWidth, sceneHeight);
 		cmdList.disable(GL_CULL_FACE);
@@ -52,24 +53,20 @@ namespace pathos {
 		root = nullptr;
 	}
 
-	void OverlayRenderer::render_recurse(RenderCommandList& cmdList, class DisplayObject2D* object, const Transform& transformAccum) {
-		if (object->getVisible() == false) {
-			return;
-		}
-		
-		Transform accum(transformAccum.getMatrix() * object->getTransform().getMatrix());
+	void OverlayRenderer::render_recurse(RenderCommandList& cmdList, DisplayObject2DProxy* object, const Transform& transformAccum) {
+		Transform accum(transformAccum.getMatrix() * object->transform.getMatrix());
 
-		auto brush = object->getBrush();
+		Brush* brush = object->brush;
 		if (brush) {
 			auto renderpass = brush->configure(this, accum);
-			if (object->getGeometry() != nullptr) {
-				if (object->onRender(cmdList)) {
+			if (object->geometry != nullptr) {
+				if (object->onRender(&cmdList)) {
 					renderpass->renderOverlay(cmdList, object, accum);
 				}
 			}
 		}
 		
-		for (DisplayObject2D* child : object->getChildren()) {
+		for (DisplayObject2DProxy* child : object->children) {
 			render_recurse(cmdList, child, accum);
 		}
 	}

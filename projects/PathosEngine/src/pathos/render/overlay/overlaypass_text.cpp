@@ -1,13 +1,15 @@
 #include "overlaypass_text.h"
 #include "pathos/overlay/label.h"
+#include "pathos/overlay/display_object_proxy.h"
 #include "pathos/shader/shader_program.h"
 
 namespace pathos {
 
 	static constexpr GLuint FONT_TEXTURE_UNIT = 0;
-	static constexpr GLuint UBO_BINDING_INDEX = 1;
 
 	struct UBO_OverlayText {
+		static constexpr GLuint BINDING_POINT = 1;
+
 		matrix4 transform;
 		vector4 color;
 	};
@@ -38,22 +40,26 @@ namespace pathos {
 		ubo.init<UBO_OverlayText>();
 	}
 
-	void OverlayPass_Text::renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) {
-		Label* label = static_cast<Label*>(object);
+	void OverlayPass_Text::renderOverlay(
+		RenderCommandList& cmdList,
+		DisplayObject2DProxy* object,
+		const Transform& transformAccum)
+	{
+		LabelProxy* label = static_cast<LabelProxy*>(object);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OverlayText);
 		cmdList.useProgram(program.getGLName());
 
-		MeshGeometry* geom = object->getGeometry();
+		MeshGeometry* geom = object->geometry;
 
 		// uniform
 		UBO_OverlayText uboData;
 		uboData.transform = transformAccum.getMatrix();
 		uboData.color = color;
-		ubo.update(cmdList, UBO_BINDING_INDEX, &uboData);
+		ubo.update(cmdList, UBO_OverlayText::BINDING_POINT, &uboData);
 
 		// shader resources
-		cmdList.bindTextureUnit(FONT_TEXTURE_UNIT, label->getFontTexture());
+		cmdList.bindTextureUnit(FONT_TEXTURE_UNIT, label->fontDesc.cacheTexture->getTexture());
 
 		cmdList.enable(GL_BLEND);
 		cmdList.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

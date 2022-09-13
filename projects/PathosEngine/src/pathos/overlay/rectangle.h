@@ -11,6 +11,8 @@ namespace pathos {
 		Rectangle(float inWidth, float inHeight);
 		virtual ~Rectangle();
 
+		DisplayObject2DProxy* createRenderProxy(OverlaySceneProxy* sceneProxy) override;
+
 		void setSize(float inWidth, float inHeight);
 
 		virtual MeshGeometry* getGeometry() override { return geom; }

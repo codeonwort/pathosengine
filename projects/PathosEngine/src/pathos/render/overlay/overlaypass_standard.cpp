@@ -1,4 +1,5 @@
 #include "overlaypass_standard.h"
+#include "pathos/overlay/display_object_proxy.h"
 #include "pathos/shader/shader_program.h"
 
 #include "badger/types/matrix_types.h"
@@ -38,8 +39,12 @@ namespace pathos {
 		ubo.init<UBO_OverlayStandard>();
 	}
 
-	void OverlayPass_Standard::renderOverlay(RenderCommandList& cmdList, DisplayObject2D* object, const Transform& transformAccum) {
-		MeshGeometry* geom = object->getGeometry();
+	void OverlayPass_Standard::renderOverlay(
+		RenderCommandList& cmdList,
+		DisplayObject2DProxy* object,
+		const Transform& transformAccum)
+	{
+		MeshGeometry* geom = object->geometry;
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OverlayStandard);
 		cmdList.useProgram(program.getGLName());

@@ -9,6 +9,7 @@ namespace pathos {
 
 	class OverlayRenderer;
 	class DisplayObject2D;
+	class DisplayObject2DProxy;
 	class Label;
 
 	// Debug 2D rendering after 3D scene is done (like ConsoleWindow)
@@ -19,13 +20,20 @@ namespace pathos {
 		~DebugOverlay();
 
 		void initialize();
-		void renderDebugOverlay(RenderCommandList& cmdList, int32 screenWidth, int32 screenHeight);
+
+		void renderDebugOverlay(
+			RenderCommandList& cmdList,
+			DisplayObject2DProxy* rootProxy,
+			int32 screenWidth,
+			int32 screenHeight);
 		
 		inline void toggleEnabled() { enabled = !enabled; }
 		inline void setEnabled(bool bValue) { enabled = bValue; }
 		inline bool getEnabled() const { return enabled; }
 
 		inline void toggleFrameStat() { showFrameStat = !showFrameStat; }
+
+		inline DisplayObject2D* internal_getRoot() const { return root; }
 
 	private:
 		bool enabled; // Controls all visibility

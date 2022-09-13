@@ -1,4 +1,5 @@
 #include "rectangle.h"
+#include "display_object_proxy.h"
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
@@ -10,6 +11,25 @@ namespace pathos {
 
 	Rectangle::~Rectangle() {
 		delete geom;
+	}
+
+	DisplayObject2DProxy* Rectangle::createRenderProxy(OverlaySceneProxy* sceneProxy) {
+		if (getVisible()) {
+			updateTransform();
+
+			RectangleProxy* proxy = sceneProxy->allocate<RectangleProxy>();
+			proxy->x = x;
+			proxy->y = y;
+			proxy->scaleX = scaleX;
+			proxy->scaleY = scaleY;
+			proxy->geometry = geom;
+			proxy->brush = getBrush();
+			proxy->transform = transform;
+			proxy->width = width;
+			proxy->height = height;
+			return proxy;
+		}
+		return nullptr;
 	}
 
 	void Rectangle::setSize(float inWidth, float inHeight) {

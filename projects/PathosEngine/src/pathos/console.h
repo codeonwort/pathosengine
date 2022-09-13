@@ -13,6 +13,7 @@ namespace pathos {
 
 	class OverlayRenderer;
 	class DisplayObject2D;
+	class DisplayObject2DProxy;
 	class Rectangle;
 	class Label;
 
@@ -25,7 +26,7 @@ namespace pathos {
 
 		bool initialize(uint16 width, uint16 height);
 
-		void renderConsoleWindow(RenderCommandList& cmdList);
+		void renderConsoleWindow(RenderCommandList& cmdList, DisplayObject2DProxy* rootProxy);
 		void toggle();
 
 		bool isVisible() const;
@@ -37,6 +38,8 @@ namespace pathos {
 
 		Label* addLine(const char* text, bool addToHistory = false);
 		Label* addLine(const wchar_t* text, bool addToHistory = false);
+
+		inline DisplayObject2D* internal_getRoot() const { return root; }
 
 	private:
 		void updateInputLine();
