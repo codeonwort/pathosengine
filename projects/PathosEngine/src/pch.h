@@ -9,4 +9,6 @@
 #include "pathos/render/render_command_list.h"
 #include "pathos/render/render_commands.h"
 
+#include "pathos/smart_pointer.h"
+
 #include <glm/glm.hpp>
