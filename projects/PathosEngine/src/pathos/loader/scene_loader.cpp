@@ -15,8 +15,6 @@
 #include <sstream>
 #include <array>
 
-#include <FreeImage.h>
-
 namespace pathos {
 
 	bool SceneLoader::loadSceneDescription(
@@ -90,8 +88,7 @@ namespace pathos {
 			for (size_t i = 0; i < 6; ++i) {
 				texturePathes[i] = sceneDesc.skybox.textures[i].c_str();
 			}
-			// #todo: Don't use FIBITMAP* directly
-			std::array<FIBITMAP*, 6> textureDataArray;
+			std::array<BitmapBlob*, 6> textureDataArray;
 			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
 			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps, sceneDesc.skybox.name.c_str());
 

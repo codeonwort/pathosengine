@@ -5,10 +5,9 @@
 
 #include "pathos/render/render_device.h"
 
-// #todo-texture: Abstract FreeImage type
-struct FIBITMAP;
-
 namespace pathos {
+
+	struct BitmapBlob;
 
 	class VolumeTexture final : public Noncopyable {
 
@@ -25,7 +24,7 @@ namespace pathos {
 
 		~VolumeTexture();
 
-		void setImageData(FIBITMAP* inData);
+		void setImageData(BitmapBlob* inData);
 		void setDebugName(const char* inDebugName);
 
 		void initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth);
@@ -40,7 +39,7 @@ namespace pathos {
 		GLuint texture;
 		const char* debugName;
 
-		FIBITMAP* bitmapInfo;
+		BitmapBlob* bitmapInfo;
 		uint32 imageWidth;
 		uint32 imageHeight;
 		uint32 bpp;

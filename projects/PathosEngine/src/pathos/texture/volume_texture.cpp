@@ -1,6 +1,5 @@
 #include "volume_texture.h"
-
-#include <FreeImage.h>
+#include "pathos/loader/imageloader.h"
 
 namespace pathos {
 
@@ -10,18 +9,15 @@ namespace pathos {
 		if (texture != 0) {
 			gRenderDevice->deleteTextures(1, &texture);
 		}
-		if (bitmapInfo != nullptr) {
-			FreeImage_Unload(bitmapInfo);
-		}
 	}
 
-	void VolumeTexture::setImageData(FIBITMAP* inData)
+	void VolumeTexture::setImageData(BitmapBlob* inData)
 	{
 		bitmapInfo = inData;
 
-		imageWidth = (uint32)FreeImage_GetWidth(bitmapInfo);
-		imageHeight = (uint32)FreeImage_GetHeight(bitmapInfo);
-		bpp = (uint32)FreeImage_GetBPP(bitmapInfo);
+		imageWidth = bitmapInfo->width;
+		imageHeight = bitmapInfo->height;
+		bpp = bitmapInfo->bpp;
 	}
 
 	void VolumeTexture::setDebugName(const char* inDebugName)
@@ -41,7 +37,7 @@ namespace pathos {
 			return;
 		}
 
-		uint8* rawBytes = FreeImage_GetBits(bitmapInfo);
+		uint8* rawBytes = bitmapInfo->getRawBytes();
 
 		GLenum internalFormat = GL_RGBA8;
 		GLenum pixelFormat = GL_RGBA;

@@ -6,9 +6,41 @@
 #include "badger/assertion/assertion.h"
 #include "stb_image.h"
 
+#include <FreeImage.h>
+
 #pragma comment(lib, "FreeImage.lib")
 
 // #todo-image-loader: Cleanup image loading API
+
+namespace pathos {
+
+	FIBITMAP* FreeImage_UnwrapBitmapBlob(const BitmapBlob* blob) {
+		return reinterpret_cast<FIBITMAP*>(blob->fiHandle);
+	}
+
+	BitmapBlob::BitmapBlob(void* inFIBITMAP) {
+		fiHandle = inFIBITMAP;
+		if (inFIBITMAP != nullptr) {
+			FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
+			width = FreeImage_GetWidth(dib);
+			height = FreeImage_GetHeight(dib);
+			bpp = FreeImage_GetBPP(dib);
+		}
+	}
+
+	BitmapBlob::~BitmapBlob() {
+		if (fiHandle) {
+			FreeImage_Unload((FIBITMAP*)fiHandle);
+			fiHandle = nullptr;
+		}
+	}
+
+	uint8* BitmapBlob::getRawBytes() const {
+		FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
+		return reinterpret_cast<uint8*>(FreeImage_GetBits(dib));
+	}
+
+}
 
 namespace pathos {
 
@@ -25,50 +57,55 @@ namespace pathos {
 		FreeImage_DeInitialise();
 	}
 
-	FIBITMAP* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {
+	BitmapBlob* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {
 		std::string path = ResourceFinder::get().find(inFilename);
 		CHECK(path.size() != 0);
 
 		LOG(LogDebug, "load image: %s", path.c_str());
 
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
-		FIBITMAP* img = FreeImage_Load(fif, path.c_str(), 0);
+		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
 
-		if (!img) {
+		if (!dib) {
 			LOG(LogError, "Error while loading: %s", path.c_str());
 			return nullptr;
 		}
 
 		if (flipHorizontal) {
-			FreeImage_FlipHorizontal(img);
+			FreeImage_FlipHorizontal(dib);
 		}
 		if (flipVertical) {
-			FreeImage_FlipVertical(img);
+			FreeImage_FlipVertical(dib);
 		}
 
-		unsigned int bpp = FreeImage_GetBPP(img);
+		unsigned int bpp = FreeImage_GetBPP(dib);
 		if (bpp != 32 && bpp != 24) {
-			FIBITMAP* img32 = FreeImage_ConvertTo32Bits(img);
-			if (img32 != nullptr) {
-				FreeImage_Unload(img);
-				return img32;
+			FIBITMAP* dib32 = FreeImage_ConvertTo32Bits(dib);
+			if (dib32 != nullptr) {
+				FreeImage_Unload(dib);
+				dib = dib32;
+				bpp = 32;
 			} else {
-				FIBITMAP* img24 = FreeImage_ConvertTo24Bits(img);
-				if (img24 != nullptr) {
-					FreeImage_Unload(img);
-					return img24;
+				FIBITMAP* dib24 = FreeImage_ConvertTo24Bits(dib);
+				if (dib24 != nullptr) {
+					FreeImage_Unload(dib);
+					dib = dib24;
 				} else {
-					FreeImage_Unload(img);
+					FreeImage_Unload(dib);
 					CHECK_NO_ENTRY();
 					return nullptr;
 				}
 			}
 		}
 
-		return img;
+		return new BitmapBlob(dib);
 	}
 
-	int32 loadCubemapImages(const std::array<const char*, 6>& inFilenames, ECubemapImagePreference preference, std::array<FIBITMAP*, 6>& outImages) {
+	int32 loadCubemapImages(
+		const std::array<const char*, 6>& inFilenames,
+		ECubemapImagePreference preference,
+		std::array<BitmapBlob*, 6>& outImages)
+	{
 		int32 ret = 0;
 		const int32 glslOrder[6] = { 0, 1, 2, 3, 5, 4 };
 
@@ -86,11 +123,17 @@ namespace pathos {
 		return ret;
 	}
 
-	GLuint createTextureFromBitmap(FIBITMAP* dib, bool generateMipmap, bool sRGB, const char* debugName /*= nullptr*/) {
+	GLuint createTextureFromBitmap(
+		BitmapBlob* bitmapBlob,
+		bool generateMipmap,
+		bool sRGB,
+		const char* debugName /*= nullptr*/)
+	{
 		int w, h;
 		uint8* data;
 		GLuint texture = 0;
 
+		FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(bitmapBlob);
 		data = FreeImage_GetBits(dib);
 		w = FreeImage_GetWidth(dib);
 		h = FreeImage_GetHeight(dib);
@@ -136,9 +179,11 @@ namespace pathos {
 	* - Image order: +X, -X, +Y, -Y, +Z, -Z
 	* - All images must have same width/height/bpp.
 	*/
-	GLuint createCubemapTextureFromBitmap(FIBITMAP* dib[], bool generateMipmap /*= true*/, const char* debugName /*= nullptr*/) {
-		int w = FreeImage_GetWidth(dib[0]);
-		int h = FreeImage_GetHeight(dib[0]);
+	GLuint createCubemapTextureFromBitmap(BitmapBlob* blobs[], bool generateMipmap /*= true*/, const char* debugName /*= nullptr*/) {
+		FIBITMAP* dib0 = FreeImage_UnwrapBitmapBlob(blobs[0]);
+
+		int w = FreeImage_GetWidth(dib0);
+		int h = FreeImage_GetHeight(dib0);
 		if (w != h){
 			LOG(LogError, "%s: Cubemap texture must have same width and height", __FUNCTION__);
 			return 0;
@@ -146,7 +191,10 @@ namespace pathos {
 
 		GLuint tex_id = 0;
 
-		ENQUEUE_RENDER_COMMAND([w, h, dib, generateMipmap, texturePtr = &tex_id, debugName](RenderCommandList& cmdList) {
+		std::array<FIBITMAP*, 6> dibs;
+		for (size_t i = 0u; i < 6; ++i) dibs[i] = FreeImage_UnwrapBitmapBlob(blobs[i]);
+
+		ENQUEUE_RENDER_COMMAND([w, h, dibs, generateMipmap, texturePtr = &tex_id, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
 			if (debugName != nullptr) {
 				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
@@ -157,7 +205,7 @@ namespace pathos {
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-			unsigned int bpp = FreeImage_GetBPP(dib[0]);
+			unsigned int bpp = FreeImage_GetBPP(dibs[0]);
 			if (bpp == 32 || bpp == 24) {
 				uint32 numLODs = 1;
 				if (generateMipmap) {
@@ -169,7 +217,7 @@ namespace pathos {
 			}
 
 			for (int32 i = 0; i < 6; i++) {
-				uint8* data = FreeImage_GetBits(dib[i]);
+				uint8* data = FreeImage_GetBits(dibs[i]);
 				GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
 				cmdList.textureSubImage3D(*texturePtr, 0,
 					0, 0, i,
@@ -260,16 +308,16 @@ namespace pathos {
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
 		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
 
-		FIBITMAP* img = FreeImage_Load(fif, path.c_str(), 0);
+		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
 
-		if (!img) {
+		if (!dib) {
 			LOG(LogError, "Error while loading: %s", path.c_str());
 			return nullptr;
 		}
 
 		// 2. Create a volume texture
 		VolumeTexture* vt = new VolumeTexture;
-		vt->setImageData(img);
+		vt->setImageData(new BitmapBlob(dib));
 		vt->setDebugName(inDebugName);
 
 		return vt;

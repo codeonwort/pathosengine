@@ -152,10 +152,9 @@ void World1::setupSky()
 		"resources/skybox/cubemap1/neg_z.jpg"
 	};
 #endif
-	std::array<FIBITMAP*, 6> cubeImg;
+	std::array<BitmapBlob*, 6> cubeImg;
 	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
-	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true);
-	glObjectLabel(GL_TEXTURE, cubeTexture, -1, "skybox cubemap");
+	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true, "skybox cubemap");
 
 	Skybox* skybox = spawnActor<Skybox>();
 	skybox->initialize(cubeTexture);

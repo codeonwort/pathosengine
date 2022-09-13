@@ -3,8 +3,7 @@
 
 #pragma once
 
-// #todo-refactoring: For ECubemapImagePreference, but this includes FreeImage.
-#include "imageloader.h"
+#include "pathos/loader/imageloader.h"
 
 #include "badger/types/vector_types.h"
 #include "badger/math/rotator.h"

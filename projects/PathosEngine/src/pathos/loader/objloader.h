@@ -12,17 +12,17 @@ namespace pathos {
 
 	struct PendingTextures {
 		PendingTextures() = default;
-		PendingTextures(FIBITMAP* inAlbedo, FIBITMAP* inNormal, FIBITMAP* inRoughness, FIBITMAP* inMetallic)
+		PendingTextures(BitmapBlob* inAlbedo, BitmapBlob* inNormal, BitmapBlob* inRoughness, BitmapBlob* inMetallic)
 			: albedo(inAlbedo)
 			, normal(inNormal)
 			, roughness(inRoughness)
 			, metallic(inMetallic)
 		{
 		}
-		FIBITMAP* albedo;
-		FIBITMAP* normal;
-		FIBITMAP* roughness;
-		FIBITMAP* metallic;
+		BitmapBlob* albedo;
+		BitmapBlob* normal;
+		BitmapBlob* roughness;
+		BitmapBlob* metallic;
 
 		GLuint glAlbedo = 0;
 		GLuint glNormal = 0;
@@ -89,7 +89,7 @@ namespace pathos {
 		std::vector<PendingShape> pendingShapes;
 		std::vector<Material*> materials;
 
-		std::map<std::string, FIBITMAP*> cachedBitmapDB;
+		std::map<std::string, BitmapBlob*> cachedBitmapDB;
 		std::map<int32, PendingTextures> pendingTextureData; // key: material index
 
 	};

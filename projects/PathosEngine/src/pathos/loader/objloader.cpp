@@ -126,9 +126,6 @@ namespace pathos {
 		t_attrib.vertices.clear();
 		pendingShapes.clear();
 		materials.clear();
-		for (auto& bmp : cachedBitmapDB) {
-			FreeImage_Unload(bmp.second);
-		}
 		cachedBitmapDB.clear();
 		pendingTextureData.clear();
 	}
@@ -143,7 +140,7 @@ namespace pathos {
 
 			if (isPBR)
 			{
-				auto getOrLoadImage = [&](const std::string& texname, FIBITMAP** outBitmap) {
+				auto getOrLoadImage = [&](const std::string& texname, BitmapBlob** outBitmap) {
 					*outBitmap = nullptr;
 					if (texname.length() > 0) {
 						std::string filepath = mtlDir + texname;
@@ -164,7 +161,7 @@ namespace pathos {
 				// #todo-loader: Self AO texture is not supported in Wavefront format
 
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
-				FIBITMAP* bmp;
+				BitmapBlob* bmp;
 				if (cachedBitmapDB.find(image_path) == cachedBitmapDB.end()) {
 					bmp = loadImage(image_path.c_str());
 					cachedBitmapDB.insert(std::make_pair(image_path, bmp));

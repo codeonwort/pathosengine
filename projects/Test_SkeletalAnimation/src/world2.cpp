@@ -76,17 +76,17 @@ void World2::setupScene()
 	//---------------------------------------------------------------------------------------
 	// create materials
 	//---------------------------------------------------------------------------------------
-	std::array<const char*, 6> cubeImgName = {
+	std::array<const char*, 6> cubeImageNames = {
 		"skybox/cubemap1/pos_x.jpg", "skybox/cubemap1/neg_x.jpg",
 		"skybox/cubemap1/pos_y.jpg", "skybox/cubemap1/neg_y.jpg",
 		"skybox/cubemap1/pos_z.jpg", "skybox/cubemap1/neg_z.jpg"
 	};
-	std::array<FIBITMAP*, 6> cubeImg;
-	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
-	GLuint cubeTexture = createCubemapTextureFromBitmap(cubeImg.data());
+	std::array<BitmapBlob*, 6> cubeImageBlobs;
+	pathos::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL, cubeImageBlobs);
+	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data());
 
-	GLuint tex = createTextureFromBitmap(loadImage("textures/154.jpg"), true, true);
-	GLuint tex_norm = createTextureFromBitmap(loadImage("textures/154_norm.jpg"), true, false);
+	GLuint tex = pathos::createTextureFromBitmap(loadImage("textures/154.jpg"), true, true);
+	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("textures/154_norm.jpg"), true, false);
 
 	auto material_texture = new TextureMaterial(tex);
 	auto material_color = new ColorMaterial;
