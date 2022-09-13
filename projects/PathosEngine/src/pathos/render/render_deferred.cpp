@@ -251,10 +251,8 @@ namespace pathos {
 
 		// #todo-refactoring: Rename to renderBasePass
 		{
-			SCOPED_GPU_COUNTER(PackGBuffer);
-
-			clearGBuffer(cmdList);
-			packGBuffer(cmdList);
+			SCOPED_GPU_COUNTER(BasePass);
+			renderBasePass(cmdList);
 		}
 
 		{
@@ -414,24 +412,18 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void DeferredRenderer::clearGBuffer(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(ClearGBuffer);
-
+	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
 		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
 		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one[] = { 1.0f };
 		static const GLfloat zero_depth[] = { 0.0f };
-		
+
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
 		// Should not clear here due to depth prepass
 		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
-	}
-
-	void DeferredRenderer::packGBuffer(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(PackGBuffer);
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
