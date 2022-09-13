@@ -13,6 +13,7 @@ namespace pathos {
 		setFont(DEFAULT_FONT_TAG);
 
 		geometry = new TextGeometry;
+		geometry->bCalculateLocalBounds = false;
 
 		setBrush(new TextBrush(1.0f, 1.0f, 1.0f));
 		setScaleX(300.0f);

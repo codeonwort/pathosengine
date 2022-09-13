@@ -785,5 +785,8 @@
     <ClInclude Include="src\pathos\overlay\display_object_proxy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\badger\math\aabb.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
