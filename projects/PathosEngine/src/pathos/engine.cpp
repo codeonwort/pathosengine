@@ -97,6 +97,9 @@ namespace pathos {
 		ResourceFinder::get().add("../../resources/");
 		ResourceFinder::get().add("../../resources_external/");
 
+		std::vector<std::string> configLines;
+		readConfigFile(configLines);
+
 		RenderDocIntegration::get().findInjectedDLL();
 
 		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
@@ -120,7 +123,9 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
 
-		readConfigFile();
+		for (const auto& line : configLines) {
+			gConsole->addLine(line.c_str(), false);
+		}
 
 		// #todo: Where to put this
 		registerExec("profile_gpu", [](const std::string& command) {
@@ -271,7 +276,7 @@ namespace pathos {
 	}
 
 	// Read config line by line and add to the console window.
-	void Engine::readConfigFile()
+	void Engine::readConfigFile(std::vector<std::string>& outEffectiveLines)
 	{
 		std::string configPath = ResourceFinder::get().find("EngineConfig.ini");
 		if (configPath.size() > 0) {
@@ -284,7 +289,18 @@ namespace pathos {
 				if (line.size() == 0 || line[0] == '#') {
 					continue;
 				}
-				gConsole->addLine(line.c_str(), false);
+
+				auto ix = line.find(' ');
+				if (ix != std::string::npos) {
+					std::string cvarName = line.substr(0, ix);
+					std::string cvarValue = line.substr(ix + 1);
+					auto cvar = ConsoleVariableManager::get().find(cvarName.data());
+					if (cvar != nullptr) {
+						cvar->parse(cvarValue.data(), nullptr);
+					}
+				}
+				
+				outEffectiveLines.emplace_back(line);
 			}
 		}
 	}

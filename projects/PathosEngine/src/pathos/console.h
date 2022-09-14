@@ -135,7 +135,7 @@ namespace pathos {
 		float newValue;
 		if (sscanf_s(msg, "%f", &newValue) == 1) {
 			setValue(newValue);
-		} else {
+		} else if (window != nullptr) {
 			window->addLine(L"Failed to set: not a float value.");
 		}
 	}
@@ -144,7 +144,7 @@ namespace pathos {
 		int32 newValue;
 		if (sscanf_s(msg, "%d", &newValue) == 1) {
 			setValue(newValue);
-		} else {
+		} else if (window != nullptr) {
 			window->addLine(L"Failed to set: not an integer value.");
 		}
 	}
