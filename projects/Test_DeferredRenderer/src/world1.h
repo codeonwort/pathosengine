@@ -22,14 +22,13 @@ namespace pathos {
 	class SceneCaptureComponent;
 }
 class CSMDebugger;
+class TransformTestActor;
 class PlayerController;
 
 // World1
 class World1 : public World {
 
 public:
-	World1();
-
 	virtual void onInitialize() override;
 	virtual void onTick(float deltaSeconds) override;
 
@@ -49,6 +48,7 @@ private:
 #if VISUALIZE_CSM_FRUSTUM
 	CSMDebugger* csmDebugger = nullptr;
 #endif
+	TransformTestActor* transformTestActor = nullptr;
 	PlayerController* playerController = nullptr;
 
 	// For scene capture

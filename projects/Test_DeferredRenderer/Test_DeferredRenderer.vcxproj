@@ -90,6 +90,7 @@
     <ClCompile Include="src\lightning_effect.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
+    <ClCompile Include="src\transform_test_actor.cpp" />
     <ClCompile Include="src\world1.cpp" />
     <ClCompile Include="src\world_rc1.cpp" />
   </ItemGroup>
@@ -98,6 +99,7 @@
     <ClInclude Include="src\galaxy_gen.h" />
     <ClInclude Include="src\lightning_effect.h" />
     <ClInclude Include="src\player_controller.h" />
+    <ClInclude Include="src\transform_test_actor.h" />
     <ClInclude Include="src\world1.h" />
     <ClInclude Include="src\world_rc1.h" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 #include "world1.h"
 #include "player_controller.h"
+#include "transform_test_actor.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
@@ -57,10 +58,6 @@ std::vector<WavefrontModelDesc> wavefrontModels = {
 
 // --------------------------------------------------------
 // World
-
-World1::World1()
-{
-}
 
 void World1::onInitialize()
 {
@@ -262,6 +259,9 @@ void World1::setupScene()
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -30.0f, 0.0f));
 	ground->getStaticMeshComponent()->castsShadow = false;
+
+	transformTestActor = spawnActor<TransformTestActor>();
+	transformTestActor->setActorLocation(vector3(-800.0f, 50.0f, 100.0f));
 
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		StaticMeshActor* ball = spawnActor<StaticMeshActor>();

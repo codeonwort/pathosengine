@@ -36,6 +36,9 @@
     <ClCompile Include="src\lightning_effect.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\transform_test_actor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\csm_debugger.h">
@@ -54,6 +57,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\lightning_effect.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\transform_test_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
