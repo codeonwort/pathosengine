@@ -662,7 +662,15 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
 
 		ubo_perFrame = std::make_unique<UniformBuffer>();
-		ubo_perFrame->init<UBO_PerFrame>();
+		ubo_perFrame->init<UBO_PerFrame>("UBO_PerFrame");
+
+		const int32 uboMaxSize = gRenderDevice->getCapabilities().glMaxUniformBlockSize;
+		if (sizeof(UBO_PerFrame) > uboMaxSize) {
+			char msg[256];
+			sprintf_s(msg, "%s: UBO_PerFrame is bigger than the device's limit (%d > %d)",
+				__FUNCTION__, (int32)sizeof(UBO_PerFrame), uboMaxSize);
+			CHECKF(false, msg);
+		}
 
 		{
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {

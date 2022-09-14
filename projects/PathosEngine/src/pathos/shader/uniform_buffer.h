@@ -25,7 +25,7 @@ namespace pathos {
 		UniformBuffer(const UniformBuffer&) = delete;
 		UniformBuffer& operator=(const UniformBuffer&) = delete;
 
-		template<typename T> void init() {
+		template<typename T> void init(const char* debugName = nullptr) {
 			//bufferSize = (sizeof(T) + 255) & ~255;
 			bufferSize = sizeof(T);
 			gRenderDevice->createBuffers(1, &ubo);
@@ -33,10 +33,16 @@ namespace pathos {
 			if (isInRenderThread()) {
 				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 				cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
+				if (debugName != nullptr) {
+					cmdList.objectLabel(GL_BUFFER, this->ubo, -1, debugName);
+				}
 			} else {
 				// #todo-renderthread: No issue with order of commands?
-				ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
+				ENQUEUE_RENDER_COMMAND([this, debugName](RenderCommandList& cmdList) {
 					cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);
+					if (debugName != nullptr) {
+						cmdList.objectLabel(GL_BUFFER, this->ubo, -1, debugName);
+					}
 				});
 			}
 		}

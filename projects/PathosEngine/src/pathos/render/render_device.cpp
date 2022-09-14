@@ -164,6 +164,7 @@ namespace pathos {
 
 	void OpenGLDevice::queryCapabilities() {
 		glGetIntegerv(GL_MAX_LABEL_LENGTH, &capabilities.glObjectLabelMaxLength);
+		glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &capabilities.glMaxUniformBlockSize);
 		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &capabilities.glMaxComputeWorkGroupInvocations);
 		glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &capabilities.glMaxComputeSharedMemorySize);
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, capabilities.glMaxComputeWorkGroupCount + 0);

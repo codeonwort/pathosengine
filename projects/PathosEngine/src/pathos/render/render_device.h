@@ -34,6 +34,8 @@ namespace pathos {
 
 	struct OpenGLDriverCapabilities {
 		int32 glObjectLabelMaxLength;
+		// The maximum size in basic machine units of a uniform block, which must be at least 16384.
+		int32 glMaxUniformBlockSize;
 		// The number of invocations in a single local work group (i.e., the product of the three dimensions) that may be dispatched to a compute shader.
 		int32 glMaxComputeWorkGroupInvocations;
 		// Limit on the total storage size (in bytes) for all shared variables in a compute shader.
