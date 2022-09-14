@@ -63,6 +63,8 @@ namespace pathos {
 
 		// For transform hierarchy.
 		matrix4 accumulatedTransform;
+		// #todo: Should I always accumulate root's transform
+		//        even if root is not the transform parent?
 		SceneComponent* transformParent = nullptr;
 		std::vector<SceneComponent*> transformChildren;
 	};
