@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 // Forked from https://www.shadertoy.com/view/4ljcz1
 

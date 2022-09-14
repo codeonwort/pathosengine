@@ -1,4 +1,4 @@
-#version 430 core
+#version 460 core
 
 // Calculate prefix sum table for depth of field.
 

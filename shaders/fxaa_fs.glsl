@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 // Just to prevent syntax error highlighting
 #ifndef FXAA_PC

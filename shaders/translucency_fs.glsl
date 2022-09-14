@@ -1,4 +1,4 @@
-#version 430 core
+#version 460 core
 
 #include "brdf.glsl"
 #include "deferred_common.glsl"

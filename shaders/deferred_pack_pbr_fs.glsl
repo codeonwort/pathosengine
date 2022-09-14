@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 #include "deferred_common_fs.glsl"
 
@@ -72,9 +72,12 @@ void main() {
 	vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, uv);
 #endif
 	
-	vec3 metallic = texture(tex_metallic, uv).rgb;
-	vec3 roughness = texture(tex_roughness, uv).rgb;
-	vec3 ao = texture(tex_ao, uv).rgb;
+	float metallic = texture(tex_metallic, uv).r;
+	float roughness = texture(tex_roughness, uv).r;
+	float localAO = texture(tex_ao, uv).r;
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic.r, roughness.r, ao.r, vec3(0.0));
+	// #todo: Support emissive
+	vec3 emissive = vec3(0.0);
+
+	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic, roughness, localAO, emissive);
 }

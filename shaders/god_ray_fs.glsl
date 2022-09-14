@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 in VS_OUT {
 	vec2 screenUV;

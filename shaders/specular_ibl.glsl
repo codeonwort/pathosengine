@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 // https://learnopengl.com/PBR/IBL/Specular-IBL
 

@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 #if HORIZONTAL != 0 && HORIZONTAL != 1
 	#error "Define HORIZONTAL as 0 or 1"

@@ -4,7 +4,7 @@
 // - http://bitsquid.blogspot.com/2017/08/notes-on-screen-space-hiz-tracing.html
 // - http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
 
-#version 450 core
+#version 460 core
 
 #include "common.glsl"
 #include "deferred_common.glsl"

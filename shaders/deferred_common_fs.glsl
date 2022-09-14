@@ -1,4 +1,4 @@
-//? #version 450 core
+//? #version 460 core
 
 // x = albedo.x, albedo.y
 // y = albedo.z, normal.x
@@ -19,7 +19,11 @@ layout (location = 1) out vec4 packOutput1;
 layout (location = 2) out uvec4 packOutput2;
 
 // VS = view space
-void packGBuffer(vec3 albedo, vec3 normalVS, uint materialID, vec3 positionVS, float metallic, float roughness, float localAO, vec3 emissive) {
+void packGBuffer(
+	vec3 albedo, vec3 normalVS, uint materialID,
+	vec3 positionVS, float metallic, float roughness,
+	float localAO, vec3 emissive)
+{
 	uvec4 out0;
 	vec4 out1;
 	uvec4 out2;
@@ -34,7 +38,7 @@ void packGBuffer(vec3 albedo, vec3 normalVS, uint materialID, vec3 positionVS, f
 
 	out2.x = packHalf2x16(vec2(metallic, roughness));
 	out2.y = packHalf2x16(vec2(localAO, emissive.x));
-	out2.z = packHalf2x16(vec2(emissive.y, emissive.z));
+	out2.z = packHalf2x16(emissive.yz);
 
 	packOutput0 = out0;
 	packOutput1 = out1;

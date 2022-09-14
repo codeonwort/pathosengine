@@ -1,6 +1,6 @@
 // Visualize scene depth
 
-#version 430 core
+#version 460 core
 
 #include "deferred_common.glsl"
 

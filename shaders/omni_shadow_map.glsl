@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 layout (std140, binding = 1) uniform UBO_OmniShadow {
 	mat4 model;

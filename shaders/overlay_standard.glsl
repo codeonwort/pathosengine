@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 #if VERTEX_SHADER
 	#define Interpolants out

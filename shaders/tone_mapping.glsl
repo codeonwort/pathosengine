@@ -1,4 +1,4 @@
-#version 430 core
+#version 460 core
 
 layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;

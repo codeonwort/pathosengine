@@ -1,4 +1,4 @@
-//? #version 450 core
+//? #version 460 core
 
 // #todo: Remove common defines in separate .glsl files and use common.glsl
 #define PI         3.14159265359

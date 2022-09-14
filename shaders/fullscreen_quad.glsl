@@ -1,4 +1,4 @@
-#version 430 core
+#version 460 core
 
 // Intended to be used with DeferredRenderer::fullscreenQuad
 
