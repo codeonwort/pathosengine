@@ -435,15 +435,19 @@ namespace pathos {
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
-#if 0	// No depth prepass
-		cmdList.depthFunc(GL_GREATER);
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthMask(GL_TRUE);
-#else	// Depth prepass
-		cmdList.depthFunc(GL_EQUAL);
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthMask(GL_FALSE);
-#endif
+
+		// #todo: Dynamically toggle depth prepass.
+		constexpr bool bUseDepthPrepass = true;
+		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
+		if (bUseDepthPrepass) {
+			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
+			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.depthMask(GL_FALSE);
+		} else {
+			cmdList.depthFunc(bReverseZ ? GL_GREATER : GL_LESS);
+			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.depthMask(GL_TRUE);
+		}
 
 		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
 

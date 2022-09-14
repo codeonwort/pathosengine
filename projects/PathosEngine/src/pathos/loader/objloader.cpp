@@ -145,7 +145,7 @@ namespace pathos {
 					if (texname.length() > 0) {
 						std::string filepath = mtlDir + texname;
 						if (cachedBitmapDB.find(filepath) == cachedBitmapDB.end()) {
-							*outBitmap = loadImage(filepath.c_str());
+							*outBitmap = pathos::loadImage(filepath.c_str());
 							cachedBitmapDB.insert(std::make_pair(filepath, *outBitmap));
 						} else {
 							*outBitmap = cachedBitmapDB[filepath];
@@ -163,7 +163,7 @@ namespace pathos {
 				std::string image_path = mtlDir + t_mat.diffuse_texname;
 				BitmapBlob* bmp;
 				if (cachedBitmapDB.find(image_path) == cachedBitmapDB.end()) {
-					bmp = loadImage(image_path.c_str());
+					bmp = pathos::loadImage(image_path.c_str());
 					cachedBitmapDB.insert(std::make_pair(image_path, bmp));
 				} else {
 					bmp = cachedBitmapDB[image_path];
@@ -401,6 +401,7 @@ namespace pathos {
 
 				PendingTextures& pendingTextures = pendingTextureData[index];
 				if (pendingTextures.glAlbedo == 0 && pendingTextures.albedo != nullptr) {
+					static_cast<PBRTextureMaterial*>(M)->writeAllPixels = !pendingTextures.albedo->hasOpacity;
 					pendingTextures.glAlbedo = pathos::createTextureFromBitmap(pendingTextures.albedo, generateMipmap, sRGB);
 				}
 				if (pendingTextures.glNormal == 0 && pendingTextures.normal != nullptr) {

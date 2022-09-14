@@ -184,6 +184,7 @@ namespace pathos {
 
 		// #todo-material: hack
 		bool useTriplanarMapping = false;
+		bool writeAllPixels = true; // true = opaque, false = masked
 
 	protected:
 		GLuint tex_albedo;

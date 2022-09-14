@@ -60,7 +60,15 @@ void main() {
 	vec3 normalZ = getNormal(N, fs_in.tangent, fs_in.bitangent, P.xy);
 	vec3 normal = normalize((normalX * NN.x) + (normalY * NN.y) + (normalZ * NN.z));
 #else
-	vec3 albedo = texture(tex_albedo, uv).rgb;
+	vec4 albedoAndOpacity = texture(tex_albedo, uv).rgba;
+	vec3 albedo = albedoAndOpacity.rgb;
+
+	// #todo: Exclude this logic for fully opaque materials.
+	// Due to lack of fancy material system I'm doing just dynamic branching.
+	if (shouldDiscard(albedoAndOpacity.a)) {
+		discard;
+	}
+
 	vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, uv);
 #endif
 	

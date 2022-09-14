@@ -16,7 +16,7 @@ namespace pathos {
 	// - If its data is uploaded to GPU and not accessed from CPU anymore, it should be freed.
 	//   It can be achieved by trasnfering memory ownership of a BitmapBlob to cmdList.
 	struct BitmapBlob {
-		BitmapBlob(void* inFIBITMAP);
+		BitmapBlob(void* inFIBITMAP, bool inHasOpacity = false);
 		~BitmapBlob();
 
 		uint8* getRawBytes() const;
@@ -25,6 +25,7 @@ namespace pathos {
 		uint32 width = 0;
 		uint32 height = 0;
 		uint32 bpp = 0;
+		bool hasOpacity = false;
 	};
 
 	// Wrapper for stbi_image

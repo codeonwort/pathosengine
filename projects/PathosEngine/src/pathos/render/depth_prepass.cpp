@@ -99,6 +99,12 @@ namespace pathos {
 					continue;
 				}
 
+				if (proxy->material->getMaterialID() == MATERIAL_ID::PBR_TEXTURE) {
+					if (static_cast<PBRTextureMaterial*>(proxy->material)->writeAllPixels == false) {
+						continue;
+					}
+				}
+
 				// Render state modifiers
 				bool doubleSided = proxy->doubleSided;
 				bool renderInternal = proxy->renderInternal;

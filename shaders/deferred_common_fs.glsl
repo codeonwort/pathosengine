@@ -40,3 +40,7 @@ void packGBuffer(vec3 albedo, vec3 normalVS, uint materialID, vec3 positionVS, f
 	packOutput1 = out1;
 	packOutput2 = out2;
 }
+
+bool shouldDiscard(float opacity) {
+	return opacity < 0.05;
+}

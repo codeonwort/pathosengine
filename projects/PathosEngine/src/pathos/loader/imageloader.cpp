@@ -18,8 +18,9 @@ namespace pathos {
 		return reinterpret_cast<FIBITMAP*>(blob->fiHandle);
 	}
 
-	BitmapBlob::BitmapBlob(void* inFIBITMAP) {
+	BitmapBlob::BitmapBlob(void* inFIBITMAP, bool inHasOpacity) {
 		fiHandle = inFIBITMAP;
+		hasOpacity = inHasOpacity;
 		if (inFIBITMAP != nullptr) {
 			FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
 			width = FreeImage_GetWidth(dib);
@@ -86,6 +87,8 @@ namespace pathos {
 		}
 
 		unsigned int bpp = FreeImage_GetBPP(dib);
+		const bool hasOpacity = (bpp == 32);
+
 		if (bpp != 32 && bpp != 24) {
 			FIBITMAP* dib32 = FreeImage_ConvertTo32Bits(dib);
 			if (dib32 != nullptr) {
@@ -105,7 +108,7 @@ namespace pathos {
 			}
 		}
 
-		return new BitmapBlob(dib);
+		return new BitmapBlob(dib, hasOpacity);
 	}
 
 	int32 loadCubemapImages(
