@@ -49,8 +49,8 @@ namespace pathos {
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_focal_distance("r.dof.focal_distance", 50.0f, "focal distance of DoF");
-	static ConsoleVariable<float> cvar_focal_depth("r.dof.focal_depth", 1000.0f, "focal depth of DoF");
+	static ConsoleVariable<float> cvar_focal_distance("r.dof.focal_distance", 200.0f, "focal distance of DoF");
+	static ConsoleVariable<float> cvar_focal_depth("r.dof.focal_depth", 10000.0f, "focal depth of DoF");
 	static ConsoleVariable<float> cvar_max_radius("r.dof.max_radius", 4.5f, "max radius of DoF kernel");
 
 	DepthOfField::~DepthOfField() {

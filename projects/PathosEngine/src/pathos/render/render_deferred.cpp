@@ -305,7 +305,7 @@ namespace pathos {
 
 			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
 			const bool noBloom = (cvar_enable_bloom.getInt() == 0);
-			const bool noDOF = (cvar_enable_dof.getInt() == 0);
+			const bool noDOF = (cvar_enable_dof.getInt() == 0) || (depthOfField->isAvailable() == false);
 
 			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
 
@@ -400,7 +400,7 @@ namespace pathos {
 			}
 
 			// Post Process: Depth of Field
-			if (!noDOF && depthOfField->isAvailable()) {
+			if (!noDOF) {
 				const GLuint dofRenderTarget = getFinalRenderTarget();
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
