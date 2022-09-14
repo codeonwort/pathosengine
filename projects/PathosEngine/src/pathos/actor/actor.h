@@ -43,6 +43,8 @@ namespace pathos {
 		void setActorScale(const vector3& inScale);
 		void setActorScale(float inScale);
 
+		void updateTransformHierarchy();
+
 	protected:
 		virtual void onSpawn() {}
 		virtual void onDestroy() {}
