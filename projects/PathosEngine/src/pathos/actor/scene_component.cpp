@@ -37,7 +37,7 @@ namespace pathos {
 					LOG(LogError, "%s: Parent wannabe is myself or my child", __FUNCTION__);
 					return;
 				}
-				ancestor = parent->getTransformParent();
+				ancestor = ancestor->getTransformParent();
 			}
 		}
 		// OK to register as parent.
