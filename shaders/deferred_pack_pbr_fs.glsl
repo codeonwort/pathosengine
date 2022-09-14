@@ -79,5 +79,13 @@ void main() {
 	// #todo: Support emissive
 	vec3 emissive = vec3(0.0);
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic, roughness, localAO, emissive);
+	packGBuffer(
+		albedo,
+		normal,
+		fs_in.material_id,
+		fs_in.vs_coords,
+		metallic,
+		roughness,
+		localAO,
+		emissive);
 }

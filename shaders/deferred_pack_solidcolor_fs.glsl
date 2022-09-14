@@ -27,5 +27,13 @@ void main() {
 	float roughness = uboPerObject.emissive_roughness.w;
 	float localAO = 1.0;
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, metallic, roughness, localAO, emissive);
+	packGBuffer(
+		albedo,
+		normal,
+		fs_in.material_id,
+		fs_in.vs_coords,
+		metallic,
+		roughness,
+		localAO,
+		emissive);
 }

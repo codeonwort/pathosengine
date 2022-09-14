@@ -466,12 +466,17 @@ namespace pathos {
 				continue;
 			}
 
+			const auto& proxyList = scene->proxyList_staticMesh[i];
+
+			if (proxyList.size() == 0) {
+				continue;
+			}
+
 			{
 				SCOPED_DRAW_EVENT(BindMaterialProgram);
 				pass->bindProgram(cmdList);
 			}
 
-			const auto& proxyList = scene->proxyList_staticMesh[i];
 			for (auto j = 0u; j < proxyList.size(); ++j) {
 				const StaticMeshProxy& item = *(proxyList[j]);
 				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;

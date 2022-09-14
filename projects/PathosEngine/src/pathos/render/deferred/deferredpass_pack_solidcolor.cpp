@@ -4,37 +4,37 @@
 
 #include "badger/types/vector_types.h"
 
-// #todo-shader: Use this instead
-//namespace pathos {
-//
-//	class SolidColorVS : public ShaderStage {
-//		SolidColorVS() : ShaderStage(GL_VERTEX_SHADER, "SolidColorVS")
-//		{
-//			setFilepath("deferred_pack_solidcolor_vs.glsl");
-//		}
-//	};
-//
-//	class SolidColorFS : public ShaderStage {
-//		SolidColorFS() : ShaderStage(GL_FRAGMENT_SHADER, "SolidColorFS")
-//		{
-//			setFilepath("deferred_pack_solidcolor_fs.glsl");
-//		}
-//	};
-//
-//	DEFINE_SHADER_PROGRAM2(Program_SolidColor, SolidColorVS, SolidColorFS);
-//	DEFINE_SHADER_PROGRAM2(Program_BillboardSolidColor, BillboardSolidColorVS, SolidColorFS);
-//
-//}
+namespace pathos {
+
+	class SolidColorVS : public ShaderStage {
+	public:
+		SolidColorVS() : ShaderStage(GL_VERTEX_SHADER, "Material_SolidColorVS")
+		{
+			setFilepath("deferred_pack_solidcolor_vs.glsl");
+		}
+	};
+
+	class SolidColorFS : public ShaderStage {
+	public:
+		SolidColorFS() : ShaderStage(GL_FRAGMENT_SHADER, "Material_SolidColorFS")
+		{
+			setFilepath("deferred_pack_solidcolor_fs.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_SolidColor, SolidColorVS, SolidColorFS);
+
+}
 
 namespace pathos {
 
 	struct UBO_Deferred_Pack_SolidColor {
-		glm::mat4 mvMatrix;
-		glm::mat4 mvpMatrix;
+		matrix4 mvMatrix;
+		matrix4 mvpMatrix;
 		glm::mat3x4 mvMatrix3x3;
-		glm::vec4 albedo_metallic;
-		glm::vec4 emissive_roughness;
-		glm::vec4 billboardParam;
+		vector4 albedo_metallic;
+		vector4 emissive_roughness;
+		vector4 billboardParam;
 	};
 
 	MeshDeferredRenderPass_Pack_SolidColor::MeshDeferredRenderPass_Pack_SolidColor() {
@@ -42,12 +42,9 @@ namespace pathos {
 	}
 
 	void MeshDeferredRenderPass_Pack_SolidColor::createProgram() {
-		Shader vs(GL_VERTEX_SHADER, "VS_Deferred_Pack_SolidColor");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_Deferred_Pack_SolidColor");
-		vs.loadSource("deferred_pack_solidcolor_vs.glsl");
-		fs.loadSource("deferred_pack_solidcolor_fs.glsl");
-
-		program = pathos::createProgram(vs, fs, "Deferred_Pack_SolidColor");
+		ShaderProgram& program1 = FIND_SHADER_PROGRAM(Program_SolidColor);
+		program = program1.getGLName();
+		
 		ubo.init<UBO_Deferred_Pack_SolidColor>();
 	}
 
