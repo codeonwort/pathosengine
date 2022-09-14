@@ -32,7 +32,7 @@ namespace pathos {
 		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
-		proxy->modelMatrix = getMatrix() * invertTextY;
+		proxy->modelMatrix = getLocalMatrix() * invertTextY;
 		proxy->geometry = geom.get();
 		proxy->material = material.get();
 

@@ -40,7 +40,7 @@ namespace pathos {
 				Material* M = materials[i];
 
 				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>(scene);
-				proxy->modelMatrix = getMatrix();
+				proxy->modelMatrix = getLocalMatrix();
 				proxy->geometry = geoms[i];
 				proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
@@ -61,7 +61,7 @@ namespace pathos {
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
-			proxy->modelMatrix = getMatrix();
+			proxy->modelMatrix = getLocalMatrix();
 			proxy->geometry = geoms[i];
 			proxy->material = materials[i];
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
@@ -75,9 +75,9 @@ namespace pathos {
 		AABB total;
 		auto& geoms = mesh->getGeometries();
 		if (geoms.size() > 0) {
-			total = calculateWorldBounds(geoms[0]->getLocalBounds(), getMatrix());
+			total = calculateWorldBounds(geoms[0]->getLocalBounds(), getLocalMatrix());
 			for (size_t i = 1; i < geoms.size(); ++i) {
-				AABB temp = calculateWorldBounds(geoms[i]->getLocalBounds(), getMatrix());
+				AABB temp = calculateWorldBounds(geoms[i]->getLocalBounds(), getLocalMatrix());
 				total = temp + total;
 			}
 		}
@@ -103,7 +103,7 @@ namespace pathos {
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
-			proxy->modelMatrix = getMatrix();
+			proxy->modelMatrix = getLocalMatrix();
 			proxy->geometry = geoms[i];
 			proxy->material = materials[i];
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);

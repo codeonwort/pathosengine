@@ -27,6 +27,7 @@ namespace pathos {
 
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {
+				actor->updateTransformHierarchy();
 				for (ActorComponent* actorComponent : actor->components) {
 					actorComponent->createRenderProxy(proxy);
 				}

@@ -7,6 +7,8 @@
 #include "pathos/util/engine_util.h"
 #include "pathos/mesh/model_transform.h"
 
+#include <vector>
+
 namespace pathos {
 
 	// SceneComponent metadata for render thread
@@ -20,6 +22,8 @@ namespace pathos {
 	public:
 		SceneComponent() = default;
 		virtual ~SceneComponent() = default;
+
+		bool isSceneComponent() const override { return true; }
 
 		inline void setVisibility(bool isVisible) { visible = isVisible; }
 		inline bool getVisibility() const { return visible; }
@@ -38,13 +42,29 @@ namespace pathos {
 		void setScale(const vector3& inScale);
 		inline vector3 getScale() const { return transform.getScale(); }
 
+		// NOTE: Only components in the same actor are valid as children.
+		//       Also this relationship is only for transform hierarchy.
+		void setTransformParent(SceneComponent* parent);
+		void unsetTransformParent();
+		inline SceneComponent* getTransformParent() const { return transformParent; }
+		void updateTransformHierarchy();
+
 	protected:
-		matrix4 getMatrix() const;
+		inline matrix4 getLocalMatrix() const { return accumulatedTransform; }
+		//inline matrix4 getLocalMatrix() const { return transform.getMatrix(); }
+		//inline matrix4 getAccumulatedLocalMatrix() const { return accumulatedTransform; }
+
+	private:
+		void accumulateTransform(const matrix4& parentTransform);
 
 	private:
 		ModelTransform transform;
 		bool visible = true;
 
+		// For transform hierarchy.
+		matrix4 accumulatedTransform;
+		SceneComponent* transformParent = nullptr;
+		std::vector<SceneComponent*> transformChildren;
 	};
 
 }

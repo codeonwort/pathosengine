@@ -80,13 +80,21 @@ namespace pathos {
 		rootComponent->setScale(inScale);
 	}
 
+	void Actor::updateTransformHierarchy() {
+		for (ActorComponent* component : components) {
+			if (component->isSceneComponent()) {
+				SceneComponent* sceneComponent = dynamic_cast<SceneComponent*>(component);
+				sceneComponent->updateTransformHierarchy();
+			}
+		}
+	}
+
 	void Actor::fixRootComponent() {
 		// Every actor must have a root component. If not, create one.
 		if (rootComponent == nullptr) {
 			bool hasSceneComponent = false;
 			for (ActorComponent* component : components) {
-				// #todo-rtti: dynamic_cast due to no custom reflection :(
-				if (dynamic_cast<SceneComponent*>(component) != nullptr) {
+				if (component->isSceneComponent()) {
 					hasSceneComponent = true;
 					break;
 				}

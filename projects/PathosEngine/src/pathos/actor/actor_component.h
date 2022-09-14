@@ -20,6 +20,8 @@ namespace pathos {
 
 		inline Actor* getOwner() const { return owner; }
 
+		virtual bool isSceneComponent() const { return false; }
+
 	protected:
 		virtual void onRegister() {}   // Called when registered to an owner actor
 		virtual void onUnregister() {} // Called when unregistered from the owner actor
