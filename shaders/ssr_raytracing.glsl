@@ -32,9 +32,9 @@ layout (std140, binding = 1) uniform UBO_RayTracing {
 layout (binding = 0) uniform sampler2D inSceneColor;
 layout (binding = 1) uniform sampler2D inSceneDepth;
 layout (binding = 2) uniform sampler2D inHiZ;
-layout (binding = 3) uniform sampler2D inGBufferA;
+layout (binding = 3) uniform usampler2D inGBufferA;
 layout (binding = 4) uniform sampler2D inGBufferB;
-layout (binding = 5) uniform sampler2D inGBufferC;
+layout (binding = 5) uniform usampler2D inGBufferC;
 layout (binding = 6) uniform sampler2D inPreintegration;
 layout (binding = 7) uniform sampler2D inPreconvolution;
 
