@@ -6,6 +6,9 @@
 	#define TRIPLANAR_MAPPING 0
 #endif
 
+// #todo-driver-bug: What's this :/
+#define WORKAROUND_RYZEN_6800U_BUG 1
+
 layout (binding = 0) uniform sampler2D tex_albedo;
 layout (binding = 1) uniform sampler2D tex_normal;
 layout (binding = 2) uniform sampler2D tex_metallic;
@@ -88,4 +91,10 @@ void main() {
 		roughness,
 		localAO,
 		emissive);
+
+#if WORKAROUND_RYZEN_6800U_BUG
+	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)'
+	// in packGBuffer() is bugged only on Ryzen 6800U.
+	packOutput2.z = 0;
+#endif
 }
