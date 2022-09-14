@@ -16,6 +16,8 @@ namespace pathos {
 	class Label;
 	class Rectangle;
 
+	class CounterList;
+
 	// Debug 2D rendering after 3D scene is done (like ConsoleWindow)
 	class DebugOverlay : public Noncopyable {
 
@@ -44,6 +46,7 @@ namespace pathos {
 
 		bool enabled = true; // Controls all visibility
 		bool showFrameStat = false;
+		float lastStatUpdateTime = 0.0f;
 
 		float gameThreadTime = 0.0f;
 		float renderThreadTime = 0.0f;
@@ -53,10 +56,9 @@ namespace pathos {
 		Label* gameThreadTimeLabel = nullptr;
 		Label* renderThreadTimeLabel = nullptr;
 		Label* gpuTimeLabel = nullptr;
-		Rectangle* cycleCounterBackground = nullptr;
-		Label* cycleCounterGroupLabel = nullptr;
-		std::vector<Label*> cycleCounterNames;
-		std::vector<Label*> cycleCounterValues;
+
+		CounterList* cpuCounterList = nullptr;
+		CounterList* gpuCounterList = nullptr;
 	};
 
 }

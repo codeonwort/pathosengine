@@ -40,8 +40,12 @@ namespace pathos {
 	DisplayObject2DProxy* DisplayObject2D::createRenderProxy(OverlaySceneProxy* sceneProxy) {
 		// Just contains child proxies to makeup the hierarchy.
 		if (getVisible()) {
-			DisplayObject2DProxy* emptyProxy = sceneProxy->allocate<DisplayObject2DProxy>();
-			return emptyProxy;
+			DisplayObject2DProxy* proxy = sceneProxy->allocate<DisplayObject2DProxy>();
+			proxy->x = x;
+			proxy->y = y;
+			proxy->scaleX = scaleX;
+			proxy->scaleY = scaleY;
+			return proxy;
 		}
 		return nullptr;
 	}

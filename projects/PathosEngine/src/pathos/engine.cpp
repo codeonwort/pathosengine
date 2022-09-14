@@ -347,6 +347,15 @@ namespace pathos {
 		gConsole->addLine(filepath.c_str(), false);
 	}
 
+	void Engine::getLastGPUCounters(
+		std::vector<std::string>& outGpuCounterNames,
+		std::vector<float>& outGpuCounterTimes)
+	{
+		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
+		outGpuCounterNames = lastGpuCounterNames;
+		outGpuCounterTimes = lastGpuCounterTimes;
+	}
+
 	void Engine::setWorld(World* inWorld) {
 		pendingNewWorld = inWorld;
 	}

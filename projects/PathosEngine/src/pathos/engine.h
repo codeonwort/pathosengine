@@ -99,13 +99,16 @@ namespace pathos {
 
 		void toggleFrameStat();
 		void dumpGPUProfile();
+		void getLastGPUCounters(
+			std::vector<std::string>& outGpuCounterNames,
+			std::vector<float>& outGpuCounterTimes);
 
 		void setWorld(World* inWorld);
 
 		const EngineConfig& getConfig() const { return conf; }
 		void updateScreenSize(int32 inScreenWidth, int32 inScreenHeight);
 
-		inline float getWorldTime() { return stopwatch_app.stop(); }
+		inline float getWorldTime() { return stopwatch_app.stop(); } // Elapsed seconds since the application started.
 		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
 		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)

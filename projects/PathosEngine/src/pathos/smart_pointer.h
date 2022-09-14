@@ -14,4 +14,9 @@ namespace pathos {
 
 	template<typename T>
 	using weakPtr = std::weak_ptr<T>;
+
+	template<typename T, typename ...Args>
+	uniquePtr<T> makeUnique(Args&& ...args) {
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
 }

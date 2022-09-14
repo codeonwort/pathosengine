@@ -15,6 +15,17 @@ namespace pathos {
 
 }
 
+// DisplayObject2DProxy
+namespace pathos {
+
+	matrix4 DisplayObject2DProxy::getLocalTransform() {
+		matrix4 M = glm::scale(matrix4(1.0f), vector3(scaleX, scaleY, 1.0f));
+		M = glm::translate(M, vector3(x, y, 0.0f));
+		return M;
+	}
+
+}
+
 // LabelProxy
 namespace pathos {
 
@@ -22,12 +33,6 @@ namespace pathos {
 		TextGeometry* G = static_cast<TextGeometry*>(geometry);
 		G->configure(*cmdList, *fontDesc.cacheTexture, text);
 		return true;
-	}
-
-	matrix4 DisplayObject2DProxy::getLocalTransform() {
-		matrix4 M = glm::scale(matrix4(1.0f), vector3(scaleX, scaleY, 1.0f));
-		M = glm::translate(M, vector3(x, y, 0.0f));
-		return M;
 	}
 
 }
