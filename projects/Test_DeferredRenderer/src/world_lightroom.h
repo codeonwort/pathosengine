@@ -33,12 +33,16 @@ private:
 private:
 #if SHARED_PTR_ACTORS
 	sharedPtr<StaticMeshActor> ground;
+	sharedPtr<StaticMeshActor> wallA;
+	sharedPtr<StaticMeshActor> wallB;
 	sharedPtr<StaticMeshActor> box;
 	sharedPtr<DirectionalLightActor> sun;
 	sharedPtr<PointLightActor> pointLight0;
 	sharedPtr<StaticMeshActor> pointLight0Gizmo;
 #else
 	StaticMeshActor* ground = nullptr;
+	StaticMeshActor* wallA = nullptr;
+	StaticMeshActor* wallB = nullptr;
 	StaticMeshActor* box = nullptr;
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
