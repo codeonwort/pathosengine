@@ -184,16 +184,16 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	return finalRadiance;
 }
 
-vec4 getLocalIllumination(GBufferData gbufferData) {
+vec3 getLocalIllumination(GBufferData gbufferData) {
 	uint ID = gbufferData.material_id;
 
-	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
+	vec3 result = vec3(0.0, 0.0, 0.0);
 	if (ID == MATERIAL_ID_TEXTURE) {
-		result.rgb = phongShading(gbufferData);
+		result = phongShading(gbufferData);
 	} else if(ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
-		result.rgb = gbufferData.albedo;
+		result = gbufferData.albedo;
 	} else if(ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR) {
-		result.rgb = CookTorranceBRDF(gbufferData);
+		result = CookTorranceBRDF(gbufferData);
 	} else {
 		discard;
 	}
@@ -216,26 +216,21 @@ void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
-	vec4 radiance = getLocalIllumination(gbufferData);
+	vec3 radiance = getLocalIllumination(gbufferData);
 
 	if (isFogEnabled()) {
-		radiance.rgb = applyFog(gbufferData, radiance.rgb);
+		radiance = applyFog(gbufferData, radiance.rgb);
 	}
 
 // shadow_mapping.glsl
 #if DEBUG_CSM_ID
-	radiance.rgb = vec3(getShadowing(gbufferData));
+	radiance = vec3(getShadowing(gbufferData));
 #endif
 
-	// #todo: Sometimes radiance.rgb is NaN, which results in vec3(65536.0) by bloom setup pass,
-	// which results in a big white circle by bloom pass.
-	radiance.rgb = max(vec3(0.0), radiance.rgb);
+	// #todo: Sometimes radiance.rgb is NaN.
+	radiance = max(vec3(0.0), radiance);
 
 	// output: standard shading
-	outSceneColor = radiance;
-	outSceneColor.rgb += gbufferData.emissive;
-
-	// #todo-shader: Write real opacity. Output this value in another place for depth-of-field.
-	// Continue to depth_of_field.glsl
-	outSceneColor.a = -gbufferData.vs_coords.z;
+	outSceneColor.rgb = radiance;
+	outSceneColor.a = 0.0;
 }

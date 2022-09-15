@@ -37,11 +37,11 @@ void main() {
 	const uint steps = uint(log2(gl_WorkGroupSize.x)) + 1;
 	uint step = 0;
 
-	vec4 i0 = imageLoad(input_image, P0 + fetchOffset);
-	vec4 i1 = imageLoad(input_image, P1 + fetchOffset);
+	vec3 i0 = imageLoad(input_image, P0 + fetchOffset).rgb;
+	vec3 i1 = imageLoad(input_image, P1 + fetchOffset).rgb;
 
-	shared_data[P0.x] = i0.rgb;
-	shared_data[P1.x] = i1.rgb;
+	shared_data[P0.x] = i0;
+	shared_data[P1.x] = i1;
 
 	barrier();
 	memoryBarrierShared();
@@ -63,6 +63,6 @@ void main() {
 	}
 
 	ivec2 storeOffset = ivec2(0, ubo.fetchOffset);
-	imageStore(output_image, storeOffset + P0.yx, vec4(prevRunResult + shared_data[P0.x], i0.a));
-	imageStore(output_image, storeOffset + P1.yx, vec4(prevRunResult + shared_data[P1.x], i1.a));
+	imageStore(output_image, storeOffset + P0.yx, vec4(prevRunResult + shared_data[P0.x], 0.0));
+	imageStore(output_image, storeOffset + P1.yx, vec4(prevRunResult + shared_data[P1.x], 0.0));
 }

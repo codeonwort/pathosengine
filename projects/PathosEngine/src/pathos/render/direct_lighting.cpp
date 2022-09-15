@@ -16,9 +16,9 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
+	static ConsoleVariable<int32> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
 
-	static ConsoleVariable<int32_t> cvar_enable_fog("r.fog", 0, "0 = disable fog, 1 = enable fog");
+	static ConsoleVariable<int32> cvar_enable_fog("r.fog", 0, "0 = disable fog, 1 = enable fog");
 	static ConsoleVariable<float> cvar_fog_bottom("r.fog.bottom", 0.0f, "bottom Y");
 	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
 	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");

@@ -60,7 +60,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
-	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
@@ -318,16 +317,12 @@ namespace pathos {
 
 				uint32 viewportWidth = sceneRenderSettings.sceneWidth / 2;
 				uint32 viewportHeight = sceneRenderSettings.sceneHeight / 2;
-				const bool bloomWithThreshold = cvar_bloom_threshold.getInt() != 0;
 
-				if (bloomWithThreshold) {
-					cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
-					bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
-					bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
-					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
-				}
+				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
+				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
+				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				const GLuint firstSource = bloomWithThreshold ? sceneRenderTargets.sceneBloom : sceneRenderTargets.sceneColor;
+				const GLuint firstSource = sceneRenderTargets.sceneBloom;
 				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
 
 				for (uint32 i = 0; i < numMips; ++i) {
