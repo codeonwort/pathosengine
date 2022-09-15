@@ -4,15 +4,8 @@
 #include "shadow_mapping.glsl"
 #include "brdf.glsl"
 
-layout (location = 0) out vec4 outSceneColor;
-
-layout (binding = 0) uniform usampler2D gbuf0;
-layout (binding = 1) uniform sampler2D gbuf1;
-layout (binding = 2) uniform usampler2D gbuf2;
-// reserved for more gbuffers...
-layout (binding = 5) uniform sampler2D ssaoMap;
-layout (binding = 6) uniform sampler2DArrayShadow csm;
-layout (binding = 7) uniform samplerCubeArrayShadow pointLightShadowMaps;
+// --------------------------------------------------------
+// Input
 
 in VS_OUT {
 	vec2 screenUV;
@@ -23,6 +16,22 @@ layout (std140, binding = 1) uniform UBO_DirectLighting {
 	vec4 fogColor;
 	vec4 fogParams;
 } ubo;
+
+layout (binding = 0) uniform usampler2D gbuf0;
+layout (binding = 1) uniform sampler2D gbuf1;
+layout (binding = 2) uniform usampler2D gbuf2;
+// reserved for more gbuffers...
+layout (binding = 5) uniform sampler2D ssaoMap;
+layout (binding = 6) uniform sampler2DArrayShadow csm;
+layout (binding = 7) uniform samplerCubeArrayShadow omniShadowMaps;
+
+// --------------------------------------------------------
+// Output
+
+layout (location = 0) out vec4 outSceneColor;
+
+// --------------------------------------------------------
+// Shader
 
 // Getters for UBO
 bool isShadowEnabled()    { return ubo.enabledTechniques1.x != 0; }
@@ -49,55 +58,7 @@ float getShadowingByPointLight(GBufferData gbufferData, PointLight light, int sh
 	query.attenuationRadius = light.attenuationRadius;
 	query.wPos              = gbufferData.ws_coords;
 
-	return getOmniShadowingFactor(pointLightShadowMaps, query);
-}
-
-// #todo: Too old model to be deprecated.
-vec3 phongShading(GBufferData gbufferData) {
-	vec3 result = vec3(0.0);
-	vec3 N = gbufferData.normal;
-
-	for(uint i = 0; i < uboPerFrame.numDirLights; ++i) {
-		DirectionalLight light = uboPerFrame.directionalLights[i];
-
-		vec3 radiance = light.intensity;
-		if (i == 0 && isShadowEnabled()) {
-			radiance = radiance * getShadowing(gbufferData);
-		}
-
-		vec3 L = -light.vsDirection;
-		float cosTheta = max(0.0, dot(N, L));
-		vec3 diffuse_color = radiance * (gbufferData.albedo * cosTheta);
-		result += diffuse_color;
-	}
-
-	int omniShadowMapIndex = 0;
-	for(uint i = 0; i < uboPerFrame.numPointLights; ++i) {
-		PointLight light = uboPerFrame.pointLights[i];
-
-		vec3 L = light.viewPosition - gbufferData.vs_coords;
-		float dist = length(L);
-		float attenuation = pointLightAttenuation(light, dist);
-		L = normalize(L);
-		vec3 R = reflect(-L, N);
-		float cosTheta = max(0.0, dot(N, L));
-
-		vec3 radiance = light.intensity;
-		radiance *= attenuation;
-		if (light.castsShadow != 0 && isShadowEnabled()) {
-			radiance *= getShadowingByPointLight(gbufferData, light, omniShadowMapIndex);
-			omniShadowMapIndex += 1;
-		}
-
-		vec3 specular_color = radiance * pow(max(0.0, dot(R, -uboPerFrame.eyeDirection)), gbufferData.specular_power);
-		vec3 diffuse_color = radiance * gbufferData.albedo * cosTheta;
-		result += diffuse_color + specular_color;
-	}
-
-	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
-	result.rgb *= ssao;
-
-	return result;
+	return getOmniShadowingFactor(omniShadowMaps, query);
 }
 
 vec3 CookTorranceBRDF(GBufferData gbufferData) {
@@ -188,11 +149,9 @@ vec3 getLocalIllumination(GBufferData gbufferData) {
 	uint ID = gbufferData.material_id;
 
 	vec3 result = vec3(0.0, 0.0, 0.0);
-	if (ID == MATERIAL_ID_TEXTURE) {
-		result = phongShading(gbufferData);
-	} else if(ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
+	if (ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
 		result = gbufferData.albedo;
-	} else if(ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR) {
+	} else if (ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR || ID == MATERIAL_ID_TEXTURE) {
 		result = CookTorranceBRDF(gbufferData);
 	} else {
 		discard;

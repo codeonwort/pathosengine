@@ -9,6 +9,7 @@
 #define MAX_DIRECTIONAL_LIGHTS     4
 #define MAX_POINT_LIGHTS           8
 
+// #todo-material: Rename to MATERIAL_DOMAIN
 // This don't need to match with material_id.h
 #define MATERIAL_ID_NONE           0
 #define MATERIAL_ID_SOLID_COLOR    1

@@ -16,5 +16,18 @@ void main() {
 	vec3 albedo = texture(tex_diffuse, fs_in.texcoord).rgb;
 	vec3 normal = normalize(fs_in.normal);
 
-	packGBuffer(albedo, normal, fs_in.material_id, fs_in.vs_coords, 0.0, 0.0, 0.0, vec3(0.0));
+	float metallic = 0.0;
+	float roughness = 1.0;
+	float localAO = 1.0;
+	vec3 emissive = vec3(0.0);
+
+	packGBuffer(
+		albedo,
+		normal,
+		fs_in.material_id,
+		fs_in.vs_coords,
+		metallic,
+		roughness,
+		localAO,
+		emissive);
 }

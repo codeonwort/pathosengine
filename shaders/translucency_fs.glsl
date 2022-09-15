@@ -1,5 +1,10 @@
 #version 460 core
 
+// #todo-translucency: Long way to go...
+//     1. Rework material assembler.
+//     2. Restore forward shading pipeline.
+//     3. Properly render translucency.
+
 #include "brdf.glsl"
 #include "deferred_common.glsl"
 

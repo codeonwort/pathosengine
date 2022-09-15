@@ -101,11 +101,13 @@ namespace pathos {
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting);
 		cmdList.useProgram(program.getGLName());
+		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-
 		pathos::checkFramebufferStatus(cmdList, fbo, "[DirectLighting] FBO is invalid");
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
@@ -113,9 +115,6 @@ namespace pathos {
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
 		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
-		cmdList.bindTextureUnit(8, scene->irradianceMap);
-		cmdList.bindTextureUnit(9, scene->prefilterEnvMap);
-		cmdList.bindTextureUnit(10, IrradianceBaker::getBRDFIntegrationMap_512());
 
 		cmdList.disable(GL_DEPTH_TEST);
 
@@ -132,8 +131,14 @@ namespace pathos {
 		quad->activateIndexBuffer(cmdList);
 		quad->drawPrimitive(cmdList);
 
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		// #todo-light: Render lights one by one. Accumulate with color blending.
+		// ...
+
+		// Cleanup render states
+		{
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		}
 	}
 
 }
