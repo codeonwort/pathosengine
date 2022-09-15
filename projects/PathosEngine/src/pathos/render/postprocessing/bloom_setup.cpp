@@ -7,13 +7,17 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
+	static ConsoleVariable<int32> cvar_bloom_applyThreshold("r.bloom.applyThreshold", 1, "Apply threshold to sceneColor for bloom contribution");
+	static ConsoleVariable<float> cvar_bloom_threshold("r.bloom.threshold", 1.0f, "Only sceneColor samples above the threshold contribute to bloom");
+	static ConsoleVariable<float> cvar_bloom_exposure("r.bloom.exposure", 1.0f, "Exposure scaling");
 
 	struct UBO_BloomSetup {
 		static constexpr uint32 BINDING_POINT = 1;
 
 		vector2 sceneSize;
 		uint32 applyThreshold;
+		float threshold;
+		float exposure;
 	};
 
 	class BloomSetupVS : public ShaderStage {
@@ -74,7 +78,9 @@ namespace pathos {
 		UBO_BloomSetup uboData;
 		uboData.sceneSize.x = (float)sceneContext.sceneWidth;
 		uboData.sceneSize.y = (float)sceneContext.sceneHeight;
-		uboData.applyThreshold = (cvar_bloom_threshold.getInt() != 0);
+		uboData.applyThreshold = (cvar_bloom_applyThreshold.getInt() != 0);
+		uboData.threshold = cvar_bloom_threshold.getFloat();
+		uboData.exposure = std::max(0.0f, cvar_bloom_exposure.getFloat());
 		ubo.update(cmdList, UBO_BloomSetup::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, input0);
