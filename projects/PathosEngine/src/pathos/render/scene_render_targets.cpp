@@ -94,10 +94,12 @@ namespace pathos {
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
 
-		// #todo-rendertarget: Switch to rgba16f?
-		reallocTexture2D(sceneFinal, GL_RGBA32F, sceneWidth, sceneHeight, "sceneFinal");
-		reallocTexture2D(sceneColor, GL_RGBA32F, sceneWidth, sceneHeight, "sceneColor");
-		reallocTexture2D(sceneDepth, GL_DEPTH24_STENCIL8, sceneWidth, sceneHeight, "sceneDepth");
+		// #todo-rendertarget: Switch PF_sceneColor to rgba16f?
+		static constexpr GLenum PF_sceneColor = GL_RGBA32F;
+		static constexpr GLenum PF_sceneDepth = GL_DEPTH24_STENCIL8;
+		reallocTexture2D(sceneFinal, PF_sceneColor, sceneWidth, sceneHeight, "sceneFinal");
+		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
+		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
 
 		// sceneColorDownsampleChain
 		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));

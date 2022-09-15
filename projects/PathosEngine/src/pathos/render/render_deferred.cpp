@@ -224,6 +224,7 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
+		// #todo-renderer: Why am I clearing backbuffer here?
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
 
@@ -265,9 +266,20 @@ namespace pathos {
 		}
 
 		{
+			SCOPED_DRAW_EVENT(ClearSceneColor);
+			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
+			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
+			cmdList.clearTexImage(
+				sceneRenderTargets.sceneColor,
+				0,
+				GL_RGBA,
+				GL_FLOAT,
+				clearValues);
+		}
+
+		{
 			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
 			SCOPED_GPU_COUNTER(DirectLighting);
-
 			renderDirectLighting(cmdList);
 		}
 
@@ -415,25 +427,27 @@ namespace pathos {
 	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(BasePass);
 
-		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
-		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		static const GLfloat one[] = { 1.0f };
-		static const GLfloat zero_depth[] = { 0.0f };
+		// #todo: Dynamically toggle depth prepass.
+		constexpr bool bUseDepthPrepass = true;
+		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
+
+		static const GLuint color_zero_ui[] = { 0, 0, 0, 0 };
+		static const GLfloat color_zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GLfloat* sceneDepthClearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat));
+		*sceneDepthClearValue = pathos::getDeviceFarDepth();
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
-		// Should not clear here due to depth prepass
-		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
+		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, color_zero_ui);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, color_zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, color_zero);
+		if (!bUseDepthPrepass) {
+			cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, sceneDepthClearValue);
+		}
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
-		// #todo: Dynamically toggle depth prepass.
-		constexpr bool bUseDepthPrepass = true;
-		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
 		if (bUseDepthPrepass) {
 			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
 			cmdList.enable(GL_DEPTH_TEST);

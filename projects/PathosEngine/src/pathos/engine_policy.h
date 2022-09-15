@@ -20,5 +20,11 @@ namespace pathos {
 	constexpr EReverseZPolicy getReverseZPolicy() {
 		return EReverseZPolicy::Reverse;
 	}
+	constexpr float getDeviceFarDepth() {
+		return (getReverseZPolicy() == EReverseZPolicy::Reverse) ? 0.0f : 1.0f;
+	}
+	constexpr float getDeviceNearDepth() {
+		return (getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1.0f : 0.0f;
+	}
 
 }

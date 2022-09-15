@@ -67,7 +67,6 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		static const GLfloat zeroDepth[] = { 0.0f };
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DepthPrepass);
 		cmdList.useProgram(program.getGLName());
@@ -82,7 +81,10 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
-		cmdList.clearNamedFramebufferfv(fbo, GL_DEPTH, 0, zeroDepth);
+
+		GLfloat* sceneDepthClearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat));
+		*sceneDepthClearValue = pathos::getDeviceFarDepth();
+		cmdList.clearNamedFramebufferfv(fbo, GL_DEPTH, 0, sceneDepthClearValue);
 
 		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
 		CHECK(cvarFrustum != nullptr);
