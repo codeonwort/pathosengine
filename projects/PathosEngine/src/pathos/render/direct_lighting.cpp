@@ -187,6 +187,8 @@ namespace pathos {
 
 				ubo.update(cmdList, UBO_DirectLighting<PointLightProxy>::BINDING_SLOT, &uboData);
 
+				// #todo-light: Local lights usually do not cover the entire viewport.
+				// Need to adjust raster region in vertex shader.
 				quad->activate_position_uv(cmdList);
 				quad->activateIndexBuffer(cmdList);
 				quad->drawPrimitive(cmdList);
