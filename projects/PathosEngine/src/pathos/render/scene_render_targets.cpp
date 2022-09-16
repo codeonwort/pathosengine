@@ -94,10 +94,12 @@ namespace pathos {
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
 
-		// #todo-rendertarget: Switch to rgba16f?
-		reallocTexture2D(sceneFinal, GL_RGBA32F, sceneWidth, sceneHeight, "sceneFinal");
-		reallocTexture2D(sceneColor, GL_RGBA32F, sceneWidth, sceneHeight, "sceneColor");
-		reallocTexture2D(sceneDepth, GL_DEPTH24_STENCIL8, sceneWidth, sceneHeight, "sceneDepth");
+		// #todo-rendertarget: Switch PF_sceneColor to rgba16f?
+		static constexpr GLenum PF_sceneColor = GL_RGBA32F;
+		static constexpr GLenum PF_sceneDepth = GL_DEPTH24_STENCIL8;
+		reallocTexture2D(sceneFinal, PF_sceneColor, sceneWidth, sceneHeight, "sceneFinal");
+		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
+		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
 
 		// sceneColorDownsampleChain
 		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
@@ -165,22 +167,24 @@ namespace pathos {
 		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		// depth of field
-		reallocTexture2D(dofSubsum0, GL_RGBA32F, sceneHeight, sceneWidth, "depthOfField_subsum0");
-		reallocTexture2D(dofSubsum1, GL_RGBA32F, sceneWidth, sceneHeight, "depthOfField_subsum1");
+		constexpr GLenum PF_dofSubsum = GL_RGBA32F;
+		reallocTexture2D(dofSubsum0, PF_dofSubsum, sceneHeight, sceneWidth, "depthOfField_subsum0");
+		reallocTexture2D(dofSubsum1, PF_dofSubsum, sceneWidth, sceneHeight, "depthOfField_subsum1");
 
 		// bloom
-		reallocTexture2DMips(sceneBloom, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloom");
+		constexpr GLenum PF_bloom = GL_RGBA16F;
+		reallocTexture2DMips(sceneBloom, PF_bloom, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloom");
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2DMips(sceneBloomTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloomTemp");
+		reallocTexture2DMips(sceneBloomTemp, PF_bloom, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloomTemp");
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, GL_RGBA16F, "view_sceneBloom");
-		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, GL_RGBA16F, "view_sceneBloomTemp");
+		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, PF_bloom, "view_sceneBloom");
+		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, PF_bloom, "view_sceneBloomTemp");
 		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
 			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

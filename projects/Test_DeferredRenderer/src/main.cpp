@@ -1,5 +1,7 @@
 #include "world1.h"
 #include "world_rc1.h"
+#include "world_lightroom.h"
+
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/input/input_manager.h"
@@ -14,7 +16,7 @@ const float CAMERA_Z_NEAR        = 1.0f;
 const float CAMERA_Z_FAR         = 5000.0f;
 
 void changeWorld() {
-	static const int32 numWorlds = 2;
+	static const int32 numWorlds = 3;
 	static int32 worldIndex = 1;
 
 	World* newWorld = nullptr;
@@ -28,6 +30,10 @@ void changeWorld() {
 		gEngine->getMainWindow()->setTitle("Test: Deferred Rendering");
 		break;
 	case 2:
+		newWorld = new World_LightRoom;
+		gEngine->getMainWindow()->setTitle("Test: Light Room");
+		break;
+	case 3:
 		// More worlds here...
 		break;
 	default:

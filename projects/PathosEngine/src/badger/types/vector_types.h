@@ -10,3 +10,7 @@ using vector4 = glm::vec4;
 using vector2i = glm::ivec2;
 using vector3i = glm::ivec3;
 using vector4i = glm::ivec4;
+
+using vector2ui = glm::uvec2;
+using vector3ui = glm::uvec3;
+using vector4ui = glm::uvec4;

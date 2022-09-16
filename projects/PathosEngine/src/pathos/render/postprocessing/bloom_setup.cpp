@@ -3,8 +3,22 @@
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/console.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_bloom_applyThreshold("r.bloom.applyThreshold", 1, "Apply threshold to sceneColor for bloom contribution");
+	static ConsoleVariable<float> cvar_bloom_threshold("r.bloom.threshold", 1.0f, "Only sceneColor samples above the threshold contribute to bloom");
+	static ConsoleVariable<float> cvar_bloom_exposure("r.bloom.exposure", 1.0f, "Exposure scaling");
+
+	struct UBO_BloomSetup {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		vector2 sceneSize;
+		uint32 applyThreshold;
+		float threshold;
+		float exposure;
+	};
 
 	class BloomSetupVS : public ShaderStage {
 	public:
@@ -33,6 +47,8 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_BloomSetup");
+
+		ubo.init<UBO_BloomSetup>("UBO_BloomSetup");
 	}
 
 	void BloomSetup::releaseResources(RenderCommandList& cmdList)
@@ -51,10 +67,27 @@ namespace pathos {
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BloomSetup);
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.useProgram(program.getGLName());
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+
+		UBO_BloomSetup uboData;
+		uboData.sceneSize.x = (float)sceneContext.sceneWidth;
+		uboData.sceneSize.y = (float)sceneContext.sceneHeight;
+		uboData.applyThreshold = (cvar_bloom_applyThreshold.getInt() != 0);
+		uboData.threshold = cvar_bloom_threshold.getFloat();
+		uboData.exposure = std::max(0.0f, cvar_bloom_exposure.getFloat());
+		ubo.update(cmdList, UBO_BloomSetup::BINDING_POINT, &uboData);
+
 		cmdList.bindTextureUnit(0, input0);
+		cmdList.bindTextureUnit(1, sceneContext.gbufferA);
+		cmdList.bindTextureUnit(2, sceneContext.gbufferB);
+		cmdList.bindTextureUnit(3, sceneContext.gbufferC);
+
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);

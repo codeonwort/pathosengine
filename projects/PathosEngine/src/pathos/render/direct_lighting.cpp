@@ -8,28 +8,43 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/camera/camera.h"
+#include "pathos/light/directional_light_component.h"
+#include "pathos/light/point_light_component.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
 
+#define INFINITE_LIGHT_SOURCES 1
+
 namespace pathos {
 
-	static ConsoleVariable<int32_t> cvar_enable_shadow("r.shadow", 1, "0 = disable shadow, 1 = enable shadow");
+	static ConsoleVariable<int32> cvar_enable_shadow("r.shadow", 1, "0 = disable shadowing, 1 = enable shadowing");
 
-	static ConsoleVariable<int32_t> cvar_enable_fog("r.fog", 0, "0 = disable fog, 1 = enable fog");
-	static ConsoleVariable<float> cvar_fog_bottom("r.fog.bottom", 0.0f, "bottom Y");
-	static ConsoleVariable<float> cvar_fog_top("r.fog.top", 1000.0f, "top Y");
-	static ConsoleVariable<float> cvar_fog_attenuation("r.fog.attenuation", 0.001f, "fog attenuation coefficient");
+	// #note: Should match with definitions in direct_lighting.glsl.
+	enum class ELightSourceType : uint32 {
+		Directional = 0,
+		Point = 1
+	};
 
+	template<typename LightProxy>
 	struct UBO_DirectLighting {
+		static_assert(
+			std::is_same<LightProxy, DirectionalLightProxy>::value
+				|| std::is_same<LightProxy, PointLightProxy>::value,
+			"Not supported LightProxy type");
+
 		static const uint32 BINDING_SLOT = 1;
 
-		vector4i enabledTechniques1; // (shadow, fog, ?, ?)
-		vector4 fogColor;
-		vector4 fogParams;           // (bottomY, topY, ?, ?)
+		uint32 enableShadowing;
+		uint32 haveShadowMap;
+		uint32 omniShadowMapIndex;
+		uint32 _padding0;
+
+		LightProxy lightParameters;
 	};
+	static_assert(sizeof(DirectionalLightProxy) == sizeof(PointLightProxy), "Should be same");
 
 	class DirectLightingVS : public ShaderStage {
 	public:
@@ -38,14 +53,18 @@ namespace pathos {
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
+
+	template<ELightSourceType LightSourceType>
 	class DirectLightingFS : public ShaderStage {
 	public:
 		DirectLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "DirectLightingFS")
 		{
+			addDefine("LIGHT_SOURCE_TYPE", (uint32)LightSourceType);
 			setFilepath("direct_lighting.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_DirectLighting, DirectLightingVS, DirectLightingFS);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Directional, DirectLightingVS, DirectLightingFS<ELightSourceType::Directional>);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Point, DirectLightingVS, DirectLightingFS<ELightSourceType::Point>);
 
 }
 
@@ -67,7 +86,8 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		ubo.init<UBO_DirectLighting>();
+		// Init with any proxy type as they have the same size.
+		ubo.init<UBO_DirectLighting<DirectionalLightProxy>>();
 	}
 
 	void DirectLightingPass::destroyResources(RenderCommandList& cmdList) {
@@ -100,11 +120,17 @@ namespace pathos {
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting);
-		cmdList.useProgram(program.getGLName());
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+		// Accumulate lighting to sceneColor one by one.
+		{
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.enable(GL_BLEND);
+			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+		}
+		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-
 		pathos::checkFramebufferStatus(cmdList, fbo, "[DirectLighting] FBO is invalid");
 
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
@@ -112,27 +138,69 @@ namespace pathos {
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
 		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
-		cmdList.bindTextureUnit(8, scene->irradianceMap);
-		cmdList.bindTextureUnit(9, scene->prefilterEnvMap);
-		cmdList.bindTextureUnit(10, IrradianceBaker::getBRDFIntegrationMap_512());
 
-		cmdList.disable(GL_DEPTH_TEST);
+		// Directional lights
+		const auto& dirLights = scene->proxyList_directionalLight;
+		if (dirLights.size() > 0) {
+			SCOPED_DRAW_EVENT(Directional);
 
-		UBO_DirectLighting uboData;
-		uboData.enabledTechniques1.x  = cvar_enable_shadow.getInt();
-		uboData.enabledTechniques1.y  = cvar_enable_fog.getInt();
-		uboData.fogColor              = glm::vec4(0.7f, 0.8f, 0.9f, 0.0f);
-		uboData.fogParams.x           = cvar_fog_bottom.getFloat();
-		uboData.fogParams.y           = cvar_fog_top.getFloat();
-		uboData.fogParams.z           = cvar_fog_attenuation.getFloat();
-		ubo.update(cmdList, UBO_DirectLighting::BINDING_SLOT, &uboData);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Directional);
+			cmdList.useProgram(program.getGLName());
 
-		quad->activate_position_uv(cmdList);
-		quad->activateIndexBuffer(cmdList);
-		quad->drawPrimitive(cmdList);
+			for (size_t lightIx = 0; lightIx < dirLights.size(); ++lightIx) {
+				const DirectionalLightProxy* light = dirLights[lightIx];
 
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+				UBO_DirectLighting<DirectionalLightProxy> uboData;
+				uboData.enableShadowing = cvar_enable_shadow.getInt();
+				// #todo-light: Support shadow map for secondary directional lights.
+				uboData.haveShadowMap = (lightIx == 0);
+				uboData.lightParameters = *light;
+
+				ubo.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
+
+				quad->activate_position_uv(cmdList);
+				quad->activateIndexBuffer(cmdList);
+				quad->drawPrimitive(cmdList);
+			}
+		}
+
+		// Point lights
+		const auto& pointLights = scene->proxyList_pointLight;
+		uint32 omniShadowMapIndex = 0;
+		if (pointLights.size() > 0) {
+			SCOPED_DRAW_EVENT(Point);
+
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Point);
+			cmdList.useProgram(program.getGLName());
+
+			for (size_t lightIx = 0; lightIx < pointLights.size(); ++lightIx) {
+				const PointLightProxy* light = pointLights[lightIx];
+
+				UBO_DirectLighting<PointLightProxy> uboData;
+				uboData.enableShadowing = cvar_enable_shadow.getInt();
+				uboData.haveShadowMap = light->castsShadow;
+				if (light->castsShadow) {
+					uboData.omniShadowMapIndex = omniShadowMapIndex;
+					omniShadowMapIndex += 1;
+				}
+				uboData.lightParameters = *light;
+
+				ubo.update(cmdList, UBO_DirectLighting<PointLightProxy>::BINDING_SLOT, &uboData);
+
+				// #todo-light: Local lights usually do not cover the entire viewport.
+				// Need to adjust raster region in vertex shader.
+				quad->activate_position_uv(cmdList);
+				quad->activateIndexBuffer(cmdList);
+				quad->drawPrimitive(cmdList);
+			}
+		}
+
+		// Cleanup render states
+		{
+			cmdList.disable(GL_BLEND);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		}
 	}
 
 }

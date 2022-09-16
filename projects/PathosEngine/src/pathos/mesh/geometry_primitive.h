@@ -25,9 +25,14 @@ namespace pathos {
 
 	class CubeGeometry : public MeshGeometry {
 	public:
-		CubeGeometry(const vector3& halfSize, EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-		void buildGeometry();
+		CubeGeometry(
+			const vector3& halfSize,
+			bool smoothing = false,
+			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
+		void buildGeometry(bool smoothing);
 	private:
+		void buildGeometry_smoothing();
+		void buildGeometry_noSmoothing();
 		vector3 halfSize;
 	};
 

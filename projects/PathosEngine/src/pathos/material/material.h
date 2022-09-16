@@ -68,8 +68,8 @@ namespace pathos {
 		TranslucentColorMaterial() {
 			materialID = MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
 			setAlbedo(1.0f, 1.0f, 1.0f);
-			metallic = 0.5f;
-			roughness = 0.1f;
+			metallic = 0.0f;
+			roughness = 0.9f;
 			opacity = 0.5f;
 		}
 

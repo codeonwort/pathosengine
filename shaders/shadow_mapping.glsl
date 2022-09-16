@@ -28,7 +28,7 @@ struct OmniShadowQuery {
 };
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
-	vec3 vSun = uboPerFrame.directionalLights[0].vsDirection;
+	vec3 vSun = uboPerFrame.sunLight.vsDirection;
 	float linearZ = (-query.vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 
 	// Non-uniform partition of depth ranges. Should match with the partitioning criteria of Camera::getFrustum().
@@ -79,7 +79,7 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 }
 
 float getOmniShadowingFactor(samplerCubeArrayShadow shadowMaps, OmniShadowQuery query) {
-	const float DEPTH_BIAS = 0.005;
+	const float DEPTH_BIAS = 0.01;
 	float Z_FAR = query.attenuationRadius;
 
 	vec3 fragToLight = query.wPos - query.lightPos;
@@ -89,7 +89,7 @@ float getOmniShadowingFactor(samplerCubeArrayShadow shadowMaps, OmniShadowQuery 
 
 	// #todo: Soft shadow
 	vec4 P = vec4(fragToLight, float(query.shadowMapIndex));
-	float shadow = texture(shadowMaps, P, currentDepth);
+	float shadow = texture(shadowMaps, P, currentDepth - DEPTH_BIAS);
 
 	return shadow;
 };

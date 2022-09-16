@@ -13,6 +13,9 @@ out VS_OUT {
 void main() {
 	vs_out.r = position;
 	gl_Position = (viewProj * vec4(position, 1)).xyww;
+#if REVERSE_Z
+	gl_Position.z = 0.0;
+#endif
 }
 
 #endif // VERTEX_SHADER
@@ -27,8 +30,7 @@ in VS_OUT {
 	vec3 r;
 } fs_in;
 
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright;
+layout (location = 0) out vec4 outSceneColor;
 
 vec2 CubeToEquirectangular(vec3 v) {
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
@@ -50,9 +52,7 @@ void main() {
 #endif
 
 	vec3 sky = texture(texSky, tc).xyz;
-	out_color = vec4(sky, 1.0);
-
-	out_bright = vec4(0.0);
+	outSceneColor = vec4(sky, 1.0);
 }
 
 #endif // FRAGMENT_SHADER

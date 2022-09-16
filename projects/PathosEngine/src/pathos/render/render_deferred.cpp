@@ -60,12 +60,8 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
-	static ConsoleVariable<int32> cvar_bloom_threshold("r.bloom.threshold", 1, "0 = No threshold for bloom, 1 = Apply threshold before bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
-
-	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
-	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
 		matrix4               prevView; // For reprojection
@@ -91,14 +87,9 @@ namespace pathos {
 		float                 __pad1;
 
 		vector3               ws_eyePosition;
-		uint32                numDirLights;
+		uint32                sunExists;
 
-		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
-
-		uint32                numPointLights;
-		vector3               __pad2;
-
-		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
+		DirectionalLightProxy sunLight;
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
@@ -225,6 +216,7 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
+		// #todo-renderer: Why am I clearing backbuffer here?
 		{
 			SCOPED_DRAW_EVENT(ClearBackbuffer);
 
@@ -266,9 +258,20 @@ namespace pathos {
 		}
 
 		{
+			SCOPED_DRAW_EVENT(ClearSceneColor);
+			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
+			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
+			cmdList.clearTexImage(
+				sceneRenderTargets.sceneColor,
+				0, // mip
+				GL_RGBA,
+				GL_FLOAT,
+				clearValues);
+		}
+
+		{
 			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
 			SCOPED_GPU_COUNTER(DirectLighting);
-
 			renderDirectLighting(cmdList);
 		}
 
@@ -286,8 +289,7 @@ namespace pathos {
 		// Translucency pass
 		{
 			SCOPED_GPU_COUNTER(Translucency);
-
-			renderTranslucency(cmdList);
+			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -318,16 +320,12 @@ namespace pathos {
 
 				uint32 viewportWidth = sceneRenderSettings.sceneWidth / 2;
 				uint32 viewportHeight = sceneRenderSettings.sceneHeight / 2;
-				const bool bloomWithThreshold = cvar_bloom_threshold.getInt() != 0;
 
-				if (bloomWithThreshold) {
-					cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
-					bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
-					bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
-					bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
-				}
+				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
+				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
+				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				const GLuint firstSource = bloomWithThreshold ? sceneRenderTargets.sceneBloom : sceneRenderTargets.sceneColor;
+				const GLuint firstSource = sceneRenderTargets.sceneBloom;
 				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
 
 				for (uint32 i = 0; i < numMips; ++i) {
@@ -420,25 +418,29 @@ namespace pathos {
 	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(BasePass);
 
-		static const GLuint zero_ui[] = { 0, 0, 0, 0 };
-		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		static const GLfloat one[] = { 1.0f };
-		static const GLfloat zero_depth[] = { 0.0f };
+		// #todo: Dynamically toggle depth prepass.
+		constexpr bool bUseDepthPrepass = true;
+		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
+
+		static const GLuint color_zero_ui[] = { 0, 0, 0, 0 };
+		static const GLfloat color_zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GLfloat* sceneDepthClearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat));
+		*sceneDepthClearValue = pathos::getDeviceFarDepth();
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, zero_ui);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, zero);
-		// Should not clear here due to depth prepass
-		//cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, zero_depth);
+		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, color_zero_ui);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, color_zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, color_zero);
+		if (!bUseDepthPrepass) {
+			cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, sceneDepthClearValue);
+		}
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
-		// #todo: Dynamically toggle depth prepass.
-		constexpr bool bUseDepthPrepass = true;
-		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
+		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
+		// Switch to EQUAL when doing full-depth prepass.
 		if (bUseDepthPrepass) {
 			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
 			cmdList.enable(GL_DEPTH_TEST);
@@ -505,6 +507,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(DirectLighting);
 
 		directLightingPass->bindFramebuffer(cmdList);
+		directLightingPass->renderDirectLighting(cmdList, scene, camera);
 
 		// #todo-refactoring: Actually not an unpack work, but rendering order is here
 		const bool bRenderSkybox = scene->isSkyboxValid();
@@ -522,18 +525,6 @@ namespace pathos {
 		} else if (scene->isSkyAtmosphereValid()) {
 			skyAtmospherePass->render(cmdList, scene);
 		}
-		
-		directLightingPass->renderDirectLighting(cmdList, scene, camera);
-	}
-	
-	// #todo-translucency: Implement
-	void DeferredRenderer::renderTranslucency(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(Translucency);
-
-		uint8 materialID = (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
-		const auto& meshBatches = scene->proxyList_staticMesh[materialID];
-
-		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
 	}
 
 	void DeferredRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
@@ -561,7 +552,11 @@ namespace pathos {
 		return finalRenderTarget->getGLName();
 	}
 
-	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void DeferredRenderer::updateSceneUniformBuffer(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera)
+	{
 		UBO_PerFrame data;
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
@@ -604,15 +599,9 @@ namespace pathos {
 
 		data.ws_eyePosition = camera->getPosition();
 
-		data.numDirLights = pathos::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
-		for (uint32 i = 0; i < data.numDirLights; ++i) {
-			data.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
-		}
-
-		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
-		for (uint32 i = 0; i < data.numPointLights; ++i) {
-			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
-		}
+		// Regard first directional light as Sun.
+		data.sunExists = scene->proxyList_directionalLight.size() > 0;
+		data.sunLight = *(scene->proxyList_directionalLight[0]);
 
 		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 

@@ -23,7 +23,10 @@ layout (location = 0) in vec3 position;
 
 void main() {
 	interpolants.cubeDir = position;
-	gl_Position = (ubo.viewProj * vec4(position, 1)).xyww;
+	gl_Position = (ubo.viewProj * vec4(position, 1.0)).xyww;
+#if REVERSE_Z
+	gl_Position.z = 0.0;
+#endif
 }
 
 #endif // VERTEX_SHADER
@@ -34,8 +37,7 @@ void main() {
 
 layout (binding = 0) uniform samplerCube texCube;
 
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright;
+layout (location = 0) out vec4 outSceneColor;
 
 vec2 CubeToEquirectangular(vec3 v) {
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
@@ -45,8 +47,7 @@ vec2 CubeToEquirectangular(vec3 v) {
 }
 
 void main() {
-  out_color = textureLod(texCube, interpolants.cubeDir, ubo.skyboxLOD);
-  out_bright = vec4(0.0);
+	outSceneColor = textureLod(texCube, interpolants.cubeDir, ubo.skyboxLOD);
 }
 
 #endif // FRAGMENT_SHADER

@@ -87,6 +87,8 @@ namespace pathos {
 		ShaderProgram& program_prefix_sum = FIND_SHADER_PROGRAM(Program_DOF_PrefixSum);
 		ShaderProgram& program_blur = FIND_SHADER_PROGRAM(Program_DOF_Blur);
 
+		constexpr GLenum PF_dofSubsum = GL_RGBA32F;
+
 		{
 			SCOPED_DRAW_EVENT(DepthOfField_Subsum);
 
@@ -105,8 +107,8 @@ namespace pathos {
 				for (int32 i = 0; i < numRuns; ++i) {
 					uboPrefixSum.update(cmdList, 1, &uboData);
 
-					cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-					cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+					cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, PF_dofSubsum);
+					cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_WRITE, PF_dofSubsum);
 					cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
 					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -122,8 +124,8 @@ namespace pathos {
 				for (int32 i = 0; i < numRuns; ++i) {
 					uboPrefixSum.update(cmdList, 1, &uboData);
 
-					cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-					cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+					cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, PF_dofSubsum);
+					cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_READ_WRITE, PF_dofSubsum);
 					cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
 					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -140,6 +142,9 @@ namespace pathos {
 			// apply box blur whose strength is relative to the difference between pixel depth and focal depth
 			cmdList.useProgram(program_blur.getGLName());
 			cmdList.bindTextureUnit(0, sceneContext.dofSubsum1);
+			cmdList.bindTextureUnit(1, sceneContext.gbufferA);
+			cmdList.bindTextureUnit(2, sceneContext.gbufferB);
+			cmdList.bindTextureUnit(3, sceneContext.gbufferC);
 
 			UBO_DoF uboData;
 			uboData.focalDistance = cvar_focal_distance.getFloat();

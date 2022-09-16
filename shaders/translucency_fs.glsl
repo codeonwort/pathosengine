@@ -1,9 +1,21 @@
 #version 460 core
 
+// #todo-translucency: Long way to go...
+//     1. Rework material assembler.
+//     2. Restore forward shading pipeline.
+//     3. Properly render translucency.
+
 #include "brdf.glsl"
 #include "deferred_common.glsl"
 
-layout (location = 0) out vec4 output0; // (color, opacity)
+#ifndef MAX_DIRECTIONAL_LIGHTS
+	#define MAX_DIRECTIONAL_LIGHTS     4
+#endif
+#ifndef MAX_POINT_LIGHTS
+	#define MAX_POINT_LIGHTS           8
+#endif
+
+layout (location = 0) out vec4 outSceneColor; // (color, opacity)
 
 layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
@@ -13,6 +25,13 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 	vec4 metallic_roughness;
 	vec4 transmittance_opacity;
 } uboPerObject;
+
+// Temp UBO to remove light info from UBO_PerFrame
+layout (std140, binding = 2) uniform UBO_LightInfo {
+	ivec4            numLightSources; // (directional, point, ?, ?)
+	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
+	PointLight       pointLights[MAX_POINT_LIGHTS];
+} uboLight;
 
 in VS_OUT {
 	vec3 vs_coords;
@@ -32,7 +51,7 @@ void main() {
 	vec3 vs_coords = fs_in.vs_coords;
 
 	vec3 N = normalize(fs_in.normal);
-	vec3 L = -uboPerFrame.directionalLights[0].vsDirection;
+	vec3 L = -uboLight.directionalLights[0].vsDirection;
 	vec3 V = normalize(uboPerFrame.eyePosition - vs_coords);
 	vec3 H = normalize(V + L);
 
@@ -50,8 +69,8 @@ void main() {
 	vec3 Lo = vec3(0.0);
 	
 	// Directional lights
-	for (int i = 0; i < uboPerFrame.numDirLights; ++i) {
-		DirectionalLight dirLight = uboPerFrame.directionalLights[i];
+	for (int i = 0; i < uboLight.numLightSources.x; ++i) {
+		DirectionalLight dirLight = uboLight.directionalLights[i];
 
 		vec3 L = -dirLight.vsDirection;
 		vec3 H = normalize(V + L);
@@ -74,8 +93,8 @@ void main() {
 	}
 
 	// Point lights
-	for (int i = 0; i < uboPerFrame.numPointLights; ++i) {
-		PointLight pointLight = uboPerFrame.pointLights[i];
+	for (int i = 0; i < uboLight.numLightSources.y; ++i) {
+		PointLight pointLight = uboLight.pointLights[i];
 
 		vec3 L = normalize(pointLight.viewPosition - vs_coords);
 		vec3 H = normalize(V + L);
@@ -106,5 +125,5 @@ void main() {
 	// #todo-translucency: Even generates NaN
 	finalColor = max(vec3(0.0), finalColor);
 
-	output0 = vec4(finalColor, opacity);
+	outSceneColor = vec4(finalColor, opacity);
 }
