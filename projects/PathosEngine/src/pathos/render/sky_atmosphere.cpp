@@ -1,5 +1,7 @@
 #include "sky_atmosphere.h"
 #include "render_device.h"
+#include "scene_render_targets.h"
+#include "pathos/engine_policy.h"
 #include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 
@@ -15,12 +17,16 @@ namespace pathos {
 	GLuint gTransmittanceLUT = 0;
 
 	struct UBO_Atmosphere {
-		glm::vec4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
+		vector4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
 	};
 
+	template<bool bCheckReverseZ>
 	class PASFullscreenVS : public ShaderStage {
 	public:
 		PASFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "PASFullscreenVS") {
+			if (bCheckReverseZ && pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("FORCE_Z_TO_ZERO", 1);
+			}
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
@@ -29,8 +35,8 @@ namespace pathos {
 	class PASTransmittanceFS : public ShaderStage {
 	public:
 		PASTransmittanceFS() : ShaderStage(GL_FRAGMENT_SHADER, "PASTransmittanceFS") {
-			setFilepath("atmosphere_precompute.glsl");
 			addDefine("PRECOMPUTE_TRANSMITTANCE", 1);
+			setFilepath("atmosphere_precompute.glsl");
 		}
 	};
 
@@ -41,8 +47,8 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS, PASTransmittanceFS);
-	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS, AtmosphericScatteringFS);
+	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS<false>, PASTransmittanceFS);
+	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS<true>, AtmosphericScatteringFS);
 
 	void init_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
 		GLuint& lut = gTransmittanceLUT;
@@ -89,21 +95,35 @@ namespace pathos {
 namespace pathos {
 
 	void SkyAtmospherePass::initializeResources(RenderCommandList& cmdList) {
+		gRenderDevice->createFramebuffers(1, &fbo);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_SkyAtmosphere");
+		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
+
 		ubo.init<UBO_Atmosphere>();
 		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
 	void SkyAtmospherePass::destroyResources(RenderCommandList& cmdList) {
+		gRenderDevice->deleteFramebuffers(1, &fbo);
 		gRenderDevice->deleteVertexArrays(1, &vao);
 	}
 
 	void SkyAtmospherePass::render(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(AtmosphereScattering);
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
 		cmdList.useProgram(program.getGLName());
 
-		cmdList.depthFunc(GL_GEQUAL);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
+
+		// Write to only far plane.
+		cmdList.depthFunc(GL_EQUAL);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_FALSE);
 
 		UBO_Atmosphere uboData;
 		uboData.sunParams.x = 5.0f;
@@ -111,6 +131,9 @@ namespace pathos {
 		ubo.update(cmdList, 1, &uboData);
 
 		cmdList.bindTextureUnit(0, gTransmittanceLUT);
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		cmdList.bindVertexArray(0);

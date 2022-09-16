@@ -18,6 +18,7 @@
 #define MATERIAL_ID_ALPHAONLY      7
 #define MATERIAL_ID_PBR            8
 
+// Total 48 bytes
 struct PointLight {
 	// 16 bytes
 	vec3  worldPosition;
@@ -30,6 +31,7 @@ struct PointLight {
 	uint  castsShadow;
 };
 
+// Total 48 bytes
 struct DirectionalLight {
 	// 16 bytes
 	vec3  wsDirection;

@@ -9,14 +9,19 @@
 #define VIS_T        0
 #define MAGIC_GROUND 0
 
-layout (binding = 0) uniform sampler2D transmittanceLUT;
-
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out vec4 out_bright;
+// --------------------------------------------------------
+// Input
 
 layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
 	vec4 sunParams;
 } ubo;
+
+layout (binding = 0) uniform sampler2D transmittanceLUT;
+
+// --------------------------------------------------------
+// Output
+
+layout (location = 0) out vec4 outSceneColor;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
@@ -302,6 +307,5 @@ void main() {
     //sunDir = vec3(0, -1, 0);
     //sunDir = normalize(vec3(0, -1, -5));
 
-    out_color = vec4(scene(eye_ray, sunDir), 1.0);
-    out_bright = vec4(0.0);
+    outSceneColor = vec4(scene(eye_ray, sunDir), 0.0);
 }

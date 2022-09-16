@@ -1,5 +1,7 @@
 #include "skybox.h"
+#include "pathos/engine_policy.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader.h"
 #include "pathos/util/math_lib.h"
@@ -14,7 +16,10 @@ namespace pathos {
 	class SkyboxVS : public ShaderStage {
 	public:
 		SkyboxVS() : ShaderStage(GL_VERTEX_SHADER, "SkyboxVS") {
-			addDefine("VERTEX_SHADER 1");
+			addDefine("VERTEX_SHADER", 1);
+			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+				addDefine("REVERSE_Z", 1);
+			}
 			setFilepath("skybox.glsl");
 		}
 	};
@@ -22,7 +27,7 @@ namespace pathos {
 	class SkyboxFS : public ShaderStage {
 	public:
 		SkyboxFS() : ShaderStage(GL_FRAGMENT_SHADER, "SkyboxFS") {
-			addDefine("FRAGMENT_SHADER 1");
+			addDefine("FRAGMENT_SHADER", 1);
 			setFilepath("skybox.glsl");
 		}
 	};
@@ -39,11 +44,15 @@ namespace pathos {
 namespace pathos {
 
 	void SkyboxPass::initializeResources(RenderCommandList& cmdList) {
+		gRenderDevice->createFramebuffers(1, &fbo);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_Skybox");
+		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
+
 		ubo.init<UBO_Skybox>();
 	}
 
 	void SkyboxPass::destroyResources(RenderCommandList& cmdList) {
-		//
+		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
 	void SkyboxPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -52,8 +61,14 @@ namespace pathos {
 		const Camera& camera = scene->camera;
 		SkyboxProxy* skybox = scene->skybox;
 
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Skybox);
 		cmdList.useProgram(program.getGLName());
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 
 		UBO_Skybox uboData;
 		{
@@ -64,17 +79,21 @@ namespace pathos {
 		}
 		ubo.update(cmdList, 1, &uboData);
 
-		cmdList.depthFunc(GL_GEQUAL);
-		cmdList.disable(GL_DEPTH_TEST);
+		// Write to only far plane.
+		cmdList.depthFunc(GL_EQUAL);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_FALSE);
+
 		cmdList.cullFace(GL_FRONT);
 
 		cmdList.bindTextureUnit(0, skybox->textureID);
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		skybox->cube->activate_position(cmdList);
 		skybox->cube->activateIndexBuffer(cmdList);
 		skybox->cube->drawPrimitive(cmdList);
 
-		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
 	}
 

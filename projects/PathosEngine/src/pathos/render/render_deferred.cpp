@@ -271,7 +271,7 @@ namespace pathos {
 			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
 			cmdList.clearTexImage(
 				sceneRenderTargets.sceneColor,
-				0,
+				0, // mip
 				GL_RGBA,
 				GL_FLOAT,
 				clearValues);
@@ -448,6 +448,8 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
 		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
+		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
+		// Switch to EQUAL when doing full-depth prepass.
 		if (bUseDepthPrepass) {
 			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
 			cmdList.enable(GL_DEPTH_TEST);
@@ -514,6 +516,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(DirectLighting);
 
 		directLightingPass->bindFramebuffer(cmdList);
+		directLightingPass->renderDirectLighting(cmdList, scene, camera);
 
 		// #todo-refactoring: Actually not an unpack work, but rendering order is here
 		const bool bRenderSkybox = scene->isSkyboxValid();
@@ -531,8 +534,6 @@ namespace pathos {
 		} else if (scene->isSkyAtmosphereValid()) {
 			skyAtmospherePass->render(cmdList, scene);
 		}
-		
-		directLightingPass->renderDirectLighting(cmdList, scene, camera);
 	}
 	
 	// #todo-translucency: Implement

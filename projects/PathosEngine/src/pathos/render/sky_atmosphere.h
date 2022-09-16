@@ -21,6 +21,7 @@ namespace pathos {
 		void render(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
+		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
 		GLuint vao;
 

@@ -15,4 +15,7 @@ void main() {
 	vs_out.screenUV = texcoords[gl_VertexID];
 
 	gl_Position = vec4(vertices[gl_VertexID], 1);
+#if FORCE_Z_TO_ZERO
+	gl_Position.z = 0.0;
+#endif
 }
