@@ -17,8 +17,13 @@ namespace pathos {
 			return lightComponent;
 		}
 
-		void setDirection(const vector3& direction) {
-			lightComponent->direction = normalize(direction);
+		void setLightSize(float width, float height) {
+			lightComponent->width = width;
+			lightComponent->height = height;
+		}
+
+		void setLightIntensity(const vector3& intensity) {
+			lightComponent->intensity = intensity;
 		}
 
 	private:

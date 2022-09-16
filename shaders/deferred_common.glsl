@@ -39,6 +39,29 @@ struct DirectionalLight {
 	float padding2;
 };
 
+// Total 96 bytes (#todo-light: Don't need this much)
+struct RectLight {
+	// 16 bytes
+	vec3 positionWS;
+	float attenuationRadius;
+	// 16 bytes
+	vec3 directionWS;
+	uint castsShadow;
+	// 16 bytes
+	vec3 intensity;
+	float falloffExponent;
+	// 16 bytes
+	float width;
+	float height;
+	vec2 padding0;
+	// 16 bytes
+	vec3 positionVS;
+	float padding1;
+	// 16 bytes
+	vec3 directionVS;
+	float padding2;
+};
+
 float pointLightAttenuation(PointLight L, float d) {
 	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
 }

@@ -6,6 +6,7 @@
 
 #define LIGHT_SOURCE_DIRECTIONAL 0
 #define LIGHT_SOURCE_POINT       1
+#define LIGHT_SOURCE_RECT        2
 // Just suppress syntax error.
 #ifndef LIGHT_SOURCE_TYPE
 	#define LIGHT_SOURCE_TYPE LIGHT_SOURCE_DIRECTIONAL
@@ -15,6 +16,8 @@
 	#define LIGHT_STRUCT DirectionalLight
 #elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
 	#define LIGHT_STRUCT PointLight
+#elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
+	#define LIGHT_STRUCT RectLight
 #endif
 
 // --------------------------------------------------------
@@ -75,12 +78,16 @@ float getShadowingByPointLight(GBufferData gbufferData, PointLight light, int sh
 }
 
 // #todo-light: Redundant logic
+// WARNING: Negate of actual incoming direction
+//          following W_i convention in The Rendering Equation.
 vec3 getIncomingDirection(GBufferData gbufferData) {
 	LIGHT_STRUCT light = getLightParameters();
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL
 	return -light.vsDirection;
 #elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
 	return normalize(light.viewPosition - gbufferData.vs_coords);
+#elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
+	return -light.directionVS;
 #else
 	#error "Invalid light source type"
 #endif
@@ -115,6 +122,30 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 		radiance *= getShadowingByPointLight(gbufferData, light, ubo.omniShadowMapIndex);
 	}
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
+
+#if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
+	RectLight light = getLightParameters();
+
+	vec3 Wi = -light.directionVS;
+	float distance = length(light.positionVS - gbufferData.vs_coords);
+	float attenuation = max(0.0, sign(light.attenuationRadius - distance)) / (1.0 + light.falloffExponent * distance * distance);
+
+	// Check if the surface is inside of rect beam.
+	vec3 v = gbufferData.vs_coords - light.positionVS;
+	// #todo-light: Wrong up & right vectors.
+	vec3 up = vec3(0.0, 1.0, 0.0);
+	if (dot(normalize(-Wi), up) >= 0.9) {
+		up = vec3(0.0, 0.0, -1.0);
+	}
+	vec3 right = normalize(cross(-Wi, up));
+	up = cross(right, -Wi);
+	if (abs(dot(v, right)) <= 0.5 * light.width
+		&& abs(dot(v, up)) <= 0.5 * light.height
+		&& dot(v, -Wi) > 0.0)
+	{
+		radiance = light.intensity * attenuation;
+	}
+#endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 
 	return radiance;
 }

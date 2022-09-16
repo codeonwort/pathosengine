@@ -31,7 +31,6 @@ namespace pathos {
 		RectLightComponent()
 			: intensity(vector3(1.0f))
 			, attenuationRadius(100.0f)
-			, direction(vector3(0.0f, -1.0f, 0.0f))
 			, falloffExponent(0.001f)
 			, castsShadow(false)
 			, width(25.0f)
@@ -44,7 +43,7 @@ namespace pathos {
 
 			proxy->positionWS        = getLocation();
 			proxy->attenuationRadius = attenuationRadius;
-			proxy->directionWS       = glm::normalize(direction);
+			proxy->directionWS       = getRotation().toDirection();
 			proxy->castsShadow       = castsShadow;
 			proxy->intensity         = intensity;
 			proxy->falloffExponent   = falloffExponent;
@@ -52,7 +51,7 @@ namespace pathos {
 			proxy->height            = height;
 
 			// Filled later
-			proxy->positionVS        = vector3(0.0f); 
+			proxy->positionVS        = vector3(0.0f);
 			proxy->directionVS       = vector3(0.0f);
 
 			scene->proxyList_rectLight.push_back(proxy);
@@ -60,10 +59,12 @@ namespace pathos {
 
 	public:
 		vector3 intensity;
+
 		float   attenuationRadius;
-		vector3 direction;
 		float   falloffExponent;
+
 		bool    castsShadow;
+
 		float   width;
 		float   height;
 

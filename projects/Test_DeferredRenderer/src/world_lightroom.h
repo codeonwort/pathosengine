@@ -19,6 +19,8 @@ namespace pathos {
 	class RectLightActor;
 }
 
+class PlayerController;
+
 // --------------------------------------------------------
 
 // A world to test lighting features.
@@ -29,6 +31,7 @@ public:
 	void onTick(float deltaSeconds) override;
 
 private:
+	void setupInput();
 	void setupScene();
 
 private:
@@ -41,6 +44,8 @@ private:
 	sharedPtr<PointLightActor> pointLight0;
 	sharedPtr<StaticMeshActor> pointLight0Gizmo;
 	sharedPtr<RectLightActor> rectLight0;
+	sharedPtr<StaticMeshActor> rectLight0Gizmo;
+	sharedPtr<PlayerController> playerController;
 #else
 	StaticMeshActor* ground = nullptr;
 	StaticMeshActor* wallA = nullptr;
@@ -50,5 +55,8 @@ private:
 	PointLightActor* pointLight0 = nullptr;
 	StaticMeshActor* pointLight0Gizmo = nullptr;
 	RectLightActor* rectLight0 = nullptr;
+	StaticMeshActor* rectLight0Gizmo = nullptr;
+
+	PlayerController* playerController = nullptr;
 #endif
 };

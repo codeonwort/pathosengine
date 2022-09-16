@@ -10,13 +10,12 @@
 #include "pathos/camera/camera.h"
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
+#include "pathos/light/rect_light_component.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
-
-#define INFINITE_LIGHT_SOURCES 1
 
 namespace pathos {
 
@@ -25,14 +24,16 @@ namespace pathos {
 	// #note: Should match with definitions in direct_lighting.glsl.
 	enum class ELightSourceType : uint32 {
 		Directional = 0,
-		Point = 1
+		Point = 1,
+		Rect = 2
 	};
 
 	template<typename LightProxy>
 	struct UBO_DirectLighting {
 		static_assert(
 			std::is_same<LightProxy, DirectionalLightProxy>::value
-				|| std::is_same<LightProxy, PointLightProxy>::value,
+				|| std::is_same<LightProxy, PointLightProxy>::value
+				|| std::is_same<LightProxy, RectLightProxy>::value,
 			"Not supported LightProxy type");
 
 		static const uint32 BINDING_SLOT = 1;
@@ -44,7 +45,6 @@ namespace pathos {
 
 		LightProxy lightParameters;
 	};
-	static_assert(sizeof(DirectionalLightProxy) == sizeof(PointLightProxy), "Should be same");
 
 	class DirectLightingVS : public ShaderStage {
 	public:
@@ -65,6 +65,7 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Directional, DirectLightingVS, DirectLightingFS<ELightSourceType::Directional>);
 	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Point, DirectLightingVS, DirectLightingFS<ELightSourceType::Point>);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Rect, DirectLightingVS, DirectLightingFS<ELightSourceType::Rect>);
 
 }
 
@@ -86,8 +87,9 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		// Init with any proxy type as they have the same size.
-		ubo.init<UBO_DirectLighting<DirectionalLightProxy>>();
+		uboDirLight.init<UBO_DirectLighting<DirectionalLightProxy>>("UBO_DirLight");
+		uboPointLight.init<UBO_DirectLighting<PointLightProxy>>("UBO_PointLight");
+		uboRectLight.init<UBO_DirectLighting<RectLightProxy>>("UBO_RectLight");
 	}
 
 	void DirectLightingPass::destroyResources(RenderCommandList& cmdList) {
@@ -156,7 +158,7 @@ namespace pathos {
 				uboData.haveShadowMap = (lightIx == 0);
 				uboData.lightParameters = *light;
 
-				ubo.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
+				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
 
 				quad->activate_position_uv(cmdList);
 				quad->activateIndexBuffer(cmdList);
@@ -185,7 +187,7 @@ namespace pathos {
 				}
 				uboData.lightParameters = *light;
 
-				ubo.update(cmdList, UBO_DirectLighting<PointLightProxy>::BINDING_SLOT, &uboData);
+				uboPointLight.update(cmdList, UBO_DirectLighting<PointLightProxy>::BINDING_SLOT, &uboData);
 
 				// #todo-light: Local lights usually do not cover the entire viewport.
 				// Need to adjust raster region in vertex shader.
@@ -200,7 +202,26 @@ namespace pathos {
 		if (rectLights.size() > 0) {
 			SCOPED_DRAW_EVENT(RectLight);
 
-			// #todo-light: Render rect light
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Rect);
+			cmdList.useProgram(program.getGLName());
+
+			for (size_t lightIx = 0; lightIx < rectLights.size(); ++lightIx) {
+				const RectLightProxy* light = rectLights[lightIx];
+
+				UBO_DirectLighting<RectLightProxy> uboData;
+				uboData.enableShadowing = cvar_enable_shadow.getInt();
+				uboData.haveShadowMap = light->castsShadow;
+
+				uboData.lightParameters = *light;
+
+				uboRectLight.update(cmdList, UBO_DirectLighting<RectLightProxy>::BINDING_SLOT, &uboData);
+
+				// #todo-light: Local lights usually do not cover the entire viewport.
+				// Need to adjust raster region in vertex shader.
+				quad->activate_position_uv(cmdList);
+				quad->activateIndexBuffer(cmdList);
+				quad->drawPrimitive(cmdList);
+			}
 		}
 
 		// Cleanup render states

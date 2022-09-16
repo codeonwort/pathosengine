@@ -7,6 +7,8 @@
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/rect_light_actor.h"
 
+#include "player_controller.h"
+
 #if SHARED_PTR_ACTORS
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
 #else
@@ -19,18 +21,23 @@
 static const vector3 CAMERA_POSITION    = vector3(50.0f, 30.0f, 70.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 0.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_RADIANCE       = 0.05f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
 
 void World_LightRoom::onInitialize() {
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
+	setupInput();
 	setupScene();
 }
 
 void World_LightRoom::onTick(float deltaSeconds) {
 	//
+}
+
+void World_LightRoom::setupInput() {
+	playerController = TEMP_SPAWN_ACTOR(PlayerController);
 }
 
 void World_LightRoom::setupScene() {
@@ -88,6 +95,7 @@ void World_LightRoom::setupScene() {
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
+#if 0
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
 	pointLight0->setLightParameters(vector3(10.0f, 10.0f, 10.0f), 70.0f);
@@ -99,8 +107,24 @@ void World_LightRoom::setupScene() {
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
+#endif
 
 	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
-	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	rectLight0->setDirection(box->getActorLocation() - rectLight0->getActorLocation());
+	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 1.5f, -10.0f);
+	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
+	rectLight0->setLightSize(25.0f, 35.0f);
+	rectLight0->setLightIntensity(vector3(10.0f, 0.0f, 0.0f));
+
+	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
+		rectLight0->getLightComponent()->width,
+		rectLight0->getLightComponent()->height,
+		1, 1, PlaneGeometry::Direction::X);
+	ColorMaterial* M_rectLightGizmo = new ColorMaterial;
+	M_rectLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
+	M_rectLightGizmo->setEmissive(0.5f, 0.0f, 0.0f);
+	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));
+	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
+	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation());
+	rectLight0Gizmo->setActorRotation(rectLight0->getActorRotation());
 }
