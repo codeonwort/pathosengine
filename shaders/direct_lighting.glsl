@@ -115,6 +115,10 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	float distance = length(light.viewPosition - gbufferData.vs_coords);
 	float attenuation = pointLightAttenuation(light, distance);
 
+	if (L.attenuationRadius < distance) {
+		discard;
+	}
+
 	radiance = light.intensity;
 	radiance *= attenuation;
 
@@ -132,13 +136,8 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 
 	// Check if the surface is inside of rect beam.
 	vec3 v = gbufferData.vs_coords - light.positionVS;
-	// #todo-light: Wrong up & right vectors.
-	vec3 up = vec3(0.0, 1.0, 0.0);
-	if (dot(normalize(-Wi), up) >= 0.9) {
-		up = vec3(0.0, 0.0, -1.0);
-	}
-	vec3 right = normalize(cross(-Wi, up));
-	up = cross(right, -Wi);
+	vec3 up = light.upVS;
+	vec3 right = light.rightVS;
 	if (abs(dot(v, right)) <= 0.5 * light.width
 		&& abs(dot(v, up)) <= 0.5 * light.height
 		&& dot(v, -Wi) > 0.0)

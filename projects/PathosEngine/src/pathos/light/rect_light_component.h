@@ -23,6 +23,15 @@ namespace pathos {
 
 		vector3   directionVS;
 		float     _padding2;
+
+		vector3   upWS;
+		float     _padding3;
+		vector3   rightWS;
+		float     _padding4;
+		vector3   upVS;
+		float     _padding5;
+		vector3   rightVS;
+		float     _padding6;
 	};
 
 	class RectLightComponent : public SceneComponent {
@@ -41,6 +50,8 @@ namespace pathos {
 		virtual void createRenderProxy(SceneProxy* scene) override {
 			RectLightProxy* proxy = ALLOC_RENDER_PROXY<RectLightProxy>(scene);
 
+			matrix3 rotation = matrix3(getRotation().toMatrix());
+
 			proxy->positionWS        = getLocation();
 			proxy->attenuationRadius = attenuationRadius;
 			proxy->directionWS       = getRotation().toDirection();
@@ -49,10 +60,14 @@ namespace pathos {
 			proxy->falloffExponent   = falloffExponent;
 			proxy->width             = width;
 			proxy->height            = height;
+			proxy->upWS              = rotation * vector3(0.0f, 1.0f, 0.0f);
+			proxy->rightWS           = rotation * vector3(0.0f, 0.0f, 1.0f);
 
 			// Filled later
 			proxy->positionVS        = vector3(0.0f);
 			proxy->directionVS       = vector3(0.0f);
+			proxy->upVS              = vector3(0.0f);
+			proxy->rightVS           = vector3(0.0f);
 
 			scene->proxyList_rectLight.push_back(proxy);
 		}

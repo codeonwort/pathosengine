@@ -60,6 +60,15 @@ struct RectLight {
 	// 16 bytes
 	vec3 directionVS;
 	float padding2;
+	// 64 bytes
+	vec3  upWS;
+	float padding3;
+	vec3  rightWS;
+	float padding4;
+	vec3  upVS;
+	float padding5;
+	vec3  rightVS;
+	float padding6;
 };
 
 float pointLightAttenuation(PointLight L, float d) {

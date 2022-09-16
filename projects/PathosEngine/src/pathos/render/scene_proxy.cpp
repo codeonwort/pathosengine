@@ -54,6 +54,8 @@ namespace pathos {
 		for (size_t i = 0u; i < proxyList_rectLight.size(); ++i) {
 			proxyList_rectLight[i]->positionVS = posToVS(proxyList_rectLight[i]->positionWS);
 			proxyList_rectLight[i]->directionVS = dirToVS(proxyList_rectLight[i]->directionWS);
+			proxyList_rectLight[i]->upVS = dirToVS(proxyList_rectLight[i]->upWS);
+			proxyList_rectLight[i]->rightVS = dirToVS(proxyList_rectLight[i]->rightWS);
 		}
 		for (size_t i = 0u; i < proxyList_directionalLight.size(); ++i) {
 			proxyList_directionalLight[i]->vsDirection = dirToVS(proxyList_directionalLight[i]->wsDirection);
