@@ -16,8 +16,14 @@ namespace pathos {
 
 	class PlaneGeometry : public MeshGeometry {
 	public:
-		PlaneGeometry(float width, float height, uint32 segW = 1, uint32 segH = 1, EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-		void buildGeometry();
+		// Determines surface normal direction.
+		enum class Direction { X = 0, Y = 1, Z = 2 };
+		PlaneGeometry(
+			float width, float height,
+			uint32 segW = 1, uint32 segH = 1,
+			PlaneGeometry::Direction direction = PlaneGeometry::Direction::Z,
+			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
+		void buildGeometry(PlaneGeometry::Direction direction);
 	private:
 		float width, height;
 		uint32 gridX, gridY;
