@@ -77,7 +77,13 @@ float getShadowingByPointLight(GBufferData gbufferData, PointLight light, int sh
 	return getOmniShadowingFactor(omniShadowMaps, query);
 }
 
+// Wo in view space
+vec3 getOutgoingDirection(GBufferData gbufferData) {
+	return normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
+}
+
 // #todo-light: Redundant logic
+// Wi in view space
 // WARNING: Negate of actual incoming direction
 //          following W_i convention in The Rendering Equation.
 vec3 getIncomingDirection(GBufferData gbufferData) {
@@ -115,7 +121,7 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	float distance = length(light.viewPosition - gbufferData.vs_coords);
 	float attenuation = pointLightAttenuation(light, distance);
 
-	if (L.attenuationRadius < distance) {
+	if (light.attenuationRadius < distance) {
 		discard;
 	}
 
@@ -152,14 +158,14 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 // Diffuse  : Perfect lambertian
 // Specular : Cook-Torrance microfacet
 vec3 CookTorranceBRDF(GBufferData gbufferData) {
-	vec3 N = gbufferData.normal;
-	vec3 V = normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
+	// NOTE: All vectors are in view space.
+	vec3 N = gbufferData.normal;                // Surface normal
+	vec3 V = getOutgoingDirection(gbufferData); // Wo
+	vec3 L = getIncomingDirection(gbufferData); // Wi
+	vec3 H = normalize(V + L);                  // Half vector
 
-	vec3 N_world = gbufferData.ws_normal;
-	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - gbufferData.ws_coords);
-	//vec3 R = reflect(-V_world, N_world);
-	vec3 L = getIncomingDirection(gbufferData);
-	vec3 H = normalize(V + L);
+	float NdotL = max(dot(N, L), 0.0);
+	float NdotV = max(dot(N, V), 0.0);
 
 	vec3 albedo = gbufferData.albedo;
 	float metallic = gbufferData.metallic;
@@ -175,15 +181,12 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 
 	vec3 kS = F;
 	vec3 kD = vec3(1.0) - kS;
-	kD *= 1.0 - metallic;
 
-	vec3 num = NDF * G * F;
-	float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-	vec3 specular = num / max(denom, 0.001);
+	vec3 diffuse = albedo * (1.0 - metallic);
+	vec3 specular = (NDF * G * F) / max(4.0 * NdotV * NdotL, 0.001);
 
-	float NdotL = max(dot(N, L), 0.0);
 	vec3 Li = getIncomingRadiance(gbufferData, V);
-	vec3 Lo = (kD * albedo / PI + specular) * Li * NdotL;
+	vec3 Lo = (kD * diffuse / PI + specular) * Li * NdotL;
 
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
 
@@ -216,10 +219,9 @@ void main() {
 	radiance = vec3(getShadowing(gbufferData));
 #endif
 
-	// #todo: Sometimes radiance.rgb is NaN.
+	// #todo-light: Sometimes radiance is NaN.
 	radiance = max(vec3(0.0), radiance);
 
-	// output: standard shading
 	outSceneColor.rgb = radiance;
 	outSceneColor.a = 0.0;
 }
