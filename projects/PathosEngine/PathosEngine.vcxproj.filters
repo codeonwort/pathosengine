@@ -797,5 +797,11 @@
     <ClInclude Include="src\pathos\smart_pointer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\light\rect_light_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\light\rect_light_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -142,7 +142,7 @@ namespace pathos {
 		// Directional lights
 		const auto& dirLights = scene->proxyList_directionalLight;
 		if (dirLights.size() > 0) {
-			SCOPED_DRAW_EVENT(Directional);
+			SCOPED_DRAW_EVENT(DirectionalLight);
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Directional);
 			cmdList.useProgram(program.getGLName());
@@ -168,7 +168,7 @@ namespace pathos {
 		const auto& pointLights = scene->proxyList_pointLight;
 		uint32 omniShadowMapIndex = 0;
 		if (pointLights.size() > 0) {
-			SCOPED_DRAW_EVENT(Point);
+			SCOPED_DRAW_EVENT(PointLight);
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Point);
 			cmdList.useProgram(program.getGLName());
@@ -193,6 +193,14 @@ namespace pathos {
 				quad->activateIndexBuffer(cmdList);
 				quad->drawPrimitive(cmdList);
 			}
+		}
+
+		// Rect lights
+		const auto& rectLights = scene->proxyList_rectLight;
+		if (rectLights.size() > 0) {
+			SCOPED_DRAW_EVENT(RectLight);
+
+			// #todo-light: Render rect light
 		}
 
 		// Cleanup render states

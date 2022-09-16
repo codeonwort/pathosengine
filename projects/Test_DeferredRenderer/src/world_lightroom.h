@@ -16,6 +16,7 @@ namespace pathos {
 	class StaticMeshActor;
 	class PointLightActor;
 	class DirectionalLightActor;
+	class RectLightActor;
 }
 
 // --------------------------------------------------------
@@ -39,6 +40,7 @@ private:
 	sharedPtr<DirectionalLightActor> sun;
 	sharedPtr<PointLightActor> pointLight0;
 	sharedPtr<StaticMeshActor> pointLight0Gizmo;
+	sharedPtr<RectLightActor> rectLight0;
 #else
 	StaticMeshActor* ground = nullptr;
 	StaticMeshActor* wallA = nullptr;
@@ -47,5 +49,6 @@ private:
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
 	StaticMeshActor* pointLight0Gizmo = nullptr;
+	RectLightActor* rectLight0 = nullptr;
 #endif
 };

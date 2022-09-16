@@ -59,6 +59,8 @@ namespace pathos {
 
 		std::vector<struct DirectionalLightProxy*> proxyList_directionalLight; // first is sun
 		std::vector<struct PointLightProxy*>       proxyList_pointLight;
+		std::vector<struct RectLightProxy*>        proxyList_rectLight;
+
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];

@@ -5,6 +5,7 @@
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/light/rect_light_actor.h"
 
 #if SHARED_PTR_ACTORS
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
@@ -98,4 +99,8 @@ void World_LightRoom::setupScene() {
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
+
+	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
+	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
+	rectLight0->setDirection(box->getActorLocation() - rectLight0->getActorLocation());
 }
