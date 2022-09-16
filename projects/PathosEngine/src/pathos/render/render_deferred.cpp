@@ -64,7 +64,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
 	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
-	static constexpr uint32 MAX_POINT_LIGHTS              = 8;
 
 	struct UBO_PerFrame {
 		matrix4               prevView; // For reprojection
@@ -93,11 +92,6 @@ namespace pathos {
 		uint32                numDirLights;
 
 		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
-
-		uint32                numPointLights;
-		vector3               __pad2;
-
-		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
@@ -297,8 +291,7 @@ namespace pathos {
 		// Translucency pass
 		{
 			SCOPED_GPU_COUNTER(Translucency);
-
-			renderTranslucency(cmdList);
+			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -535,16 +528,6 @@ namespace pathos {
 			skyAtmospherePass->render(cmdList, scene);
 		}
 	}
-	
-	// #todo-translucency: Implement
-	void DeferredRenderer::renderTranslucency(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(Translucency);
-
-		uint8 materialID = (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
-		const auto& meshBatches = scene->proxyList_staticMesh[materialID];
-
-		translucency_pass->renderTranslucency(cmdList, camera, meshBatches);
-	}
 
 	void DeferredRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
@@ -571,7 +554,11 @@ namespace pathos {
 		return finalRenderTarget->getGLName();
 	}
 
-	void DeferredRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void DeferredRenderer::updateSceneUniformBuffer(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera)
+	{
 		UBO_PerFrame data;
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
@@ -617,11 +604,6 @@ namespace pathos {
 		data.numDirLights = pathos::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
 		for (uint32 i = 0; i < data.numDirLights; ++i) {
 			data.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
-		}
-
-		data.numPointLights = pathos::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
-		for (uint32 i = 0; i < data.numPointLights; ++i) {
-			data.pointLights[i] = *(scene->proxyList_pointLight[i]);
 		}
 
 		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);

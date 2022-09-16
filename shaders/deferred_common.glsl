@@ -7,7 +7,6 @@
 // Should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
 // #todo-light: Support unlimit number of light sources
 #define MAX_DIRECTIONAL_LIGHTS     4
-#define MAX_POINT_LIGHTS           8
 
 // #todo-material: Rename to MATERIAL_DOMAIN
 // This don't need to match with material_id.h
@@ -73,9 +72,6 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	uint numDirLights;
 	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
-
-	uint numPointLights;
-	PointLight pointLights[MAX_POINT_LIGHTS];
 } uboPerFrame;
 
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance

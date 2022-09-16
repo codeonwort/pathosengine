@@ -88,8 +88,6 @@ namespace pathos {
 
 		void renderDirectLighting(RenderCommandList& cmdList);
 
-		void renderTranslucency(RenderCommandList& cmdList);
-
 		GLuint getFinalRenderTarget() const;
 
 	private:
