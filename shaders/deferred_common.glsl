@@ -4,10 +4,6 @@
 // Each pass should use binding slots after these.
 #define SLOT_UBO_PER_FRAME         0
 
-// Should match with MAX_DIRECTIONAL_LIGHTS in render_deferred.cpp
-// #todo-light: Support unlimit number of light sources
-#define MAX_DIRECTIONAL_LIGHTS     4
-
 // #todo-material: Rename to MATERIAL_DOMAIN
 // This don't need to match with material_id.h
 #define MATERIAL_ID_NONE           0
@@ -67,11 +63,15 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 sunViewProjection[4];
 	
 	vec3 eyeDirection;   // view space
-	vec3 eyePosition;    // view space
-	vec3 ws_eyePosition; // world space
+	float _padding0;
 
-	uint numDirLights;
-	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
+	vec3 eyePosition;    // view space
+	float _padding1;
+
+	vec3 ws_eyePosition; // world space
+	uint sunExists;
+
+	DirectionalLight sunLight;
 } uboPerFrame;
 
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance

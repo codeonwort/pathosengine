@@ -63,8 +63,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
-	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS        = 4;
-
 	struct UBO_PerFrame {
 		matrix4               prevView; // For reprojection
 		matrix4               prevInverseView; // For reprojection
@@ -89,9 +87,9 @@ namespace pathos {
 		float                 __pad1;
 
 		vector3               ws_eyePosition;
-		uint32                numDirLights;
+		uint32                sunExists;
 
-		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
+		DirectionalLightProxy sunLight;
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
@@ -601,10 +599,9 @@ namespace pathos {
 
 		data.ws_eyePosition = camera->getPosition();
 
-		data.numDirLights = pathos::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
-		for (uint32 i = 0; i < data.numDirLights; ++i) {
-			data.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
-		}
+		// Regard first directional light as Sun.
+		data.sunExists = scene->proxyList_directionalLight.size() > 0;
+		data.sunLight = *(scene->proxyList_directionalLight[0]);
 
 		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
 

@@ -14,7 +14,6 @@ namespace pathos {
 		
 	public:
 		TranslucencyRendering();
-		~TranslucencyRendering();
 
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
@@ -26,7 +25,6 @@ namespace pathos {
 
 	private:
 		GLuint fbo = 0xffffffff;
-		GLuint shaderProgram = 0;
 		UniformBuffer ubo;
 		UniformBuffer uboLight;
 

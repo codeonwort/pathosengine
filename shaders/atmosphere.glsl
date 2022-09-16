@@ -302,7 +302,7 @@ void main() {
 	eye_ray.origin = vec3(0.0, EARTH_RADIUS + GROUND_EPSILON, 0.0);
 	eye_ray.direction = viewDirection();
 
-	vec3 sunDir = uboPerFrame.directionalLights[0].wsDirection;
+	vec3 sunDir = uboPerFrame.sunLight.wsDirection;
     //sunDir = vec3(0, 0, -1);
     //sunDir = vec3(0, -1, 0);
     //sunDir = normalize(vec3(0, -1, -5));

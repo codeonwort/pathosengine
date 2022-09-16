@@ -28,7 +28,7 @@ struct OmniShadowQuery {
 };
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
-	vec3 vSun = uboPerFrame.directionalLights[0].vsDirection;
+	vec3 vSun = uboPerFrame.sunLight.vsDirection;
 	float linearZ = (-query.vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 
 	// Non-uniform partition of depth ranges. Should match with the partitioning criteria of Camera::getFrustum().

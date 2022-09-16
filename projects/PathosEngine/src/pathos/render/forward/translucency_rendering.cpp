@@ -5,6 +5,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
@@ -33,22 +34,27 @@ namespace pathos {
 		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
 
+	class TranslucencyVS : public ShaderStage {
+	public:
+		TranslucencyVS() : ShaderStage(GL_VERTEX_SHADER, "TranslucencyVS") {
+			setFilepath("translucency_vs.glsl");
+		}
+	};
+	class TranslucencyFS : public ShaderStage {
+	public:
+		TranslucencyFS() : ShaderStage(GL_FRAGMENT_SHADER, "TranslucencyFS") {
+			setFilepath("translucency_fs.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_Translucency, TranslucencyVS, TranslucencyFS);
+}
+
+namespace pathos {
+
 	TranslucencyRendering::TranslucencyRendering()
 	{
-		Shader vs(GL_VERTEX_SHADER, "Translucency_VS");
-		Shader fs(GL_FRAGMENT_SHADER, "Translucency_FS");
-		vs.loadSource("translucency_vs.glsl");
-		fs.loadSource("translucency_fs.glsl");
-
-		shaderProgram = pathos::createProgram(vs, fs, "Translucency");
-
 		ubo.init<UBO_Translucency>();
 		uboLight.init<UBO_LightInfo>();
-	}
-
-	TranslucencyRendering::~TranslucencyRendering()
-	{
-		gRenderDevice->deleteProgram(shaderProgram);
 	}
 
 	void TranslucencyRendering::initializeResources(RenderCommandList& cmdList)
@@ -85,7 +91,9 @@ namespace pathos {
 			cmdList.depthFunc(bReverseZ ? GL_GREATER : GL_LESS);
 		}
 
-		cmdList.useProgram(shaderProgram);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Translucency);
+		cmdList.useProgram(program.getGLName());
+
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
