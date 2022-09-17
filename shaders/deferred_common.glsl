@@ -81,10 +81,10 @@ struct RectLight {
 };
 
 // SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games
-float pointLightFalloff(PointLight L, float d) {
-	//return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
-	
-	float num = d / L.attenuationRadius;
+// r: light's attenuation radius
+// d: distance
+float pointLightFalloff(float r, float d) {
+	float num = d / r;
 	num = num * num;
 	num = num * num;
 	num = 1.0 - num;

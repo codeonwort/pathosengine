@@ -125,7 +125,7 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	}
 
 	radiance = light.intensity;
-	radiance *= pointLightFalloff(light, distance);
+	radiance *= pointLightFalloff(light.attenuationRadius, distance);
 
 	if (bEnableShadowMap) {
 		radiance *= getShadowingByPointLight(gbufferData, light, ubo.omniShadowMapIndex);
@@ -136,8 +136,6 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	RectLight light = getLightParameters();
 
 	vec3 Wi = -light.directionVS;
-	float distance = length(light.positionVS - gbufferData.vs_coords);
-	float attenuation = max(0.0, sign(light.attenuationRadius - distance)) / (1.0 + light.falloffExponent * distance * distance);
 
 	// Check if the surface is inside of rect beam.
 	vec3 v = gbufferData.vs_coords - light.positionVS;
@@ -147,7 +145,9 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 		&& abs(dot(v, up)) <= 0.5 * light.height
 		&& dot(v, -Wi) > 0.0)
 	{
-		radiance = light.intensity * attenuation;
+		float distance = length(light.positionVS - gbufferData.vs_coords);
+		float falloff = pointLightFalloff(light.attenuationRadius, distance);
+		radiance = light.intensity * falloff;
 	}
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 
