@@ -119,14 +119,13 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 
 	vec3 L = normalize(light.viewPosition - gbufferData.vs_coords);
 	float distance = length(light.viewPosition - gbufferData.vs_coords);
-	float attenuation = pointLightAttenuation(light, distance);
 
-	if (light.attenuationRadius < distance) {
+	if (distance > light.attenuationRadius) {
 		discard;
 	}
 
 	radiance = light.intensity;
-	radiance *= attenuation;
+	radiance *= pointLightFalloff(light, distance);
 
 	if (bEnableShadowMap) {
 		radiance *= getShadowingByPointLight(gbufferData, light, ubo.omniShadowMapIndex);
@@ -156,7 +155,7 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 }
 
 // Diffuse  : Perfect lambertian
-// Specular : Cook-Torrance microfacet
+// Specular : Generalized microfacet
 vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	// NOTE: All vectors are in view space.
 	vec3 N = gbufferData.normal;                // Surface normal
@@ -175,7 +174,8 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
 
-	float NDF = distributionGGX(N, H, roughness);
+	// Micro
+	float D = distributionGGX(N, H, roughness);
 	float G = geometrySmith(N, V, L, roughness);
 	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
@@ -183,14 +183,14 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	vec3 kD = vec3(1.0) - kS;
 
 	vec3 diffuse = albedo * (1.0 - metallic);
-	vec3 specular = (NDF * G * F) / max(4.0 * NdotV * NdotL, 0.001);
+	vec3 specular = (D * F * G) / max(4.0 * NdotV * NdotL, 0.001);
 
 	vec3 Li = getIncomingRadiance(gbufferData, V);
 	vec3 Lo = (kD * diffuse / PI + specular) * Li * NdotL;
-
+	
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
-
 	vec3 finalRadiance = Lo * ssao;
+
 	return finalRadiance;
 }
 

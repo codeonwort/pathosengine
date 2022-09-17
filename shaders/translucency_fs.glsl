@@ -100,7 +100,7 @@ void main() {
 		vec3 H = normalize(V + L);
 
 		float distance = length(pointLight.viewPosition - vs_coords);
-		vec3 radiance = pointLight.intensity * pointLightAttenuation(pointLight, distance);
+		vec3 radiance = pointLight.intensity * pointLightFalloff(pointLight, distance);
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);

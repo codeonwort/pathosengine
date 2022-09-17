@@ -1,8 +1,14 @@
 //? #version 460 core
 
+// --------------------------------------------------------
+// Global constants
+
 // UBO binding slots reserved globally.
 // Each pass should use binding slots after these.
 #define SLOT_UBO_PER_FRAME         0
+
+// --------------------------------------------------------
+// Materials
 
 // #todo-material: Rename to MATERIAL_DOMAIN
 // This don't need to match with material_id.h
@@ -12,6 +18,9 @@
 #define MATERIAL_ID_TEXTURE        3
 #define MATERIAL_ID_ALPHAONLY      7
 #define MATERIAL_ID_PBR            8
+
+// --------------------------------------------------------
+// Lights
 
 // Total 48 bytes
 struct PointLight {
@@ -71,9 +80,24 @@ struct RectLight {
 	float padding6;
 };
 
-float pointLightAttenuation(PointLight L, float d) {
-	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
+// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games
+float pointLightFalloff(PointLight L, float d) {
+	//return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
+	
+	float num = d / L.attenuationRadius;
+	num = num * num;
+	num = num * num;
+	num = 1.0 - num;
+	num = clamp(num, 0.0, 1.0);
+	num = num * num;
+
+	float denom = 1.0 + d * d;
+
+	return num / denom;
 }
+
+// --------------------------------------------------------
+// Uniform buffers
 
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
@@ -105,6 +129,9 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	DirectionalLight sunLight;
 } uboPerFrame;
+
+// --------------------------------------------------------
+// Math utils
 
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 vec2 CubeToEquirectangular(vec3 v)
@@ -156,6 +183,9 @@ float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 	return linearDepth;
 }
+
+// --------------------------------------------------------
+// GBuffers
 
 // GBuffer unpack info
 struct GBufferData {

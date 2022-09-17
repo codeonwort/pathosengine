@@ -242,7 +242,7 @@ void World_RC1::setupScene()
 
 	PointLightActor* pLight = spawnActor<PointLightActor>();
 	pLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-	pLight->setLightParameters(5000.0f * vector3(1.0f, 1.0f, 1.0f), 10000.0f);
+	pLight->setLightParameters(5000000.0f * vector3(1.0f, 1.0f, 1.0f), 5000.0f);
 
 	//////////////////////////////////////////////////////////////////////////
 	auto geom_sphere = new SphereGeometry(5.0f, 30);

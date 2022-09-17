@@ -95,10 +95,10 @@ void World_LightRoom::setupScene() {
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
-#if 0
+#if 1
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	pointLight0->setLightParameters(vector3(10.0f, 10.0f, 10.0f), 70.0f);
+	pointLight0->setLightParameters(100.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f, 6);
 	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
@@ -109,6 +109,7 @@ void World_LightRoom::setupScene() {
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
 #endif
 
+#if 0
 	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 1.5f, -10.0f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
@@ -127,4 +128,5 @@ void World_LightRoom::setupScene() {
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
 	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation());
 	rectLight0Gizmo->setActorRotation(rectLight0->getActorRotation());
+#endif
 }
