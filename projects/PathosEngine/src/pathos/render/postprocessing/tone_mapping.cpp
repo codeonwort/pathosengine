@@ -75,8 +75,13 @@ namespace pathos {
 		uboData.gamma    = cvar_gamma.getValue();
 		ubo.update(cmdList, 1, &uboData);
 
-		GLuint tonemapping_attachments[] = { input0, input1, input2, input3 };
-		cmdList.bindTextures(0, 4, tonemapping_attachments);
+		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 4);
+		colorAttachments[0] = input0;
+		colorAttachments[1] = input1;
+		colorAttachments[2] = input2;
+		colorAttachments[3] = input3;
+
+		cmdList.bindTextures(0, 4, colorAttachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

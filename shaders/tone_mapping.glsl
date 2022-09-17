@@ -14,7 +14,7 @@ in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
-out vec4 color;
+out vec4 outSceneColor;
 
 void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
@@ -32,6 +32,5 @@ void main() {
 	// gamma correction
 	c.rgb = pow(c.rgb, vec3(1.0 / ubo.gamma));
 
-	// w component is for depth-of-field. continue to depth_of_field.glsl
-	color = c;
+	outSceneColor = c;
 }

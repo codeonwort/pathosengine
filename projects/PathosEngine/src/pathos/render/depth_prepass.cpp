@@ -74,8 +74,10 @@ namespace pathos {
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+			cmdList.depthFunc(GL_GREATER);
+		} else {
+			cmdList.depthFunc(GL_LESS);
 		}
-		cmdList.depthFunc(GL_GREATER);
 		cmdList.enable(GL_DEPTH_TEST);
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);

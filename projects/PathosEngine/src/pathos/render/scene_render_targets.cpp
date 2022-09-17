@@ -5,35 +5,9 @@
 
 namespace pathos {
 
-	SceneRenderTargets::SceneRenderTargets()
-		: sceneWidth(0)
-		, sceneHeight(0)
-		, sceneFinal(0)
-		, sceneColor(0)
-		, sceneDepth(0)
-		, sceneColorDownsampleChain(0)
-		, sceneColorDownsampleMipmapCount(0)
-		, volumetricCloudA(0)
-		, volumetricCloudB(0)
-		, cascadedShadowMap(0)
-		, omniShadowMaps(0)
-		, useGBuffer(false)
-		, gbufferA(0)
-		, gbufferB(0)
-		, gbufferC(0)
-		, godRaySource(0)
-		, godRayResult(0)
-		, godRayResultTemp(0)
-		, dofSubsum0(0)
-		, dofSubsum1(0)
-		, sceneBloom(0)
-		, sceneBloomTemp(0)
-		, toneMappingResult(0)
-	{
-	}
+	SceneRenderTargets::SceneRenderTargets() {}
 
-	SceneRenderTargets::~SceneRenderTargets()
-	{
+	SceneRenderTargets::~SceneRenderTargets() {
 		CHECK(destroyed);
 	}
 
@@ -96,7 +70,7 @@ namespace pathos {
 
 		// #todo-rendertarget: Switch PF_sceneColor to rgba16f?
 		static constexpr GLenum PF_sceneColor = GL_RGBA32F;
-		static constexpr GLenum PF_sceneDepth = GL_DEPTH24_STENCIL8;
+		static constexpr GLenum PF_sceneDepth = GL_DEPTH32F_STENCIL8;
 		reallocTexture2D(sceneFinal, PF_sceneColor, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
 		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
@@ -195,9 +169,7 @@ namespace pathos {
 		}
 
 		// tone mapping
-		reallocTexture2D(toneMappingResult, GL_RGBA32F, sceneWidth, sceneHeight, "toneMappingResult");
-		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		cmdList.textureParameteri(toneMappingResult, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		reallocTexture2D(toneMappingResult, GL_RGBA16F, sceneWidth, sceneHeight, "toneMappingResult");
 
 		// ssao
 		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, "ssaoHalfNormalAndDepth");
