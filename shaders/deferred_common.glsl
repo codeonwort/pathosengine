@@ -22,7 +22,7 @@
 // --------------------------------------------------------
 // Lights
 
-// Total 48 bytes
+// Total 64 bytes
 struct PointLight {
 	// 16 bytes
 	vec3  worldPosition;
@@ -33,6 +33,9 @@ struct PointLight {
 	// 16 bytes
 	vec3  viewPosition;
 	uint  castsShadow;
+	// 16 bytes
+	float sourceRadius;
+	vec3  padding0;
 };
 
 // Total 48 bytes
@@ -48,7 +51,7 @@ struct DirectionalLight {
 	float padding2;
 };
 
-// Total 96 bytes (#todo-light: Too fat. WS values are not needed.)
+// Total 96 + 64 + 32 bytes (#todo-light: Too fat. WS values are not needed.)
 struct RectLight {
 	// 16 bytes
 	vec3 positionWS;
