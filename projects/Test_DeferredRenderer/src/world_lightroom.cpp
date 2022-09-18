@@ -114,10 +114,11 @@ void World_LightRoom::setupScene() {
 	pointLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
 	pointLight0->setLightParameters(500.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
 
-	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f, 6);
+	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
 	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
 	M_pointLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
-	M_pointLightGizmo->setEmissive(0.9f, 0.9f, 0.0f);
+	vector3 plGizmoEm = glm::normalize(pointLight0->getLightComponent()->intensity);
+	M_pointLightGizmo->setEmissive(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z);
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());

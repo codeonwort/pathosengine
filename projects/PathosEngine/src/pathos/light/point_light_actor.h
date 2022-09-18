@@ -32,6 +32,8 @@ namespace pathos {
 			lightComponent->sourceRadius = inRadius;
 		}
 
+		inline PointLightComponent* getLightComponent() const { return lightComponent; }
+
 	private:
 		PointLightComponent* lightComponent;
 

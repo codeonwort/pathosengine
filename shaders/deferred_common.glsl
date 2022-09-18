@@ -31,7 +31,7 @@ struct PointLight {
 	vec3  intensity;
 	float falloffExponent;
 	// 16 bytes
-	vec3  viewPosition;
+	vec3  positionVS;
 	uint  castsShadow;
 	// 16 bytes
 	float sourceRadius;

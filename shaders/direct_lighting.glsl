@@ -86,28 +86,41 @@ float getSphereLightRoughness(PointLight light, float distance, float roughness)
 	return clamp(roughness + light.sourceRadius / (3.0 * distance), 0.0, 1.0);
 }
 
-vec3 getSphereLightDirection(PointLight light, GBufferData gbufferData) {
-	vec3 L = normalize(light.viewPosition - gbufferData.vs_coords);
+// Point light to sphere light.
+// Find representative point.
+void toSphereLight(
+	PointLight light, GBufferData gbufferData,
+	out vec3 outNewL, out vec3 outNewPos)
+{
+	vec3 L = light.positionVS - gbufferData.vs_coords;
 	vec3 N = gbufferData.normal;
-	vec3 R = reflect(-L, N);
-	vec3 centerToRay = L - dot(L, R) * R;
-	vec3 closestPoint = L + centerToRay * clamp(light.sourceRadius / length(centerToRay), 0.0, 1.0);
-	return normalize(closestPoint);
+	vec3 R = reflect(-getOutgoingDirection(gbufferData), N);
+	vec3 centerToRay = -(L - dot(L, R) * R);
+	vec3 surfaceToRep = L + centerToRay * clamp(light.sourceRadius / length(centerToRay), 0.0, 1.0);
+
+	outNewL = normalize(surfaceToRep);
+	outNewPos = gbufferData.vs_coords + surfaceToRep;
 }
 
-// #todo-light: Redundant logic
-// Wi in view space
+// #todo-light: Redundant logic. Hopefully shader compiler will optimize it out...
+// Wi is in view space.
 // WARNING: Negate of actual incoming direction
 //          following W_i convention in The Rendering Equation.
 vec3 getIncomingDirection(GBufferData gbufferData) {
 	LIGHT_STRUCT light = getLightParameters();
+
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL
 	return -light.vsDirection;
+
 #elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
-	return getSphereLightDirection(light, gbufferData);
-	//return normalize(light.viewPosition - gbufferData.vs_coords);
+	vec3 L, unused;
+	toSphereLight(light, gbufferData, L, unused);
+	return L;
+	//return normalize(light.positionVS - gbufferData.vs_coords);
+
 #elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 	return -light.directionVS;
+
 #else
 	#error "Invalid light source type"
 #endif
@@ -131,13 +144,11 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
 	PointLight light = getLightParameters();
 
-	// #todo-light: Need to adjust light.viewPosition to make it a true sphere light.
+	//vec3 L = normalize(light.positionVS - gbufferData.vs_coords);
+	vec3 L, lightPos;
+	toSphereLight(light, gbufferData, L, lightPos);
 
-	// Sphere light - Find representative point and update L.
-	//vec3 L = normalize(light.viewPosition - gbufferData.vs_coords);
-	vec3 L = getSphereLightDirection(light, gbufferData);
-
-	float distance = length(light.viewPosition - gbufferData.vs_coords);
+	float distance = length(lightPos - gbufferData.vs_coords);
 
 	if (distance > light.attenuationRadius) {
 		discard;
@@ -203,9 +214,14 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games (course note p.14)
 	{
 		LIGHT_STRUCT light = getLightParameters();
-		float distL = length(light.viewPosition - gbufferData.vs_coords);
+		vec3 lightPos;
+		toSphereLight(light, gbufferData, L, lightPos);
+		float distL = length(lightPos - gbufferData.vs_coords);
 		roughness = getSphereLightRoughness(light, distL, roughness);
 	}
+	// L is renewed. Update all affected variables.
+	H = normalize(V + L);
+	NdotL = max(dot(N, L), 0.0);
 #endif
 
 	vec3 F0 = vec3(0.04);
