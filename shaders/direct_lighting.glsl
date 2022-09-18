@@ -135,19 +135,22 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 	RectLight light = getLightParameters();
 
+	// #todo-light: Find most representative point and its incoming direction.
 	vec3 Wi = -light.directionVS;
 
 	// Check if the surface is inside of rect beam.
-	vec3 v = gbufferData.vs_coords - light.positionVS;
+	vec3 v = gbufferData.vs_coords - light.virtualCenterVS;
+	float distComp = dot(v, -Wi) / light.virtualOffset;
 	vec3 up = light.upVS;
 	vec3 right = light.rightVS;
-	if (abs(dot(v, right)) <= 0.5 * light.width
-		&& abs(dot(v, up)) <= 0.5 * light.height
-		&& dot(v, -Wi) > 0.0)
+	if (abs(dot(v, right)) <= 0.5 * light.width * distComp
+		&& abs(dot(v, up)) <= 0.5 * light.height * distComp
+		&& dot(gbufferData.vs_coords - light.positionVS, -Wi) > 0.0)
 	{
 		float distance = length(light.positionVS - gbufferData.vs_coords);
-		float falloff = pointLightFalloff(light.attenuationRadius, distance);
-		radiance = light.intensity * falloff;
+		float distFalloff = pointLightFalloff(light.attenuationRadius, distance);
+		// #todo-light: Needs angular falloff?
+		radiance = light.intensity * distFalloff;
 	}
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 

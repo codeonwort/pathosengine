@@ -48,7 +48,7 @@ struct DirectionalLight {
 	float padding2;
 };
 
-// Total 96 bytes (#todo-light: Don't need this much)
+// Total 96 bytes (#todo-light: Too fat. WS values are not needed.)
 struct RectLight {
 	// 16 bytes
 	vec3 positionWS;
@@ -69,7 +69,7 @@ struct RectLight {
 	// 16 bytes
 	vec3 directionVS;
 	float padding2;
-	// 64 bytes
+	// 64 bytes for tangent frame
 	vec3  upWS;
 	float padding3;
 	vec3  rightWS;
@@ -78,6 +78,11 @@ struct RectLight {
 	float padding5;
 	vec3  rightVS;
 	float padding6;
+	// 32 bytes for virtual center
+	vec3  virtualCenterWS;
+	float virtualOffset;
+	vec3  virtualCenterVS;
+	float cosConeAngle;
 };
 
 // SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games

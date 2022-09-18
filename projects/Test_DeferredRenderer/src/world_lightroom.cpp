@@ -33,7 +33,9 @@ void World_LightRoom::onInitialize() {
 }
 
 void World_LightRoom::onTick(float deltaSeconds) {
-	//
+	float k = 0.5f * (1.0f + cosf(gEngine->getWorldTime()));
+	float ang = 0.1f + k * (178.0f - 0.1f);
+	rectLight0->setOuterAngle(ang);
 }
 
 void World_LightRoom::setupInput() {
@@ -95,10 +97,10 @@ void World_LightRoom::setupScene() {
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
-#if 1
+#if 0
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	pointLight0->setLightParameters(100.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
+	pointLight0->setLightParameters(5000.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f, 6);
 	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
@@ -109,12 +111,13 @@ void World_LightRoom::setupScene() {
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
 #endif
 
-#if 0
+#if 1
 	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 1.5f, -10.0f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(25.0f, 35.0f);
-	rectLight0->setLightIntensity(vector3(10.0f, 0.0f, 0.0f));
+	rectLight0->setLightIntensity(vector3(1000.0f, 0.0f, 0.0f));
+	rectLight0->setOuterAngle(90.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
 		rectLight0->getLightComponent()->width,

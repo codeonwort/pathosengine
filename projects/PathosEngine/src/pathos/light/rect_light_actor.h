@@ -26,6 +26,12 @@ namespace pathos {
 			lightComponent->intensity = intensity;
 		}
 
+		void setOuterAngle(float outerAngle) {
+			if (outerAngle < 0.1f) outerAngle = 0.1f;
+			else if (outerAngle > 178.0f) outerAngle = 178.0f;
+			lightComponent->outerAngle = outerAngle;
+		}
+
 	private:
 		RectLightComponent* lightComponent;
 
