@@ -210,7 +210,9 @@ namespace pathos {
 
 				UBO_DirectLighting<RectLightProxy> uboData;
 				uboData.enableShadowing = cvar_enable_shadow.getInt();
-				uboData.haveShadowMap = light->castsShadow;
+				// #todo-light: No shadowmap for rect light yet.
+				uboData.haveShadowMap = false;
+				//uboData.haveShadowMap = light->castsShadow;
 
 				uboData.lightParameters = *light;
 
