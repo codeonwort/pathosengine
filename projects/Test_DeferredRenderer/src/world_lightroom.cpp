@@ -15,8 +15,8 @@
 	#define TEMP_SPAWN_ACTOR(T) spawnActor<T>()
 #endif
 
-#define TEST_POINT_LIGHT 1
-#define TEST_RECT_LIGHT  0
+#define TEST_POINT_LIGHT 0
+#define TEST_RECT_LIGHT  1
 
 // --------------------------------------------------------
 // Constants
@@ -117,7 +117,7 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
 	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
 	M_pointLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
-	vector3 plGizmoEm = glm::normalize(pointLight0->getLightComponent()->intensity);
+	vector3 plGizmoEm = pointLight0->getLightComponent()->intensity;
 	M_pointLightGizmo->setEmissive(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z);
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
@@ -129,7 +129,8 @@ void World_LightRoom::setupScene() {
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 1.5f, -10.0f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(25.0f, 15.0f);
-	rectLight0->setLightIntensity(1000.0f * vector3(1.0f, 1.0f, 1.0f));
+	rectLight0->setLightIntensity(10000.0f * vector3(1.0f, 1.0f, 1.0f));
+	rectLight0->setAttenuationRadius(500.0f);
 	rectLight0->setOuterAngle(90.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(

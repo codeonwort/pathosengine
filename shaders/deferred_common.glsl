@@ -11,7 +11,7 @@
 // Materials
 
 // #todo-material: Rename to MATERIAL_DOMAIN
-// This don't need to match with material_id.h
+// UNLIT, DEFAULTLIT, SUBSURFACE, HAIR, TRANSLUCENT, ...
 #define MATERIAL_ID_NONE           0
 #define MATERIAL_ID_SOLID_COLOR    1
 #define MATERIAL_ID_WIREFRAME      2
@@ -63,8 +63,8 @@ struct RectLight {
 	vec3 intensity;
 	float falloffExponent;
 	// 16 bytes
-	float width;
-	float height;
+	float halfWidth;
+	float halfHeight;
 	vec2 padding0;
 	// 16 bytes
 	vec3 positionVS;

@@ -102,6 +102,15 @@ void toSphereLight(
 	outNewPos = gbufferData.vs_coords + surfaceToRep;
 }
 
+// SIGGRAPH 2014: "Moving Frostbite to PBR"
+float rightPyramidSolidAngle(float dist, float halfWidth, float halfHeight) {
+	float a = halfWidth;
+	float b = halfHeight;
+	float h = dist;
+
+	return 4.0 * asin(a * b / sqrt((a * a + h * h) * (b * b + h * h)));
+}
+
 // #todo-light: Redundant logic. Hopefully shader compiler will optimize it out...
 // Wi is in view space.
 // WARNING: Negate of actual incoming direction
@@ -171,22 +180,23 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 	RectLight light = getLightParameters();
 
-	// #todo-light: Find most representative point and its incoming direction.
 	vec3 Wi = -light.directionVS;
 
-	// Check if the surface is inside of rect beam.
+	// Check if the light reaches at the surface point.
 	vec3 v = gbufferData.vs_coords - light.virtualCenterVS;
 	float distComp = dot(v, -Wi) / light.virtualOffset;
 	vec3 up = light.upVS;
 	vec3 right = light.rightVS;
-	if (abs(dot(v, right)) <= 0.5 * light.width * distComp
-		&& abs(dot(v, up)) <= 0.5 * light.height * distComp
-		&& dot(gbufferData.vs_coords - light.positionVS, -Wi) > 0.0)
-	{
+	bool bDirectHit =
+		abs(dot(v, right)) <= 0.5 * light.halfWidth * distComp
+		&& abs(dot(v, up)) <= 0.5 * light.halfHeight * distComp;
+
+	// #todo-light: Adjust specular term for rect light
+	if (bDirectHit) {
 		float distance = length(light.positionVS - gbufferData.vs_coords);
 		float distFalloff = pointLightFalloff(light.attenuationRadius, distance);
-		// #todo-light: Needs angular falloff?
-		radiance = light.intensity * distFalloff;
+		float angularFalloff = rightPyramidSolidAngle(distance, light.halfWidth, light.halfHeight);
+		radiance = light.intensity * distFalloff * angularFalloff;
 	}
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 
@@ -208,7 +218,7 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	vec3 albedo = gbufferData.albedo;
 	float metallic = gbufferData.metallic;
 	float roughness = gbufferData.roughness;
-	float ao = gbufferData.ao;
+	float localAO = gbufferData.ao;
 
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_POINT
 	// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games (course note p.14)
@@ -241,8 +251,9 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	vec3 Li = getIncomingRadiance(gbufferData, V);
 	vec3 Lo = (kD * diffuse / PI + specular) * Li * NdotL;
 	
+	// #todo-light: SSAO is being sampled per each light unnecessarily
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
-	vec3 finalRadiance = Lo * ssao;
+	vec3 finalRadiance = Lo * localAO * ssao;
 
 	return finalRadiance;
 }

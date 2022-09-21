@@ -17,8 +17,8 @@ namespace pathos {
 		vector3   intensity;
 		float     falloffExponent;
 
-		float     width;
-		float     height;
+		float     halfWidth;
+		float     halfHeight;
 		vector2   _padding0;
 
 		vector3   positionVS;
@@ -71,8 +71,8 @@ namespace pathos {
 			proxy->castsShadow       = castsShadow;
 			proxy->intensity         = intensity;
 			proxy->falloffExponent   = falloffExponent;
-			proxy->width             = width;
-			proxy->height            = height;
+			proxy->halfWidth         = 0.5f * width;
+			proxy->halfHeight        = 0.5f * height;
 			proxy->upWS              = rotation * vector3(0.0f, 1.0f, 0.0f);
 			proxy->rightWS           = rotation * vector3(0.0f, 0.0f, 1.0f);
 			proxy->virtualCenterWS   = proxy->positionWS - forward * virtualOffset;
