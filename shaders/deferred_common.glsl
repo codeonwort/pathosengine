@@ -1,11 +1,17 @@
 //? #version 460 core
 
+// --------------------------------------------------------
+// Global constants
+
 // UBO binding slots reserved globally.
 // Each pass should use binding slots after these.
 #define SLOT_UBO_PER_FRAME         0
 
+// --------------------------------------------------------
+// Materials
+
 // #todo-material: Rename to MATERIAL_DOMAIN
-// This don't need to match with material_id.h
+// UNLIT, DEFAULTLIT, SUBSURFACE, HAIR, TRANSLUCENT, ...
 #define MATERIAL_ID_NONE           0
 #define MATERIAL_ID_SOLID_COLOR    1
 #define MATERIAL_ID_WIREFRAME      2
@@ -13,7 +19,10 @@
 #define MATERIAL_ID_ALPHAONLY      7
 #define MATERIAL_ID_PBR            8
 
-// Total 48 bytes
+// --------------------------------------------------------
+// Lights
+
+// Total 64 bytes
 struct PointLight {
 	// 16 bytes
 	vec3  worldPosition;
@@ -22,8 +31,11 @@ struct PointLight {
 	vec3  intensity;
 	float falloffExponent;
 	// 16 bytes
-	vec3  viewPosition;
+	vec3  positionVS;
 	uint  castsShadow;
+	// 16 bytes
+	float sourceRadius;
+	vec3  padding0;
 };
 
 // Total 48 bytes
@@ -39,9 +51,43 @@ struct DirectionalLight {
 	float padding2;
 };
 
-float pointLightAttenuation(PointLight L, float d) {
-	return max(0.0, sign(L.attenuationRadius - d)) / (1.0 + L.falloffExponent * d * d);
+// Total 80 bytes
+struct RectLight {
+	// 16 bytes
+	vec3 positionVS;
+	float attenuationRadius;
+	// 16 bytes
+	vec3 directionVS;
+	uint castsShadow;
+	// 16 bytes
+	vec3 intensity;
+	float falloffExponent;
+	// 16 bytes
+	vec3 upVS;
+	float halfHeight;
+	// 16 bytes
+	vec3 rightVS;
+	float halfWidth;
+};
+
+// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games
+// r: light's attenuation radius
+// d: distance
+float pointLightFalloff(float r, float d) {
+	float num = d / r;
+	num = num * num;
+	num = num * num;
+	num = 1.0 - num;
+	num = clamp(num, 0.0, 1.0);
+	num = num * num;
+
+	float denom = 1.0 + d * d;
+
+	return num / denom;
 }
+
+// --------------------------------------------------------
+// Uniform buffers
 
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
@@ -73,6 +119,9 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	DirectionalLight sunLight;
 } uboPerFrame;
+
+// --------------------------------------------------------
+// Math utils
 
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 vec2 CubeToEquirectangular(vec3 v)
@@ -124,6 +173,9 @@ float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
 	return linearDepth;
 }
+
+// --------------------------------------------------------
+// GBuffers
 
 // GBuffer unpack info
 struct GBufferData {

@@ -12,8 +12,8 @@
 
 namespace pathos {
 
-	static constexpr uint32 MAX_DIRECTIONAL_LIGHTS = 4;
-	static constexpr uint32 MAX_POINT_LIGHTS = 8;
+	static constexpr int32 MAX_DIRECTIONAL_LIGHTS = 4;
+	static constexpr int32 MAX_POINT_LIGHTS = 8;
 
 	struct UBO_Translucency {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -29,7 +29,7 @@ namespace pathos {
 	struct UBO_LightInfo {
 		static constexpr uint32 BINDING_POINT = 2;
 
-		vector4ui             numLightSources; // (directional, point, ?, ?)
+		vector4i              numLightSources; // (directional, point, ?, ?)
 		DirectionalLightProxy directionalLights[MAX_DIRECTIONAL_LIGHTS];
 		PointLightProxy       pointLights[MAX_POINT_LIGHTS];
 	};
@@ -105,12 +105,12 @@ namespace pathos {
 		// #todo-translucency: temp light info forwarding
 		{
 			UBO_LightInfo uboData;
-			uboData.numLightSources.x = std::min((uint32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
-			uboData.numLightSources.y = std::min((uint32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
-			for (uint32 i = 0; i < uboData.numLightSources.x; ++i) {
+			uboData.numLightSources.x = std::min((int32)scene->proxyList_directionalLight.size(), MAX_DIRECTIONAL_LIGHTS);
+			uboData.numLightSources.y = std::min((int32)scene->proxyList_pointLight.size(), MAX_POINT_LIGHTS);
+			for (int32 i = 0; i < uboData.numLightSources.x; ++i) {
 				uboData.directionalLights[i] = *(scene->proxyList_directionalLight[i]);
 			}
-			for (uint32 i = 0; i < uboData.numLightSources.y; ++i) {
+			for (int32 i = 0; i < uboData.numLightSources.y; ++i) {
 				uboData.pointLights[i] = *(scene->proxyList_pointLight[i]);
 			}
 			uboLight.update(cmdList, UBO_LightInfo::BINDING_POINT, &uboData);

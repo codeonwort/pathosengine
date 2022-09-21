@@ -15,6 +15,7 @@ OpenGL rendering library (for 3d graphics study)
 
 ## Features
 * Rendering
+  * Area lights (sphere, rect)
   * Depth prepass
   * Global illumination
     * Cascaded shadow map

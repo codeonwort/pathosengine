@@ -96,11 +96,12 @@ void main() {
 	for (int i = 0; i < uboLight.numLightSources.y; ++i) {
 		PointLight pointLight = uboLight.pointLights[i];
 
-		vec3 L = normalize(pointLight.viewPosition - vs_coords);
+		vec3 L = normalize(pointLight.positionVS - vs_coords);
 		vec3 H = normalize(V + L);
 
-		float distance = length(pointLight.viewPosition - vs_coords);
-		vec3 radiance = pointLight.intensity * pointLightAttenuation(pointLight, distance);
+		float distance = length(pointLight.positionVS - vs_coords);
+		float falloff = pointLightFalloff(pointLight.attenuationRadius, distance);
+		vec3 radiance = pointLight.intensity * falloff;
 
 		float NDF = distributionGGX(N, H, roughness);
 		float G = geometrySmith(N, V, L, roughness);

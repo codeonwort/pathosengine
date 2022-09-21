@@ -17,16 +17,22 @@ namespace pathos {
 
 		// #todo-light: Temporary API
 		void setLightParameters(
-			const vector3& inRadiance = vector3(1.0f, 1.0f, 1.0f),
+			const vector3& inIntensity = vector3(1.0f, 1.0f, 1.0f),
 			float inAttenuationRadius = 100.0f,
 			float inFalloffExponent = 0.001f,
 			bool castsShadow = true)
 		{
-			lightComponent->color = inRadiance;
+			lightComponent->intensity = inIntensity;
 			lightComponent->attenuationRadius = inAttenuationRadius;
 			lightComponent->falloffExponent = inFalloffExponent;
 			lightComponent->castsShadow = castsShadow;
 		}
+
+		void setSourceRadius(float inRadius) {
+			lightComponent->sourceRadius = inRadius;
+		}
+
+		inline PointLightComponent* getLightComponent() const { return lightComponent; }
 
 	private:
 		PointLightComponent* lightComponent;

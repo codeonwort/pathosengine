@@ -2,12 +2,13 @@
 #include "pathos/engine_policy.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/light/point_light_component.h"
+#include "pathos/light/rect_light_component.h"
 #include "pathos/light/directional_light_component.h"
 
 #include "badger/math/hit_test.h"
 
-namespace pathos
-{
+namespace pathos {
+
 	static constexpr uint32 RENDER_PROXY_ALLOCATOR_BYTES = 32 * 1024 * 1024; // 32 MB
 
 	SceneProxy::SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera)
@@ -17,12 +18,12 @@ namespace pathos
 		, bSceneRenderSettingsOverriden(false)
 		, renderProxyAllocator(RENDER_PROXY_ALLOCATOR_BYTES)
 	{
-		//
 	}
 
 	SceneProxy::~SceneProxy() {
 		proxyList_directionalLight.clear();
 		proxyList_pointLight.clear();
+		proxyList_rectLight.clear();
 		proxyList_shadowMesh.clear();
 		proxyList_wireframeShadowMesh.clear();
 		for (uint32 i = 0; i < (uint32)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
@@ -40,12 +41,26 @@ namespace pathos
 	}
 
 	void SceneProxy::createViewDependentRenderProxy(const matrix4& viewMatrix) {
-		for (uint32 i = 0u; i < proxyList_pointLight.size(); ++i) {
-			proxyList_pointLight[i]->viewPosition = vector3(viewMatrix * vector4(proxyList_pointLight[i]->worldPosition, 1.0f));
-		}
+		auto posToVS = [&viewMatrix](const vector3& posWS) {
+			return vector3(viewMatrix * vector4(posWS, 1.0f));
+		};
+		auto dirToVS = [&viewMatrix](const vector3& dirWS) {
+			return vector3(viewMatrix * vector4(dirWS, 0.0f));
+		};
 
-		for (uint32 i = 0u; i < proxyList_directionalLight.size(); ++i) {
-			proxyList_directionalLight[i]->vsDirection = vector3(viewMatrix * vector4(proxyList_directionalLight[i]->wsDirection, 0.0f));
+		for (size_t i = 0u; i < proxyList_pointLight.size(); ++i) {
+			proxyList_pointLight[i]->viewPosition = posToVS(proxyList_pointLight[i]->worldPosition);
+		}
+		// #todo-multiview: Overriding original vars, so only valid for first view.
+		// Need to store WS values and shall not memcpy the proxy as is.
+		for (size_t i = 0u; i < proxyList_rectLight.size(); ++i) {
+			proxyList_rectLight[i]->positionVS = posToVS(proxyList_rectLight[i]->positionVS);
+			proxyList_rectLight[i]->directionVS = dirToVS(proxyList_rectLight[i]->directionVS);
+			proxyList_rectLight[i]->upVS = dirToVS(proxyList_rectLight[i]->upVS);
+			proxyList_rectLight[i]->rightVS = dirToVS(proxyList_rectLight[i]->rightVS);
+		}
+		for (size_t i = 0u; i < proxyList_directionalLight.size(); ++i) {
+			proxyList_directionalLight[i]->vsDirection = dirToVS(proxyList_directionalLight[i]->wsDirection);
 		}
 	}
 

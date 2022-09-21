@@ -231,6 +231,8 @@
     <ClInclude Include="src\pathos\light\directional_light_component.h" />
     <ClInclude Include="src\pathos\light\point_light_actor.h" />
     <ClInclude Include="src\pathos\light\point_light_component.h" />
+    <ClInclude Include="src\pathos\light\rect_light_actor.h" />
+    <ClInclude Include="src\pathos\light\rect_light_component.h" />
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
     <ClInclude Include="src\pathos\loader\scene_desc_parser.h" />

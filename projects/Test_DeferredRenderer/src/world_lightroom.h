@@ -16,7 +16,10 @@ namespace pathos {
 	class StaticMeshActor;
 	class PointLightActor;
 	class DirectionalLightActor;
+	class RectLightActor;
 }
+
+class PlayerController;
 
 // --------------------------------------------------------
 
@@ -28,6 +31,7 @@ public:
 	void onTick(float deltaSeconds) override;
 
 private:
+	void setupInput();
 	void setupScene();
 
 private:
@@ -36,16 +40,26 @@ private:
 	sharedPtr<StaticMeshActor> wallA;
 	sharedPtr<StaticMeshActor> wallB;
 	sharedPtr<StaticMeshActor> box;
+	sharedPtr<StaticMeshActor> ball;
 	sharedPtr<DirectionalLightActor> sun;
 	sharedPtr<PointLightActor> pointLight0;
 	sharedPtr<StaticMeshActor> pointLight0Gizmo;
+	sharedPtr<RectLightActor> rectLight0;
+	sharedPtr<StaticMeshActor> rectLight0Gizmo;
+
+	sharedPtr<PlayerController> playerController;
 #else
 	StaticMeshActor* ground = nullptr;
 	StaticMeshActor* wallA = nullptr;
 	StaticMeshActor* wallB = nullptr;
 	StaticMeshActor* box = nullptr;
+	StaticMeshActor* ball = nullptr;
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
 	StaticMeshActor* pointLight0Gizmo = nullptr;
+	RectLightActor* rectLight0 = nullptr;
+	StaticMeshActor* rectLight0Gizmo = nullptr;
+
+	PlayerController* playerController = nullptr;
 #endif
 };

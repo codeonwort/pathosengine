@@ -28,7 +28,9 @@ namespace pathos {
 
 	private:
 		GLuint fbo;
-		UniformBuffer ubo;
+		UniformBuffer uboDirLight;
+		UniformBuffer uboPointLight;
+		UniformBuffer uboRectLight;
 
 		PlaneGeometry* quad = nullptr;
 

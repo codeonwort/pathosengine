@@ -9,19 +9,20 @@ namespace pathos {
 	PlaneGeometry::PlaneGeometry(
 		float inWidth, float inHeight,
 		uint32 inGridX, uint32 inGridY,
+		PlaneGeometry::Direction direction,
 		EPrimitiveInitOptions options)
 		: width(inWidth)
 		, height(inHeight)
 		, gridX(inGridX)
 		, gridY(inGridY)
 	{
-		buildGeometry();
+		buildGeometry(direction);
 		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
 			calculateTangentBasis();
 		}
 	}
 
-	void PlaneGeometry::buildGeometry() {
+	void PlaneGeometry::buildGeometry(PlaneGeometry::Direction direction) {
 		const uint32 numVertices = (gridX + 1) * (gridY + 1);
 		const float segW = width / gridX, segH = height / gridY;
 		const float x0 = -width / 2, y0 = -height / 2;
@@ -45,6 +46,22 @@ namespace pathos {
 				normals[size_t(k * 3 + 1)] = 0.0f;
 				normals[size_t(k * 3 + 2)] = 1.0f;
 				k++;
+			}
+		}
+
+		if (direction == PlaneGeometry::Direction::X) {
+			for (auto i = 0u; i < positions.size(); i += 3) {
+				positions[size_t(i + 2)] = -positions[i];
+				positions[i] = 0.0f;
+				normals[i] = 1.0f;
+				normals[size_t(i + 1)] = normals[size_t(i + 2)] = 0.0f;
+			}
+		} else if (direction == PlaneGeometry::Direction::Y) {
+			for (auto i = 0u; i < positions.size(); i += 3) {
+				positions[size_t(i + 2)] = -positions[size_t(i + 1)];
+				positions[size_t(i + 1)] = 0.0f;
+				normals[size_t(i + 1)] = 1.0f;
+				normals[i] = normals[size_t(i + 2)] = 0.0f;
 			}
 		}
 

@@ -26,10 +26,11 @@ matrix4 Rotator::toMatrix() const {
 }
 
 vector3 Rotator::toDirection() const {
-	float theta = glm::radians(yaw);
-	float phi = glm::radians(pitch);
-	float cosPhi = ::cosf(phi);
-	return vector3(sinf(theta) * cosPhi, sinf(phi), cosf(theta) * cosPhi);
+	return matrix3(toMatrix()) * vector3(1.0f, 0.0f, 0.0f);
+	//float theta = glm::radians(yaw);
+	//float phi = glm::radians(pitch);
+	//float cosPhi = ::cosf(phi);
+	//return vector3(sinf(theta) * cosPhi, sinf(phi), cosf(theta) * cosPhi);
 }
 
 void Rotator::clampValues() {

@@ -12,19 +12,19 @@ namespace pathos {
 		bool destroyed = false;
 
 	public:
-		uint32 sceneWidth;
-		uint32 sceneHeight;
+		uint32 sceneWidth = 0;
+		uint32 sceneHeight = 0;
 
 		uint32 numCascades = 4;
 		uint32 csmWidth = 2048;
 		uint32 csmHeight = 2048;
 
-		GLuint sceneFinal; // Final texture rendered on the screen
-		GLuint sceneColor; // This usually end up as an unpack of gbuffer, before any post-processing
-		GLuint sceneDepth;
+		GLuint sceneFinal = 0; // Final texture rendered on the screen
+		GLuint sceneColor = 0; // This usually end up as an unpack of gbuffer, before any post-processing
+		GLuint sceneDepth = 0;
 
-		GLuint sceneColorDownsampleChain; // mip0: half resolution, mip1: quarter resolution, mip2: ...
-		uint32 sceneColorDownsampleMipmapCount; // # of mipmaps of sceneColorDownsampleChain
+		GLuint sceneColorDownsampleChain = 0; // mip0: half resolution, mip1: quarter resolution, mip2: ...
+		uint32 sceneColorDownsampleMipmapCount = 0; // # of mipmaps of sceneColorDownsampleChain
 		std::vector<GLuint> sceneColorDownsampleViews;
 
 		// Screen space reflection
@@ -41,40 +41,40 @@ namespace pathos {
 		std::vector<GLuint> ssrPreconvolutionViews;
 		std::vector<GLuint> ssrPreconvolutionTempViews;
 
-		GLuint volumetricCloudA; // Prev and current, rotated
-		GLuint volumetricCloudB; // Prev and current, rotated
+		GLuint volumetricCloudA = 0; // Prev and current, rotated
+		GLuint volumetricCloudB = 0; // Prev and current, rotated
 
-		GLuint cascadedShadowMap;
-		GLuint omniShadowMaps; // cubemap array
+		GLuint cascadedShadowMap = 0;
+		GLuint omniShadowMaps = 0; // cubemap array
 
 		// Deferred renderer only
-		bool useGBuffer;
-		GLuint gbufferA;
-		GLuint gbufferB;
-		GLuint gbufferC;
+		bool useGBuffer = false;
+		GLuint gbufferA = 0;
+		GLuint gbufferB = 0;
+		GLuint gbufferC = 0;
 
 		// post processing: god ray
-		GLuint godRaySource;
-		GLuint godRayResult;
-		GLuint godRayResultTemp;
+		GLuint godRaySource = 0;
+		GLuint godRayResult = 0;
+		GLuint godRayResultTemp = 0;
 
 		// post processing: depth of field
-		GLuint dofSubsum0;
-		GLuint dofSubsum1;
+		GLuint dofSubsum0 = 0;
+		GLuint dofSubsum1 = 0;
 
 		// post processing: bloom
-		GLuint sceneBloom;
-		GLuint sceneBloomTemp;
+		GLuint sceneBloom = 0;
+		GLuint sceneBloomTemp = 0;
 		std::vector<GLuint> sceneBloomViews;
 		std::vector<GLuint> sceneBloomTempViews;
 
 		// post processing: tone mapping
-		GLuint toneMappingResult;
+		GLuint toneMappingResult = 0;
 
 		// post processing: ssao
-		GLuint ssaoHalfNormalAndDepth;
-		GLuint ssaoMap;
-		GLuint ssaoMapTemp;
+		GLuint ssaoHalfNormalAndDepth = 0;
+		GLuint ssaoMap = 0;
+		GLuint ssaoMapTemp = 0;
 
 	public:
 		SceneRenderTargets();
