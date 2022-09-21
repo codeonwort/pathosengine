@@ -175,7 +175,7 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
-		// #todo: multi-view
+		// #todo-multivew
 		{
 			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
 

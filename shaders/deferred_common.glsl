@@ -51,36 +51,23 @@ struct DirectionalLight {
 	float padding2;
 };
 
-// Total 96 + 64 bytes (#todo-light: Too fat. WS values are not needed.)
+// Total 80 bytes
 struct RectLight {
 	// 16 bytes
-	vec3 positionWS;
+	vec3 positionVS;
 	float attenuationRadius;
 	// 16 bytes
-	vec3 directionWS;
+	vec3 directionVS;
 	uint castsShadow;
 	// 16 bytes
 	vec3 intensity;
 	float falloffExponent;
 	// 16 bytes
-	float halfWidth;
+	vec3 upVS;
 	float halfHeight;
-	vec2 padding0;
 	// 16 bytes
-	vec3 positionVS;
-	float padding1;
-	// 16 bytes
-	vec3 directionVS;
-	float padding2;
-	// 64 bytes for tangent frame
-	vec3  upWS;
-	float padding3;
-	vec3  rightWS;
-	float padding4;
-	vec3  upVS;
-	float padding5;
-	vec3  rightVS;
-	float padding6;
+	vec3 rightVS;
+	float halfWidth;
 };
 
 // SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games

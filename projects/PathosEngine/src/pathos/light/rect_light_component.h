@@ -8,33 +8,19 @@ namespace pathos {
 	struct RectLightProxy : public SceneComponentProxy {
 		// Center of rectangular source region.
 		// NOTE: This is not the position as the light source's origin.
-		vector3   positionWS;
+		vector3   positionVS;
 		float     attenuationRadius;
 
-		vector3   directionWS;
+		vector3   directionVS;
 		uint32    castsShadow;
 
 		vector3   intensity;
 		float     falloffExponent;
 
-		float     halfWidth;
-		float     halfHeight;
-		vector2   _padding0;
-
-		vector3   positionVS;
-		float     _padding1;
-
-		vector3   directionVS;
-		float     _padding2;
-
-		vector3   upWS;
-		float     _padding3;
-		vector3   rightWS;
-		float     _padding4;
 		vector3   upVS;
-		float     _padding5;
+		float     halfHeight;
 		vector3   rightVS;
-		float     _padding6;
+		float     halfWidth;
 	};
 
 	class RectLightComponent : public SceneComponent {
@@ -56,22 +42,17 @@ namespace pathos {
 			matrix3 rotation = matrix3(getRotation().toMatrix());
 			vector3 forward = getRotation().toDirection();
 
-			proxy->positionWS        = getLocation();
+			// NOTE: Vectors are in WS here, but converted to VS later.
+			proxy->positionVS        = getLocation();
 			proxy->attenuationRadius = attenuationRadius;
-			proxy->directionWS       = forward;
+			proxy->directionVS       = forward;
 			proxy->castsShadow       = castsShadow;
 			proxy->intensity         = intensity;
 			proxy->falloffExponent   = falloffExponent;
 			proxy->halfWidth         = 0.5f * width;
 			proxy->halfHeight        = 0.5f * height;
-			proxy->upWS              = rotation * vector3(0.0f, 1.0f, 0.0f);
-			proxy->rightWS           = rotation * vector3(0.0f, 0.0f, 1.0f);
-
-			// Filled later
-			proxy->positionVS        = vector3(0.0f);
-			proxy->directionVS       = vector3(0.0f);
-			proxy->upVS              = vector3(0.0f);
-			proxy->rightVS           = vector3(0.0f);
+			proxy->upVS              = rotation * vector3(0.0f, 1.0f, 0.0f);
+			proxy->rightVS           = rotation * vector3(0.0f, 0.0f, 1.0f);
 
 			scene->proxyList_rectLight.push_back(proxy);
 		}

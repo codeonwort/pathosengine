@@ -51,11 +51,13 @@ namespace pathos {
 		for (size_t i = 0u; i < proxyList_pointLight.size(); ++i) {
 			proxyList_pointLight[i]->viewPosition = posToVS(proxyList_pointLight[i]->worldPosition);
 		}
+		// #todo-multiview: Overriding original vars, so only valid for first view.
+		// Need to store WS values and shall not memcpy the proxy as is.
 		for (size_t i = 0u; i < proxyList_rectLight.size(); ++i) {
-			proxyList_rectLight[i]->positionVS = posToVS(proxyList_rectLight[i]->positionWS);
-			proxyList_rectLight[i]->directionVS = dirToVS(proxyList_rectLight[i]->directionWS);
-			proxyList_rectLight[i]->upVS = dirToVS(proxyList_rectLight[i]->upWS);
-			proxyList_rectLight[i]->rightVS = dirToVS(proxyList_rectLight[i]->rightWS);
+			proxyList_rectLight[i]->positionVS = posToVS(proxyList_rectLight[i]->positionVS);
+			proxyList_rectLight[i]->directionVS = dirToVS(proxyList_rectLight[i]->directionVS);
+			proxyList_rectLight[i]->upVS = dirToVS(proxyList_rectLight[i]->upVS);
+			proxyList_rectLight[i]->rightVS = dirToVS(proxyList_rectLight[i]->rightVS);
 		}
 		for (size_t i = 0u; i < proxyList_directionalLight.size(); ++i) {
 			proxyList_directionalLight[i]->vsDirection = dirToVS(proxyList_directionalLight[i]->wsDirection);
