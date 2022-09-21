@@ -40,17 +40,20 @@ private:
 	sharedPtr<StaticMeshActor> wallA;
 	sharedPtr<StaticMeshActor> wallB;
 	sharedPtr<StaticMeshActor> box;
+	sharedPtr<StaticMeshActor> ball;
 	sharedPtr<DirectionalLightActor> sun;
 	sharedPtr<PointLightActor> pointLight0;
 	sharedPtr<StaticMeshActor> pointLight0Gizmo;
 	sharedPtr<RectLightActor> rectLight0;
 	sharedPtr<StaticMeshActor> rectLight0Gizmo;
+
 	sharedPtr<PlayerController> playerController;
 #else
 	StaticMeshActor* ground = nullptr;
 	StaticMeshActor* wallA = nullptr;
 	StaticMeshActor* wallB = nullptr;
 	StaticMeshActor* box = nullptr;
+	StaticMeshActor* ball = nullptr;
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
 	StaticMeshActor* pointLight0Gizmo = nullptr;

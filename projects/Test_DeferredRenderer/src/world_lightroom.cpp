@@ -15,13 +15,13 @@
 	#define TEMP_SPAWN_ACTOR(T) spawnActor<T>()
 #endif
 
-#define TEST_POINT_LIGHT 0
+#define TEST_POINT_LIGHT 1
 #define TEST_RECT_LIGHT  1
 
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION    = vector3(50.0f, 30.0f, 70.0f);
+static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
 static const vector3 SUN_RADIANCE       = 0.05f * vector3(1.0f, 1.0f, 1.0f);
@@ -78,6 +78,7 @@ void World_LightRoom::setupScene() {
 	M_wall->setMetallic(0.0f);
 
 	Mesh* mesh_wall = new Mesh(G_ground, M_wall);
+	mesh_wall->doubleSided = true;
 
 	wallA = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	wallA->setStaticMesh(mesh_wall);
@@ -92,18 +93,26 @@ void World_LightRoom::setupScene() {
 
 	const float boxHalfSize = 10.0f;
 
-	//MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
-	MeshGeometry* G_box = new SphereGeometry(boxHalfSize);
+	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
+	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
 
 	ColorMaterial* M_box = new ColorMaterial;
 	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_box->setRoughness(0.2f);
 	M_box->setMetallic(0.0f);
 
+	ColorMaterial* M_ball = new ColorMaterial;
+	M_ball->setAlbedo(0.9f, 0.9f, 0.9f);
+	M_ball->setRoughness(0.2f);
+	M_ball->setMetallic(0.0f);
+
 	box = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	box->setStaticMesh(new Mesh(G_box, M_box));
-	box->setActorLocation(0.0f, boxHalfSize, 0.0f);
-	//box->setActorScale(vector3(1.0f, 3.0f, 0.5f));
+	box->setActorLocation(0.0f, boxHalfSize, 50.0f);
+
+	ball = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	ball->setStaticMesh(new Mesh(G_ball, M_ball));
+	ball->setActorLocation(100.0f, boxHalfSize, 50.0f);
 
 	// --------------------------------------------------------
 	// Lights
@@ -113,7 +122,7 @@ void World_LightRoom::setupScene() {
 
 #if TEST_POINT_LIGHT
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
-	pointLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
+	pointLight0->setActorLocation(100.0f + boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
 	pointLight0->setLightParameters(500.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
