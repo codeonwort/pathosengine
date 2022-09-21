@@ -240,9 +240,10 @@ void World_RC1::setupScene()
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
-	PointLightActor* pLight = spawnActor<PointLightActor>();
-	pLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-	pLight->setLightParameters(5000000.0f * vector3(1.0f, 1.0f, 1.0f), 5000.0f);
+	PointLightActor* pointLight = spawnActor<PointLightActor>();
+	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
+	pointLight->setLightParameters(5000000.0f * vector3(1.0f, 1.0f, 1.0f), 10000.0f);
+	pointLight->setSourceRadius(40.0f);
 
 	//////////////////////////////////////////////////////////////////////////
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
@@ -272,7 +273,7 @@ void World_RC1::setupScene()
 
 	lightningSphere = spawnActor<LightningActor>();
 	lightningSphere->setActorScale(40.0f);
-	lightningSphere->setActorLocation(0.0f, Y_OFFSET, 0.0f);
+	lightningSphere->setActorLocation(pointLight->getActorLocation());
 
 	constexpr uint32 numRings = 6;
 	const float ring_gap = 40.0f;

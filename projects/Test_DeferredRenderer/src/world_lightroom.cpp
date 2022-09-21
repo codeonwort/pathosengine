@@ -37,9 +37,14 @@ void World_LightRoom::onInitialize() {
 
 void World_LightRoom::onTick(float deltaSeconds) {
 	if (TEST_RECT_LIGHT) {
-		float k = 0.5f * (1.0f + cosf(gEngine->getWorldTime()));
-		float ang = 0.1f + k * (178.0f - 0.1f);
-		rectLight0->setOuterAngle(ang);
+		//float k = 0.5f * (1.0f + cosf(gEngine->getWorldTime()));
+		//float ang = 0.1f + k * (178.0f - 0.1f);
+		//rectLight0->setOuterAngle(ang);
+		float t = gEngine->getWorldTime() * 1.57f;
+		float w = 25.0f + 10.0f * cosf(t);
+		float h = 15.0f + 5.0f * sinf(t);
+		rectLight0->setLightSize(w, h);
+		rectLight0Gizmo->setActorScale(vector3(1.0f, h / 15.0f, w / 25.0f));
 	}
 
 	if (TEST_POINT_LIGHT) {
@@ -126,11 +131,11 @@ void World_LightRoom::setupScene() {
 
 #if TEST_RECT_LIGHT
 	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
-	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 1.5f, -10.0f);
+	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 2.5f, -10.0f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(25.0f, 15.0f);
-	rectLight0->setLightIntensity(10000.0f * vector3(1.0f, 1.0f, 1.0f));
-	rectLight0->setAttenuationRadius(500.0f);
+	rectLight0->setLightIntensity(3000.0f * vector3(1.0f, 1.0f, 1.0f));
+	rectLight0->setAttenuationRadius(300.0f);
 	rectLight0->setOuterAngle(90.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
@@ -143,7 +148,8 @@ void World_LightRoom::setupScene() {
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
-	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation());
+	vector3 rectForward = rectLight0->getActorRotation().toDirection();
+	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation() - rectForward);
 	rectLight0Gizmo->setActorRotation(rectLight0->getActorRotation());
 #endif
 }

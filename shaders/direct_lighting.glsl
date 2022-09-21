@@ -110,6 +110,80 @@ float rightPyramidSolidAngle(float dist, float halfWidth, float halfHeight) {
 
 	return 4.0 * asin(a * b / sqrt((a * a + h * h) * (b * b + h * h)));
 }
+float rectangleSolidAngle(vec3 worldPos, vec3 p0, vec3 p1, vec3 p2, vec3 p3) {
+	vec3 v0 = p0 - worldPos;
+	vec3 v1 = p1 - worldPos;
+	vec3 v2 = p2 - worldPos;
+	vec3 v3 = p3 - worldPos;
+	vec3 n0 = normalize(cross(v0, v1));
+	vec3 n1 = normalize(cross(v1, v2));
+	vec3 n2 = normalize(cross(v2, v3));
+	vec3 n3 = normalize(cross(v3, v0));
+	float g0 = acos(dot(-n0, n1));
+	float g1 = acos(dot(-n1, n2));
+	float g2 = acos(dot(-n2, n3));
+	float g3 = acos(dot(-n3, n0));
+	return g0 + g1 + g2 + g3 - 2.0 * PI;
+}
+vec3 rayPlaneIntersect(vec3 rayOrigin, vec3 rayDirection, vec3 planeOrigin, vec3 planeNormal) {
+	float distance = dot(planeNormal, planeOrigin - rayOrigin) / dot(planeNormal, rayDirection);
+	return rayOrigin + rayDirection * distance;
+}
+vec3 closestPointRect(
+	vec3 pos, vec3 planeOrigin,
+	vec3 left, vec3 up,
+	float halfWidth, float halfHeight)
+{
+	vec3 dir = pos - planeOrigin;
+
+	vec2 dist2D = vec2(dot(dir, left), dot(dir, up));
+	vec2 rectHalfSize = vec2(halfWidth, halfHeight);
+	dist2D = clamp(dist2D, -rectHalfSize, rectHalfSize);
+	return planeOrigin + dist2D.x * left + dist2D.y * up;
+}
+bool findRectLightMRP(
+	RectLight light, GBufferData gbufferData,
+	out vec3 outLightPos, out vec3 outLightDir, out float outSolidAngle)
+{
+	vec3 pos = gbufferData.vs_coords;
+	vec3 normal = gbufferData.normal;
+	vec3 lightPos = light.positionVS;
+	vec3 lightPlaneNormal = light.directionVS;
+	vec3 left = -light.rightVS;
+	vec3 up = light.upVS;
+
+	if (dot(pos - lightPos, lightPlaneNormal) > 0.0) {
+		float clampCosAngle = 0.001 + clamp(dot(normal, lightPlaneNormal), 0.0, 1.0);
+		vec3 d0 = normalize(-lightPlaneNormal + normal * clampCosAngle);
+		vec3 d1 = normalize(normal - lightPlaneNormal * clampCosAngle);
+		vec3 dh = normalize(d0 + d1);
+
+		vec3 ph = rayPlaneIntersect(pos, dh, lightPos, lightPlaneNormal);
+		ph = closestPointRect(ph, lightPos, left, up, light.halfWidth, light.halfHeight);
+
+		vec3 p0 = lightPos + left * -light.halfWidth + up *  light.halfHeight;
+		vec3 p1 = lightPos + left * -light.halfWidth + up * -light.halfHeight;
+		vec3 p2 = lightPos + left *  light.halfWidth + up * -light.halfHeight;
+		vec3 p3 = lightPos + left *  light.halfWidth + up *  light.halfHeight;
+
+		vec3 unormLightVector = ph - pos;
+		//float sqrDist = dot(unormLightVector, unormLightVector);
+
+		outLightPos = ph;
+		outLightDir = normalize(unormLightVector);
+		outSolidAngle = rectangleSolidAngle(pos, p0, p1, p2, p3);
+
+		return true;
+	}
+	return false;
+}
+
+float getRectLightRoughness(RectLight light, float distance, float roughness) {
+	float w = light.halfWidth;
+	float h = light.halfHeight;
+	float radius = sqrt(w * w + h * h);
+	return clamp(roughness + radius / (3.0 * distance), 0.0, 1.0);
+}
 
 // #todo-light: Redundant logic. Hopefully shader compiler will optimize it out...
 // Wi is in view space.
@@ -128,6 +202,11 @@ vec3 getIncomingDirection(GBufferData gbufferData) {
 	//return normalize(light.positionVS - gbufferData.vs_coords);
 
 #elif LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
+	vec3 L, unusedLightPos;
+	float unusedSolidAngle;
+	if (findRectLightMRP(light, gbufferData, unusedLightPos, L, unusedSolidAngle)) {
+		return L;
+	}
 	return -light.directionVS;
 
 #else
@@ -154,8 +233,8 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	PointLight light = getLightParameters();
 
 	//vec3 L = normalize(light.positionVS - gbufferData.vs_coords);
-	vec3 L, lightPos;
-	toSphereLight(light, gbufferData, L, lightPos);
+	vec3 unused, lightPos;
+	toSphereLight(light, gbufferData, unused, lightPos);
 
 	float distance = length(lightPos - gbufferData.vs_coords);
 
@@ -166,12 +245,6 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	radiance = light.intensity;
 	radiance *= pointLightFalloff(light.attenuationRadius, distance);
 
-	// Sphere normalization
-	float newRough = getSphereLightRoughness(light, distance, gbufferData.roughness);
-	float sphereNorm = gbufferData.roughness / newRough;
-	sphereNorm = sphereNorm * sphereNorm;
-	radiance *= sphereNorm;
-
 	if (bEnableShadowMap) {
 		radiance *= getShadowingByPointLight(gbufferData, light, ubo.omniShadowMapIndex);
 	}
@@ -180,24 +253,26 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 	RectLight light = getLightParameters();
 
-	vec3 Wi = -light.directionVS;
-
-	// Check if the light reaches at the surface point.
-	vec3 v = gbufferData.vs_coords - light.virtualCenterVS;
-	float distComp = dot(v, -Wi) / light.virtualOffset;
-	vec3 up = light.upVS;
-	vec3 right = light.rightVS;
-	bool bDirectHit =
-		abs(dot(v, right)) <= 0.5 * light.halfWidth * distComp
-		&& abs(dot(v, up)) <= 0.5 * light.halfHeight * distComp;
-
-	// #todo-light: Adjust specular term for rect light
-	if (bDirectHit) {
-		float distance = length(light.positionVS - gbufferData.vs_coords);
-		float distFalloff = pointLightFalloff(light.attenuationRadius, distance);
-		float angularFalloff = rightPyramidSolidAngle(distance, light.halfWidth, light.halfHeight);
-		radiance = light.intensity * distFalloff * angularFalloff;
+	// Outer angle control, but causes hard cutoff.
+	if (false) {
+		vec3 v = gbufferData.vs_coords - light.virtualCenterVS;
+		float distComp = dot(v, light.directionVS) / light.virtualOffset;
+		vec3 up = light.upVS, right = light.rightVS;
+		if (abs(dot(v, right)) > 0.5 * light.halfWidth * distComp
+			|| abs(dot(v, up)) > 0.5 * light.halfHeight * distComp)
+		{
+			return radiance;
+		}
 	}
+
+	vec3 lightPos, L;
+	float solidAngle;
+	if (findRectLightMRP(light, gbufferData, lightPos, L, solidAngle)) {
+		float distance = length(lightPos - gbufferData.vs_coords);
+		float distFalloff = pointLightFalloff(light.attenuationRadius, distance);
+		radiance = light.intensity * distFalloff * solidAngle;
+	}
+
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 
 	return radiance;
@@ -224,32 +299,53 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games (course note p.14)
 	{
 		LIGHT_STRUCT light = getLightParameters();
+
 		vec3 lightPos;
 		toSphereLight(light, gbufferData, L, lightPos);
 		float distL = length(lightPos - gbufferData.vs_coords);
-		roughness = getSphereLightRoughness(light, distL, roughness);
+
+		// Sphere normalization
+		float newRough = getSphereLightRoughness(light, distL, roughness);
+		float sphereNorm = roughness / newRough;
+		sphereNorm = sphereNorm * sphereNorm;
+		
+		roughness = newRough * sphereNorm;
 	}
 	// L is renewed. Update all affected variables.
 	H = normalize(V + L);
 	NdotL = max(dot(N, L), 0.0);
 #endif
 
+#if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
+	{
+		LIGHT_STRUCT light = getLightParameters();
+		vec3 lightPos;
+		float unusedSolidAngle;
+		if (findRectLightMRP(light, gbufferData, lightPos, L, unusedSolidAngle)) {
+			float distL = length(lightPos - gbufferData.vs_coords);
+			roughness = getRectLightRoughness(light, distL, roughness);
+
+			// L is renewed. Update all affected variables.
+			H = normalize(V + L);
+			NdotL = max(dot(N, L), 0.0);
+		}
+	}
+#endif
+
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
 
-	// Micro
 	float D = distributionGGX(N, H, roughness);
 	float G = geometrySmith(N, V, L, roughness);
 	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-	vec3 kS = F;
-	vec3 kD = vec3(1.0) - kS;
+	vec3 kD = vec3(1.0) - F;
 
-	vec3 diffuse = albedo * (1.0 - metallic);
-	vec3 specular = (D * F * G) / max(4.0 * NdotV * NdotL, 0.001);
+	vec3 diffuseTerm = kD * (albedo * (1.0 - metallic)) / PI;
+	vec3 specularTerm = (D * F * G) / max(4.0 * NdotV * NdotL, 0.001);
 
 	vec3 Li = getIncomingRadiance(gbufferData, V);
-	vec3 Lo = (kD * diffuse / PI + specular) * Li * NdotL;
+	vec3 Lo = (diffuseTerm + specularTerm) * Li * NdotL;
 	
 	// #todo-light: SSAO is being sampled per each light unnecessarily
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
