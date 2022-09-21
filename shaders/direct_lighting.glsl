@@ -253,18 +253,6 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_RECT
 	RectLight light = getLightParameters();
 
-	// Outer angle control, but causes hard cutoff.
-	if (false) {
-		vec3 v = gbufferData.vs_coords - light.virtualCenterVS;
-		float distComp = dot(v, light.directionVS) / light.virtualOffset;
-		vec3 up = light.upVS, right = light.rightVS;
-		if (abs(dot(v, right)) > 0.5 * light.halfWidth * distComp
-			|| abs(dot(v, up)) > 0.5 * light.halfHeight * distComp)
-		{
-			return radiance;
-		}
-	}
-
 	vec3 lightPos, L;
 	float solidAngle;
 	if (findRectLightMRP(light, gbufferData, lightPos, L, solidAngle)) {

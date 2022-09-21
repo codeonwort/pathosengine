@@ -37,9 +37,6 @@ void World_LightRoom::onInitialize() {
 
 void World_LightRoom::onTick(float deltaSeconds) {
 	if (TEST_RECT_LIGHT) {
-		//float k = 0.5f * (1.0f + cosf(gEngine->getWorldTime()));
-		//float ang = 0.1f + k * (178.0f - 0.1f);
-		//rectLight0->setOuterAngle(ang);
 		float t = gEngine->getWorldTime() * 1.57f;
 		float w = 25.0f + 10.0f * cosf(t);
 		float h = 15.0f + 5.0f * sinf(t);
@@ -136,7 +133,6 @@ void World_LightRoom::setupScene() {
 	rectLight0->setLightSize(25.0f, 15.0f);
 	rectLight0->setLightIntensity(3000.0f * vector3(1.0f, 1.0f, 1.0f));
 	rectLight0->setAttenuationRadius(300.0f);
-	rectLight0->setOuterAngle(90.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
 		rectLight0->getLightComponent()->width,
