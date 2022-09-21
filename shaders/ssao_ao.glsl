@@ -32,7 +32,6 @@ layout (binding = 0, rgba16f) readonly uniform image2D halfNormalAndDepth;
 layout (binding = 1, r16f) writeonly uniform image2D ssaoMap;
 
 layout (std140, binding = 1) uniform UBO_SSAO {
-	bool enable;
 	uint sampleCount; // Samples per pixel
 	float worldRadius;
 	float maxScreenRadius;
@@ -86,10 +85,6 @@ vec4 fetchNeighbor(ivec2 currentTexel, ivec2 neighborTexel) {
 }
 
 float computeAO(ivec2 texel, vec2 uv) {
-	if (!uboSSAO.enable) {
-		return 1.0;
-	}
-
 #if USE_SHARED_SAMPLES
 	vec4 normalAndDepth = shared_samples[gl_LocalInvocationIndex];
 #else

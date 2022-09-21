@@ -29,7 +29,6 @@ namespace pathos {
 
 	// For SSAO_Compute
 	struct UBO_SSAO {
-		uint32 enable;
 		uint32 spp;
 		float worldRadius;
 		float maxScreenRadius;
@@ -109,6 +108,15 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
+		if (cvar_ssao_enable.getInt() == 0) {
+			GLfloat* clearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat) * 4);
+			for (int32 i = 0; i < 4; ++i) clearValue[i] = 1.0f;
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
+			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.ssaoMap, 0);
+			cmdList.clearBufferfv(GL_COLOR, 0, clearValue);
+			return;
+		}
+
 		{
 			SCOPED_DRAW_EVENT(SSAODownsample);
 
@@ -135,7 +143,6 @@ namespace pathos {
 			cmdList.useProgram(program_computeAO.getGLName());
 
 			UBO_SSAO uboData;
-			uboData.enable          = cvar_ssao_enable.getInt() == 0 ? 0 : 1;
 			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), SSAO_MAX_SAMPLE_POINTS);
 			uboData.worldRadius     = cvar_ssao_worldRadius.getFloat();
 			uboData.maxScreenRadius = cvar_ssao_maxScreenRadius.getFloat();
