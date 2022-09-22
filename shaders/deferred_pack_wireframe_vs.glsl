@@ -26,5 +26,5 @@ void main() {
 	vs_out.texcoord    = vec2(0);
 	vs_out.material_id = MATERIAL_ID_WIREFRAME;
 
-	gl_Position = uboPerObject.mvpTransform * vec4(position, 1.0f);
+	gl_Position = uboPerFrame.projTransform * (uboPerObject.mvTransform * vec4(position, 1.0f));
 }

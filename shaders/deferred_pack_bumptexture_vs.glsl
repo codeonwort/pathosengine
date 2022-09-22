@@ -31,5 +31,5 @@ void main() {
 	vs_out.texcoord    = uv;
 	vs_out.material_id = MATERIAL_ID_TEXTURE;
 
-	gl_Position = uboPerObject.mvpTransform * vec4(position, 1.0);
+	gl_Position = uboPerFrame.projTransform * (uboPerObject.mvTransform * vec4(position, 1.0));
 }

@@ -38,7 +38,7 @@ void main() {
 	interpolants.texcoord    = uv;
 	interpolants.material_id = MATERIAL_ID_ALPHAONLY;
 
-	gl_Position = uboPerObject.modelViewProj * vec4(position, 1.0);
+	gl_Position = uboPerFrame.projTransform * (uboPerObject.modelView * vec4(position, 1.0));
 }
 
 #endif // VERTEX_SHADER

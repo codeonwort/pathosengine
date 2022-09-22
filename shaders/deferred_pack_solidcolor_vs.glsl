@@ -37,5 +37,5 @@ void main() {
 		delta = right * uboPerObject.billboardParam.y * (uv.x - 0.5);
 	}
 
-	gl_Position = uboPerObject.mvpTransform * vec4(position + delta, 1.0);
+	gl_Position = uboPerFrame.projTransform * (uboPerObject.mvTransform * vec4(position + delta, 1.0));
 }

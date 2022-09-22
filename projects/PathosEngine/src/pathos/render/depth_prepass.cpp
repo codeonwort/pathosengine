@@ -20,7 +20,7 @@ namespace pathos {
 #endif
 
 	struct UBO_DepthPrepass {
-		matrix4 mvpTransform;
+		matrix4 mvTransform;
 		matrix3x4 mvMatrix3x3;
 		vector4 billboardParam;
 	};
@@ -29,7 +29,7 @@ namespace pathos {
 	public:
 		DepthPrepassVS() : ShaderStage(GL_VERTEX_SHADER, "DepthPrepassVS")
 		{
-			addDefine("VERTEX_SHADER 1");
+			addDefine("VERTEX_SHADER", 1);
 			setFilepath("depth_prepass.glsl");
 		}
 	};
@@ -38,7 +38,7 @@ namespace pathos {
 	public:
 		DepthPrepassFS() : ShaderStage(GL_FRAGMENT_SHADER, "DepthPrepassFS")
 		{
-			addDefine("FRAGMENT_SHADER 1");
+			addDefine("FRAGMENT_SHADER", 1);
 			setFilepath("depth_prepass.glsl");
 		}
 	};
@@ -134,8 +134,8 @@ namespace pathos {
 
 				UBO_DepthPrepass uboData;
 				{
-					uboData.mvpTransform = camera->getViewProjectionMatrix() * proxy->modelMatrix;
-					uboData.mvMatrix3x3 = matrix3x4(camera->getViewMatrix() * proxy->modelMatrix);
+					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
 					uboData.billboardParam.x = colorMaterial && colorMaterial->billboard ? 1.0f : 0.0f;
 					uboData.billboardParam.y = colorMaterial ? colorMaterial->billboardWidth : 0.0f;
 				}
