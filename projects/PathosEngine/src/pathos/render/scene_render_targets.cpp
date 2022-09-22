@@ -73,18 +73,8 @@ namespace pathos {
 		static constexpr GLenum PF_sceneDepth = GL_DEPTH32F_STENCIL8;
 		reallocTexture2D(sceneFinal, PF_sceneColor, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
+		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, "sceneColor");
 		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
-
-		// sceneColorDownsampleChain
-		sceneColorDownsampleMipmapCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
-		reallocTexture2DMips(sceneColorDownsampleChain, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneColorDownsampleChain");
-		reallocTexture2DViews(sceneColorDownsampleViews, sceneColorDownsampleMipmapCount, sceneColorDownsampleChain, GL_RGBA16F, "view_sceneColorDownsampleChain");
-		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(sceneColorDownsampleChain, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
-			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(sceneColorDownsampleViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
 
 		// Screen space reflection
 		{
@@ -147,25 +137,24 @@ namespace pathos {
 
 		// bloom
 		constexpr GLenum PF_bloom = GL_RGBA16F;
-		reallocTexture2DMips(sceneBloom, PF_bloom, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloom");
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(sceneBloom, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2DMips(sceneBloomTemp, PF_bloom, sceneWidth / 2, sceneHeight / 2, sceneColorDownsampleMipmapCount, "sceneBloomTemp");
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(sceneBloomTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		reallocTexture2DViews(sceneBloomViews, sceneColorDownsampleMipmapCount, sceneBloom, PF_bloom, "view_sceneBloom");
-		reallocTexture2DViews(sceneBloomTempViews, sceneColorDownsampleMipmapCount, sceneBloomTemp, PF_bloom, "view_sceneBloomTemp");
-		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
-			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(sceneBloomViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		}
-		for (uint32 i = 0; i < sceneColorDownsampleMipmapCount; ++i) {
-			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(sceneBloomTempViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		reallocTexture2D(sceneBloomSetup, PF_bloom, sceneWidth / 2, sceneHeight / 2, "sceneBloomSetup");
+		cmdList.textureParameteri(sceneBloomSetup, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloomSetup, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloomSetup, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneBloomSetup, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		sceneBloomChainMipCount = std::min(5u, static_cast<uint32>(floor(log2(std::max(sceneWidth / 2, sceneHeight / 2))) + 1));
+		reallocTexture2DMips(sceneBloomChain, PF_bloom, sceneWidth / 2, sceneHeight / 2, sceneBloomChainMipCount, "sceneBloomChain");
+		reallocTexture2DViews(sceneBloomChainViews, sceneBloomChainMipCount, sceneBloomChain, PF_bloom, "view_sceneBloomChain");
+		cmdList.textureParameteri(sceneBloomChain, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneBloomChain, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(sceneBloomChain, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(sceneBloomChain, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		for (uint32 i = 0; i < sceneBloomChainMipCount; ++i) {
+			cmdList.textureParameteri(sceneBloomChainViews[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomChainViews[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(sceneBloomChainViews[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(sceneBloomChainViews[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		}
 
 		// tone mapping
@@ -189,19 +178,17 @@ namespace pathos {
 				textures.push_back(views[i]);
 			}
 		};
-		releaseViews(sceneColorDownsampleViews);
+		releaseViews(sceneBloomChainViews);
 		releaseViews(sceneDepthHiZViews);
 		releaseViews(ssrPreintegrationViews);
 		releaseViews(ssrPreconvolutionViews);
 		releaseViews(ssrPreconvolutionTempViews);
-		releaseViews(sceneBloomViews);
-		releaseViews(sceneBloomTempViews);
 
 #define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
 		safe_release(sceneFinal);
 		safe_release(sceneColor);
 		safe_release(sceneDepth);
-		safe_release(sceneColorDownsampleChain);
+		safe_release(sceneBloomChain);
 		safe_release(sceneDepthHiZ);
 		safe_release(ssrPreintegration);
 		safe_release(ssrRayTracing);
@@ -219,8 +206,6 @@ namespace pathos {
 		safe_release(godRayResultTemp);
 		safe_release(dofSubsum0);
 		safe_release(dofSubsum1);
-		safe_release(sceneBloom);
-		safe_release(sceneBloomTemp);
 		safe_release(toneMappingResult);
 		safe_release(ssaoHalfNormalAndDepth);
 		safe_release(ssaoMap);

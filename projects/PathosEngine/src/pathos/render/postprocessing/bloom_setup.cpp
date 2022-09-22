@@ -7,7 +7,7 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_bloom_applyThreshold("r.bloom.applyThreshold", 1, "Apply threshold to sceneColor for bloom contribution");
+	static ConsoleVariable<int32> cvar_bloom_applyThreshold("r.bloom.applyThreshold", 0, "Apply threshold to sceneColor for bloom contribution");
 	static ConsoleVariable<float> cvar_bloom_threshold("r.bloom.threshold", 1.0f, "Only sceneColor samples above the threshold contribute to bloom");
 	static ConsoleVariable<float> cvar_bloom_exposure("r.bloom.exposure", 1.0f, "Exposure scaling");
 
@@ -63,7 +63,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(BloomSetup);
 
 		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
-		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloom
+		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloomSetup
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BloomSetup);
 
@@ -91,20 +91,6 @@ namespace pathos {
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-	}
-
-	void BloomSetup::clearSceneBloom(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
-	{
-		SCOPED_DRAW_EVENT(BloomSetup_NoBloom);
-
-		GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneBloom
-
-		static const GLfloat zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
-		cmdList.clearNamedFramebufferfv(fbo, GL_COLOR, 0, zero);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
 	}
 

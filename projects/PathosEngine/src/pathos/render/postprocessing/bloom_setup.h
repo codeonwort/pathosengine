@@ -12,8 +12,6 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
 
-		void clearSceneBloom(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad);
-
 	private:
 		GLuint fbo = 0;
 		UniformBuffer ubo;

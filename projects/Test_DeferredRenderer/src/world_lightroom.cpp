@@ -128,7 +128,7 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
 	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
 	M_pointLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
-	vector3 plGizmoEm = pointLight0->getLightComponent()->intensity;
+	vector3 plGizmoEm = 10.0f * glm::normalize(pointLight0->getLightComponent()->intensity);
 	M_pointLightGizmo->setEmissive(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z);
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
@@ -149,7 +149,8 @@ void World_LightRoom::setupScene() {
 		1, 1, PlaneGeometry::Direction::X);
 	ColorMaterial* M_rectLightGizmo = new ColorMaterial;
 	M_rectLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
-	M_rectLightGizmo->setEmissive(0.5f, 0.0f, 0.0f);
+	vector3 rectGizmoEm = 10.0f * glm::normalize(rectLight0->getLightComponent()->intensity);
+	M_rectLightGizmo->setEmissive(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z);
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;

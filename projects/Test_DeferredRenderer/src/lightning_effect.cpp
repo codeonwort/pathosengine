@@ -8,7 +8,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 
-static const vector3 LIGHTNING_PARTICLE_EMISSIVE(2.0f, 2.0f, 2.0f);
+static const vector3 LIGHTNING_PARTICLE_EMISSIVE(30.0f, 30.0f, 30.0f);
 
 LightningActor::LightningActor()
 {
@@ -19,7 +19,7 @@ LightningActor::LightningActor()
 	sphereMaterial->setAlbedo(0.2f, 0.3f, 0.8f);
 	sphereMaterial->setRoughness(0.0f);
 	sphereMaterial->setMetallic(0.0f);
-	sphereMaterial->setEmissive(3.0f, 3.0f, 3.0f);
+	sphereMaterial->setEmissive(30.0f, 30.0f, 30.0f);
 	sphereComponent->setStaticMesh(new Mesh(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);

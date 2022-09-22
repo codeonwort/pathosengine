@@ -67,6 +67,8 @@ namespace pathos {
 			pathos::checkFramebufferStatus(cmdList, fbo, "toneMapping");
 		}
 
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ToneMapping);
 		cmdList.useProgram(program.getGLName());
 

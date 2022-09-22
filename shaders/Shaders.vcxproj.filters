@@ -69,5 +69,7 @@
     <None Include="ssr_raytracing.glsl" />
     <None Include="ssr_preconvolution.glsl" />
     <None Include="ssr_composite.glsl" />
+    <None Include="bloom_downsample.glsl" />
+    <None Include="bloom_upsample.glsl" />
   </ItemGroup>
 </Project>

@@ -11,8 +11,6 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_bloom_preset("r.bloom.preset", 2, "Select bloom weights preset");
-
 	class BloomVS : public ShaderStage {
 	public:
 		BloomVS() : ShaderStage(GL_VERTEX_SHADER, "BloomVS")
@@ -21,29 +19,28 @@ namespace pathos {
 		}
 	};
 
-	class BloomHorizontalFS : public ShaderStage {
+	class BloomDownsampleFS : public ShaderStage {
 	public:
-		BloomHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomHorizontalFS")
-		{
-			addDefine("HORIZONTAL", 1);
-			addDefine("KERNEL_SIZE", 3);
-			setFilepath("two_pass_gaussian_blur.glsl");
+		BloomDownsampleFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomDownsampleFS") {
+			setFilepath("bloom_downsample.glsl");
 		}
 	};
 
-	class BloomVerticalFS : public ShaderStage {
+	struct UBO_BloomUpsample {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		float filterRadius;
+	};
+
+	class BloomUpsampleFS : public ShaderStage {
 	public:
-		BloomVerticalFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomVerticalFS")
-		{
-			addDefine("HORIZONTAL", 0);
-			addDefine("KERNEL_SIZE", 3);
-			addDefine("ADDITIVE", 1);
-			setFilepath("two_pass_gaussian_blur.glsl");
+		BloomUpsampleFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomUpsampleFS") {
+			setFilepath("bloom_upsample.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_BloomHorizontal, BloomVS, BloomHorizontalFS);
-	DEFINE_SHADER_PROGRAM2(Program_BloomVertical, BloomVS, BloomVerticalFS);
+	DEFINE_SHADER_PROGRAM2(Program_BloomDownsample, BloomVS, BloomDownsampleFS);
+	DEFINE_SHADER_PROGRAM2(Program_BloomUpsample, BloomVS, BloomUpsampleFS);
 
 }
 
@@ -54,6 +51,8 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_BloomPass");
+
+		uboUpsample.init<UBO_BloomUpsample>("UBO_BloomUpsample");
 	}
 
 	void BloomPass::releaseResources(RenderCommandList& cmdList)
@@ -67,77 +66,71 @@ namespace pathos {
 	{
 		SCOPED_DRAW_EVENT(BloomPass);
 
-		static constexpr uint32 MAX_ADDITIVE_WEIGHTS = 5;
-		static const float additiveWeightsPreset0[MAX_ADDITIVE_WEIGHTS] = {
-			1.0f,
-			1.0f,
-			1.0f,
-			1.0f,
-			1.0f
-		};
-		static const float additiveWeightsPreset1[MAX_ADDITIVE_WEIGHTS] = {
-			1.0f,
-			0.5f,
-			0.25f,
-			0.125f,
-			0.125f
-		};
-		static const float additiveWeightsPreset2[MAX_ADDITIVE_WEIGHTS] = {
-			0.5f,
-			0.25f,
-			0.125f,
-			0.0625f,
-			0.03125f
-		};
-		static const float* additiveWeightsPtr[3] = { additiveWeightsPreset0, additiveWeightsPreset1, additiveWeightsPreset2 };
-		int32 bloomPresetIndex = badger::clamp(0, cvar_bloom_preset.getInt(), 2);
-		const float* additiveWeights = additiveWeightsPtr[bloomPresetIndex];
-
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneBloom
-		GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloomTemp
+		GLuint input0 = getInput(EPostProcessInput::PPI_0); // Source for bloom chain mip0
 
-		uint32 downsampleCount = sceneContext.sceneColorDownsampleMipmapCount;
-		std::vector<GLuint>& sceneColorDownsampleViews = sceneContext.sceneColorDownsampleViews;
-		std::vector<GLuint>& sceneBloomTempViews = sceneContext.sceneBloomTempViews;
+		const uint32 bloomChainMipCount = sceneContext.sceneBloomChainMipCount;
+		std::vector<GLuint>& bloomChainViews = sceneContext.sceneBloomChainViews;
 
-		CHECK(downsampleCount <= MAX_ADDITIVE_WEIGHTS + 1);
+		{
+			SCOPED_DRAW_EVENT(Downsample);
 
-		ShaderProgram& program_horizontal = FIND_SHADER_PROGRAM(Program_BloomHorizontal);
-		ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_BloomVertical);
+			const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BloomDownsample);
+			cmdList.useProgram(program.getGLName());
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-		uint32 viewportWidth = sceneContext.sceneWidth / 2;
-		uint32 viewportHeight = sceneContext.sceneHeight / 2;
+			uint32 viewportWidth = sceneContext.sceneWidth / 2;
+			uint32 viewportHeight = sceneContext.sceneHeight / 2;
+			for (uint32 mipIx = 0; mipIx < bloomChainMipCount; ++mipIx) {
+				GLuint srcTexture = (mipIx == 0) ? input0 : bloomChainViews[mipIx - 1];
+				GLuint dstTexture = bloomChainViews[mipIx];
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		for (uint32 i = 0; i < downsampleCount; ++i) {
-			int32 mipIndex = downsampleCount - i - 1;
-			GLuint sceneColorMip = sceneColorDownsampleViews[mipIndex];
-			GLuint bloomTempMip = sceneBloomTempViews[mipIndex];
-			GLuint bloomMip = sceneContext.sceneBloomViews[mipIndex];
-			GLuint bloomMipPrev = (mipIndex == downsampleCount - 1) ? gEngine->getSystemTexture2DBlack() : sceneContext.sceneBloomViews[mipIndex + 1];
+				cmdList.viewport(0, 0, viewportWidth, viewportHeight);
 
-			cmdList.viewport(0, 0, viewportWidth >> mipIndex, viewportHeight >> mipIndex);
+				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, dstTexture, 0);
+				cmdList.bindTextureUnit(0, srcTexture);
 
-			cmdList.useProgram(program_horizontal.getGLName());
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomTempMip, 0);
-			pathos::checkFramebufferStatus(cmdList, fbo, "bloomTempMip");
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
 
-			cmdList.bindTextureUnit(0, sceneColorMip);
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-			fullscreenQuad->drawPrimitive(cmdList);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+				viewportWidth /= 2;
+				viewportHeight /= 2;
+			}
+		}
 
-			cmdList.useProgram(program_vertical.getGLName());
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bloomMip, 0);
-			pathos::checkFramebufferStatus(cmdList, fbo, "bloomMip");
-			cmdList.bindTextureUnit(0, bloomTempMip);
-			cmdList.bindTextureUnit(1, bloomMipPrev);
-			cmdList.uniform1f(0, additiveWeights[mipIndex]);
-			fullscreenQuad->drawPrimitive(cmdList);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+		{
+			SCOPED_DRAW_EVENT(Upsample);
+
+			cmdList.enable(GL_BLEND);
+			cmdList.blendFunc(GL_ONE, GL_ONE);
+
+			const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BloomUpsample);
+			cmdList.useProgram(program.getGLName());
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+			uint32 mip0Width = sceneContext.sceneWidth / 2;
+			uint32 mip0Height = sceneContext.sceneHeight / 2;
+			for (int32 mipIx = bloomChainMipCount - 1; mipIx > 0; --mipIx) {
+				GLuint srcTexture = bloomChainViews[mipIx];
+				GLuint dstTexture = bloomChainViews[mipIx - 1];
+
+				cmdList.viewport(0, 0, mip0Width >> (mipIx - 1), mip0Height >> (mipIx - 1));
+
+				UBO_BloomUpsample uboData;
+				uboData.filterRadius = 1.0f;
+				uboUpsample.update(cmdList, UBO_BloomUpsample::BINDING_POINT, &uboData);
+
+				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, dstTexture, 0);
+				cmdList.bindTextureUnit(0, srcTexture);
+
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
+			}
+
+			cmdList.disable(GL_BLEND);
 		}
 	}
 

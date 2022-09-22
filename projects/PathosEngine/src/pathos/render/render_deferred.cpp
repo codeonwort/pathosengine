@@ -58,6 +58,7 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
+	static ConsoleVariable<int32> cvar_enable_probegi("r.probegi.enable", 1, "Toggle probe GI");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -275,7 +276,7 @@ namespace pathos {
 			renderDirectLighting(cmdList);
 		}
 
-		{
+		if (cvar_enable_probegi.getInt() != 0) {
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
@@ -314,49 +315,22 @@ namespace pathos {
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
-			// Downsample SceneColor to generate mipmaps. Only used by bloom pass for now.
-			if (!noBloom) {
+			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
+			const bool bNeedsHalfResSceneColor = !noBloom; // NOTE: Add other conditions if needed.
+			if (bNeedsHalfResSceneColor) {
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
-
-				uint32 viewportWidth = sceneRenderSettings.sceneWidth / 2;
-				uint32 viewportHeight = sceneRenderSettings.sceneHeight / 2;
-
-				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
-				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom); // temp use for downsample
-				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
-
-				const GLuint firstSource = sceneRenderTargets.sceneBloom;
-				const uint32 numMips = sceneRenderTargets.sceneColorDownsampleMipmapCount;
-
-				for (uint32 i = 0; i < numMips; ++i) {
-					const GLuint source = i == 0 ? firstSource : sceneRenderTargets.sceneColorDownsampleViews[i - 1];
-					const GLuint target = sceneRenderTargets.sceneColorDownsampleViews[i];
-					cmdList.viewport(0, 0, viewportWidth, viewportHeight);
-					copyTexture(cmdList, source, target);
-					viewportWidth /= 2;
-					viewportHeight /= 2;
-				}
+				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
+				copyTexture(cmdList, sceneRenderTargets.sceneColor, sceneRenderTargets.sceneColorHalfRes);
 			}
 
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
-
 			// Post Process: Bloom
-			{
-				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
+			if (!noBloom) {
+				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColorHalfRes);
+				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloomSetup);
+				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColor);
-				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloom);
-				if (noBloom) {
-					bloomSetup->clearSceneBloom(cmdList, fullscreenQuad.get());
-				} else {
-					// #todo-bloom: Inputs are not used anymore (Cannot pass texture views by setInput())
-					bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloom);
-					bloomPass->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloomTemp);
-					bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
-				}
-
-				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloomSetup);
+				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
 			}
 
 			// Post Process: Tone Mapping
@@ -364,11 +338,14 @@ namespace pathos {
 				// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
 				const bool isFinalPP = (noAA && noDOF);
 
+				GLuint bloom = noBloom ? sceneAfterLastPP : sceneRenderTargets.sceneBloomChain;
+				GLuint output = isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult;
+
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-				toneMapping->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneBloom);
+				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
 				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.getVolumetricCloud(frameCounter));
-				toneMapping->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult);
+				toneMapping->setOutput(EPostProcessOutput::PPO_0, output);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
 				sceneAfterLastPP = sceneRenderTargets.toneMappingResult;

@@ -21,7 +21,9 @@
   <ItemGroup>
     <None Include="atmosphere.glsl" />
     <None Include="atmosphere_precompute.glsl" />
+    <None Include="bloom_downsample.glsl" />
     <None Include="bloom_setup.glsl" />
+    <None Include="bloom_upsample.glsl" />
     <None Include="brdf.glsl" />
     <None Include="common.glsl" />
     <None Include="copy_texture.fs.glsl" />

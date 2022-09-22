@@ -18,15 +18,21 @@ out vec4 outSceneColor;
 
 void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
+	vec2 screenUV = fs_in.screenUV;
 
-	vec4 c = texelFetch(hdr_image, texelXY, 0);
-	c.xyz += textureLod(hdr_bloom, fs_in.screenUV, 0).xyz;
-	c.xyz += textureLod(god_ray, fs_in.screenUV, 0).xyz;
+	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
+	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
+	vec3 godRay     = textureLod(god_ray, screenUV, 0).rgb;
 
-	vec4 cloud = texture(volumetricCloud, fs_in.screenUV);
-	c.xyz = mix(c.xyz, cloud.xyz, 1.0 - cloud.a);
+	sceneColor = mix(sceneColor, sceneBloom, 0.04);
 
-	// tone mapping
+	vec4 c = vec4(sceneColor, 0.0);
+	c.rgb += godRay;
+
+	vec4 cloud = texture(volumetricCloud, screenUV);
+	c.rgb = mix(c.rgb, cloud.rgb, 1.0 - cloud.a);
+
+	// Reinhard tone mapper
 	c.rgb = vec3(1.0) - exp(-c.rgb * ubo.exposure);
 
 	// gamma correction

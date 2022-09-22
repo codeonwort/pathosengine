@@ -1,6 +1,7 @@
 #pragma once
 
 #include "post_process.h"
+#include "pathos/shader/uniform_buffer.h"
 
 namespace pathos {
 
@@ -13,6 +14,7 @@ namespace pathos {
 
 	private:
 		GLuint fbo;
+		UniformBuffer uboUpsample;
 
 	};
 

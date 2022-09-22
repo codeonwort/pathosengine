@@ -4,11 +4,12 @@
 	#error "Define HORIZONTAL as 0 or 1"
 #endif
 
+//?#define UNIFORM_ADDITIVE_WEIGHT 1
+
 layout (binding = 0) uniform sampler2D src;
 #if ADDITIVE
-// For bloom
 layout (binding = 1) uniform sampler2D additive;
-layout (location = 0) uniform float additiveWeight;
+layout (location = UNIFORM_ADDITIVE_WEIGHT) uniform float additiveWeight;
 #endif
 
 in VS_OUT {

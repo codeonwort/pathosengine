@@ -21,11 +21,9 @@ namespace pathos {
 
 		GLuint sceneFinal = 0; // Final texture rendered on the screen
 		GLuint sceneColor = 0; // This usually end up as an unpack of gbuffer, before any post-processing
+		GLuint sceneColorHalfRes = 0; // Half res version, generated before any post processing to start.
+		                              // PP passes that are too expensive to run in full res should use this.
 		GLuint sceneDepth = 0;
-
-		GLuint sceneColorDownsampleChain = 0; // mip0: half resolution, mip1: quarter resolution, mip2: ...
-		uint32 sceneColorDownsampleMipmapCount = 0; // # of mipmaps of sceneColorDownsampleChain
-		std::vector<GLuint> sceneColorDownsampleViews;
 
 		// Screen space reflection
 		GLuint sceneDepthHiZ = 0;
@@ -63,10 +61,10 @@ namespace pathos {
 		GLuint dofSubsum1 = 0;
 
 		// post processing: bloom
-		GLuint sceneBloom = 0;
-		GLuint sceneBloomTemp = 0;
-		std::vector<GLuint> sceneBloomViews;
-		std::vector<GLuint> sceneBloomTempViews;
+		GLuint sceneBloomSetup = 0;         // Source for sceneBloomChain mip0
+		uint32 sceneBloomChainMipCount = 0; // # of mipmaps of sceneBloomChain
+		GLuint sceneBloomChain = 0;         // mip0: half resolution, mip1: quarter resolution, mip2: ...
+		std::vector<GLuint> sceneBloomChainViews;
 
 		// post processing: tone mapping
 		GLuint toneMappingResult = 0;

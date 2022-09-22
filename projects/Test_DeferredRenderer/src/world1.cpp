@@ -342,7 +342,7 @@ void World1::setupScene()
 	material_tooBright->setAlbedo(0.0f, 0.0f, 0.0f);
 	material_tooBright->setMetallic(0.0f);
 	material_tooBright->setRoughness(1.0f);
-	material_tooBright->setEmissive(256.0f, 0.0f, 0.0f);
+	material_tooBright->setEmissive(100.0f, 0.0f, 0.0f);
 	StaticMeshActor* bloomActor = spawnActor<StaticMeshActor>();
 	bloomActor->setActorLocation(200.0f, 80.0f, 600.0f);
 	bloomActor->setActorScale(20.0f);
