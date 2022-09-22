@@ -11,15 +11,15 @@ namespace pathos {
 		CHECK(destroyed);
 	}
 
-	void SceneRenderTargets::reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height)
+	void SceneRenderTargets::reallocSceneTextures(RenderCommandList& cmdList, uint32 newWidth, uint32 newHeight)
 	{
-		CHECK(width > 0 && height > 0);
+		CHECK(newWidth > 0 && newHeight > 0);
 
 		destroyed = false;
 
-		const bool bResolutionChanged = sceneWidth != width || sceneHeight != height;
-		sceneWidth = width;
-		sceneHeight = height;
+		const bool bResolutionChanged = (sceneWidth != newWidth) || (sceneHeight != newHeight);
+		sceneWidth = newWidth;
+		sceneHeight = newHeight;
 
 		if (!bResolutionChanged) {
 			return;
@@ -68,12 +68,12 @@ namespace pathos {
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
 
-		// #todo-rendertarget: Switch PF_sceneColor to rgba16f?
-		static constexpr GLenum PF_sceneColor = GL_RGBA32F;
+		static constexpr GLenum PF_sceneColor = GL_RGBA16F;
+		static constexpr GLenum PF_sceneFinal = GL_RGBA32F; // #todo-dof: prefix sum shader requires rgba32f input.
 		static constexpr GLenum PF_sceneDepth = GL_DEPTH32F_STENCIL8;
-		reallocTexture2D(sceneFinal, PF_sceneColor, sceneWidth, sceneHeight, "sceneFinal");
+		reallocTexture2D(sceneFinal, PF_sceneFinal, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
-		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, "sceneColor");
+		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, "sceneColorHalfRes");
 		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
 
 		// Screen space reflection
@@ -124,9 +124,9 @@ namespace pathos {
 		}
 
 		// god ray
-		reallocTexture2D(godRaySource, GL_RGBA32F, sceneWidth, sceneHeight, "godRaySource");
-		reallocTexture2D(godRayResult, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResult");
-		reallocTexture2D(godRayResultTemp, GL_RGBA32F, sceneWidth / 2, sceneHeight / 2, "godRayResultTemp");
+		reallocTexture2D(godRaySource, GL_RGBA16F, sceneWidth, sceneHeight, "godRaySource");
+		reallocTexture2D(godRayResult, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, "godRayResult");
+		reallocTexture2D(godRayResultTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, "godRayResultTemp");
 		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
