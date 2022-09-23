@@ -648,9 +648,7 @@ namespace pathos {
 				pack_passes[i] = nullptr;
 			}
 			pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR] = new MeshDeferredRenderPass_Pack_SolidColor;
-			pack_passes[(uint8)MATERIAL_ID::FLAT_TEXTURE] = new MeshDeferredRenderPass_Pack_FlatTexture;
 			pack_passes[(uint8)MATERIAL_ID::WIREFRAME] = new MeshDeferredRenderPass_Pack_Wireframe;
-			pack_passes[(uint8)MATERIAL_ID::BUMP_TEXTURE] = new MeshDeferredRenderPass_Pack_BumpTexture;
 			pack_passes[(uint8)MATERIAL_ID::ALPHA_ONLY_TEXTURE] = new MeshDeferredRenderPass_Pack_AlphaOnly;
 			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {

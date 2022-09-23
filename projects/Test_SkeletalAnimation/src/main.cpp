@@ -7,7 +7,7 @@ constexpr int32     WINDOW_WIDTH    = 1920;
 constexpr int32     WINDOW_HEIGHT   = 1080;
 constexpr char*     WINDOW_TITLE    = "Test: Skeletal Animation";
 constexpr float     FOVY            = 60.0f;
-const     vector3   CAMERA_POSITION = vector3(0.0f, 0.0f, 300.0f);
+const     vector3   CAMERA_POSITION = vector3(0.0f, 0.0f, 500.0f);
 constexpr float     CAMERA_Z_NEAR   = 1.0f;
 constexpr float     CAMERA_Z_FAR    = 10000.0f;
 

@@ -1,4 +1,5 @@
 #include "pathos/material/material.h"
+#include "pathos/engine.h"
 #include "badger/math/minmax.h"
 
 namespace pathos {
@@ -38,34 +39,10 @@ namespace pathos {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////
-	// TextureMaterial
-	TextureMaterial::TextureMaterial(GLuint diffuseTexture) : texture(diffuseTexture) {
-		materialID = MATERIAL_ID::FLAT_TEXTURE;
-		setSpecular(1.0f, 1.0f, 1.0f);
-	}
-
-	void TextureMaterial::setSpecular(float r, float g, float b) { specular[0] = r; specular[1] = g; specular[2] = b; }
-
-	////////////////////////////////////////////////////////////////////////////////////
-	// BumpTextureMaterial
-	BumpTextureMaterial::BumpTextureMaterial(GLuint diffuse, GLuint normalMap)
-		: diffuseTexture(diffuse)
-		, normalMapTexture(normalMap)
-	{
-		materialID = MATERIAL_ID::BUMP_TEXTURE;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
 	// WireframeMaterial
 	WireframeMaterial::WireframeMaterial(float r, float g, float b, float a) {
 		materialID = MATERIAL_ID::WIREFRAME;
 		rgba[0] = r; rgba[1] = g; rgba[2] = b; rgba[3] = a;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
-	// CubeEnvMapMaterial
-	CubeEnvMapMaterial::CubeEnvMapMaterial(GLuint cubeTexture) :texture(cubeTexture) {
-		materialID = MATERIAL_ID::CUBE_ENV_MAP;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +54,17 @@ namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// PBRTextureMaterial
+	PBRTextureMaterial* PBRTextureMaterial::createWithFallback(GLuint albedo, GLuint normal /*= 0*/) {
+		PBRTextureMaterial* M = new PBRTextureMaterial(albedo, normal,
+			gEngine->getSystemTexture2DBlack(),  // metallic
+			gEngine->getSystemTexture2DWhite(),  // roughness
+			gEngine->getSystemTexture2DWhite()); // localAO
+		if (normal == 0) {
+			M->setNormal(gEngine->getSystemTexture2DBlue());
+		}
+		return M;
+	}
+
 	PBRTextureMaterial::PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao) {
 		materialID = MATERIAL_ID::PBR_TEXTURE;
 		tex_albedo = albedo;

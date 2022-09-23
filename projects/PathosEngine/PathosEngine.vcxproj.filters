@@ -99,9 +99,6 @@
     <ClCompile Include="src\pathos\render\direct_lighting.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_texture.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -127,9 +124,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\resource_finder.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\brush.cpp">
@@ -428,9 +422,6 @@
     <ClInclude Include="src\pathos\render\direct_lighting.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_texture.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -459,9 +450,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\resource_finder.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_bumptexture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\brush.h">

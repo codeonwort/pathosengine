@@ -31,7 +31,6 @@ namespace std {
 
 #define LOAD_NORMAL_DATA            0
 #define WARN_INVALID_FACE_MARTERIAL 0
-#define LOAD_AS_PBR_TEXTURE         1
 
 namespace pathos {
 
@@ -170,17 +169,8 @@ namespace pathos {
 				}
 
 				// This is performed in loading thread, so creation of actual GL textures are delayed until getMaterial() call by main thread.
-#if LOAD_AS_PBR_TEXTURE
 				// https://en.wikipedia.org/wiki/Wavefront_.obj_file#Physically-based_Rendering
-				M = new PBRTextureMaterial(
-					gEngine->getSystemTexture2DWhite(),  // albedo
-					gEngine->getSystemTexture2DBlue(),   // normal
-					gEngine->getSystemTexture2DGrey(),   // metallic
-					gEngine->getSystemTexture2DWhite(),  // roughness
-					gEngine->getSystemTexture2DWhite()); // localAO
-#else
-				M = new TextureMaterial(0);
-#endif
+				M = PBRTextureMaterial::createWithFallback(gEngine->getSystemTexture2DWhite());
 				pendingTextureData.insert(std::make_pair(static_cast<int32>(i), pending));
 			}
 			else if (t_mat.dissolve < 1.0f
@@ -369,9 +359,8 @@ namespace pathos {
 					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				}
 				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
-#if LOAD_AS_PBR_TEXTURE
 				geom->calculateTangentBasis();
-#endif
+
 				mesh->add(geom, getMaterial(materialID));
 			}
 		}
@@ -390,11 +379,7 @@ namespace pathos {
 		if (pendingTextureData.find(index) != pendingTextureData.end()) {
 			switch (M->getMaterialID())
 			{
-#if LOAD_AS_PBR_TEXTURE
 			case MATERIAL_ID::PBR_TEXTURE:
-#else
-			case MATERIAL_ID::FLAT_TEXTURE:
-#endif
 			{
 				constexpr bool generateMipmap = true;
 				constexpr bool sRGB = true;
@@ -413,14 +398,11 @@ namespace pathos {
 				if (pendingTextures.glMetallic == 0 && pendingTextures.metallic != nullptr) {
 					pendingTextures.glMetallic = pathos::createTextureFromBitmap(pendingTextures.metallic, generateMipmap, !sRGB);
 				}
-#if LOAD_AS_PBR_TEXTURE
+
 				if (pendingTextures.glAlbedo != 0) static_cast<PBRTextureMaterial*>(M)->setAlbedo(pendingTextures.glAlbedo);
 				if (pendingTextures.glNormal != 0) static_cast<PBRTextureMaterial*>(M)->setNormal(pendingTextures.glNormal);
 				if (pendingTextures.glRoughness != 0) static_cast<PBRTextureMaterial*>(M)->setRoughness(pendingTextures.glRoughness);
 				if (pendingTextures.glMetallic != 0) static_cast<PBRTextureMaterial*>(M)->setMetallic(pendingTextures.glMetallic);
-#else
-				if (pendingTextures.glAlbedo != 0) static_cast<TextureMaterial*>(M)->setTexture(pendingTextures.glAlbedo);
-#endif
 			}
 				break;
 

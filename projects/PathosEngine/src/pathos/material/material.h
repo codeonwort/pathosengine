@@ -94,43 +94,6 @@ namespace pathos {
 		vector3 transmittance;
 	
 	};
-	
-	class TextureMaterial : public Material {
-
-	private:
-		GLuint texture;
-		float specular[3];
-		bool useLighting = true;
-		bool useAlpha = false;
-
-	public:
-		TextureMaterial(GLuint texture);
-
-		inline GLuint getTexture() { return texture; }
-		inline void setTexture(GLuint _texture) { texture = _texture; }
-
-		void setSpecular(float r, float g, float b);
-		inline const float* getSpecular() const { return specular; }
-
-		inline bool getLighting() { return useLighting; }
-		inline void setLighting(bool value) { useLighting = value; } // determine whether this texture will be lit
-		inline bool getUseAlpha() { return useAlpha; }
-		inline void setUseAlpha(bool value) { useAlpha = value; }
-
-	};
-	
-	class BumpTextureMaterial : public Material {
-
-	public:
-		BumpTextureMaterial(GLuint diffuseTexture, GLuint normalMapTexture);
-		inline const GLuint getDiffuseTexture() { return diffuseTexture; }
-		inline const GLuint getNormalMapTexture() { return normalMapTexture; }
-
-	protected:
-		GLuint diffuseTexture;
-		GLuint normalMapTexture;
-
-	};
 
 	class WireframeMaterial : public Material {
 
@@ -142,16 +105,6 @@ namespace pathos {
 		inline const float* getColor() const { return rgba; }
 	};
 	
-	class CubeEnvMapMaterial : public Material {
-
-	protected:
-		GLuint texture; // cubemap texture for environmental mapping
-
-	public:
-		CubeEnvMapMaterial(GLuint cubeTexture);
-		inline GLuint getTexture() const { return texture; }
-	};
-
 	class AlphaOnlyTextureMaterial : public Material {
 
 	protected:
@@ -170,6 +123,8 @@ namespace pathos {
 	class PBRTextureMaterial : public Material {
 
 	public:
+		static PBRTextureMaterial* createWithFallback(GLuint albedo, GLuint normal = 0);
+
 		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);
 		inline GLuint getAlbedo()    const { return tex_albedo;    }
 		inline GLuint getNormal()    const { return tex_normal;    }

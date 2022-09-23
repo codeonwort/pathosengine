@@ -1,6 +1,7 @@
 #include "daeloader.h"
 #include "skinned_mesh.h"
 
+#include "pathos/engine.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
 #include "pathos/loader/imageloader.h"
@@ -173,12 +174,12 @@ namespace pathos {
 				ai_material->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
 				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
 				GLuint normalTex = textureMapping.find(normalPath.C_Str())->second;
-				M = new BumpTextureMaterial(diffuseTex, normalTex);
+				M = PBRTextureMaterial::createWithFallback(diffuseTex, normalTex);
 			} else if (hasDiffuseTexture) {
 				aiString diffusePath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
 				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
-				M = new TextureMaterial(diffuseTex);
+				M = PBRTextureMaterial::createWithFallback(diffuseTex);
 			} else {
 				M = new ColorMaterial;
 				static_cast<ColorMaterial*>(M)->setAlbedo(1.0f, 0.0f, 0.0f);

@@ -180,7 +180,6 @@ void World1::setupScene()
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/textures/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/textures/154_norm.jpg"), true, false);
 
-	auto material_texture = new TextureMaterial(tex);
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
@@ -330,7 +329,7 @@ void World1::setupScene()
 	}
 	sceneCaptureComponent->captureScene();
 
-	auto material_sceneCapture = new TextureMaterial(tempRenderTarget->getGLName());
+	auto material_sceneCapture = PBRTextureMaterial::createWithFallback(tempRenderTarget->getGLName());
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
 	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);

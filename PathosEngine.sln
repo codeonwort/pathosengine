@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathosEngine", "projects\PathosEngine\PathosEngine.vcxproj", "{F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DeferredRenderer", "projects\Test_DeferredRenderer\Test_DeferredRenderer.vcxproj", "{8FCB4198-9275-4294-9C7B-02F20BFE333B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_SkeletalAnimation", "projects\Test_SkeletalAnimation\Test_SkeletalAnimation.vcxproj", "{21FB9607-AA39-4F30-931E-3A5F5736465F}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ComputeShader", "projects\Test_ComputeShader\Test_ComputeShader.vcxproj", "{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThirdParty", "thirdparty\ThirdParty.vcxproj", "{D9296D9D-A2DC-4F52-8CDB-2E4E83A4A08F}"
 EndProject
@@ -35,10 +33,6 @@ Global
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Debug|x64.Build.0 = Debug|x64
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.ActiveCfg = Release|x64
 		{21FB9607-AA39-4F30-931E-3A5F5736465F}.Release|x64.Build.0 = Release|x64
-		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Debug|x64.ActiveCfg = Debug|x64
-		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Debug|x64.Build.0 = Debug|x64
-		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Release|x64.ActiveCfg = Release|x64
-		{5B2C0DE7-3F26-44DE-81E7-81A51CD30981}.Release|x64.Build.0 = Release|x64
 		{D9296D9D-A2DC-4F52-8CDB-2E4E83A4A08F}.Debug|x64.ActiveCfg = Debug|x64
 		{D9296D9D-A2DC-4F52-8CDB-2E4E83A4A08F}.Release|x64.ActiveCfg = Release|x64
 		{B9F0F9D6-0F93-403C-8CF7-EA9318E01803}.Debug|x64.ActiveCfg = Debug|x64

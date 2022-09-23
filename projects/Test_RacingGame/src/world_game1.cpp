@@ -56,7 +56,7 @@ void World_Game1::prepareAssets()
 	M_color->setRoughness(0.2f);
 
 	GLuint landscapeTexture = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
-	auto M_landscape = new TextureMaterial(landscapeTexture);
+	auto M_landscape = PBRTextureMaterial::createWithFallback(landscapeTexture);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);

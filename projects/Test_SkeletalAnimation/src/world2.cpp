@@ -88,7 +88,7 @@ void World2::setupScene()
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("textures/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("textures/154_norm.jpg"), true, false);
 
-	auto material_texture = new TextureMaterial(tex);
+	auto material_texture = PBRTextureMaterial::createWithFallback(tex);
 	auto material_color = new ColorMaterial;
 	{
 		auto color = static_cast<ColorMaterial*>(material_color);
@@ -96,7 +96,6 @@ void World2::setupScene()
 		color->setMetallic(0.6f);
 		color->setRoughness(0.5f);
 	}
-	auto material_cubemap = new CubeEnvMapMaterial(cubeTexture);
 	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
 
 	//---------------------------------------------------------------------------------------
