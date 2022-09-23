@@ -11,9 +11,6 @@ const char* WINDOW_TITLE         = "Deferred Shading Renderer";
 const int32 WINDOW_WIDTH         = 1920;
 const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
-const float FOV_Y                = 60.0f;
-const float CAMERA_Z_NEAR        = 1.0f;
-const float CAMERA_Z_FAR         = 5000.0f;
 
 void changeWorld() {
 	static const int32 numWorlds = 3;
@@ -40,11 +37,7 @@ void changeWorld() {
 		CHECK_NO_ENTRY();
 		break;
 	}
-
 	worldIndex = (worldIndex + 1) % numWorlds;
-
-	float aspectRatio = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT); // Will be updated in the engine loop anyway.
-	newWorld->getCamera().changeLens(PerspectiveLens(FOV_Y, aspectRatio, CAMERA_Z_NEAR, CAMERA_Z_FAR));
 
 	gEngine->setWorld(newWorld);
 }
