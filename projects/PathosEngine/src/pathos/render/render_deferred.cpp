@@ -720,6 +720,9 @@ namespace pathos {
 
 		ubo_perFrame.release();
 
+#define DESTROYPASS(pass) { pass->destroyResources(cmdList); pass.reset(); }
+#define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
+
 		{
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 				if (pack_passes[i]) {
@@ -727,35 +730,32 @@ namespace pathos {
 					pack_passes[i] = nullptr;
 				}
 			}
-			directLightingPass->destroyResources(cmdList);
-			indirectLightingPass->destroyResources(cmdList);
-			screenSpaceReflectionPass->destroyResources(cmdList);
-			translucency_pass->releaseResources(cmdList);
+			DESTROYPASS(directLightingPass);
+			DESTROYPASS(indirectLightingPass);
+			DESTROYPASS(screenSpaceReflectionPass);
+			RELEASEPASS(translucency_pass);
 		}
 
-		{
-			skyboxPass->destroyResources(cmdList);
-			anselSkyPass->destroyResources(cmdList);
-			skyAtmospherePass->destroyResources(cmdList);
-			volumetricCloud->destroyResources(cmdList);
-		}
+		DESTROYPASS(skyboxPass);
+		DESTROYPASS(anselSkyPass);
+		DESTROYPASS(skyAtmospherePass);
+		DESTROYPASS(volumetricCloud);
 
-		{
-			depthPrepass->destroyResources(cmdList);
-			sunShadowMap->destroyResources(cmdList);
-			omniShadowPass->destroyResources(cmdList);
-			visualizeBuffer->destroyResources(cmdList);
-		}
+		DESTROYPASS(depthPrepass);
+		DESTROYPASS(sunShadowMap);
+		DESTROYPASS(omniShadowPass);
+		DESTROYPASS(visualizeBuffer);
 
-		{
-			godRay->releaseResources(cmdList);
-			ssao->releaseResources(cmdList);
-			bloomSetup->releaseResources(cmdList);
-			bloomPass->releaseResources(cmdList);
-			toneMapping->releaseResources(cmdList);
-			fxaa->releaseResources(cmdList);
-			depthOfField->releaseResources(cmdList);
-		}
+		RELEASEPASS(godRay);
+		RELEASEPASS(ssao);
+		RELEASEPASS(bloomSetup);
+		RELEASEPASS(bloomPass);
+		RELEASEPASS(toneMapping);
+		RELEASEPASS(fxaa);
+		RELEASEPASS(depthOfField);
+
+#undef DESTROYPASS
+#undef RELEASEPASS
 
 		cmdList.flushAllCommands();
 	}

@@ -19,6 +19,8 @@
 #include "pathos/util/gl_context_manager.h"
 #include "pathos/overlay/display_object_proxy.h"
 
+#define SAFE_RELEASE(x) { if (x) delete x; x = nullptr; }
+
 namespace pathos {
 
 	void RenderThread::renderThreadMain(RenderThread* renderThread) {
@@ -176,6 +178,32 @@ namespace pathos {
 			if (bNewSceneRendered) {
 				gEngine->updateMainWindow_renderThread();
 			}
+		} // End of render thread loop
+
+		// Terminate
+		{
+			OpenGLContextManager::takeContext();
+			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+
+			// May generate render commands
+			renderThread->renderer->releaseResources(cmdList);
+
+			for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().destroyRoutines) {
+				routine(gRenderDevice, cmdList);
+			}
+			cmdList.flushAllCommands();
+
+			SAFE_RELEASE(renderThread->renderer);
+			SAFE_RELEASE(renderThread->renderer2D);
+			SAFE_RELEASE(renderThread->debugOverlay);
+
+			cmdList.flushAllCommands();
+
+			bool bDestroyed = renderThread->destroyOpenGL();
+			CHECKF(bDestroyed, "OpenGL not destroyed properly");
+
+			glFlush();
+			OpenGLContextManager::returnContext();
 		}
 
 		// Cleanup thread main
@@ -185,6 +213,12 @@ namespace pathos {
 			CHECKF(immediateContext.isEmpty(), "Immediate command list is not empty");
 			CHECKF(deferredContext.isEmpty(), "Deferred command list is not empty");
 		}
+
+		renderThread->terminateCondVar.notify_all();
+
+		SAFE_RELEASE(renderThread->render_device);
+
+		//delete renderThread;
 
 		LOG(LogInfo, "[%s] Render thread terminated", __FUNCTION__);
 	}
@@ -228,16 +262,11 @@ namespace pathos {
 	}
 
 	void RenderThread::terminate() {
-		// #todo-renderthread: Should end RT loop first, then destroy RT resources.
-		for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().destroyRoutines) {
-			routine(gRenderDevice, gRenderDevice->getDeferredCommandList());
-		}
-
-		CHECK(destroyOpenGL());
-
-		// #todo-renderthread: Does this ensure the lock will break?
 		bPendingKill = true;
 		loopCondVar.notify_all();
+
+		std::unique_lock<std::mutex> cvLock(terminateMutex);
+		terminateCondVar.wait(cvLock);
 	}
 	
 	bool RenderThread::isSceneProxyQueueEmpty() {

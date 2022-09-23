@@ -33,6 +33,7 @@ namespace pathos {
 		void beginFrame(uint32 frameNumber);
 		void endFrame(uint32 frameNumber);
 
+		// NOTE: Blocking operation.
 		void terminate();
 
 		inline uint32 getThreadID() const { return threadID; }
@@ -74,7 +75,10 @@ namespace pathos {
 		std::thread                nativeThread;
 		std::mutex                 loopMutex;
 		std::condition_variable    loopCondVar;
+
 		std::atomic<bool>          bPendingKill;
+		std::mutex                 terminateMutex;
+		std::condition_variable    terminateCondVar;
 
 		std::atomic<bool>          mainLoopStarted;
 

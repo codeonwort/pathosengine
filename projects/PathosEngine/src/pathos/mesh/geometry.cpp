@@ -290,7 +290,8 @@ namespace pathos {
 		if (tangentBuffer != 0)   VBO.push_back(tangentBuffer);
 		if (bitangentBuffer != 0) VBO.push_back(bitangentBuffer);
 		if (indexBuffer != 0)     VBO.push_back(indexBuffer);
-		gRenderDevice->deleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
+		// #todo-lifecycle: Should manage lifecycle of GL resources
+		//gRenderDevice->deleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
 
 		std::vector<GLuint> VAO;
 		if (vao_position != 0)                             VAO.push_back(vao_position);
@@ -298,7 +299,8 @@ namespace pathos {
 		if (vao_position_normal != 0)                      VAO.push_back(vao_position_normal);
 		if (vao_position_uv_normal != 0)                   VAO.push_back(vao_position_uv_normal);
 		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
-		gRenderDevice->deleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
+		// #todo-lifecycle: Should manage lifecycle of GL resources
+		//gRenderDevice->deleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
 	}
 
 	struct VAOElement {
