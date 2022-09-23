@@ -68,7 +68,7 @@ namespace pathos {
 		bool allCompiled = true;
 		bool allNotChanged = true;
 		for (ShaderStage* shaderStage : shaderStages) {
-			ShaderStage::CompileResponse response = shaderStage->tryCompile();
+			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName);
 			allCompiled = allCompiled && response != ShaderStage::CompileResponse::Failed;
 			allNotChanged = allNotChanged && response == ShaderStage::CompileResponse::NotChanged;
 		}
@@ -261,7 +261,7 @@ namespace pathos {
 		return true;
 	}
 
-	ShaderStage::CompileResponse ShaderStage::tryCompile() {
+	ShaderStage::CompileResponse ShaderStage::tryCompile(const char* programName) {
 		std::vector<std::string> sourceCodeBackup = sourceCode;
 		loadSource();
 
@@ -292,6 +292,12 @@ namespace pathos {
 			std::string basedir = pathos::getSolutionDir();
 			basedir += "log/shader_dump/";
 			pathos::createDirectory(basedir.c_str());
+
+			if (programName != nullptr) {
+				basedir += programName;
+				basedir += "/";
+				pathos::createDirectory(basedir.c_str());
+			}
 
 			std::string dumpPath = basedir + filepath;
 

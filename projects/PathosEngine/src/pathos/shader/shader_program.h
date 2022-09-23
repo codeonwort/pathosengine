@@ -109,7 +109,7 @@ namespace pathos {
 			std::vector<std::string>& outSourceCode);
 	private:
 		bool loadSource();
-		ShaderStage::CompileResponse tryCompile();
+		ShaderStage::CompileResponse tryCompile(const char* programName);
 		bool finishCompile();
 
 		inline GLuint getGLName() const { return glName; }
