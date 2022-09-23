@@ -123,10 +123,6 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
 
-		for (const auto& line : configLines) {
-			gConsole->addLine(line.c_str(), false);
-		}
-
 		// #todo: Where to put this
 		registerExec("profile_gpu", [](const std::string& command) {
 			gEngine->dumpGPUProfile();
@@ -134,6 +130,20 @@ namespace pathos {
 		registerExec("stat", [](const std::string& command) {
 			gEngine->toggleFrameStat();
 		});
+		registerExec("set_window_size", [](const std::string& command) {
+			char unused[16];
+			int w, h;
+			int ret = sscanf_s(command.c_str(), "%s %d %d", unused, (unsigned)_countof(unused), &w, &h);
+			if (ret == 3 && w > 0 && h > 0) {
+				gEngine->getMainWindow()->setSize((uint32)w, (uint32)h);
+			} else {
+				gConsole->addLine(L"Usage: set_window_size <new_width> <new_height>");
+			}
+		});
+
+		for (const auto& line : configLines) {
+			gConsole->addLine(line.c_str(), false);
+		}
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");

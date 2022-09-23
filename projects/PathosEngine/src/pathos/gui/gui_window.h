@@ -67,6 +67,7 @@ namespace pathos {
 
 		void setTitle(const char* newTitle);
 		void setTitle(std::string&& newTitle);
+		void setSize(uint32 newWidth, uint32 newHeight);
 		//void hideToTaskbar();
 		//void flashTaskbar();
 

@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <array>
 
+constexpr uint32 WINDOW_MIN_WIDTH = 400;
+constexpr uint32 WINDOW_MIN_HEIGHT = 400;
+
 static void onGlutError(const char* fmt, va_list ap) {
 	fprintf(stderr, "onGlutError:");
 	vfprintf(stderr, fmt, ap);
@@ -132,8 +135,8 @@ namespace pathos {
 		CHECKF(title.size() > 0, "Invalid window title");
 
 		// Silently fix window size
-		windowWidth = badger::max<int32>(400, windowWidth);
-		windowHeight = badger::max<int32>(300, windowHeight);
+		windowWidth = badger::max<int32>(WINDOW_MIN_WIDTH, windowWidth);
+		windowHeight = badger::max<int32>(WINDOW_MIN_HEIGHT, windowHeight);
 		if (title.empty()) title = "Title here";
 
 		glutInitErrorFunc(onGlutError);
@@ -251,6 +254,12 @@ namespace pathos {
 
 		glutSetWindow(nativeHandle);
 		glutSetWindowTitle(title.c_str());
+	}
+
+	void GUIWindow::setSize(uint32 newWidth, uint32 newHeight) {
+		newWidth = badger::clamp(WINDOW_MIN_WIDTH, newWidth, 65536u);
+		newHeight = badger::clamp(WINDOW_MIN_HEIGHT, newHeight, 65536u);
+		glutReshapeWindow((int)newWidth, (int)newHeight);
 	}
 
 	void GUIWindow::checkSpecialKeyDown(int specialKey)
