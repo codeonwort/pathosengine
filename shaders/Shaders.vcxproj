@@ -25,6 +25,7 @@
     <None Include="bloom_setup.glsl" />
     <None Include="bloom_upsample.glsl" />
     <None Include="brdf.glsl" />
+    <None Include="cascaded_shadow_map.glsl" />
     <None Include="common.glsl" />
     <None Include="copy_texture.fs.glsl" />
     <None Include="deferred_common.glsl" />

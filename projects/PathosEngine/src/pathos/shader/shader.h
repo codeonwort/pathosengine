@@ -13,8 +13,8 @@ namespace pathos {
 	class Shader;
 
 	// Utilities
-	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName);                                   // only vertex and fragment shaders
-	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName);                            // multiple shaders
+	GLuint createProgram(Shader& vs, Shader& fs, const char* debugName);        // only vertex and fragment shaders
+	GLuint createProgram(std::vector<Shader*>& shaders, const char* debugName); // multiple shaders
 
 	// Takes shader sources and compile them.
 	// sources come from ShaderSource (setSource) or physical files (loadSource).

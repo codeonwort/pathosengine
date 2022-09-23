@@ -212,7 +212,6 @@ void World1::setupScene()
 		material_pbr->writeAllPixels = !maskedMaterial;
 	}
 
-
 	// --------------------------------------------------------
 	// Create geometries
 

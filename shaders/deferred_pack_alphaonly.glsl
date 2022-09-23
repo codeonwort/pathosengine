@@ -16,7 +16,6 @@ Interpolants InterpolantsDesc {
 
 layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 modelView;
-	mat4 modelViewProj;
 	mat3 modelView3x3;
 	vec4 color;
 } uboPerObject;

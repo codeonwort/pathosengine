@@ -169,11 +169,15 @@ namespace pathos {
 	float Camera::getYaw() const { return glm::degrees(rotationY); }
 	float Camera::getPitch() const { return glm::degrees(rotationX); }
 
-	void Camera::getFrustumVertices(std::vector<vector3>& outFrustum, uint32 numCascades) const {
+	void Camera::getFrustumVertices(
+		std::vector<vector3>& outFrustum,
+		uint32 numCascades,
+		float zFarOverride /*= -1.0f*/) const
+	{
 		CHECK(numCascades >= 1);
 
 		const float zn = lens.getZNear();
-		const float zf = lens.getZFar();
+		const float zf = zFarOverride > 0.0f ? zFarOverride : lens.getZFar();
 		const float hh_near = zn * tanf(lens.getFovYRadians() * 0.5f);
 		const float hw_near = hh_near * lens.getAspectRatioWH();
 		const float hh_far = zf * tanf(lens.getFovYRadians() * 0.5f);

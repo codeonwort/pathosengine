@@ -72,7 +72,7 @@ namespace pathos {
 		float getPitch() const;
 
 		// get vertices of camera frustum in world space
-		void getFrustumVertices(std::vector<vector3>& outFrustum, uint32 numCascades) const;
+		void getFrustumVertices(std::vector<vector3>& outFrustum, uint32 numCascades, float zFarOverride = -1.0f) const;
 
 		void getFrustumPlanes(Frustum3D& outFrustum) const;
 

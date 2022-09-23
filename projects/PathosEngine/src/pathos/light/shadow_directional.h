@@ -3,6 +3,8 @@
 #include "gl_core.h"
 #include "pathos/camera/camera.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/shader/uniform_buffer.h"
+#include "pathos/render/render_command_list.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
@@ -15,7 +17,6 @@ namespace pathos {
 	class DirectionalShadowMap : public Noncopyable {
 
 	public:
-		DirectionalShadowMap(const vector3& lightDirection = vector3(0.0f, -1.0f, 0.0f));
 		virtual ~DirectionalShadowMap();
 
 		void initializeResources(RenderCommandList& cmdList);
@@ -36,12 +37,10 @@ namespace pathos {
 		bool destroyed = false;
 
 		GLuint fbo = 0xffffffff;
-
-		GLuint program = 0xffffffff; // shadow mapping
-		GLint uniform_depthMVP = -1;
+		UniformBuffer ubo;
 
 		// light space transform
-		vector3 lightDirection;
+		vector3 lightDirection = vector3(0.0f, -1.0f, 0.0f);
 		std::vector<matrix4> viewProjectionMatrices; // Projection matrices that perfectly cover each camera frustum
 
 	};

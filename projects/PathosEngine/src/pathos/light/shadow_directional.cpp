@@ -1,21 +1,48 @@
 #include "shadow_directional.h"
-#include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
-#include "pathos/shader/shader.h"
-#include "pathos/mesh/mesh.h"
-#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/light/directional_light_component.h"
+#include "pathos/shader/shader_program.h"
+#include "pathos/util/log.h"
+#include "pathos/util/math_lib.h"
+#include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
-#include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
 
-	DirectionalShadowMap::DirectionalShadowMap(const vector3& inLightDirection) {
-		lightDirection = inLightDirection;
-	}
+	// Light frustum could be too large if we use camera's zFar as is.
+	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 5000.0f, "Custom zFar for CSM");
+
+	struct UBO_CascadedShadowMap {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		matrix4 depthMVP;
+	};
+
+	class CascadedShadowMapVS : public ShaderStage {
+	public:
+		CascadedShadowMapVS() : ShaderStage(GL_VERTEX_SHADER, "CascadedShadowMapVS") {
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("cascaded_shadow_map.glsl");
+		}
+	};
+
+	class CascadedShadowMapFS : public ShaderStage {
+	public:
+		CascadedShadowMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "CascadedShadowMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("cascaded_shadow_map.glsl");
+		}
+	};
+
+	DEFINE_SHADER_PROGRAM2(Program_CSM, CascadedShadowMapVS, CascadedShadowMapFS);
+
+}
+
+namespace pathos {
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(destroyed, "Resource leak");
@@ -25,13 +52,30 @@ namespace pathos {
 		lightDirection = direction;
 	}
 
+	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList) {
+		gRenderDevice->createFramebuffers(1, &fbo);
+		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
+
+		ubo.init<UBO_CascadedShadowMap>("UBO_CascadedShadowMap");
+	}
+
+	void DirectionalShadowMap::destroyResources(RenderCommandList& cmdList) {
+		if (!destroyed) {
+			gRenderDevice->deleteFramebuffers(1, &fbo);
+		}
+		destroyed = true;
+	}
+
 	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera) {
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		cmdList.useProgram(program);
+		const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CSM);
+
+		cmdList.useProgram(program.getGLName());
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.enable(GL_DEPTH_CLAMP); // Let vertices farther than zFar to be clamped to zFar
@@ -42,9 +86,7 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(RenderCascade);
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, i);
-			cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
 			cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
-
 			pathos::checkFramebufferStatus(cmdList, fbo, "DirectionalShadowMap::renderShadowMap");
 
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
@@ -53,7 +95,10 @@ namespace pathos {
 			for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
 				matrix4 mvp = VP * batch->modelMatrix;
 
-				cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
+				UBO_CascadedShadowMap uboData;
+				uboData.depthMVP = mvp;
+				ubo.update(cmdList, UBO_CascadedShadowMap::BINDING_POINT, &uboData);
+
 				batch->geometry->activate_position(cmdList);
 				batch->geometry->activateIndexBuffer(cmdList);
 				batch->geometry->drawPrimitive(cmdList);
@@ -65,7 +110,10 @@ namespace pathos {
 				for (ShadowMeshProxy* batch : scene->proxyList_wireframeShadowMesh) {
 					matrix4 mvp = VP * batch->modelMatrix;
 
-					cmdList.uniformMatrix4fv(uniform_depthMVP, 1, GL_FALSE, &(mvp[0][0]));
+					UBO_CascadedShadowMap uboData;
+					uboData.depthMVP = mvp;
+					ubo.update(cmdList, UBO_CascadedShadowMap::BINDING_POINT, &uboData);
+
 					batch->geometry->activate_position(cmdList);
 					batch->geometry->activateIndexBuffer(cmdList);
 					batch->geometry->drawPrimitive(cmdList);
@@ -79,45 +127,11 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_CLAMP);
 	}
 
-	void DirectionalShadowMap::initializeResources(RenderCommandList& cmdList)
+	void DirectionalShadowMap::updateUniformBufferData(
+		RenderCommandList& cmdList,
+		const SceneProxy* scene,
+		const Camera* camera)
 	{
-		gRenderDevice->createFramebuffers(1, &fbo);
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
-
-		// create shadow program
-		string vshader = R"(#version 430 core
-layout (location = 0) in vec3 position;
-layout (location = 0) uniform mat4 depthMVP;
-void main() {
-	gl_Position = depthMVP * vec4(position, 1.0f);
-}
-)";
-		string fshader = R"(#version 430 core
-out vec4 color;
-void main() {
-	color = vec4(gl_FragCoord.z, 0.0f, 0.0f, 1.0f);
-}
-)";
-
-		Shader vs(GL_VERTEX_SHADER, "VS_CascadedShadowMap");
-		Shader fs(GL_FRAGMENT_SHADER, "FS_CascadedShadowMap");
-		vs.setSource(vshader);
-		fs.setSource(fshader);
-
-		program = pathos::createProgram(vs, fs, "Program_CascadedShadowMap");
-		uniform_depthMVP = 0;
-	}
-
-	void DirectionalShadowMap::destroyResources(RenderCommandList& cmdList)
-	{
-		if (!destroyed) {
-			gRenderDevice->deleteFramebuffers(1, &fbo);
-			gRenderDevice->deleteProgram(program);
-		}
-		destroyed = true;
-	}
-
-	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		if (scene->proxyList_directionalLight.size() > 0) {
 			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);
@@ -153,8 +167,9 @@ void main() {
 			viewProjectionMatrices.emplace_back(projection * lightView);
 		};
 
+		const float zFar = std::max(1.0f, cvar_csm_zFar.getFloat());
 		std::vector<vector3> frustumPlanes;
-		camera.getFrustumVertices(frustumPlanes, numCascades);
+		camera.getFrustumVertices(frustumPlanes, numCascades, zFar);
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
 		}

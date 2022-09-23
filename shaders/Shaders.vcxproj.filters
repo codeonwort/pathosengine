@@ -71,5 +71,6 @@
     <None Include="ssr_composite.glsl" />
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_upsample.glsl" />
+    <None Include="cascaded_shadow_map.glsl" />
   </ItemGroup>
 </Project>
