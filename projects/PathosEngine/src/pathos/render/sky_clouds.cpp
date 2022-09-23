@@ -3,7 +3,6 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/thread/engine_thread.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/console.h"

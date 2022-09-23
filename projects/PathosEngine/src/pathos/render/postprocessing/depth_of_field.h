@@ -1,7 +1,6 @@
 #pragma once
 
 #include "post_process.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/uniform_buffer.h"
 
 

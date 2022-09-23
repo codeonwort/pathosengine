@@ -2,7 +2,6 @@
 #include "render_device.h"
 #include "scene_render_targets.h"
 #include "pathos/engine_policy.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 
 // #todo-atmosphere: for test

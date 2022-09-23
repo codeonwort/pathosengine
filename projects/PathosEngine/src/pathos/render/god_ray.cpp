@@ -6,7 +6,6 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"

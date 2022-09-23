@@ -4,7 +4,6 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/static_mesh_component.h"
-#include "pathos/shader/shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/light/directional_light_component.h"

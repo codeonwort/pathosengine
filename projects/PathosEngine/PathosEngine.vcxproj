@@ -165,7 +165,6 @@
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
-    <ClCompile Include="src\pathos\shader\shader.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
     <ClCompile Include="src\pathos\texture\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
@@ -307,7 +306,6 @@
     <ClInclude Include="src\pathos\mesh\geometry_primitive.h" />
     <ClInclude Include="src\pathos\mesh\mesh.h" />
     <ClInclude Include="src\pathos\mesh\render.h" />
-    <ClInclude Include="src\pathos\mesh\shader.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h" />
     <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h" />
     <ClInclude Include="src\pathos\render\god_ray.h" />
@@ -323,7 +321,6 @@
     <ClInclude Include="src\pathos\render\sky_ansel.h" />
     <ClInclude Include="src\pathos\render\visualize_buffer.h" />
     <ClInclude Include="src\pathos\render_minimal.h" />
-    <ClInclude Include="src\pathos\shader\shader.h" />
     <ClInclude Include="src\pathos\shader\uniform_buffer.h" />
     <ClInclude Include="src\pathos\text\font_mgr.h" />
     <ClInclude Include="src\pathos\text\font_texture_cache.h" />

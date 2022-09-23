@@ -25,11 +25,6 @@ namespace pathos {
 		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
-		static GLuint equirectangularToCubemap;
-		static GLuint diffuseIrradianceShader;
-		static GLuint prefilterEnvMapShader;
-		static GLuint BRDFIntegrationMapShader;
-
 		static GLuint dummyVAO;
 		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
 		static class PlaneGeometry* fullscreenQuad;

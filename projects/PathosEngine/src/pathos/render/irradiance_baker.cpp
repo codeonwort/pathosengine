@@ -1,7 +1,7 @@
 #include "irradiance_baker.h"
 #include "render_device.h"
 #include "pathos/engine.h"
-#include "pathos/shader/shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"
@@ -9,11 +9,77 @@
 #include "pathos/thread/engine_thread.h"
 
 namespace pathos {
+	
+	class EquirectangularToCubeVS : public ShaderStage {
+	public:
+		EquirectangularToCubeVS() : ShaderStage(GL_VERTEX_SHADER, "EquirectangularToCubeVS") {
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("equirectangular_to_cube.glsl");
+		}
+	};
+	class EquirectangularToCubeFS : public ShaderStage {
+	public:
+		EquirectangularToCubeFS() : ShaderStage(GL_FRAGMENT_SHADER, "EquirectangularToCubeFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("equirectangular_to_cube.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_EquirectangularToCubemap, EquirectangularToCubeVS, EquirectangularToCubeFS);
 
-	GLuint IrradianceBaker::equirectangularToCubemap = 0xffffffff;
-	GLuint IrradianceBaker::diffuseIrradianceShader = 0xffffffff;
-	GLuint IrradianceBaker::prefilterEnvMapShader = 0xffffffff;
-	GLuint IrradianceBaker::BRDFIntegrationMapShader = 0xffffffff;
+	class IrradianceMapVS : public ShaderStage {
+	public:
+		IrradianceMapVS() : ShaderStage(GL_VERTEX_SHADER, "IrradianceMapVS") {
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("diffuse_irradiance.glsl");
+		}
+	};
+	class IrradianceMapFS : public ShaderStage {
+	public:
+		IrradianceMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "IrradianceMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("diffuse_irradiance.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap, IrradianceMapVS, IrradianceMapFS);
+
+	class PrefilterEnvMapVS : public ShaderStage {
+	public:
+		PrefilterEnvMapVS() : ShaderStage(GL_VERTEX_SHADER, "PrefilterEnvMapVS") {
+			addDefine("VERTEX_SHADER", 1);
+			addDefine("PREFILTER_ENV_MAP", 1);
+			setFilepath("specular_ibl.glsl");
+		}
+	};
+	class PrefilterEnvMapFS : public ShaderStage {
+	public:
+		PrefilterEnvMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "PrefilterEnvMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			addDefine("PREFILTER_ENV_MAP", 1);
+			setFilepath("specular_ibl.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_PrefilterEnvMap, PrefilterEnvMapVS, PrefilterEnvMapFS);
+
+	class BRDFIntegrationMapVS : public ShaderStage {
+	public:
+		BRDFIntegrationMapVS() : ShaderStage(GL_VERTEX_SHADER, "BRDFIntegrationMapVS") {
+			setFilepath("fullscreen_quad.glsl");
+		}
+	};
+	class BRDFIntegrationMapFS : public ShaderStage {
+	public:
+		BRDFIntegrationMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "BRDFIntegrationMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			addDefine("BRDF_INTEGRATION", 1);
+			setFilepath("specular_ibl.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, BRDFIntegrationMapVS, BRDFIntegrationMapFS);
+
+}
+
+namespace pathos {
+
 	GLuint IrradianceBaker::internal_BRDFIntegrationMap = 0xffffffff;
 	GLuint IrradianceBaker::dummyVAO = 0;
 	GLuint IrradianceBaker::dummyFBO = 0;
@@ -49,7 +115,8 @@ namespace pathos {
 			cmdList.disable(GL_DEPTH_TEST);
 			cmdList.cullFace(GL_FRONT);
 
-			cmdList.useProgram(IrradianceBaker::equirectangularToCubemap);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_EquirectangularToCubemap);
+			cmdList.useProgram(program.getGLName());
 			cmdList.bindTextureUnit(0, equirectangularMap);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
@@ -100,7 +167,9 @@ namespace pathos {
 			cmdList.disable(GL_DEPTH_TEST);
 			cmdList.cullFace(GL_FRONT);
 
-			cmdList.useProgram(IrradianceBaker::diffuseIrradianceShader);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IrradianceMap);
+			cmdList.useProgram(program.getGLName());
+
 			cmdList.bindTextureUnit(0, cubemap);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
@@ -158,7 +227,8 @@ namespace pathos {
 			cmdList.disable(GL_DEPTH_TEST);
 			cmdList.cullFace(GL_FRONT);
 
-			cmdList.useProgram(prefilterEnvMapShader);
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PrefilterEnvMap);
+			cmdList.useProgram(program.getGLName());
 			cmdList.bindTextureUnit(0, cubemap);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
@@ -209,7 +279,10 @@ namespace pathos {
 		cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
 
 		cmdList.viewport(0, 0, size, size);
-		cmdList.useProgram(BRDFIntegrationMapShader);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BRDFIntegrationMap);
+		cmdList.useProgram(program.getGLName());
+
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
 
@@ -246,75 +319,14 @@ namespace pathos {
 			IrradianceBaker::cubeTransforms[i] = captureProjection * captureViews[i];
 		}
 
-		// Equirectangular map to cubemap
-		{
-			Shader vs(GL_VERTEX_SHADER, "equiToCube_VS");
-			Shader fs(GL_FRAGMENT_SHADER, "equiToCube_FS");
-
-			vs.addDefine("VERTEX_SHADER 1");
-			fs.addDefine("FRAGMENT_SHADER 1");
-
-			vs.loadSource("equirectangular_to_cube.glsl");
-			fs.loadSource("equirectangular_to_cube.glsl");
-
-			IrradianceBaker::equirectangularToCubemap = pathos::createProgram(vs, fs, "EquirectangularToCubemap");
-		}
-
-		// Irradiance map generator
-		{
-			Shader vs(GL_VERTEX_SHADER, "irradianceMap_VS");
-			Shader fs(GL_FRAGMENT_SHADER, "irradianceMap_FS");
-
-			vs.addDefine("VERTEX_SHADER 1");
-			fs.addDefine("FRAGMENT_SHADER 1");
-
-			vs.loadSource("diffuse_irradiance.glsl");
-			fs.loadSource("diffuse_irradiance.glsl");
-
-			IrradianceBaker::diffuseIrradianceShader = pathos::createProgram(vs, fs, "DiffuseIrradiance");
-		}
-
-		// Pre-filter environment map
-		{
-			Shader vs(GL_VERTEX_SHADER, "prefilterEnvMap_VS");
-			Shader fs(GL_FRAGMENT_SHADER, "prefilterEnvMap_FS");
-
-			vs.addDefine("VERTEX_SHADER 1");
-			vs.addDefine("PREFILTER_ENV_MAP 1");
-			fs.addDefine("FRAGMENT_SHADER 1");
-			fs.addDefine("PREFILTER_ENV_MAP 1");
-
-			vs.loadSource("specular_ibl.glsl");
-			fs.loadSource("specular_ibl.glsl");
-
-			IrradianceBaker::prefilterEnvMapShader = pathos::createProgram(vs, fs, "PrefilterEnvMap");
-		}
-
 		// BRDF integration map
-		{
-			Shader vs(GL_VERTEX_SHADER, "BRDFIntegrationMap_VS");
-			Shader fs(GL_FRAGMENT_SHADER, "BRDFIntegrationMap_FS");
-
-			fs.addDefine("FRAGMENT_SHADER 1");
-			fs.addDefine("BRDF_INTEGRATION 1");
-
-			vs.loadSource("fullscreen_quad.glsl");
-			fs.loadSource("specular_ibl.glsl");
-
-			IrradianceBaker::BRDFIntegrationMapShader = pathos::createProgram(vs, fs, "BRDFIntegrationMap");
-
-			IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512, cmdList);
-			cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
-		}
+		IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512, cmdList);
+		cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
 	}
 
 	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
 		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
-		gRenderDevice->deleteProgram(IrradianceBaker::equirectangularToCubemap);
-		gRenderDevice->deleteProgram(IrradianceBaker::diffuseIrradianceShader);
-		gRenderDevice->deleteProgram(IrradianceBaker::prefilterEnvMapShader);
-		gRenderDevice->deleteProgram(IrradianceBaker::BRDFIntegrationMapShader);
 		gRenderDevice->deleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
 
 		delete IrradianceBaker::fullscreenQuad;
