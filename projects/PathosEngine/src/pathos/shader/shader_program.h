@@ -75,7 +75,6 @@ namespace pathos {
 	};
 
 	// Represents one of VS, GS, TES, TCS, or FS.
-	// #todo-shader-rework: Replace pathos::Shader with this.
 	class ShaderStage {
 		friend class ShaderProgram;
 
@@ -99,9 +98,6 @@ namespace pathos {
 		void addDefine(const char* define, int32 value);
 		inline void setFilepath(const char* inFilepath) { filepath = inFilepath; }
 
-	// #todo-shader-rework: Expose as public to temp use in shader.cpp
-	// shader.cpp really should be deprecated but it's a big tech dept cannot be handled easily :/
-	public:
 		static bool loadSourceInternal(
 			const std::string& filepath,
 			const std::vector<std::string>& defines,
@@ -127,14 +123,7 @@ namespace pathos {
 
 	};
 
-	// #todo-shader-rework: Code-level shader source assembler. pathos::ShaderSource was my very first attempt for this,
-	// but the implementation was really cumbersome, not knowing what am I doing. After working with UE4's vertex factory
-	// and material system, I think I can do better now.
-	//
-	// class ShaderAssembler { ... };
-	//
-
-	// #todo-shader-rework: Serious problem - now I can't destroy shader programs until application termination.
+	// #todo-shader: Serious problem - now I can't destroy shader programs until application termination.
 #define DEFINE_COMPUTE_PROGRAM(ShaderProgramClass, ComputeStageClass)                                \
 	static constexpr uint32 ShaderProgramClass##_Hash = COMPILE_TIME_CRC32_STR(#ShaderProgramClass); \
 	class ShaderProgramClass : public ShaderProgram {                                                \

@@ -10,10 +10,13 @@ namespace pathos {
 	// Directory that contains the exectuable
 	void getExecDir(std::wstring& outDir);
 
-	std::string getFullDirectoryPath(const char* targetDir);
+	// Returns absolute path.
+	std::string getAbsolutePath(const char* targetDir);
 
+	// Create the directory if not exist.
 	void createDirectory(const char* targetDir);
 
+	// Returns directory that contains 'PathosEngine.sln'.
 	std::string getSolutionDir();
 
 }

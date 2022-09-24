@@ -31,7 +31,7 @@ namespace pathos {
 		outDir = path.substr(0, ix + 1);
 	}
 
-	std::string getFullDirectoryPath(const char* targetDir)
+	std::string getAbsolutePath(const char* targetDir)
 	{
 #if PLATFORM_WINDOWS
 		char buffer[1024];
@@ -62,7 +62,7 @@ namespace pathos {
 			solutionDir = solutionPath.substr(0, solutionPath.size() - std::string("PathosEngine.sln").size());
 		}
 		CHECKF(solutionDir.size() != 0, "Maybe the solution name has been changed?");
-		solutionDir = getFullDirectoryPath(solutionDir.c_str());
+		solutionDir = getAbsolutePath(solutionDir.c_str());
 		return solutionDir;
 	}
 

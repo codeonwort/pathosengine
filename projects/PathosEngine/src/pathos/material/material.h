@@ -4,8 +4,6 @@
 #include "pathos/material/material_id.h"
 
 #include "badger/types/vector_types.h"
-
-//#include "gl_core.h"
 #include <vector>
 
 // #todo: Don't expose GLuint here
@@ -17,21 +15,36 @@ namespace pathos {
 	// One material can be applied to multiple meshes.
 	class Material : public NamedObject {
 
-	protected:
-		// IMPORTANT: Child classes should initialize this in their constructors
-		MATERIAL_ID materialID = MATERIAL_ID::INVALID;
-
 	public:
 		virtual ~Material() = default;
 
+#if 0 // #todo-material-assembler
+		void setScalarParameter(const char* name, float value);
+		void setVectorParameter(const char* name, const vector2& value);
+		void setVectorParameter(const char* name, const vector3& value);
+		void setVectorParameter(const char* name, const vector4& value);
+		void setTextureParameter(uint32 binding, GLuint texture);
+#endif
+
+		// #todo-material: Deprecate this.
 		MATERIAL_ID getMaterialID() { return materialID; }
+
+		// #todo-material-assembler
+		//EMaterialShadingModel getShadingModel() const { return shadingModel; }
+
+	protected:
+		// IMPORTANT: Child classes should initialize this in their constructors
+		// #todo-material: Deprecate this.
+		MATERIAL_ID materialID = MATERIAL_ID::INVALID;
+
+		// #todo-material-assembler
+		//EMaterialShadingModel shadingModel = EMaterialShadingModel::DEFAULTLIT;
 
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Materials
 
-	// #todo-material: Support translucent
 	// Opaque solid color, rendered in gbuffer pass
 	class ColorMaterial : public Material {
 

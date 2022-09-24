@@ -165,6 +165,7 @@
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
+    <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
     <ClCompile Include="src\pathos\texture\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
@@ -277,6 +278,8 @@
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
+    <ClInclude Include="src\pathos\shader\material_shader.h" />
+    <ClInclude Include="src\pathos\shader\material_shader_assembler.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />
     <ClInclude Include="src\pathos\shader\shader_storage_buffer.h" />
     <ClInclude Include="src\pathos\smart_pointer.h" />

@@ -164,7 +164,6 @@ namespace pathos {
 		addDefine(msg);
 	}
 
-	// #todo-shader: This is getting too dirty
 	bool ShaderStage::loadSource() {
 		CHECK(filepath != nullptr);
 
@@ -172,6 +171,7 @@ namespace pathos {
 		return ShaderStage::loadSourceInternal(filepath, defines, 0, sourceCode);
 	}
 
+	// #todo-shader: This is getting too dirty
 	bool ShaderStage::loadSourceInternal(
 		const std::string& filepath,
 		const std::vector<std::string>& defines,
