@@ -93,9 +93,6 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 	mat4 mvTransform;
 	// 48 bytes (3 * 16)
 	mat3 mvTransform3x3;
-	// 16 bytes
-	uint shadingModel;
-	vec3 _padding;
 } uboPerObject;
 
 void main() {
@@ -159,7 +156,7 @@ void main() {
 	packGBuffer(
 		vec3(0.0),
 		vec3(0.0),
-		uboPerObject.shadingModel,
+		SHADINGMODEL,
 		interpolants.positionVS,
 		0.0,
 		0.0,
@@ -171,7 +168,7 @@ void main() {
 	packGBuffer(
 		attr.albedo,
 		detailNormal,
-		uboPerObject.shadingModel,
+		SHADINGMODEL,
 		interpolants.positionVS,
 		attr.metallic,
 		attr.roughness,
@@ -183,7 +180,7 @@ void main() {
 	packGBuffer(
 		attr.albedo,
 		detailNormal,
-		uboPerObject.shadingModel,
+		SHADINGMODEL,
 		interpolants.positionVS,
 		attr.metallic,
 		attr.roughness,

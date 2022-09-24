@@ -23,6 +23,10 @@ vec3 getVertexPositionOffset() {
 
 #if FRAGMENT_SHADER
 
+// #todo-material-assembler: For parsing test. Will be removed.
+PARAMETER_CONSTANT(vec3, playerPos)
+PARAMETER_CONSTANT(float, worldTime)
+
 PARAMETER_TEXTURE(0, sampler2D, tex_albedo)
 PARAMETER_TEXTURE(1, sampler2D, tex_normal)
 PARAMETER_TEXTURE(2, sampler2D, tex_metallic)
