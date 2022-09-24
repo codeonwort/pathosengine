@@ -6,11 +6,21 @@
 #include "common.glsl"
 #include "deferred_common.glsl"
 
+#define UBO_BINDING_OBJECT   1
+#define UBO_BINDING_MATERIAL 2
+
 // #todo-driver-bug: What's this :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
+
+layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
+	// 64 bytes (4 * 16)
+	mat4 mvTransform;
+	// 48 bytes (3 * 16)
+	mat3 mvTransform3x3;
+} uboPerObject;
 
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
 $NEED UBO_Material
@@ -96,13 +106,6 @@ layout (location = 1) in vec2 texcoord;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
-
-layout (std140, binding = 1) uniform UBO_PerObject {
-	// 64 bytes (4 * 16)
-	mat4 mvTransform;
-	// 48 bytes (3 * 16)
-	mat3 mvTransform3x3;
-} uboPerObject;
 
 void main() {
 	mat4 viewModel = uboPerObject.mvTransform;

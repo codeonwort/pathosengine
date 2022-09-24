@@ -24,8 +24,8 @@ namespace pathos {
 		//SKIN = 3,
 		//HAIR = 4,
 
-		NUM_DOMAINS = 3,
+		NUM_MODELS = 3,
 	};
-	static_assert((uint32)EMaterialShadingModel::NUM_DOMAINS <= 0xff, "Too many shading models");
+	static_assert((uint32)EMaterialShadingModel::NUM_MODELS <= 0xff, "Too many shading models");
 
 }

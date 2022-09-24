@@ -18,42 +18,39 @@ namespace pathos {
 		Bool
 	};
 
-	template<typename T>
 	struct MaterialConstantParameter {
 		std::string name;
 		EMaterialParameterDataType datatype;
-		T value[4];
+		union {
+			float fvalue[4];
+			int32 ivalue[4];
+			uint32 uvalue[4];
+			bool bvalue[4];
+		};
+		uint32 offset; // in UBO
 	};
 	struct MaterialTextureParameter {
 		std::string name;
 		uint32 binding;
-		GLuint glTexture;
+		GLuint glTexture = 0;
 	};
 
 	class MaterialShader {
+		friend class MaterialShaderAssembler;
 
 	public:
-		MaterialShader(const std::string& uniqueName)
-			: name(uniqueName)
-		{
-		}
-
-		// Pack scalar/vector params into a uniform buffer.
-		void packUniformBuffer();
-
 		void generateVertexShader();
 		void generateFragmentShader();
 
 	private:
 		std::string name;
 
-		EMaterialShadingModel shadingModel = EMaterialShadingModel::DEFAULTLIT;
+		EMaterialShadingModel shadingModel;
+
+		std::vector<std::string> sourceLines;
 
 		uint32 uboTotalBytes = 0;
-		std::vector<MaterialConstantParameter<float>> floatParameters;
-		std::vector<MaterialConstantParameter<int32>> intParameters;
-		std::vector<MaterialConstantParameter<uint32>> uintParameters;
-		std::vector<MaterialConstantParameter<bool>> boolParameters;
+		std::vector<MaterialConstantParameter> constantParameters;
 		std::vector<MaterialTextureParameter> textureParameters;
 
 	};

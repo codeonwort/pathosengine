@@ -18,10 +18,13 @@ PARAMETER_TEXTURE(2, sampler2D, tex_metallic)
 PARAMETER_TEXTURE(3, sampler2D, tex_roughness)
 PARAMETER_TEXTURE(4, sampler2D, tex_localAO)
 
+VPO_BEGIN
 vec3 getVertexPositionOffset() {
 	return vec3(0.0);
 }
+VPO_END
 
+ATTR_BEGIN
 MaterialAttributes getMaterialAttributes() {
 	MaterialAttributes_DefaultLit attr;
 	vec2 uv = interpolants.texcoord;
@@ -35,3 +38,4 @@ MaterialAttributes getMaterialAttributes() {
 
 	return attr;
 }
+ATTR_END

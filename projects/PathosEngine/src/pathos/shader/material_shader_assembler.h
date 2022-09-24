@@ -14,9 +14,10 @@ namespace pathos {
 		// Load material template files.
 		void loadMaterialTemplate();
 
-		// Parse material shader files and generate corresponding shader programs.
+		// Enumerate material files and call generateMaterialShader().
 		void parseAllMaterialShaders();
 
+		// Parse material shader file to generate corresponding shader program.
 		MaterialShader* generateMaterialShader(const char* fullpath, const char* filename);
 
 	private:
@@ -26,7 +27,7 @@ namespace pathos {
 		MaterialTemplate* materialTemplate = nullptr;
 		bool bTemplateLoaded = false;
 
-		std::vector<MaterialShader*> materials;
+		std::vector<MaterialShader*> materialShaders;
 
 	};
 
