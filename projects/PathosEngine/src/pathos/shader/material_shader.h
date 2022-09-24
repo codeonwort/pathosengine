@@ -14,21 +14,16 @@ namespace pathos {
 	enum class EMaterialParameterDataType : uint32 {
 		Float,
 		Int,
-		Uint
+		Uint,
+		Bool
 	};
 
-	struct MaterialScalarParameter {
+	template<typename T>
+	struct MaterialConstantParameter {
 		std::string name;
 		EMaterialParameterDataType datatype;
-		float value;
+		T value[4];
 	};
-
-	struct MaterialVectorParameter {
-		std::string name;
-		EMaterialParameterDataType datatype;
-		vector4 value;
-	};
-
 	struct MaterialTextureParameter {
 		std::string name;
 		uint32 binding;
@@ -38,6 +33,11 @@ namespace pathos {
 	class MaterialShader {
 
 	public:
+		MaterialShader(const std::string& uniqueName)
+			: name(uniqueName)
+		{
+		}
+
 		// Pack scalar/vector params into a uniform buffer.
 		void packUniformBuffer();
 
@@ -45,10 +45,15 @@ namespace pathos {
 		void generateFragmentShader();
 
 	private:
+		std::string name;
+
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::DEFAULTLIT;
 
-		std::vector<MaterialScalarParameter> scalarParameters;
-		std::vector<MaterialVectorParameter> vectorParameters;
+		uint32 uboTotalBytes = 0;
+		std::vector<MaterialConstantParameter<float>> floatParameters;
+		std::vector<MaterialConstantParameter<int32>> intParameters;
+		std::vector<MaterialConstantParameter<uint32>> uintParameters;
+		std::vector<MaterialConstantParameter<bool>> boolParameters;
 		std::vector<MaterialTextureParameter> textureParameters;
 
 	};

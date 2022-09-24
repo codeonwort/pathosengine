@@ -9,13 +9,14 @@
 // #todo-driver-bug: What's this :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
-// Things that concrete materials should implement.
-//
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
-//
-// Controls world position offset.
-$NEED getVertexPositionOffset
+
+// The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
+$NEED UBO_Material
+
+// Texture parameters
+$NEED TEXTURE_PARAMETERS
 
 // Macros that concrete materials can use.
 //
@@ -23,7 +24,9 @@ $NEED getVertexPositionOffset
 // - Put into material UBO.
 // - ex) PARAMETER_CONSTANT(float, worldTime)
 //       PARAMETER_CONSTANT(vec3, playerPos)
-//       -> struct UBO_Material { float worldTime; vec3 playerPos; } uboMaterial;
+//       -> layout (std140, binding = 2) uniform UBO_Material {
+//              vec3 playerPos; float worldTime;
+//          } ubo;
 //
 // PARAMETER_TEXTURE(binding, samplerType, name)
 // - Declared as a sampler.
@@ -77,6 +80,12 @@ INTERPOLANTS_QUALIFIER Interpolants {
 	vec2 texcoord;   // local space
 } interpolants;
 
+// Controls world position offset.
+$NEED getVertexPositionOffset
+
+// Most important output of material shaders.
+$NEED getMaterialAttributes
+
 // --------------------------------------------------------
 // Vertex shader
 
@@ -123,14 +132,6 @@ void main() {
 // Fragment shader
 
 #if FRAGMENT_SHADER
-
-layout (binding = 0) uniform sampler2D tex_albedo;
-layout (binding = 1) uniform sampler2D tex_normal;
-layout (binding = 2) uniform sampler2D tex_metallic;
-layout (binding = 3) uniform sampler2D tex_roughness;
-layout (binding = 4) uniform sampler2D tex_ao;
-
-$NEED getMaterialAttributes();
 
 vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
     vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
