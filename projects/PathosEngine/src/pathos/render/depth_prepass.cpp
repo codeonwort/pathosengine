@@ -5,6 +5,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/material/material.h"
@@ -23,6 +24,13 @@ namespace pathos {
 		matrix4 mvTransform;
 		matrix3x4 mvMatrix3x3;
 		vector4 billboardParam;
+	};
+
+	// #todo-material-assembler: Remove this
+	struct UBO_DepthPrepass_PerObject {
+		static constexpr uint32 BINDING_POINT = 1;
+		matrix4 mvTransform;
+		matrix3x4 mvMatrix3x3;
 	};
 
 	class DepthPrepassVS : public ShaderStage {
@@ -55,6 +63,7 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
 		ubo.init<UBO_DepthPrepass>();
+		uboPerObject.init<UBO_DepthPrepass_PerObject>();
 	}
 
 	void DepthPrepass::destroyResources(RenderCommandList& cmdList)
@@ -90,7 +99,7 @@ namespace pathos {
 
 		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
 		CHECK(cvarFrustum != nullptr);
-		bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
+		const bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
 
 		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
 			const auto& proxyList = scene->proxyList_staticMesh[i];
@@ -100,6 +109,10 @@ namespace pathos {
 				}
 
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
+					continue;
+				}
+
+				if (proxy->material->materialShader != nullptr) {
 					continue;
 				}
 
@@ -154,6 +167,56 @@ namespace pathos {
 				if (doubleSided) cmdList.enable(GL_CULL_FACE);
 				if (renderInternal) cmdList.frontFace(GL_CCW);
 				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+		}
+
+		// #todo-material-assembler: Render prepass with new material system
+		{
+			std::vector<StaticMeshProxy*>& proxyList = scene->proxyList_staticMeshTemp;
+			const size_t numProxies = proxyList.size();
+			uint32 currentProgramHash = 0;
+
+			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+				StaticMeshProxy* proxy = proxyList[proxyIx];
+				MaterialShader* materialShader = proxy->material->materialShader;
+
+				// Early out
+				if (bEnableFrustumCulling && !proxy->bInFrustum) {
+					continue;
+				}
+
+				bool bShouldBindProgram = false;
+
+				if (currentProgramHash != materialShader->programHash) {
+					bShouldBindProgram = true;
+					currentProgramHash = materialShader->programHash;
+				}
+
+				if (bShouldBindProgram) {
+					//SCOPED_DRAW_EVENT(BindMaterialProgram);
+					uint32 programName = materialShader->program->getGLName();
+					CHECK(programName != 0 && programName != 0xffffffff);
+					cmdList.useProgram(programName);
+				}
+
+				// Update UBO (per object)
+				{
+					UBO_DepthPrepass_PerObject uboData;
+					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
+					uboPerObject.update(cmdList, UBO_DepthPrepass_PerObject::BINDING_POINT, &uboData);
+				}
+
+				// Update UBO (material)
+				if (materialShader->uboTotalBytes > 0) {
+					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
+					materialShader->fillUniformBuffer(uboMemory);
+					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
+				}
+
+				proxy->geometry->activate_position(cmdList);
+				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->drawPrimitive(cmdList);
 			}
 		}
 	}

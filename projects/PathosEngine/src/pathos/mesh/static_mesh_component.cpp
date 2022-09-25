@@ -62,11 +62,15 @@ namespace pathos {
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getLocalMatrix();
-			proxy->geometry = geoms[i];
-			proxy->material = materials[i];
+			proxy->geometry = G;
+			proxy->material = M;
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
-			scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
+			if (M->materialShader == nullptr) {
+				scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
+			} else {
+				scene->proxyList_staticMeshTemp.push_back(proxy);
+			}
 		}
 	}
 

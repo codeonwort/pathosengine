@@ -43,6 +43,8 @@ namespace pathos {
 		proxy->prefilterEnvMap = prefilterEnvMap;
 		proxy->prefilterEnvMapMipLevels = prefilterEnvMapMipLevels;
 
+		proxy->finalize_mainThread();
+
 		return proxy;
 	}
 

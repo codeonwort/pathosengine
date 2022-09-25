@@ -1,5 +1,6 @@
 #pragma once
 
+#include "uniform_buffer.h"
 #include "pathos/material/material_id.h"
 
 #include "badger/types/vector_types.h"
@@ -23,6 +24,7 @@ namespace pathos {
 	struct MaterialConstantParameter {
 		std::string name;
 		EMaterialParameterDataType datatype;
+		uint32 numElements;
 		union {
 			float fvalue[4];
 			int32 ivalue[4];
@@ -43,6 +45,10 @@ namespace pathos {
 	public:
 		void generateShaderProgram(const std::string& fullpath, const MaterialTemplate* materialTemplate);
 
+		void fillUniformBuffer(uint8* uboMemory);
+
+		void setParameterVec3(const char* name, const vector3& value);
+
 	// #todo-material-assembler: private
 	public:
 		std::string name;
@@ -53,6 +59,10 @@ namespace pathos {
 
 		ShaderProgram* program = nullptr;
 		uint32 programHash = 0;
+
+		UniformBuffer uboMaterial;
+		std::string uboName;
+		const uint32 uboBindingPoint = 2; // #todo-material-assembler: UBO binding point
 
 		std::string nameVS;
 		std::string nameFS;

@@ -11,6 +11,14 @@ typedef unsigned int GLuint;
 
 namespace pathos {
 
+	class MaterialShader;
+
+	MaterialShader* findMaterialShader(const char* materialName);
+
+}
+
+namespace pathos {
+
 	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
 	class Material : public NamedObject {
@@ -26,20 +34,20 @@ namespace pathos {
 		void setTextureParameter(uint32 binding, GLuint texture);
 #endif
 
-		// #todo-material: Deprecate this.
 		MATERIAL_ID getMaterialID() { return materialID; }
 
-		// #todo-material-assembler
+		// #todo-material-assembler: Migration strategy
+		// 1. If 'materialShader' is not null, use it for rendering.
+		// 2. Otherwise, use old path.
+		// 3. Replace old materials with new materials.
+		// 4. Obliterate MATERIAL_ID and Material subclasses.
+		MaterialShader* materialShader = nullptr;
 		//EMaterialShadingModel getShadingModel() const { return shadingModel; }
 
 	protected:
 		// IMPORTANT: Child classes should initialize this in their constructors
 		// #todo-material: Deprecate this.
 		MATERIAL_ID materialID = MATERIAL_ID::INVALID;
-
-		// #todo-material-assembler
-		//EMaterialShadingModel shadingModel = EMaterialShadingModel::DEFAULTLIT;
-
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

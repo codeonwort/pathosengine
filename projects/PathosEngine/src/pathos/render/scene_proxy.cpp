@@ -1,5 +1,8 @@
 #include "scene_proxy.h"
 #include "pathos/engine_policy.h"
+#include "pathos/material/material.h"
+#include "pathos/shader/material_shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/light/rect_light_component.h"
@@ -29,10 +32,34 @@ namespace pathos {
 		for (uint32 i = 0; i < (uint32)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 			proxyList_staticMesh[i].clear();
 		}
+		proxyList_staticMeshTemp.clear();
 		skybox = nullptr;
 		cloud = nullptr;
 
 		renderProxyAllocator.clear();
+	}
+
+	void SceneProxy::finalize_mainThread() {
+		// Sort material shaders
+		auto& v = proxyList_staticMeshTemp;
+		std::sort(v.begin(), v.end(),
+			[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
+				const uint32 hashA = A->material->materialShader->programHash;
+				const uint32 hashB = B->material->materialShader->programHash;
+				return A < B;
+			}
+		);
+	}
+
+	void SceneProxy::initialize_renderThread() {
+		uint32 hash = 0;
+		for (StaticMeshProxy* proxy : proxyList_staticMeshTemp) {
+			uint32 newHash = proxy->material->materialShader->programHash;
+			if (hash != newHash) {
+				hash = newHash;
+				proxy->material->materialShader->program->checkFirstLoad();
+			}
+		}
 	}
 
 	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {
@@ -74,8 +101,8 @@ namespace pathos {
 		const bool bIgnoreFarPlane = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse);
 
 		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 materialID = 0; materialID < numMaterialIDs; ++materialID) {
-			auto& proxies = proxyList_staticMesh[materialID];
+		for (uint8 materialID = 0; materialID <= numMaterialIDs; ++materialID) {
+			auto& proxies = materialID == numMaterialIDs ? proxyList_staticMeshTemp : proxyList_staticMesh[materialID];
 			for (int32 i = 0; i < proxies.size(); ++i) {
 				if (bIgnoreFarPlane) {
 					proxies[i]->bInFrustum = badger::hitTest::AABB_frustum_noFarPlane(proxies[i]->worldBounds, frustum);

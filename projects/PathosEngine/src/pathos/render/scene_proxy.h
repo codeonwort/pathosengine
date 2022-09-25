@@ -29,6 +29,9 @@ namespace pathos {
 		SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera);
 		~SceneProxy();
 
+		void finalize_mainThread();
+		void initialize_renderThread();
+
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
 		// This should be called for each view.
@@ -64,6 +67,9 @@ namespace pathos {
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
+
+		// #todo-material-assembler
+		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTemp;
 		
 		struct SkyboxProxy*                        skybox = nullptr;
 		struct AnselSkyProxy*                      anselSky = nullptr;

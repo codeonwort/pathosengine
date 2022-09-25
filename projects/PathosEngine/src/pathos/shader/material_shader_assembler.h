@@ -57,6 +57,8 @@ namespace pathos {
 		static MaterialShaderAssembler& get();
 
 		void initializeMaterialShaders();
+
+		MaterialShader* findMaterialShader(const char* materialName);
 		const std::vector<MaterialShader*>& getMaterialShaders() const { return materialShaders; }
 
 	private:

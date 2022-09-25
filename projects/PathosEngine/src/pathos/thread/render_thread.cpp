@@ -79,6 +79,10 @@ namespace pathos {
 
 			SCOPED_CPU_COUNTER(EngineRender);
 
+			if (sceneProxy != nullptr) {
+				sceneProxy->initialize_renderThread();
+			}
+
 			const EngineConfig engineConfig(gEngine->getConfig());
 			const int32 screenWidth = engineConfig.windowWidth;
 			const int32 screenHeight = engineConfig.windowHeight;

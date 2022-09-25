@@ -26,6 +26,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
 
 #include "pathos/console.h"
 #include "pathos/util/log.h"
@@ -52,6 +53,13 @@ namespace pathos {
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
+
+	// // #todo-material-assembler: Remove this
+	struct UBO_BasePass_PerObject {
+		static constexpr uint32 BINDING_POINT = 1;
+		matrix4 mvTransform;
+		matrix3x4 mvMatrix3x3;
+	};
 
 }
 
@@ -110,6 +118,8 @@ namespace pathos {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
+
+		uboPerObject.init<UBO_BasePass_PerObject>("UBO_BasePass_PerObject_temp");
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
@@ -474,6 +484,56 @@ namespace pathos {
 				// #todo-renderer: Batching by same state
 				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);
 				if (item.renderInternal) cmdList.frontFace(GL_CCW);
+			}
+		}
+
+		// #todo-material-assembler: Render basepass with new material system
+		{
+			std::vector<StaticMeshProxy*>& proxyList = scene->proxyList_staticMeshTemp;
+			const size_t numProxies = proxyList.size();
+			uint32 currentProgramHash = 0;
+
+			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+				StaticMeshProxy* proxy = proxyList[proxyIx];
+				MaterialShader* materialShader = proxy->material->materialShader;
+
+				// Early out
+				if (bEnableFrustumCulling && !proxy->bInFrustum) {
+					continue;
+				}
+
+				bool bShouldBindProgram = false;
+
+				if (currentProgramHash != materialShader->programHash) {
+					bShouldBindProgram = true;
+					currentProgramHash = materialShader->programHash;
+				}
+
+				if (bShouldBindProgram) {
+					//SCOPED_DRAW_EVENT(BindMaterialProgram);
+					uint32 programName = materialShader->program->getGLName();
+					CHECK(programName != 0 && programName != 0xffffffff);
+					cmdList.useProgram(programName);
+				}
+
+				// Update UBO (per object)
+				{
+					UBO_BasePass_PerObject uboData;
+					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
+					uboPerObject.update(cmdList, UBO_BasePass_PerObject::BINDING_POINT, &uboData);
+				}
+
+				// Update UBO (material)
+				if (materialShader->uboTotalBytes > 0) {
+					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
+					materialShader->fillUniformBuffer(uboMemory);
+					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
+				}
+
+				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
+				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->drawPrimitive(cmdList);
 			}
 		}
 

@@ -1,6 +1,17 @@
 #include "pathos/material/material.h"
+#include "pathos/shader/material_shader.h"
+#include "pathos/shader/material_shader_assembler.h"
 #include "pathos/engine.h"
+
 #include "badger/math/minmax.h"
+
+namespace pathos {
+
+	MaterialShader* findMaterialShader(const char* materialName) {
+		return MaterialShaderAssembler::get().findMaterialShader(materialName);
+	}
+
+}
 
 namespace pathos {
 	

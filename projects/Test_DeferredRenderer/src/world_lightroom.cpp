@@ -2,6 +2,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
+#include "pathos/shader/material_shader.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
@@ -97,6 +98,8 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
 
 	ColorMaterial* M_box = new ColorMaterial;
+	M_box->materialShader = pathos::findMaterialShader("default_lit_test");
+	M_box->materialShader->setParameterVec3("albedoOverride", vector3(1.0f, 0.0f, 0.0f));
 	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_box->setRoughness(0.2f);
 	M_box->setMetallic(0.0f);

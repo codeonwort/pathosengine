@@ -72,5 +72,6 @@
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_upsample.glsl" />
     <None Include="cascaded_shadow_map.glsl" />
+    <None Include="materials\_template.glsl" />
   </ItemGroup>
 </Project>

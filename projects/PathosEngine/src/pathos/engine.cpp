@@ -15,6 +15,7 @@
 #include "pathos/util/renderdoc_integration.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
+#include "pathos/shader/material_shader_assembler.h"
 
 #include "pathos/loader/imageloader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
@@ -144,6 +145,9 @@ namespace pathos {
 		for (const auto& line : configLines) {
 			gConsole->addLine(line.c_str(), false);
 		}
+
+		// #todo-material-assembler: Where to put init?
+		MaterialShaderAssembler::get().initializeMaterialShaders();
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");

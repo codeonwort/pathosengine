@@ -100,6 +100,9 @@ namespace pathos {
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
 
+		// #todo-material-assembler: Remove this
+		UniformBuffer uboPerObject;
+
 		SceneRenderSettings sceneRenderSettings;
 		RenderTarget2D* finalRenderTarget = nullptr;
 
