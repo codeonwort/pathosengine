@@ -18,7 +18,10 @@ $NEED SHADERSTAGE
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
 
+// #todo: Remove unnecessary members
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
+	// 64 bytes (4 * 16)
+	mat4 modelTransform;
 	// 64 bytes (4 * 16)
 	mat4 mvTransform;
 	// 48 bytes (3 * 16)
@@ -88,7 +91,6 @@ struct MaterialAttributes_Translucent {
 #endif
 layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
 	vec3 positionVS; // view space
-	vec3 position;   // local space
 	vec3 normal;     // local space
 	vec3 tangent;    // local space
     vec3 bitangent;  // local space
@@ -113,19 +115,16 @@ layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 
 void main() {
-	mat4 viewModel = uboPerObject.mvTransform;
-	mat4 viewInv = uboPerFrame.inverseViewTransform;
+	mat4 model = uboPerObject.modelTransform;
+	mat4 view = uboPerFrame.viewTransform;
 	mat4 proj = uboPerFrame.projTransform;
 
-	// I'm using view space values for GBuffer.
-	vec3 vpo = getVertexPositionOffset();
-	vpo = (viewInv * vec4(vpo, 1.0)).xyz;
+	vec4 positionWS = model * vec4(position, 1.0);
+	positionWS.xyz += getVertexPositionOffset();
 
-	vec3 newPosition = position + vpo;
-	vec4 positionVS = viewModel * vec4(newPosition, 1.0);
+	vec4 positionVS = view * positionWS;
 
 	interpolants.positionVS  = positionVS.xyz;
-	interpolants.position    = newPosition;
 	interpolants.normal      = normal;
 	interpolants.tangent     = tangent;
 	interpolants.bitangent   = bitangent;

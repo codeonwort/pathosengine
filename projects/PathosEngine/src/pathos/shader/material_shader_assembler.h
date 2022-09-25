@@ -17,6 +17,14 @@ namespace pathos {
 
 		void updatePlaceholderIx();
 
+		void fixupNewlines() {
+			for (std::string& line : sourceLines) {
+				if (line.size() == 0 || line[line.size() - 1] != '\n') {
+					line += '\n';
+				}
+			}
+		}
+
 		MaterialTemplate makeClone() {
 			// #todo-material-assembler: Change if any member does not deep copy.
 			return *this;

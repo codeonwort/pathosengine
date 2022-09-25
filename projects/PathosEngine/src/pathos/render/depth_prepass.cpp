@@ -29,6 +29,7 @@ namespace pathos {
 	// #todo-material-assembler: Remove this
 	struct UBO_DepthPrepass_PerObject {
 		static constexpr uint32 BINDING_POINT = 1;
+		matrix4 modelTransform;
 		matrix4 mvTransform;
 		matrix3x4 mvMatrix3x3;
 	};
@@ -202,6 +203,7 @@ namespace pathos {
 				// Update UBO (per object)
 				{
 					UBO_DepthPrepass_PerObject uboData;
+					uboData.modelTransform = proxy->modelMatrix;
 					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
 					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
 					uboPerObject.update(cmdList, UBO_DepthPrepass_PerObject::BINDING_POINT, &uboData);

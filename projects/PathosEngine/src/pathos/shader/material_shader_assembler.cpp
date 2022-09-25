@@ -405,6 +405,7 @@ namespace pathos {
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
 		splitNewlines(MT.sourceLines);
 		MT.updatePlaceholderIx();
+		MT.fixupNewlines();
 
 		// #todo-material-assembler: Original dump system now supports material shaders.
 #if 0

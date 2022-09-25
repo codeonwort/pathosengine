@@ -52,6 +52,8 @@ namespace pathos {
 	}
 
 	void SceneProxy::initialize_renderThread() {
+		// #todo-material-assembler: MaterialShader::generateShaderProgram() already handles it.
+#if 0
 		uint32 hash = 0;
 		for (StaticMeshProxy* proxy : proxyList_staticMeshTemp) {
 			uint32 newHash = proxy->material->materialShader->programHash;
@@ -60,6 +62,7 @@ namespace pathos {
 				proxy->material->materialShader->program->checkFirstLoad();
 			}
 		}
+#endif
 	}
 
 	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {

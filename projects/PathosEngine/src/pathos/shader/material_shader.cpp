@@ -7,8 +7,8 @@ namespace pathos {
 	void MaterialShader::generateShaderProgram(const std::string& filepath, const MaterialTemplate* materialTemplate) {
 		std::vector<std::string> sourceVS = materialTemplate->sourceLines;
 		std::vector<std::string> sourceFS = materialTemplate->sourceLines;
-		sourceVS[materialTemplate->lineIx_shaderstage] = "#define VERTEX_SHADER 1";
-		sourceFS[materialTemplate->lineIx_shaderstage] = "#define FRAGMENT_SHADER 1";
+		sourceVS[materialTemplate->lineIx_shaderstage] = "#define VERTEX_SHADER 1\n";
+		sourceFS[materialTemplate->lineIx_shaderstage] = "#define FRAGMENT_SHADER 1\n";
 		nameVS = name + "VS";
 		nameFS = name + "FS";
 		programHash = COMPILE_TIME_CRC32_STR(name.c_str());
@@ -27,7 +27,7 @@ namespace pathos {
 		// if a drawcall uses this program ???
 		ShaderProgram* programPtr = program;
 		ENQUEUE_RENDER_COMMAND([programPtr](RenderCommandList& cmdList) {
-			programPtr->reload();
+			programPtr->checkFirstLoad();
 		});
 		FLUSH_RENDER_COMMAND(true);
 
