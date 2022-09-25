@@ -10,6 +10,8 @@ namespace pathos {
 
 	// #todo-material-assembler: Wanna get rid of GLuint from this header.
 	typedef unsigned int GLuint;
+	struct MaterialTemplate;
+	class ShaderProgram;
 
 	enum class EMaterialParameterDataType : uint32 {
 		Float,
@@ -39,20 +41,21 @@ namespace pathos {
 		friend class MaterialShaderAssembler;
 
 	public:
-		void generateVertexShader();
-		void generateFragmentShader();
+		void generateShaderProgram(const std::string& fullpath, const MaterialTemplate* materialTemplate);
 
-	private:
+	// #todo-material-assembler: private
+	public:
 		std::string name;
-
 		EMaterialShadingModel shadingModel;
-
-		std::vector<std::string> sourceLines;
-
 		uint32 uboTotalBytes = 0;
 		std::vector<MaterialConstantParameter> constantParameters;
 		std::vector<MaterialTextureParameter> textureParameters;
 
+		ShaderProgram* program = nullptr;
+		uint32 programHash = 0;
+
+		std::string nameVS;
+		std::string nameFS;
 	};
 
 }

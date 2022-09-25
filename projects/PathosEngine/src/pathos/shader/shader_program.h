@@ -23,30 +23,31 @@ namespace pathos {
 		}
 		
 		void registerProgram(uint32 programHash, ShaderProgram* program) {
-			CHECK(mapping.find(programHash) == mapping.end());
-			mapping.insert(std::make_pair(programHash, program));
+			CHECK(programMap.find(programHash) == programMap.end());
+			programMap.insert(std::make_pair(programHash, program));
 		}
 		
 		void unregisterProgram(uint32 programHash) {
-			mapping.erase(programHash);
+			programMap.erase(programHash);
 		}
 
+		ShaderProgram* findProgram(uint32 programHash);
+
 		void forEach(std::function<void(ShaderProgram*)> handler) {
-			for(const auto& item : mapping) {
+			for(const auto& item : programMap) {
 				handler(item.second);
 			}
 		}
 		
 	private:
-		std::map<uint32, ShaderProgram*> mapping;
-		
+		std::map<uint32, ShaderProgram*> programMap;
 	};
 
 	// Shader program compiled from shader stage sources.
 	class ShaderProgram {
 
 	public:
-		ShaderProgram(const char* inDebugName, uint32 inProgramHash);
+		ShaderProgram(const char* inDebugName, uint32 inProgramHash, bool inIsMaterialProgram = false);
 		virtual ~ShaderProgram();
 
 		void addShaderStage(ShaderStage* shaderStage);
@@ -62,7 +63,6 @@ namespace pathos {
 		bool internal_justInstantiated;
 
 	private:
-
 		const char* debugName;
 		uint32 programHash;
 
@@ -71,7 +71,7 @@ namespace pathos {
 		std::vector<ShaderStage*> shaderStages;
 
 		bool firstLoad;
-
+		bool isMaterialProgram;
 	};
 
 	// Represents one of VS, GS, TES, TCS, or FS.
@@ -92,12 +92,18 @@ namespace pathos {
 		// Child classes override this method to call addDefine() and setFilepath()
 		virtual void construct() {}
 
+		// For material shaders
+		void setSourceCode(const std::string& inFilepath, std::vector<std::string>&& inSourceCode);
+
 	protected:
+		// For global shaders
 		inline void addDefine(const char* define) { defines.push_back(define); }
 		inline void addDefine(const std::string& define) { defines.push_back(define); }
 		void addDefine(const char* define, int32 value);
 		inline void setFilepath(const char* inFilepath) { filepath = inFilepath; }
 
+	public:
+		// #todo-material-assembler: This util should not belong here.
 		static bool loadSourceInternal(
 			const std::string& filepath,
 			const std::vector<std::string>& defines,
@@ -105,7 +111,7 @@ namespace pathos {
 			std::vector<std::string>& outSourceCode);
 	private:
 		bool loadSource();
-		ShaderStage::CompileResponse tryCompile(const char* programName);
+		ShaderStage::CompileResponse tryCompile(const char* programName, bool checkSourceChanges);
 		bool finishCompile();
 
 		inline GLuint getGLName() const { return glName; }
@@ -117,7 +123,7 @@ namespace pathos {
 		GLuint glName;
 		GLuint pendingGLName;
 		
-		const char* filepath;
+		std::string filepath;
 		std::vector<std::string> defines;
 		std::vector<std::string> sourceCode;
 

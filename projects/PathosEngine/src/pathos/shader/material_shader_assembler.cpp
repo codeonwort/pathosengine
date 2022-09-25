@@ -1,5 +1,6 @@
 #include "material_shader_assembler.h"
 #include "material_shader.h"
+#include "shader_program.h"
 #include "pathos/util/file_system.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
@@ -12,8 +13,9 @@
 #define MATERIAL_FOLDER            "shaders/materials/"
 #define MATERIAL_TEMPLATE_FILENAME "_template.glsl"
 
-// Things that are filled by material shaders
+// Tokens in the template which are filled by the material assembler or material shaders
 #define NEED_HEADER                "$NEED"
+#define NEED_SHADERSTAGE           "SHADERSTAGE"
 #define NEED_SHADINGMODEL          "SHADINGMODEL"
 #define NEED_UBO                   "UBO_Material"
 #define NEED_TEXTUREPARAMETERS     "TEXTURE_PARAMETERS"
@@ -26,97 +28,18 @@
 
 namespace pathos {
 
-	struct MaterialTemplate {
-
-		bool checkPlaceholders() const {
-			return lineIx_shadingmodel != -1
-				&& lineIx_ubo != -1
-				//&& lineIx_textureParams != -1 // Not mandatory
-				&& lineIx_getVPO != -1
-				&& lineIx_getMaterialAttrs != -1;
-		}
-
-		MaterialTemplate makeClone() {
-			// #todo-material-assembler: Change if any member does not deep copy.
-			return *this;
-		}
-
-		void replaceShadingModel(const std::string& defineShadingModel) {
-			sourceLines[lineIx_shadingmodel] = defineShadingModel;
-		}
-		void replaceUBO(const std::string& defineUBO) {
-			sourceLines[lineIx_ubo] = defineUBO;
-		}
-		void replaceTextureParameters(const std::string& parameters) {
-			sourceLines[lineIx_textureParams] = parameters;
-		}
-		void replaceVPO(const std::string& vpo) {
-			sourceLines[lineIx_getVPO] = vpo;
-		}
-		void replaceAttr(const std::string& attr) {
-			sourceLines[lineIx_getMaterialAttrs] = attr;
-		}
-
-		int32 lineIx_shadingmodel = -1;
-		int32 lineIx_ubo = -1;
-		int32 lineIx_textureParams = -1;
-		int32 lineIx_getVPO = -1;
-		int32 lineIx_getMaterialAttrs = -1;
-		std::vector<std::string> sourceLines;
-	};
-
-}
-
-namespace pathos {
-
-	MaterialShaderAssembler& MaterialShaderAssembler::get() {
-		static MaterialShaderAssembler instance;
-		return instance;
-	}
-
-	MaterialShaderAssembler::~MaterialShaderAssembler() {
-		if (materialTemplate != nullptr) {
-			delete materialTemplate;
-		}
-	}
-
-	void MaterialShaderAssembler::loadMaterialTemplate() {
-		if (bTemplateLoaded) {
-			return;
-		}
-
-		std::string templatePathRel = MATERIAL_FOLDER;
-		templatePathRel += MATERIAL_TEMPLATE_FILENAME;
-		std::string templatePath = ResourceFinder::get().find(templatePathRel);
-		templatePath = pathos::getAbsolutePath(templatePath.c_str());
-		if (templatePath.size() == 0) {
-			char msg[256];
-			sprintf_s(msg, "Can't find material template: %s", templatePathRel.c_str());
-			CHECKF(false, msg);
-		}
-
-		std::fstream fileStream;
-		fileStream.open(templatePath.c_str(), std::ios::in);
-		CHECKF(fileStream.is_open(), "Failed to open a filestream");
-
-		materialTemplate = new MaterialTemplate;
-		MaterialTemplate& MT = *materialTemplate;
-
-		// Gather original lines
-		while (fileStream) {
-			std::string line;
-			std::getline(fileStream, line);
-			MT.sourceLines.emplace_back(line);
-		}
-
+	void MaterialTemplate::updatePlaceholderIx() {
 		// Find $NEED lines
+		MaterialTemplate& MT = *this;
 		const std::string NEED(NEED_HEADER);
 		const int32 totalLines = (int32)MT.sourceLines.size();
 		for (int32 lineIx = 0; lineIx < totalLines; ++lineIx) {
 			const std::string& line = MT.sourceLines[lineIx];
 			if (line.find(NEED) == 0) {
 				std::string header = line.substr(NEED.size() + 1);
-				if (header == NEED_SHADINGMODEL) {
+				if (header == NEED_SHADERSTAGE) {
+					MT.lineIx_shaderstage = lineIx;
+				} else if (header == NEED_SHADINGMODEL) {
 					MT.lineIx_shadingmodel = lineIx;
 				} else if (header == NEED_UBO) {
 					MT.lineIx_ubo = lineIx;
@@ -130,6 +53,69 @@ namespace pathos {
 			}
 		}
 		CHECK(MT.checkPlaceholders());
+	}
+
+	void splitNewlines(std::vector<std::string>& inoutLines) {
+		std::vector<std::string> tempLines = inoutLines;
+		inoutLines.clear();
+		// Split lines that contain multiple newlines.
+		for (const std::string& line : tempLines) {
+			size_t offset = 0;
+			size_t len = line.size();
+			while (true) {
+				size_t newline = line.find_first_of('\n', offset);
+				// Exclude '\n' at end.
+				std::string tok = line.substr(offset, newline - offset);
+				inoutLines.push_back(tok);
+				if (newline == std::string::npos) {
+					break;
+				}
+				offset = newline + 1;
+			}
+		}
+	}
+
+}
+
+namespace pathos {
+
+	MaterialShaderAssembler& MaterialShaderAssembler::get() {
+		static MaterialShaderAssembler instance;
+		return instance;
+	}
+
+	MaterialShaderAssembler::~MaterialShaderAssembler() {
+		if (materialTemplate != nullptr) {
+			delete materialTemplate;
+			materialTemplate = nullptr;
+		}
+	}
+
+	void MaterialShaderAssembler::initializeMaterialShaders() {
+		loadMaterialTemplate();
+		parseAllMaterialShaders();
+	}
+
+	void MaterialShaderAssembler::loadMaterialTemplate() {
+		if (bTemplateLoaded) {
+			return;
+		}
+
+		std::string templatePathRel = MATERIAL_FOLDER;
+		templatePathRel += MATERIAL_TEMPLATE_FILENAME;
+
+		materialTemplate = new MaterialTemplate;
+		MaterialTemplate& MT = *materialTemplate;
+
+		// #todo-material-assembler: Parse includes when loading the template.
+		// Then how to parse includes in material shaders?
+		std::vector<std::string> emptyDefines;
+		ShaderStage::loadSourceInternal(templatePathRel, emptyDefines, 0, MT.sourceLines);
+		splitNewlines(MT.sourceLines);
+
+		// Find $NEED lines
+		const std::string NEED(NEED_HEADER);
+		MT.updatePlaceholderIx();
 
 		bTemplateLoaded = true;
 	}
@@ -163,7 +149,7 @@ namespace pathos {
 
 			std::string toString() const {
 				char buf[256];
-				sprintf_s(buf, "layout (binding = %u) uniform %s %s",
+				sprintf_s(buf, "layout (binding = %u) uniform %s %s;",
 					binding, samplerType.c_str(), name.c_str());
 				return std::string(buf);
 			}
@@ -295,77 +281,81 @@ namespace pathos {
 		MT.replaceShadingModel(materialLines[materialShadingModelIx]);
 
 		// Construct material uniform buffer.
-		std::sort(constParams.begin(), constParams.end(),
-			[](ConstantParameterDesc& A, ConstantParameterDesc& B) -> bool {
-				return A.numElements > B.numElements;
-			}
-		);
-		std::string ubo = "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
-		int32 uboPaddingId = 0;
-		int32 numScalars = 0;
 		uint32 uboTotalElements = 0; // 1 element = 4 bytes
-		uint32 uboCurrentOffset = 0;
-		// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
-		for (ConstantParameterDesc& desc : constParams) {
-			ubo += '\t';
-			ubo += desc.toString();
+		if (constParams.size() == 0) {
+			MT.replaceUBO("");
+		} else {
+			std::sort(constParams.begin(), constParams.end(),
+				[](ConstantParameterDesc& A, ConstantParameterDesc& B) -> bool {
+					return A.numElements > B.numElements;
+				}
+			);
+			std::string ubo = "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
+			int32 uboPaddingId = 0;
+			int32 numScalars = 0;
+			uint32 uboCurrentOffset = 0;
+			// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
+			for (ConstantParameterDesc& desc : constParams) {
+				ubo += '\t';
+				ubo += desc.toString();
 
-			MaterialConstantParameter param;
-			param.name = desc.name;
-			param.datatype = desc.datatypeEnum;
-			param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
-			param.offset = uboCurrentOffset;
-			materialConstParameters.emplace_back(param);
+				MaterialConstantParameter param;
+				param.name = desc.name;
+				param.datatype = desc.datatypeEnum;
+				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
+				param.offset = uboCurrentOffset;
+				materialConstParameters.emplace_back(param);
 
-			if (desc.numElements == 4) {
-				ubo += '\n';
-				uboTotalElements += 4;
-				uboCurrentOffset += 16;
-			} else if (desc.numElements == 3) {
-				ubo += "\t\tfloat _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 4;
-				uboCurrentOffset += 16;
-			} else if (desc.numElements == 2) {
-				ubo += "\t\tvec2 _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 4;
-				uboCurrentOffset += 16;
-			} else if (desc.numElements == 1) {
-				ubo += '\n';
-				uboTotalElements += 1;
-				uboCurrentOffset += 4;
-			} else {
-				CHECK_NO_ENTRY();
+				if (desc.numElements == 4) {
+					ubo += '\n';
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 3) {
+					ubo += "\t\tfloat _unused";
+					ubo += std::to_string(uboPaddingId++);
+					ubo += ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 2) {
+					ubo += "\t\tvec2 _unused";
+					ubo += std::to_string(uboPaddingId++);
+					ubo += ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 1) {
+					ubo += '\n';
+					uboTotalElements += 1;
+					uboCurrentOffset += 4;
+				} else {
+					CHECK_NO_ENTRY();
+				}
+				numScalars += (desc.numElements == 1) ? 1 : 0;
 			}
-			numScalars += (desc.numElements == 1) ? 1 : 0;
+			switch (numScalars) {
+			case 1:
+				ubo += "\tvec3 _unused";
+				ubo += std::to_string(uboPaddingId++);
+				ubo += ";\n";
+				uboTotalElements += 3;
+				break;
+			case 2:
+				ubo += "\tvec2 _unused";
+				ubo += std::to_string(uboPaddingId++);
+				ubo += ";\n";
+				uboTotalElements += 2;
+				break;
+			case 3:
+				ubo += "\tfloat _unused";
+				ubo += std::to_string(uboPaddingId++);
+				ubo += ";\n";
+				uboTotalElements += 1;
+				break;
+			default:
+				break;
+			}
+			ubo += "} uboMaterial; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
+			MT.replaceUBO(ubo);
 		}
-		switch(numScalars){
-		case 1:
-			ubo += "\tvec3 _unused";
-			ubo += std::to_string(uboPaddingId++);
-			ubo += ";\n";
-			uboTotalElements += 3;
-			break;
-		case 2:
-			ubo += "\tvec2 _unused";
-			ubo += std::to_string(uboPaddingId++);
-			ubo += ";\n";
-			uboTotalElements += 2;
-			break;
-		case 3:
-			ubo += "\tfloat _unused";
-			ubo += std::to_string(uboPaddingId++);
-			ubo += ";\n";
-			uboTotalElements += 1;
-			break;
-		default:
-			break;
-		}
-		ubo += "} ubo; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
-		MT.replaceUBO(ubo);
 
 		if (textureParams.size() == 0) {
 			MT.replaceTextureParameters("");
@@ -400,7 +390,13 @@ namespace pathos {
 		std::string materialName = filename;
 		materialName = materialName.substr(0, materialName.find_first_of('.'));
 
-		// #todo-material-assembler: Dump material shaders for debugging
+		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
+		splitNewlines(MT.sourceLines);
+		MT.updatePlaceholderIx();
+
+		// #todo-material-assembler: Original dump system now supports material shaders.
+#if 0
+		// Dump material shaders for debugging.
 		{
 			std::string dumppath = pathos::getSolutionDir();
 			dumppath += "log/material_dump/";
@@ -414,6 +410,7 @@ namespace pathos {
 			}
 			fs.close();
 		}
+#endif
 
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
 		{
@@ -440,10 +437,10 @@ namespace pathos {
 		MaterialShader* shader = new MaterialShader;
 		shader->name = materialName;
 		shader->shadingModel = shadingModel;
-		shader->sourceLines = std::move(MT.sourceLines);
 		shader->uboTotalBytes = uboTotalElements * 4;
 		shader->constantParameters = std::move(materialConstParameters);
 		shader->textureParameters = std::move(materialTextureParameters);
+		shader->generateShaderProgram(filename, &MT);
 
 		return shader;
 	}

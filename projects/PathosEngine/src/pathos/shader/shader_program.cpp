@@ -28,17 +28,33 @@ namespace pathos {
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
 						program->reload();
+						});
 					});
-				});
 				FLUSH_RENDER_COMMAND();
 				LOG(LogInfo, "End reloading shaders.");
-			});
+				});
 		}
 	} internal_recompileShaders;
 
-	ShaderProgram::ShaderProgram(const char* inDebugName, uint32 inProgramHash)
+	ShaderProgram* ShaderDB::findProgram(uint32 programHash) {
+		CHECK(isInRenderThread());
+		auto it = programMap.find(programHash);
+		if (it != programMap.end()) {
+			ShaderProgram* program = it->second;
+			program->checkFirstLoad();
+			return program;
+		}
+		return nullptr;
+	}
+
+}
+
+namespace pathos {
+
+	ShaderProgram::ShaderProgram(const char* inDebugName, uint32 inProgramHash, bool inIsMaterialProgram /*= false*/)
 		: debugName(inDebugName)
 		, programHash(inProgramHash)
+		, isMaterialProgram(inIsMaterialProgram)
 		, glName(0xffffffff)
 		, firstLoad(true)
 		, internal_justInstantiated(true)
@@ -67,8 +83,9 @@ namespace pathos {
 		// Try to compile shader stages
 		bool allCompiled = true;
 		bool allNotChanged = true;
+		bool checkSourceChanges = !isMaterialProgram; // #todo-material-assembler: Material shaders don't support runtime recompilation yet.
 		for (ShaderStage* shaderStage : shaderStages) {
-			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName);
+			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName, checkSourceChanges);
 			allCompiled = allCompiled && response != ShaderStage::CompileResponse::Failed;
 			allNotChanged = allNotChanged && response == ShaderStage::CompileResponse::NotChanged;
 		}
@@ -137,7 +154,6 @@ namespace pathos {
 		, debugName(inDebugName)
 		, glName(0)
 		, pendingGLName(0)
-		, filepath(nullptr)
 	{
 		CHECK( inShaderType == GL_VERTEX_SHADER
 			|| inShaderType == GL_GEOMETRY_SHADER
@@ -165,10 +181,15 @@ namespace pathos {
 	}
 
 	bool ShaderStage::loadSource() {
-		CHECK(filepath != nullptr);
+		CHECK(filepath.c_str() != nullptr);
 
 		sourceCode.clear();
 		return ShaderStage::loadSourceInternal(filepath, defines, 0, sourceCode);
+	}
+
+	void ShaderStage::setSourceCode(const std::string& inFilepath, std::vector<std::string>&& inSourceCode) {
+		filepath = inFilepath;
+		sourceCode = inSourceCode;
 	}
 
 	// #todo-shader: This is getting too dirty
@@ -261,26 +282,28 @@ namespace pathos {
 		return true;
 	}
 
-	ShaderStage::CompileResponse ShaderStage::tryCompile(const char* programName) {
-		std::vector<std::string> sourceCodeBackup = sourceCode;
-		loadSource();
+	ShaderStage::CompileResponse ShaderStage::tryCompile(const char* programName, bool checkSourceChanges) {
+		if (checkSourceChanges) {
+			std::vector<std::string> sourceCodeBackup = sourceCode;
+			loadSource();
 
-		bool sourceChanged = false;
-		if (sourceCode.size() == sourceCodeBackup.size()) {
-			for (size_t i = 0; i < sourceCode.size(); ++i) {
-				if (sourceCode[i] != sourceCodeBackup[i]) {
-					sourceChanged = true;
-					break;
+			bool sourceChanged = false;
+			if (sourceCode.size() == sourceCodeBackup.size()) {
+				for (size_t i = 0; i < sourceCode.size(); ++i) {
+					if (sourceCode[i] != sourceCodeBackup[i]) {
+						sourceChanged = true;
+						break;
+					}
 				}
+			} else {
+				sourceChanged = true;
 			}
-		} else {
-			sourceChanged = true;
-		}
-		if (sourceChanged == false) {
+			if (sourceChanged == false) {
 #if IGNORE_SAME_SHADERS_ON_RECOMPILE == 0
-			LOG(LogDebug, "%s: Source code is same.", debugName);
+				LOG(LogDebug, "%s: Source code is same.", debugName);
 #endif
-			return ShaderStage::CompileResponse::NotChanged;
+				return ShaderStage::CompileResponse::NotChanged;
+			}
 		}
 
 		if (pendingGLName != 0) {

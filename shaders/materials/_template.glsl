@@ -12,6 +12,9 @@
 // #todo-driver-bug: What's this :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
+// VERTEX_SHADER or FRAGMENT_SHADER
+$NEED SHADERSTAGE
+
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
 
@@ -50,19 +53,19 @@ struct MaterialAttributes_Unlit {
 struct MaterialAttributes_DefaultLit {
 	vec3 albedo;
 	vec3 normal;
-	vec3 metallic;
-	vec3 roughness;
+	float metallic;
+	float roughness;
 	vec3 emissive;
-	vec3 localAO;
+	float localAO;
 };
 
 struct MaterialAttributes_Translucent {
 	vec3 albedo;
 	vec3 normal;
-	vec3 metallic;
-	vec3 roughness;
+	float metallic;
+	float roughness;
 	vec3 emissive;
-	vec3 localAO;
+	float localAO;
 };
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
@@ -75,13 +78,15 @@ struct MaterialAttributes_Translucent {
 	#error "Invalid SHADINGMODEL. See common.glsl"
 #endif
 
+// #todo: GLSL spec says I should not use 'location' for inout interface block,
+//        but glslangvalidator says I should use one???
 // Interpolants (VS to PS)
 #if VERTEX_SHADER
 	#define INTERPOLANTS_QUALIFIER out
 #elif FRAGMENT_SHADER
 	#define INTERPOLANTS_QUALIFIER in
 #endif
-INTERPOLANTS_QUALIFIER Interpolants {
+layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
 	vec3 positionVS; // view space
 	vec3 position;   // local space
 	vec3 normal;     // local space
@@ -135,6 +140,8 @@ void main() {
 // Fragment shader
 
 #if FRAGMENT_SHADER
+
+#include "deferred_common_fs.glsl"
 
 vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
     vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
@@ -192,10 +199,10 @@ void main() {
 		attr.emissive);
 #endif
 
-#if WORKAROUND_RYZEN_6800U_BUG
+#if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
 	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)'
 	// in packGBuffer() is bugged only on Ryzen 6800U.
-	if (emissive.yz == vec2(0.0)) {
+	if (attr.emissive.yz == vec2(0.0)) {
 		packOutput2.z = 0;
 	}
 #endif

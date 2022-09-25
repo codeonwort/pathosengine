@@ -29,12 +29,12 @@ MaterialAttributes getMaterialAttributes() {
 	MaterialAttributes_DefaultLit attr;
 	vec2 uv = interpolants.texcoord;
 
-	attr.albedo    = texture(tex_albedo, uv);
-	attr.normal    = texture(tex_normal, uv);
-	attr.metallic  = texture(tex_metallic, uv);
-	attr.roughness = texture(tex_roughness, uv);
+	attr.albedo    = texture(tex_albedo, uv).rgb;
+	attr.normal    = texture(tex_normal, uv).rgb;
+	attr.metallic  = texture(tex_metallic, uv).r;
+	attr.roughness = texture(tex_roughness, uv).r;
 	attr.emissive  = vec3(0.0);
-	attr.localAo   = texture(tex_localAO, uv);
+	attr.localAO   = texture(tex_localAO, uv).r;
 
 	return attr;
 }

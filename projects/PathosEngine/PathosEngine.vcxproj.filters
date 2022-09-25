@@ -360,6 +360,9 @@
     <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\shader\material_shader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
