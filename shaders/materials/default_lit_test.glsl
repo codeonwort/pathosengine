@@ -4,6 +4,7 @@
 
 // #todo-material-assembler: For parsing test. Will be removed.
 PARAMETER_CONSTANT(vec3, albedoOverride)
+PARAMETER_CONSTANT(float, roughnessOverride)
 //PARAMETER_CONSTANT(ivec2, test2a)
 //PARAMETER_CONSTANT(uvec2, test2b)
 //PARAMETER_CONSTANT(vec4, test4a)
@@ -40,7 +41,7 @@ MaterialAttributes getMaterialAttributes() {
 	attr.albedo    = uboMaterial.albedoOverride;
 	attr.normal    = vec3(0.0, 0.0, 1.0);
 	attr.metallic  = 0.0;
-	attr.roughness = 1.0;
+	attr.roughness = uboMaterial.roughnessOverride;
 	attr.emissive  = vec3(0.0);
 	attr.localAO   = 1.0;
 	#endif

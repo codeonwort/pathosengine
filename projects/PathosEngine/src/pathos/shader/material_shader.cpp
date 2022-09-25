@@ -69,6 +69,15 @@ namespace pathos {
 		}
 	}
 
+	void MaterialShader::setParameterFloat(const char* name, float value) {
+		for (MaterialConstantParameter& mcp : constantParameters) {
+			if (mcp.name == name) {
+				mcp.fvalue[0] = value;
+				break;
+			}
+		}
+	}
+
 	void MaterialShader::setParameterVec3(const char* name, const vector3& value) {
 		for (MaterialConstantParameter& mcp : constantParameters) {
 			if (mcp.name == name) {

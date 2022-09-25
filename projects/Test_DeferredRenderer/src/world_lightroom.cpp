@@ -99,12 +99,16 @@ void World_LightRoom::setupScene() {
 
 	ColorMaterial* M_box = new ColorMaterial;
 	M_box->materialShader = pathos::findMaterialShader("default_lit_test");
-	M_box->materialShader->setParameterVec3("albedoOverride", vector3(1.0f, 0.0f, 0.0f));
+	M_box->materialShader->setParameterVec3("albedoOverride", vector3(0.9f, 0.9f, 0.9f));
+	M_box->materialShader->setParameterFloat("roughnessOverride", 0.2f);
 	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_box->setRoughness(0.2f);
 	M_box->setMetallic(0.0f);
 
 	ColorMaterial* M_ball = new ColorMaterial;
+	M_ball->materialShader = pathos::findMaterialShader("default_lit_test");
+	M_ball->materialShader->setParameterVec3("albedoOverride", vector3(0.9f, 0.9f, 0.9f));
+	M_ball->materialShader->setParameterFloat("roughnessOverride", 0.2f);
 	M_ball->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_ball->setRoughness(0.2f);
 	M_ball->setMetallic(0.0f);

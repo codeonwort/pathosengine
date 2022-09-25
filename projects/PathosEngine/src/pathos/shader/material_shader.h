@@ -47,6 +47,8 @@ namespace pathos {
 
 		void fillUniformBuffer(uint8* uboMemory);
 
+		// #todo-material-assembler: Template may require less typing?
+		void setParameterFloat(const char* name, float value);
 		void setParameterVec3(const char* name, const vector3& value);
 
 	// #todo-material-assembler: private

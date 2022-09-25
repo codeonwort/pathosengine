@@ -90,11 +90,12 @@ struct MaterialAttributes_Translucent {
 	#define INTERPOLANTS_QUALIFIER in
 #endif
 layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
-	vec3 positionVS; // view space
-	vec3 normal;     // local space
-	vec3 tangent;    // local space
-    vec3 bitangent;  // local space
-	vec2 texcoord;   // local space
+	// #todo-material-assembler: Optimize memory bandwidth
+	vec3 positionVS;   // view space
+	vec3 normal;       // local space
+	vec3 tangent;      // local space
+	vec3 bitangent;    // local space
+	vec2 texcoord;     // local space
 } interpolants;
 
 // Controls world position offset.
@@ -143,15 +144,11 @@ void main() {
 #include "deferred_common_fs.glsl"
 
 vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
-    vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
-    vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
-    vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
-    mat3 TBN = mat3(T, B, N);
-
-    vec3 norm = normalize(normalmap * 2.0 - 1.0);
-    norm = TBN * norm;
-
-    return norm;
+	vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
+	vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
+	vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
+	mat3 TBN = mat3(T, B, N);
+	return TBN * normalize(normalmap);
 }
 
 void main() {
@@ -159,7 +156,10 @@ void main() {
 
 #if SHADINGMODEL != MATERIAL_SHADINGMODEL_UNLIT
 	vec3 detailNormal = applyNormalMap(
-		interpolants.normal, interpolants.tangent, interpolants.bitangent, attr.normal);
+		normalize(interpolants.normal),
+		normalize(interpolants.tangent),
+		normalize(interpolants.bitangent),
+		attr.normal);
 #endif
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
