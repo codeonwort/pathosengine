@@ -8,8 +8,8 @@
 // #todo-material-assembler: Temporarily modify values
 // until MATERIAL_IDs in deferred_common.glsl are removed.
 // Must match with EMaterialDomain
-#define MATERIAL_SHADINGMODEL_UNLIT       0
-#define MATERIAL_SHADINGMODEL_DEFAULTLIT  8
-#define MATERIAL_SHADINGMODEL_TRANSLUCENT 9
+#define MATERIAL_SHADINGMODEL_UNLIT       1
+#define MATERIAL_SHADINGMODEL_DEFAULTLIT  2
+#define MATERIAL_SHADINGMODEL_TRANSLUCENT 3
 //#define MATERIAL_SHADINGMODEL_SKIN        3
 //#define MATERIAL_SHADINGMODEL_HAIR        4

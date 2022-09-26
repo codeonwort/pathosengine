@@ -63,11 +63,17 @@ void World_LightRoom::setupScene() {
 
 	MeshGeometry* G_ground = new PlaneGeometry(1000.0f, 1000.0f, 10, 10);
 
+#if 1
 	Material* M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.33f, 0.22f, 0.18f)); // brown
 	M_ground->setConstantParameter("roughness", 0.2f);
 	M_ground->setConstantParameter("metallic", 0.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
+#else
+	// unlit test
+	Material* M_ground = Material::createMaterialInstance("unlit");
+	M_ground->setConstantParameter("color", vector3(0.0f, 0.0f, 0.5f));
+#endif
 
 	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	ground->setStaticMesh(new Mesh(G_ground, M_ground));

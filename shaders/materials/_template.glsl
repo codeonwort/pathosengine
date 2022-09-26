@@ -179,14 +179,14 @@ void main() {
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
 	packGBuffer(
-		vec3(0.0),
+		attr.color, // Unlit color into albedo
 		vec3(0.0),
 		SHADINGMODEL,
 		interpolants.positionVS,
 		0.0,
 		0.0,
 		1.0,
-		attr.color);
+		vec3(0.0));
 #endif
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
