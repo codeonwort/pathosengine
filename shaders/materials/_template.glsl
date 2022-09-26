@@ -109,27 +109,27 @@ $NEED getMaterialAttributes
 
 #if VERTEX_SHADER
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texcoord;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in vec3 tangent;
-layout (location = 4) in vec3 bitangent;
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec2 inTexcoord;
+layout (location = 2) in vec3 inNormal;
+layout (location = 3) in vec3 inTangent;
+layout (location = 4) in vec3 inBitangent;
 
 void main() {
 	mat4 model = uboPerObject.modelTransform;
 	mat4 view = uboPerFrame.viewTransform;
 	mat4 proj = uboPerFrame.projTransform;
 
-	vec4 positionWS = model * vec4(position, 1.0);
+	vec4 positionWS = model * vec4(inPosition, 1.0);
 	positionWS.xyz += getVertexPositionOffset();
 
 	vec4 positionVS = view * positionWS;
 
 	interpolants.positionVS  = positionVS.xyz;
-	interpolants.normal      = normal;
-	interpolants.tangent     = tangent;
-	interpolants.bitangent   = bitangent;
-	interpolants.texcoord    = texcoord;
+	interpolants.normal      = inNormal;
+	interpolants.tangent     = inTangent;
+	interpolants.bitangent   = inBitangent;
+	interpolants.texcoord    = inTexcoord;
 
 	gl_Position = proj * positionVS;
 }

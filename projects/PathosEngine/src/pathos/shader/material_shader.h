@@ -7,10 +7,11 @@
 #include <vector>
 #include <string>
 
+// #todo-material-assembler: Wanna get rid of GLuint from this header.
+typedef unsigned int GLuint;
+
 namespace pathos {
 
-	// #todo-material-assembler: Wanna get rid of GLuint from this header.
-	typedef unsigned int GLuint;
 	struct MaterialTemplate;
 	class ShaderProgram;
 
@@ -63,8 +64,8 @@ namespace pathos {
 				|| (mcp->datatype == EMaterialParameterDataType::Int && isInt)
 				|| (mcp->datatype == EMaterialParameterDataType::Uint && isUint)
 				|| (mcp->datatype == EMaterialParameterDataType::Bool && isBool), "Element types of MCP and given value are different");
-			// #todo-material-assembler: Is it OK for bool vectors?
-			CHECKF(mcp->numElements == sizeof(ValueType) / 4, "Num elements of MCP and given value are different");
+			constexpr size_t valueSize = isBool ? sizeof(ValueType) : (sizeof(ValueType) / 4);
+			CHECKF(mcp->numElements == valueSize, "Num elements of MCP and given value are different");
 
 			void* dst = nullptr;
 			// #todo-cpp17
@@ -72,18 +73,14 @@ namespace pathos {
 			if /*constexpr*/ (isInt) dst = &(mcp->ivalue[0]);
 			if /*constexpr*/ (isUint) dst = &(mcp->uvalue[0]);
 			if /*constexpr*/ (isBool) dst = &(mcp->bvalue[0]);
-			// #todo-material-assembler: Is it OK for bool vectors?
 			memcpy_s(dst, sizeof(ValueType), &value, sizeof(ValueType));
 		}
 
-		MaterialConstantParameter* findConstantParameter(const char* name) {
-			for (MaterialConstantParameter& mcp : constantParameters) {
-				if (mcp.name == name) {
-					return &mcp;
-				}
-			}
-			return nullptr;
-		}
+		MaterialConstantParameter* findConstantParameter(const char* name);
+
+		void setTextureParameter(const char* name, GLuint glTexture);
+
+		MaterialTextureParameter* findTextureParameter(const char* name);
 
 	// #todo-material-assembler: private
 	public:

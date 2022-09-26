@@ -12,6 +12,7 @@
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
+#include "pathos/shader/material_shader.h"
 
 // --------------------------------------------------------
 // Constants
@@ -210,6 +211,21 @@ void World1::setupScene()
 
 		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
 		material_pbr->writeAllPixels = !maskedMaterial;
+
+		// #todo-material-assembler: Test if pbr_texture material works well
+		MaterialShader* ms_pbrTexture = pathos::findMaterialShader("pbr_texture");
+		ms_pbrTexture->setConstantParameter("bOverrideAlbedo", false);
+		ms_pbrTexture->setConstantParameter("bOverrideNormal", false);
+		ms_pbrTexture->setConstantParameter("bOverrideMetallic", false);
+		ms_pbrTexture->setConstantParameter("bOverrideRoughness", false);
+		ms_pbrTexture->setConstantParameter("bOverrideLocalAO", false);
+		ms_pbrTexture->setConstantParameter("emissiveConstant", vector3(0.0f));
+		ms_pbrTexture->setTextureParameter("albedo", albedo);
+		ms_pbrTexture->setTextureParameter("normal", normal);
+		ms_pbrTexture->setTextureParameter("metallic", metallic);
+		ms_pbrTexture->setTextureParameter("roughness", roughness);
+		ms_pbrTexture->setTextureParameter("localAO", ao);
+		material_pbr->materialShader = ms_pbrTexture;
 	}
 
 	// --------------------------------------------------------

@@ -67,4 +67,28 @@ namespace pathos {
 		}
 	}
 
+	MaterialConstantParameter* MaterialShader::findConstantParameter(const char* name) {
+		for (MaterialConstantParameter& mcp : constantParameters) {
+			if (mcp.name == name) {
+				return &mcp;
+			}
+		}
+		return nullptr;
+	}
+
+	void MaterialShader::setTextureParameter(const char* name, GLuint glTexture) {
+		MaterialTextureParameter* mtp = findTextureParameter(name);
+		CHECKF(mtp != nullptr, "Can't find material texture parameter");
+		mtp->glTexture = glTexture;
+	}
+
+	MaterialTextureParameter* MaterialShader::findTextureParameter(const char* name) {
+		for (MaterialTextureParameter& mtp : textureParameters) {
+			if (mtp.name == name) {
+				return &mtp;
+			}
+		}
+		return nullptr;
+	}
+
 }

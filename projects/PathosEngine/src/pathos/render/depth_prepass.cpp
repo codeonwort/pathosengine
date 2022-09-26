@@ -216,6 +216,9 @@ namespace pathos {
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
+				// #todo-material-assembler: Bind texture units like base pass?
+				// How to detect if a vertex shader uses VTF(Vertex Texture Fetch)?
+
 				proxy->geometry->activate_position(cmdList);
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);

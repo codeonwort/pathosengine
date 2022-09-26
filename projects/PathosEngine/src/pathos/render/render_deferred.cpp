@@ -533,6 +533,11 @@ namespace pathos {
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
+				// Bind texture units
+				for (const MaterialTextureParameter& mtp : materialShader->textureParameters) {
+					cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+				}
+
 				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
