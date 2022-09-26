@@ -42,4 +42,11 @@ namespace pathos {
 		outTextures = textureParameters;
 	}
 
+	uint32 MaterialShader::getNextInstanceID() {
+		// #todo-material: Needs atomic?
+		uint32 id = lastInstanceID;
+		++lastInstanceID;
+		return id;
+	}
+
 }

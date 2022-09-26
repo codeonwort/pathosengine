@@ -97,29 +97,17 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
 	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
 
-	// #todo-material-assembler: Support material instances
-	// #todo-material-assembler: Support default values for constant parameters
-	MaterialShader* MS_solidColor = pathos::findMaterialShader("solid_color");
-
-	ColorMaterial* M_box = new ColorMaterial;
-	M_box->bindMaterialShader(MS_solidColor);
+	Material* M_box = pathos::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	M_box->setConstantParameter("roughness", 0.2f);
 	M_box->setConstantParameter("metallic", 0.0f);
 	M_box->setConstantParameter("emissive", vector3(0.0f));
-	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
-	M_box->setRoughness(0.2f);
-	M_box->setMetallic(0.0f);
 
-	ColorMaterial* M_ball = new ColorMaterial;
-	M_ball->bindMaterialShader(MS_solidColor);
-	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.5f, 0.5f));
+	Material* M_ball = pathos::createMaterialInstance("solid_color");
+	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
 	M_ball->setConstantParameter("roughness", 0.3f);
 	M_ball->setConstantParameter("metallic", 0.0f);
 	M_ball->setConstantParameter("emissive", vector3(0.0f));
-	M_ball->setAlbedo(0.9f, 0.9f, 0.9f);
-	M_ball->setRoughness(0.2f);
-	M_ball->setMetallic(0.0f);
 
 	box = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	box->setStaticMesh(new Mesh(G_box, M_box));

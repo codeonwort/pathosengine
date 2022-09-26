@@ -56,7 +56,8 @@ namespace pathos {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
 			uint8 materialID = static_cast<uint8>(M->getMaterialID());
-			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
+			bool useMaterialShader = (M->internal_getMaterialShader() != nullptr);
+			CHECKF(useMaterialShader || (!useMaterialShader && 0 <= materialID && materialID < numMaterialIDs), "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;

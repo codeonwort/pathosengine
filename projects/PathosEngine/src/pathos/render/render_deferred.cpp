@@ -493,6 +493,7 @@ namespace pathos {
 			std::vector<StaticMeshProxy*>& proxyList = scene->proxyList_staticMeshTemp;
 			const size_t numProxies = proxyList.size();
 			uint32 currentProgramHash = 0;
+			uint32 currentMIID = 0xffffffff;
 
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
@@ -504,12 +505,10 @@ namespace pathos {
 					continue;
 				}
 
-				bool bShouldBindProgram = false;
-
-				if (currentProgramHash != materialShader->programHash) {
-					bShouldBindProgram = true;
-					currentProgramHash = materialShader->programHash;
-				}
+				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
+				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				currentProgramHash = materialShader->programHash;
+				currentMIID = material->internal_getMaterialInstanceID();
 
 				if (bShouldBindProgram) {
 					//SCOPED_DRAW_EVENT(BindMaterialProgram);
@@ -528,15 +527,17 @@ namespace pathos {
 				}
 
 				// Update UBO (material)
-				if (materialShader->uboTotalBytes > 0) {
+				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
 					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
 					material->internal_fillUniformBuffer(uboMemory);
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
 				// Bind texture units
-				for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
-					cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+				if (bShouldUpdateMaterialParameters) {
+					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+					}
 				}
 
 				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);

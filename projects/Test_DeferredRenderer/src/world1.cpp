@@ -197,7 +197,7 @@ void World1::setupScene()
 	}
 
 	// PBR material
-	PBRTextureMaterial* material_pbr;
+	Material* material_pbr;
 	{
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
@@ -209,11 +209,10 @@ void World1::setupScene()
 		GLuint roughness = pathos::createTextureFromBitmap(loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
 		GLuint ao = pathos::createTextureFromBitmap(loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
 
-		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
-		material_pbr->writeAllPixels = !maskedMaterial;
+		// #todo-material-assembler: Support masked material
+		//material_pbr->writeAllPixels = !maskedMaterial;
 
-		// #todo-material-assembler: Test if pbr_texture material works well
-		material_pbr->bindMaterialShader(pathos::findMaterialShader("pbr_texture"));
+		material_pbr = pathos::createMaterialInstance("pbr_texture");
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
 		material_pbr->setConstantParameter("bOverrideMetallic", false);

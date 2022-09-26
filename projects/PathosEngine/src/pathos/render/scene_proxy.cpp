@@ -40,13 +40,18 @@ namespace pathos {
 	}
 
 	void SceneProxy::finalize_mainThread() {
-		// Sort material shaders
+		// Sort material shaders first by program, then by material instance ID.
 		auto& v = proxyList_staticMeshTemp;
 		std::sort(v.begin(), v.end(),
 			[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
-				const uint32 hashA = A->material->internal_getMaterialShader()->programHash;
-				const uint32 hashB = B->material->internal_getMaterialShader()->programHash;
-				return A < B;
+				const uint32 programA = A->material->internal_getMaterialShader()->programHash;
+				const uint32 programB = B->material->internal_getMaterialShader()->programHash;
+				if (programA != programB) {
+					return A < B;
+				}
+				const uint32 midA = A->material->internal_getMaterialInstanceID();
+				const uint32 midB = B->material->internal_getMaterialInstanceID();
+				return midA < midB;
 			}
 		);
 	}

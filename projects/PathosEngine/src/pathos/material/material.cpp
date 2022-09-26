@@ -7,12 +7,19 @@
 
 namespace pathos {
 
-	MaterialShader* findMaterialShader(const char* materialName) {
-		return MaterialShaderAssembler::get().findMaterialShader(materialName);
+	pathos::Material* createMaterialInstance(const char* materialName) {
+		const uint32 hash = COMPILE_TIME_CRC32_STR(materialName);
+		MaterialShader* ms = MaterialShaderAssembler::get().findMaterialShaderByHash(hash);
+		CHECKF(ms != nullptr, "Invalid material name");
+		uint32 instanceID = ms->getNextInstanceID();
+		Material* material = new Material;
+		material->internal_bindMaterialShader(ms, instanceID);
+		return material;
 	}
 
-	void Material::bindMaterialShader(MaterialShader* inMaterialShader) {
+	void Material::internal_bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID) {
 		materialShader = inMaterialShader;
+		materialInstanceID = inInstanceID;
 		materialShader->extractMaterialParameters(constantParameters, textureParameters);
 	}
 

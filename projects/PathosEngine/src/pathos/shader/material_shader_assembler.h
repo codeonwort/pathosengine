@@ -1,5 +1,10 @@
 #pragma once
 
+#include "badger/types/int_types.h"
+#include <vector>
+#include <string>
+#include <map>
+
 namespace pathos {
 
 	class MaterialShader;
@@ -66,8 +71,8 @@ namespace pathos {
 
 		void initializeMaterialShaders();
 
-		MaterialShader* findMaterialShader(const char* materialName);
-		const std::vector<MaterialShader*>& getMaterialShaders() const { return materialShaders; }
+		MaterialShader* findMaterialShaderByName(const char* materialName);
+		MaterialShader* findMaterialShaderByHash(uint32 materialNameHash);
 
 	private:
 		// Load material template files.
@@ -86,7 +91,7 @@ namespace pathos {
 		MaterialTemplate* materialTemplate = nullptr;
 		bool bTemplateLoaded = false;
 
-		std::vector<MaterialShader*> materialShaders;
+		std::map<uint32, MaterialShader*> materialShaderMap;
 
 	};
 

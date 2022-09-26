@@ -12,11 +12,7 @@ typedef unsigned int GLuint;
 
 namespace pathos {
 
-	MaterialShader* findMaterialShader(const char* materialName);
-
-}
-
-namespace pathos {
+	class Material* createMaterialInstance(const char* materialName);
 
 	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
@@ -26,10 +22,6 @@ namespace pathos {
 		virtual ~Material() = default;
 
 		MATERIAL_ID getMaterialID() { return materialID; }
-
-		// #todo-material-assembler: Temp initializer.
-		// Ultimately, a MaterialShader will be bound when a Material is created.
-		void bindMaterialShader(MaterialShader* inMaterialShader);
 
 		template<typename ValueType>
 		void setConstantParameter(const char* name, const ValueType& value) {
@@ -67,9 +59,14 @@ namespace pathos {
 
 	// CAUTION: INTERNAL USE ONLY
 	public:
-		MaterialShader* internal_getMaterialShader() const { return materialShader; }
-		const std::vector<MaterialTextureParameter>& internal_getTextureParameters() const { return textureParameters; }
+		// #todo-material-assembler: Temp initializer.
+		// Ultimately, a MaterialShader will be bound when a Material is created.
+		void internal_bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID);
 		void internal_fillUniformBuffer(uint8* uboMemory);
+
+		MaterialShader* internal_getMaterialShader() const { return materialShader; }
+		uint32 internal_getMaterialInstanceID() const { return materialInstanceID; }
+		const std::vector<MaterialTextureParameter>& internal_getTextureParameters() const { return textureParameters; }
 
 	protected:
 		// IMPORTANT: Child classes should initialize this in their constructors
@@ -82,6 +79,7 @@ namespace pathos {
 		// 3. Replace old materials with new materials.
 		// 4. Obliterate MATERIAL_ID and Material subclasses.
 		MaterialShader* materialShader = nullptr;
+		uint32 materialInstanceID = 0xffffffff;
 
 		std::vector<MaterialConstantParameter> constantParameters;
 		std::vector<MaterialTextureParameter> textureParameters;

@@ -51,6 +51,8 @@ namespace pathos {
 			std::vector<MaterialConstantParameter>& outConstants,
 			std::vector<MaterialTextureParameter>& outTextures);
 
+		uint32 getNextInstanceID();
+
 	// #todo-material-assembler: private
 	public:
 		std::string materialName;
@@ -68,6 +70,8 @@ namespace pathos {
 		std::string nameFS;
 
 	private:
+		uint32 lastInstanceID = 0;
+
 		// These are just ketp as original data.
 		// Actual parameter values are controlled by Material.
 		std::vector<MaterialConstantParameter> constantParameters;

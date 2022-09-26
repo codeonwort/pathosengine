@@ -96,8 +96,17 @@ namespace pathos {
 		parseAllMaterialShaders();
 	}
 
-	MaterialShader* MaterialShaderAssembler::findMaterialShader(const char* materialName) {
-		for (MaterialShader* ms : materialShaders) {
+	MaterialShader* MaterialShaderAssembler::findMaterialShaderByHash(uint32 materialNameHash) {
+		auto it = materialShaderMap.find(materialNameHash);
+		if (it == materialShaderMap.end()) {
+			return nullptr;
+		}
+		return it->second;
+	}
+
+	MaterialShader* MaterialShaderAssembler::findMaterialShaderByName(const char* materialName) {
+		for (auto it = materialShaderMap.begin(); it != materialShaderMap.end(); ++it) {
+			MaterialShader* ms = it->second;
 			if (ms->materialName == materialName) {
 				return ms;
 			}
@@ -143,9 +152,7 @@ namespace pathos {
 			
 			std::string materialPath = shaderDir + filename;
 			MaterialShader* material = generateMaterialShader(materialPath.c_str(), filename.c_str());
-			// #todo-material-assembler: Replace with fallback material
 			CHECK(material != nullptr);
-			materialShaders.push_back(material);
 		}
 	}
 
@@ -210,6 +217,12 @@ namespace pathos {
 			LOG(LogError, "[Material] Failed to open: %s", fullpath);
 			return nullptr;
 		}
+
+		std::string materialName = filename;
+		materialName = materialName.substr(0, materialName.find_first_of('.'));
+
+		const uint32 materialNameHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
+		CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
 
 		// Gather original lines
 		std::vector<std::string> materialLines;
@@ -401,9 +414,6 @@ namespace pathos {
 		}
 		MT.replaceAttr(attrs);
 
-		std::string materialName = filename;
-		materialName = materialName.substr(0, materialName.find_first_of('.'));
-
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
 		splitNewlines(MT.sourceLines);
 		MT.updatePlaceholderIx();
@@ -440,6 +450,7 @@ namespace pathos {
 		shader->textureParameters = std::move(materialTextureParameters);
 		shader->generateShaderProgram(filename, &MT);
 
+		materialShaderMap[materialNameHash] = shader;
 		return shader;
 	}
 
