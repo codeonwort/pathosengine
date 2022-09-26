@@ -14,6 +14,7 @@ namespace pathos {
 		uint32 instanceID = ms->getNextInstanceID();
 		Material* material = new Material;
 		material->bindMaterialShader(ms, instanceID);
+		material->materialName = materialName;
 		return material;
 	}
 

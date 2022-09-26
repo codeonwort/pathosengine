@@ -189,17 +189,15 @@ namespace pathos {
 			}
 			else
 			{
-				ColorMaterial* solidColor = new ColorMaterial;
+				M = Material::createMaterialInstance("solid_color");
 				
 				// #todo-loader: What to do with ambient and specular
  				//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
  				//solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
-				solidColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
-				solidColor->setMetallic(t_mat.metallic);
-				solidColor->setRoughness(t_mat.roughness);
-				solidColor->setEmissive(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]);
-
-				M = solidColor;
+				M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
+				M->setConstantParameter("metallic", t_mat.metallic);
+				M->setConstantParameter("roughness", t_mat.roughness);
+				M->setConstantParameter("emissive", vector3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]));
 			}
 
 			M->setName(t_mat.name);
@@ -207,9 +205,11 @@ namespace pathos {
 		}
 
 		// used for shapes whose material id is invalid
-		defaultMaterial = new ColorMaterial;
-		ColorMaterial* M = defaultMaterial;
-		M->setAlbedo(0.0f, 1.0f, 0.0f);
+		defaultMaterial = Material::createMaterialInstance("solid_color");
+		defaultMaterial->setConstantParameter("albedo", vector3(0.0f, 0.9f, 0.0f));
+		defaultMaterial->setConstantParameter("metallic", 0.0f);
+		defaultMaterial->setConstantParameter("roughness", 0.9f);
+		defaultMaterial->setConstantParameter("emissive", vector3(0.0f));
 	}
 
 	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& tiny_attrib, std::vector<PendingShape>& outPendingShapes) {

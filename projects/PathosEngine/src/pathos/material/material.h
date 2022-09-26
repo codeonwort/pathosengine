@@ -14,6 +14,7 @@ namespace pathos {
 
 	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
+	// #todo-material-assembler: Detach from NamedObject
 	class Material : public NamedObject {
 
 	public:
@@ -25,6 +26,8 @@ namespace pathos {
 		virtual ~Material() = default;
 
 		MATERIAL_ID getMaterialID() { return materialID; }
+
+		const std::string& getMaterialName() const { return materialName; }
 
 		template<typename ValueType>
 		void setConstantParameter(const char* name, const ValueType& value) {
@@ -85,6 +88,7 @@ namespace pathos {
 		// 4. Obliterate MATERIAL_ID and Material subclasses.
 		MaterialShader* materialShader = nullptr;
 		uint32 materialInstanceID = 0xffffffff;
+		std::string materialName;
 
 		std::vector<MaterialConstantParameter> constantParameters;
 		std::vector<MaterialTextureParameter> textureParameters;

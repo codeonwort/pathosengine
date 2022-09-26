@@ -80,7 +80,7 @@ namespace pathos {
 		bool bIsValid;
 
 		// Fallback material if there's no matching material for that within .mtl
-		ColorMaterial* defaultMaterial = nullptr;
+		Material* defaultMaterial = nullptr;
 
 		std::vector<tinyobj::shape_t> t_shapes;
 		std::vector<tinyobj::material_t> t_materials;

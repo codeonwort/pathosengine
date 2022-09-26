@@ -181,23 +181,20 @@ void World1::setupScene()
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("resources/textures/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("resources/textures/154_norm.jpg"), true, false);
 
-	auto material_color = new ColorMaterial;
-	{
-		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(0.9f, 0.2f, 0.2f);
-		color->setMetallic(0.0f);
-		color->setRoughness(0.1f);
-	}
-	Material* material_mirrorGround = new ColorMaterial;
-	{
-		auto color = static_cast<ColorMaterial*>(material_mirrorGround);
-		color->setAlbedo(0.9f, 0.9f, 0.9f);
-		color->setMetallic(0.0f);
-		color->setRoughness(0.0f);
-	}
+	Material* material_color = Material::createMaterialInstance("solid_color");
+	material_color->setConstantParameter("albedo", vector3(0.9f, 0.2f, 0.2f));
+	material_color->setConstantParameter("metallic", 0.0f);
+	material_color->setConstantParameter("roughness", 0.1f);
+	material_color->setConstantParameter("emissive", vector3(0.0f));
+
+	Material* material_mirrorGround = Material::createMaterialInstance("solid_color");
+	material_mirrorGround->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	material_mirrorGround->setConstantParameter("metallic", 0.0f);
+	material_mirrorGround->setConstantParameter("roughness", 0.0f);
+	material_mirrorGround->setConstantParameter("emissive", vector3(0.0f));
 
 	// PBR material
-	Material* material_pbr;
+	Material* material_pbr = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
@@ -212,7 +209,6 @@ void World1::setupScene()
 		// #todo-material-assembler: Support masked material
 		//material_pbr->writeAllPixels = !maskedMaterial;
 
-		material_pbr = Material::createMaterialInstance("pbr_texture");
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
 		material_pbr->setConstantParameter("bOverrideMetallic", false);
@@ -283,10 +279,11 @@ void World1::setupScene()
 		balls.push_back(ball);
 	}
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
-		ColorMaterial* ball_material = new ColorMaterial;
-		ball_material->setAlbedo(0.5f, 0.3f, 0.3f);
-		ball_material->setMetallic(0.2f);
-		ball_material->setRoughness((float)i / NUM_BALLS);
+		Material* ball_material = Material::createMaterialInstance("solid_color");
+		ball_material->setConstantParameter("albedo", vector3(0.5f, 0.3f, 0.3f));
+		ball_material->setConstantParameter("metallic", 0.0f);
+		ball_material->setConstantParameter("roughness", (float)i / NUM_BALLS);
+		ball_material->setConstantParameter("emissive", vector3(0.0f));
 
 		StaticMeshActor* ball = spawnActor<StaticMeshActor>();
 		ball->setStaticMesh(new Mesh(geom_cube, ball_material));
@@ -300,10 +297,12 @@ void World1::setupScene()
 	constexpr float box_spaceX = 20.0f;
 	constexpr float box_spaceY = 20.0f;
 	float sinT = 0.0f;
-	ColorMaterial* box_material = new ColorMaterial;
-	box_material->setAlbedo(0.9f, 0.9f, 0.9f);
-	box_material->setMetallic(0.0f);
-	box_material->setRoughness(0.5f);
+	Material* box_material = Material::createMaterialInstance("solid_color");
+
+	box_material->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	box_material->setConstantParameter("metallic", 0.0f);
+	box_material->setConstantParameter("roughness", 0.5f);
+	box_material->setConstantParameter("emissive", vector3(0.0f));
 	for (uint32 i = 0; i < 16; ++i)
 	{
 		for (uint32 j = 0; j < 16; ++j)
@@ -350,11 +349,11 @@ void World1::setupScene()
 
 	// --------------------------------------------------------
 	// Bloom test
-	ColorMaterial* material_tooBright = new ColorMaterial;
-	material_tooBright->setAlbedo(0.0f, 0.0f, 0.0f);
-	material_tooBright->setMetallic(0.0f);
-	material_tooBright->setRoughness(1.0f);
-	material_tooBright->setEmissive(100.0f, 0.0f, 0.0f);
+	Material* material_tooBright = Material::createMaterialInstance("solid_color");
+	material_tooBright->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
+	material_tooBright->setConstantParameter("metallic", 0.0f);
+	material_tooBright->setConstantParameter("roughness", 1.0f);
+	material_tooBright->setConstantParameter("emissive", vector3(100.0f, 0.0f, 0.0f));
 	StaticMeshActor* bloomActor = spawnActor<StaticMeshActor>();
 	bloomActor->setActorLocation(200.0f, 80.0f, 600.0f);
 	bloomActor->setActorScale(20.0f);
@@ -377,9 +376,8 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	objModel->setActorLocation(desc.location);
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
-		ColorMaterial* CM = dynamic_cast<ColorMaterial*>(M);
-		if (CM) {
-			CM->setRoughness(1.0f);
+		if (M->getMaterialName() == "solid_color") {
+			M->setConstantParameter("roughness", 1.0f);
 		}
 	}
 

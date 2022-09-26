@@ -13,18 +13,27 @@ TransformTestActor::TransformTestActor()
 	root = createDefaultComponent<StaticMeshComponent>();
 	setAsRootComponent(root);
 
+	Material* M_base = Material::createMaterialInstance("solid_color");
+	M_base->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
+	M_base->setConstantParameter("metallic", 0.0f);
+	M_base->setConstantParameter("roughness", 0.9f);
+	M_base->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
+
 	MeshGeometry* rootG = new SphereGeometry(10.0f);
-	ColorMaterial* rootM = new ColorMaterial;
-	rootM->setRoughness(0.35f);
+	Material* rootM = Material::createMaterialInstance("solid_color");
+	rootM->copyParametersFrom(M_base);
+	rootM->setConstantParameter("roughness", 0.35f);
 	root->setStaticMesh(new Mesh(rootG, rootM));
 
 	MeshGeometry* starG = new CubeGeometry(vector3(10.0f, 10.0f, 10.0f));
-	ColorMaterial* starM = new ColorMaterial;
-	starM->setEmissive(1.0f, 1.0f, 5.0f);
+	Material* starM = Material::createMaterialInstance("solid_color");
+	starM->copyParametersFrom(M_base);
+	starM->setConstantParameter("emissive", vector3(1.0f, 1.0f, 5.0f));
 
 	MeshGeometry* moonG = new CubeGeometry(vector3(3.0f, 3.0f, 3.0f));
-	ColorMaterial* moonM = new ColorMaterial;
-	moonM->setAlbedo(0.9f, 0.9f, 0.1f);
+	Material* moonM = Material::createMaterialInstance("solid_color");
+	moonM->copyParametersFrom(M_base);
+	moonM->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.1f));
 
 	for (int32 i = 0; i < numStars; ++i) {
 		StaticMeshComponent* star = createDefaultComponent<StaticMeshComponent>();

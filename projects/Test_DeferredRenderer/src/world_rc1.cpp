@@ -248,14 +248,6 @@ void World_RC1::setupScene()
 	//////////////////////////////////////////////////////////////////////////
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
 
-	auto material_color = new ColorMaterial;
-	{
-		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(2.0f, 0.2f, 0.2f);
-		color->setMetallic(0.2f);
-		color->setRoughness(0.1f);
-	}
-
 	PBRTextureMaterial* material_pbr;
 	{
 		constexpr bool genMips = true;
@@ -334,10 +326,12 @@ RingActor::RingActor()
 {
 	G = new ProceduralGeometry;
 	
-	M = new ColorMaterial;
-	M->setAlbedo(1.8f, 1.8f, 1.8f);
-	M->setRoughness(1.0f);
-	M->setMetallic(0.0f);
+	// #todo: This is overriden. No use.
+	M = Material::createMaterialInstance("solid_color");
+	M->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	M->setConstantParameter("metallic", 0.0f);
+	M->setConstantParameter("roughness", 1.0f);
+	M->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
 	setStaticMesh(new Mesh(G, M));
 }

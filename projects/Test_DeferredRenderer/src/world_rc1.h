@@ -10,7 +10,7 @@ using namespace pathos;
 
 namespace pathos {
 	class ProceduralGeometry;
-	class ColorMaterial;
+	class Material;
 	class OBJLoader;
 	class TextMeshActor;
 }
@@ -23,8 +23,8 @@ public:
 	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
 	vector3 getRandomInnerPosition() const;
 private:
-	class ProceduralGeometry* G;
-	class ColorMaterial* M;
+	ProceduralGeometry* G;
+	Material* M;
 	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };
 

@@ -152,12 +152,14 @@ namespace pathos {
 				}
 			}
 			
+			// #todo-material-assembler: Update even if garbage data
+			// as I'm always activating all buffers for the new draw path.
 			// construct geometry
 			MeshGeometry* G = new MeshGeometry;
-			if (ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);
-			if (ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);
-			if (ai_mesh->HasTextureCoords(0)) G->updateUVData(texcoords.data(), 2 * N);
-			if (ai_mesh->HasTangentsAndBitangents()) {
+			if (true || ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);
+			if (true || ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);
+			if (true || ai_mesh->HasTextureCoords(0)) G->updateUVData(texcoords.data(), 2 * N);
+			if (true || ai_mesh->HasTangentsAndBitangents()) {
 				G->updateTangentData(tangents.data(), 3 * N);
 				G->updateBitangentData(bitangents.data(), 3 * N);
 			}
@@ -181,8 +183,11 @@ namespace pathos {
 				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
 				M = PBRTextureMaterial::createWithFallback(diffuseTex);
 			} else {
-				M = new ColorMaterial;
-				static_cast<ColorMaterial*>(M)->setAlbedo(1.0f, 0.0f, 0.0f);
+				M = Material::createMaterialInstance("solid_color");
+				M->setConstantParameter("albedo", vector3(0.9f, 0.0f, 0.0f));
+				M->setConstantParameter("metallic", 0.0f);
+				M->setConstantParameter("roughness", 0.8f);
+				M->setConstantParameter("emissive", vector3(0.0f));
 			}
 
 			// add GM pair to the mesh

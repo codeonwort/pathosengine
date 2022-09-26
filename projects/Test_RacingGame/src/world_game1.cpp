@@ -50,10 +50,11 @@ void World_Game1::onTick(float deltaSeconds)
 
 void World_Game1::prepareAssets()
 {
-	auto M_color = new ColorMaterial;
-	M_color->setAlbedo(1.0f, 0.1f, 0.1f);
-	M_color->setMetallic(0.0f);
-	M_color->setRoughness(0.2f);
+	Material* M_color = Material::createMaterialInstance("solid_color");
+	M_color->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
+	M_color->setConstantParameter("metallic", 0.0f);
+	M_color->setConstantParameter("roughness", 0.2f);
+	M_color->setConstantParameter("emissive", vector3(0.0f));
 
 	GLuint landscapeTexture = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
 	auto M_landscape = PBRTextureMaterial::createWithFallback(landscapeTexture);
