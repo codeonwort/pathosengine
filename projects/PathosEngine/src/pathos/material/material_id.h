@@ -6,10 +6,9 @@ namespace pathos {
 
 	// #todo-material: Deprecate this
 	enum class MATERIAL_ID : uint8 {
-		SOLID_COLOR = 0,
-		WIREFRAME = 2,
-		ALPHA_ONLY_TEXTURE = 7,
-		PBR_TEXTURE = 8,
+		WIREFRAME               = 2,
+		ALPHA_ONLY_TEXTURE      = 7,
+		PBR_TEXTURE             = 8,
 		TRANSLUCENT_SOLID_COLOR = 9,
 
 		NUM_MATERIAL_IDS = 10,

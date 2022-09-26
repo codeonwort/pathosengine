@@ -76,7 +76,7 @@ vec3 getGlobalIllumination(GBufferData gbufferData) {
 	uint ID = gbufferData.material_id;
 	vec3 irradiance = vec3(0.0);
 
-	if(ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR) {
+	if (ID == MATERIAL_ID_PBR) {
 		irradiance.rgb = getIBL(gbufferData);
 	}
 

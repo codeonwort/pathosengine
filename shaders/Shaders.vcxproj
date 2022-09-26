@@ -35,8 +35,6 @@
     <None Include="deferred_pack_bumptexture_vs.glsl" />
     <None Include="deferred_pack_pbr_fs.glsl" />
     <None Include="deferred_pack_pbr_vs.glsl" />
-    <None Include="deferred_pack_solidcolor_fs.glsl" />
-    <None Include="deferred_pack_solidcolor_vs.glsl" />
     <None Include="deferred_pack_texture_fs.glsl" />
     <None Include="deferred_pack_texture_vs.glsl" />
     <None Include="deferred_pack_wireframe_fs.glsl" />

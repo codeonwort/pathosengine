@@ -348,7 +348,7 @@ vec3 getLocalIllumination(GBufferData gbufferData) {
 	vec3 result = vec3(0.0, 0.0, 0.0);
 	if (ID == MATERIAL_ID_WIREFRAME || ID == MATERIAL_ID_ALPHAONLY) {
 		result = gbufferData.albedo;
-	} else if (ID == MATERIAL_ID_SOLID_COLOR || ID == MATERIAL_ID_PBR || ID == MATERIAL_ID_TEXTURE) {
+	} else if (ID == MATERIAL_ID_PBR || ID == MATERIAL_ID_TEXTURE) {
 		result = CookTorranceBRDF(gbufferData);
 	} else {
 		discard;

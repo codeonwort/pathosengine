@@ -27,7 +27,7 @@ namespace pathos {
 		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
-		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
+		static std::unique_ptr<class Material> fallbackMaterial;
 		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 

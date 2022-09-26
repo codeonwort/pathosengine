@@ -23,7 +23,6 @@ namespace pathos {
 	struct UBO_DepthPrepass {
 		matrix4 mvTransform;
 		matrix3x4 mvMatrix3x3;
-		vector4 billboardParam;
 	};
 
 	// #todo-material-assembler: Remove this
@@ -133,12 +132,6 @@ namespace pathos {
 				if (renderInternal) cmdList.frontFace(GL_CW);
 				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				// #todo-material: temp billboard
-				ColorMaterial* colorMaterial = nullptr;
-				if (proxy->material->getMaterialID() == MATERIAL_ID::SOLID_COLOR) {
-					colorMaterial = static_cast<ColorMaterial*>(proxy->material);
-				}
-
 #if SUPPORT_ALPHAONLY_DISCARD
 				// #todo-material: temp alphaonly processing in prepass
 				if (proxy->material->getMaterialID() == MATERIAL_ID::ALPHA_ONLY_TEXTURE) {
@@ -151,16 +144,10 @@ namespace pathos {
 				{
 					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
 					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-					uboData.billboardParam.x = colorMaterial && colorMaterial->billboard ? 1.0f : 0.0f;
-					uboData.billboardParam.y = colorMaterial ? colorMaterial->billboardWidth : 0.0f;
 				}
 				ubo.update(cmdList, 1, &uboData);
 
-				if (colorMaterial && colorMaterial->billboard) {
-					proxy->geometry->activate_position_uv(cmdList);
-				} else {
-					proxy->geometry->activate_position(cmdList);
-				}
+				proxy->geometry->activate_position(cmdList);
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
 				proxy->geometry->deactivate(cmdList);

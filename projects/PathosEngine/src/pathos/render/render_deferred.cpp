@@ -187,6 +187,15 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
 
+		// Prepare fallback material.
+		if (fallbackMaterial.get() == nullptr) {
+			fallbackMaterial = std::unique_ptr<Material>(Material::createMaterialInstance("solid_color"));
+			fallbackMaterial->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
+			fallbackMaterial->setConstantParameter("metallic", 0.0f);
+			fallbackMaterial->setConstantParameter("roughness", 0.0f);
+			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
+		}
+
 		// #todo-multivew
 		{
 			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
@@ -444,10 +453,8 @@ namespace pathos {
 		for (uint8 i = 0; i < numMaterialIDs; ++i) {
 			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
 
-			bool fallbackPass = false;
 			if (pass == nullptr) {
-				pass = pack_passes[static_cast<uint16>(MATERIAL_ID::SOLID_COLOR)];
-				fallbackPass = true;
+				continue;
 			}
 
 			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
@@ -468,7 +475,7 @@ namespace pathos {
 
 			for (auto j = 0u; j < proxyList.size(); ++j) {
 				const StaticMeshProxy& item = *(proxyList[j]);
-				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
+				Material* materialOverride = item.material;
 
 				if (bEnableFrustumCulling && !item.bInFrustum) {
 					continue;
@@ -666,7 +673,7 @@ namespace pathos {
 
 namespace pathos {
 	
-	std::unique_ptr<class ColorMaterial>           DeferredRenderer::fallbackMaterial;
+	std::unique_ptr<class Material>                DeferredRenderer::fallbackMaterial;
 	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
 	GLuint                                         DeferredRenderer::copyTextureFBO = 0;
 	
@@ -699,11 +706,6 @@ namespace pathos {
 	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
 
 	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fallbackMaterial = std::make_unique<ColorMaterial>();
-		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
-		fallbackMaterial->setMetallic(0.0f);
-		fallbackMaterial->setRoughness(0.0f);
-
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
@@ -723,7 +725,6 @@ namespace pathos {
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 				pack_passes[i] = nullptr;
 			}
-			pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR] = new MeshDeferredRenderPass_Pack_SolidColor;
 			pack_passes[(uint8)MATERIAL_ID::WIREFRAME] = new MeshDeferredRenderPass_Pack_Wireframe;
 			pack_passes[(uint8)MATERIAL_ID::ALPHA_ONLY_TEXTURE] = new MeshDeferredRenderPass_Pack_AlphaOnly;
 			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;

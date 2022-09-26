@@ -94,40 +94,6 @@ namespace pathos {
 }
 
 namespace pathos {
-	
-	////////////////////////////////////////////////////////////////////////////////////
-	// ColorMaterial
-	ColorMaterial::ColorMaterial() {
-		materialID = MATERIAL_ID::SOLID_COLOR;
-
-		setMetallic(0.0f);
-		setRoughness(0.9f);
-		setAlbedo(0.5f, 0.5f, 0.5f);
-		setEmissive(0.0f, 0.0f, 0.0f);
-
-		billboard = false;
-		billboardWidth = 10.0f;
-	}
-
-	void ColorMaterial::setAlbedo(float r, float g, float b) {
-		albedo.x = badger::clamp(0.0f, r, 1.0f);
-		albedo.y = badger::clamp(0.0f, g, 1.0f);
-		albedo.z = badger::clamp(0.0f, b, 1.0f);
-	}
-
-	void ColorMaterial::setMetallic(float inMetallic) {
-		metallic = badger::clamp(0.0f, inMetallic, 1.0f);
-	}
-
-	void ColorMaterial::setRoughness(float inRoughness) {
-		roughness = badger::clamp(0.0f, inRoughness, 1.0f);
-	}
-
-	void ColorMaterial::setEmissive(float r, float g, float b) {
-		emissive.x = r;
-		emissive.y = g;
-		emissive.z = b;
-	}
 
 	////////////////////////////////////////////////////////////////////////////////////
 	// WireframeMaterial

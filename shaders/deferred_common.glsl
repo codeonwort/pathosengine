@@ -10,10 +10,9 @@
 // --------------------------------------------------------
 // Materials
 
-// #todo-material: Rename to MATERIAL_DOMAIN
+// #todo-material: Deprecated. See common.glsl.
 // UNLIT, DEFAULTLIT, SUBSURFACE, HAIR, TRANSLUCENT, ...
 #define MATERIAL_ID_NONE           0
-#define MATERIAL_ID_SOLID_COLOR    1
 #define MATERIAL_ID_WIREFRAME      2
 #define MATERIAL_ID_TEXTURE        3
 #define MATERIAL_ID_ALPHAONLY      7

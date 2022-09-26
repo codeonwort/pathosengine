@@ -95,36 +95,7 @@ namespace pathos {
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Materials
-
-	// Opaque solid color, rendered in gbuffer pass
-	class ColorMaterial : public Material {
-
-	public:
-		ColorMaterial();
-
-		void setAlbedo(float r, float g, float b);
-		void setMetallic(float inMetallic);
-		void setRoughness(float inRoughness);
-		void setEmissive(float r, float g, float b);
-
-		inline vector3 getAlbedo() const { return albedo; }
-		inline float getMetallic() const { return metallic; }
-		inline float getRoughness() const { return roughness; }
-		inline vector3 getEmissive() const { return emissive; }
-
-	// #todo-material: Hard-coded for now
-	public:
-		bool billboard;
-		float billboardWidth;
-
-	private:
-		vector3 albedo;
-		float metallic;
-		vector3 emissive;
-		float roughness;
-
-	};
+	// Materials (deprecated)
 
 	// Rendered in translucency pass
 	class TranslucentColorMaterial : public Material {
