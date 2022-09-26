@@ -97,18 +97,22 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
 	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
 
+	// #todo-material-assembler: Support material instances
+	// #todo-material-assembler: Support default values for constant parameters
+	MaterialShader* MS_solidColor = pathos::findMaterialShader("solid_color");
+	MS_solidColor->setParameterVec3("albedo", vector3(0.9f, 0.9f, 0.9f));
+	MS_solidColor->setParameterFloat("roughness", 0.2f);
+	MS_solidColor->setParameterFloat("metallic", 0.0f);
+	MS_solidColor->setParameterVec3("emissive", vector3(0.0f));
+
 	ColorMaterial* M_box = new ColorMaterial;
-	M_box->materialShader = pathos::findMaterialShader("default_lit_test");
-	M_box->materialShader->setParameterVec3("albedoOverride", vector3(0.9f, 0.9f, 0.9f));
-	M_box->materialShader->setParameterFloat("roughnessOverride", 0.2f);
+	M_box->materialShader = MS_solidColor;
 	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_box->setRoughness(0.2f);
 	M_box->setMetallic(0.0f);
 
 	ColorMaterial* M_ball = new ColorMaterial;
-	M_ball->materialShader = pathos::findMaterialShader("default_lit_test");
-	M_ball->materialShader->setParameterVec3("albedoOverride", vector3(0.9f, 0.9f, 0.9f));
-	M_ball->materialShader->setParameterFloat("roughnessOverride", 0.2f);
+	M_ball->materialShader = MS_solidColor;
 	M_ball->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_ball->setRoughness(0.2f);
 	M_ball->setMetallic(0.0f);
