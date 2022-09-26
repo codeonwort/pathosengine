@@ -22,7 +22,7 @@ PARAMETER_TEXTURE(3, sampler2D, roughness)
 PARAMETER_TEXTURE(4, sampler2D, localAO)
 
 VPO_BEGIN
-vec3 getVertexPositionOffset() {
+vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 	return vec3(0.0);
 }
 VPO_END

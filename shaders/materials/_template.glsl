@@ -98,6 +98,14 @@ layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
 	vec2 texcoord;     // local space
 } interpolants;
 
+struct VertexShaderInput {
+	vec3 position;
+	vec3 normal;
+	vec3 tangent;
+	vec3 bitangent;
+	vec2 texcoord;
+};
+
 // Controls world position offset.
 $NEED getVertexPositionOffset
 
@@ -121,7 +129,14 @@ void main() {
 	mat4 proj = uboPerFrame.projTransform;
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
-	positionWS.xyz += getVertexPositionOffset();
+
+	VertexShaderInput vsi;
+	vsi.position = inPosition;
+	vsi.texcoord = inTexcoord;
+	vsi.normal = inNormal;
+	vsi.tangent = inTangent;
+	vsi.bitangent = inBitangent;
+	positionWS.xyz += getVertexPositionOffset(vsi);
 
 	vec4 positionVS = view * positionWS;
 

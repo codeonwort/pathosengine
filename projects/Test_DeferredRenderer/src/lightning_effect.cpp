@@ -15,11 +15,11 @@ LightningActor::LightningActor()
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
 
 	sphereGeometry = new SphereGeometry(1.0f, 50);
-	sphereMaterial = new ColorMaterial;
-	sphereMaterial->setAlbedo(0.2f, 0.3f, 0.8f);
-	sphereMaterial->setRoughness(0.0f);
-	sphereMaterial->setMetallic(0.0f);
-	sphereMaterial->setEmissive(30.0f, 30.0f, 30.0f);
+	sphereMaterial = Material::createMaterialInstance("solid_color");
+	sphereMaterial->setConstantParameter("albedo", vector3(0.2f, 0.3f, 0.8f));
+	sphereMaterial->setConstantParameter("roughness", 0.0f);
+	sphereMaterial->setConstantParameter("metallic", 0.0f);
+	sphereMaterial->setConstantParameter("emissive", vector3(30.0f, 30.0f, 30.0f));
 	sphereComponent->setStaticMesh(new Mesh(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);
@@ -38,13 +38,9 @@ LightningParticleComponent::LightningParticleComponent()
 {
 	G = new ProceduralGeometry;
 
-	M = new ColorMaterial;
-	M->setAlbedo(0.0f, 0.0f, 0.0f);
-	M->setRoughness(0.0f);
-	M->setMetallic(0.0f);
-	M->setEmissive(LIGHTNING_PARTICLE_EMISSIVE.x, LIGHTNING_PARTICLE_EMISSIVE.y, LIGHTNING_PARTICLE_EMISSIVE.z);
-	M->billboard = true;
-	M->billboardWidth = 5.0f;
+	M = Material::createMaterialInstance("lightning_bolt");
+	M->setConstantParameter("emissive", LIGHTNING_PARTICLE_EMISSIVE);
+	M->setConstantParameter("billboardWidth", 5.0f);
 
 	setStaticMesh(new Mesh(G, M));
 	getStaticMesh()->doubleSided = true;

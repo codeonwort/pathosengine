@@ -8,7 +8,7 @@ PARAMETER_CONSTANT(float, roughness)
 PARAMETER_CONSTANT(vec3, emissive)
 
 VPO_BEGIN
-vec3 getVertexPositionOffset() {
+vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 	return vec3(0.0);
 }
 VPO_END
