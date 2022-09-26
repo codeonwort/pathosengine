@@ -7,17 +7,17 @@
 
 namespace pathos {
 
-	pathos::Material* createMaterialInstance(const char* materialName) {
+	Material* Material::createMaterialInstance(const char* materialName) {
 		const uint32 hash = COMPILE_TIME_CRC32_STR(materialName);
 		MaterialShader* ms = MaterialShaderAssembler::get().findMaterialShaderByHash(hash);
 		CHECKF(ms != nullptr, "Invalid material name");
 		uint32 instanceID = ms->getNextInstanceID();
 		Material* material = new Material;
-		material->internal_bindMaterialShader(ms, instanceID);
+		material->bindMaterialShader(ms, instanceID);
 		return material;
 	}
 
-	void Material::internal_bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID) {
+	void Material::bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID) {
 		materialShader = inMaterialShader;
 		materialInstanceID = inInstanceID;
 		materialShader->extractMaterialParameters(constantParameters, textureParameters);
@@ -45,6 +45,15 @@ namespace pathos {
 			}
 		}
 		return nullptr;
+	}
+
+	bool Material::copyParametersFrom(Material* other) {
+		if (materialShader == nullptr || materialShader != other->materialShader) {
+			return false;
+		}
+		constantParameters = other->constantParameters;
+		textureParameters = other->textureParameters;
+		return true;
 	}
 
 	void Material::internal_fillUniformBuffer(uint8* uboMemory) {

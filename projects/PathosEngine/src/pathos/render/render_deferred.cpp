@@ -258,7 +258,6 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
-		// #todo-refactoring: Rename to renderBasePass
 		{
 			SCOPED_GPU_COUNTER(BasePass);
 			renderBasePass(cmdList);
@@ -540,9 +539,17 @@ namespace pathos {
 					}
 				}
 
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+
 				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
+
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
 			}
 		}
 

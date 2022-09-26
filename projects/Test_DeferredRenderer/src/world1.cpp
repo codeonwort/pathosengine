@@ -212,7 +212,7 @@ void World1::setupScene()
 		// #todo-material-assembler: Support masked material
 		//material_pbr->writeAllPixels = !maskedMaterial;
 
-		material_pbr = pathos::createMaterialInstance("pbr_texture");
+		material_pbr = Material::createMaterialInstance("pbr_texture");
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
 		material_pbr->setConstantParameter("bOverrideMetallic", false);

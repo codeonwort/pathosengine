@@ -12,11 +12,14 @@ typedef unsigned int GLuint;
 
 namespace pathos {
 
-	class Material* createMaterialInstance(const char* materialName);
-
 	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
 	class Material : public NamedObject {
+
+	public:
+		// Use this to create a Material.
+		// #todo-material-assembler: Hide Material ctor.
+		static Material* createMaterialInstance(const char* materialName);
 
 	public:
 		virtual ~Material() = default;
@@ -57,16 +60,18 @@ namespace pathos {
 
 		MaterialTextureParameter* findTextureParameter(const char* name);
 
+		// Only successful when their material shaders are same. Returns true if successful.
+		bool copyParametersFrom(Material* other);
+
 	// CAUTION: INTERNAL USE ONLY
 	public:
-		// #todo-material-assembler: Temp initializer.
-		// Ultimately, a MaterialShader will be bound when a Material is created.
-		void internal_bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID);
 		void internal_fillUniformBuffer(uint8* uboMemory);
-
 		MaterialShader* internal_getMaterialShader() const { return materialShader; }
 		uint32 internal_getMaterialInstanceID() const { return materialInstanceID; }
 		const std::vector<MaterialTextureParameter>& internal_getTextureParameters() const { return textureParameters; }
+
+	private:
+		void bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID);
 
 	protected:
 		// IMPORTANT: Child classes should initialize this in their constructors

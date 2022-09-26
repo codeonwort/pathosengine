@@ -89,13 +89,13 @@ void World2::setupScene()
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("textures/154_norm.jpg"), true, false);
 
 	auto material_texture = PBRTextureMaterial::createWithFallback(tex);
-	auto material_color = new ColorMaterial;
-	{
-		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(1.0f, 1.0f, 1.0f);
-		color->setMetallic(0.6f);
-		color->setRoughness(0.5f);
-	}
+	
+	Material* material_color = Material::createMaterialInstance("solid_color");
+	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	material_color->setConstantParameter("metallic", 0.0f);
+	material_color->setConstantParameter("roughness", 0.5f);
+	material_color->setConstantParameter("emissive", vector3(0.0f));
+
 	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
 
 	//---------------------------------------------------------------------------------------

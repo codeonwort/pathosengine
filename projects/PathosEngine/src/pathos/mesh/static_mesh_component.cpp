@@ -67,7 +67,7 @@ namespace pathos {
 			proxy->material = M;
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
-			if (M->internal_getMaterialShader() == nullptr) {
+			if (!useMaterialShader) {
 				scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
 			} else {
 				scene->proxyList_staticMeshTemp.push_back(proxy);
@@ -103,7 +103,8 @@ namespace pathos {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
 			uint8 materialID = static_cast<uint8>(M->getMaterialID());
-			CHECKF(0 <= materialID && materialID < numMaterialIDs, "Material ID is invalid");
+			bool useMaterialShader = (M->internal_getMaterialShader() != nullptr);
+			CHECKF(useMaterialShader || (!useMaterialShader && 0 <= materialID && materialID < numMaterialIDs), "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;

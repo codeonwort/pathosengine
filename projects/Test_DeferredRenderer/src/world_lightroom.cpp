@@ -63,20 +63,22 @@ void World_LightRoom::setupScene() {
 
 	MeshGeometry* G_ground = new PlaneGeometry(1000.0f, 1000.0f, 10, 10);
 
-	ColorMaterial* M_ground = new ColorMaterial;
-	M_ground->setAlbedo(0.33f, 0.22f, 0.18f); // brown
-	M_ground->setRoughness(0.2f);
-	M_ground->setMetallic(0.0f);
+	Material* M_ground = Material::createMaterialInstance("solid_color");
+	M_ground->setConstantParameter("albedo", vector3(0.33f, 0.22f, 0.18f)); // brown
+	M_ground->setConstantParameter("roughness", 0.2f);
+	M_ground->setConstantParameter("metallic", 0.0f);
+	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
 	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	ground->setStaticMesh(new Mesh(G_ground, M_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 
-	ColorMaterial* M_wall = new ColorMaterial;
-	M_wall->setAlbedo(0.9f, 0.9f, 0.9f);
-	M_wall->setRoughness(0.8f);
-	M_wall->setMetallic(0.0f);
+	Material* M_wall = Material::createMaterialInstance("solid_color");
+	M_wall->setConstantParameter("albedo", vector3(0.5f, 0.9f, 0.5f));
+	M_wall->setConstantParameter("roughness", 0.8f);
+	M_wall->setConstantParameter("metallic", 0.0f);
+	M_wall->setConstantParameter("emissive", vector3(0.0f));
 
 	Mesh* mesh_wall = new Mesh(G_ground, M_wall);
 	mesh_wall->doubleSided = true;
@@ -97,13 +99,13 @@ void World_LightRoom::setupScene() {
 	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
 	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
 
-	Material* M_box = pathos::createMaterialInstance("solid_color");
+	Material* M_box = Material::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	M_box->setConstantParameter("roughness", 0.2f);
 	M_box->setConstantParameter("metallic", 0.0f);
 	M_box->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* M_ball = pathos::createMaterialInstance("solid_color");
+	Material* M_ball = Material::createMaterialInstance("solid_color");
 	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
 	M_ball->setConstantParameter("roughness", 0.3f);
 	M_ball->setConstantParameter("metallic", 0.0f);
@@ -129,10 +131,12 @@ void World_LightRoom::setupScene() {
 	pointLight0->setLightParameters(500.0f * vector3(1.0f, 1.0f, 1.0f), 70.0f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
-	ColorMaterial* M_pointLightGizmo = new ColorMaterial;
-	M_pointLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
+	Material* M_pointLightGizmo = Material::createMaterialInstance("solid_color");
+	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
+	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
+	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
 	vector3 plGizmoEm = 10.0f * glm::normalize(pointLight0->getLightComponent()->intensity);
-	M_pointLightGizmo->setEmissive(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z);
+	M_pointLightGizmo->setConstantParameter("emissive", vector3(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z));
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
@@ -150,10 +154,10 @@ void World_LightRoom::setupScene() {
 		rectLight0->getLightComponent()->width,
 		rectLight0->getLightComponent()->height,
 		1, 1, PlaneGeometry::Direction::X);
-	ColorMaterial* M_rectLightGizmo = new ColorMaterial;
-	M_rectLightGizmo->setAlbedo(0.0f, 0.0f, 0.0f);
+	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
+	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
 	vector3 rectGizmoEm = 10.0f * glm::normalize(rectLight0->getLightComponent()->intensity);
-	M_rectLightGizmo->setEmissive(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z);
+	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
