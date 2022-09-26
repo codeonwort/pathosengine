@@ -100,19 +100,23 @@ void World_LightRoom::setupScene() {
 	// #todo-material-assembler: Support material instances
 	// #todo-material-assembler: Support default values for constant parameters
 	MaterialShader* MS_solidColor = pathos::findMaterialShader("solid_color");
-	MS_solidColor->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
-	MS_solidColor->setConstantParameter("roughness", 0.2f);
-	MS_solidColor->setConstantParameter("metallic", 0.0f);
-	MS_solidColor->setConstantParameter("emissive", vector3(0.0f));
 
 	ColorMaterial* M_box = new ColorMaterial;
-	M_box->materialShader = MS_solidColor;
+	M_box->bindMaterialShader(MS_solidColor);
+	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	M_box->setConstantParameter("roughness", 0.2f);
+	M_box->setConstantParameter("metallic", 0.0f);
+	M_box->setConstantParameter("emissive", vector3(0.0f));
 	M_box->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_box->setRoughness(0.2f);
 	M_box->setMetallic(0.0f);
 
 	ColorMaterial* M_ball = new ColorMaterial;
-	M_ball->materialShader = MS_solidColor;
+	M_ball->bindMaterialShader(MS_solidColor);
+	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.5f, 0.5f));
+	M_ball->setConstantParameter("roughness", 0.3f);
+	M_ball->setConstantParameter("metallic", 0.0f);
+	M_ball->setConstantParameter("emissive", vector3(0.0f));
 	M_ball->setAlbedo(0.9f, 0.9f, 0.9f);
 	M_ball->setRoughness(0.2f);
 	M_ball->setMetallic(0.0f);

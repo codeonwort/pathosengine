@@ -66,7 +66,7 @@ namespace pathos {
 			proxy->material = M;
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
-			if (M->materialShader == nullptr) {
+			if (M->internal_getMaterialShader() == nullptr) {
 				scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
 			} else {
 				scene->proxyList_staticMeshTemp.push_back(proxy);

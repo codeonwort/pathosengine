@@ -105,6 +105,7 @@ namespace pathos {
 		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
 			const auto& proxyList = scene->proxyList_staticMesh[i];
 			for (StaticMeshProxy* proxy : proxyList) {
+
 				if (proxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
 					continue;
 				}
@@ -113,7 +114,7 @@ namespace pathos {
 					continue;
 				}
 
-				if (proxy->material->materialShader != nullptr) {
+				if (proxy->material->internal_getMaterialShader() != nullptr) {
 					continue;
 				}
 
@@ -179,7 +180,8 @@ namespace pathos {
 
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
-				MaterialShader* materialShader = proxy->material->materialShader;
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -212,14 +214,17 @@ namespace pathos {
 				// Update UBO (material)
 				if (materialShader->uboTotalBytes > 0) {
 					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					materialShader->fillUniformBuffer(uboMemory);
+					material->internal_fillUniformBuffer(uboMemory);
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
 				// #todo-material-assembler: Bind texture units like base pass?
 				// How to detect if a vertex shader uses VTF(Vertex Texture Fetch)?
+				// ...
 
+				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
 				proxy->geometry->activate_position(cmdList);
+
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
 			}

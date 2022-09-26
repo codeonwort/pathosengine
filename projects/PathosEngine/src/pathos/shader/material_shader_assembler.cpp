@@ -98,7 +98,7 @@ namespace pathos {
 
 	MaterialShader* MaterialShaderAssembler::findMaterialShader(const char* materialName) {
 		for (MaterialShader* ms : materialShaders) {
-			if (ms->name == materialName) {
+			if (ms->materialName == materialName) {
 				return ms;
 			}
 		}
@@ -241,6 +241,8 @@ namespace pathos {
 			} else if (line.find(PARAMETER_CONSTANT) == 0) {
 				char datatype[16];
 				char name[64];
+				// #todo-material-assembler: Support default values?
+				// It would be quite useful but another parsing mess :/
 				int ret = sscanf_s(line.c_str(),
 					"PARAMETER_CONSTANT(%[^,], %[^)])",
 					datatype, (unsigned)_countof(datatype),
@@ -407,24 +409,7 @@ namespace pathos {
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		// #todo-material-assembler: Original dump system now supports material shaders.
-#if 0
-		// Dump material shaders for debugging.
-		{
-			std::string dumppath = pathos::getSolutionDir();
-			dumppath += "log/material_dump/";
-			pathos::createDirectory(dumppath.c_str());
-			dumppath += materialName + ".dump.glsl";
-
-			std::fstream fs;
-			fs.open(dumppath, std::ios::out);
-			for (const std::string& line : MT.sourceLines) {
-				fs << line << '\n';
-			}
-			fs.close();
-		}
-#endif
-
+		// Parse shading model.
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
 		{
 			char shadingModelStr[64];
@@ -448,7 +433,7 @@ namespace pathos {
 
 		// #todo-material-assembler: Now how to compile and register them?
 		MaterialShader* shader = new MaterialShader;
-		shader->name = materialName;
+		shader->materialName = std::move(materialName);
 		shader->shadingModel = shadingModel;
 		shader->uboTotalBytes = uboTotalElements * 4;
 		shader->constantParameters = std::move(materialConstParameters);

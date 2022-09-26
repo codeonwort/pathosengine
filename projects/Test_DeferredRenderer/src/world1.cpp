@@ -213,19 +213,18 @@ void World1::setupScene()
 		material_pbr->writeAllPixels = !maskedMaterial;
 
 		// #todo-material-assembler: Test if pbr_texture material works well
-		MaterialShader* ms_pbrTexture = pathos::findMaterialShader("pbr_texture");
-		ms_pbrTexture->setConstantParameter("bOverrideAlbedo", false);
-		ms_pbrTexture->setConstantParameter("bOverrideNormal", false);
-		ms_pbrTexture->setConstantParameter("bOverrideMetallic", false);
-		ms_pbrTexture->setConstantParameter("bOverrideRoughness", false);
-		ms_pbrTexture->setConstantParameter("bOverrideLocalAO", false);
-		ms_pbrTexture->setConstantParameter("emissiveConstant", vector3(0.0f));
-		ms_pbrTexture->setTextureParameter("albedo", albedo);
-		ms_pbrTexture->setTextureParameter("normal", normal);
-		ms_pbrTexture->setTextureParameter("metallic", metallic);
-		ms_pbrTexture->setTextureParameter("roughness", roughness);
-		ms_pbrTexture->setTextureParameter("localAO", ao);
-		material_pbr->materialShader = ms_pbrTexture;
+		material_pbr->bindMaterialShader(pathos::findMaterialShader("pbr_texture"));
+		material_pbr->setConstantParameter("bOverrideAlbedo", false);
+		material_pbr->setConstantParameter("bOverrideNormal", false);
+		material_pbr->setConstantParameter("bOverrideMetallic", false);
+		material_pbr->setConstantParameter("bOverrideRoughness", false);
+		material_pbr->setConstantParameter("bOverrideLocalAO", false);
+		material_pbr->setConstantParameter("emissiveConstant", vector3(0.0f));
+		material_pbr->setTextureParameter("albedo", albedo);
+		material_pbr->setTextureParameter("normal", normal);
+		material_pbr->setTextureParameter("metallic", metallic);
+		material_pbr->setTextureParameter("roughness", roughness);
+		material_pbr->setTextureParameter("localAO", ao);
 	}
 
 	// --------------------------------------------------------

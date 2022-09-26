@@ -496,7 +496,8 @@ namespace pathos {
 
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
-				MaterialShader* materialShader = proxy->material->materialShader;
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -529,12 +530,12 @@ namespace pathos {
 				// Update UBO (material)
 				if (materialShader->uboTotalBytes > 0) {
 					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					materialShader->fillUniformBuffer(uboMemory);
+					material->internal_fillUniformBuffer(uboMemory);
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
 				// Bind texture units
-				for (const MaterialTextureParameter& mtp : materialShader->textureParameters) {
+				for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
 					cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
 				}
 

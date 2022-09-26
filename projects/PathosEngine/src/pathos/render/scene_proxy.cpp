@@ -44,8 +44,8 @@ namespace pathos {
 		auto& v = proxyList_staticMeshTemp;
 		std::sort(v.begin(), v.end(),
 			[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
-				const uint32 hashA = A->material->materialShader->programHash;
-				const uint32 hashB = B->material->materialShader->programHash;
+				const uint32 hashA = A->material->internal_getMaterialShader()->programHash;
+				const uint32 hashB = B->material->internal_getMaterialShader()->programHash;
 				return A < B;
 			}
 		);
