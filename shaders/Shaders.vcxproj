@@ -31,12 +31,8 @@
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
     <None Include="deferred_pack_alphaonly.glsl" />
-    <None Include="deferred_pack_bumptexture_fs.glsl" />
-    <None Include="deferred_pack_bumptexture_vs.glsl" />
     <None Include="deferred_pack_pbr_fs.glsl" />
     <None Include="deferred_pack_pbr_vs.glsl" />
-    <None Include="deferred_pack_texture_fs.glsl" />
-    <None Include="deferred_pack_texture_vs.glsl" />
     <None Include="deferred_pack_wireframe_fs.glsl" />
     <None Include="deferred_pack_wireframe_vs.glsl" />
     <None Include="direct_lighting.glsl" />
