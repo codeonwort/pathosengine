@@ -23,8 +23,6 @@ namespace pathos {
 		program->addShaderStage(VS);
 		program->addShaderStage(FS);
 
-		// #todo-material-assembler-fatal: 'No vertex shader bound' error
-		// if a drawcall uses this program ???
 		ShaderProgram* programPtr = program;
 		ENQUEUE_RENDER_COMMAND([programPtr](RenderCommandList& cmdList) {
 			programPtr->checkFirstLoad();
@@ -64,26 +62,6 @@ namespace pathos {
 				break;
 			default:
 				CHECK_NO_ENTRY();
-				break;
-			}
-		}
-	}
-
-	void MaterialShader::setParameterFloat(const char* name, float value) {
-		for (MaterialConstantParameter& mcp : constantParameters) {
-			if (mcp.name == name) {
-				mcp.fvalue[0] = value;
-				break;
-			}
-		}
-	}
-
-	void MaterialShader::setParameterVec3(const char* name, const vector3& value) {
-		for (MaterialConstantParameter& mcp : constantParameters) {
-			if (mcp.name == name) {
-				mcp.fvalue[0] = value.x;
-				mcp.fvalue[1] = value.y;
-				mcp.fvalue[2] = value.z;
 				break;
 			}
 		}

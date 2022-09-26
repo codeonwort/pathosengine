@@ -100,10 +100,10 @@ void World_LightRoom::setupScene() {
 	// #todo-material-assembler: Support material instances
 	// #todo-material-assembler: Support default values for constant parameters
 	MaterialShader* MS_solidColor = pathos::findMaterialShader("solid_color");
-	MS_solidColor->setParameterVec3("albedo", vector3(0.9f, 0.9f, 0.9f));
-	MS_solidColor->setParameterFloat("roughness", 0.2f);
-	MS_solidColor->setParameterFloat("metallic", 0.0f);
-	MS_solidColor->setParameterVec3("emissive", vector3(0.0f));
+	MS_solidColor->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	MS_solidColor->setConstantParameter("roughness", 0.2f);
+	MS_solidColor->setConstantParameter("metallic", 0.0f);
+	MS_solidColor->setConstantParameter("emissive", vector3(0.0f));
 
 	ColorMaterial* M_box = new ColorMaterial;
 	M_box->materialShader = MS_solidColor;
