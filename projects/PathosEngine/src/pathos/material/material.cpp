@@ -96,13 +96,6 @@ namespace pathos {
 namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
-	// WireframeMaterial
-	WireframeMaterial::WireframeMaterial(float r, float g, float b, float a) {
-		materialID = MATERIAL_ID::WIREFRAME;
-		rgba[0] = r; rgba[1] = g; rgba[2] = b; rgba[3] = a;
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
 	// AlphaOnlyTextureMaterial
 	AlphaOnlyTextureMaterial::AlphaOnlyTextureMaterial(GLuint texture, float r, float g, float b) :texture(texture) {
 		materialID = MATERIAL_ID::ALPHA_ONLY_TEXTURE;

@@ -12,12 +12,16 @@ CSMDebugger::CSMDebugger() {
 
 	// For camera frustum
 	G = new ProceduralGeometry;
-	WireframeMaterial* M = new WireframeMaterial(1.0f, 1.0f, 1.0f);
+	Material* M = Material::createMaterialInstance("unlit");
+	M->setConstantParameter("color", vector3(0.7f));
+	M->bWireframe = true;
 	getStaticMesh()->add(G, M);
 
 	// For bounds of light view projections
 	G2 = new ProceduralGeometry;
-	WireframeMaterial* M2 = new WireframeMaterial(1.0f, 0.0f, 0.0f);
+	Material* M2 = Material::createMaterialInstance("unlit");
+	M2->setConstantParameter("color", vector3(0.7f, 0.0f, 0.0f));
+	M2->bWireframe = true;
 	getStaticMesh()->add(G2, M2);
 }
 

@@ -96,9 +96,6 @@
     <ClCompile Include="src\pathos\render\direct_lighting.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\text\font_mgr.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -414,9 +411,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\direct_lighting.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\font_mgr.h">

@@ -261,7 +261,7 @@ namespace pathos {
 		uboData.godRayColor = godRayColor;
 		uboSilhouette.update(cmdList, 1, &uboData);
 
-		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
+		const bool wireframe = meshProxy->material->bWireframe;
 		if (wireframe) {
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}

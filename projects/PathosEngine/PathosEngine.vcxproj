@@ -132,7 +132,6 @@
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\direct_lighting.cpp" />
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
@@ -298,7 +297,6 @@
     <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
     <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_pbr.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\sky.h" />

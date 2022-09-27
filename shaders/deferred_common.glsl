@@ -15,8 +15,7 @@
 #define MATERIAL_ID_NONE           0
 #define MATERIAL_ID_UNLIT          1
 #define MATERIAL_ID_PBR            2
-#define MATERIAL_ID_WIREFRAME      4
-#define MATERIAL_ID_ALPHAONLY      5
+#define MATERIAL_ID_ALPHAONLY      4
 
 // --------------------------------------------------------
 // Lights

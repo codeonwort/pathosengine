@@ -132,16 +132,6 @@ namespace pathos {
 		vector3 transmittance;
 	
 	};
-
-	class WireframeMaterial : public Material {
-
-	private:
-		float rgba[4];
-
-	public:
-		WireframeMaterial(float, float, float, float = 1.0f);
-		inline const float* getColor() const { return rgba; }
-	};
 	
 	class AlphaOnlyTextureMaterial : public Material {
 

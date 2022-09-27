@@ -126,11 +126,9 @@ namespace pathos {
 				// Render state modifiers
 				bool doubleSided = proxy->doubleSided;
 				bool renderInternal = proxy->renderInternal;
-				bool wireframe = proxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
 
 				if (doubleSided) cmdList.disable(GL_CULL_FACE);
 				if (renderInternal) cmdList.frontFace(GL_CW);
-				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 #if SUPPORT_ALPHAONLY_DISCARD
 				// #todo-material: temp alphaonly processing in prepass
@@ -155,7 +153,6 @@ namespace pathos {
 
 				if (doubleSided) cmdList.enable(GL_CULL_FACE);
 				if (renderInternal) cmdList.frontFace(GL_CCW);
-				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 

@@ -44,10 +44,7 @@ namespace pathos {
 				proxy->geometry = geoms[i];
 				proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
-				bool bWireframe = (M->getMaterialID() == MATERIAL_ID::WIREFRAME)
-					|| M->bWireframe;
-
-				if (bWireframe) {
+				if (M->bWireframe) {
 					scene->proxyList_wireframeShadowMesh.push_back(proxy);
 				} else {
 					scene->proxyList_shadowMesh.push_back(proxy);

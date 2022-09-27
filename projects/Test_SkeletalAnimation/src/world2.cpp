@@ -96,8 +96,6 @@ void World2::setupScene()
 	material_color->setConstantParameter("roughness", 0.5f);
 	material_color->setConstantParameter("emissive", vector3(0.0f));
 
-	auto material_wireframe = new WireframeMaterial(0.0f, 1.0f, 1.0f, 0.3f);
-
 	//---------------------------------------------------------------------------------------
 	// create geometries
 	//---------------------------------------------------------------------------------------
