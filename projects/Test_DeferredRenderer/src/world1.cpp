@@ -199,15 +199,11 @@ void World1::setupScene()
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
 		BitmapBlob* albedoBlob = loadImage(SANDSTONE_ALBEDO);
-		bool maskedMaterial = albedoBlob->hasOpacity;
 		GLuint albedo = pathos::createTextureFromBitmap(albedoBlob, genMipmap, sRGB);
 		GLuint normal = pathos::createTextureFromBitmap(loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
 		GLuint metallic = pathos::createTextureFromBitmap(loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
 		GLuint roughness = pathos::createTextureFromBitmap(loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
 		GLuint ao = pathos::createTextureFromBitmap(loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
-
-		// #todo-material-assembler: Support masked material
-		//material_pbr->writeAllPixels = !maskedMaterial;
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);

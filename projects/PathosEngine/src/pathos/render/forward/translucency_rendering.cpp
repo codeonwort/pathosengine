@@ -29,7 +29,7 @@ namespace pathos {
 
 	TranslucencyRendering::TranslucencyRendering()
 	{
-		uboPerObject.init<UBO_PerObject>();
+		uboPerObject.init<Material::UBO_PerObject>();
 		uboLightInfo.init<UBO_LightInfo>();
 	}
 
@@ -122,11 +122,11 @@ namespace pathos {
 
 			// Update UBO (per object)
 			{
-				UBO_PerObject uboData;
+				Material::UBO_PerObject uboData;
 				uboData.modelTransform = proxy->modelMatrix;
 				uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
 				uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-				uboPerObject.update(cmdList, UBO_PerObject::BINDING_POINT, &uboData);
+				uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 			}
 
 			// Update UBO (material)

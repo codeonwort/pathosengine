@@ -13,14 +13,6 @@
 
 namespace pathos {
 
-	// #todo-material-assembler: Remove this
-	struct UBO_DepthPrepass_PerObject {
-		static constexpr uint32 BINDING_POINT = 1;
-		matrix4 modelTransform;
-		matrix4 mvTransform;
-		matrix3x4 mvMatrix3x3;
-	};
-
 	class DepthPrepassVS : public ShaderStage {
 	public:
 		DepthPrepassVS() : ShaderStage(GL_VERTEX_SHADER, "DepthPrepassVS")
@@ -50,7 +42,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
-		uboPerObject.init<UBO_DepthPrepass_PerObject>();
+		uboPerObject.init<Material::UBO_PerObject>();
 	}
 
 	void DepthPrepass::destroyResources(RenderCommandList& cmdList)
@@ -120,11 +112,11 @@ namespace pathos {
 
 				// Update UBO (per object)
 				{
-					UBO_DepthPrepass_PerObject uboData;
+					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
 					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
 					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-					uboPerObject.update(cmdList, UBO_DepthPrepass_PerObject::BINDING_POINT, &uboData);
+					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
 				// Update UBO (material)

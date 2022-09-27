@@ -32,7 +32,6 @@ namespace pathos {
 		}
 
 		MaterialTemplate makeClone() {
-			// #todo-material-assembler: Change if any member does not deep copy.
 			return *this;
 		}
 
@@ -55,6 +54,8 @@ namespace pathos {
 			sourceLines[lineIx_getMaterialAttrs] = attr;
 		}
 		void replaceGetSceneColor(const std::string& getSceneColor) {
+			// Only valid for forward shading.
+			CHECK(lineIx_getSceneColor != -1);
 			sourceLines[lineIx_getSceneColor] = getSceneColor;
 		}
 

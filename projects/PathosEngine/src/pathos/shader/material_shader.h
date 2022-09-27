@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-// #todo-material-assembler: Wanna get rid of GLuint from this header.
+// #todo-refactoring: Wanna get rid of GLuint from this header.
 typedef unsigned int GLuint;
 
 namespace pathos {
@@ -53,7 +53,6 @@ namespace pathos {
 
 		uint32 getNextInstanceID();
 
-	// #todo-material-assembler: private
 	public:
 		std::string materialName;
 		EMaterialShadingModel shadingModel;
@@ -64,7 +63,8 @@ namespace pathos {
 
 		UniformBuffer uboMaterial;
 		std::string uboName;
-		const uint32 uboBindingPoint = 2; // #todo-material-assembler: UBO binding point
+		// #todo-material: See _template.glsl
+		const uint32 uboBindingPoint = 2;
 
 		std::string nameVS;
 		std::string nameFS;

@@ -338,8 +338,6 @@ namespace pathos {
 				param.datatype = desc.datatypeEnum;
 				param.numElements = desc.numElements;
 				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
-				// #todo-material-assembler: If a parameter is not used at all,
-				// the shader compiler will opt out it and my offsets will be screwed.
 				param.offset = uboCurrentOffset;
 				materialConstParameters.emplace_back(param);
 
@@ -466,7 +464,6 @@ namespace pathos {
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		// #todo-material-assembler: Now how to compile and register them?
 		MaterialShader* shader = new MaterialShader;
 		shader->materialName = std::move(materialName);
 		shader->shadingModel = shadingModel;

@@ -217,8 +217,11 @@ namespace pathos {
 				M->setConstantParameter("emissive", vector3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]));
 			}
 
-			// #todo-material-assembler: Delete overriden material
 			if (overrideIx != -1) {
+				// #todo: Would be best not to create it at first...
+				if (M != nullptr) {
+					delete M;
+				}
 				M = materialOverrides[overrideIx].second;
 			}
 

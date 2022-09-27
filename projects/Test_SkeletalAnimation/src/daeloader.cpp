@@ -152,8 +152,6 @@ namespace pathos {
 				}
 			}
 			
-			// #todo-material-assembler: Update even if garbage data
-			// as I'm always activating all buffers for the new draw path.
 			// construct geometry
 			MeshGeometry* G = new MeshGeometry;
 			if (true || ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);

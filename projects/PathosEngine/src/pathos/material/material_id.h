@@ -4,15 +4,6 @@
 
 namespace pathos {
 
-	// #todo-material-assembler: Deprecate this
-	enum class MATERIAL_ID : uint8 {
-		TRANSLUCENT_SOLID_COLOR = 3,
-
-		NUM_MATERIAL_IDS = 4,
-		INVALID = 0xff,
-	};
-
-	// #todo-material-assembler: Use this
 	enum class EMaterialShadingModel : uint8 {
 		INVALID     = 0,
 		UNLIT       = 1,

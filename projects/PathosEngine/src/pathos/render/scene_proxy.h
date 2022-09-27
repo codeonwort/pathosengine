@@ -73,7 +73,6 @@ namespace pathos {
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 
-		// #todo-material-assembler
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		

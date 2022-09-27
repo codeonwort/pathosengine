@@ -54,14 +54,6 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
 
-	// // #todo-material-assembler: Remove this
-	struct UBO_BasePass_PerObject {
-		static constexpr uint32 BINDING_POINT = 1;
-		matrix4 modelTransform;
-		matrix4 mvTransform;
-		matrix3x4 mvMatrix3x3;
-	};
-
 }
 
 namespace pathos {
@@ -120,7 +112,7 @@ namespace pathos {
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 
-		uboPerObject.init<UBO_BasePass_PerObject>("UBO_BasePass_PerObject_temp");
+		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_BasePass");
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
@@ -483,11 +475,11 @@ namespace pathos {
 
 				// Update UBO (per object)
 				{
-					UBO_BasePass_PerObject uboData;
+					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
 					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
 					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-					uboPerObject.update(cmdList, UBO_BasePass_PerObject::BINDING_POINT, &uboData);
+					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
 				// Update UBO (material)

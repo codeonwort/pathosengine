@@ -146,7 +146,6 @@ namespace pathos {
 			gConsole->addLine(line.c_str(), false);
 		}
 
-		// #todo-material-assembler: Where to put init?
 		MaterialShaderAssembler::get().initializeMaterialShaders();
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
