@@ -17,8 +17,7 @@ namespace pathos {
 
 	TextMeshComponent::TextMeshComponent() {
 		geom = std::make_unique<TextGeometry>();
-		materialNew = std::unique_ptr<Material>(Material::createMaterialInstance("unlit_text"));
-		materialOld = std::make_unique<AlphaOnlyTextureMaterial>(0);
+		material = std::unique_ptr<Material>(Material::createMaterialInstance("unlit_text"));
 
 		setFont(DEFAULT_FONT_TAG);
 	}
@@ -28,24 +27,16 @@ namespace pathos {
 			return;
 		}
 
-		// #todo-material-assembler-fatal: texcoord is only invalid in new material system?
-		bool bUseMaterialShader = true;
-		Material* material = bUseMaterialShader ? materialNew.get() : materialOld.get();
-
 		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
 		proxy->modelMatrix = getLocalMatrix() * invertTextY;
 		proxy->geometry = geom.get();
-		proxy->material = material;
+		proxy->material = material.get();
 		proxy->bDepthPrepassNeedsFullVAO = true;
 		// #todo-frustum-culling: Update worldBounds for text component
 
-		if (bUseMaterialShader) {
-			scene->proxyList_staticMeshTemp.push_back(proxy);
-		} else {
-			scene->proxyList_staticMesh[(uint8)materialOld->getMaterialID()].push_back(proxy);
-		}
+		scene->proxyList_staticMeshTemp.push_back(proxy);
 	}
 
 	void TextMeshComponent::updateDynamicData_renderThread(RenderCommandList& cmdList) {
@@ -61,8 +52,7 @@ namespace pathos {
 	}
 
 	void TextMeshComponent::setColor(float r, float g, float b) {
-		materialNew->setConstantParameter("color", vector3(r, g, b));
-		materialOld->setColor(r, g, b);
+		material->setConstantParameter("color", vector3(r, g, b));
 	}
 
 	void TextMeshComponent::setFont(const std::string& tag) {
@@ -73,8 +63,7 @@ namespace pathos {
 		CHECK(validDesc);
 		GLuint fontCache = fontDesc.cacheTexture->getTexture();
 
-		materialNew->setTextureParameter("fontCache", fontCache);
-		materialOld->setTexture(fontCache);
+		material->setTextureParameter("fontCache", fontCache);
 	}
 
 }

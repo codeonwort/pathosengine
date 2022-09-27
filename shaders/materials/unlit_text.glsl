@@ -1,7 +1,9 @@
 // Unlit text.
 
-//#define SHADINGMODEL MATERIAL_SHADINGMODEL_UNLIT
+// #todo-material: In Ryzen 6800U, interpolants.texcoord is always zero for unlit.
+// Maybe look into the assembly code later.
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_DEFAULTLIT
+//#define SHADINGMODEL MATERIAL_SHADINGMODEL_UNLIT
 
 PARAMETER_CONSTANT(vec3, color)
 
@@ -19,7 +21,6 @@ MaterialAttributes getMaterialAttributes() {
 // #todo-material: Hacky injection of discard.
 // Maybe need separate features like getOpacity() and masked material?
 #if FRAGMENT_SHADER
-	// #todo-material: interpolants.texcoord is zero for unlit?
 	float alpha = texture(fontCache, interpolants.texcoord).r;
 	if (alpha < 0.5) {
 		discard;

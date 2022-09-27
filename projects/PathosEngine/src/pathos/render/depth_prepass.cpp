@@ -11,14 +11,7 @@
 #include "pathos/material/material.h"
 #include "pathos/console.h"
 
-// #todo-material
-#define SUPPORT_ALPHAONLY_DISCARD 0
-
 namespace pathos {
-
-#if SUPPORT_ALPHAONLY_DISCARD
-	static constexpr uint32 ALPHAONLY_TEXTURE_UNIT = 1;
-#endif
 
 	struct UBO_DepthPrepass {
 		matrix4 mvTransform;
@@ -129,14 +122,6 @@ namespace pathos {
 
 				if (doubleSided) cmdList.disable(GL_CULL_FACE);
 				if (renderInternal) cmdList.frontFace(GL_CW);
-
-#if SUPPORT_ALPHAONLY_DISCARD
-				// #todo-material: temp alphaonly processing in prepass
-				if (proxy->material->getMaterialID() == MATERIAL_ID::ALPHA_ONLY_TEXTURE) {
-					AlphaOnlyTextureMaterial* M = static_cast<AlphaOnlyTextureMaterial*>(proxy->material);
-					cmdList.bindTextureUnit(ALPHAONLY_TEXTURE_UNIT, M->getTexture());
-				}
-#endif
 
 				UBO_DepthPrepass uboData;
 				{

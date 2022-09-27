@@ -318,9 +318,6 @@
     <ClCompile Include="src\pathos\text\text_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\util\engine_util.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -726,9 +723,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\text_component.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\thread\render_thread.h">

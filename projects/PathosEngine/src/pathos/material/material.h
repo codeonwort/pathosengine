@@ -132,20 +132,6 @@ namespace pathos {
 		vector3 transmittance;
 	
 	};
-	
-	class AlphaOnlyTextureMaterial : public Material {
-
-	protected:
-		GLuint texture;
-		float color[3];
-
-	public:
-		AlphaOnlyTextureMaterial(GLuint texture, float r = 1.0f, float g = 1.0f, float b = 1.0f);
-		inline const GLuint getTexture() { return texture; }
-		inline const float* getColor() const { return color; }
-		inline void setTexture(GLuint inTexture) { texture = inTexture; }
-		inline void setColor(float r, float g, float b) { color[0] = r; color[1] = g; color[2] = b; }
-	};
 
 	// Cook-Torrance BRDF
 	class PBRTextureMaterial : public Material {

@@ -51,7 +51,6 @@
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />
-    <None Include="deferred_pack_alphaonly.glsl" />
     <None Include="common.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />

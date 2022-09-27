@@ -8,9 +8,8 @@ namespace pathos {
 	enum class MATERIAL_ID : uint8 {
 		PBR_TEXTURE             = 2,
 		TRANSLUCENT_SOLID_COLOR = 3,
-		ALPHA_ONLY_TEXTURE      = 4,
 
-		NUM_MATERIAL_IDS = 6,
+		NUM_MATERIAL_IDS = 4,
 		INVALID = 0xff,
 	};
 

@@ -96,13 +96,6 @@ namespace pathos {
 namespace pathos {
 
 	////////////////////////////////////////////////////////////////////////////////////
-	// AlphaOnlyTextureMaterial
-	AlphaOnlyTextureMaterial::AlphaOnlyTextureMaterial(GLuint texture, float r, float g, float b) :texture(texture) {
-		materialID = MATERIAL_ID::ALPHA_ONLY_TEXTURE;
-		setColor(r, g, b);
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////
 	// PBRTextureMaterial
 	PBRTextureMaterial* PBRTextureMaterial::createWithFallback(GLuint albedo, GLuint normal /*= 0*/) {
 		PBRTextureMaterial* M = new PBRTextureMaterial(albedo, normal,
