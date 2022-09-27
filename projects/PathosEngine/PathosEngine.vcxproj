@@ -129,7 +129,6 @@
     <ClCompile Include="src\pathos\overlay\display_object_proxy.cpp" />
     <ClCompile Include="src\pathos\overlay\label.cpp" />
     <ClCompile Include="src\pathos\overlay\rectangle.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
     <ClCompile Include="src\pathos\render\direct_lighting.cpp" />
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
@@ -293,8 +292,6 @@
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\math_lib.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\sky.h" />

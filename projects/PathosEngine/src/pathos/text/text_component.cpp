@@ -36,7 +36,7 @@ namespace pathos {
 		proxy->material = material.get();
 		// #todo-frustum-culling: Update worldBounds for text component
 
-		scene->proxyList_staticMeshTemp.push_back(proxy);
+		scene->addStaticMeshProxy(proxy);
 	}
 
 	void TextMeshComponent::updateDynamicData_renderThread(RenderCommandList& cmdList) {

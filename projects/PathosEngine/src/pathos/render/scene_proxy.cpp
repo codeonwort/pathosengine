@@ -62,20 +62,6 @@ namespace pathos {
 		);
 	}
 
-	void SceneProxy::initialize_renderThread() {
-		// #todo-material-assembler: MaterialShader::generateShaderProgram() already handles it.
-#if 0
-		uint32 hash = 0;
-		for (StaticMeshProxy* proxy : proxyList_staticMeshTemp) {
-			uint32 newHash = proxy->material->materialShader->programHash;
-			if (hash != newHash) {
-				hash = newHash;
-				proxy->material->materialShader->program->checkFirstLoad();
-			}
-		}
-#endif
-	}
-
 	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {
 		sceneRenderSettingsOverride = inSettings;
 		bSceneRenderSettingsOverriden = true;
@@ -114,9 +100,7 @@ namespace pathos {
 		int32 culledCount = 0;
 		const bool bIgnoreFarPlane = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse);
 
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 materialID = 0; materialID <= numMaterialIDs; ++materialID) {
-			auto& proxies = materialID == numMaterialIDs ? proxyList_staticMeshTemp : proxyList_staticMesh[materialID];
+		auto checkProxyList = [&](std::vector<StaticMeshProxy*>& proxies) {
 			for (int32 i = 0; i < proxies.size(); ++i) {
 				if (bIgnoreFarPlane) {
 					proxies[i]->bInFrustum = badger::hitTest::AABB_frustum_noFarPlane(proxies[i]->worldBounds, frustum);
@@ -129,6 +113,23 @@ namespace pathos {
 				}
 				totalCount++;
 			}
+		};
+
+		checkProxyList(proxyList_staticMeshTemp);
+		// #todo-material-assembler: check translucent meshes
+		//checkProxyList(proxyList_translucentMeshes);
+	}
+
+	void SceneProxy::addStaticMeshProxy(struct StaticMeshProxy* proxy) {
+		if (proxy->material->internal_getMaterialShader() == nullptr) {
+			return;
+		}
+
+		EMaterialShadingModel sm = proxy->material->getShadingModel();
+		if (sm == EMaterialShadingModel::TRANSLUCENT) {
+			proxyList_staticMesh[(uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR].push_back(proxy);
+		} else {
+			proxyList_staticMeshTemp.push_back(proxy);
 		}
 	}
 

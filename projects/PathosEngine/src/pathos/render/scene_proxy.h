@@ -18,6 +18,8 @@
 
 namespace pathos {
 
+	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
+
 	enum class SceneProxySource : uint8 {
 		MainScene    = 0,
 		SceneCapture = 1,
@@ -30,7 +32,6 @@ namespace pathos {
 		~SceneProxy();
 
 		void finalize_mainThread();
-		void initialize_renderThread();
 
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
@@ -39,6 +40,9 @@ namespace pathos {
 		void createViewDependentRenderProxy(const matrix4& viewMatrix);
 
 		void checkFrustumCulling(const Camera& camera);
+
+		void addStaticMeshProxy(struct StaticMeshProxy* proxy);
+		const StaticMeshProxyList& getOpaqueStaticMeshes() const { return proxyList_staticMeshTemp; }
 
 		//
 		// Utilities to check if various proxies are valid.
@@ -64,12 +68,13 @@ namespace pathos {
 		std::vector<struct PointLightProxy*>       proxyList_pointLight;
 		std::vector<struct RectLightProxy*>        proxyList_rectLight;
 
+		// Shadowmap rendering
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
-		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
 
 		// #todo-material-assembler
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTemp;
+		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
 		
 		struct SkyboxProxy*                        skybox = nullptr;
 		struct AnselSkyProxy*                      anselSky = nullptr;

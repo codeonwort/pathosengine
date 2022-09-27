@@ -451,54 +451,8 @@ namespace pathos {
 
 		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
 
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
-
-			if (pass == nullptr) {
-				continue;
-			}
-
-			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
-				// Translucency is not rendered in gbuffer pass
-				continue;
-			}
-
-			const auto& proxyList = scene->proxyList_staticMesh[i];
-
-			if (proxyList.size() == 0) {
-				continue;
-			}
-
-			{
-				SCOPED_DRAW_EVENT(BindMaterialProgram);
-				pass->bindProgram(cmdList);
-			}
-
-			for (auto j = 0u; j < proxyList.size(); ++j) {
-				const StaticMeshProxy& item = *(proxyList[j]);
-				Material* materialOverride = item.material;
-
-				if (bEnableFrustumCulling && !item.bInFrustum) {
-					continue;
-				}
-
-				// #todo-renderer: Batching by same state
-				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (item.renderInternal) cmdList.frontFace(GL_CW);
-
- 				pass->setModelMatrix(item.modelMatrix);
- 				pass->render(cmdList, scene, camera, item.geometry, materialOverride);
-
-				// #todo-renderer: Batching by same state
-				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (item.renderInternal) cmdList.frontFace(GL_CCW);
-			}
-		}
-
-		// #todo-material-assembler: Render basepass with new material system
 		{
-			std::vector<StaticMeshProxy*>& proxyList = scene->proxyList_staticMeshTemp;
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
 			const size_t numProxies = proxyList.size();
 			uint32 currentProgramHash = 0;
 			uint32 currentMIID = 0xffffffff;
@@ -520,7 +474,8 @@ namespace pathos {
 				currentMIID = material->internal_getMaterialInstanceID();
 
 				if (bShouldBindProgram) {
-					//SCOPED_DRAW_EVENT(BindMaterialProgram);
+					SCOPED_DRAW_EVENT(BindMaterialProgram);
+
 					uint32 programName = materialShader->program->getGLName();
 					CHECK(programName != 0 && programName != 0xffffffff);
 					cmdList.useProgram(programName);
@@ -684,8 +639,6 @@ namespace pathos {
 	
 	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
 	
-	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-	
 	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
 	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
 	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
@@ -729,15 +682,6 @@ namespace pathos {
 		}
 
 		{
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				pack_passes[i] = nullptr;
-			}
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				if (pack_passes[i] == nullptr) {
-					LOG(LogWarning, "BasePass not present for material id: %u", i);
-				}
-			}
-
 			directLightingPass = std::make_unique<DirectLightingPass>();
 			indirectLightingPass = std::make_unique<IndirectLightingPass>();
 			screenSpaceReflectionPass = std::make_unique<ScreenSpaceReflectionPass>();
@@ -807,18 +751,10 @@ namespace pathos {
 #define DESTROYPASS(pass) { pass->destroyResources(cmdList); pass.reset(); }
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
 
-		{
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				if (pack_passes[i]) {
-					delete pack_passes[i];
-					pack_passes[i] = nullptr;
-				}
-			}
-			DESTROYPASS(directLightingPass);
-			DESTROYPASS(indirectLightingPass);
-			DESTROYPASS(screenSpaceReflectionPass);
-			RELEASEPASS(translucency_pass);
-		}
+		DESTROYPASS(directLightingPass);
+		DESTROYPASS(indirectLightingPass);
+		DESTROYPASS(screenSpaceReflectionPass);
+		RELEASEPASS(translucency_pass);
 
 		DESTROYPASS(resolveUnlitPass);
 

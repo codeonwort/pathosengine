@@ -94,45 +94,8 @@ namespace pathos {
 		CHECK(cvarFrustum != nullptr);
 		const bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
 
-		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
-			const auto& proxyList = scene->proxyList_staticMesh[i];
-			for (StaticMeshProxy* proxy : proxyList) {
-				if (proxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
-					continue;
-				}
-
-				if (bEnableFrustumCulling && !proxy->bInFrustum) {
-					continue;
-				}
-
-				// Render state modifiers
-				bool doubleSided = proxy->doubleSided;
-				bool renderInternal = proxy->renderInternal;
-
-				if (doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (renderInternal) cmdList.frontFace(GL_CW);
-
-				UBO_DepthPrepass uboData;
-				{
-					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
-					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-				}
-				ubo.update(cmdList, 1, &uboData);
-
-				proxy->geometry->activate_position(cmdList);
-				proxy->geometry->activateIndexBuffer(cmdList);
-				proxy->geometry->drawPrimitive(cmdList);
-				proxy->geometry->deactivate(cmdList);
-				proxy->geometry->deactivateIndexBuffer(cmdList);
-
-				if (doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (renderInternal) cmdList.frontFace(GL_CCW);
-			}
-		}
-
-		// #todo-material-assembler: Render prepass with new material system
 		{
-			std::vector<StaticMeshProxy*>& proxyList = scene->proxyList_staticMeshTemp;
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
 			const size_t numProxies = proxyList.size();
 			uint32 currentProgramHash = 0;
 			uint32 currentMIID = 0xffffffff;

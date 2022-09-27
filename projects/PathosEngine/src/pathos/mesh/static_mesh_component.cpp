@@ -32,7 +32,6 @@ namespace pathos {
 		Geometries geoms = mesh->getGeometries();
 		Materials materials = mesh->getMaterials();
 		const uint32 numSections = static_cast<uint32>(geoms.size());
-		constexpr uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 
 		if (castsShadow) {
 			for (size_t i = 0u; i < numSections; ++i) {
@@ -55,9 +54,6 @@ namespace pathos {
 		for (size_t i = 0u; i < numSections; ++i) {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
-			uint8 materialID = static_cast<uint8>(M->getMaterialID());
-			bool useMaterialShader = (M->internal_getMaterialShader() != nullptr);
-			CHECKF(useMaterialShader || (!useMaterialShader && 0 <= materialID && materialID < numMaterialIDs), "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
@@ -67,11 +63,7 @@ namespace pathos {
 			proxy->material = M;
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
-			if (!useMaterialShader) {
-				scene->proxyList_staticMesh[static_cast<uint16>(materialID)].push_back(proxy);
-			} else {
-				scene->proxyList_staticMeshTemp.push_back(proxy);
-			}
+			scene->addStaticMeshProxy(proxy);
 		}
 	}
 
@@ -97,14 +89,10 @@ namespace pathos {
 		Geometries geoms = mesh->getGeometries();
 		Materials materials = mesh->getMaterials();
 		const uint32 numSections = static_cast<uint32>(geoms.size());
-		constexpr uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
 
 		for (size_t i = 0u; i < numSections; ++i) {
 			MeshGeometry* G = geoms[i];
 			Material* M = materials[i];
-			uint8 materialID = static_cast<uint8>(M->getMaterialID());
-			bool useMaterialShader = (M->internal_getMaterialShader() != nullptr);
-			CHECKF(useMaterialShader || (!useMaterialShader && 0 <= materialID && materialID < numMaterialIDs), "Material ID is invalid");
 
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;

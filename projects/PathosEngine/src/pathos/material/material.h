@@ -31,6 +31,7 @@ namespace pathos {
 		MATERIAL_ID getMaterialID() { return materialID; }
 
 		const std::string& getMaterialName() const { return materialName; }
+		EMaterialShadingModel getShadingModel() const { return materialShader->shadingModel; }
 
 		template<typename ValueType>
 		void setConstantParameter(const char* name, const ValueType& value) {
