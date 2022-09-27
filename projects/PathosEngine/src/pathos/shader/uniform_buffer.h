@@ -26,6 +26,7 @@ namespace pathos {
 		UniformBuffer& operator=(const UniformBuffer&) = delete;
 
 		void init(uint32 inBufferSize, const char* inDebugName = nullptr) {
+			CHECK(inBufferSize > 0);
 			bufferSize = inBufferSize;
 			if (inDebugName != nullptr) {
 				debugName = inDebugName;

@@ -56,6 +56,12 @@ MaterialAttributes getMaterialAttributes() {
 		attr.roughness = texture(roughness, uv).r;
 	}
 
+	if (uboMaterial.bOverrideLocalAO) {
+		attr.localAO = uboMaterial.localAOOverride;
+	} else {
+		attr.localAO = texture(localAO, uv).r;
+	}
+
 	attr.emissive = uboMaterial.emissiveConstant;
 
 	return attr;

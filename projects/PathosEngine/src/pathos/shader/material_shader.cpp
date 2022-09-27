@@ -30,8 +30,10 @@ namespace pathos {
 		});
 		FLUSH_RENDER_COMMAND(true);
 
-		uboName = "UBO_" + materialName;
-		uboMaterial.init(uboTotalBytes, uboName.c_str());
+		if (uboTotalBytes > 0) {
+			uboName = "UBO_" + materialName;
+			uboMaterial.init(uboTotalBytes, uboName.c_str());
+		}
 	}
 
 	void MaterialShader::extractMaterialParameters(
