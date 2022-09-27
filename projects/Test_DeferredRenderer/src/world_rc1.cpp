@@ -56,7 +56,9 @@ void World_RC1::onInitialize()
 {
 	// --------------------------------------------------------
 	// Async load assets
+	M_tower = Material::createMaterialInstance("guard_tower");
 	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
+	assetRefGuardTower.addMaterialOverride("TowerMaterial", M_tower);
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ, 0);
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
@@ -316,8 +318,13 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	guardTower->setActorScale(1000.0f);
 	guardTower->setActorLocation(vector3(0.0f, Y_OFFSET - 4700.0f, 0.0f));
 
-	// #todo-material: hack
-	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;
+	M_tower->setTextureParameter("albedo", loader->findGLTexture("T_Tower.png"));
+	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));
+	M_tower->setTextureParameter("roughness", loader->findGLTexture("R_Tower.png"));
+	M_tower->setTextureParameter("metallic", loader->findGLTexture("M_Tower.png"));
+	
+	PBRTextureMaterial* m = static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0]);
+	if (m) m->useTriplanarMapping = true;
 }
 
 //////////////////////////////////////////////////////////////////////////

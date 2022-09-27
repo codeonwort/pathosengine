@@ -64,6 +64,8 @@ private:
 	SpaceshipActor* spaceship1 = nullptr;
 	SpaceshipActor* spaceship2 = nullptr;
 	StaticMeshActor* guardTower = nullptr;
+
+	Material* M_tower = nullptr;
 	
 	GLuint starfield = 0;
 

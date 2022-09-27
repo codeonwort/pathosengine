@@ -92,6 +92,7 @@ struct MaterialAttributes_Translucent {
 layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
 	// #todo-material-assembler: Optimize memory bandwidth
 	vec3 positionVS;   // view space
+	vec3 position;     // local space
 	vec3 normal;       // local space
 	vec3 tangent;      // local space
 	vec3 bitangent;    // local space
@@ -105,6 +106,14 @@ struct VertexShaderInput {
 	vec3 bitangent;
 	vec2 texcoord;
 };
+
+vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
+	vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
+	vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
+	vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
+	mat3 TBN = mat3(T, B, N);
+	return TBN * normalize(normalmap);
+}
 
 // Controls world position offset.
 $NEED getVertexPositionOffset
@@ -141,6 +150,7 @@ void main() {
 	vec4 positionVS = view * positionWS;
 
 	interpolants.positionVS  = positionVS.xyz;
+	interpolants.position    = inPosition;
 	interpolants.normal      = inNormal;
 	interpolants.tangent     = inTangent;
 	interpolants.bitangent   = inBitangent;
@@ -157,14 +167,6 @@ void main() {
 #if FRAGMENT_SHADER
 
 #include "deferred_common_fs.glsl"
-
-vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
-	vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
-	vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
-	vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
-	mat3 TBN = mat3(T, B, N);
-	return TBN * normalize(normalmap);
-}
 
 void main() {
 	MaterialAttributes attr = getMaterialAttributes();

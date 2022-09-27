@@ -22,6 +22,7 @@ namespace pathos {
 		CHECK(loader);
 
 		arg->loader = loader;
+		loader->setMaterialOverrides(std::move(arg->materialOverrides));
 		loader->load(arg->filepath, arg->mtlDir);
 
 		streamer->mutex_loadedOBJs.lock();

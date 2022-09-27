@@ -69,5 +69,6 @@
     <None Include="materials\lightning_bolt.glsl" />
     <None Include="materials\unlit.glsl" />
     <None Include="materials\unlit_text.glsl" />
+    <None Include="materials\guard_tower.glsl" />
   </ItemGroup>
 </Project>

@@ -8,12 +8,16 @@
 
 #include <list>
 #include <mutex>
+#include <vector>
+#include <string>
+#include <utility>
 #include <functional>
 
 namespace pathos {
 
 	class AssetStreamer;
 	class OBJLoader;
+	class Material;
 	
 	using WavefrontOBJHandler = std::function<void(OBJLoader* objLoader, uint64 payload)>;
 
@@ -34,8 +38,19 @@ namespace pathos {
 			, baseDir(inBaseDir)
 		{
 		}
+		void addMaterialOverride(const std::string& mtlName, Material* newMaterial) {
+			for (auto& v : materialOverrides) {
+				if (v.first == mtlName) {
+					v.second = newMaterial;
+					return;
+				}
+			}
+			materialOverrides.push_back(std::make_pair(mtlName, newMaterial));
+		}
+
 		const char* filepath;
 		const char* baseDir;
+		std::vector<std::pair<std::string, Material*>> materialOverrides;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -54,6 +69,7 @@ namespace pathos {
 		OBJLoader* loader;
 		const char* filepath;
 		const char* mtlDir;
+		std::vector<std::pair<std::string, Material*>> materialOverrides;
 
 		uint64 payload;
 	};
@@ -123,6 +139,7 @@ namespace pathos {
 		arg->streamer = this;
 		arg->filepath = assetRef.filepath;
 		arg->mtlDir = assetRef.baseDir;
+		arg->materialOverrides = assetRef.materialOverrides;
 
 		arg->payload = payload;
 
