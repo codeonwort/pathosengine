@@ -145,7 +145,7 @@ namespace pathos {
 			Material* M = nullptr;
 
 			int32 overrideIx = -1;
-			for (size_t i=0; i<materialOverrides.size(); ++i) {
+			for (size_t i = 0; i < materialOverrides.size(); ++i) {
 				if (materialOverrides[i].first == t_mat.name) {
 					overrideIx = (int32)i;
 					break;

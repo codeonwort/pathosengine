@@ -2,10 +2,6 @@
 
 #include "deferred_common_fs.glsl"
 
-#if !defined(TRIPLANAR_MAPPING)
-	#define TRIPLANAR_MAPPING 0
-#endif
-
 // #todo-driver-bug: What's this :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
@@ -47,22 +43,6 @@ vec3 getNormal(vec3 n, vec3 t, vec3 b, vec2 uv) {
 void main() {
 	vec2 uv = fs_in.texcoord;
 
-#if TRIPLANAR_MAPPING
-	// #todo: Same process for metallic, roughness, and ao
-	// #todo: Apply at least model transform
-	vec3 P = fs_in.ls_coords * 2.0;
-	vec3 N = fs_in.normal;
-	vec3 NN = N * N;
-	vec3 albedoX = texture(tex_albedo, P.zy).rgb;
-	vec3 albedoY = texture(tex_albedo, P.zx).rgb;
-	vec3 albedoZ = texture(tex_albedo, P.xy).rgb;
-	vec3 albedo = (albedoX * NN.x) + (albedoY * NN.y) + (albedoZ * NN.z);
-
-	vec3 normalX = getNormal(N, fs_in.tangent, fs_in.bitangent, P.zy);
-	vec3 normalY = getNormal(N, fs_in.tangent, fs_in.bitangent, P.zx);
-	vec3 normalZ = getNormal(N, fs_in.tangent, fs_in.bitangent, P.xy);
-	vec3 normal = normalize((normalX * NN.x) + (normalY * NN.y) + (normalZ * NN.z));
-#else
 	vec4 albedoAndOpacity = texture(tex_albedo, uv).rgba;
 	vec3 albedo = albedoAndOpacity.rgb;
 
@@ -73,7 +53,6 @@ void main() {
 	}
 
 	vec3 normal = getNormal(fs_in.normal, fs_in.tangent, fs_in.bitangent, uv);
-#endif
 	
 	float metallic = texture(tex_metallic, uv).r;
 	float roughness = texture(tex_roughness, uv).r;

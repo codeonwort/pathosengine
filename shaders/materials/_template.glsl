@@ -83,13 +83,14 @@ struct MaterialAttributes_Translucent {
 
 // #todo: GLSL spec says I should not use 'location' for inout interface block,
 //        but glslangvalidator says I should use one???
+// -> Ryzen 6800U is bugged if I specify 'location' here. Comment it out.
 // Interpolants (VS to PS)
 #if VERTEX_SHADER
 	#define INTERPOLANTS_QUALIFIER out
 #elif FRAGMENT_SHADER
 	#define INTERPOLANTS_QUALIFIER in
 #endif
-layout (location = 0) INTERPOLANTS_QUALIFIER Interpolants {
+/*layout (location = 0)*/ INTERPOLANTS_QUALIFIER Interpolants {
 	// #todo-material-assembler: Optimize memory bandwidth
 	vec3 positionVS;   // view space
 	vec3 position;     // local space

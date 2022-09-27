@@ -14,20 +14,15 @@ namespace pathos {
 		}
 	};
 
-	template<bool TriplanarMapping>
 	class DefaultLitFS : public ShaderStage {
 	public:
 		DefaultLitFS() : ShaderStage(GL_FRAGMENT_SHADER, "Material_DefaultLitFS")
 		{
-			if (TriplanarMapping) {
-				addDefine("TRIPLANAR_MAPPING", 1);
-			}
 			setFilepath("deferred_pack_pbr_fs.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_DefaultLit, DefaultLitVS, DefaultLitFS<false>);
-	DEFINE_SHADER_PROGRAM2(Program_DefaultLitTriplanarMapping, DefaultLitVS, DefaultLitFS<true>);
+	DEFINE_SHADER_PROGRAM2(Program_DefaultLit, DefaultLitVS, DefaultLitFS);
 }
 
 namespace pathos {
@@ -64,17 +59,11 @@ namespace pathos {
 	{
 		PBRTextureMaterial* material = static_cast<PBRTextureMaterial*>(inMaterial);
 
-		// #todo-material: hack and it increases overhead of shader changes.
-		if (material->useTriplanarMapping) {
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DefaultLitTriplanarMapping);
-			cmdList.useProgram(program.getGLName());
-		} else {
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DefaultLit);
-			cmdList.useProgram(program.getGLName());
-		}
-
 		geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 		geometry->activateIndexBuffer(cmdList);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DefaultLit);
+		cmdList.useProgram(program.getGLName());
 
 		// uniform: transform
 		UBO_Deferred_Pack_PBR uboData;

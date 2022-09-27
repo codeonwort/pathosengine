@@ -322,9 +322,6 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));
 	M_tower->setTextureParameter("roughness", loader->findGLTexture("R_Tower.png"));
 	M_tower->setTextureParameter("metallic", loader->findGLTexture("M_Tower.png"));
-	
-	PBRTextureMaterial* m = static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0]);
-	if (m) m->useTriplanarMapping = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
