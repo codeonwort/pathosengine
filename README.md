@@ -36,6 +36,7 @@ OpenGL rendering library (for 3d graphics study)
   * Asynchronous asset loader
   * Runtime shader recompilation
   * Actor system (component-based development)
+  * Material shader assembly system
 
 ## Sample Images
 
