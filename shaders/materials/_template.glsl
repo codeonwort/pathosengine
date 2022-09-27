@@ -223,6 +223,11 @@ void main() {
 		packOutput2.z = 0;
 	}
 #endif
+
+#if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
+	packOutput2 = uvec4(0);
+#endif
+
 }
 
 #endif // FRAGMENT_SHADER

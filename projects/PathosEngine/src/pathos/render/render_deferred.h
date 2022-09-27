@@ -5,6 +5,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/direct_lighting.h"
 #include "pathos/render/indirect_lighting.h"
+#include "pathos/render/resolve_unlit.h"
 #include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/deferred/deferredpass.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
@@ -41,6 +42,9 @@ namespace pathos {
 		static std::unique_ptr<DirectLightingPass>          directLightingPass;
 		static std::unique_ptr<IndirectLightingPass>        indirectLightingPass;
 		static std::unique_ptr<ScreenSpaceReflectionPass>   screenSpaceReflectionPass;
+
+		// Unlit
+		static std::unique_ptr<ResolveUnlitPass>            resolveUnlitPass;
 
 		// Sky & atmosphere
 		static std::unique_ptr<class SkyboxPass>            skyboxPass;

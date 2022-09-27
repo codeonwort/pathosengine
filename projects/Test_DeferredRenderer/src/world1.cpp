@@ -341,7 +341,9 @@ void World1::setupScene()
 	}
 	sceneCaptureComponent->captureScene();
 
-	auto material_sceneCapture = PBRTextureMaterial::createWithFallback(tempRenderTarget->getGLName());
+	Material* material_sceneCapture = Material::createMaterialInstance("texture_viewer");
+	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getGLName());
+	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_plane, material_sceneCapture));
 	sceneCaptureViewer->setActorLocation(-500.0f, 300.0f, -300.0f);

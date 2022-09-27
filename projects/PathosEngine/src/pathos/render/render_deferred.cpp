@@ -301,6 +301,8 @@ namespace pathos {
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
+		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
+
 		if (cvar_enable_ssr.getInt() != 0) {
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
@@ -688,6 +690,8 @@ namespace pathos {
 	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
 	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
 
+	std::unique_ptr<ResolveUnlitPass>              DeferredRenderer::resolveUnlitPass;
+
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
 	std::unique_ptr<class SkyboxPass>              DeferredRenderer::skyboxPass;
@@ -745,6 +749,9 @@ namespace pathos {
 			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
+
+		resolveUnlitPass = std::make_unique<ResolveUnlitPass>();
+		resolveUnlitPass->initializeResources(cmdList);
 
 		{
 			skyboxPass = std::make_unique<SkyboxPass>();
@@ -813,6 +820,8 @@ namespace pathos {
 			DESTROYPASS(screenSpaceReflectionPass);
 			RELEASEPASS(translucency_pass);
 		}
+
+		DESTROYPASS(resolveUnlitPass);
 
 		DESTROYPASS(skyboxPass);
 		DESTROYPASS(anselSkyPass);

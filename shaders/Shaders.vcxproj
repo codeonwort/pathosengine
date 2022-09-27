@@ -55,6 +55,7 @@
     <None Include="overlay_standard.glsl" />
     <None Include="overlay_text.glsl" />
     <None Include="prefix_sum.glsl" />
+    <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
     <None Include="skybox.glsl" />
     <None Include="sky_ansel.glsl" />
