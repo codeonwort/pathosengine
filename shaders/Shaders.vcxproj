@@ -48,6 +48,7 @@
     <None Include="materials\pbr_texture.glsl" />
     <None Include="materials\solid_color.glsl" />
     <None Include="materials\unlit.glsl" />
+    <None Include="materials\unlit_text.glsl" />
     <None Include="materials\_template.glsl" />
     <None Include="nvidia_fxaa.glsl" />
     <None Include="omni_shadow_map.glsl" />

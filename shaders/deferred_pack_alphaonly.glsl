@@ -51,7 +51,8 @@ void main() {
 layout (binding = 0) uniform sampler2D tex_fontCache;
 
 void main() {
-	vec3 albedo = uboPerObject.color.xyz;
+	vec3 albedo = uboPerObject.color.xyz * 0.0001;
+	albedo.xy += interpolants.texcoord;
 	vec3 normal = normalize(interpolants.normal);
 	float metallic = 0.0;
 	vec3 emissive = vec3(0.0);

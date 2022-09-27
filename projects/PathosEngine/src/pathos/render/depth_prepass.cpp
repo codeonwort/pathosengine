@@ -202,9 +202,15 @@ namespace pathos {
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
-				// #todo-material-assembler: Bind texture units like base pass?
-				// How to detect if a vertex shader uses VTF(Vertex Texture Fetch)?
-				// ...
+				// #todo-material-assembler: How to detect if binding textures is mandatory?
+				// Example cases:
+				// - The vertex shader uses VTF(Vertex Texture Fetch)
+				// - The pixel shader uses discard
+				if (bShouldUpdateMaterialParameters) {
+					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+					}
+				}
 
 				// #todo-renderer: Batching by same state
 				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
@@ -212,7 +218,11 @@ namespace pathos {
 				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
-				proxy->geometry->activate_position(cmdList);
+				if (proxy->bDepthPrepassNeedsFullVAO) {
+					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
+				} else {
+					proxy->geometry->activate_position(cmdList);
+				}
 
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);

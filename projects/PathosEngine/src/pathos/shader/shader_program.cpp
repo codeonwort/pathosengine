@@ -327,7 +327,11 @@ namespace pathos {
 			std::fstream fs(dumpPath, std::fstream::out);
 			if (fs.is_open()) {
 				for (uint32 i = 0; i < sourceCode.size(); ++i) {
-					fs << sourceCode[i] << std::endl;
+					const std::string& s = sourceCode[i];
+					fs << s;
+					if (s.size() == 0 || s[s.size()-1] != '\n') {
+						fs << std::endl;
+					}
 				}
 				fs.close();
 			}

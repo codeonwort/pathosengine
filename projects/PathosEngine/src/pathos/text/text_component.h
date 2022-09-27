@@ -24,7 +24,8 @@ namespace pathos {
 	private:
 		std::wstring text;
 		std::unique_ptr<TextGeometry> geom;
-		std::unique_ptr<AlphaOnlyTextureMaterial> material;
+		std::unique_ptr<Material> materialNew;
+		std::unique_ptr<AlphaOnlyTextureMaterial> materialOld;
 		FontDesc fontDesc;
 
 		bool dynamicDataDirty = false;

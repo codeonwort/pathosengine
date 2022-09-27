@@ -9,7 +9,7 @@
 
 namespace pathos {
 
-	static matrix4 invertTextY(
+	static const matrix4 invertTextY(
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
@@ -17,7 +17,8 @@ namespace pathos {
 
 	TextMeshComponent::TextMeshComponent() {
 		geom = std::make_unique<TextGeometry>();
-		material = std::make_unique<AlphaOnlyTextureMaterial>(0);
+		materialNew = std::unique_ptr<Material>(Material::createMaterialInstance("unlit_text"));
+		materialOld = std::make_unique<AlphaOnlyTextureMaterial>(0);
 
 		setFont(DEFAULT_FONT_TAG);
 	}
@@ -27,16 +28,24 @@ namespace pathos {
 			return;
 		}
 
-		uint16 materialID = static_cast<uint16>(material->getMaterialID());
-		
+		// #todo-material-assembler-fatal: texcoord is only invalid in new material system?
+		bool bUseMaterialShader = true;
+		Material* material = bUseMaterialShader ? materialNew.get() : materialOld.get();
+
 		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
 		proxy->modelMatrix = getLocalMatrix() * invertTextY;
 		proxy->geometry = geom.get();
-		proxy->material = material.get();
+		proxy->material = material;
+		proxy->bDepthPrepassNeedsFullVAO = true;
+		// #todo-frustum-culling: Update worldBounds for text component
 
-		scene->proxyList_staticMesh[materialID].push_back(proxy);
+		if (bUseMaterialShader) {
+			scene->proxyList_staticMeshTemp.push_back(proxy);
+		} else {
+			scene->proxyList_staticMesh[(uint8)materialOld->getMaterialID()].push_back(proxy);
+		}
 	}
 
 	void TextMeshComponent::updateDynamicData_renderThread(RenderCommandList& cmdList) {
@@ -52,7 +61,8 @@ namespace pathos {
 	}
 
 	void TextMeshComponent::setColor(float r, float g, float b) {
-		material->setColor(r, g, b);
+		materialNew->setConstantParameter("color", vector3(r, g, b));
+		materialOld->setColor(r, g, b);
 	}
 
 	void TextMeshComponent::setFont(const std::string& tag) {
@@ -61,8 +71,10 @@ namespace pathos {
 			validDesc = FontManager::get().getFontDesc(DEFAULT_FONT_TAG, fontDesc);
 		}
 		CHECK(validDesc);
+		GLuint fontCache = fontDesc.cacheTexture->getTexture();
 
-		material->setTexture(fontDesc.cacheTexture->getTexture());
+		materialNew->setTextureParameter("fontCache", fontCache);
+		materialOld->setTexture(fontCache);
 	}
 
 }
