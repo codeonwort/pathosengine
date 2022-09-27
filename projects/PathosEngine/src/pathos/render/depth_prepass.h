@@ -26,7 +26,7 @@ namespace pathos {
 
 	private:
 		GLuint fbo = 0xffffffff;
-		UniformBuffer ubo;
+		UniformBuffer uboPerObject;
 
 	};
 

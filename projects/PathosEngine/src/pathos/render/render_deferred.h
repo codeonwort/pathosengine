@@ -5,8 +5,8 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/direct_lighting.h"
 #include "pathos/render/indirect_lighting.h"
+#include "pathos/render/resolve_unlit.h"
 #include "pathos/render/screen_space_reflection.h"
-#include "pathos/render/deferred/deferredpass.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
@@ -27,26 +27,28 @@ namespace pathos {
 		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
-		static std::unique_ptr<class ColorMaterial> fallbackMaterial;
+		static std::unique_ptr<class Material> fallbackMaterial;
 		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
 		static std::unique_ptr<UniformBuffer> ubo_perFrame;
-
-		// Mesh rendering
-		static MeshDeferredRenderPass_Pack*                 pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
 		// Local & global illumination
 		static std::unique_ptr<DirectLightingPass>          directLightingPass;
 		static std::unique_ptr<IndirectLightingPass>        indirectLightingPass;
 		static std::unique_ptr<ScreenSpaceReflectionPass>   screenSpaceReflectionPass;
 
+		// Unlit
+		static std::unique_ptr<ResolveUnlitPass>            resolveUnlitPass;
+
 		// Sky & atmosphere
 		static std::unique_ptr<class SkyboxPass>            skyboxPass;
 		static std::unique_ptr<class AnselSkyPass>          anselSkyPass;
 		static std::unique_ptr<class SkyAtmospherePass>     skyAtmospherePass;
 		static std::unique_ptr<class VolumetricCloudPass>   volumetricCloud;
+
+		// Translucency
+		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
 
 		// Full-screen processing
 		static std::unique_ptr<class DepthPrepass>          depthPrepass;
@@ -99,6 +101,8 @@ namespace pathos {
 		// #todo-renderer: Implement render target pool
 		SceneRenderTargets sceneRenderTargets;
 		GLuint gbufferFBO = 0;
+
+		UniformBuffer uboPerObject;
 
 		SceneRenderSettings sceneRenderSettings;
 		RenderTarget2D* finalRenderTarget = nullptr;

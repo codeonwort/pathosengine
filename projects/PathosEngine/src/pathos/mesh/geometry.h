@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pathos/named_object.h"
 #include "pathos/render/render_command_list.h"
 #include "gl_core.h"
 
@@ -9,7 +8,7 @@
 
 namespace pathos {
 
-	class MeshGeometry : public NamedObject {
+	class MeshGeometry {
 
 	public:
 		MeshGeometry();

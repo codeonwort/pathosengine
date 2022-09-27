@@ -26,6 +26,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
 
 #include "pathos/console.h"
 #include "pathos/util/log.h"
@@ -110,6 +111,8 @@ namespace pathos {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
+
+		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_BasePass");
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
@@ -175,6 +178,15 @@ namespace pathos {
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 		reallocateSceneRenderTargets(cmdList);
+
+		// Prepare fallback material.
+		if (fallbackMaterial.get() == nullptr) {
+			fallbackMaterial = std::unique_ptr<Material>(Material::createMaterialInstance("solid_color"));
+			fallbackMaterial->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
+			fallbackMaterial->setConstantParameter("metallic", 0.0f);
+			fallbackMaterial->setConstantParameter("roughness", 0.0f);
+			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
+		}
 
 		// #todo-multivew
 		{
@@ -247,7 +259,6 @@ namespace pathos {
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
-		// #todo-refactoring: Rename to renderBasePass
 		{
 			SCOPED_GPU_COUNTER(BasePass);
 			renderBasePass(cmdList);
@@ -281,6 +292,8 @@ namespace pathos {
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
+
+		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
 
 		if (cvar_enable_ssr.getInt() != 0) {
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
@@ -430,50 +443,72 @@ namespace pathos {
 
 		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
 
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 i = 0; i < numMaterialIDs; ++i) {
-			MeshDeferredRenderPass_Pack* pass = pack_passes[i];
+		{
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
+			const size_t numProxies = proxyList.size();
+			uint32 currentProgramHash = 0;
+			uint32 currentMIID = 0xffffffff;
 
-			bool fallbackPass = false;
-			if (pass == nullptr) {
-				pass = pack_passes[static_cast<uint16>(MATERIAL_ID::SOLID_COLOR)];
-				fallbackPass = true;
-			}
+			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+				StaticMeshProxy* proxy = proxyList[proxyIx];
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
 
-			if (i == (uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
-				// Translucency is not rendered in gbuffer pass
-				continue;
-			}
-
-			const auto& proxyList = scene->proxyList_staticMesh[i];
-
-			if (proxyList.size() == 0) {
-				continue;
-			}
-
-			{
-				SCOPED_DRAW_EVENT(BindMaterialProgram);
-				pass->bindProgram(cmdList);
-			}
-
-			for (auto j = 0u; j < proxyList.size(); ++j) {
-				const StaticMeshProxy& item = *(proxyList[j]);
-				Material* materialOverride = fallbackPass ? fallbackMaterial.get() : item.material;
-
-				if (bEnableFrustumCulling && !item.bInFrustum) {
+				// Early out
+				if (bEnableFrustumCulling && !proxy->bInFrustum) {
 					continue;
 				}
 
-				// #todo-renderer: Batching by same state
-				if (item.doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (item.renderInternal) cmdList.frontFace(GL_CW);
+				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
+				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bUseWireframeMode = material->bWireframe;
+				currentProgramHash = materialShader->programHash;
+				currentMIID = material->internal_getMaterialInstanceID();
 
- 				pass->setModelMatrix(item.modelMatrix);
- 				pass->render(cmdList, scene, camera, item.geometry, materialOverride);
+				if (bShouldBindProgram) {
+					SCOPED_DRAW_EVENT(BindMaterialProgram);
+
+					uint32 programName = materialShader->program->getGLName();
+					CHECK(programName != 0 && programName != 0xffffffff);
+					cmdList.useProgram(programName);
+				}
+
+				// Update UBO (per object)
+				{
+					Material::UBO_PerObject uboData;
+					uboData.modelTransform = proxy->modelMatrix;
+					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
+					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+				}
+
+				// Update UBO (material)
+				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
+					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
+					material->internal_fillUniformBuffer(uboMemory);
+					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
+				}
+
+				// Bind texture units
+				if (bShouldUpdateMaterialParameters) {
+					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+					}
+				}
 
 				// #todo-renderer: Batching by same state
-				if (item.doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (item.renderInternal) cmdList.frontFace(GL_CCW);
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
+				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->drawPrimitive(cmdList);
+
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 
@@ -590,17 +625,17 @@ namespace pathos {
 
 namespace pathos {
 	
-	std::unique_ptr<class ColorMaterial>           DeferredRenderer::fallbackMaterial;
+	std::unique_ptr<class Material>                DeferredRenderer::fallbackMaterial;
 	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
 	GLuint                                         DeferredRenderer::copyTextureFBO = 0;
 	
 	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
 	
-	MeshDeferredRenderPass_Pack*                   DeferredRenderer::pack_passes[static_cast<uint32>(MATERIAL_ID::NUM_MATERIAL_IDS)];
-	
 	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
 	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
 	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
+
+	std::unique_ptr<ResolveUnlitPass>              DeferredRenderer::resolveUnlitPass;
 
 	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
 
@@ -623,11 +658,6 @@ namespace pathos {
 	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
 
 	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fallbackMaterial = std::make_unique<ColorMaterial>();
-		fallbackMaterial->setAlbedo(1.0f, 0.4f, 0.7f);
-		fallbackMaterial->setMetallic(0.0f);
-		fallbackMaterial->setRoughness(0.0f);
-
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
@@ -644,19 +674,6 @@ namespace pathos {
 		}
 
 		{
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				pack_passes[i] = nullptr;
-			}
-			pack_passes[(uint8)MATERIAL_ID::SOLID_COLOR] = new MeshDeferredRenderPass_Pack_SolidColor;
-			pack_passes[(uint8)MATERIAL_ID::WIREFRAME] = new MeshDeferredRenderPass_Pack_Wireframe;
-			pack_passes[(uint8)MATERIAL_ID::ALPHA_ONLY_TEXTURE] = new MeshDeferredRenderPass_Pack_AlphaOnly;
-			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				if (pack_passes[i] == nullptr) {
-					LOG(LogWarning, "BasePass not present for material id: %u", i);
-				}
-			}
-
 			directLightingPass = std::make_unique<DirectLightingPass>();
 			indirectLightingPass = std::make_unique<IndirectLightingPass>();
 			screenSpaceReflectionPass = std::make_unique<ScreenSpaceReflectionPass>();
@@ -667,6 +684,9 @@ namespace pathos {
 			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
 		}
+
+		resolveUnlitPass = std::make_unique<ResolveUnlitPass>();
+		resolveUnlitPass->initializeResources(cmdList);
 
 		{
 			skyboxPass = std::make_unique<SkyboxPass>();
@@ -723,18 +743,12 @@ namespace pathos {
 #define DESTROYPASS(pass) { pass->destroyResources(cmdList); pass.reset(); }
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
 
-		{
-			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-				if (pack_passes[i]) {
-					delete pack_passes[i];
-					pack_passes[i] = nullptr;
-				}
-			}
-			DESTROYPASS(directLightingPass);
-			DESTROYPASS(indirectLightingPass);
-			DESTROYPASS(screenSpaceReflectionPass);
-			RELEASEPASS(translucency_pass);
-		}
+		DESTROYPASS(directLightingPass);
+		DESTROYPASS(indirectLightingPass);
+		DESTROYPASS(screenSpaceReflectionPass);
+		RELEASEPASS(translucency_pass);
+
+		DESTROYPASS(resolveUnlitPass);
 
 		DESTROYPASS(skyboxPass);
 		DESTROYPASS(anselSkyPass);

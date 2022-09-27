@@ -92,7 +92,11 @@ namespace pathos {
 		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 
-		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
+		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
+		gbuffer_textures[0] = sceneContext.gbufferA;
+		gbuffer_textures[1] = sceneContext.gbufferB;
+		gbuffer_textures[2] = sceneContext.gbufferC;
+
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(4, scene->irradianceMap);
@@ -102,6 +106,9 @@ namespace pathos {
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
+
+		// Fix a strange bug that IBL maps are randomly persistent across worlds.
+		cmdList.bindTextures(0, 7, nullptr);
 
 		// Restore render states
 		{

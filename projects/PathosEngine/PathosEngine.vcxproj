@@ -115,7 +115,6 @@
     <ClCompile Include="src\pathos\loader\spline_loader.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
-    <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\shadow_directional.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
@@ -129,11 +128,6 @@
     <ClCompile Include="src\pathos\overlay\display_object_proxy.cpp" />
     <ClCompile Include="src\pathos\overlay\label.cpp" />
     <ClCompile Include="src\pathos\overlay\rectangle.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_base.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.cpp" />
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_wireframe.cpp" />
     <ClCompile Include="src\pathos\render\direct_lighting.cpp" />
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
@@ -155,6 +149,7 @@
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
+    <ClCompile Include="src\pathos\render\resolve_unlit.cpp" />
     <ClCompile Include="src\pathos\render\scene_proxy.cpp" />
     <ClCompile Include="src\pathos\render\screen_space_reflection.cpp" />
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp" />
@@ -165,6 +160,8 @@
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
+    <ClCompile Include="src\pathos\shader\material_shader.cpp" />
+    <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
     <ClCompile Include="src\pathos\texture\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
@@ -239,7 +236,6 @@
     <ClInclude Include="src\pathos\mesh\model_transform.h" />
     <ClInclude Include="src\pathos\mesh\static_mesh_actor.h" />
     <ClInclude Include="src\pathos\mesh\static_mesh_component.h" />
-    <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light_all.h" />
@@ -251,7 +247,6 @@
     <ClInclude Include="src\pathos\overlay\display_object_proxy.h" />
     <ClInclude Include="src\pathos\overlay\label.h" />
     <ClInclude Include="src\pathos\overlay\rectangle.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_alphaonly.h" />
     <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\indirect_lighting.h" />
@@ -270,6 +265,7 @@
     <ClInclude Include="src\pathos\render\render_command_list.h" />
     <ClInclude Include="src\pathos\render\render_device.h" />
     <ClInclude Include="src\pathos\render\render_target.h" />
+    <ClInclude Include="src\pathos\render\resolve_unlit.h" />
     <ClInclude Include="src\pathos\render\scene_proxy.h" />
     <ClInclude Include="src\pathos\render\screen_space_reflection.h" />
     <ClInclude Include="src\pathos\render\sky_atmosphere.h" />
@@ -277,6 +273,8 @@
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
+    <ClInclude Include="src\pathos\shader\material_shader.h" />
+    <ClInclude Include="src\pathos\shader\material_shader_assembler.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />
     <ClInclude Include="src\pathos\shader\shader_storage_buffer.h" />
     <ClInclude Include="src\pathos\smart_pointer.h" />
@@ -292,11 +290,6 @@
     <ClInclude Include="src\pathos\util\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\math_lib.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_base.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_pbr.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_solidcolor.h" />
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_wireframe.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
     <ClInclude Include="src\pathos\render\sky.h" />

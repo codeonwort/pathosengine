@@ -8,18 +8,6 @@
 #define SLOT_UBO_PER_FRAME         0
 
 // --------------------------------------------------------
-// Materials
-
-// #todo-material: Rename to MATERIAL_DOMAIN
-// UNLIT, DEFAULTLIT, SUBSURFACE, HAIR, TRANSLUCENT, ...
-#define MATERIAL_ID_NONE           0
-#define MATERIAL_ID_SOLID_COLOR    1
-#define MATERIAL_ID_WIREFRAME      2
-#define MATERIAL_ID_TEXTURE        3
-#define MATERIAL_ID_ALPHAONLY      7
-#define MATERIAL_ID_PBR            8
-
-// --------------------------------------------------------
 // Lights
 
 // Total 64 bytes

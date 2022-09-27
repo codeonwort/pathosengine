@@ -5,10 +5,14 @@
 #include "pathos/mesh/mesh.h"
 
 #include <vector>
+#include <string>
 #include <map>
 #include <set>
+#include <utility>
 
 namespace pathos {
+
+	class Material;
 
 	struct PendingTextures {
 		PendingTextures() = default;
@@ -19,10 +23,15 @@ namespace pathos {
 			, metallic(inMetallic)
 		{
 		}
-		BitmapBlob* albedo;
-		BitmapBlob* normal;
-		BitmapBlob* roughness;
-		BitmapBlob* metallic;
+		BitmapBlob* albedo = nullptr;
+		BitmapBlob* normal = nullptr;
+		BitmapBlob* roughness = nullptr;
+		BitmapBlob* metallic = nullptr;
+
+		std::string albedoFilename;
+		std::string normalFilename;
+		std::string roughnessFilename;
+		std::string metallicFilename;
 
 		GLuint glAlbedo = 0;
 		GLuint glNormal = 0;
@@ -46,6 +55,10 @@ namespace pathos {
 		OBJLoader(const char* inObjFile, const char* inMtlDir);
 		OBJLoader(const OBJLoader& other) = delete;
 		OBJLoader(OBJLoader&& rhs) = delete;
+
+		// Should be called before load()
+		void setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides);
+		GLuint findGLTexture(const std::string& textureName) const;
 
 		// May called in worker threads
 		bool load(const char* inObjFile, const char* inMtlDir);
@@ -77,10 +90,11 @@ namespace pathos {
 	private:
 		std::string objFile;
 		std::string mtlDir;
+		std::vector<std::pair<std::string, Material*>> materialOverrides;
 		bool bIsValid;
 
 		// Fallback material if there's no matching material for that within .mtl
-		ColorMaterial* defaultMaterial = nullptr;
+		Material* defaultMaterial = nullptr;
 
 		std::vector<tinyobj::shape_t> t_shapes;
 		std::vector<tinyobj::material_t> t_materials;
@@ -91,6 +105,9 @@ namespace pathos {
 
 		std::map<std::string, BitmapBlob*> cachedBitmapDB;
 		std::map<int32, PendingTextures> pendingTextureData; // key: material index
+
+		// Can be queried to get source images.
+		std::map<std::string, GLuint> glTextureMap;
 
 	};
 

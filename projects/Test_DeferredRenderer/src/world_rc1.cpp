@@ -30,11 +30,11 @@
 #define OBJ_SPACESHIP_FILE       "render_challenge_1/spaceship.obj"
 #define OBJ_SPACESHIP_DIR        "render_challenge_1/"
 
-#define GUARD_TOWER_ALBEDO       "resources/render_challenge_1/T_Brick.png"
-#define GUARD_TOWER_NORMAL       "resources/render_challenge_1/N_Brick.png"
-#define GUARD_TOWER_METALLIC     "resources/render_challenge_1/M_Brick.png"
-#define GUARD_TOWER_ROUGHNESS    "resources/render_challenge_1/R_Brick.png"
-#define GUARD_TOWER_LOCAL_AO     "resources/render_challenge_1/A_Brick.png"
+#define RING_ALBEDO       "resources/render_challenge_1/T_Brick.png"
+#define RING_NORMAL       "resources/render_challenge_1/N_Brick.png"
+#define RING_METALLIC     "resources/render_challenge_1/M_Brick.png"
+#define RING_ROUGHNESS    "resources/render_challenge_1/R_Brick.png"
+#define RING_LOCAL_AO     "resources/render_challenge_1/A_Brick.png"
 
 #define SPLINE_1                 "render_challenge_1/SpaceshipCurve1.spline"
 #define SPLINE_2                 "render_challenge_1/SpaceshipCurve2.spline"
@@ -56,7 +56,9 @@ void World_RC1::onInitialize()
 {
 	// --------------------------------------------------------
 	// Async load assets
+	M_tower = Material::createMaterialInstance("guard_tower");
 	AssetReferenceWavefrontOBJ assetRefGuardTower(OBJ_GUARD_TOWER_FILE, OBJ_GUARD_TOWER_DIR);
+	assetRefGuardTower.addMaterialOverride("TowerMaterial", M_tower);
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ, 0);
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
@@ -246,26 +248,22 @@ void World_RC1::setupScene()
 	pointLight->setSourceRadius(40.0f);
 
 	//////////////////////////////////////////////////////////////////////////
-	auto geom_sphere = new SphereGeometry(5.0f, 30);
+	// Materials
 
-	auto material_color = new ColorMaterial;
-	{
-		auto color = static_cast<ColorMaterial*>(material_color);
-		color->setAlbedo(2.0f, 0.2f, 0.2f);
-		color->setMetallic(0.2f);
-		color->setRoughness(0.1f);
-	}
-
-	PBRTextureMaterial* material_pbr;
+	Material* material_ring = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr bool genMips = true;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_ALBEDO), genMips, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_NORMAL), genMips, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_METALLIC), genMips, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_ROUGHNESS), genMips, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(loadImage(GUARD_TOWER_LOCAL_AO), genMips, !sRGB);
-		material_pbr = new PBRTextureMaterial(albedo, normal, metallic, roughness, ao);
+		GLuint albedo = pathos::createTextureFromBitmap(loadImage(RING_ALBEDO), genMips, sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(loadImage(RING_NORMAL), genMips, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(loadImage(RING_METALLIC), genMips, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(loadImage(RING_ROUGHNESS), genMips, !sRGB);
+		GLuint localAO = pathos::createTextureFromBitmap(loadImage(RING_LOCAL_AO), genMips, !sRGB);
+		material_ring->setTextureParameter("albedo", albedo);
+		material_ring->setTextureParameter("normal", normal);
+		material_ring->setTextureParameter("metallic", metallic);
+		material_ring->setTextureParameter("roughness", roughness);
+		material_ring->setTextureParameter("localAO", localAO);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -297,7 +295,7 @@ void World_RC1::setupScene()
 		rings.push_back(ring);
 
 		ring->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-		ring->getStaticMesh()->setMaterial(0, material_pbr);
+		ring->getStaticMesh()->setMaterial(0, material_ring);
 	}
 
 	const uint32 numParticles = 10;
@@ -324,8 +322,10 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	guardTower->setActorScale(1000.0f);
 	guardTower->setActorLocation(vector3(0.0f, Y_OFFSET - 4700.0f, 0.0f));
 
-	// #todo-material: hack
-	static_cast<PBRTextureMaterial*>(guardTower->getStaticMesh()->getMaterials()[0])->useTriplanarMapping = true;
+	M_tower->setTextureParameter("albedo", loader->findGLTexture("T_Tower.png"));
+	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));
+	M_tower->setTextureParameter("roughness", loader->findGLTexture("R_Tower.png"));
+	M_tower->setTextureParameter("metallic", loader->findGLTexture("M_Tower.png"));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -334,10 +334,12 @@ RingActor::RingActor()
 {
 	G = new ProceduralGeometry;
 	
-	M = new ColorMaterial;
-	M->setAlbedo(1.8f, 1.8f, 1.8f);
-	M->setRoughness(1.0f);
-	M->setMetallic(0.0f);
+	// #todo: This is overriden. No use.
+	M = Material::createMaterialInstance("solid_color");
+	M->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
+	M->setConstantParameter("metallic", 0.0f);
+	M->setConstantParameter("roughness", 1.0f);
+	M->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
 	setStaticMesh(new Mesh(G, M));
 }

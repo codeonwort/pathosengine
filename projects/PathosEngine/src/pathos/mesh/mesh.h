@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pathos/named_object.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/model_transform.h"
 #include "pathos/material/material.h"
@@ -13,7 +12,7 @@ namespace pathos {
 	using Materials = std::vector<Material*>;
 
 	// mesh asset = geometries + materials
-	class Mesh : public NamedObject {
+	class Mesh {
 
 	public:
 		// #todo-static-mesh: Move to StaticMeshComponent

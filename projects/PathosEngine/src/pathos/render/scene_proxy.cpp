@@ -1,5 +1,8 @@
 #include "scene_proxy.h"
 #include "pathos/engine_policy.h"
+#include "pathos/material/material.h"
+#include "pathos/shader/material_shader.h"
+#include "pathos/shader/shader_program.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/light/rect_light_component.h"
@@ -26,13 +29,37 @@ namespace pathos {
 		proxyList_rectLight.clear();
 		proxyList_shadowMesh.clear();
 		proxyList_wireframeShadowMesh.clear();
-		for (uint32 i = 0; i < (uint32)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			proxyList_staticMesh[i].clear();
-		}
+		proxyList_staticMeshOpaque.clear();
+		proxyList_staticMeshTranslucent.clear();
 		skybox = nullptr;
 		cloud = nullptr;
 
 		renderProxyAllocator.clear();
+	}
+
+	void SceneProxy::finalize_mainThread() {
+		auto sortProxyList = [](StaticMeshProxyList& v) {
+			std::sort(v.begin(), v.end(),
+				[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
+					const uint32 programA = A->material->internal_getMaterialShader()->programHash;
+					const uint32 programB = B->material->internal_getMaterialShader()->programHash;
+					if (programA != programB) {
+						return programA < programB;
+					}
+					const uint32 midA = A->material->internal_getMaterialInstanceID();
+					const uint32 midB = B->material->internal_getMaterialInstanceID();
+					if (midA != midB) {
+						return midA < midB;
+					}
+					// Solid meshes first
+					const uint32 wireA = (uint32)A->material->bWireframe;
+					const uint32 wireB = (uint32)B->material->bWireframe;
+					return wireA < wireB;
+				}
+			);
+		};
+		sortProxyList(proxyList_staticMeshOpaque);
+		sortProxyList(proxyList_staticMeshTranslucent);
 	}
 
 	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {
@@ -73,9 +100,7 @@ namespace pathos {
 		int32 culledCount = 0;
 		const bool bIgnoreFarPlane = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse);
 
-		const uint8 numMaterialIDs = (uint8)MATERIAL_ID::NUM_MATERIAL_IDS;
-		for (uint8 materialID = 0; materialID < numMaterialIDs; ++materialID) {
-			auto& proxies = proxyList_staticMesh[materialID];
+		auto checkProxyList = [&](std::vector<StaticMeshProxy*>& proxies) {
 			for (int32 i = 0; i < proxies.size(); ++i) {
 				if (bIgnoreFarPlane) {
 					proxies[i]->bInFrustum = badger::hitTest::AABB_frustum_noFarPlane(proxies[i]->worldBounds, frustum);
@@ -88,6 +113,22 @@ namespace pathos {
 				}
 				totalCount++;
 			}
+		};
+
+		checkProxyList(proxyList_staticMeshOpaque);
+		checkProxyList(proxyList_staticMeshTranslucent);
+	}
+
+	void SceneProxy::addStaticMeshProxy(StaticMeshProxy* proxy) {
+		if (proxy->material->internal_getMaterialShader() == nullptr) {
+			return;
+		}
+
+		EMaterialShadingModel sm = proxy->material->getShadingModel();
+		if (sm == EMaterialShadingModel::TRANSLUCENT) {
+			proxyList_staticMeshTranslucent.push_back(proxy);
+		} else {
+			proxyList_staticMeshOpaque.push_back(proxy);
 		}
 	}
 

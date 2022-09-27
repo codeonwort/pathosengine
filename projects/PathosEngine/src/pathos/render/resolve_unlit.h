@@ -1,0 +1,31 @@
+#pragma once
+
+#include "pathos/render/render_command_list.h"
+
+// Resolve unlit color into sceneColor.
+
+namespace pathos {
+
+	class MeshGeometry;
+
+	class ResolveUnlitPass {
+
+	public:
+		ResolveUnlitPass();
+		~ResolveUnlitPass();
+
+		void initializeResources(RenderCommandList& cmdList);
+		void destroyResources(RenderCommandList& cmdList);
+
+		void renderUnlit(
+			RenderCommandList& cmdList,
+			MeshGeometry* fullscreenQuad);
+
+	private:
+		GLuint fbo = 0xffffffff;
+
+		bool destroyed = false;
+
+	};
+
+}

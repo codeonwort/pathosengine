@@ -8,7 +8,6 @@ namespace pathos {
 	class StaticMeshComponent;
 	class SphereGeometry;
 	class ProceduralGeometry;
-	class ColorMaterial;
 }
 
 class LightningParticleComponent : public StaticMeshComponent {
@@ -17,7 +16,7 @@ public:
 	void generateParticle(const vector3& p0, const vector3& p1);
 private:
 	ProceduralGeometry* G;
-	ColorMaterial* M;
+	Material* M;
 };
 
 class LightningActor : public Actor {
@@ -31,7 +30,7 @@ public:
 private:
 	StaticMeshComponent* sphereComponent;
 	SphereGeometry* sphereGeometry;
-	ColorMaterial* sphereMaterial;
+	Material* sphereMaterial;
 
 	std::vector<LightningParticleComponent*> particleComponents;
 };

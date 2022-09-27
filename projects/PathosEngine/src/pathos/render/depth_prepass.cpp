@@ -5,25 +5,13 @@
 #include "pathos/engine_policy.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/material/material.h"
 #include "pathos/console.h"
 
-// #todo-material
-#define SUPPORT_ALPHAONLY_DISCARD 0
-
 namespace pathos {
-
-#if SUPPORT_ALPHAONLY_DISCARD
-	static constexpr uint32 ALPHAONLY_TEXTURE_UNIT = 1;
-#endif
-
-	struct UBO_DepthPrepass {
-		matrix4 mvTransform;
-		matrix3x4 mvMatrix3x3;
-		vector4 billboardParam;
-	};
 
 	class DepthPrepassVS : public ShaderStage {
 	public:
@@ -54,7 +42,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
-		ubo.init<UBO_DepthPrepass>();
+		uboPerObject.init<Material::UBO_PerObject>();
 	}
 
 	void DepthPrepass::destroyResources(RenderCommandList& cmdList)
@@ -90,70 +78,83 @@ namespace pathos {
 
 		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
 		CHECK(cvarFrustum != nullptr);
-		bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
+		const bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
 
-		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
-			const auto& proxyList = scene->proxyList_staticMesh[i];
-			for (StaticMeshProxy* proxy : proxyList) {
-				if (proxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
-					continue;
-				}
+		{
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
+			const size_t numProxies = proxyList.size();
+			uint32 currentProgramHash = 0;
+			uint32 currentMIID = 0xffffffff;
 
+			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+				StaticMeshProxy* proxy = proxyList[proxyIx];
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
+
+				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
 					continue;
 				}
 
-				if (proxy->material->getMaterialID() == MATERIAL_ID::PBR_TEXTURE) {
-					if (static_cast<PBRTextureMaterial*>(proxy->material)->writeAllPixels == false) {
-						continue;
+				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
+				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bUseWireframeMode = material->bWireframe;
+				currentProgramHash = materialShader->programHash;
+				currentMIID = material->internal_getMaterialInstanceID();
+
+				if (bShouldBindProgram) {
+					SCOPED_DRAW_EVENT(BindMaterialProgram);
+
+					uint32 programName = materialShader->program->getGLName();
+					CHECK(programName != 0 && programName != 0xffffffff);
+					cmdList.useProgram(programName);
+				}
+
+				// Update UBO (per object)
+				{
+					Material::UBO_PerObject uboData;
+					uboData.modelTransform = proxy->modelMatrix;
+					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
+					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
+					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+				}
+
+				// Update UBO (material)
+				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
+					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
+					material->internal_fillUniformBuffer(uboMemory);
+					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
+				}
+
+				// #todo-material-assembler: How to detect if binding textures is mandatory?
+				// Example cases:
+				// - The vertex shader uses VTF(Vertex Texture Fetch)
+				// - The pixel shader uses discard
+				if (bShouldUpdateMaterialParameters) {
+					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
 					}
 				}
 
-				// Render state modifiers
-				bool doubleSided = proxy->doubleSided;
-				bool renderInternal = proxy->renderInternal;
-				bool wireframe = proxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				if (doubleSided) cmdList.disable(GL_CULL_FACE);
-				if (renderInternal) cmdList.frontFace(GL_CW);
-				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-				// #todo-material: temp billboard
-				ColorMaterial* colorMaterial = nullptr;
-				if (proxy->material->getMaterialID() == MATERIAL_ID::SOLID_COLOR) {
-					colorMaterial = static_cast<ColorMaterial*>(proxy->material);
-				}
-
-#if SUPPORT_ALPHAONLY_DISCARD
-				// #todo-material: temp alphaonly processing in prepass
-				if (proxy->material->getMaterialID() == MATERIAL_ID::ALPHA_ONLY_TEXTURE) {
-					AlphaOnlyTextureMaterial* M = static_cast<AlphaOnlyTextureMaterial*>(proxy->material);
-					cmdList.bindTextureUnit(ALPHAONLY_TEXTURE_UNIT, M->getTexture());
-				}
-#endif
-
-				UBO_DepthPrepass uboData;
-				{
-					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
-					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
-					uboData.billboardParam.x = colorMaterial && colorMaterial->billboard ? 1.0f : 0.0f;
-					uboData.billboardParam.y = colorMaterial ? colorMaterial->billboardWidth : 0.0f;
-				}
-				ubo.update(cmdList, 1, &uboData);
-
-				if (colorMaterial && colorMaterial->billboard) {
-					proxy->geometry->activate_position_uv(cmdList);
-				} else {
+				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
+				if (material->bTrivialDepthOnlyPass) {
 					proxy->geometry->activate_position(cmdList);
+				} else {
+					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 				}
+
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
-				proxy->geometry->deactivate(cmdList);
-				proxy->geometry->deactivateIndexBuffer(cmdList);
 
-				if (doubleSided) cmdList.enable(GL_CULL_FACE);
-				if (renderInternal) cmdList.frontFace(GL_CCW);
-				if (wireframe) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 	}

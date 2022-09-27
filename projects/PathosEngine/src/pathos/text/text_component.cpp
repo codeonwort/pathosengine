@@ -9,7 +9,7 @@
 
 namespace pathos {
 
-	static matrix4 invertTextY(
+	static const matrix4 invertTextY(
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
@@ -17,7 +17,8 @@ namespace pathos {
 
 	TextMeshComponent::TextMeshComponent() {
 		geom = std::make_unique<TextGeometry>();
-		material = std::make_unique<AlphaOnlyTextureMaterial>(0);
+		material = std::unique_ptr<Material>(Material::createMaterialInstance("unlit_text"));
+		material->bTrivialDepthOnlyPass = false;
 
 		setFont(DEFAULT_FONT_TAG);
 	}
@@ -27,16 +28,15 @@ namespace pathos {
 			return;
 		}
 
-		uint16 materialID = static_cast<uint16>(material->getMaterialID());
-		
 		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
 		proxy->modelMatrix = getLocalMatrix() * invertTextY;
 		proxy->geometry = geom.get();
 		proxy->material = material.get();
+		// #todo-frustum-culling: Update worldBounds for text component
 
-		scene->proxyList_staticMesh[materialID].push_back(proxy);
+		scene->addStaticMeshProxy(proxy);
 	}
 
 	void TextMeshComponent::updateDynamicData_renderThread(RenderCommandList& cmdList) {
@@ -52,7 +52,7 @@ namespace pathos {
 	}
 
 	void TextMeshComponent::setColor(float r, float g, float b) {
-		material->setColor(r, g, b);
+		material->setConstantParameter("color", vector3(r, g, b));
 	}
 
 	void TextMeshComponent::setFont(const std::string& tag) {
@@ -61,8 +61,9 @@ namespace pathos {
 			validDesc = FontManager::get().getFontDesc(DEFAULT_FONT_TAG, fontDesc);
 		}
 		CHECK(validDesc);
+		GLuint fontCache = fontDesc.cacheTexture->getTexture();
 
-		material->setTexture(fontDesc.cacheTexture->getTexture());
+		material->setTextureParameter("fontCache", fontCache);
 	}
 
 }

@@ -11,12 +11,17 @@
 
 namespace pathos {
 
-	void TextGeometry::configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& newText) {
-		// You should not call this function with empty text. Just skip rendering from higher interface.
+	void TextGeometry::configure(
+		RenderCommandList& cmdList,
+		FontTextureCache& cache,
+		const std::wstring& newText)
+	{
+		// You should not call this function with empty text.
+		// Just skip rendering from higher interface.
 		CHECK(newText.size() > 0);
 
 		std::vector<GLfloat> positions;
-		std::vector<GLfloat> normals;
+		std::vector<GLfloat> normals, tangentsDummy;
 		std::vector<GLfloat> uvs;
 		std::vector<GLuint> indices;
 
@@ -115,12 +120,17 @@ namespace pathos {
 		updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
 
 		if (normals.size() == 0) {
-			for (auto i = 0u; i < newText.size(); ++i) {
+			for (auto i = 0u; i < newText.size() * 4; ++i) {
 				normals.push_back(0.0f);
 				normals.push_back(0.0f);
 				normals.push_back(1.0f);
+				tangentsDummy.push_back(0.0f);
+				tangentsDummy.push_back(0.0f);
+				tangentsDummy.push_back(0.0f);
 			}
 			updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
+			updateTangentData(tangentsDummy.data(), (uint32)tangentsDummy.size());
+			updateBitangentData(tangentsDummy.data(), (uint32)tangentsDummy.size());
 		}
 	}
 

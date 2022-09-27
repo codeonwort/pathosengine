@@ -22,16 +22,6 @@
     <None Include="copy_texture.fs.glsl" />
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
-    <None Include="deferred_pack_bumptexture_fs.glsl" />
-    <None Include="deferred_pack_bumptexture_vs.glsl" />
-    <None Include="deferred_pack_pbr_fs.glsl" />
-    <None Include="deferred_pack_pbr_vs.glsl" />
-    <None Include="deferred_pack_solidcolor_fs.glsl" />
-    <None Include="deferred_pack_solidcolor_vs.glsl" />
-    <None Include="deferred_pack_texture_fs.glsl" />
-    <None Include="deferred_pack_texture_vs.glsl" />
-    <None Include="deferred_pack_wireframe_fs.glsl" />
-    <None Include="deferred_pack_wireframe_vs.glsl" />
     <None Include="direct_lighting.glsl" />
     <None Include="depth_of_field.glsl" />
     <None Include="depth_prepass.glsl" />
@@ -54,12 +44,9 @@
     <None Include="ssao_downscale.glsl" />
     <None Include="starfield.glsl" />
     <None Include="tone_mapping.glsl" />
-    <None Include="translucency_fs.glsl" />
-    <None Include="translucency_vs.glsl" />
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />
-    <None Include="deferred_pack_alphaonly.glsl" />
     <None Include="common.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />
@@ -72,5 +59,15 @@
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_upsample.glsl" />
     <None Include="cascaded_shadow_map.glsl" />
+    <None Include="materials\_template.glsl" />
+    <None Include="materials\pbr_texture.glsl" />
+    <None Include="materials\solid_color.glsl" />
+    <None Include="materials\lightning_bolt.glsl" />
+    <None Include="materials\unlit.glsl" />
+    <None Include="materials\unlit_text.glsl" />
+    <None Include="materials\guard_tower.glsl" />
+    <None Include="resolve_unlit.glsl" />
+    <None Include="materials\texture_viewer.glsl" />
+    <None Include="materials\translucent_color.glsl" />
   </ItemGroup>
 </Project>

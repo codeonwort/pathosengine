@@ -2,15 +2,18 @@
 
 #include "badger/types/int_types.h"
 
-// each MeshMaterial-derived class should set one of these to its materialID.
-// #todo-material: maybe should be uint16 and INVALID be (MAX - 1)?
-enum class MATERIAL_ID : uint8 {
-	SOLID_COLOR             = 0,
-	WIREFRAME               = 2,
-	ALPHA_ONLY_TEXTURE      = 7,
-	PBR_TEXTURE             = 8,
-	TRANSLUCENT_SOLID_COLOR = 9,
+namespace pathos {
 
-	NUM_MATERIAL_IDS       = 10,
-	INVALID                = 0xff,
-};
+	enum class EMaterialShadingModel : uint8 {
+		INVALID     = 0,
+		UNLIT       = 1,
+		DEFAULTLIT  = 2,
+		TRANSLUCENT = 3,
+		//SKIN = 3,
+		//HAIR = 4,
+
+		NUM_MODELS = 3,
+	};
+	static_assert((uint32)EMaterialShadingModel::NUM_MODELS <= 0xff, "Too many shading models");
+
+}

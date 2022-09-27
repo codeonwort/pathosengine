@@ -252,7 +252,7 @@ namespace pathos {
 		// #todo-godray: Ignore translucent materials completely for now.
 		// - Scaling the luminance proportional to the material's transmittance might produce a not so bad result.
 		// - No idea how to deal with refraction :/
-		if (meshProxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
+		if (meshProxy->material->getShadingModel() == EMaterialShadingModel::TRANSLUCENT) {
 			return;
 		}
 
@@ -261,7 +261,7 @@ namespace pathos {
 		uboData.godRayColor = godRayColor;
 		uboSilhouette.update(cmdList, 1, &uboData);
 
-		bool wireframe = meshProxy->material->getMaterialID() == MATERIAL_ID::WIREFRAME;
+		const bool wireframe = meshProxy->material->bWireframe;
 		if (wireframe) {
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}

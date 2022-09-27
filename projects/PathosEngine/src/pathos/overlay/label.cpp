@@ -9,7 +9,7 @@
 namespace pathos {
 
 	Label::Label() {
-		setName("label");
+		setDisplayName("label");
 		setFont(DEFAULT_FONT_TAG);
 
 		geometry = new TextGeometry;
