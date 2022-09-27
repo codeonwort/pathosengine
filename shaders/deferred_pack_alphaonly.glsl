@@ -10,6 +10,7 @@ Interpolants InterpolantsDesc {
 	vec3 vs_coords;
 	vec3 normal;
 	vec3 tangent;
+	vec3 bitangent;
 	vec2 texcoord;
 	flat uint material_id;
 } interpolants;
@@ -26,18 +27,21 @@ layout (std140, binding = 1) uniform UBO_PerObject {
 
 #include "deferred_common.glsl"
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 uv;
-layout (location = 2) in vec3 normal;
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec2 inTexcoord;
+layout (location = 2) in vec3 inNormal;
+layout (location = 3) in vec3 inTangent;
+layout (location = 4) in vec3 inBitangent;
 
 void main() {
-	interpolants.vs_coords   = (uboPerObject.modelView * vec4(position, 1.0)).xyz;
-	interpolants.normal      = uboPerObject.modelView3x3 * normal;
-	interpolants.tangent     = vec3(0);
-	interpolants.texcoord    = uv;
+	interpolants.vs_coords   = (uboPerObject.modelView * vec4(inPosition, 1.0)).xyz;
+	interpolants.normal      = uboPerObject.modelView3x3 * inNormal;
+	interpolants.tangent     = inTangent;
+	interpolants.bitangent   = inBitangent;
+	interpolants.texcoord    = inTexcoord;
 	interpolants.material_id = MATERIAL_ID_ALPHAONLY;
 
-	gl_Position = uboPerFrame.projTransform * (uboPerObject.modelView * vec4(position, 1.0));
+	gl_Position = uboPerFrame.projTransform * (uboPerObject.modelView * vec4(inPosition, 1.0));
 }
 
 #endif // VERTEX_SHADER

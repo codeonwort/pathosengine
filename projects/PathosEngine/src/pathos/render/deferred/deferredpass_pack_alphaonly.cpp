@@ -61,7 +61,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(ALBEDO_TEXTURE_UNIT, material->getTexture());
 
 		// Drawcall
-		inMesh->activate_position_uv_normal(cmdList);
+		inMesh->activate_position_uv_normal_tangent_bitangent(cmdList);
 		inMesh->activateIndexBuffer(cmdList);
 		inMesh->drawPrimitive(cmdList);
 	}

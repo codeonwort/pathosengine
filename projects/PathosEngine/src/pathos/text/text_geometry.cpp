@@ -120,7 +120,7 @@ namespace pathos {
 		updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
 
 		if (normals.size() == 0) {
-			for (auto i = 0u; i < newText.size(); ++i) {
+			for (auto i = 0u; i < newText.size() * 4; ++i) {
 				normals.push_back(0.0f);
 				normals.push_back(0.0f);
 				normals.push_back(1.0f);
