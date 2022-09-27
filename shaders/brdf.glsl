@@ -2,7 +2,7 @@
 // Utilities
 //
 
-const float PI = 3.14159265359;
+#include "common.glsl"
 
 // Schlick's approximation of fresnel
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {

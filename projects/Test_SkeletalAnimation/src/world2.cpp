@@ -28,9 +28,8 @@ void World2::onInitialize()
 void World2::onTick(float deltaSeconds)
 {
 	static float modelYaw = 0.0f;
-	model->setActorLocation(vector3(0, 20, 0));
 	model->setActorRotation(Rotator(modelYaw += 30.0f * deltaSeconds, 0.0f, 0.0f));
-	model->setActorLocation(vector3(0, -20, 0));
+	model->setActorLocation(vector3(0, -200, 0));
 
 	// Dummy boxes
 	for (uint32 i = 0; i < (uint32)boxes.size(); ++i)
@@ -88,7 +87,8 @@ void World2::setupScene()
 	GLuint tex = pathos::createTextureFromBitmap(loadImage("textures/154.jpg"), true, true);
 	GLuint tex_norm = pathos::createTextureFromBitmap(loadImage("textures/154_norm.jpg"), true, false);
 
-	auto material_texture = PBRTextureMaterial::createWithFallback(tex);
+	//auto material_texture = PBRTextureMaterial::createWithFallback(tex);
+	Material* material_texture = pathos::createPBRMaterial(tex);
 	
 	Material* material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -131,6 +131,7 @@ void World2::setupScene()
 	model = spawnActor<StaticMeshActor>();
 	model->setStaticMesh(new Mesh(geom_sphere_big, material_texture));
 	model->setActorLocation(vector3(-40.0f, 0.0f, 0.0f));
+	model->setActorScale(10.0f);
 
 	model2 = spawnActor<StaticMeshActor>();
 	model2->setStaticMesh(new Mesh(geom_sphere, material_color));
@@ -177,7 +178,7 @@ void World2::loadDAE()
 
 		daeActor->setActorScale(10.0f);
 #if DAE_MODEL_ID == 2
-		daeActor->setActorScale(10.0f);
+		daeActor->setActorScale(20.0f);
 		daeActor->setActorRotation(Rotator(90.0f, 0.0f, 0.0f));
 #endif
 		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));

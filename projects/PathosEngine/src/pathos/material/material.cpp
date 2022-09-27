@@ -95,28 +95,6 @@ namespace pathos {
 
 namespace pathos {
 
-	////////////////////////////////////////////////////////////////////////////////////
-	// PBRTextureMaterial
-	PBRTextureMaterial* PBRTextureMaterial::createWithFallback(GLuint albedo, GLuint normal /*= 0*/) {
-		PBRTextureMaterial* M = new PBRTextureMaterial(albedo, normal,
-			gEngine->getSystemTexture2DBlack(),  // metallic
-			gEngine->getSystemTexture2DWhite(),  // roughness
-			gEngine->getSystemTexture2DWhite()); // localAO
-		if (normal == 0) {
-			M->setNormal(gEngine->getSystemTexture2DBlue());
-		}
-		return M;
-	}
-
-	PBRTextureMaterial::PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao) {
-		materialID = MATERIAL_ID::PBR_TEXTURE;
-		tex_albedo = albedo;
-		tex_normal = normal;
-		tex_metallic = metallic;
-		tex_roughness = roughness;
-		tex_ao = ao;
-	}
-
 	Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex /*= 0*/) {
 		CHECK(albedoTex != 0); // At least albedo must be there.
 		Material* M = Material::createMaterialInstance("pbr_texture");

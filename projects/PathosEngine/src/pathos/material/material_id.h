@@ -4,9 +4,8 @@
 
 namespace pathos {
 
-	// #todo-material: Deprecate this
+	// #todo-material-assembler: Deprecate this
 	enum class MATERIAL_ID : uint8 {
-		PBR_TEXTURE             = 2,
 		TRANSLUCENT_SOLID_COLOR = 3,
 
 		NUM_MATERIAL_IDS = 4,

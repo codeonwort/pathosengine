@@ -26,6 +26,7 @@ namespace pathos {
 		virtual ~Material() = default;
 
 		bool bWireframe = false;
+		bool bTrivialDepthOnlyPass = true;
 
 		MATERIAL_ID getMaterialID() { return materialID; }
 
@@ -134,35 +135,6 @@ namespace pathos {
 		float opacity;
 		vector3 transmittance;
 	
-	};
-
-	// Cook-Torrance BRDF
-	class PBRTextureMaterial : public Material {
-
-	public:
-		static PBRTextureMaterial* createWithFallback(GLuint albedo, GLuint normal = 0);
-
-		PBRTextureMaterial(GLuint albedo, GLuint normal, GLuint metallic, GLuint roughness, GLuint ao);
-		inline GLuint getAlbedo()    const { return tex_albedo;    }
-		inline GLuint getNormal()    const { return tex_normal;    }
-		inline GLuint getMetallic()  const { return tex_metallic;  }
-		inline GLuint getRoughness() const { return tex_roughness; }
-		inline GLuint getAO()        const { return tex_ao;        }
-		inline void setAlbedo(GLuint inTexture)    { tex_albedo = inTexture;    }
-		inline void setNormal(GLuint inTexture)    { tex_normal = inTexture;    }
-		inline void setMetallic(GLuint inTexture)  { tex_metallic = inTexture;  }
-		inline void setRoughness(GLuint inTexture) { tex_roughness = inTexture; }
-		inline void setAO(GLuint inTexture)        { tex_ao = inTexture;        }
-
-		bool writeAllPixels = true; // true = opaque, false = masked
-
-	protected:
-		GLuint tex_albedo;
-		GLuint tex_normal;
-		GLuint tex_metallic;
-		GLuint tex_roughness;
-		GLuint tex_ao;
-
 	};
 
 }

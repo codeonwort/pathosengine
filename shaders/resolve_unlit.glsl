@@ -1,5 +1,6 @@
 #version 460 core
 
+#include "common.glsl"
 #include "deferred_common.glsl"
 
 // --------------------------------------------------------
@@ -25,7 +26,7 @@ void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
-	if (gbufferData.material_id != MATERIAL_ID_UNLIT) {
+	if (gbufferData.material_id != MATERIAL_SHADINGMODEL_UNLIT) {
 		discard;	
 	}
 

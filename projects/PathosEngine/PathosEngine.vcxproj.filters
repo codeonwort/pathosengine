@@ -129,9 +129,6 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\deferred\deferredpass_pack_pbr.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\console.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -450,9 +447,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_text.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\deferred\deferredpass_pack_pbr.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\console.h">

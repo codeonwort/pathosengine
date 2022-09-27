@@ -97,23 +97,12 @@ namespace pathos {
 		for (uint8 i = 0; i < (uint8)(MATERIAL_ID::NUM_MATERIAL_IDS); ++i) {
 			const auto& proxyList = scene->proxyList_staticMesh[i];
 			for (StaticMeshProxy* proxy : proxyList) {
-
 				if (proxy->material->getMaterialID() == MATERIAL_ID::TRANSLUCENT_SOLID_COLOR) {
 					continue;
 				}
 
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
 					continue;
-				}
-
-				if (proxy->material->internal_getMaterialShader() != nullptr) {
-					continue;
-				}
-
-				if (proxy->material->getMaterialID() == MATERIAL_ID::PBR_TEXTURE) {
-					if (static_cast<PBRTextureMaterial*>(proxy->material)->writeAllPixels == false) {
-						continue;
-					}
 				}
 
 				// Render state modifiers
@@ -203,10 +192,10 @@ namespace pathos {
 				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
-				if (proxy->bDepthPrepassNeedsFullVAO) {
-					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
-				} else {
+				if (material->bTrivialDepthOnlyPass) {
 					proxy->geometry->activate_position(cmdList);
+				} else {
+					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 				}
 
 				proxy->geometry->activateIndexBuffer(cmdList);

@@ -13,6 +13,7 @@ PARAMETER_CONSTANT(bool, bOverrideNormal)
 PARAMETER_CONSTANT(bool, bOverrideMetallic)
 PARAMETER_CONSTANT(bool, bOverrideRoughness)
 PARAMETER_CONSTANT(bool, bOverrideLocalAO)
+PARAMETER_CONSTANT(bool, bHasOpacity)
 PARAMETER_CONSTANT(vec3, emissiveConstant)
 
 PARAMETER_TEXTURE(0, sampler2D, albedo)
@@ -35,7 +36,13 @@ MaterialAttributes getMaterialAttributes() {
 	if (uboMaterial.bOverrideAlbedo) {
 		attr.albedo = uboMaterial.albedoOverride;
 	} else {
-		attr.albedo = texture(albedo, uv).rgb;
+		vec4 albedoAndOpacity = texture(albedo, uv);
+		attr.albedo = albedoAndOpacity.rgb;
+#if FRAGMENT_SHADER
+		if (uboMaterial.bHasOpacity && albedoAndOpacity.a < 0.05) {
+			discard;
+		}
+#endif
 	}
 
 	if (uboMaterial.bOverrideNormal) {

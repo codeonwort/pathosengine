@@ -22,8 +22,6 @@
     <None Include="copy_texture.fs.glsl" />
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
-    <None Include="deferred_pack_pbr_fs.glsl" />
-    <None Include="deferred_pack_pbr_vs.glsl" />
     <None Include="direct_lighting.glsl" />
     <None Include="depth_of_field.glsl" />
     <None Include="depth_prepass.glsl" />

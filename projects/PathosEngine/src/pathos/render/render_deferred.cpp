@@ -732,7 +732,6 @@ namespace pathos {
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 				pack_passes[i] = nullptr;
 			}
-			pack_passes[(uint8)MATERIAL_ID::PBR_TEXTURE] = new MeshDeferredRenderPass_Pack_PBR;
 			for (uint8 i = 0; i < (uint8)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
 				if (pack_passes[i] == nullptr) {
 					LOG(LogWarning, "BasePass not present for material id: %u", i);

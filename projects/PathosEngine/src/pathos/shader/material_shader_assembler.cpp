@@ -128,7 +128,8 @@ namespace pathos {
 		// #todo-material-assembler: Parse includes when loading the template.
 		// Then how to parse includes in material shaders?
 		std::vector<std::string> emptyDefines;
-		ShaderStage::loadSourceInternal(templatePathRel, emptyDefines, 0, MT.sourceLines);
+		std::vector<std::string> includeHistory;
+		ShaderStage::loadSourceInternal(templatePathRel, emptyDefines, 0, includeHistory, MT.sourceLines);
 		splitNewlines(MT.sourceLines);
 
 		// Find $NEED lines

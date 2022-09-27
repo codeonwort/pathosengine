@@ -19,9 +19,6 @@ namespace pathos {
 		Material* material;
 		AABB worldBounds;
 
-		// #todo-material-assembler
-		bool bDepthPrepassNeedsFullVAO = false;
-
 		// Derived in render thread
 		bool bInFrustum = true;
 	};

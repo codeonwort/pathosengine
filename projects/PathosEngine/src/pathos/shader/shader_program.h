@@ -108,6 +108,7 @@ namespace pathos {
 			const std::string& filepath,
 			const std::vector<std::string>& defines,
 			int32 recursionDepth,
+			std::vector<std::string>& includeHistory,
 			std::vector<std::string>& outSourceCode);
 	private:
 		bool loadSource();

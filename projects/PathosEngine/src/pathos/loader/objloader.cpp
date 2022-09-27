@@ -170,6 +170,7 @@ namespace pathos {
 					}
 				};
 
+				// File loading is performed in worker threads. Actual GL textures are created later.
 				PendingTextures pending;
 				getOrLoadImage(t_mat.diffuse_texname, &pending.albedo);
 				getOrLoadImage(t_mat.normal_texname, &pending.normal);
@@ -190,9 +191,7 @@ namespace pathos {
 					bmp = cachedBitmapDB[image_path];
 				}
 
-				// This is performed in loading thread, so creation of actual GL textures are delayed until getMaterial() call by main thread.
-				// https://en.wikipedia.org/wiki/Wavefront_.obj_file#Physically-based_Rendering
-				M = PBRTextureMaterial::createWithFallback(gEngine->getSystemTexture2DWhite());
+				M = pathos::createPBRMaterial(gEngine->getSystemTexture2DGrey());
 				pendingTextureData.insert(std::make_pair(static_cast<int32>(i), pending));
 			}
 			else if (t_mat.dissolve < 1.0f
@@ -424,25 +423,16 @@ namespace pathos {
 				glTextureMap[pendingTextures.metallicFilename] = pendingTextures.glMetallic;
 			}
 
-			if (M->internal_getMaterialShader() == nullptr) {
-				switch (M->getMaterialID())
-				{
-				case MATERIAL_ID::PBR_TEXTURE:
-				{
-					PendingTextures& pendingTextures = pendingTextureData[index];
-					if (pendingTextures.albedo != nullptr) {
-						static_cast<PBRTextureMaterial*>(M)->writeAllPixels = !pendingTextures.albedo->hasOpacity;
-					}
-					if (pendingTextures.glAlbedo != 0) static_cast<PBRTextureMaterial*>(M)->setAlbedo(pendingTextures.glAlbedo);
-					if (pendingTextures.glNormal != 0) static_cast<PBRTextureMaterial*>(M)->setNormal(pendingTextures.glNormal);
-					if (pendingTextures.glRoughness != 0) static_cast<PBRTextureMaterial*>(M)->setRoughness(pendingTextures.glRoughness);
-					if (pendingTextures.glMetallic != 0) static_cast<PBRTextureMaterial*>(M)->setMetallic(pendingTextures.glMetallic);
+			if (M->getMaterialName() == "pbr_texture") {
+				PendingTextures& pendingTextures = pendingTextureData[index];
+				if (pendingTextures.albedo != nullptr) {
+					M->setConstantParameter("bHasOpacity", pendingTextures.albedo->hasOpacity);
+					M->bTrivialDepthOnlyPass = false;
 				}
-				break;
-
-				default:
-					CHECKF(0, "Failed to process a pending material");
-				}
+				if (pendingTextures.glAlbedo != 0) M->setTextureParameter("albedo", pendingTextures.glAlbedo);
+				if (pendingTextures.glNormal != 0) M->setTextureParameter("normal", pendingTextures.glNormal);
+				if (pendingTextures.glRoughness != 0) (M)->setTextureParameter("roughness", pendingTextures.glRoughness);
+				if (pendingTextures.glMetallic != 0) M->setTextureParameter("metallic", pendingTextures.glMetallic);
 			}
 		}
 

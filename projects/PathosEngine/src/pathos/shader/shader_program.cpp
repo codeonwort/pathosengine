@@ -184,7 +184,8 @@ namespace pathos {
 		CHECK(filepath.c_str() != nullptr);
 
 		sourceCode.clear();
-		return ShaderStage::loadSourceInternal(filepath, defines, 0, sourceCode);
+		std::vector<std::string> includeHistory;
+		return ShaderStage::loadSourceInternal(filepath, defines, 0, includeHistory, sourceCode);
 	}
 
 	void ShaderStage::setSourceCode(const std::string& inFilepath, std::vector<std::string>&& inSourceCode) {
@@ -197,6 +198,7 @@ namespace pathos {
 		const std::string& filepath,
 		const std::vector<std::string>& defines,
 		int32 recursionDepth,
+		std::vector<std::string>& includeHistory,
 		std::vector<std::string>& outSourceCode)
 	{
 		std::string fullFilepath = ResourceFinder::get().find(filepath);
@@ -272,7 +274,10 @@ namespace pathos {
 			CHECK(quote_start != std::string::npos && quote_end != std::string::npos);
 
 			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
-			ShaderStage::loadSourceInternal(include_file, defines, recursionDepth + 1, outSourceCode);
+			if (std::find(includeHistory.begin(), includeHistory.end(), include_file) == includeHistory.end()) {
+				includeHistory.push_back(include_file);
+				ShaderStage::loadSourceInternal(include_file, defines, recursionDepth + 1, includeHistory, outSourceCode);
+			}
 
 			fullCode = fullCode.substr(include_end + 1);
 		}

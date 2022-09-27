@@ -1,5 +1,6 @@
 #version 460 core
 
+#include "common.glsl"
 #include "deferred_common.glsl"
 #include "shadow_mapping.glsl"
 #include "brdf.glsl"
@@ -343,10 +344,10 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 }
 
 vec3 getLocalIllumination(GBufferData gbufferData) {
-	uint ID = gbufferData.material_id;
+	uint shadingModel = gbufferData.material_id;
 
 	vec3 result = vec3(0.0, 0.0, 0.0);
-	if (ID == MATERIAL_ID_PBR) {
+	if (shadingModel == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
 		result = CookTorranceBRDF(gbufferData);
 	} else {
 		discard;

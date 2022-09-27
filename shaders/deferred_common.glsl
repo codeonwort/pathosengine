@@ -8,15 +8,6 @@
 #define SLOT_UBO_PER_FRAME         0
 
 // --------------------------------------------------------
-// Materials
-
-// #todo-material: Deprecated. See common.glsl.
-// UNLIT, DEFAULTLIT, SUBSURFACE, HAIR, TRANSLUCENT, ...
-#define MATERIAL_ID_NONE           0
-#define MATERIAL_ID_UNLIT          1
-#define MATERIAL_ID_PBR            2
-
-// --------------------------------------------------------
 // Lights
 
 // Total 64 bytes
