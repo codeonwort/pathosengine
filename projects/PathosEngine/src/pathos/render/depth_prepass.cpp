@@ -178,6 +178,7 @@ namespace pathos {
 
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
 				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bUseWireframeMode = material->bWireframe;
 				currentProgramHash = materialShader->programHash;
 				currentMIID = material->internal_getMaterialInstanceID();
 
@@ -208,11 +209,21 @@ namespace pathos {
 				// How to detect if a vertex shader uses VTF(Vertex Texture Fetch)?
 				// ...
 
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
 				proxy->geometry->activate_position(cmdList);
 
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
+
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 	}

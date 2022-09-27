@@ -47,11 +47,17 @@ namespace pathos {
 				const uint32 programA = A->material->internal_getMaterialShader()->programHash;
 				const uint32 programB = B->material->internal_getMaterialShader()->programHash;
 				if (programA != programB) {
-					return A < B;
+					return programA < programB;
 				}
 				const uint32 midA = A->material->internal_getMaterialInstanceID();
 				const uint32 midB = B->material->internal_getMaterialInstanceID();
-				return midA < midB;
+				if (midA != midB) {
+					return midA < midB;
+				}
+				// Solid meshes first
+				const uint32 wireA = (uint32)A->material->bWireframe;
+				const uint32 wireB = (uint32)B->material->bWireframe;
+				return wireA < wireB;
 			}
 		);
 	}

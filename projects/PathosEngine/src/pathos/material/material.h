@@ -25,6 +25,8 @@ namespace pathos {
 	public:
 		virtual ~Material() = default;
 
+		bool bWireframe = false;
+
 		MATERIAL_ID getMaterialID() { return materialID; }
 
 		const std::string& getMaterialName() const { return materialName; }

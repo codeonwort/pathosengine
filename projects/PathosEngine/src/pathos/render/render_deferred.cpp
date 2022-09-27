@@ -513,6 +513,7 @@ namespace pathos {
 
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
 				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bUseWireframeMode = material->bWireframe;
 				currentProgramHash = materialShader->programHash;
 				currentMIID = material->internal_getMaterialInstanceID();
 
@@ -547,16 +548,18 @@ namespace pathos {
 				}
 
 				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
 				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
 				proxy->geometry->activateIndexBuffer(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
 
 				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided) cmdList.enable(GL_CULL_FACE);
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
 				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 
