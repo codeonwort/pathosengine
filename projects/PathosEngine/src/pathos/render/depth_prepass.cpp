@@ -13,11 +13,6 @@
 
 namespace pathos {
 
-	struct UBO_DepthPrepass {
-		matrix4 mvTransform;
-		matrix3x4 mvMatrix3x3;
-	};
-
 	// #todo-material-assembler: Remove this
 	struct UBO_DepthPrepass_PerObject {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -55,7 +50,6 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
-		ubo.init<UBO_DepthPrepass>();
 		uboPerObject.init<UBO_DepthPrepass_PerObject>();
 	}
 
@@ -117,7 +111,8 @@ namespace pathos {
 				currentMIID = material->internal_getMaterialInstanceID();
 
 				if (bShouldBindProgram) {
-					//SCOPED_DRAW_EVENT(BindMaterialProgram);
+					SCOPED_DRAW_EVENT(BindMaterialProgram);
+
 					uint32 programName = materialShader->program->getGLName();
 					CHECK(programName != 0 && programName != 0xffffffff);
 					cmdList.useProgram(programName);

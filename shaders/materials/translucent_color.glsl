@@ -1,73 +1,59 @@
-#version 460 core
+// Simple Translucent material that represents constant color.
 
-// #todo-translucency: Long way to go...
-//     1. Rework material assembler.
-//     2. Restore forward shading pipeline.
-//     3. Properly render translucency.
+#define SHADINGMODEL MATERIAL_SHADINGMODEL_TRANSLUCENT
 
-#include "brdf.glsl"
-#include "deferred_common.glsl"
+PARAMETER_CONSTANT(vec3, albedo)
+PARAMETER_CONSTANT(float, roughness)
+PARAMETER_CONSTANT(vec3, transmittance)
 
-#ifndef MAX_DIRECTIONAL_LIGHTS
-	#define MAX_DIRECTIONAL_LIGHTS     4
-#endif
-#ifndef MAX_POINT_LIGHTS
-	#define MAX_POINT_LIGHTS           8
-#endif
+VPO_BEGIN
+vec3 getVertexPositionOffset(VertexShaderInput vsi) {
+	return vec3(0.0);
+}
+VPO_END
 
-layout (location = 0) out vec4 outSceneColor; // (color, opacity)
+ATTR_BEGIN
+MaterialAttributes getMaterialAttributes() {
+	MaterialAttributes_Translucent attr;
 
-layout (std140, binding = 1) uniform UBO_PerObject {
-	mat4 mvTransform;
-	mat4 mvpTransform;
-	mat3 mvTransform3x3;
-	vec4 albedo;
-	vec4 metallic_roughness;
-	vec4 transmittance_opacity;
-} uboPerObject;
+	attr.albedo        = uboMaterial.albedo;
+	attr.normal        = vec3(0.0, 0.0, 1.0);
+	attr.roughness     = uboMaterial.roughness;
+	attr.transmittance = uboMaterial.transmittance;
 
-// Temp UBO to remove light info from UBO_PerFrame
-layout (std140, binding = 2) uniform UBO_LightInfo {
-	ivec4            numLightSources; // (directional, point, ?, ?)
-	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
-	PointLight       pointLights[MAX_POINT_LIGHTS];
-} uboLight;
+	return attr;
+}
+ATTR_END
 
-in VS_OUT {
-	vec3 vs_coords;
-	vec3 normal;
-	vec3 tangent;
-    vec3 bitangent;
-	vec2 texcoord;
-} fs_in;
+FORWARDSHADING_BEGIN
+vec4 getSceneColor(MaterialAttributes_Translucent attr) {
+	vec3 albedo        = attr.albedo; // vec3(0.1, 0.1, 0.2);
+	float metallic     = 0.0;
+	float roughness    = attr.roughness;
+	vec3 transmittance = attr.transmittance;
+	float opacity      = 1.0;
 
-void main() {
-	//vec3 albedo        = uboPerObject.albedo.rgb;
-	//float metallic     = uboPerObject.metallic_roughness.x;
-	//float roughness    = uboPerObject.metallic_roughness.y;
-	vec3 transmittance = uboPerObject.transmittance_opacity.xyz;
-	//float opacity      = uboPerObject.transmittance_opacity.w;
-
-	vec3 vs_coords = fs_in.vs_coords;
-
-	vec3 N = normalize(fs_in.normal);
-	vec3 L = -uboLight.directionalLights[0].vsDirection;
+	vec3 vs_coords = interpolants.positionVS;
+	vec3 N = normalize(attr.normal);
 	vec3 V = normalize(uboPerFrame.eyePosition - vs_coords);
-	vec3 H = normalize(V + L);
 
-	// Fake glass material
-	vec3 albedo = vec3(0.1, 0.1, 0.2);
-	float fakeFresnel = fresnelSchlick(max(dot(H, V), 0.0), vec3(3.0)).x;
-	float metallic = mix(0.05, 1.0, fakeFresnel);
-	float roughness = 0.0;
-	float opacity = mix(0.05, 0.2, fakeFresnel);
-	float refraction = mix(1.2, 0.8, fakeFresnel);
+	// Fake glass material (well I don't remember where this formula came from?)
+	{
+		vec3 L = -uboLight.directionalLights[0].vsDirection;
+		vec3 H = normalize(V + L);
+		float fakeFresnel = fresnelSchlick(max(dot(H, V), 0.0), vec3(3.0)).x;
+
+		metallic = mix(0.05, 1.0, fakeFresnel);
+		roughness = 0.0;
+		opacity = mix(0.05, 0.2, fakeFresnel);
+		float refraction = mix(1.2, 0.8, fakeFresnel);
+	}
 
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
 
 	vec3 Lo = vec3(0.0);
-	
+
 	// Directional lights
 	for (int i = 0; i < uboLight.numLightSources.x; ++i) {
 		DirectionalLight dirLight = uboLight.directionalLights[i];
@@ -126,5 +112,6 @@ void main() {
 	// #todo-translucency: Even generates NaN
 	finalColor = max(vec3(0.0), finalColor);
 
-	outSceneColor = vec4(finalColor, opacity);
+	return vec4(finalColor, opacity);
 }
+FORWARDSHADING_END

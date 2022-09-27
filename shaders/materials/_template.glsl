@@ -6,8 +6,9 @@
 #include "common.glsl"
 #include "deferred_common.glsl"
 
-#define UBO_BINDING_OBJECT   1
-#define UBO_BINDING_MATERIAL 2
+#define UBO_BINDING_OBJECT    1
+#define UBO_BINDING_MATERIAL  2
+#define UBO_BINDING_LIGHTINFO 3
 
 // #todo-driver-bug: What's this :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
@@ -17,6 +18,8 @@ $NEED SHADERSTAGE
 
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
+
+#define FORWARD_SHADING (SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
 // #todo: Remove unnecessary members
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
@@ -30,6 +33,16 @@ layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
 
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
 $NEED UBO_Material
+
+#if FORWARD_SHADING
+#define MAX_DIRECTIONAL_LIGHTS     2
+#define MAX_POINT_LIGHTS           8
+layout (std140, binding = UBO_BINDING_LIGHTINFO) uniform UBO_LightInfo {
+	ivec4            numLightSources; // (directional, point, ?, ?)
+	DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
+	PointLight       pointLights[MAX_POINT_LIGHTS];
+} uboLight;
+#endif
 
 // Texture parameters
 $NEED TEXTURE_PARAMETERS
@@ -65,10 +78,8 @@ struct MaterialAttributes_DefaultLit {
 struct MaterialAttributes_Translucent {
 	vec3 albedo;
 	vec3 normal;
-	float metallic;
 	float roughness;
-	vec3 emissive;
-	float localAO;
+	vec3 transmittance;
 };
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
@@ -116,11 +127,18 @@ vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
 	return TBN * normalize(normalmap);
 }
 
+#if FORWARD_SHADING
+#include "brdf.glsl"
+#endif
+
 // Controls world position offset.
 $NEED getVertexPositionOffset
 
 // Most important output of material shaders.
 $NEED getMaterialAttributes
+
+// Forward shading only.
+$NEED getSceneColor
 
 // --------------------------------------------------------
 // Vertex shader
@@ -167,7 +185,12 @@ void main() {
 
 #if FRAGMENT_SHADER
 
+#if !FORWARD_SHADING
 #include "deferred_common_fs.glsl"
+#else
+// #todo: Wrap with forward_common.glsl?
+layout (location = 0) out vec4 outSceneColor;
+#endif
 
 void main() {
 	MaterialAttributes attr = getMaterialAttributes();
@@ -205,15 +228,7 @@ void main() {
 #endif
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT
-	packGBuffer(
-		attr.albedo,
-		detailNormal,
-		SHADINGMODEL,
-		interpolants.positionVS,
-		attr.metallic,
-		attr.roughness,
-		attr.localAO,
-		attr.emissive);
+	outSceneColor = getSceneColor(attr);
 #endif
 
 #if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT

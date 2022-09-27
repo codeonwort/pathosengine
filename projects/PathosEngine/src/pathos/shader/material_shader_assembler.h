@@ -17,6 +17,7 @@ namespace pathos {
 				&& lineIx_ubo != -1
 				&& lineIx_textureParams != -1
 				&& lineIx_getVPO != -1
+				//&& lineIx_getSceneColor != -1 // Forward shading only
 				&& lineIx_getMaterialAttrs != -1;
 		}
 
@@ -53,6 +54,9 @@ namespace pathos {
 		void replaceAttr(const std::string& attr) {
 			sourceLines[lineIx_getMaterialAttrs] = attr;
 		}
+		void replaceGetSceneColor(const std::string& getSceneColor) {
+			sourceLines[lineIx_getSceneColor] = getSceneColor;
+		}
 
 		int32 lineIx_shaderstage = -1;
 		int32 lineIx_shadingmodel = -1;
@@ -60,6 +64,7 @@ namespace pathos {
 		int32 lineIx_textureParams = -1;
 		int32 lineIx_getVPO = -1;
 		int32 lineIx_getMaterialAttrs = -1;
+		int32 lineIx_getSceneColor = -1;
 		std::vector<std::string> sourceLines;
 	};
 

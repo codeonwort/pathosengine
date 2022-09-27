@@ -29,10 +29,8 @@ namespace pathos {
 		proxyList_rectLight.clear();
 		proxyList_shadowMesh.clear();
 		proxyList_wireframeShadowMesh.clear();
-		for (uint32 i = 0; i < (uint32)MATERIAL_ID::NUM_MATERIAL_IDS; ++i) {
-			proxyList_staticMesh[i].clear();
-		}
-		proxyList_staticMeshTemp.clear();
+		proxyList_staticMeshOpaque.clear();
+		proxyList_staticMeshTranslucent.clear();
 		skybox = nullptr;
 		cloud = nullptr;
 
@@ -40,26 +38,28 @@ namespace pathos {
 	}
 
 	void SceneProxy::finalize_mainThread() {
-		// Sort material shaders first by program, then by material instance ID.
-		auto& v = proxyList_staticMeshTemp;
-		std::sort(v.begin(), v.end(),
-			[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
-				const uint32 programA = A->material->internal_getMaterialShader()->programHash;
-				const uint32 programB = B->material->internal_getMaterialShader()->programHash;
-				if (programA != programB) {
-					return programA < programB;
+		auto sortProxyList = [](StaticMeshProxyList& v) {
+			std::sort(v.begin(), v.end(),
+				[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
+					const uint32 programA = A->material->internal_getMaterialShader()->programHash;
+					const uint32 programB = B->material->internal_getMaterialShader()->programHash;
+					if (programA != programB) {
+						return programA < programB;
+					}
+					const uint32 midA = A->material->internal_getMaterialInstanceID();
+					const uint32 midB = B->material->internal_getMaterialInstanceID();
+					if (midA != midB) {
+						return midA < midB;
+					}
+					// Solid meshes first
+					const uint32 wireA = (uint32)A->material->bWireframe;
+					const uint32 wireB = (uint32)B->material->bWireframe;
+					return wireA < wireB;
 				}
-				const uint32 midA = A->material->internal_getMaterialInstanceID();
-				const uint32 midB = B->material->internal_getMaterialInstanceID();
-				if (midA != midB) {
-					return midA < midB;
-				}
-				// Solid meshes first
-				const uint32 wireA = (uint32)A->material->bWireframe;
-				const uint32 wireB = (uint32)B->material->bWireframe;
-				return wireA < wireB;
-			}
-		);
+			);
+		};
+		sortProxyList(proxyList_staticMeshOpaque);
+		sortProxyList(proxyList_staticMeshTranslucent);
 	}
 
 	void SceneProxy::overrideSceneRenderSettings(const SceneRenderSettings& inSettings) {
@@ -115,21 +115,20 @@ namespace pathos {
 			}
 		};
 
-		checkProxyList(proxyList_staticMeshTemp);
-		// #todo-material-assembler: check translucent meshes
-		//checkProxyList(proxyList_translucentMeshes);
+		checkProxyList(proxyList_staticMeshOpaque);
+		checkProxyList(proxyList_staticMeshTranslucent);
 	}
 
-	void SceneProxy::addStaticMeshProxy(struct StaticMeshProxy* proxy) {
+	void SceneProxy::addStaticMeshProxy(StaticMeshProxy* proxy) {
 		if (proxy->material->internal_getMaterialShader() == nullptr) {
 			return;
 		}
 
 		EMaterialShadingModel sm = proxy->material->getShadingModel();
 		if (sm == EMaterialShadingModel::TRANSLUCENT) {
-			proxyList_staticMesh[(uint8)MATERIAL_ID::TRANSLUCENT_SOLID_COLOR].push_back(proxy);
+			proxyList_staticMeshTranslucent.push_back(proxy);
 		} else {
-			proxyList_staticMeshTemp.push_back(proxy);
+			proxyList_staticMeshOpaque.push_back(proxy);
 		}
 	}
 

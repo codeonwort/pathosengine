@@ -199,14 +199,10 @@ namespace pathos {
 				|| (0.0f <= t_mat.transmittance[1] && t_mat.transmittance[1] < 1.0f)
 				|| (0.0f <= t_mat.transmittance[2] && t_mat.transmittance[2] < 1.0f))
 			{
-				TranslucentColorMaterial* translucentColor = new TranslucentColorMaterial;
-				translucentColor->setAlbedo(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
-				translucentColor->setMetallic(t_mat.metallic);
-				translucentColor->setRoughness(t_mat.roughness);
-				translucentColor->setOpacity(t_mat.dissolve);
-				translucentColor->setTransmittance(vector3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
-				
-				M = translucentColor;
+				M = Material::createMaterialInstance("translucent_color");
+				M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
+				M->setConstantParameter("roughness", t_mat.roughness);
+				M->setConstantParameter("transmittance", vector3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
 			}
 			else
 			{

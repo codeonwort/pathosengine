@@ -5,12 +5,21 @@
 #include "pathos/shader/material_shader.h"
 
 #include "badger/types/vector_types.h"
+#include "badger/types/matrix_types.h"
 #include <vector>
 
 // #todo: Don't expose GLuint here
 typedef unsigned int GLuint;
 
 namespace pathos {
+
+	struct UBO_PerObject {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		matrix4 modelTransform;
+		matrix4 mvTransform;
+		matrix3x4 mvMatrix3x3;
+	};
 
 	// Base class for all material classes.
 	// One material can be applied to multiple meshes.
@@ -100,42 +109,5 @@ namespace pathos {
 
 	// Temp util to easily create 'pbr_texture' material.
 	class Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex = 0);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Materials (deprecated)
-
-	// Rendered in translucency pass
-	class TranslucentColorMaterial : public Material {
-	
-	public:
-		TranslucentColorMaterial() {
-			materialID = MATERIAL_ID::TRANSLUCENT_SOLID_COLOR;
-			setAlbedo(1.0f, 1.0f, 1.0f);
-			metallic = 0.0f;
-			roughness = 0.9f;
-			opacity = 0.5f;
-		}
-
-		inline vector3 getAlbedo() const        { return albedo; }
-		inline float getMetallic() const        { return metallic; }
-		inline float getRoughness() const       { return roughness; }
-		inline float getOpacity() const         { return opacity; }
-		inline vector3 getTransmittance() const { return transmittance; }
-	
-		inline void setAlbedo(float r, float g, float b)             { albedo.x = r; albedo.y = g; albedo.z = b; }
-		inline void setAlbedo(const vector3& rgb)                    { albedo = rgb; }
-		inline void setMetallic(float inMetallic)                    { metallic = inMetallic; }
-		inline void setRoughness(float inRoughness)                  { roughness = inRoughness; }
-		inline void setOpacity(float inOpacity)                      { opacity = inOpacity; }
-		inline void setTransmittance(const vector3& inTransmittance) { transmittance = inTransmittance; }
-	
-	private:
-		vector3 albedo;
-		float metallic;
-		float roughness;
-		float opacity;
-		vector3 transmittance;
-	
-	};
 
 }

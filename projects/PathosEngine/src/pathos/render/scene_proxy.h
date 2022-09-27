@@ -42,7 +42,8 @@ namespace pathos {
 		void checkFrustumCulling(const Camera& camera);
 
 		void addStaticMeshProxy(struct StaticMeshProxy* proxy);
-		const StaticMeshProxyList& getOpaqueStaticMeshes() const { return proxyList_staticMeshTemp; }
+		const StaticMeshProxyList& getOpaqueStaticMeshes() const { return proxyList_staticMeshOpaque; }
+		const StaticMeshProxyList& getTranslucentStaticMeshes() const { return proxyList_staticMeshTranslucent; }
 
 		//
 		// Utilities to check if various proxies are valid.
@@ -73,8 +74,8 @@ namespace pathos {
 		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 
 		// #todo-material-assembler
-		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTemp;
-		std::vector<struct StaticMeshProxy*>       proxyList_staticMesh[(uint32)MATERIAL_ID::NUM_MATERIAL_IDS];
+		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
+		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		
 		struct SkyboxProxy*                        skybox = nullptr;
 		struct AnselSkyProxy*                      anselSky = nullptr;

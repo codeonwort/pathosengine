@@ -45,6 +45,8 @@
     <None Include="materials\lightning_bolt.glsl" />
     <None Include="materials\pbr_texture.glsl" />
     <None Include="materials\solid_color.glsl" />
+    <None Include="materials\texture_viewer.glsl" />
+    <None Include="materials\translucent_color.glsl" />
     <None Include="materials\unlit.glsl" />
     <None Include="materials\unlit_text.glsl" />
     <None Include="materials\_template.glsl" />
@@ -67,8 +69,6 @@
     <None Include="ssr_raytracing.glsl" />
     <None Include="starfield.glsl" />
     <None Include="tone_mapping.glsl" />
-    <None Include="translucency_fs.glsl" />
-    <None Include="translucency_vs.glsl" />
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="volumetric_clouds.glsl" />

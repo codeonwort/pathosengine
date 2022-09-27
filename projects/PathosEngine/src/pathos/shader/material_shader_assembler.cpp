@@ -21,6 +21,7 @@
 #define NEED_TEXTUREPARAMETERS     "TEXTURE_PARAMETERS"
 #define NEED_VPO                   "getVertexPositionOffset"
 #define NEED_MATERIALATTRS         "getMaterialAttributes"
+#define NEED_GETSCENECOLOR         "getSceneColor"
 
 // Macros that are used by material shaders
 #define PARAMETER_CONSTANT         "PARAMETER_CONSTANT"
@@ -49,6 +50,8 @@ namespace pathos {
 					MT.lineIx_getVPO = lineIx;
 				} else if (header == NEED_MATERIALATTRS) {
 					MT.lineIx_getMaterialAttrs = lineIx;
+				} else if (header == NEED_GETSCENECOLOR) {
+					MT.lineIx_getSceneColor = lineIx;
 				}
 			}
 		}
@@ -278,6 +281,8 @@ namespace pathos {
 		int32 materialVPOEndIx = -1; // inclusive
 		int32 materialAttrBeginIx = -1; // inclusive
 		int32 materialAttrEndIx = -1; // inclusive
+		int32 getSceneColorBeginIx = -1; // inclusive
+		int32 getSceneColorEndIx = -1; // inclusive
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
 			if (0 == line.find("#define SHADINGMODEL")) {
@@ -290,6 +295,10 @@ namespace pathos {
 				materialAttrBeginIx = lineIx + 1;
 			} else if (0 == line.find("ATTR_END")) {
 				materialAttrEndIx = lineIx - 1;
+			} else if (0 == line.find("FORWARDSHADING_BEGIN")) {
+				getSceneColorBeginIx = lineIx + 1;
+			} else if (0 == line.find("FORWARDSHADING_END")) {
+				getSceneColorEndIx = lineIx - 1;
 			}
 		}
 		const bool bMaterialWellDefined =
@@ -415,11 +424,6 @@ namespace pathos {
 		}
 		MT.replaceAttr(attrs);
 
-		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
-		splitNewlines(MT.sourceLines);
-		MT.updatePlaceholderIx();
-		MT.fixupNewlines();
-
 		// Parse shading model.
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
 		{
@@ -441,6 +445,26 @@ namespace pathos {
 				CHECKF(false, msg);
 			}
 		}
+
+		bool bForwardShading = (shadingModel == EMaterialShadingModel::TRANSLUCENT);
+		if (!bForwardShading) {
+			MT.replaceGetSceneColor("");
+		} else {
+			CHECK(getSceneColorBeginIx != -1
+				&& getSceneColorEndIx != -1
+				&& getSceneColorBeginIx < getSceneColorEndIx);
+			std::string getSceneColor;
+			for (int32 ix = getSceneColorBeginIx; ix <= getSceneColorEndIx; ++ix) {
+				getSceneColor += materialLines[ix];
+				getSceneColor += '\n';
+			}
+			MT.replaceGetSceneColor(getSceneColor);
+		}
+
+		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
+		splitNewlines(MT.sourceLines);
+		MT.updatePlaceholderIx();
+		MT.fixupNewlines();
 
 		// #todo-material-assembler: Now how to compile and register them?
 		MaterialShader* shader = new MaterialShader;

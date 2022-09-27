@@ -26,7 +26,6 @@ namespace pathos {
 
 	private:
 		GLuint fbo = 0xffffffff;
-		UniformBuffer ubo;
 
 		// #todo-material-assembler: Remove this
 		UniformBuffer uboPerObject;
