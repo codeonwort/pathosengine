@@ -56,8 +56,10 @@ void World_Game1::prepareAssets()
 	M_color->setConstantParameter("roughness", 0.2f);
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
-	GLuint landscapeTexture = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
-	auto M_landscape = PBRTextureMaterial::createWithFallback(landscapeTexture);
+	// #todo-material-assembler-fatal: Well what's the problem now
+	GLuint landscapeAlbedo = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
+	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
+	//auto M_landscape = PBRTextureMaterial::createWithFallback(landscapeAlbedo);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);

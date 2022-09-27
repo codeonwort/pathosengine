@@ -96,6 +96,9 @@ namespace pathos {
 		std::vector<MaterialTextureParameter> textureParameters;
 	};
 
+	// Temp util to easily create 'pbr_texture' material.
+	class Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex = 0);
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Materials (deprecated)
 

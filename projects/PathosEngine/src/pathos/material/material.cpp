@@ -117,4 +117,31 @@ namespace pathos {
 		tex_ao = ao;
 	}
 
+	Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex /*= 0*/) {
+		CHECK(albedoTex != 0); // At least albedo must be there.
+		Material* M = Material::createMaterialInstance("pbr_texture");
+
+		M->setConstantParameter("bOverrideAlbedo", false);
+		M->setConstantParameter("bOverrideNormal", false);
+		M->setConstantParameter("bOverrideMetallic", false);
+		M->setConstantParameter("bOverrideRoughness", false);
+		M->setConstantParameter("bOverrideLocalAO", false);
+		M->setConstantParameter("emissiveConstant", vector3(0.0f));
+
+		M->setTextureParameter("albedo", albedoTex);
+		if (normalTex != 0) {
+			M->setTextureParameter("normal", normalTex);
+		} else {
+			M->setTextureParameter("normal", gEngine->getSystemTexture2DBlue());
+			//M->setConstantParameter("normalOverride", vector3(0.0f, 0.0f, 1.0f));
+			//M->setConstantParameter("bOverrideNormal", true);
+		}
+		// metallic=0, roughness=1, localAO=1
+		M->setTextureParameter("metallic", gEngine->getSystemTexture2DBlack());
+		M->setTextureParameter("roughness", gEngine->getSystemTexture2DWhite());
+		M->setTextureParameter("localAO", gEngine->getSystemTexture2DWhite());
+
+		return M;
+	}
+
 }

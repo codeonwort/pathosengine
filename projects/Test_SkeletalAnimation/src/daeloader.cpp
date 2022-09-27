@@ -176,12 +176,12 @@ namespace pathos {
 				ai_material->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
 				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
 				GLuint normalTex = textureMapping.find(normalPath.C_Str())->second;
-				M = PBRTextureMaterial::createWithFallback(diffuseTex, normalTex);
+				M = pathos::createPBRMaterial(diffuseTex, normalTex);
 			} else if (hasDiffuseTexture) {
 				aiString diffusePath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
 				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
-				M = PBRTextureMaterial::createWithFallback(diffuseTex);
+				M = pathos::createPBRMaterial(diffuseTex);
 			} else {
 				M = Material::createMaterialInstance("solid_color");
 				M->setConstantParameter("albedo", vector3(0.9f, 0.0f, 0.0f));
