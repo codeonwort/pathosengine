@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pathos/named_object.h"
 #include "pathos/material/material_id.h"
 #include "pathos/shader/material_shader.h"
 
@@ -13,10 +12,10 @@ typedef unsigned int GLuint;
 
 namespace pathos {
 
-	// Base class for all material classes.
-	// One material can be applied to multiple meshes.
-	// #todo-material-assembler: Detach from NamedObject
-	class Material : public NamedObject {
+	// a MaterialShader relates to a unique material shader program.
+	// a Material is (material shader + own parameters).
+	// Multiple materials might share a same material shader, but they can have their own parameters.
+	class Material {
 
 	public:
 		// Use this to create a Material.

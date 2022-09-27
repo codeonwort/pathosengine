@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pathos/named_object.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/wrapper/transform.h"
 #include <vector>
@@ -11,7 +10,7 @@ namespace pathos {
 	class OverlaySceneProxy;
 	class DisplayObject2DProxy;
 
-	class DisplayObject2D : public NamedObject {
+	class DisplayObject2D {
 
 	public:
 		static DisplayObject2D* createRoot();
@@ -57,6 +56,9 @@ namespace pathos {
 
 		Transform transform;
 		bool transformDirty = false; // #todo-overlay: Utilize this
+
+		std::string displayName = "displayObject";
+		void setDisplayName(const std::string& newName) { displayName = newName; }
 
 		void setRoot(DisplayObject2D* root);
 		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) {}

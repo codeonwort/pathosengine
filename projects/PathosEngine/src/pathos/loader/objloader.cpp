@@ -225,7 +225,6 @@ namespace pathos {
 				M = materialOverrides[overrideIx].second;
 			}
 
-			M->setName(t_mat.name);
 			materials.push_back(M);
 		}
 

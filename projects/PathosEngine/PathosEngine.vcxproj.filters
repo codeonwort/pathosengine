@@ -138,9 +138,6 @@
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\named_object.cpp">
-      <Filter>소스 파일\pathos</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\render\skybox.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -463,9 +460,6 @@
     </ClInclude>
     <ClInclude Include="src\pathos\shader\uniform_buffer.h">
       <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\named_object.h">
-      <Filter>헤더 파일\pathos</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render_minimal.h">
       <Filter>헤더 파일</Filter>

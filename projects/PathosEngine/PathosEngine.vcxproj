@@ -115,7 +115,6 @@
     <ClCompile Include="src\pathos\loader\spline_loader.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
     <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
-    <ClCompile Include="src\pathos\named_object.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\light\shadow_directional.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
@@ -237,7 +236,6 @@
     <ClInclude Include="src\pathos\mesh\model_transform.h" />
     <ClInclude Include="src\pathos\mesh\static_mesh_actor.h" />
     <ClInclude Include="src\pathos\mesh\static_mesh_component.h" />
-    <ClInclude Include="src\pathos\named_object.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\light\light_all.h" />
