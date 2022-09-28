@@ -141,7 +141,7 @@ namespace pathos {
 		bool initializeFontSystem(RenderCommandList& cmdList);
 		bool initializeConsole();
 
-		void readConfigFile(std::vector<std::string>& outEffectiveLines);
+		void readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines);
 
 		// GUI event listeners //
 		static void onCloseWindow();

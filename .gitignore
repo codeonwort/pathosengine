@@ -5,6 +5,8 @@ log/
 resources_raw/
 # External resources downloaded by the setup script
 resources_external/
+# Ignore local config
+EngineConfigOverride.ini
 
 # Created by https://www.gitignore.io/api/visualstudio,c++
 

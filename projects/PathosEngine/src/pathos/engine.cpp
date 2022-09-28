@@ -24,6 +24,8 @@
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
 
 #define CONSOLE_WINDOW_MIN_HEIGHT 400
+#define ENGINE_CONFIG_FILE        "EngineConfig.ini"
+#define ENGINE_CONFIG_EXTRA_FILE  "EngineConfigOverride.ini"
 
 namespace pathos {
 
@@ -99,7 +101,8 @@ namespace pathos {
 		ResourceFinder::get().add("../../resources_external/");
 
 		std::vector<std::string> configLines;
-		readConfigFile(configLines);
+		readConfigFile(ENGINE_CONFIG_FILE, configLines);
+		readConfigFile(ENGINE_CONFIG_EXTRA_FILE, configLines);
 
 		RenderDocIntegration::get().findInjectedDLL();
 
@@ -289,9 +292,9 @@ namespace pathos {
 	}
 
 	// Read config line by line and add to the console window.
-	void Engine::readConfigFile(std::vector<std::string>& outEffectiveLines)
+	void Engine::readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines)
 	{
-		std::string configPath = ResourceFinder::get().find("EngineConfig.ini");
+		std::string configPath = ResourceFinder::get().find(configFilename);
 		if (configPath.size() > 0) {
 			LOG(LogInfo, "Read config file: %s", configPath.c_str());
 
