@@ -1,6 +1,3 @@
-// Separated from scene_loader due to some nasty include errors for rapidjson.
-// ex) rapidjson\document.h(958,76): warning C4003: not enough arguments for function-like macro invocation 'max'
-
 #pragma once
 
 #include "pathos/loader/imageloader.h"

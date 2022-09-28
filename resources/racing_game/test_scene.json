@@ -18,29 +18,35 @@
 		"texture": "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr",
 		"hdr": true
 	},
-	"directionalLight": {
-		"name": "Sun",
-		"direction": [0, -0.4, -1],
-		"radiance": [1.2, 1.2, 1.2]
-	},
-	"pointLight": {
-		"name": "PointLight0",
-		"location": [-20, 5, 20],
-		"radiance": [0, 10, 0],
-		"attenuationRadius": 1000,
-		"falloffExponent": 0.001,
-		"castsShadow": true
-	},
-	"staticMesh": {
-		"name": "Sphere0",
-		"location": [0, 0, 0],
-		"rotation": [0, 0, 0],
-		"scale": [15, 15, 15]
-	},
-	"staticMesh": {
-		"name": "Landscape",
-		"location": [0, -20, 0],
-		"rotation": [0, -90, 0],
-		"scale": [100, 100, 1]
-	}
+	"directionalLight": [
+		{
+			"name": "Sun",
+			"direction": [0, -0.4, -1],
+			"radiance": [1.2, 1.2, 1.2]
+		}
+	],
+	"pointLight": [
+		{
+			"name": "PointLight0",
+			"location": [-20, 5, 20],
+			"radiance": [0, 10, 0],
+			"attenuationRadius": 1000,
+			"falloffExponent": 0.001,
+			"castsShadow": true
+		}
+	],
+	"staticMesh": [
+		{
+			"name": "Sphere0",
+			"location": [0, 0, 0],
+			"rotation": [0, 0, 0],
+			"scale": [15, 15, 15]
+		},
+		{
+			"name": "Landscape",
+			"location": [0, -20, 0],
+			"rotation": [0, -90, 0],
+			"scale": [100, 100, 1]
+		}
+	]
 }

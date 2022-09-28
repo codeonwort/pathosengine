@@ -59,11 +59,10 @@ namespace pathos {
 			CHECKF(mcp->numElements == valueSize, "Num elements of MCP and given value are different");
 
 			void* dst = nullptr;
-			// #todo-cpp17
-			if /*constexpr*/ (isFloat) dst = &(mcp->fvalue[0]);
-			if /*constexpr*/ (isInt) dst = &(mcp->ivalue[0]);
-			if /*constexpr*/ (isUint) dst = &(mcp->uvalue[0]);
-			if /*constexpr*/ (isBool) dst = &(mcp->bvalue[0]);
+			if constexpr (isFloat) dst = &(mcp->fvalue[0]);
+			if constexpr (isInt) dst = &(mcp->ivalue[0]);
+			if constexpr (isUint) dst = &(mcp->uvalue[0]);
+			if constexpr (isBool) dst = &(mcp->bvalue[0]);
 			memcpy_s(dst, sizeof(ValueType), &value, sizeof(ValueType));
 		}
 

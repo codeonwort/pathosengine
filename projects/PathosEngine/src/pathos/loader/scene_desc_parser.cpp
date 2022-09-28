@@ -3,32 +3,36 @@
 
 #include "badger/types/int_types.h"
 #include "badger/assertion/assertion.h"
-#include <rapidjson/document.h>
+
+// https://github.com/nlohmann/json
+#include <nlohmann/json.hpp>
+
+#define KEY_DIRECTIONAL_LIGHTS    "directionalLight"
+#define KEY_POINT_LIGHTS          "pointLight"
+#define KEY_STATIC_MESHES         "staticMesh"
 
 namespace pathos {
 
-#define CONTINUE_IF_NOT(it, key) if (0 != strcmp(it->name.GetString(), key)) { continue; }
-
-	template<typename JSONObject>
+	template<typename JSONObject = nlohmann::json>
 	static vector3 parseVec3(JSONObject& obj) {
-		CHECK(obj.Size() >= 3);
+		CHECK(obj.size() >= 3);
 		vector3 v;
-		for (rapidjson::SizeType i = 0; i < 3; ++i) {
-			v[i] = obj[i].GetFloat();
+		for (auto i = 0; i < 3; ++i) {
+			v[i] = obj[i];
 		}
 		return v;
 	}
 
-	template<typename JSONObject>
+	template<typename JSONObject = nlohmann::json>
 	static std::string parseName(JSONObject& obj) {
-		return obj["name"].GetString();
+		return obj["name"];
 	}
 
-	template<typename JSONObject>
+	template<typename JSONObject = nlohmann::json>
 	static bool checkMembers(JSONObject& obj, const std::vector<const char*>& members) {
 		bool valid = true;
 		for (size_t i = 0; i < members.size(); ++i) {
-			if (obj.HasMember(members[i]) == false) {
+			if (obj.contains(members[i]) == false) {
 				LOG(LogError, "Missing property: %s", members[i]);
 				valid = false;
 			}
@@ -36,16 +40,16 @@ namespace pathos {
 		return valid;
 	}
 
-	static void parseSky(rapidjson::Document& document, SceneDescription& outDesc) {
-		int32 hasAtmosphere = (int32)document.HasMember("skyAtmosphere");
-		int32 hasSkybox = (int32)document.HasMember("skybox");
-		int32 hasEquimap = (int32)document.HasMember("skyEquirectangularMap");
+	static void parseSky(nlohmann::json& document, SceneDescription& outDesc) {
+		int32 hasAtmosphere = (int32)document.contains("skyAtmosphere");
+		int32 hasSkybox = (int32)document.contains("skybox");
+		int32 hasEquimap = (int32)document.contains("skyEquirectangularMap");
 		if (hasAtmosphere + hasSkybox + hasEquimap >= 2) {
 			LOG(LogWarning, "Too many sky descriptions. Only one will be activated. (priority: atmosphere -> skybox -> equirectangular map)");
 		}
 
 		if (hasAtmosphere) {
-			auto sky = document["skyAtmosphere"].GetObject();
+			auto sky = document["skyAtmosphere"];
 			if (checkMembers(sky, { "name" })) {
 				auto name(parseName(sky));
 
@@ -54,21 +58,21 @@ namespace pathos {
 			}
 		}
 		if (hasSkybox) {
-			auto sky = document["skybox"].GetObject();
+			auto sky = document["skybox"];
 			if (checkMembers(sky, { "name", "flipPreference", "textures", "generateMipmaps" })) {
 				auto name(parseName(sky));
-				std::string preferenceString(sky["flipPreference"].GetString());
-				auto texturePathes = sky["textures"].GetArray();
+				std::string preferenceString(sky["flipPreference"]);
+				auto texturePathes = sky["textures"];
 
-				if (texturePathes.Size() >= 6) {
+				if (texturePathes.size() >= 6) {
 					std::vector<std::string> textures(6);
-					for (rapidjson::SizeType i = 0; i < 6; ++i) {
-						textures[i] = texturePathes[i].GetString();
+					for (size_t i = 0; i < 6; ++i) {
+						textures[i] = texturePathes[i];
 					}
 					ECubemapImagePreference flipPreference = (preferenceString == "hlsl")
 						? ECubemapImagePreference::HLSL
 						: ECubemapImagePreference::GLSL;
-					bool mips = sky["generateMipmaps"].GetBool();
+					const bool mips = sky["generateMipmaps"];
 
 					SceneDescription::Skybox desc{ name, flipPreference, std::move(textures), mips, true };
 					outDesc.skybox = std::move(desc);
@@ -78,11 +82,11 @@ namespace pathos {
 			}
 		}
 		if (hasEquimap) {
-			auto sky = document["skyEquirectangularMap"].GetObject();
+			auto sky = document["skyEquirectangularMap"];
 			if (checkMembers(sky, { "name", "texture", "hdr" })) {
-				auto name(parseName(sky));
-				std::string texture = sky["texture"].GetString();
-				bool hdr = sky["hdr"].GetBool();
+				std::string name(parseName(sky));
+				std::string texture = sky["texture"];
+				const bool hdr = sky["hdr"];
 
 				SceneDescription::SkyEquirectangularMap desc{ name, texture, hdr, true };
 				outDesc.skyEquimap = std::move(desc);
@@ -90,18 +94,19 @@ namespace pathos {
 		}
 	}
 
-	static void parseDirLights(rapidjson::Document& document, SceneDescription& outDesc) {
-		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
-			CONTINUE_IF_NOT(it, "directionalLight");
+	static void parseDirLights(nlohmann::json& document, SceneDescription& outDesc) {
+		if (!document.contains(KEY_DIRECTIONAL_LIGHTS)) {
+			return;
+		}
 
-			auto L = it->value.GetObject();
+		for (auto& [unused_key, L] : document[KEY_DIRECTIONAL_LIGHTS].items()) {
 			if (!checkMembers(L, { "name", "direction", "radiance" })) {
 				continue;
 			}
 
-			auto name(parseName(L));
-			auto dir = parseVec3(L["direction"].GetArray());
-			auto radiance = parseVec3(L["radiance"].GetArray());
+			std::string name(parseName(L));
+			vector3 dir = parseVec3(L["direction"]);
+			vector3 radiance = parseVec3(L["radiance"]);
 
 			SceneDescription::DirLight desc;
 			desc.name = name;
@@ -112,22 +117,23 @@ namespace pathos {
 		}
 	}
 
-	static void parsePointLights(rapidjson::Document& document, SceneDescription& outDesc) {
-		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
-			CONTINUE_IF_NOT(it, "pointLight");
+	static void parsePointLights(nlohmann::json& document, SceneDescription& outDesc) {
+		if (!document.contains(KEY_POINT_LIGHTS)) {
+			return;
+		}
 
-			auto L = it->value.GetObject();
+		for (auto& [unused_key, L] : document[KEY_POINT_LIGHTS].items()) {
 			if (!checkMembers(L, { "name", "location", "radiance",
 					"attenuationRadius", "falloffExponent", "castsShadow" })) {
 				continue;
 			}
 
-			auto name(parseName(L));
-			auto loc = parseVec3(L["location"].GetArray());
-			auto radiance = parseVec3(L["radiance"].GetArray());
-			auto attenuationR = L["attenuationRadius"].GetFloat();
-			auto falloffExp = L["falloffExponent"].GetFloat();
-			auto castsShadow = L["castsShadow"].GetBool();
+			std::string name(parseName(L));
+			vector3 loc = parseVec3(L["location"]);
+			vector3 radiance = parseVec3(L["radiance"]);
+			float attenuationR = L["attenuationRadius"];
+			float falloffExp = L["falloffExponent"];
+			bool castsShadow = L["castsShadow"];
 
 			SceneDescription::PointLight desc{
 				name, loc, radiance, attenuationR, falloffExp, castsShadow
@@ -136,19 +142,20 @@ namespace pathos {
 		}
 	}
 
-	static void parseStaticMeshes(rapidjson::Document& document, SceneDescription& outDesc) {
-		for (auto it = document.MemberBegin(); it != document.MemberEnd(); ++it) {
-			CONTINUE_IF_NOT(it, "staticMesh");
+	static void parseStaticMeshes(nlohmann::json& document, SceneDescription& outDesc) {
+		if (!document.contains(KEY_STATIC_MESHES)) {
+			return;
+		}
 
-			auto SM = it->value.GetObject();
+		for (auto& [unused_key, SM] : document[KEY_STATIC_MESHES].items()) {
 			if (!checkMembers(SM, { "name", "location", "rotation", "scale" })) {
 				continue;
 			}
 
-			auto name(parseName(SM));
-			auto loc = parseVec3(SM["location"].GetArray());
-			auto rot = parseVec3(SM["rotation"].GetArray());
-			auto scale = parseVec3(SM["scale"].GetArray());
+			std::string name(parseName(SM));
+			vector3 loc = parseVec3(SM["location"]);
+			vector3 rot = parseVec3(SM["rotation"]);
+			vector3 scale = parseVec3(SM["scale"]);
 
 			// #todo-scene-loader: How to support actual assets here?
 
@@ -159,16 +166,16 @@ namespace pathos {
 		}
 	}
 
-	bool SceneDescriptionParser::parse(const std::string& jsonSting, SceneDescription& outDesc) {
-		rapidjson::Document document;
-		document.Parse(jsonSting.c_str());
+	bool SceneDescriptionParser::parse(const std::string& jsonString, SceneDescription& outDesc) {
+		nlohmann::json document = nlohmann::json::parse(jsonString);
 
-		if (!document.IsObject()) {
+		// Failed to parse the scene.
+		if (document.is_discarded()) {
 			return false;
 		}
 
-		if (document.HasMember("Name")) {
-			outDesc.sceneName = document["Name"].GetString();
+		if (document.contains("name")) {
+			outDesc.sceneName = document["name"];
 		} else {
 			outDesc.sceneName = "<unknown>";
 		}

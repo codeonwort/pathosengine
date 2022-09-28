@@ -9,8 +9,10 @@
 #include "pathos/loader/scene_loader.h"
 #include "pathos/input/input_manager.h"
 
-const vector3       CAMERA_POSITION      = vector3(0.0f, 0.0f, 50.0f);
-const vector3       CAMERA_LOOK_AT       = vector3(0.0f, 0.0f, 0.0f);
+#define SCENE_DESC_FILE "resources/racing_game/test_scene.json"
+
+const vector3 CAMERA_POSITION = vector3(0.0f, 0.0f, 50.0f);
+const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);
 
 World_Game1::World_Game1()
 {
@@ -80,7 +82,7 @@ void World_Game1::reloadScene()
 	binder.addBinding("Landscape", &landscape);
 
 	SceneLoader sceneLoader;
-	sceneLoader.loadSceneDescription(this, "resources/racing_game/test_scene.json", binder);
+	sceneLoader.loadSceneDescription(this, SCENE_DESC_FILE, binder);
 
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();
