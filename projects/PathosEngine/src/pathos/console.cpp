@@ -130,14 +130,14 @@ namespace pathos {
 		}
 	}
 
-	Label* ConsoleWindow::addLine(const char* text, bool addToHistory) {
+	Label* ConsoleWindow::addLine(const char* text, bool addToHistory, bool skipEvaluate) {
 		std::wstring buffer;
 		pathos::MBCS_TO_WCHAR(text, buffer);
 
-		return addLine(buffer.data(), addToHistory);
+		return addLine(buffer.data(), addToHistory, skipEvaluate);
 	}
 
-	Label* ConsoleWindow::addLine(const wchar_t* text, bool addToHistory) {
+	Label* ConsoleWindow::addLine(const wchar_t* text, bool addToHistory, bool skipEvaluate) {
 		if (wcslen(text) == 0) {
 			return nullptr;
 		}
@@ -159,7 +159,9 @@ namespace pathos {
 			}
 		}
 
-		evaluate(text);
+		if (!skipEvaluate) {
+			evaluate(text);
+		}
 		if (addToHistory) {
 			addInputHistory(text);
 		}
@@ -254,18 +256,28 @@ namespace pathos {
 		auto ix = command.find(' ');
 		std::string header = ix == std::string::npos ? command : command.substr(0, ix);
 
-		// Execute registered procedure if exists
+		// If it's a console command, execute it.
 		if (gEngine->execute(command)) {
 			return;
 		}
 
+		bool bPrintCVarHelp = false;
+		if (header[header.size() - 1] == '?') {
+			bPrintCVarHelp = true;
+			header.pop_back();
+		}
+
 		// Is it a cvar?
 		if (auto cvar = ConsoleVariableManager::get().find(header.data())) {
-			std::string msg = command.substr(ix + 1);
-			if (ix == std::string::npos) {
-				cvar->print(this);
+			if (bPrintCVarHelp) {
+				addLine(cvar->getHelpMessage().c_str(), false, true);
 			} else {
-				cvar->parse(msg.data(), this);
+				std::string newValue = command.substr(ix + 1);
+				if (ix == std::string::npos) {
+					cvar->print(this);
+				} else {
+					cvar->parse(newValue.data(), this);
+				}
 			}
 		}
 	}

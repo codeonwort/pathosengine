@@ -37,8 +37,8 @@ namespace pathos {
 		void showPreviousHistory();
 		void showNextHistory();
 
-		Label* addLine(const char* text, bool addToHistory = false);
-		Label* addLine(const wchar_t* text, bool addToHistory = false);
+		Label* addLine(const char* text, bool addToHistory = false, bool skipEvalute = false);
+		Label* addLine(const wchar_t* text, bool addToHistory = false, bool skipEvalute = false);
 
 		inline DisplayObject2D* internal_getRoot() const { return root; }
 
@@ -92,19 +92,21 @@ namespace pathos {
 		virtual void parse(const char* msg, ConsoleWindow* window) = 0;
 		virtual int32 getInt() const = 0;
 		virtual float getFloat() const = 0;
+		const std::string& getHelpMessage() const { return help; }
 	protected:
 		ConsoleVariableBase();
 		std::string name;
+		std::string help;
 	};
 
 	template<typename T>
 	class ConsoleVariable : public ConsoleVariableBase {
 	public:
-		ConsoleVariable(const char* varName, T defaultValue, const char* help)
-			: help(help)
-			, value(defaultValue)
+		ConsoleVariable(const char* varName, T defaultValue, const char* inHelp)
+			: value(defaultValue)
 		{
 			name = varName;
+			help = inHelp;
 		}
 		T getValue() const { return value; }
 		void setValue(T newValue) { value = newValue; }
@@ -113,22 +115,20 @@ namespace pathos {
 		virtual int32 getInt() const override { return static_cast<int32>(value); }
 		virtual float getFloat() const override { return static_cast<float>(value); }
 	private:
-		std::string help;
 		T value;
-		
 	};
 
 	template<>
 	inline void ConsoleVariable<float>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %f", value);
-		window->addLine(buffer);
+		window->addLine(buffer, false, true);
 	}
 	template<>
 	inline void ConsoleVariable<int32>::print(ConsoleWindow* window) const override {
 		wchar_t buffer[256];
 		swprintf_s(buffer, L"> %d", value);
-		window->addLine(buffer);
+		window->addLine(buffer, false, true);
 	}
 
 	template<>
