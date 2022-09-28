@@ -32,15 +32,15 @@ namespace pathos {
 	class FXAAPassFS : public ShaderStage {
 	public:
 		FXAAPassFS() : ShaderStage(GL_FRAGMENT_SHADER, "FXAAPassFS") {
-			addDefine("FXAA_PC 1");
-			addDefine("FXAA_GLSL_130 1");
-			addDefine("FXAA_GREEN_AS_LUMA 1");
-			addDefine("FXAA_QUALITY__PRESET 23");
+			addDefine("FXAA_PC", 1);
+			addDefine("FXAA_GLSL_130", 1);
+			addDefine("FXAA_GREEN_AS_LUMA", 1);
+			addDefine("FXAA_QUALITY__PRESET", 23);
 			setFilepath("fxaa_fs.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(FXAAProgram, FXAAPassVS, FXAAPassFS);
+	DEFINE_SHADER_PROGRAM2(Program_FXAA, FXAAPassVS, FXAAPassFS);
 
 }
 
@@ -83,7 +83,7 @@ namespace pathos {
 		vector4 sharp2_param = 2.0f * inv_size_4;
 		vector4 sharp3_param = vector4(8.0f, 8.0f, -4.0f, -4.0f) * inv_size_4;
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(FXAAProgram);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_FXAA);
 		cmdList.useProgram(program.getGLName());
 
 		UBO_FXAA uboData;
@@ -108,6 +108,8 @@ namespace pathos {
 
 			pathos::checkFramebufferStatus(cmdList, fbo, "fxaa");
 		}
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		cmdList.textureParameteri(input0, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(input0, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
