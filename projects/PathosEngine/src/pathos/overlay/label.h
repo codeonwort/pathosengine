@@ -20,6 +20,9 @@ namespace pathos {
 		void setColor(const vector3& newColor);
 		void setFont(const std::string& tag);
 
+		const std::wstring& getText() const { return text; }
+		std::wstring getText() { return text; }
+
 		virtual MeshGeometry* getGeometry() override { return geometry; }
 
 	protected:

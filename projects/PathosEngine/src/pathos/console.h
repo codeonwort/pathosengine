@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/noncopyable.h"
+#include "badger/types/int_types.h"
 #include "render/render_command_list.h"
 
 #include <memory>
@@ -31,7 +32,7 @@ namespace pathos {
 
 		bool isVisible() const;
 
-		void onKeyPress(unsigned char ascii);
+		void onKeyPress(uint8 ascii);
 
 		void showPreviousHistory();
 		void showNextHistory();

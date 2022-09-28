@@ -521,7 +521,8 @@ namespace pathos {
 	}
 
 	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {
-		if (ascii == 0x60) {
+		constexpr uint8 BACKTICK = 0x60;
+		if (ascii == BACKTICK) {
 			// backtick
 			gConsole->toggle();
 		} else if (gConsole->isVisible()) {

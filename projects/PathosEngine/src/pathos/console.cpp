@@ -91,14 +91,20 @@ namespace pathos {
 		return visible;
 	}
 
-	void ConsoleWindow::onKeyPress(unsigned char ascii) {
-		if (ascii == 0x08) {
-			// backspace
+	void ConsoleWindow::onKeyPress(uint8 ascii) {
+		constexpr uint8 BACKSPACE = 8;  // 0x08
+		constexpr uint8 TAB       = 9;  // 0x09
+		constexpr uint8 ENTER     = 13; // 0x0D
+
+		if (ascii == BACKSPACE) {
 			if (currentInput.size() > 0) {
 				currentInput = currentInput.substr(0, currentInput.size() - 1);
 			}
-		} else if (ascii == 13) {
-			// enter
+		} else if (ascii == TAB) {
+			if (currentInput.size() > 0 && hintList.size() > 0 && hintList[0]->getText() != L"...") {
+				currentInput = hintList[0]->getText();
+			}
+		} else if (ascii == ENTER) {
 			addLine(currentInput.data(), true);
 			currentInput = L"";
 		} else {
