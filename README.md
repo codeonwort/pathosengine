@@ -7,11 +7,12 @@ OpenGL rendering library (for 3d graphics study)
 * GL version: OpenGL 4.6 Core Profile
 
 ## Third-party Libraries
-* OpenGL        : glm, glLoadGen
-* Window system : freeglut
-* Image         : freeimage, stb_image
-* Font          : freetype
-* 3D model      : tinyobjloader, assimp
+* OpenGL        : [glm](https://github.com/g-truc/glm), glLoadGen
+* Window system : [freeglut](https://github.com/FreeGLUTProject/freeglut)
+* Image         : [freeimage](https://freeimage.sourceforge.io/), [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
+* Font          : [freetype](https://github.com/freetype/freetype)
+* 3D model      : [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader), [assimp](https://github.com/assimp/assimp)
+* JSON          : [nlohmann](https://github.com/nlohmann/json)
 
 ## Features
 * Rendering
