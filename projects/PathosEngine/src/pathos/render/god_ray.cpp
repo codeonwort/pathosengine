@@ -1,4 +1,5 @@
 #include "god_ray.h"
+#include "pathos/engine_policy.h"
 #include "pathos/render/render_deferred.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
@@ -22,7 +23,7 @@ static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Den
 namespace pathos {
 
 	struct UBO_GodRaySilhouette {
-		matrix4 modelViewProj;
+		matrix4 modelTransform;
 		vector3 godRayColor;
 	};
 
@@ -169,6 +170,9 @@ namespace pathos {
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthFunc(GL_EQUAL);
+		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
+			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		}
 
 		// render silhouettes
 		{
@@ -257,7 +261,7 @@ namespace pathos {
 		}
 
 		UBO_GodRaySilhouette uboData;
-		uboData.modelViewProj = camera->getViewProjectionMatrix() * meshProxy->modelMatrix;
+		uboData.modelTransform = meshProxy->modelMatrix;
 		uboData.godRayColor = godRayColor;
 		uboSilhouette.update(cmdList, 1, &uboData);
 

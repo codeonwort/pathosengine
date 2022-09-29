@@ -98,9 +98,9 @@ namespace pathos {
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getLocalMatrix();
-			proxy->geometry = geoms[i];
-			proxy->material = materials[i];
-			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
+			proxy->geometry = G;
+			proxy->material = M;
+			proxy->worldBounds = calculateWorldBounds(G->getLocalBounds(), proxy->modelMatrix);
 
 			outProxyList.push_back(proxy);
 		}

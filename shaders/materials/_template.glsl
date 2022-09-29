@@ -175,6 +175,8 @@ void main() {
 	interpolants.bitangent   = inBitangent;
 	interpolants.texcoord    = inTexcoord;
 
+	// #todo: Precision issue.
+	// See SIGGRAPH2012 "Creating Vast Game Worlds" (p.11)
 	gl_Position = proj * positionVS;
 }
 
