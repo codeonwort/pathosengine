@@ -144,6 +144,9 @@ namespace pathos {
 				gConsole->addLine(L"Usage: set_window_size <new_width> <new_height>");
 			}
 		});
+		registerExec("screenshot", [this](const std::string& command) {
+			renderThread->takeScreenshot();
+		});
 
 		for (const auto& line : configLines) {
 			gConsole->addLine(line.c_str(), false);
@@ -397,6 +400,10 @@ namespace pathos {
 		conf.windowHeight = inScreenHeight;
 	}
 
+	void Engine::pushScreenshot(Screenshot screenshot) {
+		screenshotQueue.emplace_back(screenshot);
+	}
+
 	void Engine::tick()
 	{
 		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
@@ -481,6 +488,33 @@ namespace pathos {
 				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
 				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
 				renderThread->pushOverlayProxy(overlayProxy);
+			}
+
+			//
+			// Output screenshots
+			//
+			if (screenshotQueue.size() > 0) {
+				std::string screenshotDir = pathos::getSolutionDir() + "/log/screenshot/";
+				pathos::createDirectory(screenshotDir.c_str());
+				for (size_t i = 0; i < screenshotQueue.size(); ++i) {
+					std::string screenshotPath = screenshotDir;
+
+					time_t now = ::time(0);
+					tm localTm;
+					errno_t timeErr = ::localtime_s(&localTm, &now);
+					CHECKF(timeErr == 0, "Failed to get current time");
+					char timeBuffer[128];
+					::strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d-%H-%M-%S", &localTm);
+
+					screenshotPath += std::string(timeBuffer);
+					screenshotPath += "_shot" + std::to_string(i) + ".png";
+					const vector2i& size = screenshotQueue[i].first;
+					uint8* pixels = screenshotQueue[i].second;
+					pathos::savePNG_RGB(size.x, size.y, pixels, screenshotPath.c_str());
+					delete[] pixels;
+				}
+				gConsole->addLine(L"Screenshot saved to log/screenshot/", false, true);
+				screenshotQueue.clear();
 			}
 		}
 

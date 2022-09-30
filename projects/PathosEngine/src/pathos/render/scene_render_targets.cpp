@@ -69,12 +69,16 @@ namespace pathos {
 		};
 
 		static constexpr GLenum PF_sceneColor = GL_RGBA16F;
-		static constexpr GLenum PF_sceneFinal = GL_RGBA32F; // #todo-dof: prefix sum shader requires rgba32f input.
 		static constexpr GLenum PF_sceneDepth = GL_DEPTH32F_STENCIL8;
-		reallocTexture2D(sceneFinal, PF_sceneFinal, sceneWidth, sceneHeight, "sceneFinal");
 		reallocTexture2D(sceneColor, PF_sceneColor, sceneWidth, sceneHeight, "sceneColor");
 		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, "sceneColorHalfRes");
 		reallocTexture2D(sceneDepth, PF_sceneDepth, sceneWidth, sceneHeight, "sceneDepth");
+
+		static constexpr GLenum PF_sceneColorAA = GL_RGBA16F;
+		reallocTexture2D(sceneColorAA, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorAA");
+
+		static constexpr GLenum PF_sceneFinal = GL_RGBA16F;
+		reallocTexture2D(sceneFinal, PF_sceneFinal, sceneWidth, sceneHeight, "sceneFinal");
 
 		// Screen space reflection
 		{
@@ -132,6 +136,7 @@ namespace pathos {
 
 		// depth of field
 		constexpr GLenum PF_dofSubsum = GL_RGBA32F;
+		reallocTexture2D(sceneColorDoFInput, PF_dofSubsum, sceneWidth, sceneHeight, "DoF_sceneColor32f");
 		reallocTexture2D(dofSubsum0, PF_dofSubsum, sceneHeight, sceneWidth, "depthOfField_subsum0");
 		reallocTexture2D(dofSubsum1, PF_dofSubsum, sceneWidth, sceneHeight, "depthOfField_subsum1");
 
@@ -158,7 +163,7 @@ namespace pathos {
 		}
 
 		// tone mapping
-		reallocTexture2D(toneMappingResult, GL_RGBA16F, sceneWidth, sceneHeight, "toneMappingResult");
+		reallocTexture2D(sceneColorToneMapped, GL_RGBA16F, sceneWidth, sceneHeight, "sceneColorToneMapped");
 
 		// ssao
 		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, "ssaoHalfNormalAndDepth");
@@ -206,7 +211,7 @@ namespace pathos {
 		safe_release(godRayResultTemp);
 		safe_release(dofSubsum0);
 		safe_release(dofSubsum1);
-		safe_release(toneMappingResult);
+		safe_release(sceneColorToneMapped);
 		safe_release(ssaoHalfNormalAndDepth);
 		safe_release(ssaoMap);
 		safe_release(ssaoMapTemp);

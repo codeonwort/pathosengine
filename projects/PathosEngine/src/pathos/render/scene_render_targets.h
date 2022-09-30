@@ -19,11 +19,13 @@ namespace pathos {
 		uint32 csmWidth = 2048;
 		uint32 csmHeight = 2048;
 
-		GLuint sceneFinal = 0; // Final texture rendered on the screen
 		GLuint sceneColor = 0; // This usually end up as an unpack of gbuffer, before any post-processing
 		GLuint sceneColorHalfRes = 0; // Half res version, generated before any post processing to start.
 		                              // PP passes that are too expensive to run in full res should use this.
 		GLuint sceneDepth = 0;
+
+		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
+		GLuint sceneFinal = 0; // Final texture rendered on the screen
 
 		// Screen space reflection
 		GLuint sceneDepthHiZ = 0;
@@ -57,6 +59,7 @@ namespace pathos {
 		GLuint godRayResultTemp = 0;
 
 		// post processing: depth of field
+		GLuint sceneColorDoFInput = 0;
 		GLuint dofSubsum0 = 0;
 		GLuint dofSubsum1 = 0;
 
@@ -67,7 +70,7 @@ namespace pathos {
 		std::vector<GLuint> sceneBloomChainViews;
 
 		// post processing: tone mapping
-		GLuint toneMappingResult = 0;
+		GLuint sceneColorToneMapped = 0;
 
 		// post processing: ssao
 		GLuint ssaoHalfNormalAndDepth = 0;

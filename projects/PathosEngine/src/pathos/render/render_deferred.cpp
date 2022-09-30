@@ -113,11 +113,14 @@ namespace pathos {
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 
 		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_BasePass");
+
+		gRenderDevice->createFramebuffers(1, &fboScreenshot);
 	}
 
 	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			destroySceneRenderTargets(cmdList);
+			gRenderDevice->deleteFramebuffers(1, &fboScreenshot);
 		}
 		destroyed = true;
 	}
@@ -308,8 +311,11 @@ namespace pathos {
 
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		GLuint sceneAfterLastPP = 0;
+
 		if (sceneRenderSettings.enablePostProcess == false)
 		{
+			SCOPED_DRAW_EVENT(BlitToFinalTarget);
 			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget());
 		}
 		else
@@ -323,7 +329,7 @@ namespace pathos {
 			const bool noBloom = (cvar_enable_bloom.getInt() == 0);
 			const bool noDOF = (cvar_enable_dof.getInt() == 0) || (depthOfField->isAvailable() == false);
 
-			GLuint sceneAfterLastPP = sceneRenderTargets.sceneColor;
+			sceneAfterLastPP = sceneRenderTargets.sceneColor;
 
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
@@ -352,7 +358,7 @@ namespace pathos {
 				const bool isFinalPP = (noAA && noDOF);
 
 				GLuint bloom = noBloom ? sceneAfterLastPP : sceneRenderTargets.sceneBloomChain;
-				GLuint output = isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.toneMappingResult;
+				GLuint output = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
@@ -361,7 +367,7 @@ namespace pathos {
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, output);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				sceneAfterLastPP = sceneRenderTargets.toneMappingResult;
+				sceneAfterLastPP = sceneRenderTargets.sceneColorToneMapped;
 			}
 
 			// Post Process: Anti-aliasing
@@ -374,12 +380,13 @@ namespace pathos {
 				{
 					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
 					const bool isFinalPP = noDOF;
+					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
 
 					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-					fxaa->setOutput(EPostProcessOutput::PPO_0, isFinalPP ? getFinalRenderTarget() : sceneRenderTargets.sceneFinal);
+					fxaa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
 					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
 
-					sceneAfterLastPP = sceneRenderTargets.sceneFinal;
+					sceneAfterLastPP = aaRenderTarget;
 				}
 				break;
 
@@ -389,13 +396,38 @@ namespace pathos {
 
 			// Post Process: Depth of Field
 			if (!noDOF) {
-				const GLuint dofRenderTarget = getFinalRenderTarget();
+				const GLuint dofInput = sceneRenderTargets.sceneColorDoFInput;
+				const GLuint dofRenderTarget = sceneRenderTargets.sceneFinal;
 
-				depthOfField->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+				// Force rgba32f input.
+				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
+				copyTexture(cmdList, sceneAfterLastPP, dofInput);
+
+				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
 				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+
+				sceneAfterLastPP = dofRenderTarget;
 			}
 
+		}
+
+		// Assumes rendering result is always written to sceneFinal and it's pixel format is rgba16f.
+		if (scene->bScreenshotReserved) {
+			cmdList.bindFramebuffer(GL_READ_FRAMEBUFFER, fboScreenshot);
+			cmdList.namedFramebufferTexture(fboScreenshot, GL_COLOR_ATTACHMENT0, sceneRenderTargets.sceneFinal, 0);
+			cmdList.namedFramebufferReadBuffer(fboScreenshot, GL_COLOR_ATTACHMENT0);
+
+			scene->screenshotSize = vector2i((int32)sceneRenderSettings.sceneWidth, (int32)sceneRenderSettings.sceneHeight);
+			scene->screenshotRawData.resize(4 * sceneRenderSettings.sceneWidth * sceneRenderSettings.sceneHeight);
+			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 1);
+			cmdList.readPixels(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, GL_RGBA, GL_HALF_FLOAT, scene->screenshotRawData.data());
+			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 4);
+		}
+
+		if (sceneAfterLastPP != 0) {
+			SCOPED_DRAW_EVENT(BlitToFinalTarget);
+			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget());
 		}
 
 		// Debug pass (r.viewmode)

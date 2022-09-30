@@ -33,6 +33,8 @@ namespace pathos {
 		void beginFrame(uint32 frameNumber);
 		void endFrame(uint32 frameNumber);
 
+		void takeScreenshot() { bScreenshotReserved = true; }
+
 		// NOTE: Blocking operation.
 		void terminate();
 
@@ -100,6 +102,8 @@ namespace pathos {
 
 		std::list<OverlaySceneProxy*>     overlayProxyQueue; // CAUTION: No direct access!!! Use helper methods.
 		std::mutex                        overlayProxyQueueMutex;
+
+		bool                       bScreenshotReserved = false;
 
 	// GPU
 	private:

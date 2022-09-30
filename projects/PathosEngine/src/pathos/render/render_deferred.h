@@ -107,6 +107,8 @@ namespace pathos {
 		SceneRenderSettings sceneRenderSettings;
 		RenderTarget2D* finalRenderTarget = nullptr;
 
+		GLuint fboScreenshot = 0; // Dummy FBO to read screenshot.
+
 		// temporary save
 		SceneProxy* scene;
 		Camera* camera;

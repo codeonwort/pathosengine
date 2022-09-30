@@ -75,4 +75,6 @@ namespace pathos {
 	// NOTE: You should call VolumeTexture::initGLResource() manually.
 	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
 
+	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename);
+
 }

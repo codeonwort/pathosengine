@@ -2,6 +2,7 @@
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
+#include "badger/types/vector_types.h"
 #include "badger/memory/mem_alloc.h"
 #include "badger/system/stopwatch.h"
 
@@ -29,6 +30,8 @@ namespace pathos {
 	class AssetStreamer;
 	class OverlayRenderer;
 	class RenderThread;
+
+	using Screenshot = std::pair<vector2i, uint8*>;
 
 	enum class ERendererType : uint8 {
 		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
@@ -107,6 +110,9 @@ namespace pathos {
 
 		const EngineConfig& getConfig() const { return conf; }
 		void updateScreenSize(int32 inScreenWidth, int32 inScreenHeight);
+
+		// Called by render thread when a screenshot is taken.
+		void pushScreenshot(Screenshot screenshot);
 
 		inline float getWorldTime() { return stopwatch_app.stop(); } // Elapsed seconds since the application started.
 		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
@@ -192,6 +198,8 @@ namespace pathos {
 		GLuint texture2D_white = 0;
 		GLuint texture2D_grey  = 0;
 		GLuint texture2D_blue  = 0;
+
+		std::vector<Screenshot> screenshotQueue;
 
 	// Utility thread
 	private:
