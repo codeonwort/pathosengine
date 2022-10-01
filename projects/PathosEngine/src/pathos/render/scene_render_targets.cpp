@@ -189,11 +189,13 @@ namespace pathos {
 		releaseViews(ssrPreconvolutionViews);
 		releaseViews(ssrPreconvolutionTempViews);
 
+		// #todo-renderer: Implement RT pool and release all automatically.
 #define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
-		safe_release(sceneFinal);
 		safe_release(sceneColor);
+		safe_release(sceneColorHalfRes);
 		safe_release(sceneDepth);
-		safe_release(sceneBloomChain);
+		safe_release(sceneColorAA);
+		safe_release(sceneFinal);
 		safe_release(sceneDepthHiZ);
 		safe_release(ssrPreintegration);
 		safe_release(ssrRayTracing);
@@ -211,6 +213,8 @@ namespace pathos {
 		safe_release(godRayResultTemp);
 		safe_release(dofSubsum0);
 		safe_release(dofSubsum1);
+		safe_release(sceneBloomSetup);
+		safe_release(sceneBloomChain);
 		safe_release(sceneColorToneMapped);
 		safe_release(ssaoHalfNormalAndDepth);
 		safe_release(ssaoMap);
