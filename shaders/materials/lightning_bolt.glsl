@@ -7,10 +7,14 @@ PARAMETER_CONSTANT(float, billboardWidth)
 
 VPO_BEGIN
 vec3 getVertexPositionOffset(VertexShaderInput vsi) {
+	mat3 viewInv  = transpose(uboPerFrame.viewTransform3x3);
+
 	// #todo: Temp billboard (bad quality; inconsistent thickness)
 	vec3 delta = vec3(0.0);
-	vec3 right = inverse(uboPerObject.mvTransform3x3) * vec3(1.0, 0.0, 0.0);
-	delta = right * uboMaterial.billboardWidth * (vsi.texcoord.x - 0.5);
+	vec3 right = viewInv * vec3(1.0, 0.0, 0.0);
+	float amp = uboMaterial.billboardWidth;
+	delta = right * amp * (vsi.texcoord.x - 0.5);
+
 	return delta;
 }
 VPO_END

@@ -8,7 +8,8 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 
-static const vector3 LIGHTNING_PARTICLE_EMISSIVE(30.0f, 30.0f, 30.0f);
+static const vector3 LIGHTNING_PARTICLE_EMISSIVE(20.0f, 20.0f, 20.0f);
+static const float LIGHTNING_PARTICLE_THICKNESS = 5.0f;
 
 LightningActor::LightningActor()
 {
@@ -40,7 +41,7 @@ LightningParticleComponent::LightningParticleComponent()
 
 	M = Material::createMaterialInstance("lightning_bolt");
 	M->setConstantParameter("emissive", LIGHTNING_PARTICLE_EMISSIVE);
-	M->setConstantParameter("billboardWidth", 5.0f);
+	M->setConstantParameter("billboardWidth", LIGHTNING_PARTICLE_THICKNESS);
 
 	setStaticMesh(new Mesh(G, M));
 	getStaticMesh()->doubleSided = true;
@@ -55,7 +56,7 @@ void LightningParticleComponent::generateParticle(const vector3& startPosition, 
 	std::vector<uint32> indices;
 
 	const uint32 numSubdivisions = 4;
-	const float jitter = glm::length(endPosition - startPosition) * 0.02f;
+	const float jitter = glm::length(endPosition - startPosition) * 0.03f;
 	
 	auto recurse = [&](const vector3& p0, const vector3& p1, uint32 depth) -> void {
 		auto recurse_impl = [&](const vector3& p0, const vector3& p1, uint32 depth, auto& impl) -> void {
@@ -72,8 +73,9 @@ void LightningParticleComponent::generateParticle(const vector3& startPosition, 
 			}
 			positions.push_back(middle);
 			positions.push_back(middle);
-			uvs.push_back(vector2(0.0f, 0.0f));
-			uvs.push_back(vector2(1.0f, 0.0f));
+			float yRatio = glm::length(middle - startPosition) / glm::length(endPosition - startPosition);
+			uvs.push_back(vector2(0.0f, yRatio));
+			uvs.push_back(vector2(1.0f, yRatio));
 			if (depth > 0) {
 				impl(middle, p1, depth - 1, impl);
 			}
@@ -88,8 +90,8 @@ void LightningParticleComponent::generateParticle(const vector3& startPosition, 
 	recurse(startPosition, endPosition, numSubdivisions);
 	positions.push_back(endPosition);
 	positions.push_back(endPosition);
-	uvs.push_back(vector2(0.0f, 0.0f));
-	uvs.push_back(vector2(1.0f, 0.0f));
+	uvs.push_back(vector2(0.0f, 1.0f));
+	uvs.push_back(vector2(1.0f, 1.0f));
 
 	uint32 numVertices = (uint32)positions.size() / 2;
 	for (uint32 i = 0; i < numVertices - 1; ++i) {
