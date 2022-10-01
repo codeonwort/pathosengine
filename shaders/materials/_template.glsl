@@ -25,10 +25,6 @@ $NEED SHADINGMODEL
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
 	// 64 bytes (4 * 16)
 	mat4 modelTransform;
-	// 64 bytes (4 * 16)
-	mat4 mvTransform;
-	// 48 bytes (3 * 16)
-	mat3 mvTransform3x3;
 } uboPerObject;
 
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
@@ -119,10 +115,13 @@ struct VertexShaderInput {
 	vec2 texcoord;
 };
 
+// All inputs in local space of the object
 vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
-	vec3 T = normalize(uboPerObject.mvTransform3x3 * t);
-	vec3 B = normalize(uboPerObject.mvTransform3x3 * b);
-	vec3 N = normalize(uboPerObject.mvTransform3x3 * n);
+	mat3 model = mat3(uboPerObject.modelTransform);
+	model = inverse(transpose(model)); // Cannot assure uniform scaling.
+	vec3 T = normalize(model * t);
+	vec3 B = normalize(model * b);
+	vec3 N = normalize(model * n);
 	mat3 TBN = mat3(T, B, N);
 	return TBN * normalize(normalmap);
 }
@@ -154,7 +153,7 @@ layout (location = 4) in vec3 inBitangent;
 void main() {
 	mat4 model = uboPerObject.modelTransform;
 	mat4 view = uboPerFrame.viewTransform;
-	mat4 proj = uboPerFrame.projTransform;
+	mat4 proj_view = uboPerFrame.viewProjTransform;
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
 
@@ -177,7 +176,7 @@ void main() {
 
 	// #todo: Precision issue.
 	// See SIGGRAPH2012 "Creating Vast Game Worlds" (p.11)
-	gl_Position = proj * positionVS;
+	gl_Position = proj_view * positionWS;
 }
 
 #endif // VERTEX_SHADER
@@ -203,6 +202,7 @@ void main() {
 		normalize(interpolants.tangent),
 		normalize(interpolants.bitangent),
 		attr.normal);
+	detailNormal = (uboPerFrame.viewTransform * vec4(detailNormal, 0.0)).xyz;
 #endif
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT

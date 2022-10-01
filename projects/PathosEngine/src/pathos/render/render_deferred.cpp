@@ -509,8 +509,6 @@ namespace pathos {
 				{
 					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
-					uboData.mvTransform = camera->getViewMatrix() * proxy->modelMatrix;
-					uboData.mvMatrix3x3 = matrix3x4(uboData.mvTransform);
 					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
