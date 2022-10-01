@@ -5,7 +5,7 @@
 #include "pathos/actor/world.h"
 #include "pathos/scene/scene.h"
 #include "pathos/render/render_device.h"
-#include "pathos/render/render_deferred.h"
+#include "pathos/render/scene_renderer.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/thread/render_thread.h"
 #include "pathos/util/log.h"

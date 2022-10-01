@@ -2,7 +2,7 @@
 #include "scene.h"
 #include "pathos/actor/world.h"
 #include "pathos/actor/actor.h"
-#include "pathos/render/render_deferred.h"
+#include "pathos/render/scene_renderer.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/scene_proxy.h"

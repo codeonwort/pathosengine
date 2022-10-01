@@ -16,7 +16,6 @@ int main(int argc, char** argv) {
 	conf.windowWidth  = WINDOW_WIDTH;
 	conf.windowHeight = WINDOW_HEIGHT;
 	conf.title        = WINDOW_TITLE;
-	conf.rendererType = ERendererType::Deferred;
 	Engine::init(argc, argv, conf);
 
 	const float ar = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);

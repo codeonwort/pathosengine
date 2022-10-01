@@ -7,7 +7,7 @@
 #include "pathos/input/input_manager.h"
 using namespace pathos;
 
-const char* WINDOW_TITLE         = "Deferred Shading Renderer";
+const char* WINDOW_TITLE         = "Demo Application";
 const int32 WINDOW_WIDTH         = 1920;
 const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
@@ -20,15 +20,15 @@ void changeWorld() {
 	switch (worldIndex) {
 	case 0:
 		newWorld = new World_RC1;
-		gEngine->getMainWindow()->setTitle("Test: Rendering Challenge 1");
+		gEngine->getMainWindow()->setTitle("Rendering Challenge 1");
 		break;
 	case 1:
 		newWorld = new World1;
-		gEngine->getMainWindow()->setTitle("Test: Deferred Rendering");
+		gEngine->getMainWindow()->setTitle("Some Random World");
 		break;
 	case 2:
 		newWorld = new World_LightRoom;
-		gEngine->getMainWindow()->setTitle("Test: Light Room");
+		gEngine->getMainWindow()->setTitle("Light Room");
 		break;
 	case 3:
 		// More worlds here...
@@ -48,7 +48,6 @@ int main(int argc, char** argv) {
 	conf.windowHeight = WINDOW_HEIGHT;
 	conf.fullscreen   = WINDOW_FULLSCREEN;
 	conf.title        = WINDOW_TITLE;
-	conf.rendererType = ERendererType::Deferred;
 	Engine::init(argc, argv, conf);
 
 	changeWorld();

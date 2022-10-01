@@ -421,8 +421,7 @@ void World1::onTick(float deltaSeconds)
 
 	{
 		char title[256];
-		sprintf_s(title, "%s (GameThread: %.2f ms, RenderThread: %.2f ms, GPU: %.2f ms)",
-			gEngine->getConfig().title,
+		sprintf_s(title, "Some Demo World (GameThread: %.2f ms, RenderThread: %.2f ms, GPU: %.2f ms)",
 			gEngine->getGameThreadCPUTime(),
 			gEngine->getRenderThreadCPUTime(),
 			gEngine->getGPUTime());

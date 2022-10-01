@@ -33,11 +33,6 @@ namespace pathos {
 
 	using Screenshot = std::pair<vector2i, uint8*>;
 
-	enum class ERendererType : uint8 {
-		Forward, // #todo-forward-rendering: Removed due to maintenance issue.
-		Deferred
-	};
-
 	// @see Engine::init
 	struct EngineConfig {
 		EngineConfig()
@@ -45,7 +40,6 @@ namespace pathos {
 			, windowHeight(1080)
 			, fullscreen(false)
 			, title("pathos engine")
-			, rendererType(ERendererType::Deferred)
 			, numWorkersForAssetStreamer(2)
 		{
 		}
@@ -54,8 +48,6 @@ namespace pathos {
 		int32 windowHeight;
 		bool fullscreen;
 		const char* title;
-
-		ERendererType rendererType;
 
 		uint32 numWorkersForAssetStreamer;
 	};

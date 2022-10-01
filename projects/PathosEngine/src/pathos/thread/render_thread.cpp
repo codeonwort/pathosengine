@@ -14,7 +14,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/renderer.h"
 #include "pathos/render/render_overlay.h"
-#include "pathos/render/render_deferred.h"
+#include "pathos/render/scene_renderer.h"
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/gl_context_manager.h"
@@ -421,30 +421,19 @@ namespace pathos {
 	}
 
 	bool RenderThread::initializeRenderer(RenderCommandList& cmdList) {
-		const auto& conf = gEngine->getConfig();
-		switch (conf.rendererType) {
-		case ERendererType::Forward:
-			LOG(LogFatal, "Forward shading renderer is removed due to maintenance issue. Switching to deferred shading...");
-			renderer = new DeferredRenderer;
-			break;
+		renderer = new SceneRenderer;
 
-		case ERendererType::Deferred:
-			renderer = new DeferredRenderer;
-			break;
+		const EngineConfig& conf = gEngine->getConfig();
+		SceneRenderSettings settings;
+		{
+			settings.sceneWidth = conf.windowWidth;
+			settings.sceneHeight = conf.windowHeight;
+			settings.frameCounter = 0;
+			settings.enablePostProcess = true;
+			settings.finalRenderTarget = nullptr;
 		}
-
-		if (renderer) {
-			SceneRenderSettings settings;
-			{
-				settings.sceneWidth = conf.windowWidth;
-				settings.sceneHeight = conf.windowHeight;
-				settings.frameCounter = 0;
-				settings.enablePostProcess = true;
-				settings.finalRenderTarget = nullptr;
-			}
-			renderer->setSceneRenderSettings(settings);
-			renderer->initializeResources(cmdList);
-		}
+		renderer->setSceneRenderSettings(settings);
+		renderer->initializeResources(cmdList);
 
 		LOG(LogInfo, "Initialize scene renderer");
 		return true;

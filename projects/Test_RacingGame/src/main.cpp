@@ -18,7 +18,6 @@ int main(int argc, char** argv) {
 	conf.windowHeight = WINDOW_HEIGHT;
 	conf.fullscreen = WINDOW_FULLSCREEN;
 	conf.title = WINDOW_TITLE;
-	conf.rendererType = ERendererType::Deferred;
 	Engine::init(argc, argv, conf);
 
 	const float aspect_ratio = static_cast<float>(conf.windowWidth) / static_cast<float>(conf.windowHeight);

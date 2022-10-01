@@ -20,7 +20,7 @@ namespace pathos {
 	class OpenGLDevice;
 	class RenderTarget2D;
 
-	class DeferredRenderer : public Renderer {
+	class SceneRenderer : public Renderer {
 
 	public:
 		static void internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
@@ -66,8 +66,8 @@ namespace pathos {
 		static std::unique_ptr<class DepthOfField>          depthOfField;
 
 	public:
-		DeferredRenderer();
-		virtual ~DeferredRenderer();
+		SceneRenderer();
+		virtual ~SceneRenderer();
 
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;

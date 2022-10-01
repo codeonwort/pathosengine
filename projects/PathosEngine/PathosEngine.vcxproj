@@ -149,7 +149,7 @@
     <ClCompile Include="src\pathos\render\postprocessing\ssao.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\tone_mapping.cpp" />
     <ClCompile Include="src\pathos\render\render_command_list.cpp" />
-    <ClCompile Include="src\pathos\render\render_deferred.cpp" />
+    <ClCompile Include="src\pathos\render\scene_renderer.cpp" />
     <ClCompile Include="src\pathos\render\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
@@ -311,7 +311,7 @@
     <ClInclude Include="src\pathos\render\overlay\overlaypass_standard.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_text.h" />
     <ClInclude Include="src\pathos\render\renderer.h" />
-    <ClInclude Include="src\pathos\render\render_deferred.h" />
+    <ClInclude Include="src\pathos\render\scene_renderer.h" />
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\scene\scene.h" />
     <ClInclude Include="src\pathos\render\skybox.h" />

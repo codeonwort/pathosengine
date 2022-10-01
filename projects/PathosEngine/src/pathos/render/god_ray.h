@@ -11,7 +11,7 @@
 namespace pathos {
 
 	class MeshGeometry;
-	class DeferredRenderer;
+	class SceneRenderer;
 	struct StaticMeshProxy;
 
 	class GodRay final {
@@ -32,7 +32,7 @@ namespace pathos {
 			SceneProxy* scene,
 			Camera* camera,
 			MeshGeometry* fullscreenQuad,
-			DeferredRenderer* renderer);
+			SceneRenderer* renderer);
 
 		// Quite arbitrary, not physically based
 		inline void setGodRayColor(const vector3& inColor) { godRayColor = inColor; }

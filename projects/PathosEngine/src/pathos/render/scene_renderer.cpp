@@ -1,4 +1,4 @@
-#include "render_deferred.h"
+#include "scene_renderer.h"
 
 #include "pathos/engine_policy.h"
 
@@ -95,19 +95,22 @@ namespace pathos {
 	};
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
-	DeferredRenderer::DeferredRenderer()
+	SceneRenderer::SceneRenderer()
 		: antiAliasing(EAntiAliasingMethod::FXAA)
 		, scene(nullptr)
 		, camera(nullptr)
 	{
+		// #todo-forward-shading: Restore forward shading pipeline.
+		// ...
+
 		sceneRenderTargets.useGBuffer = true;
 	}
 
-	DeferredRenderer::~DeferredRenderer() {
+	SceneRenderer::~SceneRenderer() {
 		CHECK(destroyed);
 	}
 
-	void DeferredRenderer::initializeResources(RenderCommandList& cmdList) {
+	void SceneRenderer::initializeResources(RenderCommandList& cmdList) {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
@@ -117,7 +120,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fboScreenshot);
 	}
 
-	void DeferredRenderer::releaseResources(RenderCommandList& cmdList) {
+	void SceneRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			destroySceneRenderTargets(cmdList);
 			gRenderDevice->deleteFramebuffers(1, &fboScreenshot);
@@ -125,7 +128,7 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void DeferredRenderer::setSceneRenderSettings(const SceneRenderSettings& settings) {
+	void SceneRenderer::setSceneRenderSettings(const SceneRenderSettings& settings) {
 		CHECK(settings.isValid());
 
 		sceneRenderSettings = settings;
@@ -136,17 +139,17 @@ namespace pathos {
 		}
 	}
 
-	void DeferredRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+	void SceneRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
 		CHECKF(inFinalRenderTarget != nullptr, "null is not accepted. Use setFinalRenderTargetToBackbuffer() for backbuffer");
 		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
 		finalRenderTarget = inFinalRenderTarget;
 	}
 
-	void DeferredRenderer::setFinalRenderTargetToBackbuffer() {
+	void SceneRenderer::setFinalRenderTargetToBackbuffer() {
 		finalRenderTarget = 0;
 	}
 
-	void DeferredRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
+	void SceneRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
 		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
 
 		if (gbufferFBO == 0) {
@@ -167,12 +170,12 @@ namespace pathos {
 		}
 	}
 
-	void DeferredRenderer::destroySceneRenderTargets(RenderCommandList& cmdList) {
+	void SceneRenderer::destroySceneRenderTargets(RenderCommandList& cmdList) {
 		sceneRenderTargets.freeSceneTextures(cmdList);
 		gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 	}
 
-	void DeferredRenderer::render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
+	void SceneRenderer::render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
@@ -437,7 +440,7 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void DeferredRenderer::renderBasePass(RenderCommandList& cmdList) {
+	void SceneRenderer::renderBasePass(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(BasePass);
 
 		// #todo: Dynamically toggle depth prepass.
@@ -545,7 +548,7 @@ namespace pathos {
 		cmdList.depthMask(GL_TRUE);
 	}
 
-	void DeferredRenderer::renderDirectLighting(RenderCommandList& cmdList) {
+	void SceneRenderer::renderDirectLighting(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(DirectLighting);
 
 		directLightingPass->bindFramebuffer(cmdList);
@@ -569,15 +572,15 @@ namespace pathos {
 		}
 	}
 
-	void DeferredRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
+	void SceneRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
 
 		cmdList.useProgram(program.getGLName());
 		if (target == 0) {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 		} else {
-			cmdList.bindFramebuffer(GL_FRAMEBUFFER, DeferredRenderer::copyTextureFBO);
-			cmdList.namedFramebufferTexture(DeferredRenderer::copyTextureFBO, GL_COLOR_ATTACHMENT0, target, 0);
+			cmdList.bindFramebuffer(GL_FRAMEBUFFER, SceneRenderer::copyTextureFBO);
+			cmdList.namedFramebufferTexture(SceneRenderer::copyTextureFBO, GL_COLOR_ATTACHMENT0, target, 0);
 		}
 		cmdList.bindTextureUnit(0, source);
 		fullscreenQuad->activate_position_uv(cmdList);
@@ -587,14 +590,14 @@ namespace pathos {
 		fullscreenQuad->deactivateIndexBuffer(cmdList);
 	}
 
-	GLuint DeferredRenderer::getFinalRenderTarget() const {
+	GLuint SceneRenderer::getFinalRenderTarget() const {
 		if (finalRenderTarget == nullptr) {
 			return 0; // Default backbuffer
 		}
 		return finalRenderTarget->getGLName();
 	}
 
-	void DeferredRenderer::updateSceneUniformBuffer(
+	void SceneRenderer::updateSceneUniformBuffer(
 		RenderCommandList& cmdList,
 		SceneProxy* scene,
 		Camera* camera)
@@ -655,39 +658,39 @@ namespace pathos {
 
 namespace pathos {
 	
-	std::unique_ptr<class Material>                DeferredRenderer::fallbackMaterial;
-	std::unique_ptr<class PlaneGeometry>           DeferredRenderer::fullscreenQuad;
-	GLuint                                         DeferredRenderer::copyTextureFBO = 0;
+	std::unique_ptr<class Material>                SceneRenderer::fallbackMaterial;
+	std::unique_ptr<class PlaneGeometry>           SceneRenderer::fullscreenQuad;
+	GLuint                                         SceneRenderer::copyTextureFBO = 0;
 	
-	std::unique_ptr<UniformBuffer>                 DeferredRenderer::ubo_perFrame;
+	std::unique_ptr<UniformBuffer>                 SceneRenderer::ubo_perFrame;
 	
-	std::unique_ptr<DirectLightingPass>            DeferredRenderer::directLightingPass;
-	std::unique_ptr<IndirectLightingPass>          DeferredRenderer::indirectLightingPass;
-	std::unique_ptr<ScreenSpaceReflectionPass>     DeferredRenderer::screenSpaceReflectionPass;
+	std::unique_ptr<DirectLightingPass>            SceneRenderer::directLightingPass;
+	std::unique_ptr<IndirectLightingPass>          SceneRenderer::indirectLightingPass;
+	std::unique_ptr<ScreenSpaceReflectionPass>     SceneRenderer::screenSpaceReflectionPass;
 
-	std::unique_ptr<ResolveUnlitPass>              DeferredRenderer::resolveUnlitPass;
+	std::unique_ptr<ResolveUnlitPass>              SceneRenderer::resolveUnlitPass;
 
-	std::unique_ptr<class TranslucencyRendering>   DeferredRenderer::translucency_pass;
+	std::unique_ptr<class TranslucencyRendering>   SceneRenderer::translucency_pass;
 
-	std::unique_ptr<class SkyboxPass>              DeferredRenderer::skyboxPass;
-	std::unique_ptr<class AnselSkyPass>            DeferredRenderer::anselSkyPass;
-	std::unique_ptr<class SkyAtmospherePass>       DeferredRenderer::skyAtmospherePass;
-	std::unique_ptr<class VolumetricCloudPass>     DeferredRenderer::volumetricCloud;
+	std::unique_ptr<class SkyboxPass>              SceneRenderer::skyboxPass;
+	std::unique_ptr<class AnselSkyPass>            SceneRenderer::anselSkyPass;
+	std::unique_ptr<class SkyAtmospherePass>       SceneRenderer::skyAtmospherePass;
+	std::unique_ptr<class VolumetricCloudPass>     SceneRenderer::volumetricCloud;
 
-	std::unique_ptr<class DepthPrepass>            DeferredRenderer::depthPrepass;
-	std::unique_ptr<DirectionalShadowMap>          DeferredRenderer::sunShadowMap;
-	std::unique_ptr<OmniShadowPass>                DeferredRenderer::omniShadowPass;
-	std::unique_ptr<class VisualizeBufferPass>     DeferredRenderer::visualizeBuffer;
+	std::unique_ptr<class DepthPrepass>            SceneRenderer::depthPrepass;
+	std::unique_ptr<DirectionalShadowMap>          SceneRenderer::sunShadowMap;
+	std::unique_ptr<OmniShadowPass>                SceneRenderer::omniShadowPass;
+	std::unique_ptr<class VisualizeBufferPass>     SceneRenderer::visualizeBuffer;
 
-	std::unique_ptr<class GodRay>                  DeferredRenderer::godRay;
-	std::unique_ptr<class SSAO>                    DeferredRenderer::ssao;
-	std::unique_ptr<class BloomSetup>              DeferredRenderer::bloomSetup;
-	std::unique_ptr<class BloomPass>               DeferredRenderer::bloomPass;
-	std::unique_ptr<class ToneMapping>             DeferredRenderer::toneMapping;
-	std::unique_ptr<class FXAA>                    DeferredRenderer::fxaa;
-	std::unique_ptr<class DepthOfField>            DeferredRenderer::depthOfField;
+	std::unique_ptr<class GodRay>                  SceneRenderer::godRay;
+	std::unique_ptr<class SSAO>                    SceneRenderer::ssao;
+	std::unique_ptr<class BloomSetup>              SceneRenderer::bloomSetup;
+	std::unique_ptr<class BloomPass>               SceneRenderer::bloomPass;
+	std::unique_ptr<class ToneMapping>             SceneRenderer::toneMapping;
+	std::unique_ptr<class FXAA>                    SceneRenderer::fxaa;
+	std::unique_ptr<class DepthOfField>            SceneRenderer::depthOfField;
 
-	void DeferredRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
+	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
@@ -763,7 +766,7 @@ namespace pathos {
 		}
 	}
 
-	void DeferredRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
+	void SceneRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial.release();
 		fullscreenQuad->dispose();
 		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
@@ -804,6 +807,6 @@ namespace pathos {
 		cmdList.flushAllCommands();
 	}
 
-	DEFINE_GLOBAL_RENDER_ROUTINE(DeferredRenderer, DeferredRenderer::internal_initGlobalResources, DeferredRenderer::internal_destroyGlobalResources);
+	DEFINE_GLOBAL_RENDER_ROUTINE(SceneRenderer, SceneRenderer::internal_initGlobalResources, SceneRenderer::internal_destroyGlobalResources);
 
 }

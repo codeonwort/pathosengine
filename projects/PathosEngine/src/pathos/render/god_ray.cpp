@@ -1,6 +1,6 @@
 #include "god_ray.h"
 #include "pathos/engine_policy.h"
-#include "pathos/render/render_deferred.h"
+#include "pathos/render/scene_renderer.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
@@ -141,7 +141,7 @@ namespace pathos {
 		SceneProxy* scene,
 		Camera* camera,
 		MeshGeometry* fullscreenQuad,
-		DeferredRenderer* renderer)
+		SceneRenderer* renderer)
 	{
 		SCOPED_DRAW_EVENT(GodRay);
 
