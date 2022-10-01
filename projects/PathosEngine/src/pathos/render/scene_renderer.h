@@ -78,10 +78,11 @@ namespace pathos {
 		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.
-		void copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target);
+		void copyTexture(RenderCommandList& cmdList, GLuint source,
+			GLuint target, uint32 targetWidth, uint32 targetHeight);
 
 	private:
-		void reallocateSceneRenderTargets(RenderCommandList& cmdList);
+		void reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling);
 		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);

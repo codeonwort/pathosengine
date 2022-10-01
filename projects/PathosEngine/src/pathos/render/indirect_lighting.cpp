@@ -97,6 +97,8 @@ namespace pathos {
 		gbuffer_textures[1] = sceneContext.gbufferB;
 		gbuffer_textures[2] = sceneContext.gbufferC;
 
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(4, scene->irradianceMap);

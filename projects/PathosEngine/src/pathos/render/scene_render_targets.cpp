@@ -1,9 +1,12 @@
 #include "scene_render_targets.h"
 #include "pathos/render/render_device.h"
+#include "pathos/console.h"
 #include "badger/assertion/assertion.h"
-#include "../util/log.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_resolutionScale("r.resolution_scale", 100, "Controls screen resolution percentage");
 
 	SceneRenderTargets::SceneRenderTargets() {}
 
@@ -11,11 +14,21 @@ namespace pathos {
 		CHECK(destroyed);
 	}
 
-	void SceneRenderTargets::reallocSceneTextures(RenderCommandList& cmdList, uint32 newWidth, uint32 newHeight)
+	void SceneRenderTargets::reallocSceneTextures(RenderCommandList& cmdList, uint32 newWidth, uint32 newHeight, bool bEnableResolutionScaling)
 	{
 		CHECK(newWidth > 0 && newHeight > 0);
 
 		destroyed = false;
+
+		unscaledSceneWidth = newWidth;
+		unscaledSceneHeight = newHeight;
+
+		// Resolution scaling
+		if (bEnableResolutionScaling && cvar_resolutionScale.getInt() != 100) {
+			float resolutionScale = badger::clamp(0.5f, 0.01f * (float)cvar_resolutionScale.getInt(), 2.0f);
+			newWidth = (uint32)((float)newWidth * resolutionScale);
+			newHeight = (uint32)((float)newHeight * resolutionScale);
+		}
 
 		const bool bResolutionChanged = (sceneWidth != newWidth) || (sceneHeight != newHeight);
 		sceneWidth = newWidth;

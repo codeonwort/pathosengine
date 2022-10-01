@@ -32,8 +32,8 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(Overlay);
 
 		CHECK(cmdList.sceneRenderTargets);
-		const uint32 sceneWidth = cmdList.sceneRenderTargets->sceneWidth;
-		const uint32 sceneHeight = cmdList.sceneRenderTargets->sceneHeight;
+		const uint32 sceneWidth = cmdList.sceneRenderTargets->unscaledSceneWidth;
+		const uint32 sceneHeight = cmdList.sceneRenderTargets->unscaledSceneHeight;
 
 		root = inRootProxy;
 		//CHECK(root && root->isRoot());

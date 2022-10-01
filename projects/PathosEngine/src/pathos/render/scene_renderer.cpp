@@ -111,7 +111,7 @@ namespace pathos {
 	}
 
 	void SceneRenderer::initializeResources(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, false);
 		cmdList.flushAllCommands();
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
 
@@ -149,8 +149,8 @@ namespace pathos {
 		finalRenderTarget = 0;
 	}
 
-	void SceneRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+	void SceneRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling) {
+		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, bEnableResolutionScaling);
 
 		if (gbufferFBO == 0) {
 			gRenderDevice->createFramebuffers(1, &gbufferFBO);
@@ -181,9 +181,11 @@ namespace pathos {
 
 		CHECK(sceneRenderSettings.isValid());
 
+		bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
+
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = &sceneRenderTargets;
-		reallocateSceneRenderTargets(cmdList);
+		reallocateSceneRenderTargets(cmdList, bEnableResolutionScaling);
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
@@ -319,7 +321,8 @@ namespace pathos {
 		if (sceneRenderSettings.enablePostProcess == false)
 		{
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
-			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget());
+			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget(),
+				sceneRenderTargets.unscaledSceneWidth, sceneRenderTargets.unscaledSceneHeight);
 		}
 		else
 		{
@@ -341,8 +344,8 @@ namespace pathos {
 			const bool bNeedsHalfResSceneColor = !noBloom; // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
-				cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth / 2, sceneRenderSettings.sceneHeight / 2);
-				copyTexture(cmdList, sceneRenderTargets.sceneColor, sceneRenderTargets.sceneColorHalfRes);
+				copyTexture(cmdList, sceneRenderTargets.sceneColor, sceneRenderTargets.sceneColorHalfRes,
+					sceneRenderTargets.sceneWidth / 2, sceneRenderTargets.sceneHeight / 2);
 			}
 
 			// Post Process: Bloom
@@ -404,7 +407,8 @@ namespace pathos {
 
 				// Force rgba32f input.
 				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
-				copyTexture(cmdList, sceneAfterLastPP, dofInput);
+				copyTexture(cmdList, sceneAfterLastPP, dofInput,
+					sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
@@ -421,16 +425,17 @@ namespace pathos {
 			cmdList.namedFramebufferTexture(fboScreenshot, GL_COLOR_ATTACHMENT0, sceneRenderTargets.sceneFinal, 0);
 			cmdList.namedFramebufferReadBuffer(fboScreenshot, GL_COLOR_ATTACHMENT0);
 
-			scene->screenshotSize = vector2i((int32)sceneRenderSettings.sceneWidth, (int32)sceneRenderSettings.sceneHeight);
-			scene->screenshotRawData.resize(4 * sceneRenderSettings.sceneWidth * sceneRenderSettings.sceneHeight);
+			scene->screenshotSize = vector2i((int32)sceneRenderTargets.sceneWidth, (int32)sceneRenderTargets.sceneHeight);
+			scene->screenshotRawData.resize(4 * sceneRenderTargets.sceneWidth * sceneRenderTargets.sceneHeight);
 			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 1);
-			cmdList.readPixels(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, GL_RGBA, GL_HALF_FLOAT, scene->screenshotRawData.data());
+			cmdList.readPixels(0, 0, sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight, GL_RGBA, GL_HALF_FLOAT, scene->screenshotRawData.data());
 			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 4);
 		}
 
 		if (sceneAfterLastPP != 0) {
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
-			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget());
+			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget(),
+				sceneRenderTargets.unscaledSceneWidth, sceneRenderTargets.unscaledSceneHeight);
 		}
 
 		// Debug pass (r.viewmode)
@@ -462,7 +467,7 @@ namespace pathos {
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.viewport(0, 0, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight);
+		cmdList.viewport(0, 0, sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
 
 		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
 		// Switch to EQUAL when doing full-depth prepass.
@@ -572,7 +577,9 @@ namespace pathos {
 		}
 	}
 
-	void SceneRenderer::copyTexture(RenderCommandList& cmdList, GLuint source, GLuint target) {
+	void SceneRenderer::copyTexture(RenderCommandList& cmdList, GLuint source,
+		GLuint target, uint32 targetWidth, uint32 targetHeight)
+	{
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
 
 		cmdList.useProgram(program.getGLName());
@@ -582,6 +589,7 @@ namespace pathos {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, SceneRenderer::copyTextureFBO);
 			cmdList.namedFramebufferTexture(SceneRenderer::copyTextureFBO, GL_COLOR_ATTACHMENT0, target, 0);
 		}
+		cmdList.viewport(0, 0, targetWidth, targetHeight);
 		cmdList.bindTextureUnit(0, source);
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
@@ -622,8 +630,8 @@ namespace pathos {
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
-		data.screenResolution.x = (float)sceneRenderSettings.sceneWidth;
-		data.screenResolution.y = (float)sceneRenderSettings.sceneHeight;
+		data.screenResolution.x = (float)sceneRenderTargets.sceneWidth;
+		data.screenResolution.y = (float)sceneRenderTargets.sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 

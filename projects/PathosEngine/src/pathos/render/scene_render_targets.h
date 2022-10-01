@@ -12,8 +12,13 @@ namespace pathos {
 		bool destroyed = false;
 
 	public:
+		// CAUTION: These can be different than those of SceneRenderSettings due to resolution scaling.
 		uint32 sceneWidth = 0;
 		uint32 sceneHeight = 0;
+
+		// Same as width/height values in SceneRenderSettings.
+		uint32 unscaledSceneWidth = 0;
+		uint32 unscaledSceneHeight = 0;
 
 		uint32 numCascades = 4;
 		uint32 csmWidth = 2048;
@@ -85,7 +90,7 @@ namespace pathos {
 		SceneRenderTargets& operator=(const SceneRenderTargets&) = delete;
 
 		// Reallocate scene textures if they are invalid or the screen resolution has been changed
-		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height);
+		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height, bool bEnableResolutionScaling);
 
 		void freeSceneTextures(RenderCommandList& cmdList);
 

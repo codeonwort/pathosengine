@@ -194,8 +194,8 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(DownsampleSilhouette);
 
 			// Downsample
-			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
-			renderer->copyTexture(cmdList, sceneContext.godRaySource, sceneContext.godRayResultTemp);
+			renderer->copyTexture(cmdList, sceneContext.godRaySource, sceneContext.godRayResultTemp,
+				sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		}
 
 		// light scattering pass

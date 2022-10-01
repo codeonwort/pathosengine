@@ -15,12 +15,11 @@ layout (location = 0) in vec3 inPosition;
 
 void main() {
 	mat4 model = ubo.modelTransform;
-	mat4 view = uboPerFrame.viewTransform;
-	mat4 proj = uboPerFrame.projTransform;
+	mat4 viewProj = uboPerFrame.viewProjTransform;
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
 
-	gl_Position = proj * (view * positionWS);
+	gl_Position = viewProj * positionWS;
 }
 
 #endif
