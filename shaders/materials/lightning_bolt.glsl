@@ -1,6 +1,7 @@
 // Lightning bolt effect for world_rc1.
 
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_DEFAULTLIT
+#define NONTRIVIALDEPTH
 
 PARAMETER_CONSTANT(vec3, emissive)
 PARAMETER_CONSTANT(float, billboardWidth)

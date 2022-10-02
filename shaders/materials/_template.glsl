@@ -19,6 +19,8 @@ $NEED SHADERSTAGE
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
 
+// NOTE: Define 'NONTRIVIALDEPTH' in a material shader if needed.
+
 #define FORWARD_SHADING (SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
 // #todo: Remove unnecessary members

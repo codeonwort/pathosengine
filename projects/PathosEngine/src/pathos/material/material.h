@@ -34,7 +34,6 @@ namespace pathos {
 		virtual ~Material() = default;
 
 		bool bWireframe = false;
-		bool bTrivialDepthOnlyPass = true;
 
 		const std::string& getMaterialName() const { return materialName; }
 		EMaterialShadingModel getShadingModel() const { return materialShader->shadingModel; }

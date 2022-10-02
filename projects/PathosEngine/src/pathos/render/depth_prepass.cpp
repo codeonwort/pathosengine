@@ -97,7 +97,8 @@ namespace pathos {
 				}
 
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bShouldUpdateMaterialParameters = (!materialShader->bTrivialDepthOnlyPass)
+					&& (bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID()));
 				bool bUseWireframeMode = material->bWireframe;
 				currentProgramHash = materialShader->programHash;
 				currentMIID = material->internal_getMaterialInstanceID();
@@ -139,8 +140,7 @@ namespace pathos {
 				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
 				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				// #todo-material-assembler: How to detect if a VS uses vertex buffers other than the position buffer?
-				if (material->bTrivialDepthOnlyPass) {
+				if (materialShader->bTrivialDepthOnlyPass) {
 					proxy->geometry->activate_position(cmdList);
 				} else {
 					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);

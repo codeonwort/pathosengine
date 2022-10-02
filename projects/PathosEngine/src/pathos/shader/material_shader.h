@@ -56,6 +56,7 @@ namespace pathos {
 	public:
 		std::string materialName;
 		EMaterialShadingModel shadingModel;
+		bool bTrivialDepthOnlyPass = true;
 		uint32 uboTotalBytes = 0;
 
 		ShaderProgram* program = nullptr;

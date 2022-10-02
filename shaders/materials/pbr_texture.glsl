@@ -3,6 +3,9 @@
 
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_DEFAULTLIT
 
+// #todo: Should make a separate masked variant.
+#define NONTRIVIALDEPTH
+
 PARAMETER_CONSTANT(vec3, albedoOverride)
 PARAMETER_CONSTANT(vec3, normalOverride)
 PARAMETER_CONSTANT(float, metallicOverride)

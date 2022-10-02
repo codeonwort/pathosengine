@@ -283,10 +283,13 @@ namespace pathos {
 		int32 materialAttrEndIx = -1; // inclusive
 		int32 getSceneColorBeginIx = -1; // inclusive
 		int32 getSceneColorEndIx = -1; // inclusive
+		bool bTrivialDepthOnlyPass = true;
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
 			if (0 == line.find("#define SHADINGMODEL")) {
 				materialShadingModelIx = lineIx;
+			} else if (0 == line.find("#define NONTRIVIALDEPTH")) {
+				bTrivialDepthOnlyPass = false;
 			} else if (0 == line.find("VPO_BEGIN")) {
 				materialVPOBeginIx = lineIx + 1;
 			} else if (0 == line.find("VPO_END")) {
@@ -467,6 +470,7 @@ namespace pathos {
 		MaterialShader* shader = new MaterialShader;
 		shader->materialName = std::move(materialName);
 		shader->shadingModel = shadingModel;
+		shader->bTrivialDepthOnlyPass = bTrivialDepthOnlyPass;
 		shader->uboTotalBytes = uboTotalElements * 4;
 		shader->constantParameters = std::move(materialConstParameters);
 		shader->textureParameters = std::move(materialTextureParameters);

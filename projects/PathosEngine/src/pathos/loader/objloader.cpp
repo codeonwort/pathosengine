@@ -425,7 +425,6 @@ namespace pathos {
 				PendingTextures& pendingTextures = pendingTextureData[index];
 				if (pendingTextures.albedo != nullptr) {
 					M->setConstantParameter("bHasOpacity", pendingTextures.albedo->hasOpacity);
-					M->bTrivialDepthOnlyPass = false;
 				}
 				if (pendingTextures.glAlbedo != 0) M->setTextureParameter("albedo", pendingTextures.glAlbedo);
 				if (pendingTextures.glNormal != 0) M->setTextureParameter("normal", pendingTextures.glNormal);

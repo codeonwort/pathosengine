@@ -18,7 +18,6 @@ namespace pathos {
 	TextMeshComponent::TextMeshComponent() {
 		geom = std::make_unique<TextGeometry>();
 		material = std::unique_ptr<Material>(Material::createMaterialInstance("unlit_text"));
-		material->bTrivialDepthOnlyPass = false;
 
 		setFont(DEFAULT_FONT_TAG);
 	}
