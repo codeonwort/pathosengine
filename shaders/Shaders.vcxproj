@@ -35,6 +35,8 @@
     <None Include="depth_prepass.glsl" />
     <None Include="diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
+    <None Include="fsr1_wrapper_easu.glsl" />
+    <None Include="fsr1_wrapper_rcas.glsl" />
     <None Include="fullscreen_quad.glsl" />
     <None Include="fxaa_fs.glsl" />
     <None Include="god_ray_fs.glsl" />

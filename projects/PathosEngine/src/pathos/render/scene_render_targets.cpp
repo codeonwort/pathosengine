@@ -90,6 +90,11 @@ namespace pathos {
 		static constexpr GLenum PF_sceneColorAA = GL_RGBA16F;
 		reallocTexture2D(sceneColorAA, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorAA");
 
+		// Super resolution
+		static constexpr GLenum PF_sceneColorSuperRes = GL_RGBA16F;
+		reallocTexture2D(sceneColorUpscaledTemp, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorUpscaledTemp");
+		reallocTexture2D(sceneColorUpscaled, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorUpscaled");
+
 		static constexpr GLenum PF_sceneFinal = GL_RGBA16F;
 		reallocTexture2D(sceneFinal, PF_sceneFinal, sceneWidth, sceneHeight, "sceneFinal");
 
@@ -208,6 +213,8 @@ namespace pathos {
 		safe_release(sceneColorHalfRes);
 		safe_release(sceneDepth);
 		safe_release(sceneColorAA);
+		safe_release(sceneColorUpscaledTemp);
+		safe_release(sceneColorUpscaled);
 		safe_release(sceneFinal);
 		safe_release(sceneDepthHiZ);
 		safe_release(ssrPreintegration);

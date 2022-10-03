@@ -30,6 +30,10 @@ namespace pathos {
 		GLuint sceneDepth = 0;
 
 		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
+
+		GLuint sceneColorUpscaledTemp = 0; // FSR1 EASU output
+		GLuint sceneColorUpscaled = 0; // FSR1 RCAS output
+
 		GLuint sceneFinal = 0; // Final texture rendered on the screen
 
 		// Screen space reflection

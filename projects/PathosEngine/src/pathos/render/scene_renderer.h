@@ -12,6 +12,7 @@
 #include "pathos/camera/camera.h"
 #include "pathos/light/shadow_directional.h"
 #include "pathos/light/shadow_omni.h"
+#include "pathos/smart_pointer.h"
 
 #include <memory>
 
@@ -63,6 +64,7 @@ namespace pathos {
 		static std::unique_ptr<class BloomPass>             bloomPass;
 		static std::unique_ptr<class ToneMapping>           toneMapping;
 		static std::unique_ptr<class FXAA>                  fxaa;
+		static uniquePtr<class FSR1>                        fsr1;
 		static std::unique_ptr<class DepthOfField>          depthOfField;
 
 	public:
@@ -96,8 +98,6 @@ namespace pathos {
 	private:
 		bool destroyed = false;
 		uint32 frameCounter = 0;
-
-		EAntiAliasingMethod antiAliasing;
 
 		// #todo-renderer: Implement render target pool
 		SceneRenderTargets sceneRenderTargets;
