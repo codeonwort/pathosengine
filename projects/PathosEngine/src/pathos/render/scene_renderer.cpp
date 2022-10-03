@@ -364,16 +364,16 @@ namespace pathos {
 				const bool isFinalPP = (noAA && noDOF);
 
 				GLuint bloom = noBloom ? sceneAfterLastPP : sceneRenderTargets.sceneBloomChain;
-				GLuint output = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
+				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
 				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.getVolumetricCloud(frameCounter));
-				toneMapping->setOutput(EPostProcessOutput::PPO_0, output);
+				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				sceneAfterLastPP = sceneRenderTargets.sceneColorToneMapped;
+				sceneAfterLastPP = toneMappingRenderTarget;
 			}
 
 			// Post Process: Anti-aliasing

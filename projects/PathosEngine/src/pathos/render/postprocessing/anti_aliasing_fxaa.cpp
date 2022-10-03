@@ -47,7 +47,7 @@ namespace pathos {
 namespace pathos {
 
 	void FXAA::initializeResources(RenderCommandList& cmdList) {
-		ubo.init<UBO_FXAA>();
+		ubo.init<UBO_FXAA>("UBO_FXAA");
 
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
@@ -63,8 +63,9 @@ namespace pathos {
 	void FXAA::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(FXAA);
 
-		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // toneMappingResult
-		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneFinal or backbuffer
+		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColorToneMapped
+		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneColorAA or sceneFinal
+		CHECKF(output0 != 0, "Post processes do not write to the backbuffer anymore");
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
@@ -100,14 +101,9 @@ namespace pathos {
 		uboData.fxaaConsole360ConstDir	     = vector4(1.0f, -1.0f, 0.25f, -0.25f);
 		ubo.update(cmdList, UBO_FXAA::BINDING_SLOT, &uboData);
 
-		if (output0 == 0) {
-			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
-		} else {
-			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
-
-			pathos::checkFramebufferStatus(cmdList, fbo, "fxaa");
-		}
+		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
+		pathos::checkFramebufferStatus(cmdList, fbo, "fxaa");
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
