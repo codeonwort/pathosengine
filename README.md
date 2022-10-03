@@ -29,6 +29,7 @@ OpenGL rendering library (for 3d graphics study)
     * Bloom
 	* Tone mapping
 	* FXAA
+  * Super resolution (AMD FSR1)
 	* Depth of field
   * PBR materials
   * Scene capture
