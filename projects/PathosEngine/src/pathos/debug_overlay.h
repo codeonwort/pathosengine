@@ -56,6 +56,7 @@ namespace pathos {
 		Label* gameThreadTimeLabel = nullptr;
 		Label* renderThreadTimeLabel = nullptr;
 		Label* gpuTimeLabel = nullptr;
+		Label* resolutionLabel = nullptr;
 
 		CounterList* cpuCounterList = nullptr;
 		CounterList* gpuCounterList = nullptr;
