@@ -449,7 +449,6 @@ namespace pathos {
 				}
 			}
 
-			// #todo-fsr1: DoF is broken
 			// Post Process: Depth of Field
 			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
 				const GLuint dofInput = sceneRenderTargets.sceneColorDoFInput;
@@ -458,7 +457,7 @@ namespace pathos {
 				// Force rgba32f input.
 				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
 				copyTexture(cmdList, sceneAfterLastPP, dofInput,
-					sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+					sceneRenderTargets.sceneWidthSuperRes, sceneRenderTargets.sceneHeightSuperRes);
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);

@@ -97,36 +97,40 @@ namespace pathos {
 			const int32 bucketSize = 2 * gRenderDevice->getCapabilities().glMaxComputeWorkGroupSize[0];
 			cmdList.useProgram(program_prefix_sum.getGLName());
 
+			// CAUTION: DoF executes after super resolution.
+			const uint32 SCENE_WIDTH = sceneContext.sceneWidthSuperRes;
+			const uint32 SCENE_HEIGHT = sceneContext.sceneHeightSuperRes;
+
 			// Prefix sum shader can process only 2048 columns at once, so we split up the work into buckets.
 			{
-				const int32 numRuns = (int32)(::ceilf((float)sceneContext.sceneWidth / bucketSize));
+				const int32 numRuns = (int32)(::ceilf((float)SCENE_WIDTH / bucketSize));
 				UBO_PrefixSum uboData;
 				uboData.fetchOffset = 0;
-				uboData.maxImageLength = sceneContext.sceneWidth;
+				uboData.maxImageLength = SCENE_WIDTH;
 				
 				for (int32 i = 0; i < numRuns; ++i) {
 					uboPrefixSum.update(cmdList, 1, &uboData);
 
 					cmdList.bindImageTexture(0, input0, 0, GL_FALSE, 0, GL_READ_ONLY, PF_dofSubsum);
 					cmdList.bindImageTexture(1, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_WRITE, PF_dofSubsum);
-					cmdList.dispatchCompute(sceneContext.sceneHeight, 1, 1);
+					cmdList.dispatchCompute(SCENE_HEIGHT, 1, 1);
 					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 					uboData.fetchOffset += bucketSize;
 				}
 			}
 			{
-				const int32 numRuns = (int32)(::ceilf((float)sceneContext.sceneHeight / bucketSize));
+				const int32 numRuns = (int32)(::ceilf((float)SCENE_HEIGHT / bucketSize));
 				UBO_PrefixSum uboData;
 				uboData.fetchOffset = 0;
-				uboData.maxImageLength = sceneContext.sceneHeight;
+				uboData.maxImageLength = SCENE_HEIGHT;
 
 				for (int32 i = 0; i < numRuns; ++i) {
 					uboPrefixSum.update(cmdList, 1, &uboData);
 
 					cmdList.bindImageTexture(0, sceneContext.dofSubsum0, 0, GL_FALSE, 0, GL_READ_ONLY, PF_dofSubsum);
 					cmdList.bindImageTexture(1, sceneContext.dofSubsum1, 0, GL_FALSE, 0, GL_READ_WRITE, PF_dofSubsum);
-					cmdList.dispatchCompute(sceneContext.sceneWidth, 1, 1);
+					cmdList.dispatchCompute(SCENE_WIDTH, 1, 1);
 					cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 					uboData.fetchOffset += bucketSize;
