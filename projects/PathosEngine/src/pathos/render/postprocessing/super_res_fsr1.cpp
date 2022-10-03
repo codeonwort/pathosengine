@@ -6,8 +6,11 @@
 
 #include "badger/math/minmax.h"
 
-// #todo-fsr1: Use FP32 version for now.
-// (in shaders: 'F' variants instead of 'H' variants)
+// #todo-fsr1: Support FP16
+// - I'm integrating FSR1 with GTX 1660 Super and it does
+//   not support GLSL FP16 extension. Use FP32 for now.
+//   (in shaders: 'F' variants instead of 'H' variants)
+// - Check FP16 later with RTX 3080 Ti or Ryzen 6800U.
 #define FSR1_SUPPORTS_FP16 0
 
 // FSR1 consists of upscaling pass (EASU) and sharpening pass (RCAS).
@@ -19,9 +22,15 @@
 // - Image should be generated using negative MIP bias to increase texture detail.
 // - Image should be noise-free.
 
+// FSR quality modes
+// - Ultra Quality : 1.3x per dimension
+// - Quality       : 1.5x per dimension
+// - Balanced      : 1.7x per dimension
+// - Performance   : 2.0x per dimension
+
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_fsr1_sharpness("r.fsr1.sharpness", 0.0f, "0.0 ~ 2.0 (The smaller, the sharper)");
+	static ConsoleVariable<float> cvar_fsr1_sharpness("r.fsr1.sharpness", 0.2f, "0.0 ~ 2.0 (The smaller, the sharper. Default is 0.2)");
 
 	struct UBO_FSR1 {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -74,11 +83,11 @@ namespace pathos {
 		ShaderProgram& programEASU = FIND_SHADER_PROGRAM(Program_FSR1_EASU);
 		ShaderProgram& programRCAS = FIND_SHADER_PROGRAM(Program_FSR1_RCAS);
 
-		// #todo-fsr1: Downscale all scene textures before FSR1.
 		vector2ui renderViewportSize(sceneContext.sceneWidth, sceneContext.sceneHeight);
-		// I'm always using the entire region of scene textures. Things might change if I implement Dynamic Resolution.
+		// NOTE: I'm always using the entire region of scene textures.
+		//       Things might change if I implement Dynamic Resolution.
 		vector2ui containerTextureSize = renderViewportSize;
-		vector2ui upscaledViewportSize(sceneContext.sceneWidth, sceneContext.sceneHeight);
+		vector2ui upscaledViewportSize(sceneContext.sceneWidthSuperRes, sceneContext.sceneHeightSuperRes);
 
 		UBO_FSR1 uboData;
 		uboData.renderViewportSize = renderViewportSize;
@@ -92,6 +101,8 @@ namespace pathos {
 		// EASU
 		{
 			cmdList.useProgram(programEASU.getGLName());
+
+			cmdList.textureParameteri(input0, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 			cmdList.bindTextureUnit(0, input0);
 			cmdList.bindImageTexture(1, sceneContext.sceneColorUpscaledTemp, 0, GL_FALSE, 0, GL_READ_ONLY, PF_fsr1);

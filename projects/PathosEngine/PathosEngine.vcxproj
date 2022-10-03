@@ -137,6 +137,7 @@
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\indirect_lighting.cpp" />
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
+    <ClCompile Include="src\pathos\render\postprocessing\super_res.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\super_res_fsr1.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\bloom_setup.cpp" />
@@ -276,6 +277,7 @@
     <ClInclude Include="src\pathos\render\screen_space_reflection.h" />
     <ClInclude Include="src\pathos\render\sky_atmosphere.h" />
     <ClInclude Include="src\pathos\render\sky_clouds.h" />
+    <ClInclude Include="src\pathos\render\postprocessing\super_res.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />

@@ -19,6 +19,7 @@
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
 
 #include "pathos/light/directional_light_component.h"
@@ -39,11 +40,6 @@
 #include "badger/math/minmax.h"
 
 namespace pathos {
-
-	enum class ESuperResolutionMethod : uint8 {
-		Disabled = 0,
-		FSR1     = 1,
-	};
 
 	class CopyTextureVS : public ShaderStage {
 	public:
@@ -71,7 +67,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
-	static ConsoleVariable<int32> cvar_super_res("r.super_res.method", 0, "0 = disabled, 1 = AMD FSR1");
 
 	struct UBO_PerFrame {
 		matrix4               prevView; // For reprojection
@@ -336,8 +331,8 @@ namespace pathos {
 			// #todo: Support nested gpu counters
 			SCOPED_GPU_COUNTER(PostProcessing);
 
-			EAntiAliasingMethod antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
-			ESuperResolutionMethod superResMethod = (ESuperResolutionMethod)badger::clamp(0, cvar_super_res.getInt(), 1);
+			const EAntiAliasingMethod antiAliasing = (EAntiAliasingMethod)badger::clamp(0, cvar_anti_aliasing.getInt(), (int32)EAntiAliasingMethod::NumMethods);
+			const ESuperResolutionMethod superResMethod = pathos::getSuperResolutionMethod();
 
 			enum class EPostProcessOrder : uint8 {
 				Bloom,
@@ -366,7 +361,7 @@ namespace pathos {
 			setEnablePP(EPostProcessOrder::ToneMapping, true);
 			setEnablePP(EPostProcessOrder::AntiAliasing, antiAliasing != EAntiAliasingMethod::NoAA);
 			setEnablePP(EPostProcessOrder::SuperResolution, superResMethod != ESuperResolutionMethod::Disabled);
-			setEnablePP(EPostProcessOrder::DepthOfField, (cvar_enable_dof.getInt() != 0) || depthOfField->isAvailable());
+			setEnablePP(EPostProcessOrder::DepthOfField, (cvar_enable_dof.getInt() != 0) && depthOfField->isAvailable());
 
 			sceneAfterLastPP = sceneRenderTargets.sceneColor;
 
@@ -454,6 +449,7 @@ namespace pathos {
 				}
 			}
 
+			// #todo-fsr1: DoF is broken
 			// Post Process: Depth of Field
 			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
 				const GLuint dofInput = sceneRenderTargets.sceneColorDoFInput;
