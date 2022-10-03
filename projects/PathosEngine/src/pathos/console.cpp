@@ -147,11 +147,11 @@ namespace pathos {
 		label->setY(textList.size() * LINE_GAP);
 
 		textList.push_back(label);
-		root->addChild(label);
+		background->addChild(label);
 
 		if (textList.size() > MAX_LINES) {
 			Label* old = textList.front();
-			root->removeChild(old);
+			background->removeChild(old);
 			textList.pop_front();
 			delete old;
 			for (Label* label : textList) {
