@@ -41,7 +41,7 @@ namespace pathos {
 		uint32 enableShadowing;
 		uint32 haveShadowMap;
 		uint32 omniShadowMapIndex;
-		uint32 _padding0;
+		float csmZFar;
 
 		LightProxy lightParameters;
 	};
@@ -149,6 +149,9 @@ namespace pathos {
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Directional);
 			cmdList.useProgram(program.getGLName());
 
+			static ConsoleVariableBase* cvarZFar = ConsoleVariableManager::get().find("r.csm.zFar");
+			CHECK(cvarZFar != nullptr);
+
 			for (size_t lightIx = 0; lightIx < dirLights.size(); ++lightIx) {
 				const DirectionalLightProxy* light = dirLights[lightIx];
 
@@ -156,6 +159,7 @@ namespace pathos {
 				uboData.enableShadowing = cvar_enable_shadow.getInt();
 				// #todo-light: Support shadow map for secondary directional lights.
 				uboData.haveShadowMap = (lightIx == 0);
+				uboData.csmZFar = std::max(1.0f, cvarZFar->getFloat());
 				uboData.lightParameters = *light;
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);

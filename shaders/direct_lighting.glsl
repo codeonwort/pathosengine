@@ -32,7 +32,7 @@ layout (std140, binding = 1) uniform UBO_DirectLighting {
 	uint enableShadowing;
 	uint haveShadowMap;
 	int omniShadowMapIndex;
-	uint _padding0;
+	float csmZFar;
 
 	LIGHT_STRUCT lightParameters;
 } ubo;
@@ -61,6 +61,7 @@ LIGHT_STRUCT getLightParameters() { return ubo.lightParameters; }
 float getShadowing(GBufferData gbufferData) {
 	ShadowQuery query;
 	query.vPos    = gbufferData.vs_coords;
+	query.zFar    = ubo.csmZFar;
 	query.wPos    = gbufferData.ws_coords;
 	query.vNormal = gbufferData.normal;
 	query.wNormal = gbufferData.ws_normal;

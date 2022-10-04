@@ -15,6 +15,7 @@ CAUTION: Need to include deferred_common.glsl prior to this file
 
 struct ShadowQuery {
 	vec3 vPos;    // position in view space
+	float zFar;   // Probably 'r.csm.zFar'
 	vec3 wPos;    // position in world space
 	vec3 vNormal; // surface normal in view space
 	vec3 wNormal; // surface normal in world space
@@ -29,10 +30,8 @@ struct OmniShadowQuery {
 
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	vec3 vSun = uboPerFrame.sunLight.vsDirection;
-	float linearZ = (-query.vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
-
-	// Non-uniform partition of depth ranges. Should match with the partitioning criteria of Camera::getFrustum().
-	//linearZ = pow(linearZ, 2.0);
+	float zNear = uboPerFrame.zRange.x; // zNear is same as that of primary view. (no reason, just same)
+	float linearZ = (-query.vPos.z - zNear) / (query.zFar - zNear);
 
 	int csmLayer = int(linearZ * NUM_CASCADES);
 	if (csmLayer >= NUM_CASCADES) {
