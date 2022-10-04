@@ -113,6 +113,7 @@ namespace pathos {
 			GLuint dispatchY = (upscaledViewportSize.y + (workRegionDim - 1)) / workRegionDim;
 
 			cmdList.dispatchCompute(dispatchX, dispatchY, 1);
+
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 		// RCAS

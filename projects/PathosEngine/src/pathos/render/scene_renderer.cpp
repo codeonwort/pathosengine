@@ -433,13 +433,24 @@ namespace pathos {
 				case ESuperResolutionMethod::FSR1:
 					{
 						const bool isFinalPP = isPPFinal(EPostProcessOrder::SuperResolution);
-						const GLuint renderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorUpscaled;
+						//const GLuint renderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorUpscaled;
+						const GLuint renderTarget = sceneRenderTargets.sceneColorUpscaled;
 
 						fsr1->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 						fsr1->setOutput(EPostProcessOutput::PPO_0, renderTarget);
 						fsr1->renderPostProcess(cmdList, fullscreenQuad.get());
 
 						sceneAfterLastPP = renderTarget;
+
+						// #todo-fsr1: glReadPixels() produces all zero when FSR1 is enabled.
+						// sceneFinal is correct in RenderDoc, No glGetError(), 
+						// Even memory barrier with GL_ALL_BARRIER_BITS does not solve the problem.
+						// -> Workaround: FSR1 always renders to sceneColorUpscaled, copy sceneColorUpscaled to sceneFinal.
+						if (isFinalPP) {
+							copyTexture(cmdList, sceneAfterLastPP, sceneRenderTargets.sceneFinal,
+								sceneRenderTargets.sceneWidthSuperRes, sceneRenderTargets.sceneHeightSuperRes);
+							sceneAfterLastPP = sceneRenderTargets.sceneFinal;
+						}
 					}
 					break;
 
@@ -470,14 +481,20 @@ namespace pathos {
 
 		// Assumes rendering result is always written to sceneFinal and it's pixel format is rgba16f.
 		if (scene->bScreenshotReserved) {
+			SCOPED_DRAW_EVENT(ReadbackScreenshot);
+
+			CHECK(sceneAfterLastPP == sceneRenderTargets.sceneFinal);
+
 			cmdList.bindFramebuffer(GL_READ_FRAMEBUFFER, fboScreenshot);
 			cmdList.namedFramebufferTexture(fboScreenshot, GL_COLOR_ATTACHMENT0, sceneRenderTargets.sceneFinal, 0);
 			cmdList.namedFramebufferReadBuffer(fboScreenshot, GL_COLOR_ATTACHMENT0);
 
-			scene->screenshotSize = vector2i((int32)sceneRenderTargets.sceneWidth, (int32)sceneRenderTargets.sceneHeight);
-			scene->screenshotRawData.resize(4 * sceneRenderTargets.sceneWidth * sceneRenderTargets.sceneHeight);
+			vector2i screenshotSize((int32)sceneRenderTargets.sceneWidthSuperRes, (int32)sceneRenderTargets.sceneHeightSuperRes);
+
+			scene->screenshotSize = screenshotSize;
+			scene->screenshotRawData.resize(4 * screenshotSize.x * screenshotSize.y);
 			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 1);
-			cmdList.readPixels(0, 0, sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight, GL_RGBA, GL_HALF_FLOAT, scene->screenshotRawData.data());
+			cmdList.readPixels(0, 0, screenshotSize.x, screenshotSize.y, GL_RGBA, GL_HALF_FLOAT, scene->screenshotRawData.data());
 			cmdList.pixelStorei(GL_PACK_ALIGNMENT, 4);
 		}
 
