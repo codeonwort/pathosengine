@@ -2,8 +2,8 @@
 #include "pathos/engine_policy.h"
 
 #include "badger/math/minmax.h"
+#include "badger/types/matrix_types.h"
 #include "badger/assertion/assertion.h"
-#include "glm/gtc/matrix_transform.hpp"
 
 namespace pathos {
 

@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "pathos/gl_handles.h"
 #include "pathos/camera/camera.h"
 #include "pathos/shader/uniform_buffer.h"
 
 #include "badger/types/vector_types.h"
-#include "gl_core.h"
 
 namespace pathos {
 

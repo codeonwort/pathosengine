@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gl_core.h"
+#include "pathos/gl_handles.h"
 #include "badger/types/string_hash.h"
 
 #include <string>

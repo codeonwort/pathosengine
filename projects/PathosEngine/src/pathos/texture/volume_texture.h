@@ -1,9 +1,9 @@
 #pragma once
 
-#include "gl_core.h"
-#include "badger/types/noncopyable.h"
-
+#include "pathos/gl_handles.h"
 #include "pathos/render/render_device.h"
+
+#include "badger/types/noncopyable.h"
 
 namespace pathos {
 

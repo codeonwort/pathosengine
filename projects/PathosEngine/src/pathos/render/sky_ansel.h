@@ -1,10 +1,9 @@
 #pragma once
 
 #include "sky.h"
+#include "pathos/gl_handles.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/actor/scene_component.h"
-
-#include "gl_core.h"
 
 #include "badger/types/noncopyable.h"
 

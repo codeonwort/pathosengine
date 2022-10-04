@@ -1,8 +1,8 @@
 #pragma once
 
+#include "pathos/gl_handles.h"
 #include "pathos/actor/scene_component.h"
 
-#include "gl_core.h"
 #include <vector>
 
 namespace pathos {

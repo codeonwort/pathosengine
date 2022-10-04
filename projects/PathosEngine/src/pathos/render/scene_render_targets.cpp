@@ -102,6 +102,8 @@ namespace pathos {
 		// Independent of screen resolution
 		
 		// CSM
+		// #todo-shadow: If a point is not covered by CSM, do not cast shadow.
+		// #todo-shadow: Vis mode for CSM id.
 		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

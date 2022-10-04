@@ -1,12 +1,12 @@
 #pragma once
 
-#include "gl_core.h"
-#include "badger/types/noncopyable.h"
-
+#include "pathos/gl_handles.h"
 #include "pathos/actor/actor.h"
 #include "pathos/actor/scene_component.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/shader/uniform_buffer.h"
+
+#include "badger/types/noncopyable.h"
 
 namespace pathos {
 

@@ -1,5 +1,4 @@
 #include "render_device.h"
-#include "gl_core.h"
 #include "pathos/util/log.h"
 #include "pathos/util/gl_context_manager.h"
 

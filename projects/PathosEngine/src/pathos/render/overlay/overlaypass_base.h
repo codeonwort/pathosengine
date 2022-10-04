@@ -1,10 +1,11 @@
 #pragma once
 
+#include "pathos/gl_handles.h"
+#include "pathos/render/render_command_list.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/wrapper/transform.h"
 
 #include "badger/types/noncopyable.h"
-#include "gl_core.h"
 
 namespace pathos {
 

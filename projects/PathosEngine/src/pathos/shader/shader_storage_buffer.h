@@ -2,9 +2,9 @@
 
 // https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
 
+#include "pathos/gl_handles.h"
 #include "pathos/render/render_device.h"
 #include "badger/assertion/assertion.h"
-#include "gl_core.h"
 
 namespace pathos {
 

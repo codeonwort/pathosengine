@@ -1,6 +1,7 @@
 #pragma once
 
-#include "glm/detail/type_mat.hpp"
+#include <glm/detail/type_mat.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 using matrix2 = glm::mat2x2;
 using matrix3 = glm::mat3x3;

@@ -1,6 +1,10 @@
 #pragma once
 
-#include "gl_core.h"
+#include "pathos/gl_handles.h"
+#include "pathos/render/render_command_list.h"
+
+#include "badger/types/int_types.h"
+#include "badger/types/matrix_types.h"
 
 namespace pathos {
 
@@ -29,7 +33,7 @@ namespace pathos {
 		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
 		static class PlaneGeometry* fullscreenQuad;
 		static class CubeGeometry* dummyCube;
-		static glm::mat4 cubeTransforms[6];
+		static matrix4 cubeTransforms[6];
 
 		static GLuint internal_BRDFIntegrationMap;
 

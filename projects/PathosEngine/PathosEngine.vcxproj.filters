@@ -455,9 +455,6 @@
     <ClInclude Include="src\pathos\render\renderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\gl_core.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\core_minimal.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -771,6 +768,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\super_res.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\gl_handles.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

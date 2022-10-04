@@ -6,9 +6,9 @@
 // But Unicode characters are too many that they cannot be stored in a single texture.
 // Only recently used glyphs are maintained in a limited number of textures.
 
+#include "pathos/gl_handles.h"
 #include "pathos/render/render_command_list.h"
 #include "pathos/text/font_mgr.h"
-#include "gl_core.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"

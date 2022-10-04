@@ -3,11 +3,10 @@
 #pragma once
 
 #include "sky.h"
+#include "pathos/gl_handles.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/actor/scene_component.h"
 #include "pathos/shader/uniform_buffer.h"
-
-#include "gl_core.h"
 
 // #todo-refactoring: Separate pass and actor code
 namespace pathos {

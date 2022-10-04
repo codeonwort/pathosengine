@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pathos/gl_handles.h"
+
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include "badger/system/stopwatch.h"
@@ -9,7 +11,6 @@
 #include <string>
 #include <thread>
 #include <condition_variable>
-#include "gl_core.h"
 
 namespace pathos {
 

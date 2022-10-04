@@ -1,5 +1,4 @@
 #include "pathos/wrapper/transform.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace pathos {
 

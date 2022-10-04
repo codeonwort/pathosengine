@@ -11,4 +11,5 @@
 
 #include "pathos/smart_pointer.h"
 
-#include <glm/glm.hpp>
+#include "badger/types/int_types.h"
+#include "badger/types/matrix_types.h"

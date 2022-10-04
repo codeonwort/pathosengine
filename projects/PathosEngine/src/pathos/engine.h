@@ -1,13 +1,14 @@
 #pragma once
 
+#include "pathos/gl_handles.h"
+#include "pathos/input/input_system.h"
+#include "pathos/render/render_command_list.h"
+
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
 #include "badger/memory/mem_alloc.h"
 #include "badger/system/stopwatch.h"
-
-#include "pathos/input/input_system.h"
-#include "pathos/render/render_command_list.h"
 
 #include <map>
 #include <list>
@@ -16,7 +17,6 @@
 #include <memory>
 #include <string>
 #include <functional>
-#include "gl_core.h"
 
 namespace pathos {
 

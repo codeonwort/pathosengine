@@ -212,7 +212,7 @@
     <ClInclude Include="src\badger\types\noncopyable.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
-    <ClInclude Include="src\gl_core.h" />
+    <ClInclude Include="src\pathos\gl_handles.h" />
     <ClInclude Include="src\pathos\actor\actor.h" />
     <ClInclude Include="src\pathos\actor\actor_component.h" />
     <ClInclude Include="src\pathos\actor\scene_component.h" />

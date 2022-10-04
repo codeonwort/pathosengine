@@ -1,7 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-#include "gl_core.h"
+#include <GL/gl3w.h>
 
 namespace pathos {
 

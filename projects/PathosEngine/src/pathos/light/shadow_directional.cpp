@@ -10,6 +10,7 @@
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/types/matrix_types.h"
 
 namespace pathos {
 

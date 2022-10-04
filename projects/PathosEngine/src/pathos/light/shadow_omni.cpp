@@ -9,6 +9,7 @@
 #include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/types/matrix_types.h"
 #include "badger/math/hit_test.h"
 
 namespace pathos {
