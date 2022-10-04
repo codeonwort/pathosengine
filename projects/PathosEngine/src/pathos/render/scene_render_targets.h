@@ -13,9 +13,16 @@ namespace pathos {
 
 	public:
 		// CAUTION: These can be different than those of SceneRenderSettings due to resolution scaling.
+		// Scene size before super resolution.
+		// Both super resolution and screen percentage are applied.
 		uint32 sceneWidth = 0;
 		uint32 sceneHeight = 0;
 
+		// Scene size after super resolution. Screen percentage is still applied.
+		uint32 sceneWidthSuperRes = 0;
+		uint32 sceneHeightSuperRes = 0;
+
+		// Scene size after screen percentage.
 		// Same as width/height values in SceneRenderSettings.
 		uint32 unscaledSceneWidth = 0;
 		uint32 unscaledSceneHeight = 0;
@@ -30,6 +37,10 @@ namespace pathos {
 		GLuint sceneDepth = 0;
 
 		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
+
+		GLuint sceneColorUpscaledTemp = 0; // FSR1 EASU output
+		GLuint sceneColorUpscaled = 0; // FSR1 RCAS output
+
 		GLuint sceneFinal = 0; // Final texture rendered on the screen
 
 		// Screen space reflection
@@ -89,7 +100,8 @@ namespace pathos {
 		SceneRenderTargets(const SceneRenderTargets&) = delete;
 		SceneRenderTargets& operator=(const SceneRenderTargets&) = delete;
 
-		// Reallocate scene textures if they are invalid or the screen resolution has been changed
+		// Reallocate scene textures if they are invalid or the screen resolution has been changed.
+		// bEnableResolutionScaling: texture sizes will be affected by screen percentage and/or super resolution.
 		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height, bool bEnableResolutionScaling);
 
 		void freeSceneTextures(RenderCommandList& cmdList);

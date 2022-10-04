@@ -69,5 +69,7 @@
     <None Include="resolve_unlit.glsl" />
     <None Include="materials\texture_viewer.glsl" />
     <None Include="materials\translucent_color.glsl" />
+    <None Include="fsr1_wrapper_easu.glsl" />
+    <None Include="fsr1_wrapper_rcas.glsl" />
   </ItemGroup>
 </Project>

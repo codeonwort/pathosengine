@@ -362,6 +362,22 @@ namespace pathos {
 			errorLog.resize(logSize);
 			glGetShaderInfoLog(pendingGLName, logSize, NULL, &errorLog[0]);
 			LOG(LogError, "Failed to compile shader (%s) : %s", debugName, errorLog.c_str());
+			
+			if (cvar_dumpShaders.getInt() != 0 && programName != nullptr) {
+				std::string basedir = pathos::getSolutionDir();
+				basedir += "log/shader_dump/";
+				basedir += programName;
+				basedir += "/";
+				pathos::createDirectory(basedir.c_str());
+
+				std::string dumpPath = basedir + "error.txt";
+
+				std::fstream fs(dumpPath, std::fstream::out);
+				if (fs.is_open()) {
+					fs << errorLog << std::endl;
+					fs.close();
+				}
+			}
 
 			glDeleteShader(pendingGLName);
 			pendingGLName = 0;

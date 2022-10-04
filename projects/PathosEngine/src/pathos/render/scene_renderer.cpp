@@ -19,6 +19,8 @@
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/postprocessing/super_res.h"
+#include "pathos/render/postprocessing/super_res_fsr1.h"
 
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
@@ -35,6 +37,7 @@
 #include "pathos/util/gl_debug_group.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -96,8 +99,7 @@ namespace pathos {
 	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
 
 	SceneRenderer::SceneRenderer()
-		: antiAliasing(EAntiAliasingMethod::FXAA)
-		, scene(nullptr)
+		: scene(nullptr)
 		, camera(nullptr)
 	{
 		// #todo-forward-shading: Restore forward shading pipeline.
@@ -329,11 +331,37 @@ namespace pathos {
 			// #todo: Support nested gpu counters
 			SCOPED_GPU_COUNTER(PostProcessing);
 
-			antiAliasing = (EAntiAliasingMethod)pathos::max(0, pathos::min((int32)EAntiAliasingMethod::NumMethods, cvar_anti_aliasing.getInt()));
+			const EAntiAliasingMethod antiAliasing = (EAntiAliasingMethod)badger::clamp(0, cvar_anti_aliasing.getInt(), (int32)EAntiAliasingMethod::NumMethods);
+			const ESuperResolutionMethod superResMethod = pathos::getSuperResolutionMethod();
 
-			const bool noAA = (antiAliasing == EAntiAliasingMethod::NoAA);
-			const bool noBloom = (cvar_enable_bloom.getInt() == 0);
-			const bool noDOF = (cvar_enable_dof.getInt() == 0) || (depthOfField->isAvailable() == false);
+			enum class EPostProcessOrder : uint8 {
+				Bloom,
+				ToneMapping,
+				AntiAliasing,
+				SuperResolution,
+				DepthOfField,
+				MAX
+			};
+			constexpr uint8 NumPPOrders = (uint8)EPostProcessOrder::MAX;
+			bool postProcessEnableFlags[NumPPOrders];
+			auto setEnablePP = [&postProcessEnableFlags](EPostProcessOrder pp, bool bEnabled) {
+				postProcessEnableFlags[(uint8)pp] = bEnabled;
+			};
+			auto isPPEnabled = [&postProcessEnableFlags](EPostProcessOrder pp) {
+				return postProcessEnableFlags[(uint8)pp];
+			};
+			// Assumes isPPEnabled(pp) == true
+			auto isPPFinal = [&postProcessEnableFlags, NumPPOrders](EPostProcessOrder pp) {
+				for (uint8 i = (uint8)pp + 1; i < NumPPOrders; ++i) {
+					if (postProcessEnableFlags[i]) return false;
+				}
+				return true;
+			};
+			setEnablePP(EPostProcessOrder::Bloom, cvar_enable_bloom.getInt() != 0);
+			setEnablePP(EPostProcessOrder::ToneMapping, true);
+			setEnablePP(EPostProcessOrder::AntiAliasing, antiAliasing != EAntiAliasingMethod::NoAA);
+			setEnablePP(EPostProcessOrder::SuperResolution, superResMethod != ESuperResolutionMethod::Disabled);
+			setEnablePP(EPostProcessOrder::DepthOfField, (cvar_enable_dof.getInt() != 0) && depthOfField->isAvailable());
 
 			sceneAfterLastPP = sceneRenderTargets.sceneColor;
 
@@ -341,7 +369,7 @@ namespace pathos {
 			fullscreenQuad->activateIndexBuffer(cmdList);
 
 			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
-			const bool bNeedsHalfResSceneColor = !noBloom; // NOTE: Add other conditions if needed.
+			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
 				copyTexture(cmdList, sceneRenderTargets.sceneColor, sceneRenderTargets.sceneColorHalfRes,
@@ -349,7 +377,7 @@ namespace pathos {
 			}
 
 			// Post Process: Bloom
-			if (!noBloom) {
+			if (isPPEnabled(EPostProcessOrder::Bloom)) {
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColorHalfRes);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloomSetup);
 				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
@@ -360,20 +388,19 @@ namespace pathos {
 
 			// Post Process: Tone Mapping
 			{
-				// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
-				const bool isFinalPP = (noAA && noDOF);
+				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
 
-				GLuint bloom = noBloom ? sceneAfterLastPP : sceneRenderTargets.sceneBloomChain;
-				GLuint output = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
+				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets.sceneBloomChain : sceneAfterLastPP;
+				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
 				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.getVolumetricCloud(frameCounter));
-				toneMapping->setOutput(EPostProcessOutput::PPO_0, output);
+				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				sceneAfterLastPP = sceneRenderTargets.sceneColorToneMapped;
+				sceneAfterLastPP = toneMappingRenderTarget;
 			}
 
 			// Post Process: Anti-aliasing
@@ -384,8 +411,7 @@ namespace pathos {
 
 			case EAntiAliasingMethod::FXAA:
 				{
-					// #todo-postprocess: How to check if current PP is the last? (standard way is needed, not ad-hoc like this)
-					const bool isFinalPP = noDOF;
+					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
 
 					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
@@ -400,15 +426,38 @@ namespace pathos {
 				break;
 			}
 
+			// Super resolution
+			// NOTE: Should run after tone mapping and before any noise-introducing PPs.
+			if (isPPEnabled(EPostProcessOrder::SuperResolution)) {
+				switch (superResMethod) {
+				case ESuperResolutionMethod::FSR1:
+					{
+						const bool isFinalPP = isPPFinal(EPostProcessOrder::SuperResolution);
+						const GLuint renderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorUpscaled;
+
+						fsr1->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+						fsr1->setOutput(EPostProcessOutput::PPO_0, renderTarget);
+						fsr1->renderPostProcess(cmdList, fullscreenQuad.get());
+
+						sceneAfterLastPP = renderTarget;
+					}
+					break;
+
+				default:
+					break;
+					
+				}
+			}
+
 			// Post Process: Depth of Field
-			if (!noDOF) {
+			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
 				const GLuint dofInput = sceneRenderTargets.sceneColorDoFInput;
 				const GLuint dofRenderTarget = sceneRenderTargets.sceneFinal;
 
 				// Force rgba32f input.
 				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
 				copyTexture(cmdList, sceneAfterLastPP, dofInput,
-					sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+					sceneRenderTargets.sceneWidthSuperRes, sceneRenderTargets.sceneHeightSuperRes);
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
@@ -696,6 +745,7 @@ namespace pathos {
 	std::unique_ptr<class BloomPass>               SceneRenderer::bloomPass;
 	std::unique_ptr<class ToneMapping>             SceneRenderer::toneMapping;
 	std::unique_ptr<class FXAA>                    SceneRenderer::fxaa;
+	std::unique_ptr<class FSR1>                    SceneRenderer::fsr1;
 	std::unique_ptr<class DepthOfField>            SceneRenderer::depthOfField;
 
 	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
@@ -762,6 +812,7 @@ namespace pathos {
 			bloomPass = std::make_unique<BloomPass>();
 			toneMapping = std::make_unique<ToneMapping>();
 			fxaa = std::make_unique<FXAA>();
+			fsr1 = pathos::makeUnique<FSR1>();
 			depthOfField = std::make_unique<DepthOfField>();
 
 			godRay->initializeResources(cmdList);
@@ -770,6 +821,7 @@ namespace pathos {
 			bloomPass->initializeResources(cmdList);
 			toneMapping->initializeResources(cmdList);
 			fxaa->initializeResources(cmdList);
+			fsr1->initializeResources(cmdList);
 			depthOfField->initializeResources(cmdList);
 		}
 	}
@@ -807,6 +859,7 @@ namespace pathos {
 		RELEASEPASS(bloomPass);
 		RELEASEPASS(toneMapping);
 		RELEASEPASS(fxaa);
+		RELEASEPASS(fsr1);
 		RELEASEPASS(depthOfField);
 
 #undef DESTROYPASS

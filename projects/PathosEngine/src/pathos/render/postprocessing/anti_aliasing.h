@@ -5,9 +5,9 @@
 namespace pathos {
 
 	enum class EAntiAliasingMethod : uint8 {
-		NoAA = 0,
-		FXAA = 1,
-		// #todo-anti-aliasing: TAA
+		NoAA = 0, // Skip anti-aliasing pass
+		FXAA = 1, // NVidia FXAA
+		//TAA = 2, // #todo-anti-aliasing: TAA
 		NumMethods = 2
 	};
 
