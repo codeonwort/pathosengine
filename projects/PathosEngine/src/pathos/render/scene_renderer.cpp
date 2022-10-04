@@ -239,21 +239,6 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
-		// #todo-renderer: Why am I clearing backbuffer here?
-		{
-			SCOPED_DRAW_EVENT(ClearBackbuffer);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			cmdList.clearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
-				cmdList.clearDepth(0.0f);
-			} else {
-				cmdList.clearDepth(1.0f);
-			}
-			cmdList.clearStencil(0);
-			cmdList.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		}
-
 		// Volumetric clouds
 		{
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
