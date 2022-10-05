@@ -36,8 +36,6 @@ void glErrorCallback(
 		const char* typeStrings[] = { "ERROR", "DEPRECATED", "UNDEFINED", "PORTABILITY", "PERFORMANCE", "OTHER" };
 		const char* severityStrings[] = { "HIGH", "MEDIUM", "LOW" };
 
-		// #todo-fatal: Sometimes DeferredRenderer::clearGBuffer() fails and leads to here. (reason: gbufferFBO is incomplete)
-
 		fprintf_s(stderr, "GL CALLBACK: renderCommandIx=%d, source=0x%x(%s), type=0x%x(%s), severity=0x%x(%s), message=%s\n",
 			pathos::gRenderDevice->getImmediateCommandList().debugCurrentCommandIx,
 			source, sourceStrings[source - 0x8246], type, typeStrings[type - 0x824C], severity, severityStrings[severity - 0x9146], message);
@@ -203,7 +201,7 @@ namespace pathos {
 		
 		auto findExt = [&](const char* desiredExt) -> bool {
 			for (GLint i = 0; i < n; ++i) {
-				if (strcmp(extNames[i], desiredExt)) {
+				if (0 == strcmp(extNames[i], desiredExt)) {
 					return true;
 				}
 			}
