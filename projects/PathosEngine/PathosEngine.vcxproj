@@ -114,6 +114,7 @@
     <ClCompile Include="src\pathos\input\xinput_manager.cpp" />
     <ClCompile Include="src\pathos\light\shadow_omni.cpp" />
     <ClCompile Include="src\pathos\loader\asset_streamer.cpp" />
+    <ClCompile Include="src\pathos\loader\gltf_loader.cpp" />
     <ClCompile Include="src\pathos\loader\scene_desc_parser.cpp" />
     <ClCompile Include="src\pathos\loader\scene_loader.cpp" />
     <ClCompile Include="src\pathos\loader\spline_loader.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="src\pathos\light\rect_light_component.h" />
     <ClInclude Include="src\pathos\light\shadow_omni.h" />
     <ClInclude Include="src\pathos\loader\asset_streamer.h" />
+    <ClInclude Include="src\pathos\loader\gltf_loader.h" />
     <ClInclude Include="src\pathos\loader\scene_desc_parser.h" />
     <ClInclude Include="src\pathos\loader\scene_loader.h" />
     <ClInclude Include="src\pathos\loader\spline_loader.h" />

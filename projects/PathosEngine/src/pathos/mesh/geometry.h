@@ -32,6 +32,7 @@ namespace pathos {
 		// - 'length' can be confusing. It means the number of elements, not total bytes.
 		void updatePositionData(const GLfloat* data, uint32 length);
 		void updateIndexData(const GLuint* data, uint32 length);
+		void updateIndex16Data(const uint16* data, uint32 length);
 		void updateUVData(const GLfloat* data, uint32 length);
 		void updateNormalData(const GLfloat* data, uint32 length);
 		void updateTangentData(const GLfloat* data, uint32 length);

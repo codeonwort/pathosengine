@@ -154,6 +154,16 @@ namespace pathos {
 		}
 		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
 	}
+	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
+		indexData.resize(length);
+		for (uint32 i = 0; i < length; ++i) {
+			indexData[i] = (GLuint)data[i];
+		}
+		if (!indexBuffer) {
+			indexBuffer = createBufferHelper("Buffer_index");
+		}
+		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
+	}
 
 	void MeshGeometry::activateIndexBuffer(RenderCommandList& cmdList) {
 		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);

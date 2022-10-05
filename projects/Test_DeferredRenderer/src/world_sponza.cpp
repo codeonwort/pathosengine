@@ -5,6 +5,7 @@
 #include "pathos/shader/material_shader.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/directional_light_actor.h"
+#include "pathos/loader/gltf_loader.h"
 //#include "pathos/light/point_light_actor.h"
 //#include "pathos/light/rect_light_actor.h"
 
@@ -14,6 +15,16 @@
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
 #else
 	#define TEMP_SPAWN_ACTOR(T) spawnActor<T>()
+#endif
+
+#define GLTF_TESTCASE 1
+
+#if GLTF_TESTCASE == 0
+	#define GLTF_FILENAME "intel_sponza/Main.1_Sponza/NewSponza_Main_glTF_002.gltf"
+	#define GLTF_SCALE_MULT 1.0f
+#elif GLTF_TESTCASE == 1
+	#define GLTF_FILENAME "damaged_helmet/DamagedHelmet.gltf"
+	#define GLTF_SCALE_MULT 100.0f
 #endif
 
 // --------------------------------------------------------
@@ -31,6 +42,18 @@ void World_Sponza::onInitialize() {
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 	setupInput();
 	setupScene();
+
+	GLTFLoader loader;
+	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
+	if (bLoaded) {
+		for (size_t i = 0; i < loader.numModels(); ++i) {
+			StaticMeshActor* sm = spawnActor<StaticMeshActor>();
+			const GLTFModelDesc& desc = loader.getModel(i);
+			sm->setStaticMesh(desc.mesh);
+			sm->setActorLocation(desc.translation);
+			sm->setActorScale(desc.scale * GLTF_SCALE_MULT);
+		}
+	}
 }
 
 void World_Sponza::onTick(float deltaSeconds) {
