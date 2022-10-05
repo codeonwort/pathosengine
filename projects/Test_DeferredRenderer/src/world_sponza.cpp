@@ -6,7 +6,7 @@
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/loader/gltf_loader.h"
-//#include "pathos/light/point_light_actor.h"
+#include "pathos/light/point_light_actor.h"
 //#include "pathos/light/rect_light_actor.h"
 
 #include "player_controller.h"
@@ -33,7 +33,7 @@
 static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 20.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_RADIANCE       = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -87,4 +87,12 @@ void World_Sponza::setupScene() {
 
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
+
+	PointLightActor* pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
+	pointLight0->setActorLocation(150.0f, 0.0f, 50.0f);
+	pointLight0->setLightParameters(100000.0f * vector3(1.0f, 0.1f, 0.1f), 300.0f);
+
+	PointLightActor* pointLight1 = TEMP_SPAWN_ACTOR(PointLightActor);
+	pointLight1->setActorLocation(-150.0f, 0.0f, 50.0f);
+	pointLight1->setLightParameters(100000.0f * vector3(0.1f, 0.1f, 1.0f), 300.0f);
 }

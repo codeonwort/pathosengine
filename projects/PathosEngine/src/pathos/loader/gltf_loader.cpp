@@ -68,6 +68,14 @@ namespace pathos {
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {
+		std::vector<bool> isSRGB(tinyModel->textures.size(), false);
+		for (const tinygltf::Material& tinyMat : tinyModel->materials) {
+			int32 texIx = tinyMat.pbrMetallicRoughness.baseColorTexture.index;
+			if (texIx != -1) {
+				isSRGB[texIx] = true;
+			}
+		}
+
 		//for (size_t imageIx = 0; imageIx < tinyModel->images.size(); ++imageIx) {
 		//	const tinygltf::Image& tinyImage = tinyModel->images[imageIx];
 		//}
@@ -79,8 +87,7 @@ namespace pathos {
 			uint32 bpp = tinyImg.bits * tinyImg.component;
 			CHECK(bpp == 24 || bpp == 32);
 
-			// #todo-gltf: Can't know sRGB here
-			bool sRGB = false;
+			const bool sRGB = isSRGB[texIx];
 			constexpr bool hasOpacity = false;
 			BitmapBlob blob((uint8*)(tinyImg.image.data()), tinyImg.width, tinyImg.height, bpp, hasOpacity);
 			GLuint glTex = pathos::createTextureFromBitmap(&blob, true, sRGB, tinyImg.uri.c_str(), false);
@@ -100,7 +107,6 @@ namespace pathos {
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
 			Material* material = fallbackMaterial;
 
-			// #todo-gltf: Parse materials
 			const tinygltf::Material& tinyMat = tinyModel->materials[materialIx];
 			if (tinyMat.alphaMode == "OPAQUE") {
 				int32 baseColorId = tinyMat.pbrMetallicRoughness.baseColorTexture.index;
@@ -257,8 +263,34 @@ namespace pathos {
 						geometry->updateUVData((float*)texcoords.data(), numPos * 2);
 					}
 
-					// #todo-gltf: Parse normal, tangent
-					geometry->calculateNormals();
+					// Normal buffer
+					auto it_n = tinyPrim.attributes.find("NORMAL");
+					if (it_n != tinyPrim.attributes.end()) {
+						const tinygltf::Accessor& normDesc = tinyModel->accessors[it_n->second];
+						const tinygltf::BufferView& normView = tinyModel->bufferViews[normDesc.bufferView];
+						CHECK(normDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+						CHECK(normDesc.type == TINYGLTF_TYPE_VEC3);
+
+						uint8* normBlob = getBlobPtr(normDesc);
+						if (normView.byteStride == 0) {
+							geometry->updateNormalData((float*)normBlob, numPos * 3);
+						} else {
+							std::vector<float> tempN;
+							tempN.reserve(numPos * 3);
+							for (uint32 i = 0; i < numPos; ++i) {
+								float* curr = (float*)normBlob;
+								tempN.push_back(curr[0]);
+								tempN.push_back(curr[1]);
+								tempN.push_back(curr[2]);
+								normBlob += normView.byteStride;
+							}
+							geometry->updateNormalData(tempN.data(), (uint32)tempN.size());
+						}
+					} else {
+						geometry->calculateNormals();
+					}
+
+					// #todo-gltf: Parse tangent
 					geometry->calculateTangentBasis();
 
 					if (tinyPrim.material != -1) {
