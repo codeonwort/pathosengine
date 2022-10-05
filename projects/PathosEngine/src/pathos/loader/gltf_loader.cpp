@@ -1,5 +1,6 @@
 #include "gltf_loader.h"
 #include "imageloader.h"
+#include "pathos/engine.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
@@ -89,20 +90,58 @@ namespace pathos {
 	}
 
 	void GLTFLoader::parseMaterials(tinygltf::Model* tinyModel) {
+		auto toVector3 = [](const std::vector<double>& tinyVec, const vector3& fallback) -> vector3 {
+			if (tinyVec.size() >= 3) {
+				return vector3(float(tinyVec[0]), float(tinyVec[1]), float(tinyVec[2]));
+			}
+			return fallback;
+		};
+
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
 			Material* material = fallbackMaterial;
 
 			// #todo-gltf: Parse materials
 			const tinygltf::Material& tinyMat = tinyModel->materials[materialIx];
 			if (tinyMat.alphaMode == "OPAQUE") {
-				int32 albedoId = tinyMat.pbrMetallicRoughness.baseColorTexture.index;
+				int32 baseColorId = tinyMat.pbrMetallicRoughness.baseColorTexture.index;
+				int32 normalId = tinyMat.normalTexture.index;
 				int32 metalRoughId = tinyMat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+				int32 localAOId = tinyMat.occlusionTexture.index;
+				int32 emissiveId = tinyMat.emissiveTexture.index;
 
 				// TEXCOORD_0
 				CHECK(tinyMat.pbrMetallicRoughness.baseColorTexture.texCoord == 0);
+				CHECK(tinyMat.normalTexture.texCoord == 0);
 				CHECK(tinyMat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord == 0);
+				CHECK(tinyMat.occlusionTexture.texCoord == 0);
+				CHECK(tinyMat.emissiveTexture.texCoord == 0);
 
-				material = pathos::createPBRMaterial(glTextures[albedoId]);
+				vector3 baseColorFactor = toVector3(tinyMat.pbrMetallicRoughness.baseColorFactor, vector3(1.0f));
+				vector3 emissiveFactor = toVector3(tinyMat.emissiveFactor, vector3(0.0f));
+				float metallicFactor = (float)tinyMat.pbrMetallicRoughness.metallicFactor;
+				float roughnessFactor = (float)tinyMat.pbrMetallicRoughness.roughnessFactor;
+
+				const GLuint BLACK = gEngine->getSystemTexture2DBlack();
+				const GLuint NORM = gEngine->getSystemTexture2DNormalmap();
+				const GLuint WHITE = gEngine->getSystemTexture2DWhite();
+
+				material = Material::createMaterialInstance("gltf_opaque");
+				material->setConstantParameter("baseColorFactor", baseColorFactor);
+				material->setConstantParameter("metallicFactor", metallicFactor);
+				material->setConstantParameter("roughnessFactor", roughnessFactor);
+				material->setConstantParameter("emissiveFactor", emissiveFactor);
+
+				material->setTextureParameter("baseColorTexture",
+					(baseColorId != -1) ? glTextures[baseColorId] : WHITE);
+				material->setTextureParameter("normalTexture",
+					(normalId != -1) ? glTextures[normalId] : NORM);
+				material->setTextureParameter("metallicRoughnessTexture",
+					(metalRoughId != -1) ? glTextures[metalRoughId] : WHITE);
+				material->setTextureParameter("occlusionTexture",
+					(localAOId != -1) ? glTextures[localAOId] : WHITE);
+				material->setTextureParameter("emissiveTexture",
+					(emissiveId != -1) ? glTextures[emissiveId] : WHITE);
+
 			} else if (tinyMat.alphaMode == "MASK") {
 				float alphaCutoff = (float)tinyMat.alphaCutoff;
 				//

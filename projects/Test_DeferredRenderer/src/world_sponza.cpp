@@ -33,7 +33,7 @@
 static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 10.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_RADIANCE       = 20.0f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -52,6 +52,7 @@ void World_Sponza::onInitialize() {
 			sm->setStaticMesh(desc.mesh);
 			sm->setActorLocation(desc.translation);
 			sm->setActorScale(desc.scale * GLTF_SCALE_MULT);
+			sm->setActorRotation(Rotator(0.0f, 90.0f, 0.0f));
 		}
 	}
 }
@@ -76,10 +77,10 @@ void World_Sponza::setupScene() {
 	M_ground->setConstantParameter("metallic", 0.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
-	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	ground->setStaticMesh(new Mesh(G_ground, M_ground));
-	ground->setActorLocation(0.0f, 0.0f, 0.0f);
-	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
+	//ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	//ground->setStaticMesh(new Mesh(G_ground, M_ground));
+	//ground->setActorLocation(0.0f, 0.0f, 0.0f);
+	//ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 
 	// --------------------------------------------------------
 	// Lights
