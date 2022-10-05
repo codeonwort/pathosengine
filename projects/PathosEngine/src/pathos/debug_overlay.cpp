@@ -177,9 +177,13 @@ namespace pathos {
 			const float newGameThreadTime = gEngine->getGameThreadCPUTime();
 			const float newRenderThreadTime = gEngine->getRenderThreadCPUTime();
 			const float newGpuTime = gEngine->getGPUTime();
-			gameThreadTime += 0.1f * (newGameThreadTime - gameThreadTime);
-			renderThreadTime += 0.1f * (newRenderThreadTime - renderThreadTime);
-			gpuTime += 0.1f * (newGpuTime - gpuTime);
+			// Interpolation is not needed since bUpdateStat is introduced.
+			//gameThreadTime += 0.1f * (newGameThreadTime - gameThreadTime);
+			//renderThreadTime += 0.1f * (newRenderThreadTime - renderThreadTime);
+			//gpuTime += 0.1f * (newGpuTime - gpuTime);
+			gameThreadTime = newGameThreadTime;
+			renderThreadTime = newRenderThreadTime;
+			gpuTime = newGpuTime;
 
 			wchar_t buffer[256];
 			swprintf_s(buffer, L"game thread   : %.2f ms", gameThreadTime);
