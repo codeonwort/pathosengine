@@ -6,13 +6,6 @@
 
 #include "badger/math/minmax.h"
 
-// #todo-fsr1: Support FP16
-// - I'm integrating FSR1 with GTX 1660 Super and it does
-//   not support GLSL FP16 extension. Use FP32 for now.
-//   (in shaders: 'F' variants instead of 'H' variants)
-// - Check FP16 later with RTX 3080 Ti or Ryzen 6800U.
-#define FSR1_SUPPORTS_FP16 0
-
 // FSR1 consists of upscaling pass (EASU) and sharpening pass (RCAS).
 // Order: Tone mapping -> EASU -> RCAS -> Noise-introducing PPs
 
@@ -32,6 +25,20 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_fsr1_sharpness("r.fsr1.sharpness", 0.2f, "0.0 ~ 2.0 (The smaller, the sharper. Default is 0.2)");
 
+	// 0 : Must use FP32 fallback.
+	// 1 : FP16 mode is available with EXT extensions.
+	// 2 : FP16 mode is available but NV extension is required.
+	static int32 checkFP16Support() {
+		const auto& ext = gRenderDevice->getExtensionSupport();
+		if (ext.EXT_shader_16bit_storage && ext.EXT_shader_explicit_arithmetic_types) {
+			return 1;
+		}
+		if (ext.NV_gpu_shader5) {
+			return 2;
+		}
+		return 0;
+	}
+
 	struct UBO_FSR1 {
 		static constexpr uint32 BINDING_POINT = 1;
 
@@ -45,6 +52,8 @@ namespace pathos {
 	class FSR1_EASU : public ShaderStage {
 	public:
 		FSR1_EASU() : ShaderStage(GL_COMPUTE_SHADER, "FSR1_EASU") {
+			const int32 fp16Criteria = checkFP16Support();
+			addDefine("FP16_CRITERIA", fp16Criteria);
 			setFilepath("fsr1_wrapper_easu.glsl");
 		}
 	};
@@ -52,6 +61,8 @@ namespace pathos {
 	class FSR1_RCAS : public ShaderStage {
 	public:
 		FSR1_RCAS() : ShaderStage(GL_COMPUTE_SHADER, "FSR1_RCAS") {
+			const int32 fp16Criteria = checkFP16Support();
+			addDefine("FP16_CRITERIA", fp16Criteria);
 			setFilepath("fsr1_wrapper_rcas.glsl");
 		}
 	};

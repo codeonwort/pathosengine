@@ -218,6 +218,9 @@ namespace pathos {
 		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
 		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
 		extensionSupport.NVX_gpu_memory_info             = findExt("GL_NVX_gpu_memory_info");
+		extensionSupport.NV_gpu_shader5                  = findExt("GL_NV_gpu_shader5");
+		extensionSupport.EXT_shader_16bit_storage        = findExt("GL_EXT_shader_16bit_storage");
+		extensionSupport.EXT_shader_explicit_arithmetic_types = findExt("GL_EXT_shader_explicit_arithmetic_types");
 	}
 
 }

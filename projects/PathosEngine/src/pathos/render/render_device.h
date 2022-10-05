@@ -30,6 +30,9 @@ namespace pathos {
 		uint32 NV_compute_shader_derivatives : 1;
 		uint32 NV_scissor_exclusive : 1;
 		uint32 NVX_gpu_memory_info : 1;
+		uint32 NV_gpu_shader5 : 1;
+		uint32 EXT_shader_16bit_storage : 1;
+		uint32 EXT_shader_explicit_arithmetic_types : 1;
 	};
 
 	struct OpenGLDriverCapabilities {

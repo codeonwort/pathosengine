@@ -71,5 +71,6 @@
     <None Include="materials\translucent_color.glsl" />
     <None Include="fsr1_wrapper_easu.glsl" />
     <None Include="fsr1_wrapper_rcas.glsl" />
+    <None Include="fsr1_wrapper_common.glsl" />
   </ItemGroup>
 </Project>
