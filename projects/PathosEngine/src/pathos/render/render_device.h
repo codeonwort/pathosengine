@@ -97,8 +97,6 @@ namespace pathos {
 
 		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
-		GLint getUniformLocation(GLuint program, const GLchar* name);
-
 	private:
 		void queryCapabilities();
 		void checkExtensions();

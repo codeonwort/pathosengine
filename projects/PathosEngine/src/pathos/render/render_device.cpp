@@ -322,9 +322,4 @@ namespace pathos {
 		glDeleteTextures(n, textures);
 	}
 
-	GLint OpenGLDevice::getUniformLocation(GLuint program, const GLchar* name) {
-		CHECK_GL_CONTEXT_TAKEN();
-		return glGetUniformLocation(program, name);
-	}
-
 }
