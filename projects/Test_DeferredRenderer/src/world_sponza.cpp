@@ -2,6 +2,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
+#include "pathos/render/irradiance_baker.h"
 #include "pathos/shader/material_shader.h"
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/light/directional_light_actor.h"
@@ -21,10 +22,12 @@
 
 #if GLTF_TESTCASE == 0
 	#define GLTF_FILENAME "intel_sponza/Main.1_Sponza/NewSponza_Main_glTF_002.gltf"
-	#define GLTF_SCALE_MULT 1.0f
+	#define GLTF_SCALE_MULT 100.0f
+	#define GLTF_ROT Rotator(0.0f, 0.0f, 0.0f)
 #elif GLTF_TESTCASE == 1
 	#define GLTF_FILENAME "damaged_helmet/DamagedHelmet.gltf"
 	#define GLTF_SCALE_MULT 100.0f
+	#define GLTF_ROT Rotator(0.0f, 90.0f, 0.0f)
 #endif
 
 // --------------------------------------------------------
@@ -33,7 +36,7 @@
 static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 5.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_RADIANCE       = 25.0f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -46,14 +49,10 @@ void World_Sponza::onInitialize() {
 	GLTFLoader loader;
 	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
 	if (bLoaded) {
-		for (size_t i = 0; i < loader.numModels(); ++i) {
-			StaticMeshActor* sm = spawnActor<StaticMeshActor>();
-			const GLTFModelDesc& desc = loader.getModel(i);
-			sm->setStaticMesh(desc.mesh);
-			sm->setActorLocation(desc.translation);
-			sm->setActorScale(desc.scale * GLTF_SCALE_MULT);
-			sm->setActorRotation(Rotator(0.0f, 90.0f, 0.0f));
-		}
+		Actor* actor = spawnActor<Actor>();
+		loader.attachToActor(actor);
+		actor->setActorScale(GLTF_SCALE_MULT);
+		actor->setActorRotation(GLTF_ROT);
 	}
 }
 
@@ -88,6 +87,7 @@ void World_Sponza::setupScene() {
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
+#if 1
 	PointLightActor* pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(150.0f, 0.0f, 50.0f);
 	pointLight0->setLightParameters(100000.0f * vector3(1.0f, 0.1f, 0.1f), 300.0f);
@@ -95,4 +95,42 @@ void World_Sponza::setupScene() {
 	PointLightActor* pointLight1 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight1->setActorLocation(-150.0f, 0.0f, 50.0f);
 	pointLight1->setLightParameters(100000.0f * vector3(0.1f, 0.1f, 1.0f), 300.0f);
+#endif
+
+	// --------------------------------------------------------
+	// Sky
+
+#if 0
+	static const char* SKY_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
+
+	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
+		pathos::loadHDRImage(SKY_HDRI), true,
+		"Texture IBL: equirectangularMap");
+	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(
+		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+
+	// diffuse irradiance
+	{
+		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
+			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
+		scene.irradianceMap = irradianceMap;
+	}
+
+	// specular IBL
+	{
+		GLuint prefilteredEnvMap;
+		uint32 mipLevels;
+		IrradianceBaker::bakePrefilteredEnvMap(
+			cubemapForIBL, 128, prefilteredEnvMap, mipLevels,
+			"Texture IBL: specular IBL (prefiltered env map)");
+
+		scene.prefilterEnvMap = prefilteredEnvMap;
+		scene.prefilterEnvMapMipLevels = mipLevels;
+	}
+
+	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
+	GLuint anselTex = equirectangularMap;
+	ansel->initialize(anselTex);
+	scene.sky = ansel;
+#endif
 }

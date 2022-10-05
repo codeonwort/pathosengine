@@ -3,12 +3,13 @@
 #include "pathos/engine.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
-#include "tiny_gltf.h"
-
+#include <tiny_gltf.h>
+#include <glm/gtc/quaternion.hpp>
 
 namespace pathos {
 
@@ -42,29 +43,68 @@ namespace pathos {
 		parseMaterials(&tinyModel);
 		parseMeshes(&tinyModel);
 
-		for (size_t nodeIx = 0; nodeIx < tinyModel.scenes[0].nodes.size(); ++nodeIx) {
+		const size_t totalNodes = tinyModel.scenes[0].nodes.size();
+		transformParentIx.resize(totalNodes, -1);
+		for (size_t nodeIx = 0; nodeIx < totalNodes; ++nodeIx) {
 			const tinygltf::Node& tinyNode = tinyModel.nodes[nodeIx];
-			if (tinyNode.mesh == -1) {
-				continue;
+
+			for (int32 child : tinyNode.children) {
+				transformParentIx[child] = (int32)nodeIx;
 			}
 
 			GLTFModelDesc desc{};
-			desc.mesh = meshes[tinyNode.mesh];
-			if (tinyNode.translation.size() > 0) {
+			desc.mesh = (tinyNode.mesh != -1) ? meshes[tinyNode.mesh] : nullptr;
+			if (tinyNode.translation.size() >= 3) {
 				desc.translation.x = (float)tinyNode.translation[0];
 				desc.translation.y = (float)tinyNode.translation[1];
 				desc.translation.z = (float)tinyNode.translation[2];
 			}
-			if (tinyNode.scale.size() > 0) {
+			if (tinyNode.scale.size() >= 3) {
 				desc.scale.x = (float)tinyNode.scale[0];
 				desc.scale.y = (float)tinyNode.scale[1];
 				desc.scale.z = (float)tinyNode.scale[2];
+			}
+			if (tinyNode.rotation.size() >= 4) {
+				glm::quat q(
+					(float)tinyNode.rotation[0], (float)tinyNode.rotation[1],
+					(float)tinyNode.rotation[2], (float)tinyNode.rotation[3]);
+				vector3 rot = glm::eulerAngles(q);
+				desc.rotation.pitch = rot.x;
+				desc.rotation.yaw = rot.y;
+				desc.rotation.roll = rot.z;
 			}
 
 			finalModels.push_back(desc);
 		}
 
 		return true;
+	}
+
+	void GLTFLoader::attachToActor(Actor* targetActor) {
+		std::vector<SceneComponent*> comps(numModels(), nullptr);
+		for (size_t i = 0; i < numModels(); ++i) {
+			const GLTFModelDesc& desc = getModel(i);
+
+			if (desc.mesh != nullptr) {
+				comps[i] = new StaticMeshComponent;
+				StaticMeshComponent* smc = static_cast<StaticMeshComponent*>(comps[i]);
+				smc->setStaticMesh(desc.mesh);
+			} else {
+				comps[i] = new SceneComponent;
+			}
+			comps[i]->setLocation(desc.translation);
+			comps[i]->setScale(desc.scale);
+			comps[i]->setRotation(desc.rotation);
+
+			targetActor->registerComponent(comps[i]);
+		}
+		for (size_t i = 0; i < numModels(); ++i) {
+			if (transformParentIx[i] == -1) {
+				comps[i]->setTransformParent(targetActor->getRootComponent());
+			} else {
+				comps[i]->setTransformParent(comps[transformParentIx[i]]);
+			}
+		}
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {

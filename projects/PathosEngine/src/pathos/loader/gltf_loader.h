@@ -4,6 +4,7 @@
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
+#include "badger/math/rotator.h"
 
 #include <string>
 #include <vector>
@@ -14,11 +15,13 @@ namespace pathos {
 
 	class Material;
 	class Mesh;
+	class Actor;
 
 	struct GLTFModelDesc {
 		Mesh* mesh = nullptr;
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
+		Rotator rotation;
 	};
 
 	class GLTFLoader final : public Noncopyable {
@@ -27,6 +30,9 @@ namespace pathos {
 		~GLTFLoader() = default;
 
 		bool loadASCII(const char* inFilename);
+
+		// Craft StaticMeshComponents and attach to the actor.
+		void attachToActor(Actor* targetActor);
 
 		size_t numModels() const { return finalModels.size(); }
 		const GLTFModelDesc& getModel(size_t ix) const { return finalModels[ix]; }
@@ -43,6 +49,7 @@ namespace pathos {
 
 		Material* fallbackMaterial = nullptr;
 		std::vector<GLTFModelDesc> finalModels;
+		std::vector<int32> transformParentIx;
 	};
 
 }
