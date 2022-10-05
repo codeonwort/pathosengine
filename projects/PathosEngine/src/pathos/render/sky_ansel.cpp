@@ -152,9 +152,9 @@ namespace pathos {
 			glm::vec3 v12 = glm::normalize(v1 + v2);
 			glm::vec3 v20 = glm::normalize(v2 + v0);
 
-			CHECK(glm::length<float>(v01) > 0.00001f);
-			CHECK(glm::length<float>(v12) > 0.00001f);
-			CHECK(glm::length<float>(v20) > 0.00001f);
+			CHECK(glm::length(v01) > 0.00001f);
+			CHECK(glm::length(v12) > 0.00001f);
+			CHECK(glm::length(v20) > 0.00001f);
 
 			newPositions[i01 * 3] = v01.x;
 			newPositions[i01 * 3 + 1] = v01.y;
