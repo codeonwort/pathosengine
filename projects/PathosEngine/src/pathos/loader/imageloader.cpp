@@ -29,6 +29,15 @@ namespace pathos {
 		}
 	}
 
+	BitmapBlob::BitmapBlob(uint8* inRawBytes, uint32 inWidth, uint32 inHeight, uint32 inBpp, bool inHasOpacity) {
+		CHECK(inRawBytes != nullptr && inWidth > 0 && inHeight > 0 && inBpp > 0);
+		externalRawBytes = inRawBytes;
+		width = inWidth;
+		height = inHeight;
+		bpp = inBpp;
+		hasOpacity = inHasOpacity;
+	}
+
 	BitmapBlob::~BitmapBlob() {
 		if (fiHandle) {
 			FreeImage_Unload((FIBITMAP*)fiHandle);
@@ -37,8 +46,11 @@ namespace pathos {
 	}
 
 	uint8* BitmapBlob::getRawBytes() const {
-		FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
-		return reinterpret_cast<uint8*>(FreeImage_GetBits(dib));
+		if (fiHandle != nullptr) {
+			FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
+			return reinterpret_cast<uint8*>(FreeImage_GetBits(dib));
+		}
+		return externalRawBytes;
 	}
 
 	HDRImageBlob::~HDRImageBlob() {

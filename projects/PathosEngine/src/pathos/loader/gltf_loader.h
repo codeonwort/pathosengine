@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pathos/gl_handles.h"
+
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
 
@@ -30,10 +32,12 @@ namespace pathos {
 		const GLTFModelDesc& getModel(size_t ix) const { return finalModels[ix]; }
 
 	private:
+		void parseTextures(tinygltf::Model* tinyModel);
 		void parseMaterials(tinygltf::Model* tinyModel);
 		void parseMeshes(tinygltf::Model* tinyModel);
 
 	private:
+		std::vector<GLuint> glTextures;
 		std::vector<Material*> materials;
 		std::vector<Mesh*> meshes;
 

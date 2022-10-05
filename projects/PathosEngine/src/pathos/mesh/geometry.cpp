@@ -99,11 +99,16 @@ namespace pathos {
 		}
 	}
 
-	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length) {
+	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length, bool bFlipY /*= false */) {
 		CHECKF(length % 2 == 0, "Invalid length");
 		const vector2* data2 = reinterpret_cast<const vector2*>(data);
 
 		uvData.assign(data2, data2 + length / 2);
+		if (bFlipY) {
+			for (vector2& uv : uvData) {
+				uv.y = 1.0f - uv.y;
+			}
+		}
 		if (!uvBuffer) {
 			uvBuffer = createBufferHelper("Buffer_uv");
 		}

@@ -33,7 +33,7 @@ namespace pathos {
 		void updatePositionData(const GLfloat* data, uint32 length);
 		void updateIndexData(const GLuint* data, uint32 length);
 		void updateIndex16Data(const uint16* data, uint32 length);
-		void updateUVData(const GLfloat* data, uint32 length);
+		void updateUVData(const GLfloat* data, uint32 length, bool bFlipY = false);
 		void updateNormalData(const GLfloat* data, uint32 length);
 		void updateTangentData(const GLfloat* data, uint32 length);
 		void updateBitangentData(const GLfloat* data, uint32 length);
