@@ -1,6 +1,7 @@
 #include "world1.h"
 #include "world_rc1.h"
 #include "world_lightroom.h"
+#include "world_sponza.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
@@ -13,8 +14,8 @@ const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
-	static const int32 numWorlds = 3;
-	static int32 worldIndex = 1;
+	static const int32 numWorlds = 4;
+	static int32 worldIndex = 3;
 
 	World* newWorld = nullptr;
 	switch (worldIndex) {
@@ -31,6 +32,10 @@ void changeWorld() {
 		gEngine->getMainWindow()->setTitle("Light Room");
 		break;
 	case 3:
+		newWorld = new World_Sponza;
+		gEngine->getMainWindow()->setTitle("Yet another Sponza");
+		break;
+	case 4:
 		// More worlds here...
 		break;
 	default:
