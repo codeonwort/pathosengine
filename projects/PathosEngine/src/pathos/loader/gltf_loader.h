@@ -24,6 +24,7 @@ namespace pathos {
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
 		Rotator rotation;
+		bool bReferencedByScene = false;
 	};
 
 	struct GLTFPendingTexture {
@@ -92,6 +93,7 @@ namespace pathos {
 		void parseTextures(tinygltf::Model* tinyModel);
 		void parseMaterials(tinygltf::Model* tinyModel);
 		void parseMeshes(tinygltf::Model* tinyModel);
+		void checkSceneReference(tinygltf::Model* tinyModel, int32 sceneIndex, std::vector<GLTFModelDesc>& finalModels);
 
 	private:
 		uniquePtr<tinygltf::TinyGLTF> tinyLoader;

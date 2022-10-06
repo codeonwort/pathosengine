@@ -62,7 +62,6 @@ namespace pathos {
 		parseMaterials(tinyModel.get());
 		parseMeshes(tinyModel.get());
 
-		// #todo-gltf: Use scenes[i].nodes?
 		const size_t totalNodes = tinyModel->nodes.size();
 		transformParentIx.resize(totalNodes, -1);
 		for (size_t nodeIx = 0; nodeIx < totalNodes; ++nodeIx) {
@@ -100,6 +99,8 @@ namespace pathos {
 
 			finalModels.push_back(desc);
 		}
+		// #todo-gltf: Render only first scene.
+		checkSceneReference(tinyModel.get(), 0, finalModels);
 
 		LOG(LogInfo, "[GLTF] Done.");
 
@@ -162,10 +163,15 @@ namespace pathos {
 
 		uint32 numStaticMeshComponents = 0;
 		uint32 numSceneComponents = 0;
+		uint32 numSkipped = 0; // tinyNodes not referenced by tinyScene.
 
 		std::vector<SceneComponent*> comps(numModels(), nullptr);
 		for (size_t i = 0; i < numModels(); ++i) {
 			const GLTFModelDesc& desc = getModel(i);
+			if (desc.bReferencedByScene == false) {
+				++numSkipped;
+				continue;
+			}
 
 			if (desc.mesh != nullptr) {
 				comps[i] = new StaticMeshComponent;
@@ -183,6 +189,9 @@ namespace pathos {
 			targetActor->registerComponent(comps[i]);
 		}
 		for (size_t i = 0; i < numModels(); ++i) {
+			if (getModel(i).bReferencedByScene == false) {
+				continue;
+			}
 			if (transformParentIx[i] == -1) {
 				comps[i]->setTransformParent(targetActor->getRootComponent());
 			} else {
@@ -190,8 +199,8 @@ namespace pathos {
 			}
 		}
 
-		LOG(LogInfo, "[GLTF] Num static meshes = %u, Num placeholders = %u",
-			numStaticMeshComponents, numSceneComponents);
+		LOG(LogInfo, "[GLTF] Num static meshes = %u, Num placeholders = %u, Num skipped = %u",
+			numStaticMeshComponents, numSceneComponents, numSkipped);
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {
@@ -235,6 +244,8 @@ namespace pathos {
 			}
 			return fallback;
 		};
+
+		uint32 numInvalidMaterials = 0;
 
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
 			Material* material = fallbackMaterial;
@@ -284,13 +295,15 @@ namespace pathos {
 
 			} else if (tinyMat.alphaMode == "MASK") {
 				float alphaCutoff = (float)tinyMat.alphaCutoff;
-				//
+				++numInvalidMaterials;
 			} else if (tinyMat.alphaMode == "BLEND") {
-				//
+				++numInvalidMaterials;
 			}
 
 			materials.push_back(material);
 		}
+
+		LOG(LogDebug, "[GLTF] Matrials not parsed: %u", numInvalidMaterials);
 	}
 
 	void GLTFLoader::parseMeshes(tinygltf::Model* tinyModel) {
@@ -407,6 +420,10 @@ namespace pathos {
 					pending.uvLength = numPos * 2;
 					pending.bShouldFreeUV = bTempUV;
 					pending.bFlipTexcoordY = bFlipTexcoordY;
+					// #todo-gltf: Other UV channels
+					if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
+						LOG(LogWarning, "[GLTF] Need to parse TEXCOORD_1");
+					}
 
 					// Normal buffer
 					auto it_n = tinyPrim.attributes.find("NORMAL");
@@ -441,6 +458,9 @@ namespace pathos {
 					if (tinyPrim.material != -1) {
 						material = materials[tinyPrim.material];
 					}
+					if (material == fallbackMaterial) {
+						LOG(LogDebug, "[GLTF] fallback material ref: mesh=%u prim=%u", meshIx, primIx);
+					}
 
 					mesh->add(geometry, material);
 				} else {
@@ -450,6 +470,18 @@ namespace pathos {
 
 			meshes.push_back(mesh);
 		}
+	}
+
+	void checkSceneReferencesSub(tinygltf::Model* tinyModel, std::vector<int>& nodes, std::vector<GLTFModelDesc>& finalModels) {
+		for (int nodeIx : nodes) {
+			finalModels[nodeIx].bReferencedByScene = true;
+			if (tinyModel->nodes[nodeIx].children.size() > 0) {
+				checkSceneReferencesSub(tinyModel, tinyModel->nodes[nodeIx].children, finalModels);
+			}
+		}
+	}
+	void GLTFLoader::checkSceneReference(tinygltf::Model* tinyModel, int32 sceneIndex, std::vector<GLTFModelDesc>& finalModels) {
+		checkSceneReferencesSub(tinyModel, tinyModel->scenes[sceneIndex].nodes, finalModels);
 	}
 
 }
