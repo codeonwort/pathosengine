@@ -88,9 +88,12 @@ namespace pathos {
 					(float)tinyNode.rotation[0], (float)tinyNode.rotation[1],
 					(float)tinyNode.rotation[2], (float)tinyNode.rotation[3]);
 				vector3 rot = glm::eulerAngles(q);
-				desc.rotation.pitch = rot.x;
-				desc.rotation.yaw = rot.y;
-				desc.rotation.roll = rot.z;
+				// #todo-gltf: Rotation values mapping?
+				desc.rotation.pitch = glm::degrees(rot.x) * 2.0f;
+				desc.rotation.yaw = glm::degrees(rot.y) + 180.0f;
+				desc.rotation.roll = glm::degrees(rot.z) * 2.0f;
+				desc.rotation.clampValues();
+				//LOG(LogDebug, "[GLTF] node=%u, pitch=%f yaw=%f roll=%f", nodeIx, desc.rotation.pitch, desc.rotation.yaw, desc.rotation.roll);
 			}
 			if (tinyNode.matrix.size() >= 16) {
 				// #todo-gltf: Parse matrix
@@ -245,7 +248,7 @@ namespace pathos {
 			return fallback;
 		};
 
-		uint32 numInvalidMaterials = 0;
+		uint32 numMasks = 0, numBlends = 0;
 
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
 			Material* material = fallbackMaterial;
@@ -295,15 +298,15 @@ namespace pathos {
 
 			} else if (tinyMat.alphaMode == "MASK") {
 				float alphaCutoff = (float)tinyMat.alphaCutoff;
-				++numInvalidMaterials;
+				++numMasks;
 			} else if (tinyMat.alphaMode == "BLEND") {
-				++numInvalidMaterials;
+				++numBlends;
 			}
 
 			materials.push_back(material);
 		}
 
-		LOG(LogDebug, "[GLTF] Matrials not parsed: %u", numInvalidMaterials);
+		LOG(LogDebug, "[GLTF] Matrials not parsed: MASK=%u BLEND=%u", numMasks, numBlends);
 	}
 
 	void GLTFLoader::parseMeshes(tinygltf::Model* tinyModel) {
@@ -422,7 +425,7 @@ namespace pathos {
 					pending.bFlipTexcoordY = bFlipTexcoordY;
 					// #todo-gltf: Other UV channels
 					if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
-						LOG(LogWarning, "[GLTF] Need to parse TEXCOORD_1");
+						//LOG(LogDebug, "[GLTF] Need to parse TEXCOORD_1");
 					}
 
 					// Normal buffer
@@ -459,7 +462,7 @@ namespace pathos {
 						material = materials[tinyPrim.material];
 					}
 					if (material == fallbackMaterial) {
-						LOG(LogDebug, "[GLTF] fallback material ref: mesh=%u prim=%u", meshIx, primIx);
+						LOG(LogDebug, "[GLTF] Fallback material ref: mesh=%u prim=%u", meshIx, primIx);
 					}
 
 					mesh->add(geometry, material);
