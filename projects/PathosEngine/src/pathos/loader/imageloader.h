@@ -25,6 +25,7 @@ namespace pathos {
 
 		void* fiHandle = nullptr; // FIBITMAP
 		uint8* externalRawBytes = nullptr;
+		bool bIsBGR = false; // FreeImage thing
 
 		uint32 width = 0;
 		uint32 height = 0;

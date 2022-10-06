@@ -38,7 +38,7 @@
 static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 25.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_RADIANCE       = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -49,7 +49,13 @@ void World_Sponza::onInitialize() {
 	setupScene();
 
 	GLTFLoader loader;
+
+#if GLTF_TESTCASE == 1
+	loader.emissiveBoost = 10.0f;
+#endif
+
 	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
+
 	if (bLoaded) {
 		Actor* actor = spawnActor<Actor>();
 		loader.attachToActor(actor);
