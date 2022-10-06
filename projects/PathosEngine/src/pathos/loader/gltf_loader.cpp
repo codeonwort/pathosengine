@@ -215,9 +215,6 @@ namespace pathos {
 			}
 		}
 
-		//for (size_t imageIx = 0; imageIx < tinyModel->images.size(); ++imageIx) {
-		//	const tinygltf::Image& tinyImage = tinyModel->images[imageIx];
-		//}
 		for (size_t texIx = 0; texIx < tinyModel->textures.size(); ++texIx) {
 			const tinygltf::Texture& tinyTex = tinyModel->textures[texIx];
 			const tinygltf::Image& tinyImg = tinyModel->images[tinyTex.source];
@@ -248,12 +245,14 @@ namespace pathos {
 			return fallback;
 		};
 
+		// #todo-gltf: MASK and BLEND materials
 		uint32 numMasks = 0, numBlends = 0;
 
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
 			Material* material = fallbackMaterial;
 
 			const tinygltf::Material& tinyMat = tinyModel->materials[materialIx];
+
 			if (tinyMat.alphaMode == "OPAQUE") {
 				int32 baseColorId = tinyMat.pbrMetallicRoughness.baseColorTexture.index;
 				int32 normalId = tinyMat.normalTexture.index;
@@ -336,6 +335,11 @@ namespace pathos {
 				const tinygltf::Primitive& tinyPrim = tinyMesh.primitives[primIx];
 				MeshGeometry* geometry = new MeshGeometry;
 				Material* material = fallbackMaterial;
+
+				// #todo-gltf: Temp ignore mesh sections with unsupported materials.
+				if (tinyPrim.material == -1 || materials[tinyPrim.material] == fallbackMaterial) {
+					continue;
+				}
 
 				if (tinyPrim.mode == 4 && tinyPrim.indices != -1) {
 					GLTFPendingGeometry pending;

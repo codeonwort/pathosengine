@@ -21,9 +21,11 @@
 #endif
 
 // Configuration
-#define GLTF_TESTCASE 0
+#define GLTF_TESTCASE 1
 #define SKYLIGHT      1
+#define POINTLIGHT    0
 
+// #todo-gltf: Download these GLTF assets via Setup.ps1
 #if GLTF_TESTCASE == 0
 	#define GLTF_FILENAME "intel_sponza/Main.1_Sponza/NewSponza_Main_glTF_002.gltf"
 	#define GLTF_SCALE_MULT 100.0f
@@ -31,7 +33,7 @@
 #elif GLTF_TESTCASE == 1
 	#define GLTF_FILENAME "damaged_helmet/DamagedHelmet.gltf"
 	#define GLTF_SCALE_MULT 100.0f
-	#define GLTF_ROT Rotator(0.0f, 90.0f, 0.0f)
+	#define GLTF_ROT Rotator(0.0f, -90.0f, 0.0f)
 #endif
 
 // --------------------------------------------------------
@@ -52,9 +54,15 @@ void World_Sponza::onInitialize() {
 
 #if 1
 	AssetReferenceGLTF assetRef(GLTF_FILENAME);
+	if (GLTF_TESTCASE == 1) {
+		assetRef.emissiveBoost = 5.0f;
+	}
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_Sponza::onLoadGLTF, 0);
 #else
 	GLTFLoader loader;
+	if (GLTF_TESTCASE == 1) {
+		loader.emissiveBoost = 10.0f;
+	}
 	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
 	if (bLoaded) {
 		onLoadGLTF(&loader, 0);
@@ -107,14 +115,14 @@ void World_Sponza::setupScene() {
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
 
-#if 1
+#if POINTLIGHT
 	PointLightActor* pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
-	pointLight0->setActorLocation(150.0f, 0.0f, 50.0f);
-	pointLight0->setLightParameters(100000.0f * vector3(1.0f, 0.1f, 0.1f), 300.0f);
+	pointLight0->setActorLocation(600.0f, 150.0f, 0.0f);
+	pointLight0->setLightParameters(500000.0f * vector3(1.0f, 0.5f, 0.5f), 1000.0f);
 
 	PointLightActor* pointLight1 = TEMP_SPAWN_ACTOR(PointLightActor);
-	pointLight1->setActorLocation(-150.0f, 0.0f, 50.0f);
-	pointLight1->setLightParameters(100000.0f * vector3(0.1f, 0.1f, 1.0f), 300.0f);
+	pointLight1->setActorLocation(-600.0f, 150.0f, 0.0f);
+	pointLight1->setLightParameters(500000.0f * vector3(0.5f, 0.5f, 1.0f), 1000.0f);
 #endif
 
 	// --------------------------------------------------------

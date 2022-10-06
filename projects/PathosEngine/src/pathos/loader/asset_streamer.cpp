@@ -46,6 +46,7 @@ namespace pathos {
 		AssetStreamer* streamer = arg->streamer;
 
 		GLTFLoader* loader = streamer->gltfLoaderAllocator.alloc();
+		loader->emissiveBoost = arg->emissiveBoost;
 		CHECK(loader);
 
 		arg->loader = loader;
