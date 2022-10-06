@@ -54,15 +54,9 @@ void World_Sponza::onInitialize() {
 
 #if 1
 	AssetReferenceGLTF assetRef(GLTF_FILENAME);
-	if (GLTF_TESTCASE == 1) {
-		assetRef.emissiveBoost = 5.0f;
-	}
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_Sponza::onLoadGLTF, 0);
 #else
 	GLTFLoader loader;
-	if (GLTF_TESTCASE == 1) {
-		loader.emissiveBoost = 10.0f;
-	}
 	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
 	if (bLoaded) {
 		onLoadGLTF(&loader, 0);

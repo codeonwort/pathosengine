@@ -272,9 +272,6 @@ namespace pathos {
 				float metallicFactor = (float)tinyMat.pbrMetallicRoughness.metallicFactor;
 				float roughnessFactor = (float)tinyMat.pbrMetallicRoughness.roughnessFactor;
 
-				// #todo-gltf: Workaround for emissive limit.
-				emissiveFactor *= emissiveBoost;
-
 				const GLuint NORM = gEngine->getSystemTexture2DNormalmap();
 				const GLuint WHITE = gEngine->getSystemTexture2DWhite();
 

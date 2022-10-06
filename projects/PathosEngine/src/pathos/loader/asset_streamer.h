@@ -64,7 +64,6 @@ namespace pathos {
 		{}
 
 		std::string filepath;
-		float emissiveBoost = 1.0f; // #todo-gltf: Temp emissiveBoost
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -110,8 +109,6 @@ namespace pathos {
 		AssetStreamer* streamer;
 		GLTFLoader* loader;
 		std::string filepath;
-
-		float emissiveBoost; // #todo-gltf
 
 		uint64 payload;
 	};
@@ -223,8 +220,6 @@ namespace pathos {
 
 		arg->handlerOwner = handlerOwner;
 		arg->handlerMethod = handlerMethod;
-
-		arg->emissiveBoost = assetRef.emissiveBoost;
 
 		ThreadPoolWork work;
 		work.arg = arg;

@@ -26,9 +26,13 @@ void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
 
-	if (gbufferData.material_id != MATERIAL_SHADINGMODEL_UNLIT) {
-		discard;	
+	if (gbufferData.material_id == MATERIAL_SHADINGMODEL_UNLIT) {
+		outSceneColor = vec4(gbufferData.albedo, 0.0);
+	} else if (gbufferData.material_id == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
+		// This pass was originally written only for unlit,
+		// but it turned out that it's actually a good place to add emissive to sceneColor.
+		outSceneColor = vec4(gbufferData.emissive, 0.0);
+	} else {
+		discard;
 	}
-
-	outSceneColor = vec4(gbufferData.albedo, 0.0);
 }

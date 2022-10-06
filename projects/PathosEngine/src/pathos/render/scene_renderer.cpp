@@ -288,6 +288,7 @@ namespace pathos {
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
+		// Add unlit and emissive
 		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
 
 		if (cvar_enable_ssr.getInt() != 0) {

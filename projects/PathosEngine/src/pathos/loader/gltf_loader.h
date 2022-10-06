@@ -75,9 +75,6 @@ namespace pathos {
 		GLTFLoader();
 		~GLTFLoader();
 
-		// #todo-gltf: GLTF spec limits emissive factor to 1.0??? Then how to do HDR lighting?
-		float emissiveBoost = 1.0f;
-
 		bool loadASCII(const char* inFilename);
 
 		void finalizeGPUUpload();
