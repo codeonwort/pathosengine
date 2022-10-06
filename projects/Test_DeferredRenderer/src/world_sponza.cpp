@@ -5,13 +5,14 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/shader/material_shader.h"
 #include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/text/text_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/loader/gltf_loader.h"
+#include "pathos/loader/asset_streamer.h"
 #include "pathos/light/point_light_actor.h"
 //#include "pathos/light/rect_light_actor.h"
 
 #include "player_controller.h"
-#include "pathos/loader/asset_streamer.h"
 
 #if SHARED_PTR_ACTORS
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
@@ -49,7 +50,7 @@ void World_Sponza::onInitialize() {
 	setupInput();
 	setupScene();
 
-#if 0
+#if 1
 	AssetReferenceGLTF assetRef(GLTF_FILENAME);
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_Sponza::onLoadGLTF, 0);
 #else
@@ -66,6 +67,8 @@ void World_Sponza::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 	loader->attachToActor(actor);
 	actor->setActorScale(GLTF_SCALE_MULT);
 	actor->setActorRotation(GLTF_ROT);
+
+	textActor->getRootComponent()->setVisibility(false);
 }
 
 void World_Sponza::onTick(float deltaSeconds) {
@@ -92,6 +95,11 @@ void World_Sponza::setupScene() {
 	//ground->setStaticMesh(new Mesh(G_ground, M_ground));
 	//ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	//ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
+
+	textActor = spawnActor<TextMeshActor>();
+	textActor->setText(L"Loading GLTF asset...");
+	textActor->setColor(1.0f, 0.0f, 0.0f);
+	textActor->setActorScale(300.0f);
 
 	// --------------------------------------------------------
 	// Lights

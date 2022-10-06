@@ -8,6 +8,7 @@ using namespace pathos;
 
 namespace pathos {
 	class StaticMeshActor;
+	class TextMeshActor;
 	class PointLightActor;
 	class DirectionalLightActor;
 	class RectLightActor;
@@ -33,6 +34,7 @@ private:
 
 private:
 	StaticMeshActor* ground = nullptr;
+	TextMeshActor* textActor = nullptr;
 	DirectionalLightActor* sun = nullptr;
 
 	PlayerController* playerController = nullptr;

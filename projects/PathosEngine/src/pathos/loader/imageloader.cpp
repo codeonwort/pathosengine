@@ -159,7 +159,7 @@ namespace pathos {
 	{
 		GLuint texture = 0;
 
-		LOG(LogDebug, "%s: Create texture %ux%u", __FUNCTION__, bitmapBlob->width, bitmapBlob->height);
+		//LOG(LogDebug, "%s: Create texture %ux%u", __FUNCTION__, bitmapBlob->width, bitmapBlob->height);
 
 		ENQUEUE_RENDER_COMMAND(
 			[bitmapBlob,
