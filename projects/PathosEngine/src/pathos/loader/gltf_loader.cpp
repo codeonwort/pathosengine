@@ -16,6 +16,12 @@ namespace pathos {
 	bool GLTFLoader::loadASCII(const char* inFilename) {
 		std::string filename = ResourceFinder::get().find(inFilename);
 
+		if (filename.size() == 0) {
+			LOG(LogError, "[GLTF] File not found: %s", inFilename);
+			return false;
+		}
+		LOG(LogInfo, "[GLTF] Loading: %s", filename.c_str());
+
 		tinygltf::TinyGLTF tinyLoader;
 		tinygltf::Model tinyModel;
 		std::string tinyErr, tinyWarn;
@@ -38,6 +44,12 @@ namespace pathos {
 		fallbackMaterial->setConstantParameter("metallic", 0.0f);
 		fallbackMaterial->setConstantParameter("roughness", 0.9f);
 		fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
+
+		LOG(LogInfo, "[GLTF] Textures: %u", (uint32)tinyModel.textures.size());
+		LOG(LogInfo, "[GLTF] Materials: %u", (uint32)tinyModel.materials.size());
+		LOG(LogInfo, "[GLTF] Meshes: %u", (uint32)tinyModel.meshes.size());
+		LOG(LogInfo, "[GLTF] Nodes: %u", (uint32)tinyModel.nodes.size());
+		LOG(LogInfo, "[GLTF] Scenes: %u", (uint32)tinyModel.scenes.size());
 
 		parseTextures(&tinyModel);
 		parseMaterials(&tinyModel);
@@ -76,6 +88,8 @@ namespace pathos {
 
 			finalModels.push_back(desc);
 		}
+
+		LOG(LogInfo, "[GLTF] Done.");
 
 		return true;
 	}

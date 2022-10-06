@@ -26,7 +26,10 @@ MaterialAttributes getMaterialAttributes() {
 
 	attr.albedo    = texture(baseColorTexture, uv).rgb        * uboMaterial.baseColorFactor;
 	attr.normal    = normalize(texture(normalTexture, uv).rgb * 2.0 - vec3(1.0));
-	attr.metallic  = texture(metallicRoughnessTexture, uv).r  * uboMaterial.metallicFactor;
+	// #todo: GLTF spec says metallic = R, roughness = G
+	// but in Damaged_Helmet asset (https://github.com/KhronosGroup/glTF-Sample-Models/)
+	// metallic is clearly stored in blue channel?
+	attr.metallic  = texture(metallicRoughnessTexture, uv).b  * uboMaterial.metallicFactor;
 	attr.roughness = texture(metallicRoughnessTexture, uv).g  * uboMaterial.roughnessFactor;
 	attr.localAO   = texture(occlusionTexture, uv).r;
 	attr.emissive  = texture(emissiveTexture, uv).rgb         * uboMaterial.emissiveFactor;
