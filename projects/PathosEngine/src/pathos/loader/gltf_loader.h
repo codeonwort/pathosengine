@@ -9,13 +9,15 @@
 #include <string>
 #include <vector>
 
-namespace tinygltf { class Model; }
+namespace tinygltf { class TinyGLTF; class Model; }
 
 namespace pathos {
 
 	class Material;
 	class Mesh;
+	class MeshGeometry;
 	class Actor;
+	struct BitmapBlob;
 
 	struct GLTFModelDesc {
 		Mesh* mesh = nullptr;
@@ -24,19 +26,65 @@ namespace pathos {
 		Rotator rotation;
 	};
 
+	struct GLTFPendingTexture {
+		BitmapBlob* blob;
+		bool sRGB;
+		std::string debugName;
+
+		GLuint glTexture = 0;
+	};
+
+	struct GLTFPendingTextureParameter {
+		GLTFPendingTextureParameter(
+			Material* inMaterial, const std::string& inParam, uint32 inIndex, GLuint inFallback)
+			: material(inMaterial)
+			, parameterName(inParam)
+			, index(inIndex)
+			, fallbackTexture(inFallback)
+		{}
+		Material* material;
+		std::string parameterName;
+		uint32 index;
+		GLuint fallbackTexture;
+	};
+	struct GLTFPendingGeometry {
+		MeshGeometry* geometry;
+
+		void* indexBlob;
+		uint32 indexLength;
+		bool bShouldFreeIndex;
+		bool bIndex16;
+
+		void* positionBlob;
+		uint32 positionLength;
+		bool bShouldFreePosition;
+
+		void* uvBlob;
+		uint32 uvLength;
+		bool bShouldFreeUV;
+		bool bFlipTexcoordY;
+
+		void* normalBlob;
+		uint32 normalLength;
+		bool bShouldFreeNormal;
+	};
+
 	class GLTFLoader final : public Noncopyable {
 	public:
-		GLTFLoader() = default;
-		~GLTFLoader() = default;
+		GLTFLoader();
+		~GLTFLoader();
 
 		// #todo-gltf: GLTF spec limits emissive factor to 1.0??? Then how to do HDR lighting?
 		float emissiveBoost = 1.0f;
 
 		bool loadASCII(const char* inFilename);
 
+		void finalizeGPUUpload();
+
 		// Craft StaticMeshComponents and attach to the actor.
 		void attachToActor(Actor* targetActor);
 
+		// NOTE: Should finalize first.
 		size_t numModels() const { return finalModels.size(); }
 		const GLTFModelDesc& getModel(size_t ix) const { return finalModels[ix]; }
 
@@ -46,7 +94,13 @@ namespace pathos {
 		void parseMeshes(tinygltf::Model* tinyModel);
 
 	private:
-		std::vector<GLuint> glTextures;
+		uniquePtr<tinygltf::TinyGLTF> tinyLoader;
+		uniquePtr<tinygltf::Model> tinyModel;
+
+		std::vector<GLTFPendingTexture> pendingTextures;
+		std::vector<GLTFPendingTextureParameter> pendingTextureParameters;
+		std::vector<GLTFPendingGeometry> pendingGeometries;
+
 		std::vector<Material*> materials;
 		std::vector<Mesh*> meshes;
 

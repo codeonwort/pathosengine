@@ -11,6 +11,7 @@ namespace pathos {
 	class PointLightActor;
 	class DirectionalLightActor;
 	class RectLightActor;
+	class GLTFLoader;
 }
 
 class PlayerController;
@@ -25,6 +26,8 @@ public:
 	void onTick(float deltaSeconds) override;
 
 private:
+	void onLoadGLTF(GLTFLoader* loader, uint64 payload);
+
 	void setupInput();
 	void setupScene();
 

@@ -11,6 +11,7 @@
 //#include "pathos/light/rect_light_actor.h"
 
 #include "player_controller.h"
+#include "pathos/loader/asset_streamer.h"
 
 #if SHARED_PTR_ACTORS
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
@@ -48,20 +49,15 @@ void World_Sponza::onInitialize() {
 	setupInput();
 	setupScene();
 
-	GLTFLoader loader;
+	AssetReferenceGLTF assetRef(GLTF_FILENAME);
+	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_Sponza::onLoadGLTF, 0);
+}
 
-#if GLTF_TESTCASE == 1
-	loader.emissiveBoost = 10.0f;
-#endif
-
-	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
-
-	if (bLoaded) {
-		Actor* actor = spawnActor<Actor>();
-		loader.attachToActor(actor);
-		actor->setActorScale(GLTF_SCALE_MULT);
-		actor->setActorRotation(GLTF_ROT);
-	}
+void World_Sponza::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
+	Actor* actor = spawnActor<Actor>();
+	loader->attachToActor(actor);
+	actor->setActorScale(GLTF_SCALE_MULT);
+	actor->setActorRotation(GLTF_ROT);
 }
 
 void World_Sponza::onTick(float deltaSeconds) {

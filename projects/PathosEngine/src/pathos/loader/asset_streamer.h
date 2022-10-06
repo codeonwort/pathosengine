@@ -16,20 +16,25 @@
 namespace pathos {
 
 	class AssetStreamer;
-	class OBJLoader;
 	class Material;
+	class OBJLoader;
+	class GLTFLoader;
 	
 	using WavefrontOBJHandler = std::function<void(OBJLoader* objLoader, uint64 payload)>;
+	using GLTFHandler = std::function<void(GLTFLoader* loader, uint64 payload)>;
 
-	// #todo-asset-streamer: poor man's WTF delegate for asset streamer :(
+	// #todo-asset-streamer: Poor man's WTF delegates for asset streamer :(
 	template<typename UserClass>
 	using WavefrontOBJHandlerMethod = void (UserClass::*)(OBJLoader* loader, uint64 payload);
+	template<typename UserClass>
+	using GLTFHandlerMethod = void (UserClass::*)(GLTFLoader* loader, uint64 payload);
 
-	// Do not use
+	// CAUTION: Do not use
 	void internal_loadWavefrontOBJ(const WorkItemParam* param);
+	void internal_loadGLTF(const WorkItemParam* param);
 
 	//////////////////////////////////////////////////////////////////////////
-	// asset reference
+	// Asset reference
 
 	struct AssetReferenceWavefrontOBJ
 	{
@@ -53,8 +58,16 @@ namespace pathos {
 		std::vector<std::pair<std::string, Material*>> materialOverrides;
 	};
 
+	struct AssetReferenceGLTF {
+		AssetReferenceGLTF(const char* inFilepath)
+			: filepath(inFilepath)
+		{}
+
+		std::string filepath;
+	};
+
 	//////////////////////////////////////////////////////////////////////////
-	// load info
+	// Load info
 
 	struct AssetLoadInfoBase
 	{
@@ -90,6 +103,31 @@ namespace pathos {
 		}
 	};
 
+	struct AssetLoadInfoBase_GLTF {
+		virtual void invokeHandler() {}
+
+		AssetStreamer* streamer;
+		GLTFLoader* loader;
+		std::string filepath;
+
+		uint64 payload;
+	};
+
+	template<typename UserClass>
+	struct AssetLoadInfo_GLTF : AssetLoadInfoBase_GLTF {
+		UserClass* handlerOwner = nullptr;
+		GLTFHandlerMethod<UserClass> handlerMethod = nullptr;
+		GLTFHandler handler;
+
+		void invokeHandler() override {
+			if (handlerOwner == nullptr) {
+				handler(loader, payload);
+			} else {
+				(handlerOwner->*handlerMethod)(loader, payload);
+			}
+		}
+	};
+
 	//////////////////////////////////////////////////////////////////////////
 	// AssetStreamer
 
@@ -110,6 +148,15 @@ namespace pathos {
 		template<typename UserClass>
 		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
+		void enqueueGLTF(const char* inFilepath, GLTFHandler handler, uint64 payload);
+
+		template<typename UserClass>
+		void enqueueGLTF(
+			const AssetReferenceGLTF& assetRef,
+			UserClass* handlerOwner,
+			GLTFHandlerMethod<UserClass> handlerMethod,
+			uint64 payload);
+
 		// Should be called in render thread
 		void flushLoadedAssets();
 
@@ -126,6 +173,9 @@ namespace pathos {
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> loadedOBJs;
 		std::mutex mutex_loadedOBJs;
 
+		PoolAllocator<GLTFLoader> gltfLoaderAllocator;
+		std::vector<AssetLoadInfoBase_GLTF*> loadedGLTFs;
+		std::mutex mutex_loadedGLTFs;
 	};
 
 	template<typename UserClass>
@@ -150,6 +200,30 @@ namespace pathos {
 		work.arg = arg;
 		work.routine = internal_loadWavefrontOBJ;
 
+		threadPool.AddWorkSafe(work);
+	}
+
+	template<typename UserClass>
+	void AssetStreamer::enqueueGLTF(
+		const AssetReferenceGLTF& assetRef,
+		UserClass* handlerOwner,
+		GLTFHandlerMethod<UserClass> handlerMethod,
+		uint64 payload)
+	{
+		using LoadInfoType = AssetLoadInfo_GLTF<UserClass>;
+		LoadInfoType* arg = reinterpret_cast<LoadInfoType*>(loadInfoAllocator.alloc(sizeof(LoadInfoType)));
+		new (arg) LoadInfoType; // placement new to fill vtable
+		CHECKF(arg != nullptr, "Out of memory for asset streamer load info");
+
+		arg->streamer = this;
+		arg->filepath = assetRef.filepath;
+
+		arg->handlerOwner = handlerOwner;
+		arg->handlerMethod = handlerMethod;
+
+		ThreadPoolWork work;
+		work.arg = arg;
+		work.routine = internal_loadGLTF;
 		threadPool.AddWorkSafe(work);
 	}
 

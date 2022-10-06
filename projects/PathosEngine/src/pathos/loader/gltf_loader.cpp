@@ -13,6 +13,15 @@
 
 namespace pathos {
 
+	GLTFLoader::GLTFLoader() {
+		tinyLoader = makeUnique<tinygltf::TinyGLTF>();
+		tinyModel = makeUnique<tinygltf::Model>();
+	}
+
+	GLTFLoader::~GLTFLoader() {
+		LOG(LogDebug, "[GLTF] Destroy GLTFLoader");
+	}
+
 	bool GLTFLoader::loadASCII(const char* inFilename) {
 		std::string filename = ResourceFinder::get().find(inFilename);
 
@@ -22,11 +31,9 @@ namespace pathos {
 		}
 		LOG(LogInfo, "[GLTF] Loading: %s", filename.c_str());
 
-		tinygltf::TinyGLTF tinyLoader;
-		tinygltf::Model tinyModel;
 		std::string tinyErr, tinyWarn;
 
-		bool ret = tinyLoader.LoadASCIIFromFile(&tinyModel, &tinyErr, &tinyWarn, filename);
+		bool ret = tinyLoader->LoadASCIIFromFile(tinyModel.get(), &tinyErr, &tinyWarn, filename);
 
 		if (!tinyWarn.empty()) {
 			LOG(LogWarning, tinyWarn.c_str());
@@ -45,20 +52,20 @@ namespace pathos {
 		fallbackMaterial->setConstantParameter("roughness", 0.9f);
 		fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
 
-		LOG(LogInfo, "[GLTF] Textures: %u", (uint32)tinyModel.textures.size());
-		LOG(LogInfo, "[GLTF] Materials: %u", (uint32)tinyModel.materials.size());
-		LOG(LogInfo, "[GLTF] Meshes: %u", (uint32)tinyModel.meshes.size());
-		LOG(LogInfo, "[GLTF] Nodes: %u", (uint32)tinyModel.nodes.size());
-		LOG(LogInfo, "[GLTF] Scenes: %u", (uint32)tinyModel.scenes.size());
+		LOG(LogInfo, "[GLTF] Textures: %u", (uint32)tinyModel->textures.size());
+		LOG(LogInfo, "[GLTF] Materials: %u", (uint32)tinyModel->materials.size());
+		LOG(LogInfo, "[GLTF] Meshes: %u", (uint32)tinyModel->meshes.size());
+		LOG(LogInfo, "[GLTF] Nodes: %u", (uint32)tinyModel->nodes.size());
+		LOG(LogInfo, "[GLTF] Scenes: %u", (uint32)tinyModel->scenes.size());
 
-		parseTextures(&tinyModel);
-		parseMaterials(&tinyModel);
-		parseMeshes(&tinyModel);
+		parseTextures(tinyModel.get());
+		parseMaterials(tinyModel.get());
+		parseMeshes(tinyModel.get());
 
-		const size_t totalNodes = tinyModel.scenes[0].nodes.size();
+		const size_t totalNodes = tinyModel->scenes[0].nodes.size();
 		transformParentIx.resize(totalNodes, -1);
 		for (size_t nodeIx = 0; nodeIx < totalNodes; ++nodeIx) {
-			const tinygltf::Node& tinyNode = tinyModel.nodes[nodeIx];
+			const tinygltf::Node& tinyNode = tinyModel->nodes[nodeIx];
 
 			for (int32 child : tinyNode.children) {
 				transformParentIx[child] = (int32)nodeIx;
@@ -94,7 +101,57 @@ namespace pathos {
 		return true;
 	}
 
+	void GLTFLoader::finalizeGPUUpload() {
+		for (GLTFPendingTexture& pending : pendingTextures) {
+			constexpr bool genMips = true;
+			constexpr bool autoDestroy = false;
+			LOG(LogDebug, "tex: %s", pending.debugName.c_str());
+			pending.glTexture = pathos::createTextureFromBitmap(
+				pending.blob, genMips, pending.sRGB, pending.debugName.c_str(), autoDestroy);
+		}
+		for (GLTFPendingTextureParameter& param : pendingTextureParameters) {
+			param.material->setTextureParameter(param.parameterName.c_str(),
+				(param.index != -1) ? pendingTextures[param.index].glTexture : param.fallbackTexture);
+		}
+		for (GLTFPendingGeometry& pending : pendingGeometries) {
+			MeshGeometry* geometry = pending.geometry;
+
+			if (pending.bIndex16) {
+				geometry->updateIndex16Data((uint16*)pending.indexBlob, pending.indexLength);
+			} else {
+				geometry->updateIndexData((uint32*)pending.indexBlob, pending.indexLength);
+			}
+			if (pending.bShouldFreeIndex) {
+				delete pending.indexBlob;
+			}
+
+			geometry->updatePositionData((float*)pending.positionBlob, pending.positionLength);
+			if (pending.bShouldFreePosition) {
+				delete pending.positionBlob;
+			}
+
+			geometry->updateUVData((float*)pending.uvBlob, pending.uvLength, pending.bFlipTexcoordY);
+			if (pending.bShouldFreeUV) {
+				delete pending.uvBlob;
+			}
+
+			if (pending.normalBlob != nullptr) {
+				geometry->updateNormalData((float*)pending.normalBlob, pending.normalLength);
+				if (pending.bShouldFreeNormal) {
+					delete pending.normalBlob;
+				}
+			} else {
+				geometry->calculateNormals();
+			}
+
+			// #todo-gltf: Parse tangent
+			geometry->calculateTangentBasis();
+		}
+	}
+
 	void GLTFLoader::attachToActor(Actor* targetActor) {
+		finalizeGPUUpload();
+
 		std::vector<SceneComponent*> comps(numModels(), nullptr);
 		for (size_t i = 0; i < numModels(); ++i) {
 			const GLTFModelDesc& desc = getModel(i);
@@ -141,12 +198,16 @@ namespace pathos {
 			uint32 bpp = tinyImg.bits * tinyImg.component;
 			CHECK(bpp == 24 || bpp == 32);
 
-			const bool sRGB = isSRGB[texIx];
 			constexpr bool hasOpacity = false;
-			BitmapBlob blob((uint8*)(tinyImg.image.data()), tinyImg.width, tinyImg.height, bpp, hasOpacity);
-			GLuint glTex = pathos::createTextureFromBitmap(&blob, true, sRGB, tinyImg.uri.c_str(), false);
-			
-			glTextures.push_back(glTex);
+			BitmapBlob* blob = new BitmapBlob(
+				(uint8*)(tinyImg.image.data()), tinyImg.width, tinyImg.height, bpp, hasOpacity);
+
+			GLTFPendingTexture pending;
+			pending.blob = blob;
+			pending.sRGB = isSRGB[texIx];
+			pending.debugName = tinyImg.uri;
+
+			pendingTextures.emplace_back(pending);
 		}
 	}
 
@@ -184,7 +245,6 @@ namespace pathos {
 				// #todo-gltf: Workaround for emissive limit.
 				emissiveFactor *= emissiveBoost;
 
-				const GLuint BLACK = gEngine->getSystemTexture2DBlack();
 				const GLuint NORM = gEngine->getSystemTexture2DNormalmap();
 				const GLuint WHITE = gEngine->getSystemTexture2DWhite();
 
@@ -194,16 +254,16 @@ namespace pathos {
 				material->setConstantParameter("roughnessFactor", roughnessFactor);
 				material->setConstantParameter("emissiveFactor", emissiveFactor);
 
-				material->setTextureParameter("baseColorTexture",
-					(baseColorId != -1) ? glTextures[baseColorId] : WHITE);
-				material->setTextureParameter("normalTexture",
-					(normalId != -1) ? glTextures[normalId] : NORM);
-				material->setTextureParameter("metallicRoughnessTexture",
-					(metalRoughId != -1) ? glTextures[metalRoughId] : WHITE);
-				material->setTextureParameter("occlusionTexture",
-					(localAOId != -1) ? glTextures[localAOId] : WHITE);
-				material->setTextureParameter("emissiveTexture",
-					(emissiveId != -1) ? glTextures[emissiveId] : WHITE);
+				pendingTextureParameters.emplace_back(
+					GLTFPendingTextureParameter(material, "baseColorTexture", baseColorId, WHITE));
+				pendingTextureParameters.emplace_back(
+					GLTFPendingTextureParameter(material, "normalTexture", normalId, NORM));
+				pendingTextureParameters.emplace_back(
+					GLTFPendingTextureParameter(material, "metallicRoughnessTexture", metalRoughId, WHITE));
+				pendingTextureParameters.emplace_back(
+					GLTFPendingTextureParameter(material, "occlusionTexture", localAOId, WHITE));
+				pendingTextureParameters.emplace_back(
+					GLTFPendingTextureParameter(material, "emissiveTexture", emissiveId, WHITE));
 
 			} else if (tinyMat.alphaMode == "MASK") {
 				float alphaCutoff = (float)tinyMat.alphaCutoff;
@@ -237,13 +297,16 @@ namespace pathos {
 		for (size_t meshIx = 0; meshIx < tinyModel->meshes.size(); ++meshIx) {
 			const tinygltf::Mesh& tinyMesh = tinyModel->meshes[meshIx];
 			Mesh* mesh = new Mesh;
-			MeshGeometry* geometry = new MeshGeometry;
-			Material* material = fallbackMaterial;
 
 			// For each mesh section
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {
 				const tinygltf::Primitive& tinyPrim = tinyMesh.primitives[primIx];
+				MeshGeometry* geometry = new MeshGeometry;
+				Material* material = fallbackMaterial;
+
 				if (tinyPrim.mode == 4 && tinyPrim.indices != -1) {
+					GLTFPendingGeometry pending;
+					pending.geometry = geometry;
 
 					// Index buffer
 					{
@@ -254,13 +317,10 @@ namespace pathos {
 						const tinygltf::BufferView& indicesView = tinyModel->bufferViews[indicesDesc.bufferView];
 						CHECK(indicesView.byteStride == 0); // Indices are consecutive, right?
 
-						uint8* indicesBlob = getBlobPtr(indicesDesc);
-						const uint32 numIndices = (uint32)indicesDesc.count;
-						if (indicesDesc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-							geometry->updateIndex16Data((uint16*)indicesBlob, numIndices);
-						} else {
-							geometry->updateIndexData((uint32*)indicesBlob, numIndices);
-						}
+						pending.indexBlob = getBlobPtr(indicesDesc);
+						pending.indexLength = (uint32)indicesDesc.count;
+						pending.bShouldFreeIndex = false;
+						pending.bIndex16 = (indicesDesc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT);
 					}
 
 					// Position buffer
@@ -275,80 +335,91 @@ namespace pathos {
 
 						uint8* posBlob = getBlobPtr(posDesc);
 						numPos = (uint32)posDesc.count;
-						if (posView.byteStride == 0) {
-							geometry->updatePositionData((float*)posBlob, numPos * 3);
-						} else {
-							std::vector<float> tempPos;
-							tempPos.reserve(numPos * 3);
+						bool bTempBlob = false;
+						std::vector<float>* tempPos = nullptr;
+
+						if (posView.byteStride != 0) {
+							bTempBlob = true;
+							tempPos = new std::vector<float>;
+							tempPos->reserve(numPos * 3);
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)posBlob;
-								tempPos.push_back(curr[0]);
-								tempPos.push_back(curr[1]);
-								tempPos.push_back(curr[2]);
+								tempPos->push_back(curr[0]);
+								tempPos->push_back(curr[1]);
+								tempPos->push_back(curr[2]);
 								posBlob += posView.byteStride;
 							}
-							geometry->updatePositionData(tempPos.data(), (uint32)tempPos.size());
 						}
+						
+						pending.positionBlob = bTempBlob ? (void*)tempPos : (void*)posBlob;
+						pending.positionLength = numPos * 3;
+						pending.bShouldFreePosition = bTempBlob;
 					}
 					CHECK(numPos != 0);
 
 					// Texcoord buffer
 					auto it_uv0 = tinyPrim.attributes.find("TEXCOORD_0");
+					uint8* uvBlob = nullptr;
+					bool bTempUV = false;
+					bool bFlipTexcoordY = false;
+					std::vector<float>* tempUV = nullptr;
 					if (it_uv0 != tinyPrim.attributes.end()) {
 						const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
 						const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
 						CHECK(uvDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 						CHECK(uvDesc.type == TINYGLTF_TYPE_VEC2);
 
-						uint8* uvBlob = getBlobPtr(uvDesc);
+						uvBlob = getBlobPtr(uvDesc);
 						if (uvView.byteStride == 0) {
-							constexpr bool flipY = true;
-							geometry->updateUVData((float*)uvBlob, numPos * 2, flipY);
+							bFlipTexcoordY = true;
 						} else {
-							std::vector<float> tempUV;
-							tempUV.reserve(numPos * 2);
+							tempUV = new std::vector<float>;
+							tempUV->reserve(numPos * 2);
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)uvBlob;
-								tempUV.push_back(curr[0]);
-								tempUV.push_back(1.0f - curr[1]);
+								tempUV->push_back(curr[0]);
+								tempUV->push_back(1.0f - curr[1]);
 								uvBlob += uvView.byteStride;
 							}
-							geometry->updateUVData(tempUV.data(), (uint32)tempUV.size());
 						}
 					} else {
-						std::vector<vector2> texcoords(numPos, vector2(0.0f));
-						geometry->updateUVData((float*)texcoords.data(), numPos * 2);
+						tempUV = new std::vector<float>(numPos * 2, 0.0f);
 					}
+					pending.uvBlob = bTempUV ? (void*)tempUV : (void*)uvBlob;
+					pending.uvLength = numPos * 2;
+					pending.bShouldFreeUV = bTempUV;
+					pending.bFlipTexcoordY = bFlipTexcoordY;
 
 					// Normal buffer
 					auto it_n = tinyPrim.attributes.find("NORMAL");
+					uint8* normBlob = nullptr;
+					bool bTempNormal = false;
+					std::vector<float>* tempN = nullptr;
 					if (it_n != tinyPrim.attributes.end()) {
 						const tinygltf::Accessor& normDesc = tinyModel->accessors[it_n->second];
 						const tinygltf::BufferView& normView = tinyModel->bufferViews[normDesc.bufferView];
 						CHECK(normDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 						CHECK(normDesc.type == TINYGLTF_TYPE_VEC3);
 
-						uint8* normBlob = getBlobPtr(normDesc);
-						if (normView.byteStride == 0) {
-							geometry->updateNormalData((float*)normBlob, numPos * 3);
-						} else {
-							std::vector<float> tempN;
-							tempN.reserve(numPos * 3);
+						normBlob = getBlobPtr(normDesc);
+						if (normView.byteStride != 0) {
+							bTempNormal = true;
+							tempN = new std::vector<float>;
+							tempN->reserve(numPos * 3);
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)normBlob;
-								tempN.push_back(curr[0]);
-								tempN.push_back(curr[1]);
-								tempN.push_back(curr[2]);
+								tempN->push_back(curr[0]);
+								tempN->push_back(curr[1]);
+								tempN->push_back(curr[2]);
 								normBlob += normView.byteStride;
 							}
-							geometry->updateNormalData(tempN.data(), (uint32)tempN.size());
 						}
-					} else {
-						geometry->calculateNormals();
 					}
+					pending.normalBlob = bTempNormal ? (void*)tempN : (void*)normBlob;
+					pending.normalLength = numPos * 3;
+					pending.bShouldFreeNormal = bTempNormal;
 
-					// #todo-gltf: Parse tangent
-					geometry->calculateTangentBasis();
+					pendingGeometries.emplace_back(pending);
 
 					if (tinyPrim.material != -1) {
 						material = materials[tinyPrim.material];
