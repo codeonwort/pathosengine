@@ -20,7 +20,7 @@
 #endif
 
 // Configuration
-#define GLTF_TESTCASE 1
+#define GLTF_TESTCASE 0
 #define SKYLIGHT      1
 
 #if GLTF_TESTCASE == 0
@@ -49,8 +49,16 @@ void World_Sponza::onInitialize() {
 	setupInput();
 	setupScene();
 
+#if 0
 	AssetReferenceGLTF assetRef(GLTF_FILENAME);
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_Sponza::onLoadGLTF, 0);
+#else
+	GLTFLoader loader;
+	bool bLoaded = loader.loadASCII(GLTF_FILENAME);
+	if (bLoaded) {
+		onLoadGLTF(&loader, 0);
+	}
+#endif
 }
 
 void World_Sponza::onLoadGLTF(GLTFLoader* loader, uint64 payload) {

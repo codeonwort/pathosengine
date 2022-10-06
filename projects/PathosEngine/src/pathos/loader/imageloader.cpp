@@ -36,6 +36,8 @@ namespace pathos {
 		height = inHeight;
 		bpp = inBpp;
 		hasOpacity = inHasOpacity;
+
+		fiHandle = nullptr;
 	}
 
 	BitmapBlob::~BitmapBlob() {

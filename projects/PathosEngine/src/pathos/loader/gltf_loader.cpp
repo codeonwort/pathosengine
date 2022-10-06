@@ -105,7 +105,9 @@ namespace pathos {
 		for (GLTFPendingTexture& pending : pendingTextures) {
 			constexpr bool genMips = true;
 			constexpr bool autoDestroy = false;
-			LOG(LogDebug, "tex: %s", pending.debugName.c_str());
+
+			//LOG(LogDebug, "tex w=%u h=%u bpp=%u BGR=%d", pending.blob->width, pending.blob->height, pending.blob->bpp, pending.blob->bIsBGR);
+
 			pending.glTexture = pathos::createTextureFromBitmap(
 				pending.blob, genMips, pending.sRGB, pending.debugName.c_str(), autoDestroy);
 		}
@@ -122,23 +124,24 @@ namespace pathos {
 				geometry->updateIndexData((uint32*)pending.indexBlob, pending.indexLength);
 			}
 			if (pending.bShouldFreeIndex) {
-				delete pending.indexBlob;
+				delete[] pending.indexBlob;
 			}
 
+			//LOG(LogDebug, "[GLTF] Position temp=%d len=%u blob=%x", pending.bShouldFreePosition, pending.positionLength, pending.positionBlob);
 			geometry->updatePositionData((float*)pending.positionBlob, pending.positionLength);
 			if (pending.bShouldFreePosition) {
-				delete pending.positionBlob;
+				delete[] pending.positionBlob;
 			}
 
 			geometry->updateUVData((float*)pending.uvBlob, pending.uvLength, pending.bFlipTexcoordY);
 			if (pending.bShouldFreeUV) {
-				delete pending.uvBlob;
+				delete[] pending.uvBlob;
 			}
 
 			if (pending.normalBlob != nullptr) {
 				geometry->updateNormalData((float*)pending.normalBlob, pending.normalLength);
 				if (pending.bShouldFreeNormal) {
-					delete pending.normalBlob;
+					delete[] pending.normalBlob;
 				}
 			} else {
 				geometry->calculateNormals();
@@ -197,6 +200,7 @@ namespace pathos {
 
 			uint32 bpp = tinyImg.bits * tinyImg.component;
 			CHECK(bpp == 24 || bpp == 32);
+			CHECKF(tinyImg.image.size() == (tinyImg.width * tinyImg.height * tinyImg.component), "Image blob size is invalid");
 
 			constexpr bool hasOpacity = false;
 			BitmapBlob* blob = new BitmapBlob(
@@ -336,17 +340,16 @@ namespace pathos {
 						uint8* posBlob = getBlobPtr(posDesc);
 						numPos = (uint32)posDesc.count;
 						bool bTempBlob = false;
-						std::vector<float>* tempPos = nullptr;
+						float* tempPos = nullptr;
 
 						if (posView.byteStride != 0) {
 							bTempBlob = true;
-							tempPos = new std::vector<float>;
-							tempPos->reserve(numPos * 3);
+							tempPos = new float[numPos * 3];
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)posBlob;
-								tempPos->push_back(curr[0]);
-								tempPos->push_back(curr[1]);
-								tempPos->push_back(curr[2]);
+								tempPos[i * 3 + 0] = curr[0];
+								tempPos[i * 3 + 1] = curr[1];
+								tempPos[i * 3 + 2] = curr[2];
 								posBlob += posView.byteStride;
 							}
 						}
@@ -362,7 +365,7 @@ namespace pathos {
 					uint8* uvBlob = nullptr;
 					bool bTempUV = false;
 					bool bFlipTexcoordY = false;
-					std::vector<float>* tempUV = nullptr;
+					float* tempUV = nullptr;
 					if (it_uv0 != tinyPrim.attributes.end()) {
 						const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
 						const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
@@ -373,17 +376,19 @@ namespace pathos {
 						if (uvView.byteStride == 0) {
 							bFlipTexcoordY = true;
 						} else {
-							tempUV = new std::vector<float>;
-							tempUV->reserve(numPos * 2);
+							tempUV = new float[numPos * 2];
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)uvBlob;
-								tempUV->push_back(curr[0]);
-								tempUV->push_back(1.0f - curr[1]);
+								tempUV[i * 2 + 0] = curr[0];
+								tempUV[i * 2 + 1] = 1.0f - curr[1];
 								uvBlob += uvView.byteStride;
 							}
 						}
 					} else {
-						tempUV = new std::vector<float>(numPos * 2, 0.0f);
+						tempUV = new float[numPos * 2];
+						for (uint32 i = 0; i < numPos; ++i) {
+							tempUV[i * 2 + 0] = tempUV[i * 2 + 1] = 0.0f;
+						}
 					}
 					pending.uvBlob = bTempUV ? (void*)tempUV : (void*)uvBlob;
 					pending.uvLength = numPos * 2;
@@ -394,7 +399,7 @@ namespace pathos {
 					auto it_n = tinyPrim.attributes.find("NORMAL");
 					uint8* normBlob = nullptr;
 					bool bTempNormal = false;
-					std::vector<float>* tempN = nullptr;
+					float* tempN = nullptr;
 					if (it_n != tinyPrim.attributes.end()) {
 						const tinygltf::Accessor& normDesc = tinyModel->accessors[it_n->second];
 						const tinygltf::BufferView& normView = tinyModel->bufferViews[normDesc.bufferView];
@@ -404,13 +409,12 @@ namespace pathos {
 						normBlob = getBlobPtr(normDesc);
 						if (normView.byteStride != 0) {
 							bTempNormal = true;
-							tempN = new std::vector<float>;
-							tempN->reserve(numPos * 3);
+							tempN = new float[numPos * 3];
 							for (uint32 i = 0; i < numPos; ++i) {
 								float* curr = (float*)normBlob;
-								tempN->push_back(curr[0]);
-								tempN->push_back(curr[1]);
-								tempN->push_back(curr[2]);
+								tempN[i * 3 + 0] = curr[0];
+								tempN[i * 3 + 1] = curr[1];
+								tempN[i * 3 + 2] = curr[2];
 								normBlob += normView.byteStride;
 							}
 						}
@@ -419,13 +423,15 @@ namespace pathos {
 					pending.normalLength = numPos * 3;
 					pending.bShouldFreeNormal = bTempNormal;
 
-					pendingGeometries.emplace_back(pending);
+					pendingGeometries.push_back(pending);
 
 					if (tinyPrim.material != -1) {
 						material = materials[tinyPrim.material];
 					}
 
 					mesh->add(geometry, material);
+				} else {
+					LOG(LogError, "[GLTF] Primitive type is not supported: mode=%d, indices=%d", tinyPrim.mode, tinyPrim.indices);
 				}
 			}
 
