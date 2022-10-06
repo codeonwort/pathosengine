@@ -117,10 +117,11 @@ namespace pathos {
 
 		inline GUIWindow* getMainWindow() const { return mainWindow.get(); }
 
-		inline GLuint getSystemTexture2DBlack() const { return texture2D_black; }
-		inline GLuint getSystemTexture2DWhite() const { return texture2D_white; }
-		inline GLuint getSystemTexture2DGrey()  const { return texture2D_grey;  }
-		inline GLuint getSystemTexture2DBlue()  const { return texture2D_blue;  }
+		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
+		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
+		inline GLuint getSystemTexture2DGrey()       const { return texture2D_grey;      }
+		inline GLuint getSystemTexture2DBlue()       const { return texture2D_blue;      }
+		inline GLuint getSystemTexture2DNormalmap()  const { return texture2D_normalmap; }
 
 		inline const std::map<std::string, ExecProc>& getExecMap() const { return execMap; }
 
@@ -186,10 +187,11 @@ namespace pathos {
 		std::mutex gpuQueryMutex;
 
 		// System textures
-		GLuint texture2D_black = 0;
-		GLuint texture2D_white = 0;
-		GLuint texture2D_grey  = 0;
-		GLuint texture2D_blue  = 0;
+		GLuint texture2D_black     = 0;
+		GLuint texture2D_white     = 0;
+		GLuint texture2D_grey      = 0;
+		GLuint texture2D_blue      = 0;
+		GLuint texture2D_normalmap = 0;
 
 		std::vector<Screenshot> screenshotQueue;
 

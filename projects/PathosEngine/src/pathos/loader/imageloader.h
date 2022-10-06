@@ -12,16 +12,21 @@ namespace pathos {
 	void initializeImageLibrary();
 	void destroyImageLibrary();
 
+	// Initial data for GL textures.
 	// - Wrapper for FreeImage's FIBITMAP.
 	// - If its data is uploaded to GPU and not accessed from CPU anymore, it should be freed.
 	//   It can be achieved by trasnfering memory ownership of a BitmapBlob to cmdList.
 	struct BitmapBlob {
 		BitmapBlob(void* inFIBITMAP, bool inHasOpacity = false);
+		BitmapBlob(uint8* inRawBytes, uint32 inWidth, uint32 inHeight, uint32 inBpp, bool inHasOpacity);
 		~BitmapBlob();
 
 		uint8* getRawBytes() const;
 
 		void* fiHandle = nullptr; // FIBITMAP
+		uint8* externalRawBytes = nullptr;
+		bool bIsBGR = false; // FreeImage thing
+
 		uint32 width = 0;
 		uint32 height = 0;
 		uint32 bpp = 0;

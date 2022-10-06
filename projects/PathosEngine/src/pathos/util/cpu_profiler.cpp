@@ -146,7 +146,7 @@ namespace pathos {
 	}
 
 	void CpuProfiler::purgeEverything() {
-		LOG(LogDebug, "[TEMP] Purge cpu profiles");
+		//LOG(LogDebug, "[TEMP] Purge cpu profiles");
 
 		purge_milestone.fetch_add(1);
 

@@ -376,33 +376,38 @@ namespace pathos {
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
-		GLuint systemTextures[4];
-		render_device->createTextures(GL_TEXTURE_2D, 4, systemTextures);
+		GLuint systemTextures[5];
+		render_device->createTextures(GL_TEXTURE_2D, 5, systemTextures);
 
 		gEngine->texture2D_black = systemTextures[0];
 		gEngine->texture2D_white = systemTextures[1];
 		gEngine->texture2D_grey = systemTextures[2];
 		gEngine->texture2D_blue = systemTextures[3];
+		gEngine->texture2D_normalmap = systemTextures[4];
 
 		cmdList.textureStorage2D(gEngine->texture2D_black, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_white, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_grey, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_blue, 1, GL_RGBA8, 1, 1);
+		cmdList.textureStorage2D(gEngine->texture2D_normalmap, 1, GL_RGBA8, 1, 1);
 
 		GLubyte black[4] = { 0, 0, 0, 0 };
 		GLubyte white[4] = { 0xff, 0xff, 0xff, 0xff };
 		GLubyte grey[4] = { 0x7f, 0x7f, 0x7f, 0x7f };
 		GLubyte blue[4] = { 0x00, 0x00, 0xff, 0xff };
+		GLubyte normalmap[4] = { 0x7f, 0x7f, 0xff, 0xff };
 
 		cmdList.clearTexImage(gEngine->texture2D_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
 		cmdList.clearTexImage(gEngine->texture2D_white, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
 		cmdList.clearTexImage(gEngine->texture2D_grey, 0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
 		cmdList.clearTexImage(gEngine->texture2D_blue, 0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+		cmdList.clearTexImage(gEngine->texture2D_normalmap, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalmap);
 
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_black, -1, "system texture 2D (black)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_white, -1, "system texture 2D (white)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_grey, -1, "system texture 2D (grey)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_blue, -1, "system texture 2D (blue)");
+		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_normalmap, -1, "system texture 2D (normalmap)");
 
 		cmdList.flushAllCommands();
 

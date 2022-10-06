@@ -29,6 +29,17 @@ namespace pathos {
 		}
 	}
 
+	BitmapBlob::BitmapBlob(uint8* inRawBytes, uint32 inWidth, uint32 inHeight, uint32 inBpp, bool inHasOpacity) {
+		CHECK(inRawBytes != nullptr && inWidth > 0 && inHeight > 0 && inBpp > 0);
+		externalRawBytes = inRawBytes;
+		width = inWidth;
+		height = inHeight;
+		bpp = inBpp;
+		hasOpacity = inHasOpacity;
+
+		fiHandle = nullptr;
+	}
+
 	BitmapBlob::~BitmapBlob() {
 		if (fiHandle) {
 			FreeImage_Unload((FIBITMAP*)fiHandle);
@@ -37,8 +48,11 @@ namespace pathos {
 	}
 
 	uint8* BitmapBlob::getRawBytes() const {
-		FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
-		return reinterpret_cast<uint8*>(FreeImage_GetBits(dib));
+		if (fiHandle != nullptr) {
+			FIBITMAP* dib = FreeImage_UnwrapBitmapBlob(this);
+			return reinterpret_cast<uint8*>(FreeImage_GetBits(dib));
+		}
+		return externalRawBytes;
 	}
 
 	HDRImageBlob::~HDRImageBlob() {
@@ -108,7 +122,10 @@ namespace pathos {
 			}
 		}
 
-		return new BitmapBlob(dib, hasOpacity);
+		BitmapBlob* blob = new BitmapBlob(dib, hasOpacity);
+		blob->bIsBGR = true;
+
+		return blob;
 	}
 
 	int32 loadCubemapImages(
@@ -142,7 +159,7 @@ namespace pathos {
 	{
 		GLuint texture = 0;
 
-		LOG(LogDebug, "%s: Create texture %ux%u", __FUNCTION__, bitmapBlob->width, bitmapBlob->height);
+		//LOG(LogDebug, "%s: Create texture %ux%u", __FUNCTION__, bitmapBlob->width, bitmapBlob->height);
 
 		ENQUEUE_RENDER_COMMAND(
 			[bitmapBlob,
@@ -165,11 +182,13 @@ namespace pathos {
 			}
 			
 			if (bpp == 32) {
+				GLenum fmt = bitmapBlob->bIsBGR ? GL_BGRA : GL_RGBA;
 				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8, w, h);
-				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, rawBytes);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, fmt, GL_UNSIGNED_BYTE, rawBytes);
 			} else if (bpp == 24) {
+				GLenum fmt = bitmapBlob->bIsBGR ? GL_BGR : GL_RGB;
 				cmdList.textureStorage2D(*texturePtr, numLODs, sRGB ? GL_SRGB8 : GL_RGB8, w, h);
-				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, rawBytes);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, w, h, fmt, GL_UNSIGNED_BYTE, rawBytes);
 			} else {
 				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
 				//gRenderDevice->deleteTextures(1, &tex_id);
@@ -241,7 +260,9 @@ namespace pathos {
 
 			for (int32 i = 0; i < 6; i++) {
 				uint8* data = blobArray[i]->getRawBytes();
-				GLenum format = bpp == 32 ? GL_BGRA : GL_BGR;
+				GLenum format = blobArray[i]->bIsBGR
+					? ((bpp == 32) ? GL_BGRA : GL_BGR)
+					: ((bpp == 32) ? GL_RGBA : GL_RGB);
 				cmdList.textureSubImage3D(*texturePtr, 0,
 					0, 0, i,
 					w, h, 1,

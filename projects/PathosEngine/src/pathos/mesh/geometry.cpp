@@ -99,11 +99,16 @@ namespace pathos {
 		}
 	}
 
-	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length) {
+	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length, bool bFlipY /*= false */) {
 		CHECKF(length % 2 == 0, "Invalid length");
 		const vector2* data2 = reinterpret_cast<const vector2*>(data);
 
 		uvData.assign(data2, data2 + length / 2);
+		if (bFlipY) {
+			for (vector2& uv : uvData) {
+				uv.y = 1.0f - uv.y;
+			}
+		}
 		if (!uvBuffer) {
 			uvBuffer = createBufferHelper("Buffer_uv");
 		}
@@ -149,6 +154,16 @@ namespace pathos {
 	}
 	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
 		indexData.assign(data, data + length);
+		if (!indexBuffer) {
+			indexBuffer = createBufferHelper("Buffer_index");
+		}
+		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
+	}
+	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
+		indexData.resize(length);
+		for (uint32 i = 0; i < length; ++i) {
+			indexData[i] = (GLuint)data[i];
+		}
 		if (!indexBuffer) {
 			indexBuffer = createBufferHelper("Buffer_index");
 		}

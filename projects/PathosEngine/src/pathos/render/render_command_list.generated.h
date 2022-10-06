@@ -6524,7 +6524,7 @@ void namedBufferData(
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_namedBufferData::execute);
 	packet->buffer = buffer;
 	packet->size = size;
-	packet->data = storeParameter(size, data);
+	packet->data = data;
 	packet->usage = usage;
 }
 void namedBufferSubData(

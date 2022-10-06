@@ -13,6 +13,7 @@ in VS_OUT {
 
 layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	float prefilterEnvMapMaxLOD;
+	float intensity;
 } ubo;
 
 layout (binding = 0) uniform usampler2D gbuf0;
@@ -90,6 +91,8 @@ void main() {
 
 	vec3 irradiance = getGlobalIllumination(gbufferData);
 	irradiance.rgb = max(vec3(0.0), irradiance.rgb);
+
+	irradiance.rgb *= ubo.intensity;
 
 	outSceneColor = vec4(irradiance, 0.0);
 }

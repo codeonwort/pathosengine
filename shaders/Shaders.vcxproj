@@ -44,6 +44,7 @@
     <None Include="god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="indirect_lighting.glsl" />
+    <None Include="materials\gltf_opaque.glsl" />
     <None Include="materials\guard_tower.glsl" />
     <None Include="materials\lightning_bolt.glsl" />
     <None Include="materials\pbr_texture.glsl" />
