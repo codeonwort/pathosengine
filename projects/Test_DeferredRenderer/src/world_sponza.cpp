@@ -18,7 +18,9 @@
 	#define TEMP_SPAWN_ACTOR(T) spawnActor<T>()
 #endif
 
+// Configuration
 #define GLTF_TESTCASE 1
+#define SKYLIGHT      1
 
 #if GLTF_TESTCASE == 0
 	#define GLTF_FILENAME "intel_sponza/Main.1_Sponza/NewSponza_Main_glTF_002.gltf"
@@ -100,7 +102,7 @@ void World_Sponza::setupScene() {
 	// --------------------------------------------------------
 	// Sky
 
-#if 0
+#if SKYLIGHT
 	static const char* SKY_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
@@ -109,14 +111,14 @@ void World_Sponza::setupScene() {
 	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(
 		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
-	// diffuse irradiance
+	// Sky irradiance map
 	{
 		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
 			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
 		scene.irradianceMap = irradianceMap;
 	}
 
-	// specular IBL
+	// Sky reflection probe
 	{
 		GLuint prefilteredEnvMap;
 		uint32 mipLevels;

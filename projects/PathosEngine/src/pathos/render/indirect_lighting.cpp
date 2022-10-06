@@ -18,10 +18,13 @@
 
 namespace pathos {
 
+	static ConsoleVariable<float> cvar_gi_intensity("r.probegi.intensity", 1.0f, "Indirect lighting boost coeff");
+
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
 
 		float prefilterEnvMapMaxLOD;
+		float intensity;
 	};
 
 	class IndirectLightingVS : public ShaderStage {
@@ -89,7 +92,8 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.prefilterEnvMapMaxLOD = pathos::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
+		uboData.prefilterEnvMapMaxLOD = std::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
+		uboData.intensity = std::max(0.0f, cvar_gi_intensity.getFloat());
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
