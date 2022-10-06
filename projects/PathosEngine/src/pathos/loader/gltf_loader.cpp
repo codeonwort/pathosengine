@@ -62,7 +62,8 @@ namespace pathos {
 		parseMaterials(tinyModel.get());
 		parseMeshes(tinyModel.get());
 
-		const size_t totalNodes = tinyModel->scenes[0].nodes.size();
+		// #todo-gltf: Use scenes[i].nodes?
+		const size_t totalNodes = tinyModel->nodes.size();
 		transformParentIx.resize(totalNodes, -1);
 		for (size_t nodeIx = 0; nodeIx < totalNodes; ++nodeIx) {
 			const tinygltf::Node& tinyNode = tinyModel->nodes[nodeIx];
@@ -91,6 +92,10 @@ namespace pathos {
 				desc.rotation.pitch = rot.x;
 				desc.rotation.yaw = rot.y;
 				desc.rotation.roll = rot.z;
+			}
+			if (tinyNode.matrix.size() >= 16) {
+				// #todo-gltf: Parse matrix
+				LOG(LogWarning, "[GLTF] Should parse matrix");
 			}
 
 			finalModels.push_back(desc);
@@ -155,6 +160,9 @@ namespace pathos {
 	void GLTFLoader::attachToActor(Actor* targetActor) {
 		finalizeGPUUpload();
 
+		uint32 numStaticMeshComponents = 0;
+		uint32 numSceneComponents = 0;
+
 		std::vector<SceneComponent*> comps(numModels(), nullptr);
 		for (size_t i = 0; i < numModels(); ++i) {
 			const GLTFModelDesc& desc = getModel(i);
@@ -163,8 +171,10 @@ namespace pathos {
 				comps[i] = new StaticMeshComponent;
 				StaticMeshComponent* smc = static_cast<StaticMeshComponent*>(comps[i]);
 				smc->setStaticMesh(desc.mesh);
+				++numStaticMeshComponents;
 			} else {
 				comps[i] = new SceneComponent;
+				++numSceneComponents;
 			}
 			comps[i]->setLocation(desc.translation);
 			comps[i]->setScale(desc.scale);
@@ -179,6 +189,9 @@ namespace pathos {
 				comps[i]->setTransformParent(comps[transformParentIx[i]]);
 			}
 		}
+
+		LOG(LogInfo, "[GLTF] Num static meshes = %u, Num placeholders = %u",
+			numStaticMeshComponents, numSceneComponents);
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {
