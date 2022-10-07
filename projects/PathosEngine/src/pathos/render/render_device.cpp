@@ -1,4 +1,5 @@
 #include "render_device.h"
+#include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/util/gl_context_manager.h"
 
@@ -47,6 +48,9 @@ void glErrorCallback(
 namespace pathos {
 
 	OpenGLDevice* gRenderDevice = nullptr;
+
+	// NOTE: Should be set in EngineConfig.ini to be effective.
+	static ConsoleVariable<int32> cvarDumpGLDevice("r.dumpGLDevice", 0, "(read only) Dump GL device info to log/device_dump");
 
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
 		//CHECK(isInMainThread());
@@ -197,6 +201,22 @@ namespace pathos {
 		std::vector<const char*> extNames(n, nullptr);
 		for (GLint i = 0; i < n; ++i) {
 			extNames[i] = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		}
+
+		if (cvarDumpGLDevice.getInt() != 0) {
+			std::string basedir = pathos::getSolutionDir();
+			basedir += "log/device_dump/";
+			pathos::createDirectory(basedir.c_str());
+
+			std::string dumpPath = basedir + "GL_extensions.txt";
+
+			std::fstream fs(dumpPath, std::fstream::out);
+			if (fs.is_open()) {
+				for (uint32 i = 0; i < (uint32)extNames.size(); ++i) {
+					fs << extNames[i] << '\n';
+				}
+				fs.close();
+			}
 		}
 		
 		auto findExt = [&](const char* desiredExt) -> bool {
