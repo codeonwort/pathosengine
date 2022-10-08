@@ -11,27 +11,28 @@ OpenGL rendering library (for 3d graphics study)
 * Window system : [freeglut](https://github.com/FreeGLUTProject/freeglut)
 * Image         : [freeimage](https://freeimage.sourceforge.io/), [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 * Font          : [freetype](https://github.com/freetype/freetype)
-* 3D model      : [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader), [assimp](https://github.com/assimp/assimp)
+* 3D model      : [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader), [tinygltf](https://github.com/syoyo/tinygltf), [assimp](https://github.com/assimp/assimp)
 * JSON          : [nlohmann](https://github.com/nlohmann/json)
 
 ## Features
-* Rendering
-  * Area lights (sphere, rect)
+* Rendering pipeline
   * Depth prepass
+  * Local illumination
+    * Area lights (sphere, rect)
+    * PBR materials
   * Global illumination
     * Cascaded shadow map
     * Screen-space ambient occlusion
     * Screen-space reflection
-    * Basic IBL (sky irradiance sampling on diffuse/glossy/specular surfaces, without sky occlusion)
+    * Basic sky IBL
   * Volumetric clouds
   * Post processing
-    * God ray
+    * God ray (light shaft)
     * Bloom
-	* Tone mapping
-	* FXAA
-  * Super resolution (AMD FSR1)
-	* Depth of field
-  * PBR materials
+    * Tone mapping
+    * Anti-aliasing (FXAA)
+    * Super resolution (AMD FSR1)
+    * Depth of field
   * Scene capture
 * System
   * Render thread
