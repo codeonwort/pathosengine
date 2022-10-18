@@ -15,6 +15,7 @@ namespace pathos {
 		uint32 doubleSided : 1;
 		uint32 renderInternal : 1;
 		matrix4 modelMatrix;
+		matrix4 prevModelMatrix;
 		MeshGeometry* geometry;
 		Material* material;
 		AABB worldBounds;
@@ -49,6 +50,7 @@ namespace pathos {
 
 	private:
 		Mesh* mesh = nullptr;
+		matrix4 prevModelMatrix;
 
 	};
 

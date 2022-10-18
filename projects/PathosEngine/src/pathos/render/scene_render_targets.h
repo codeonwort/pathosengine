@@ -38,6 +38,7 @@ namespace pathos {
 
 		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
 		GLuint sceneColorHistory = 0; // For TAA
+		GLuint velocityMap = 0;
 
 		GLuint sceneColorUpscaledTemp = 0; // FSR1 EASU output
 		GLuint sceneColorUpscaled = 0; // FSR1 RCAS output

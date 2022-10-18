@@ -18,6 +18,8 @@ layout (location = 1) out vec4 packOutput1;
 // w = <undefined>
 layout (location = 2) out uvec4 packOutput2;
 
+layout (location = 3) out vec2 outVelocityMap;
+
 // VS = view space
 void packGBuffer(
 	vec3 albedo, vec3 normalVS, uint materialID,

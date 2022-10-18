@@ -26,6 +26,7 @@ namespace pathos {
 
 			// #todo: Upload only object ID. Read model transform from some buffer.
 			matrix4 modelTransform;
+			matrix4 prevModelTransform;
 		};
 
 	private:

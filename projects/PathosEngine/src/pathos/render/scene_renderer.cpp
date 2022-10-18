@@ -174,13 +174,19 @@ namespace pathos {
 		}
 		// Do this everytime as reallocSceneTextures() might recreate GL textures.
 		{
-			GLenum gbuffer_draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+			GLenum gbuffer_draw_buffers[] = {
+				GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1,
+				GL_COLOR_ATTACHMENT2,
+				GL_COLOR_ATTACHMENT3,
+			};
 			
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets.gbufferA, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets.gbufferB, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets.gbufferC, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT3, sceneRenderTargets.velocityMap, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
-			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
+			cmdList.namedFramebufferDrawBuffers(gbufferFBO, _countof(gbuffer_draw_buffers), gbuffer_draw_buffers);
 
 			pathos::checkFramebufferStatus(cmdList, gbufferFBO, "gbuffer setup is invalid");
 		}
@@ -548,6 +554,7 @@ namespace pathos {
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, color_zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, color_zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, color_zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 3, color_zero);
 		if (!bUseDepthPrepass) {
 			cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, sceneDepthClearValue);
 		}
@@ -604,6 +611,7 @@ namespace pathos {
 				{
 					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
+					uboData.prevModelTransform = proxy->prevModelMatrix;
 					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 

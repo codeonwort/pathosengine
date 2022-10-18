@@ -23,10 +23,10 @@ $NEED SHADINGMODEL
 
 #define FORWARD_SHADING (SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
-// #todo: Remove unnecessary members
+// 128 bytes
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
-	// 64 bytes (4 * 16)
 	mat4 modelTransform;
+	mat4 prevModelTransform;
 } uboPerObject;
 
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
@@ -107,6 +107,8 @@ struct MaterialAttributes_Translucent {
 	vec3 tangent;      // local space
 	vec3 bitangent;    // local space
 	vec2 texcoord;     // local space
+	vec4 clipPos;      // clip space
+	vec4 prevClipPos;  // clip space
 } interpolants;
 
 struct VertexShaderInput {
@@ -158,6 +160,7 @@ void main() {
 	mat4 proj_view = uboPerFrame.viewProjTransform;
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
+	vec4 prevPositionWS = uboPerObject.prevModelTransform * vec4(inPosition, 1.0);
 
 	VertexShaderInput vsi;
 	vsi.position = inPosition;
@@ -180,6 +183,10 @@ void main() {
 	// See SIGGRAPH2012 "Creating Vast Game Worlds" (p.11)
 	vec4 positionCS = proj_view * positionWS;
 	positionCS.xy += uboPerFrame.temporalJitter.xy * positionCS.w;
+
+	interpolants.clipPos = positionCS;
+	interpolants.prevClipPos = uboPerFrame.prevViewProjTransform * prevPositionWS;
+
 	gl_Position = positionCS;
 }
 
@@ -249,6 +256,11 @@ void main() {
 	packOutput2 = uvec4(0);
 #endif
 
+#if !FORWARD_SHADING
+	vec2 v1 = (interpolants.clipPos.xy / interpolants.clipPos.w) * 0.5 + vec2(0.5, 0.5);
+	vec2 v0 = (interpolants.prevClipPos.xy / interpolants.prevClipPos.w) * 0.5 + vec2(0.5, 0.5);
+	outVelocityMap = v1 - v0;
+#endif
 }
 
 #endif // FRAGMENT_SHADER

@@ -59,12 +59,15 @@ namespace pathos {
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getLocalMatrix();
+			proxy->prevModelMatrix = prevModelMatrix;
 			proxy->geometry = G;
 			proxy->material = M;
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
 			scene->addStaticMeshProxy(proxy);
 		}
+
+		prevModelMatrix = getLocalMatrix();
 	}
 
 	AABB StaticMeshComponent::getWorldBounds() const
