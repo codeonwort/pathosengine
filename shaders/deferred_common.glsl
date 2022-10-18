@@ -90,6 +90,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 inverseProjTransform;
 
 	vec4 projParams;
+	vec4 temporalJitter;
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 	vec4 time; // (currentTime, ?, ?, ?)

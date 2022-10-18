@@ -116,6 +116,9 @@ namespace pathos {
 		matrix4 prevView;
 		matrix4 prevInverseView;
 
+		static constexpr uint32 JITTER_SEQ_LENGTH = 16;
+		float temporalJitterSequenceX[JITTER_SEQ_LENGTH];
+		float temporalJitterSequenceY[JITTER_SEQ_LENGTH];
 	};
 
 }

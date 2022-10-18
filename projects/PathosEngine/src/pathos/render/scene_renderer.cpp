@@ -18,6 +18,7 @@
 #include "pathos/render/postprocessing/bloom.h"
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
+#include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
@@ -38,6 +39,7 @@
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
+#include "badger/math/random.h"
 
 namespace pathos {
 
@@ -66,7 +68,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
-	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
 	struct UBO_PerFrame {
 		matrix4               prevView; // For reprojection
@@ -79,6 +80,7 @@ namespace pathos {
 		matrix4               inverseProj;
 
 		vector4               projParams;
+		vector4               temporalJitter; // (x, y, ?, ?)
 		vector4               screenResolution; // (w, h, 1/w, 1/h)
 		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		vector4               time; // (currentTime, ?, ?, ?)
@@ -106,6 +108,14 @@ namespace pathos {
 		// ...
 
 		sceneRenderTargets.useGBuffer = true;
+
+		// [GDC2016] INSIDE uses 16 samples from Halton(2,3).
+		badger::HaltonSequence(2, JITTER_SEQ_LENGTH, temporalJitterSequenceX);
+		badger::HaltonSequence(3, JITTER_SEQ_LENGTH, temporalJitterSequenceY);
+		for (uint32 i = 0; i < JITTER_SEQ_LENGTH; ++i) {
+			temporalJitterSequenceX[i] = 2.0f * temporalJitterSequenceX[i] - 1.0f;
+			temporalJitterSequenceY[i] = 2.0f * temporalJitterSequenceY[i] - 1.0f;
+		}
 	}
 
 	SceneRenderer::~SceneRenderer() {
@@ -317,7 +327,7 @@ namespace pathos {
 			// #todo: Support nested gpu counters
 			SCOPED_GPU_COUNTER(PostProcessing);
 
-			const EAntiAliasingMethod antiAliasing = (EAntiAliasingMethod)badger::clamp(0, cvar_anti_aliasing.getInt(), (int32)EAntiAliasingMethod::NumMethods);
+			const EAntiAliasingMethod antiAliasing = getAntiAliasingMethod();
 			const ESuperResolutionMethod superResMethod = pathos::getSuperResolutionMethod();
 
 			enum class EPostProcessOrder : uint8 {
@@ -391,11 +401,12 @@ namespace pathos {
 
 			// Post Process: Anti-aliasing
 			switch (antiAliasing) {
-			case EAntiAliasingMethod::NoAA:
-				// Do nothing
-				break;
-
-			case EAntiAliasingMethod::FXAA:
+				case EAntiAliasingMethod::NoAA:
+				{
+					// Do nothing
+					break;
+				}
+				case EAntiAliasingMethod::FXAA:
 				{
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
@@ -405,11 +416,18 @@ namespace pathos {
 					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
 
 					sceneAfterLastPP = aaRenderTarget;
+					break;
 				}
-				break;
-
-			default:
-				break;
+				case EAntiAliasingMethod::TAA:
+				{
+					// #todo-taa
+					break;
+				}
+				default:
+				{
+					CHECK_NO_ENTRY();
+					break;
+				}
 			}
 
 			// Super resolution
@@ -681,6 +699,16 @@ namespace pathos {
 		data.inverseProj  = glm::inverse(projMatrix);
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+
+		if (getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
+			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
+			float K = getTemporalJitterMultiplier();
+			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets.sceneWidth;
+			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets.sceneHeight;
+			data.temporalJitter.z = data.temporalJitter.w = 0.0f;
+		} else {
+			data.temporalJitter = vector4(0.0f);
+		}
 
 		data.screenResolution.x = (float)sceneRenderTargets.sceneWidth;
 		data.screenResolution.y = (float)sceneRenderTargets.sceneHeight;

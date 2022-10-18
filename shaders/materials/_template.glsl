@@ -178,7 +178,9 @@ void main() {
 
 	// #todo: Precision issue.
 	// See SIGGRAPH2012 "Creating Vast Game Worlds" (p.11)
-	gl_Position = proj_view * positionWS;
+	vec4 positionCS = proj_view * positionWS;
+	positionCS.xy += uboPerFrame.temporalJitter.xy * positionCS.w;
+	gl_Position = positionCS;
 }
 
 #endif // VERTEX_SHADER

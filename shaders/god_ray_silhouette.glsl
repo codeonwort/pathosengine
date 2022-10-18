@@ -19,7 +19,10 @@ void main() {
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
 
-	gl_Position = viewProj * positionWS;
+	vec4 positionCS = viewProj * positionWS;
+	positionCS.xy += uboPerFrame.temporalJitter.xy * positionCS.w;
+
+	gl_Position = positionCS;
 }
 
 #endif

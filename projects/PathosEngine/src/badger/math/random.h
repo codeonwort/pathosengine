@@ -1,8 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-
-#include "glm/vec3.hpp"
+#include "badger/types/vector_types.h"
 
 #include <random>
 #include <vector>
@@ -64,8 +63,14 @@ private:
 
 };
 
-glm::vec3 RandomInUnitSphere();
+vector3 RandomInUnitSphere();
 
 float Random();
 
-glm::vec3 RandomInUnitDisk();
+vector3 RandomInUnitDisk();
+
+namespace badger {
+
+	void HaltonSequence(uint32 base, uint32 numSamples, float* dest);
+
+}
