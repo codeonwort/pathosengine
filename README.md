@@ -23,14 +23,14 @@ OpenGL rendering library (for 3d graphics study)
   * Global illumination
     * Cascaded shadow map
     * Screen-space ambient occlusion
-    * Screen-space reflection
+    * Screen-space reflection (WIP)
     * Basic sky IBL
   * Volumetric clouds
   * Post processing
     * God ray (light shaft)
     * Bloom
     * Tone mapping
-    * Anti-aliasing (FXAA)
+    * Anti-aliasing (FXAA, TAA)
     * Super resolution (AMD FSR1)
     * Depth of field
   * Scene capture

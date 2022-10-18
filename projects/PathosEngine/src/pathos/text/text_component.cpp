@@ -31,6 +31,7 @@ namespace pathos {
 		proxy->doubleSided = true;
 		proxy->renderInternal = false;
 		proxy->modelMatrix = getLocalMatrix() * invertTextY;
+		proxy->prevModelMatrix = proxy->modelMatrix; // #todo-motion-blur
 		proxy->geometry = geom.get();
 		proxy->material = material.get();
 		// #todo-frustum-culling: Update worldBounds for text component

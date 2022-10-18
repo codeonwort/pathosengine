@@ -18,7 +18,9 @@
 #include "pathos/render/postprocessing/bloom.h"
 #include "pathos/render/postprocessing/tone_mapping.h"
 #include "pathos/render/postprocessing/depth_of_field.h"
+#include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/postprocessing/anti_aliasing_taa.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
 
@@ -38,6 +40,7 @@
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
+#include "badger/math/random.h"
 
 namespace pathos {
 
@@ -66,11 +69,8 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
-	static ConsoleVariable<int32> cvar_anti_aliasing("r.antialiasing.method", 1, "0 = disable, 1 = FXAA");
 
 	struct UBO_PerFrame {
-		matrix4               prevView; // For reprojection
-		matrix4               prevInverseView; // For reprojection
 		matrix4               view;
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
@@ -78,7 +78,13 @@ namespace pathos {
 		matrix4               proj;
 		matrix4               inverseProj;
 
+		// For reprojection
+		matrix4               prevView;
+		matrix4               prevInverseView;
+		matrix4               prevViewProj;
+
 		vector4               projParams;
+		vector4               temporalJitter; // (x, y, ?, ?)
 		vector4               screenResolution; // (w, h, 1/w, 1/h)
 		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
 		vector4               time; // (currentTime, ?, ?, ?)
@@ -106,6 +112,14 @@ namespace pathos {
 		// ...
 
 		sceneRenderTargets.useGBuffer = true;
+
+		// [GDC2016] INSIDE uses 16 samples from Halton(2,3).
+		badger::HaltonSequence(2, JITTER_SEQ_LENGTH, temporalJitterSequenceX);
+		badger::HaltonSequence(3, JITTER_SEQ_LENGTH, temporalJitterSequenceY);
+		for (uint32 i = 0; i < JITTER_SEQ_LENGTH; ++i) {
+			temporalJitterSequenceX[i] = 2.0f * temporalJitterSequenceX[i] - 1.0f;
+			temporalJitterSequenceY[i] = 2.0f * temporalJitterSequenceY[i] - 1.0f;
+		}
 	}
 
 	SceneRenderer::~SceneRenderer() {
@@ -160,13 +174,19 @@ namespace pathos {
 		}
 		// Do this everytime as reallocSceneTextures() might recreate GL textures.
 		{
-			GLenum gbuffer_draw_buffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+			GLenum gbuffer_draw_buffers[] = {
+				GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1,
+				GL_COLOR_ATTACHMENT2,
+				GL_COLOR_ATTACHMENT3,
+			};
 			
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets.gbufferA, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets.gbufferB, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets.gbufferC, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT3, sceneRenderTargets.velocityMap, 0);
 			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
-			cmdList.namedFramebufferDrawBuffers(gbufferFBO, 3, gbuffer_draw_buffers);
+			cmdList.namedFramebufferDrawBuffers(gbufferFBO, _countof(gbuffer_draw_buffers), gbuffer_draw_buffers);
 
 			pathos::checkFramebufferStatus(cmdList, gbufferFBO, "gbuffer setup is invalid");
 		}
@@ -317,7 +337,7 @@ namespace pathos {
 			// #todo: Support nested gpu counters
 			SCOPED_GPU_COUNTER(PostProcessing);
 
-			const EAntiAliasingMethod antiAliasing = (EAntiAliasingMethod)badger::clamp(0, cvar_anti_aliasing.getInt(), (int32)EAntiAliasingMethod::NumMethods);
+			const EAntiAliasingMethod antiAliasing = getAntiAliasingMethod();
 			const ESuperResolutionMethod superResMethod = pathos::getSuperResolutionMethod();
 
 			enum class EPostProcessOrder : uint8 {
@@ -391,11 +411,12 @@ namespace pathos {
 
 			// Post Process: Anti-aliasing
 			switch (antiAliasing) {
-			case EAntiAliasingMethod::NoAA:
-				// Do nothing
-				break;
-
-			case EAntiAliasingMethod::FXAA:
+				case EAntiAliasingMethod::NoAA:
+				{
+					// Do nothing
+					break;
+				}
+				case EAntiAliasingMethod::FXAA:
 				{
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
@@ -405,11 +426,32 @@ namespace pathos {
 					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
 
 					sceneAfterLastPP = aaRenderTarget;
+					break;
 				}
-				break;
+				case EAntiAliasingMethod::TAA:
+				{
+					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
+					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
 
-			default:
-				break;
+					taa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneColorHistory);
+					taa->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.sceneDepth);
+					taa->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.velocityMap);
+					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
+					taa->renderPostProcess(cmdList, fullscreenQuad.get());
+
+					copyTexture(cmdList,
+						aaRenderTarget, sceneRenderTargets.sceneColorHistory,
+						sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+
+					sceneAfterLastPP = aaRenderTarget;
+					break;
+				}
+				default:
+				{
+					CHECK_NO_ENTRY();
+					break;
+				}
 			}
 
 			// Super resolution
@@ -513,6 +555,7 @@ namespace pathos {
 		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, color_zero_ui);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, color_zero);
 		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, color_zero);
+		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 3, color_zero);
 		if (!bUseDepthPrepass) {
 			cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, sceneDepthClearValue);
 		}
@@ -569,6 +612,7 @@ namespace pathos {
 				{
 					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
+					uboData.prevModelTransform = proxy->prevModelMatrix;
 					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
@@ -666,13 +710,6 @@ namespace pathos {
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
-		if (frameCounter != 0) {
-			data.prevView        = prevView;
-			data.prevInverseView = prevInverseView;
-		} else {
-			data.prevView        = matrix4(1.0f);
-			data.prevInverseView = matrix4(1.0f);
-		}
 		data.view         = camera->getViewMatrix();
 		data.inverseView  = glm::inverse(data.view);
 		data.view3x3      = matrix3x4(data.view);
@@ -680,7 +717,29 @@ namespace pathos {
 		data.proj         = projMatrix;
 		data.inverseProj  = glm::inverse(projMatrix);
 
+		if (frameCounter != 0) {
+			data.prevView = prevView;
+			data.prevInverseView = prevInverseView;
+			data.prevViewProj = prevViewProj;
+		} else {
+			data.prevView = data.view;
+			data.prevInverseView = data.inverseView;
+			data.prevViewProj = data.viewProj;
+		}
+
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
+
+		if (getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
+			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
+			float K = getTemporalJitterMultiplier();
+			// It reduces the effectiveness of TAA, but also relax jittering when super resolution is enabled.
+			K /= getSuperResolutionScaleFactor();
+			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets.sceneWidth;
+			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets.sceneHeight;
+			data.temporalJitter.z = data.temporalJitter.w = 0.0f;
+		} else {
+			data.temporalJitter = vector4(0.0f);
+		}
 
 		data.screenResolution.x = (float)sceneRenderTargets.sceneWidth;
 		data.screenResolution.y = (float)sceneRenderTargets.sceneHeight;
@@ -712,6 +771,7 @@ namespace pathos {
 
 		prevView = data.view;
 		prevInverseView = data.inverseView;
+		prevViewProj = data.viewProj;
 	}
 
 }
@@ -748,6 +808,7 @@ namespace pathos {
 	std::unique_ptr<class BloomPass>               SceneRenderer::bloomPass;
 	std::unique_ptr<class ToneMapping>             SceneRenderer::toneMapping;
 	std::unique_ptr<class FXAA>                    SceneRenderer::fxaa;
+	uniquePtr<class TAA>                           SceneRenderer::taa;
 	std::unique_ptr<class FSR1>                    SceneRenderer::fsr1;
 	std::unique_ptr<class DepthOfField>            SceneRenderer::depthOfField;
 
@@ -815,6 +876,7 @@ namespace pathos {
 			bloomPass = std::make_unique<BloomPass>();
 			toneMapping = std::make_unique<ToneMapping>();
 			fxaa = std::make_unique<FXAA>();
+			taa = pathos::makeUnique<TAA>();
 			fsr1 = pathos::makeUnique<FSR1>();
 			depthOfField = std::make_unique<DepthOfField>();
 
@@ -824,6 +886,7 @@ namespace pathos {
 			bloomPass->initializeResources(cmdList);
 			toneMapping->initializeResources(cmdList);
 			fxaa->initializeResources(cmdList);
+			taa->initializeResources(cmdList);
 			fsr1->initializeResources(cmdList);
 			depthOfField->initializeResources(cmdList);
 		}
@@ -862,6 +925,7 @@ namespace pathos {
 		RELEASEPASS(bloomPass);
 		RELEASEPASS(toneMapping);
 		RELEASEPASS(fxaa);
+		RELEASEPASS(taa);
 		RELEASEPASS(fsr1);
 		RELEASEPASS(depthOfField);
 

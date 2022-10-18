@@ -115,6 +115,7 @@ namespace pathos {
 				{
 					Material::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
+					uboData.prevModelTransform = proxy->prevModelMatrix;
 					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 

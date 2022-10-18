@@ -197,7 +197,10 @@ namespace pathos {
 
 		// Anti-aliasing
 		static constexpr GLenum PF_sceneColorAA = GL_RGBA16F;
+		static constexpr GLenum PF_velocityMap = GL_RG16F;
 		reallocTexture2D(sceneColorAA, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorAA");
+		reallocTexture2D(sceneColorHistory, PF_sceneColorAA, sceneWidth, sceneHeight, "sceneColorHistory");
+		reallocTexture2D(velocityMap, PF_velocityMap, sceneWidth, sceneHeight, "velocityMap");
 
 		// Tone mapping
 		reallocTexture2D(sceneColorToneMapped, GL_RGBA16F, sceneWidth, sceneHeight, "sceneColorToneMapped");
@@ -252,6 +255,8 @@ namespace pathos {
 		safe_release(sceneColorHalfRes);
 		safe_release(sceneDepth);
 		safe_release(sceneColorAA);
+		safe_release(sceneColorHistory);
+		safe_release(velocityMap);
 		safe_release(sceneColorUpscaledTemp);
 		safe_release(sceneColorUpscaled);
 		safe_release(sceneFinal);

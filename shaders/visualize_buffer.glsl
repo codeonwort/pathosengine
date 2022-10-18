@@ -13,6 +13,7 @@
 #define VIEWMODE_EMISSIVE    6
 #define VIEWMODE_SSAO        7
 #define VIEWMODE_SSR         8
+#define VIEWMODE_VELOCITY    9
 
 in VS_OUT {
 	vec2 screenUV;
@@ -28,6 +29,7 @@ layout (binding = 2) uniform sampler2D gbuf1;
 layout (binding = 3) uniform usampler2D gbuf2;
 layout (binding = 4) uniform sampler2D ssaoMap;
 layout (binding = 5) uniform sampler2D ssr;
+layout (binding = 6) uniform sampler2D velocityMap;
 
 layout (location = 0) out vec4 outColor;
 
@@ -58,5 +60,8 @@ void main() {
 		outColor = vec4(vec3(ssao), 1.0);
 	} else if (viewmode == VIEWMODE_SSR) {
 		outColor = vec4(texture2D(ssr, screenUV).rgb, 1.0);
+	} else if (viewmode == VIEWMODE_VELOCITY) {
+		float fps = 144.0;
+		outColor = vec4(abs(texture2D(velocityMap, screenUV).rg) * fps, 0.0, 1.0);
 	}
 }
