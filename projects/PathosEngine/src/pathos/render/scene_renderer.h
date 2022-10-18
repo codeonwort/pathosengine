@@ -64,6 +64,7 @@ namespace pathos {
 		static std::unique_ptr<class BloomPass>             bloomPass;
 		static std::unique_ptr<class ToneMapping>           toneMapping;
 		static std::unique_ptr<class FXAA>                  fxaa;
+		static uniquePtr<class TAA>                         taa;
 		static uniquePtr<class FSR1>                        fsr1;
 		static std::unique_ptr<class DepthOfField>          depthOfField;
 

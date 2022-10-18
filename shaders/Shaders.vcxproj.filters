@@ -73,5 +73,6 @@
     <None Include="fsr1_wrapper_rcas.glsl" />
     <None Include="fsr1_wrapper_common.glsl" />
     <None Include="materials\gltf_opaque.glsl" />
+    <None Include="temporal_anti_aliasing.glsl" />
   </ItemGroup>
 </Project>

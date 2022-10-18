@@ -20,6 +20,7 @@
 #include "pathos/render/postprocessing/depth_of_field.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/render/postprocessing/anti_aliasing_fxaa.h"
+#include "pathos/render/postprocessing/anti_aliasing_taa.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
 
@@ -420,7 +421,19 @@ namespace pathos {
 				}
 				case EAntiAliasingMethod::TAA:
 				{
-					// #todo-taa
+					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
+					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
+
+					taa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
+					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneColorHistory);
+					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
+					taa->renderPostProcess(cmdList, fullscreenQuad.get());
+
+					copyTexture(cmdList,
+						aaRenderTarget, sceneRenderTargets.sceneColorHistory,
+						sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+
+					sceneAfterLastPP = aaRenderTarget;
 					break;
 				}
 				default:
@@ -776,6 +789,7 @@ namespace pathos {
 	std::unique_ptr<class BloomPass>               SceneRenderer::bloomPass;
 	std::unique_ptr<class ToneMapping>             SceneRenderer::toneMapping;
 	std::unique_ptr<class FXAA>                    SceneRenderer::fxaa;
+	uniquePtr<class TAA>                           SceneRenderer::taa;
 	std::unique_ptr<class FSR1>                    SceneRenderer::fsr1;
 	std::unique_ptr<class DepthOfField>            SceneRenderer::depthOfField;
 
@@ -843,6 +857,7 @@ namespace pathos {
 			bloomPass = std::make_unique<BloomPass>();
 			toneMapping = std::make_unique<ToneMapping>();
 			fxaa = std::make_unique<FXAA>();
+			taa = pathos::makeUnique<TAA>();
 			fsr1 = pathos::makeUnique<FSR1>();
 			depthOfField = std::make_unique<DepthOfField>();
 
@@ -852,6 +867,7 @@ namespace pathos {
 			bloomPass->initializeResources(cmdList);
 			toneMapping->initializeResources(cmdList);
 			fxaa->initializeResources(cmdList);
+			taa->initializeResources(cmdList);
 			fsr1->initializeResources(cmdList);
 			depthOfField->initializeResources(cmdList);
 		}
@@ -890,6 +906,7 @@ namespace pathos {
 		RELEASEPASS(bloomPass);
 		RELEASEPASS(toneMapping);
 		RELEASEPASS(fxaa);
+		RELEASEPASS(taa);
 		RELEASEPASS(fsr1);
 		RELEASEPASS(depthOfField);
 
