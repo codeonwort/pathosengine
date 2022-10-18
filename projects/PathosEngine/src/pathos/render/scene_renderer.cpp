@@ -71,14 +71,17 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 
 	struct UBO_PerFrame {
-		matrix4               prevView; // For reprojection
-		matrix4               prevInverseView; // For reprojection
 		matrix4               view;
 		matrix4               inverseView;
 		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
 		matrix4               viewProj;
 		matrix4               proj;
 		matrix4               inverseProj;
+
+		// For reprojection
+		matrix4               prevView;
+		matrix4               prevInverseView;
+		matrix4               prevViewProj;
 
 		vector4               projParams;
 		vector4               temporalJitter; // (x, y, ?, ?)
@@ -426,6 +429,7 @@ namespace pathos {
 
 					taa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneColorHistory);
+					taa->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.sceneDepth);
 					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
 					taa->renderPostProcess(cmdList, fullscreenQuad.get());
 
@@ -697,19 +701,22 @@ namespace pathos {
 
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 
-		if (frameCounter != 0) {
-			data.prevView        = prevView;
-			data.prevInverseView = prevInverseView;
-		} else {
-			data.prevView        = matrix4(1.0f);
-			data.prevInverseView = matrix4(1.0f);
-		}
 		data.view         = camera->getViewMatrix();
 		data.inverseView  = glm::inverse(data.view);
 		data.view3x3      = matrix3x4(data.view);
 		data.viewProj     = camera->getViewProjectionMatrix();
 		data.proj         = projMatrix;
 		data.inverseProj  = glm::inverse(projMatrix);
+
+		if (frameCounter != 0) {
+			data.prevView = prevView;
+			data.prevInverseView = prevInverseView;
+			data.prevViewProj = prevViewProj;
+		} else {
+			data.prevView = data.view;
+			data.prevInverseView = data.inverseView;
+			data.prevViewProj = data.viewProj;
+		}
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
@@ -753,6 +760,7 @@ namespace pathos {
 
 		prevView = data.view;
 		prevInverseView = data.inverseView;
+		prevViewProj = data.viewProj;
 	}
 
 }

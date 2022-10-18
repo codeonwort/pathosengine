@@ -80,14 +80,16 @@ float pointLightFalloff(float r, float d) {
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
 layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
-	mat4x4 prevViewTransform; // For reprojection
-	mat4x4 prevInverseViewTransform; // For reprojection
 	mat4x4 viewTransform;
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
 	mat4x4 projTransform;
 	mat4x4 inverseProjTransform;
+
+	mat4x4 prevViewTransform;
+	mat4x4 prevInverseViewTransform;
+	mat4x4 prevViewProjTransform;
 
 	vec4 projParams;
 	vec4 temporalJitter;

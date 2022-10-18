@@ -116,6 +116,7 @@ namespace pathos {
 		Camera* camera;
 		matrix4 prevView;
 		matrix4 prevInverseView;
+		matrix4 prevViewProj;
 
 		static constexpr uint32 JITTER_SEQ_LENGTH = 16;
 		float temporalJitterSequenceX[JITTER_SEQ_LENGTH];
