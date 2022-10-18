@@ -732,6 +732,8 @@ namespace pathos {
 		if (getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
 			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
 			float K = getTemporalJitterMultiplier();
+			// It reduces the effectiveness of TAA, but also relax jittering when super resolution is enabled.
+			K /= getSuperResolutionScaleFactor();
 			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets.sceneWidth;
 			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets.sceneHeight;
 			data.temporalJitter.z = data.temporalJitter.w = 0.0f;
