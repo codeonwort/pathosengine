@@ -4,8 +4,13 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/util/engine_util.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
+	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
 
 	class ToneMappingVS : public ShaderStage {
 	public:
@@ -14,21 +19,30 @@ namespace pathos {
 		}
 	};
 
+	template<int32 ToneMapper>
 	class ToneMappingFS : public ShaderStage {
 	public:
 		ToneMappingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ToneMappingFS") {
+			addDefine("TONE_MAPPER", ToneMapper);
 			setFilepath("tone_mapping.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_ToneMapping, ToneMappingVS, ToneMappingFS);
+	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_Reinhard, ToneMappingVS, ToneMappingFS<0>);
+	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_ACES, ToneMappingVS, ToneMappingFS<1>);
+
+	ShaderProgram& getToneMapingProgram() {
+		int32 op = badger::clamp(0, cvar_tonemapping_operator.getInt(), 1);
+		if (op == 0) {
+			return FIND_SHADER_PROGRAM(Program_ToneMapping_Reinhard);
+		} else {
+			return FIND_SHADER_PROGRAM(Program_ToneMapping_ACES);
+		}
+	}
 
 }
 
 namespace pathos {
-
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
-	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList)
 	{
@@ -68,7 +82,7 @@ namespace pathos {
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ToneMapping);
+		ShaderProgram& program = getToneMapingProgram();
 		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
