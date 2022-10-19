@@ -48,7 +48,7 @@ namespace pathos {
 		ubo.init<UBO_VisualizeBuffer>();
 	}
 
-	void VisualizeBufferPass::destroyResources(RenderCommandList& cmdList) {
+	void VisualizeBufferPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &dummyVAO);
 	}
 

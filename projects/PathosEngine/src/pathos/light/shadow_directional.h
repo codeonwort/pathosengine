@@ -20,7 +20,7 @@ namespace pathos {
 		virtual ~DirectionalShadowMap();
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera);
 		

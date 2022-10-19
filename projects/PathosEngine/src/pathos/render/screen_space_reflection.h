@@ -18,7 +18,7 @@ namespace pathos {
 		~ScreenSpaceReflectionPass();
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void renderScreenSpaceReflection(
 			RenderCommandList& cmdList,

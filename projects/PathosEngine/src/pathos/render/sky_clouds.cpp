@@ -94,7 +94,7 @@ namespace pathos {
 		ubo.init<UBO_VolumetricCloud>();
 	}
 
-	void VolumetricCloudPass::destroyResources(RenderCommandList& cmdList)
+	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList)
 	{
 		//
 	}

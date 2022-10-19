@@ -18,7 +18,7 @@ namespace pathos {
 		virtual ~OmniShadowPass() = default;
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 		void renderShadowMaps(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera);
 
 	private:

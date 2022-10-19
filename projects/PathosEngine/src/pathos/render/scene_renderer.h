@@ -28,45 +28,45 @@ namespace pathos {
 		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
-		static std::unique_ptr<class Material> fallbackMaterial;
-		static std::unique_ptr<class PlaneGeometry> fullscreenQuad;
+		static uniquePtr<class Material> fallbackMaterial;
+		static uniquePtr<class PlaneGeometry> fullscreenQuad;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
-		static std::unique_ptr<UniformBuffer> ubo_perFrame;
+		static uniquePtr<UniformBuffer> ubo_perFrame;
 
 		// Local & global illumination
-		static std::unique_ptr<DirectLightingPass>          directLightingPass;
-		static std::unique_ptr<IndirectLightingPass>        indirectLightingPass;
-		static std::unique_ptr<ScreenSpaceReflectionPass>   screenSpaceReflectionPass;
+		static uniquePtr<DirectLightingPass>          directLightingPass;
+		static uniquePtr<IndirectLightingPass>        indirectLightingPass;
+		static uniquePtr<ScreenSpaceReflectionPass>   screenSpaceReflectionPass;
 
 		// Unlit
-		static std::unique_ptr<ResolveUnlitPass>            resolveUnlitPass;
+		static uniquePtr<ResolveUnlitPass>            resolveUnlitPass;
 
 		// Sky & atmosphere
-		static std::unique_ptr<class SkyboxPass>            skyboxPass;
-		static std::unique_ptr<class AnselSkyPass>          anselSkyPass;
-		static std::unique_ptr<class SkyAtmospherePass>     skyAtmospherePass;
-		static std::unique_ptr<class VolumetricCloudPass>   volumetricCloud;
+		static uniquePtr<class SkyboxPass>            skyboxPass;
+		static uniquePtr<class AnselSkyPass>          anselSkyPass;
+		static uniquePtr<class SkyAtmospherePass>     skyAtmospherePass;
+		static uniquePtr<class VolumetricCloudPass>   volumetricCloud;
 
 		// Translucency
-		static std::unique_ptr<class TranslucencyRendering> translucency_pass;
+		static uniquePtr<class TranslucencyRendering> translucency_pass;
 
 		// Full-screen processing
-		static std::unique_ptr<class DepthPrepass>          depthPrepass;
-		static std::unique_ptr<DirectionalShadowMap>        sunShadowMap;
-		static std::unique_ptr<OmniShadowPass>              omniShadowPass;
-		static std::unique_ptr<class VisualizeBufferPass>   visualizeBuffer;
+		static uniquePtr<class DepthPrepass>          depthPrepass;
+		static uniquePtr<DirectionalShadowMap>        sunShadowMap;
+		static uniquePtr<OmniShadowPass>              omniShadowPass;
+		static uniquePtr<class VisualizeBufferPass>   visualizeBuffer;
 
 		// Post-processing
-		static std::unique_ptr<class GodRay>                godRay;
-		static std::unique_ptr<class SSAO>                  ssao;
-		static std::unique_ptr<class BloomSetup>            bloomSetup;
-		static std::unique_ptr<class BloomPass>             bloomPass;
-		static std::unique_ptr<class ToneMapping>           toneMapping;
-		static std::unique_ptr<class FXAA>                  fxaa;
-		static uniquePtr<class TAA>                         taa;
-		static uniquePtr<class FSR1>                        fsr1;
-		static std::unique_ptr<class DepthOfField>          depthOfField;
+		static uniquePtr<class GodRay>                godRay;
+		static uniquePtr<class SSAO>                  ssao;
+		static uniquePtr<class BloomSetup>            bloomSetup;
+		static uniquePtr<class BloomPass>             bloomPass;
+		static uniquePtr<class ToneMapping>           toneMapping;
+		static uniquePtr<class FXAA>                  fxaa;
+		static uniquePtr<class TAA>                   taa;
+		static uniquePtr<class FSR1>                  fsr1;
+		static uniquePtr<class DepthOfField>          depthOfField;
 
 	public:
 		SceneRenderer();
@@ -112,8 +112,8 @@ namespace pathos {
 		GLuint fboScreenshot = 0; // Dummy FBO to read screenshot.
 
 		// temporary save
-		SceneProxy* scene;
-		Camera* camera;
+		SceneProxy* scene = nullptr;
+		Camera* camera = nullptr;
 		matrix4 prevView;
 		matrix4 prevInverseView;
 		matrix4 prevViewProj;

@@ -77,7 +77,7 @@ namespace pathos {
 		~VolumetricCloudPass() = default;
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene);
 

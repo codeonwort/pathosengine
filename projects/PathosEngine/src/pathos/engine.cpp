@@ -198,35 +198,29 @@ namespace pathos {
 		createParams.onMouseDown       = Engine::onMouseDown;
 		createParams.onMouseUp         = Engine::onMouseUp;
 
-		mainWindow = std::make_unique<GUIWindow>();
+		mainWindow = makeUnique<GUIWindow>();
 		mainWindow->create(createParams);
 
 		LOG(LogInfo, "Initialize the main window");
 		return true;
 	}
 
-	bool Engine::initializeInput()
-	{
-		inputSystem = std::make_unique<InputSystem>();
-
+	bool Engine::initializeInput() {
+		inputSystem = makeUnique<InputSystem>();
 		return true;
 	}
 
-	bool Engine::initializeAssetStreamer()
-	{
-		assetStreamer = std::make_unique<AssetStreamer>();
-
+	bool Engine::initializeAssetStreamer() {
+		assetStreamer = makeUnique<AssetStreamer>();
 		return true;
 	}
 
-	bool Engine::initializeImageLibrary()
-	{
+	bool Engine::initializeImageLibrary() {
 		pathos::initializeImageLibrary();
 		return true;
 	}
 
-	bool Engine::initializeFontSystem(RenderCommandList& cmdList)
-	{
+	bool Engine::initializeFontSystem(RenderCommandList& cmdList) {
 		if (FontManager::get().init() == false) {
 			LOG(LogError, "[ERROR] Failed to initialize font manager");
 			return false;
@@ -238,8 +232,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeConsole()
-	{
+	bool Engine::initializeConsole() {
 		gConsole = new ConsoleWindow(renderThread->getRenderer2D());
 		if (gConsole->initialize(conf.windowWidth, std::min(conf.windowHeight, CONSOLE_WINDOW_MIN_HEIGHT)) == false) {
 			LOG(LogError, "Failed to initialize console window");

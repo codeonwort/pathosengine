@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/gl_handles.h"
+#include "pathos/smart_pointer.h"
 #include "pathos/input/input_system.h"
 #include "pathos/render/render_command_list.h"
 
@@ -171,9 +172,9 @@ namespace pathos {
 
 		std::map<std::string, ExecProc> execMap;
 
-		std::unique_ptr<InputSystem> inputSystem;
+		uniquePtr<InputSystem> inputSystem;
 
-		std::unique_ptr<GUIWindow> mainWindow;
+		uniquePtr<GUIWindow> mainWindow;
 
 	// Render thread
 	private:
@@ -197,7 +198,7 @@ namespace pathos {
 
 	// Utility thread
 	private:
-		std::unique_ptr<AssetStreamer> assetStreamer;
+		uniquePtr<AssetStreamer> assetStreamer;
 
 	};
 

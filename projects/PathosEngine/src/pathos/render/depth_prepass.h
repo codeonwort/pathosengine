@@ -20,7 +20,7 @@ namespace pathos {
 
 	public:
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 

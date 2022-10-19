@@ -19,7 +19,7 @@ namespace pathos {
 		~DirectLightingPass();
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		// Call before render()
 		void bindFramebuffer(RenderCommandList& cmdList);

@@ -4,7 +4,7 @@
 #include "pathos/text/font_mgr.h"
 #include "pathos/material/material.h"
 #include "pathos/actor/scene_component.h"
-#include <memory>
+#include "pathos/smart_pointer.h"
 
 namespace pathos {
 
@@ -23,8 +23,8 @@ namespace pathos {
 
 	private:
 		std::wstring text;
-		std::unique_ptr<TextGeometry> geom;
-		std::unique_ptr<Material> material;
+		uniquePtr<TextGeometry> geom;
+		uniquePtr<Material> material;
 		FontDesc fontDesc;
 
 		bool dynamicDataDirty = false;

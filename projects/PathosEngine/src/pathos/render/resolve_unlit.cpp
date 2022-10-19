@@ -40,7 +40,7 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 	}
 
-	void ResolveUnlitPass::destroyResources(RenderCommandList& cmdList) {
+	void ResolveUnlitPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 		}

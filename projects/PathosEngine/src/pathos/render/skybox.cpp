@@ -50,7 +50,7 @@ namespace pathos {
 		ubo.init<UBO_Skybox>();
 	}
 
-	void SkyboxPass::destroyResources(RenderCommandList& cmdList) {
+	void SkyboxPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 

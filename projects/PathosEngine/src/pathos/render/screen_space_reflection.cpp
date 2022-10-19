@@ -168,7 +168,7 @@ namespace pathos {
 		uboRayTracing.init<UBO_ScreenSpaceRayTracing>();
 	}
 
-	void ScreenSpaceReflectionPass::destroyResources(RenderCommandList& cmdList) {
+	void ScreenSpaceReflectionPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo_HiZ);
 			gRenderDevice->deleteFramebuffers(1, &fbo_preintegration);

@@ -43,7 +43,7 @@ namespace pathos {
 		uniform_transform = 0;
 	}
 
-	void AnselSkyPass::destroyResources(RenderCommandList& cmdList) {
+	void AnselSkyPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 

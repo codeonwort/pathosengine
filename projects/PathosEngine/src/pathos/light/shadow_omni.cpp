@@ -56,7 +56,7 @@ namespace pathos {
 		ubo.init<UBO_OmniShadow>();
 	}
 
-	void OmniShadowPass::destroyResources(RenderCommandList& cmdList)
+	void OmniShadowPass::releaseResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}

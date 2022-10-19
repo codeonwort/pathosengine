@@ -45,7 +45,7 @@ namespace pathos {
 		uboPerObject.init<Material::UBO_PerObject>();
 	}
 
-	void DepthPrepass::destroyResources(RenderCommandList& cmdList)
+	void DepthPrepass::releaseResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}

@@ -102,7 +102,7 @@ namespace pathos {
 		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
-	void SkyAtmospherePass::destroyResources(RenderCommandList& cmdList) {
+	void SkyAtmospherePass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		gRenderDevice->deleteVertexArrays(1, &vao);
 	}

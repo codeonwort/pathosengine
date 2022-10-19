@@ -211,7 +211,7 @@ namespace pathos {
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
-			fallbackMaterial = std::unique_ptr<Material>(Material::createMaterialInstance("solid_color"));
+			fallbackMaterial = uniquePtr<Material>(Material::createMaterialInstance("solid_color"));
 			fallbackMaterial->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 			fallbackMaterial->setConstantParameter("metallic", 0.0f);
 			fallbackMaterial->setConstantParameter("roughness", 0.0f);
@@ -778,46 +778,46 @@ namespace pathos {
 
 namespace pathos {
 	
-	std::unique_ptr<class Material>                SceneRenderer::fallbackMaterial;
-	std::unique_ptr<class PlaneGeometry>           SceneRenderer::fullscreenQuad;
-	GLuint                                         SceneRenderer::copyTextureFBO = 0;
+	uniquePtr<Material>                  SceneRenderer::fallbackMaterial;
+	uniquePtr<PlaneGeometry>             SceneRenderer::fullscreenQuad;
+	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	
-	std::unique_ptr<UniformBuffer>                 SceneRenderer::ubo_perFrame;
+	uniquePtr<UniformBuffer>             SceneRenderer::ubo_perFrame;
 	
-	std::unique_ptr<DirectLightingPass>            SceneRenderer::directLightingPass;
-	std::unique_ptr<IndirectLightingPass>          SceneRenderer::indirectLightingPass;
-	std::unique_ptr<ScreenSpaceReflectionPass>     SceneRenderer::screenSpaceReflectionPass;
+	uniquePtr<DirectLightingPass>        SceneRenderer::directLightingPass;
+	uniquePtr<IndirectLightingPass>      SceneRenderer::indirectLightingPass;
+	uniquePtr<ScreenSpaceReflectionPass> SceneRenderer::screenSpaceReflectionPass;
 
-	std::unique_ptr<ResolveUnlitPass>              SceneRenderer::resolveUnlitPass;
+	uniquePtr<ResolveUnlitPass>          SceneRenderer::resolveUnlitPass;
 
-	std::unique_ptr<class TranslucencyRendering>   SceneRenderer::translucency_pass;
+	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
 
-	std::unique_ptr<class SkyboxPass>              SceneRenderer::skyboxPass;
-	std::unique_ptr<class AnselSkyPass>            SceneRenderer::anselSkyPass;
-	std::unique_ptr<class SkyAtmospherePass>       SceneRenderer::skyAtmospherePass;
-	std::unique_ptr<class VolumetricCloudPass>     SceneRenderer::volumetricCloud;
+	uniquePtr<SkyboxPass>                SceneRenderer::skyboxPass;
+	uniquePtr<AnselSkyPass>              SceneRenderer::anselSkyPass;
+	uniquePtr<SkyAtmospherePass>         SceneRenderer::skyAtmospherePass;
+	uniquePtr<VolumetricCloudPass>       SceneRenderer::volumetricCloud;
 
-	std::unique_ptr<class DepthPrepass>            SceneRenderer::depthPrepass;
-	std::unique_ptr<DirectionalShadowMap>          SceneRenderer::sunShadowMap;
-	std::unique_ptr<OmniShadowPass>                SceneRenderer::omniShadowPass;
-	std::unique_ptr<class VisualizeBufferPass>     SceneRenderer::visualizeBuffer;
+	uniquePtr<DepthPrepass>              SceneRenderer::depthPrepass;
+	uniquePtr<DirectionalShadowMap>      SceneRenderer::sunShadowMap;
+	uniquePtr<OmniShadowPass>            SceneRenderer::omniShadowPass;
+	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 
-	std::unique_ptr<class GodRay>                  SceneRenderer::godRay;
-	std::unique_ptr<class SSAO>                    SceneRenderer::ssao;
-	std::unique_ptr<class BloomSetup>              SceneRenderer::bloomSetup;
-	std::unique_ptr<class BloomPass>               SceneRenderer::bloomPass;
-	std::unique_ptr<class ToneMapping>             SceneRenderer::toneMapping;
-	std::unique_ptr<class FXAA>                    SceneRenderer::fxaa;
-	uniquePtr<class TAA>                           SceneRenderer::taa;
-	std::unique_ptr<class FSR1>                    SceneRenderer::fsr1;
-	std::unique_ptr<class DepthOfField>            SceneRenderer::depthOfField;
+	uniquePtr<GodRay>                    SceneRenderer::godRay;
+	uniquePtr<SSAO>                      SceneRenderer::ssao;
+	uniquePtr<BloomSetup>                SceneRenderer::bloomSetup;
+	uniquePtr<BloomPass>                 SceneRenderer::bloomPass;
+	uniquePtr<ToneMapping>               SceneRenderer::toneMapping;
+	uniquePtr<FXAA>                      SceneRenderer::fxaa;
+	uniquePtr<TAA>                       SceneRenderer::taa;
+	uniquePtr<FSR1>                      SceneRenderer::fsr1;
+	uniquePtr<DepthOfField>              SceneRenderer::depthOfField;
 
 	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fullscreenQuad = std::make_unique<PlaneGeometry>(2.0f, 2.0f);
+		fullscreenQuad = makeUnique<PlaneGeometry>(2.0f, 2.0f);
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
 
-		ubo_perFrame = std::make_unique<UniformBuffer>();
+		ubo_perFrame = makeUnique<UniformBuffer>();
 		ubo_perFrame->init<UBO_PerFrame>("UBO_PerFrame");
 
 		const int32 uboMaxSize = gRenderDevice->getCapabilities().glMaxUniformBlockSize;
@@ -829,10 +829,10 @@ namespace pathos {
 		}
 
 		{
-			directLightingPass = std::make_unique<DirectLightingPass>();
-			indirectLightingPass = std::make_unique<IndirectLightingPass>();
-			screenSpaceReflectionPass = std::make_unique<ScreenSpaceReflectionPass>();
-			translucency_pass = std::make_unique<TranslucencyRendering>();
+			directLightingPass = makeUnique<DirectLightingPass>();
+			indirectLightingPass = makeUnique<IndirectLightingPass>();
+			screenSpaceReflectionPass = makeUnique<ScreenSpaceReflectionPass>();
+			translucency_pass = makeUnique<TranslucencyRendering>();
 
 			directLightingPass->initializeResources(cmdList);
 			indirectLightingPass->initializeResources(cmdList);
@@ -840,28 +840,28 @@ namespace pathos {
 			translucency_pass->initializeResources(cmdList);
 		}
 
-		resolveUnlitPass = std::make_unique<ResolveUnlitPass>();
+		resolveUnlitPass = makeUnique<ResolveUnlitPass>();
 		resolveUnlitPass->initializeResources(cmdList);
 
 		{
-			skyboxPass = std::make_unique<SkyboxPass>();
+			skyboxPass = makeUnique<SkyboxPass>();
 			skyboxPass->initializeResources(cmdList);
 
-			anselSkyPass = std::make_unique<AnselSkyPass>();
+			anselSkyPass = makeUnique<AnselSkyPass>();
 			anselSkyPass->initializeResources(cmdList);
 
-			skyAtmospherePass = std::make_unique<SkyAtmospherePass>();
+			skyAtmospherePass = makeUnique<SkyAtmospherePass>();
 			skyAtmospherePass->initializeResources(cmdList);
 
-			volumetricCloud = std::make_unique<VolumetricCloudPass>();
+			volumetricCloud = makeUnique<VolumetricCloudPass>();
 			volumetricCloud->initializeResources(cmdList);
 		}
 
 		{
-			depthPrepass = std::make_unique<DepthPrepass>();
-			sunShadowMap = std::make_unique<DirectionalShadowMap>();
-			omniShadowPass = std::make_unique<OmniShadowPass>();
-			visualizeBuffer = std::make_unique<VisualizeBufferPass>();
+			depthPrepass = makeUnique<DepthPrepass>();
+			sunShadowMap = makeUnique<DirectionalShadowMap>();
+			omniShadowPass = makeUnique<OmniShadowPass>();
+			visualizeBuffer = makeUnique<VisualizeBufferPass>();
 
 			depthPrepass->initializeResources(cmdList);
 			sunShadowMap->initializeResources(cmdList);
@@ -870,15 +870,15 @@ namespace pathos {
 		}
 
 		{
-			godRay = std::make_unique<GodRay>();
-			ssao = std::make_unique<SSAO>();
-			bloomSetup = std::make_unique<BloomSetup>();
-			bloomPass = std::make_unique<BloomPass>();
-			toneMapping = std::make_unique<ToneMapping>();
-			fxaa = std::make_unique<FXAA>();
+			godRay = makeUnique<GodRay>();
+			ssao = makeUnique<SSAO>();
+			bloomSetup = makeUnique<BloomSetup>();
+			bloomPass = makeUnique<BloomPass>();
+			toneMapping = makeUnique<ToneMapping>();
+			fxaa = makeUnique<FXAA>();
 			taa = pathos::makeUnique<TAA>();
 			fsr1 = pathos::makeUnique<FSR1>();
-			depthOfField = std::make_unique<DepthOfField>();
+			depthOfField = makeUnique<DepthOfField>();
 
 			godRay->initializeResources(cmdList);
 			ssao->initializeResources(cmdList);
@@ -899,25 +899,24 @@ namespace pathos {
 
 		ubo_perFrame.release();
 
-#define DESTROYPASS(pass) { pass->destroyResources(cmdList); pass.reset(); }
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
 
-		DESTROYPASS(directLightingPass);
-		DESTROYPASS(indirectLightingPass);
-		DESTROYPASS(screenSpaceReflectionPass);
+		RELEASEPASS(directLightingPass);
+		RELEASEPASS(indirectLightingPass);
+		RELEASEPASS(screenSpaceReflectionPass);
 		RELEASEPASS(translucency_pass);
 
-		DESTROYPASS(resolveUnlitPass);
+		RELEASEPASS(resolveUnlitPass);
 
-		DESTROYPASS(skyboxPass);
-		DESTROYPASS(anselSkyPass);
-		DESTROYPASS(skyAtmospherePass);
-		DESTROYPASS(volumetricCloud);
+		RELEASEPASS(skyboxPass);
+		RELEASEPASS(anselSkyPass);
+		RELEASEPASS(skyAtmospherePass);
+		RELEASEPASS(volumetricCloud);
 
-		DESTROYPASS(depthPrepass);
-		DESTROYPASS(sunShadowMap);
-		DESTROYPASS(omniShadowPass);
-		DESTROYPASS(visualizeBuffer);
+		RELEASEPASS(depthPrepass);
+		RELEASEPASS(sunShadowMap);
+		RELEASEPASS(omniShadowPass);
+		RELEASEPASS(visualizeBuffer);
 
 		RELEASEPASS(godRay);
 		RELEASEPASS(ssao);
@@ -929,7 +928,6 @@ namespace pathos {
 		RELEASEPASS(fsr1);
 		RELEASEPASS(depthOfField);
 
-#undef DESTROYPASS
 #undef RELEASEPASS
 
 		cmdList.flushAllCommands();

@@ -3,6 +3,7 @@
 #include "badger/types/noncopyable.h"
 
 #include "render_command_list.h"
+#include "pathos/smart_pointer.h"
 #include "pathos/thread/engine_thread.h"
 #include "pathos/util/gl_debug_group.h"
 
@@ -104,12 +105,12 @@ namespace pathos {
 		void queryCapabilities();
 		void checkExtensions();
 
-		OpenGLDriverCapabilities           capabilities;
-		OpenGLExtensionSupport             extensionSupport;
+		OpenGLDriverCapabilities capabilities;
+		OpenGLExtensionSupport extensionSupport;
 
-		std::unique_ptr<RenderCommandList> immediate_command_list; // For render thread itself
-		std::unique_ptr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
-		std::unique_ptr<RenderCommandList> hook_command_list;
+		uniquePtr<RenderCommandList> immediate_command_list; // For render thread itself
+		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
+		uniquePtr<RenderCommandList> hook_command_list;
 	};
 
 	extern OpenGLDevice* gRenderDevice;

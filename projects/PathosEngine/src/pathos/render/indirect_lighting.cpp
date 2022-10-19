@@ -58,7 +58,7 @@ namespace pathos {
 		ubo.init<UBO_IndirectLighting>();
 	}
 
-	void IndirectLightingPass::destroyResources(RenderCommandList& cmdList) {
+	void IndirectLightingPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 		}

@@ -15,7 +15,7 @@ namespace pathos {
 		~ResolveUnlitPass();
 
 		void initializeResources(RenderCommandList& cmdList);
-		void destroyResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
 
 		void renderUnlit(
 			RenderCommandList& cmdList,

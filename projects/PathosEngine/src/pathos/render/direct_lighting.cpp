@@ -92,7 +92,7 @@ namespace pathos {
 		uboRectLight.init<UBO_DirectLighting<RectLightProxy>>("UBO_RectLight");
 	}
 
-	void DirectLightingPass::destroyResources(RenderCommandList& cmdList) {
+	void DirectLightingPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 			quad->dispose();

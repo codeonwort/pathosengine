@@ -61,7 +61,7 @@ namespace pathos {
 		ubo.init<UBO_CascadedShadowMap>("UBO_CascadedShadowMap");
 	}
 
-	void DirectionalShadowMap::destroyResources(RenderCommandList& cmdList) {
+	void DirectionalShadowMap::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 		}

@@ -134,9 +134,9 @@ namespace pathos {
 
 		// #todo-renderthread: Wanna get rid of deferred_command_list :/
 		// Create command lists
-		immediate_command_list = std::make_unique<RenderCommandList>("immediate");
-		deferred_command_list = std::make_unique<RenderCommandList>("deferred");
-		hook_command_list = std::make_unique<RenderCommandList>("hook");
+		immediate_command_list = makeUnique<RenderCommandList>("immediate");
+		deferred_command_list = makeUnique<RenderCommandList>("deferred");
+		hook_command_list = makeUnique<RenderCommandList>("hook");
 		immediate_command_list->setHookCommandList(hook_command_list.get());
 		deferred_command_list->setHookCommandList(hook_command_list.get());
 
