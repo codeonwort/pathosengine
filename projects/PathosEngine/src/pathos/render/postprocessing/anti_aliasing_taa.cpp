@@ -56,6 +56,7 @@ namespace pathos {
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneColorHistory
 		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // sceneDepth
 		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // velocityMap
+		const GLuint input4 = getInput(EPostProcessInput::PPI_4); // gbufferA
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // sceneColorAA or sceneFinal
 		CHECKF(output0 != 0, "Post processes do not write to the backbuffer anymore");
 
@@ -83,6 +84,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(1, input1);
 		cmdList.bindTextureUnit(2, input2);
 		cmdList.bindTextureUnit(3, input3);
+		cmdList.bindTextureUnit(4, input4);
 
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);

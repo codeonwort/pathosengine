@@ -17,6 +17,7 @@ layout (binding = 0) uniform sampler2D inSceneColor;
 layout (binding = 1) uniform sampler2D inSceneColorHistory;
 layout (binding = 2) uniform sampler2D inSceneDepth;
 layout (binding = 3) uniform sampler2D inVelocityMap;
+layout (binding = 4) uniform usampler2D inGBufferA;
 
 // --------------------------------------------------------
 // Output
@@ -71,6 +72,14 @@ void main() {
 
 		prevColor = texture(inSceneColorHistory, prevScreenUV);
 		prevColor = clamp(prevColor, neighborMin, neighborMax);
+
+		uint shadingModelID = texture(inGBufferA, screenUV).w;
+		// Probably sky, which does not generate motion vector.
+		// Even if its motion vector is valid, it's unlikely it will benefit from subpixel details,
+		// as sky atmosphere is analytical and sky cubemaps do not have spatial artifacts.
+		if (shadingModelID == 0) {
+			w = 0.0;
+		}
 	}
 
 	outSceneColor = (1.0 - w) * currColor + w * prevColor;

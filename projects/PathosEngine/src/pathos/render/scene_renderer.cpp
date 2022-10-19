@@ -437,6 +437,7 @@ namespace pathos {
 					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneColorHistory);
 					taa->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.sceneDepth);
 					taa->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.velocityMap);
+					taa->setInput(EPostProcessInput::PPI_4, sceneRenderTargets.gbufferA);
 					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
 					taa->renderPostProcess(cmdList, fullscreenQuad.get());
 
