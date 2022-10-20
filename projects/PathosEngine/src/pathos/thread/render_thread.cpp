@@ -83,8 +83,6 @@ namespace pathos {
 
 			renderThread->stopwatch.start();
 
-			SCOPED_CPU_COUNTER(EngineRender);
-
 			const EngineConfig engineConfig(gEngine->getConfig());
 			const int32 screenWidth = engineConfig.windowWidth;
 			const int32 screenHeight = engineConfig.windowHeight;
@@ -177,8 +175,11 @@ namespace pathos {
 			immediateContext.endQuery(GL_TIME_ELAPSED);
 			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
 
-			immediateContext.flushAllCommands();
-			deferredContext.flushAllCommands();
+			{
+				SCOPED_CPU_COUNTER(ExecuteCommands);
+				immediateContext.flushAllCommands();
+				deferredContext.flushAllCommands();
+			}
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
 			// Get GPU profile
@@ -188,13 +189,16 @@ namespace pathos {
 				renderThread->lastGpuCounterTimes);
 
 			// Clear render resources for current frame.
-			if (sceneProxy != nullptr) {
-				delete sceneProxy;
-				sceneProxy = nullptr;
-			}
-			if (overlayProxy != nullptr) {
-				delete overlayProxy;
-				overlayProxy = nullptr;
+			{
+				SCOPED_CPU_COUNTER(DestroyRenderProxy);
+				if (sceneProxy != nullptr) {
+					delete sceneProxy;
+					sceneProxy = nullptr;
+				}
+				if (overlayProxy != nullptr) {
+					delete overlayProxy;
+					overlayProxy = nullptr;
+				}
 			}
 
 			// Let subsystems handle the end of rendering.
@@ -213,10 +217,14 @@ namespace pathos {
 			//
 			// End a frame
 			//
-			glFinish();
+			{
+				SCOPED_CPU_COUNTER(WaitForGPU);
+				glFinish();
+			}
 			OpenGLContextManager::returnContext();
 			// Wait here and let GUI to take GL context and swap buffers.
 			if (bNewSceneRendered) {
+				SCOPED_CPU_COUNTER(Present);
 				gEngine->updateMainWindow_renderThread();
 			}
 		} // End of render thread loop

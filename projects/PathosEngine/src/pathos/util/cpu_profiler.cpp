@@ -56,7 +56,17 @@ namespace pathos {
 		purge_milestone.store(0);
 
 		gEngine->registerExec("profile_cpu", [](const std::string& command) {
-			CpuProfiler::getInstance().dumpCPUProfile();
+			int32 numFrames;
+			bool bText = false;
+
+			char fmt[16] = "json";
+			int ret = sscanf_s(command.c_str(), "profile_cpu %d %s", &numFrames, fmt, (unsigned)_countof(fmt));
+			if (ret <= 0) {
+				numFrames = 5;
+			} else if (ret == 2) {
+				bText = (0 == strcmp(fmt, "text")) || (0 == strcmp(fmt, "txt"));
+			}
+			CpuProfiler::getInstance().dumpCPUProfile(numFrames, !bText);
 		});
 	}
 
@@ -65,28 +75,22 @@ namespace pathos {
 		registerThread(threadId, inDebugName);
 	}
 	void CpuProfiler::registerThread(uint32 threadId, const char* inDebugName) {
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
 		CHECKF(profiles.find(threadId) == profiles.end(), "Current thread is already registered");
 		profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
 	}
 
-	void CpuProfiler::beginCheckpoint(uint32 frameCounter)
-	{
-		// #todo-stat: Using logical core ID is simply wrong. Use thread ID.
-		const uint32 coreIndex = CPU::getCurrentLogicalCoreIndex();
-
+	void CpuProfiler::beginCheckpoint(uint32 frameCounter) {
+		std::lock_guard<std::mutex> cpLock(checkpointMutex);
 		ProfileCheckpoint cp;
-		cp.startTime = globalClocks[coreIndex].stop();
-		cp.logicalCoreIndex = coreIndex;
+		cp.startTime = getGlobalClockTime();
 		cp.frameCounter = frameCounter;
-
 		checkpoints.emplace_back(cp);
 	}
 
-	void CpuProfiler::finishCheckpoint()
-	{
-		const uint32 coreIndex = CPU::getCurrentLogicalCoreIndex();
-		checkpoints[checkpoints.size() - 1].endTime = globalClocks[coreIndex].stop();
-
+	void CpuProfiler::finishCheckpoint() {
+		std::lock_guard<std::mutex> cpLock(checkpointMutex);
+		checkpoints[checkpoints.size() - 1].endTime = getGlobalClockTime();
 		if (checkpoints.size() > PURGE_BETWEEN_CHECKPOINTS) {
 			purgeEverything();
 		}
@@ -158,8 +162,15 @@ namespace pathos {
 		checkpoints.clear();
 	}
 
-	// #todo-cpu: Render 2D figure with this
-	void CpuProfiler::dumpCPUProfile() {
+	void CpuProfiler::dumpCPUProfile(int32 numFramesToDump, bool bChromeTracingFormat) {
+		if (checkpoints.size() == 0 || (checkpoints.size() == 1 && checkpoints[0].endTime < 0.0f)) {
+			LOG(LogInfo, "No CPU profile data exists");
+			return;
+		}
+
+		std::lock_guard<std::mutex> cpLock(checkpointMutex);
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
+
 		std::string filepath = pathos::getSolutionDir();
 		filepath += "log/";
 		pathos::createDirectory(filepath.c_str());
@@ -169,7 +180,11 @@ namespace pathos {
 		errno_t timeErr = ::localtime_s(&localTm, &now);
 		CHECKF(timeErr == 0, "Failed to get current time");
 		char timeBuffer[128];
-		::strftime(timeBuffer, sizeof(timeBuffer), "CPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
+		if (bChromeTracingFormat) {
+			::strftime(timeBuffer, sizeof(timeBuffer), "CPUProfile-%Y-%m-%d-%H-%M-%S.json", &localTm);
+		} else {
+			::strftime(timeBuffer, sizeof(timeBuffer), "CPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
+		}
 		filepath += std::string(timeBuffer);
 
 		std::fstream fs(filepath, std::fstream::out);
@@ -181,24 +196,89 @@ namespace pathos {
 		};
 
 		if (fs.is_open()) {
-			for (auto it = profiles.begin(); it != profiles.end(); ++it) {
-				const ProfilePerThread& profile = it->second;
-
-				if (profile.isEmpty()) {
-					continue;
-				}
-
-				fs << profile.debugName << std::endl;
-
-				size_t numItems = profile.items.size();
-				for (size_t i = 0; i < numItems; ++i) {
-					const ProfileItem& item = profile.items[i];
-					tab(item.tab + 1);
-					fs << item.name << ": " << item.elapsedMS << " ms" << std::endl;
-				}
-				fs << std::endl;
+			// Dump per frame checkpoint
+			int32 checkpointIxEnd = (int32)checkpoints.size() - 1;
+			if (checkpoints[checkpointIxEnd].endTime < 0.0f) {
+				checkpointIxEnd -= 1;
 			}
+			int32 checkpointIxStart = numFramesToDump <= 0 ? 0 : std::max(0, checkpointIxEnd - numFramesToDump);
 
+			// #todo-cpu: Naive double loop, but not critically slow for few frames.
+			// Can be optimized from O(MN) to O(M + N) if needed.
+			if (bChromeTracingFormat) {
+				char eventMsg[1024];
+				std::vector<std::string> events;
+				const uint32 pid = 0; // I don't need pid
+
+				float dumpStartTime = checkpoints[checkpointIxStart].startTime;
+				float dumpEndTime = checkpoints[checkpointIxEnd].endTime;
+
+				fs << "[" << '\n';
+				// Metadata events
+				for (auto it_p = profiles.begin(); it_p != profiles.end(); ++it_p) {
+					const uint32 tid = it_p->first;
+					const std::string tname = it_p->second.threadName;
+					sprintf_s(eventMsg, "{\"name\":\"thread_name\", \"ph\":\"M\", \"pid\":%u, \"tid\":%u, \"args\":{\"name\":\"%s\"}}",
+						pid, tid, tname.c_str());
+					fs << eventMsg;
+					fs << ",\n";
+				}
+				// Events
+				for (auto it_p = profiles.begin(); it_p != profiles.end(); ++it_p) {
+					const uint32 tid = it_p->first;
+					const ProfilePerThread& profile = it_p->second;
+					size_t numItems = profile.items.size();
+					for (size_t i = 0; i < numItems; ++i) {
+						const ProfileItem& item = profile.items[i];
+						if (dumpStartTime <= item.startTime && item.startTime <= dumpEndTime && item.elapsedMS > 0.0f) {
+							sprintf_s(eventMsg, "{\"name\":\"%s\", \"cat\":\"CPU\", \"ph\":\"X\", \"ts\":%u, \"dur\":%u, \"pid\":%u, \"tid\":%u}",
+								item.name, (uint32)(item.startTime * 1000 * 1000), (uint32)(item.elapsedMS * 1000), pid, tid);
+							events.push_back(eventMsg);
+						}
+					}
+				}
+				for (size_t i = 0; i < events.size(); ++i) {
+					fs << events[i];
+					if (i != events.size() - 1) {
+						fs << ',';
+					}
+					fs << '\n';
+				}
+				fs << "]" << std::endl;
+			} else {
+				// #todo-cpu: Text dump is missing in-between counters (checkpoints are discontinuous).
+				for (int32 checkpointIx = checkpointIxStart; checkpointIx <= checkpointIxEnd; ++checkpointIx) {
+					const ProfileCheckpoint& cp = checkpoints[checkpointIx];
+					fs << "[Frame " << cp.frameCounter << ']' << std::endl;
+
+					for (auto it_p = profiles.begin(); it_p != profiles.end(); ++it_p) {
+						const ProfilePerThread& profile = it_p->second;
+
+						if (profile.isEmpty()) {
+							continue;
+						}
+
+						size_t numItems = profile.items.size();
+						std::vector<size_t> validItemIndices;
+						for (size_t i = 0; i < numItems; ++i) {
+							const ProfileItem& item = profile.items[i];
+							if (cp.startTime <= item.startTime && item.startTime <= cp.endTime) {
+								validItemIndices.push_back(i);
+							}
+						}
+
+						if (validItemIndices.size() > 0) {
+							fs << profile.threadName << std::endl;
+							for (size_t i = 0; i < validItemIndices.size(); ++i) {
+								const ProfileItem& item = profile.items[validItemIndices[i]];
+								tab(item.tab + 1);
+								fs << item.name << ": " << item.elapsedMS << " ms" << std::endl;
+							}
+							fs << std::endl;
+						}
+					}
+				}
+			}
 			fs.close();
 		}
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <mutex>
 #include <unordered_map>
 
 namespace pathos {
@@ -42,13 +43,13 @@ namespace pathos {
 	struct ProfilePerThread {
 		ProfilePerThread(uint32 inThreadId, const char* inDebugName)
 			: threadId(inThreadId)
-			, debugName(inDebugName)
+			, threadName(inDebugName)
 			, currentTab(0)
 		{
 		}
 		ProfilePerThread(uint32 inThreadId, std::string&& inDebugName)
 			: threadId(inThreadId)
-			, debugName(inDebugName)
+			, threadName(inDebugName)
 			, currentTab(0)
 		{
 		}
@@ -62,7 +63,7 @@ namespace pathos {
 		}
 
 		uint32 threadId;
-		std::string debugName;
+		std::string threadName;
 
 		std::vector<ProfileItem> items;
 		uint32 currentTab;
@@ -71,16 +72,15 @@ namespace pathos {
 	public:
 		ProfilePerThread()
 			: threadId(0xffffffff)
-			, debugName("")
+			, threadName("")
 			, currentTab(0)
 		{
 		}
 	};
 
 	struct ProfileCheckpoint {
-		float startTime; // in seconds
-		float endTime;   // in seconds
-		uint32 logicalCoreIndex;
+		float startTime;       // in seconds
+		float endTime = -1.0f; // in seconds
 		uint32 frameCounter;
 	};
 
@@ -110,12 +110,18 @@ namespace pathos {
 
 		void purgeEverything();
 
-		void dumpCPUProfile();
+		// bChromeTracingFormat: Dump as plain text or JSON that chrome://tracing and edge://tracing recognizes.
+		// See https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+		void dumpCPUProfile(int32 numFramesToDump, bool bChromeTracingFormat);
 
 		float getGlobalClockTime();
 
 		std::unordered_map<uint32, ProfilePerThread> profiles; // Map thread id to profile
+		std::mutex profilesMutex;
+
 		std::vector<ProfileCheckpoint> checkpoints; // #todo-cpu: Switch to typed ring buffers
+		std::mutex checkpointMutex;
+
 		std::vector<Stopwatch> globalClocks; // Per-core so that no mutex is necessary
 	};
 

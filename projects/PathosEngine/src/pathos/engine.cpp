@@ -448,16 +448,19 @@ namespace pathos {
 			// World tick
 			//
 			if (currentWorld != nullptr) {
-				SCOPED_CPU_COUNTER(CreateRenderProxy);
-
 				const float ar = (float)conf.windowWidth / conf.windowHeight;
 				currentWorld->getCamera().getLens().setAspectRatio(ar);
 
-				currentWorld->tick(deltaSeconds);
+				{
+					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
+					currentWorld->tick(deltaSeconds);
+				}
 
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
+					SCOPED_CPU_COUNTER(CreateRenderProxy);
+
 					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
 						SceneProxySource::MainScene,
 						frameCounter_gameThread,
@@ -511,7 +514,6 @@ namespace pathos {
 			}
 		}
 
-		// #todo-cpu: Use frameCounter as a checkpoint
 		CpuProfiler::getInstance().finishCheckpoint();
 
 		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
