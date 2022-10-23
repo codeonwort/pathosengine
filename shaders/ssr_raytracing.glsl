@@ -16,6 +16,9 @@
 #define MAX_ITERATIONS       48
 #define MAX_THICKNESS        0.001
 
+// Set to 1 to disable HiZ and perform naive linear search.
+#define DEBUG_LINEAR_SEARCH  0
+
 // --------------------------------------------------------
 // Input
 
@@ -82,8 +85,7 @@ vec3 intersectCellBoundary(
 }
 
 bool crossedCellBoundary(ivec2 oldCellIx, ivec2 newCellIx) {
-	return oldCellIx.x != newCellIx.x || oldCellIx.y != newCellIx.y;
-	//return any(notEqual(oldCellIx, newCellIx));
+	return any(notEqual(oldCellIx, newCellIx));
 }
 
 // Minimum depth of the current cell in the current HiZ level.
@@ -142,6 +144,9 @@ bool traceHiZ(
 	vec3 d = v * maxTraceDistance;
 
 	int level = HIZ_START_LEVEL;
+#if DEBUG_LINEAR_SEARCH
+	level = 0;
+#endif
 	uint iterations = 0;
 	bool isBackwardRay = v.z < 0;
 	float rayDir = isBackwardRay ? -1.0 : 1.0;
@@ -180,6 +185,9 @@ bool traceHiZ(
 		if (crossed) {
 			ray = intersectCellBoundary(o, d, oldCellIx, cellCount, crossStep, crossOffset);
 			level = min(maxLevel, level + 1);
+#if DEBUG_LINEAR_SEARCH
+			level = 0;
+#endif
 		} else {
 			ray = tempRay;
 			level = level - 1;
