@@ -355,15 +355,15 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 
 	constexpr uint32 numSubdivisions = 60;
 	constexpr auto n = numSubdivisions;
-	std::vector<vector3> positions(numSegments * n * 4);
-	std::vector<vector2> uvs(numSegments * n * 4);
+	std::vector<vector3> positions(numSegments * (n * 4 + 8));
+	std::vector<vector2> uvs(numSegments * (n * 4 + 8));
 	std::vector<uint32> indices;
-	indices.reserve(numSegments * n * 24);
-	innerVertexIndices.reserve(positions.size() / 2);
+	indices.reserve(numSegments * (n * 24 + 12));
+	innerVertexIndices.reserve(numSegments * (n * 4) / 2);
 
 	uint32 i0 = 0;
 
-	for(uint32 segmentIndex = 0; segmentIndex < numSegments; ++segmentIndex) {
+	for (uint32 segmentIndex = 0; segmentIndex < numSegments; ++segmentIndex) {
 		const float dz = thickness * 0.5f;
 		const float startAngle = glm::radians(segRanges[segmentIndex * 2]);
 		const float endAngle = glm::radians(segRanges[segmentIndex * 2 + 1]);
@@ -374,8 +374,7 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 			indices.push_back(b); indices.push_back(c); indices.push_back(d);
 		};
 
-		for (uint32 i = i0; i < i0 + n; ++i)
-		{
+		for (uint32 i = i0; i < i0 + n; ++i) {
 			const float ratio = (float)(i - i0) / (n - 1);
 			float angle = startAngle + (endAngle - startAngle) * ratio;
 			float cosAngle = cosf(angle);
@@ -384,13 +383,13 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 			innerVertexIndices.push_back(i);
 			innerVertexIndices.push_back(i + 2 * n);
 
-			positions[i]         = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
-			positions[i + n]     = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);
+			positions[i + 0 * n] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
+			positions[i + 1 * n] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);
 			positions[i + 2 * n] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, -dz);
 			positions[i + 3 * n] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, -dz);
 
-			uvs[i]         = vector2(ratio, 0.0f);
-			uvs[i + n]     = vector2(ratio, 0.25f);
+			uvs[i + 0 * n] = vector2(ratio, 0.0f);
+			uvs[i + 1 * n] = vector2(ratio, 0.25f);
 			uvs[i + 2 * n] = vector2(ratio, 0.5f);
 			uvs[i + 3 * n] = vector2(ratio, 1.0f);
 
@@ -406,10 +405,38 @@ void RingActor::buildRing(float innerRadius, float outerRadius, float thickness,
 				//makeQuad(i + n, i + 3 * n, i + 2 * n + 1, i + 1);
 			}
 		}
-		makeQuad(i0, i0 + 2 * n, i0 + 3 * n, i0 + n);
-		makeQuad(n - 1 + i0, n - 1 + i0 + n, n - 1 + i0 + 3 * n, n - 1 + i0 + 2 * n);
 
 		i0 += n * 4;
+
+		float angle = startAngle;
+		float cosAngle = cosf(angle);
+		float sinAngle = sinf(angle);
+		positions[i0 + 0] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
+		positions[i0 + 1] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);
+		positions[i0 + 2] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, -dz);
+		positions[i0 + 3] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, -dz);
+		uvs[i0 + 0] = vector2(0.0f, 0.0f);
+		uvs[i0 + 1] = vector2(1.0f, 0.0f);
+		uvs[i0 + 2] = vector2(0.0f, 1.0f);
+		uvs[i0 + 3] = vector2(1.0f, 1.0f);
+		makeQuad(i0, i0 + 2, i0 + 3, i0 + 1);
+
+		i0 += 4;
+
+		angle = endAngle;
+		cosAngle = cosf(angle);
+		sinAngle = sinf(angle);
+		positions[i0 + 0] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, +dz);
+		positions[i0 + 1] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, +dz);
+		positions[i0 + 2] = vector3(innerRadius * cosAngle, innerRadius * sinAngle, -dz);
+		positions[i0 + 3] = vector3(outerRadius * cosAngle, outerRadius * sinAngle, -dz);
+		uvs[i0 + 0] = vector2(0.0f, 0.0f);
+		uvs[i0 + 1] = vector2(1.0f, 0.0f);
+		uvs[i0 + 2] = vector2(0.0f, 1.0f);
+		uvs[i0 + 3] = vector2(1.0f, 1.0f);
+		makeQuad(i0 + 1, i0 + 3, i0 + 2, i0 + 0);
+
+		i0 += 4;
 	}
 
 	G->updatePositionData((float*)positions.data(), (uint32)(positions.size() * 3));
