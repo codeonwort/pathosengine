@@ -16,7 +16,7 @@
 #define HIZ_MAX_LEVEL        6
 // #todo-ssr: Blocky artifacts if too small, but I want this value below 32.
 #define MAX_ITERATIONS       64
-#define MAX_THICKNESS        0.005
+#define MAX_THICKNESS        100.0
 
 // Set to 1 to disable HiZ and perform naive linear search.
 #define DEBUG_LINEAR_SEARCH  0
@@ -91,9 +91,9 @@ bool crossedCellBoundary(ivec2 oldCellIx, ivec2 newCellIx) {
 }
 
 // Minimum depth of the current cell in the current HiZ level.
-float getMinimumDepthPlane(ivec2 cellIx, int level) {
+vec2 getMinMaxDepthPlane(ivec2 cellIx, int level) {
 	vec2 minmax = texelFetch(inHiZ, cellIx, level).xy;
-	return minmax.x;
+	return minmax;
 }
 
 float getMaxTraceDistance(vec3 p, vec3 v) {
@@ -123,7 +123,7 @@ float getMaxTraceDistance(vec3 p, vec3 v) {
 bool traceHiZ(
 	vec3 p, vec3 v, out vec3 hitPointSS,
 	// Debug output, preferably compiled out.
-	out int debugFinalLevel, out uint debugIterations)
+	out int debugDeepestLevel, out uint debugIterations)
 {
 	const int maxLevel = min(HIZ_MAX_LEVEL, int(ubo.hiZMipCount) - 1); // Last mip level
 	float maxTraceDistance = getMaxTraceDistance(p, v);
@@ -147,6 +147,7 @@ bool traceHiZ(
 	vec3 d = v * maxTraceDistance;
 
 	int level = HIZ_START_LEVEL;
+	int deepestLevel = level;
 #if DEBUG_LINEAR_SEARCH
 	level = 0;
 #endif
@@ -168,7 +169,9 @@ bool traceHiZ(
 		ivec2 oldCellIx = getCell(ray.xy, cellCount);
 
 		// Get the minimum depth plane in which the current ray resides.
-		float cellMinZ = getMinimumDepthPlane(oldCellIx, level);
+		vec2 cellMinMaxZ = getMinMaxDepthPlane(oldCellIx, level);
+		float cellMinZ = cellMinMaxZ.x;
+		float cellMaxZ = cellMinMaxZ.y;
 
 		// Intersect only if ray depth is below the minimum depth plane.
 		vec3 tempRay;
@@ -180,14 +183,22 @@ bool traceHiZ(
 
 		ivec2 newCellIx = getCell(tempRay.xy, cellCount);
 
-		float thickness = (level == 0) ? (ray.z - cellMinZ) : 0.0;
+#if REVERSE_Z
+		vec3 rayVS = getViewPositionFromSceneDepth(ray.xy, 1.0 - ray.z);
+		vec3 cellMinVS = getViewPositionFromSceneDepth(ray.xy, 1.0 - cellMinZ);
+#else
+		vec3 rayVS = getViewPositionFromSceneDepth(ray.xy, ray.z);
+		vec3 cellMinVS = getViewPositionFromSceneDepth(ray.xy, cellMinZ);
+#endif
+		float thickness = rayVS.z - cellMinVS.z;
+
 		bool crossed = (isBackwardRay && (cellMinZ > ray.z))
-					|| (thickness > MAX_THICKNESS)
-					|| crossedCellBoundary(oldCellIx, newCellIx);
+					|| ((thickness <= MAX_THICKNESS) && crossedCellBoundary(oldCellIx, newCellIx));
 		
 		if (crossed) {
 			ray = intersectCellBoundary(o, d, oldCellIx, cellCount, crossStep, crossOffset);
 			level = min(maxLevel, level + 1);
+			deepestLevel = max(deepestLevel, level);
 #if DEBUG_LINEAR_SEARCH
 			level = 0;
 #endif
@@ -200,7 +211,7 @@ bool traceHiZ(
 	}
 
 	// Results
-	debugFinalLevel = level;
+	debugDeepestLevel = deepestLevel;
 	debugIterations = iterations;
 	hitPointSS = ray;
 	return level < HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS;
@@ -311,9 +322,11 @@ void main() {
 
 	// Trace HiZ to find the hit point.
 	vec3 hitPointSS;
-	int debugFinalLevel;
+	int debugDeepestLevel;
 	uint debugIterations;
-	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS, debugFinalLevel, debugIterations);
+	bool intersects = traceHiZ(
+		positionSS, reflectionDirSS, hitPointSS,
+		debugDeepestLevel, debugIterations);
 
 #if 0
 	// AMD's FidelityFX SSSR checks this but is this needed in my code?
@@ -348,6 +361,6 @@ void main() {
 	// DEBUG: Num iterations
 	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugIterations) / float(MAX_ITERATIONS));
 	// DEBUG: mip level
-	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugFinalLevel) / float(ubo.hiZMipCount - 1));
+	//outRayTracingResult = mix(vec3(1,0,0), vec3(0,0,1), float(debugDeepestLevel) / float(ubo.hiZMipCount - 1));
 #endif
 }

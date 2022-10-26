@@ -441,9 +441,12 @@ namespace pathos {
 					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
 					taa->renderPostProcess(cmdList, fullscreenQuad.get());
 
-					copyTexture(cmdList,
-						aaRenderTarget, sceneRenderTargets.sceneColorHistory,
-						sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+					{
+						SCOPED_DRAW_EVENT(SaveSceneColorHistory);
+						copyTexture(cmdList,
+							aaRenderTarget, sceneRenderTargets.sceneColorHistory,
+							sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+					}
 
 					sceneAfterLastPP = aaRenderTarget;
 					break;
