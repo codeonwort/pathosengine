@@ -149,6 +149,7 @@ namespace pathos {
 		}
 	}
 
+	// #todo-fatal: It causes program crash due to data conflict with finishItem().
 	void CpuProfiler::purgeEverything() {
 		//LOG(LogDebug, "[TEMP] Purge cpu profiles");
 

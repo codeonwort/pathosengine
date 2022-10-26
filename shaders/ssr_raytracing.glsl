@@ -10,11 +10,13 @@
 #include "deferred_common.glsl"
 
 // Start tracing in this level.
-#define HIZ_START_LEVEL      2
+#define HIZ_START_LEVEL      0
 // Stop tracing if current level is higher than this. (higher level means lower value)
 #define HIZ_STOP_LEVEL       0
-#define MAX_ITERATIONS       48
-#define MAX_THICKNESS        0.001
+#define HIZ_MAX_LEVEL        6
+// #todo-ssr: Blocky artifacts if too small, but I want this value below 32.
+#define MAX_ITERATIONS       64
+#define MAX_THICKNESS        0.005
 
 // Set to 1 to disable HiZ and perform naive linear search.
 #define DEBUG_LINEAR_SEARCH  0
@@ -123,16 +125,17 @@ bool traceHiZ(
 	// Debug output, preferably compiled out.
 	out int debugFinalLevel, out uint debugIterations)
 {
-	const int maxLevel = int(ubo.hiZMipCount) - 1; // Last mip level
+	const int maxLevel = min(HIZ_MAX_LEVEL, int(ubo.hiZMipCount) - 1); // Last mip level
 	float maxTraceDistance = getMaxTraceDistance(p, v);
 
 	// Get the cell cross direction and a small offset to enter
 	// the next cell when doing cell crossing.
 	vec2 crossStep, crossOffset;
-	crossStep.x = (v.x >= 0) ? 1.0 : -1.0;
-	crossStep.y = (v.y >= 0) ? 1.0 : -1.0;
-	// #todo-ssr: This scaling feels so random. Needs concrete math.
-	crossOffset.xy = crossStep * (8.0 / ubo.sceneSize);
+	crossStep.x = (v.x >= 0) ? 1.0 : 0.0;
+	crossStep.y = (v.y >= 0) ? 1.0 : 0.0;
+	crossOffset.xy = 0.005 * exp2(HIZ_START_LEVEL) / ubo.sceneSize;
+	if (v.x < 0) crossOffset.x *= -1;
+	if (v.y < 0) crossOffset.y *= -1;
 
 	// Set current ray to the original screen coordinate and depth.
 	vec3 ray = p;
@@ -295,10 +298,7 @@ void main() {
 	vec3 positionCS = positionSS;
 	positionCS.xy = 2.0 * positionCS.xy - 1.0;
 
-	vec3 position2VS = positionVS + 100.0 * reflectionDirVS;
-	//if (position2VS.z < 0.0) {
-	//	position2VS /= position2VS.z;
-	//}
+	vec3 position2VS = positionVS + 1000.0 * reflectionDirVS;
 	vec4 position2CS = uboPerFrame.projTransform * vec4(position2VS, 1.0);
 	position2CS /= position2CS.w;
 	vec3 position2SS = position2CS.xyz;
@@ -314,6 +314,21 @@ void main() {
 	int debugFinalLevel;
 	uint debugIterations;
 	bool intersects = traceHiZ(positionSS, reflectionDirSS, hitPointSS, debugFinalLevel, debugIterations);
+
+#if 0
+	// AMD's FidelityFX SSSR checks this but is this needed in my code?
+	// No way my GBuffer contains some backward normals as they will be backface-culled.
+	if (intersects) {
+		GBufferData hitGBuffer;
+		unpackGBuffer(
+			ivec2(hitPointSS.xy * ubo.sceneSize),
+			inGBufferA, inGBufferB, inGBufferC,
+			hitGBuffer);
+		if (hitGBuffer.vs_coords.z > 0) {
+			intersects = false;
+		}
+	}
+#endif
 
 	// Trace cone to accumulate reflected radiances.
 	vec3 finalRadiance = vec3(0.0);
