@@ -21,10 +21,11 @@ namespace pathos {
 	{
 		CHECK(inName != nullptr);
 		threadId = CPU::getCurrentThreadId();
-		itemHandle = CpuProfiler::getInstance().beginItem(threadId, name);
 
 		// #todo-cpu: Temp logic for periodic purge
 		purge_milestone = CpuProfiler::getInstance().purge_milestone.load();
+
+		itemHandle = CpuProfiler::getInstance().beginItem(threadId, name);
 	}
 
 	ScopedCpuCounter::~ScopedCpuCounter() {
@@ -76,6 +77,7 @@ namespace pathos {
 	}
 	void CpuProfiler::registerThread(uint32 threadId, const char* inDebugName) {
 		std::lock_guard<std::mutex> profileLock(profilesMutex);
+
 		CHECKF(profiles.find(threadId) == profiles.end(), "Current thread is already registered");
 		profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
 	}
@@ -149,10 +151,7 @@ namespace pathos {
 		}
 	}
 
-	// #todo-fatal: It causes program crash due to data conflict with finishItem().
 	void CpuProfiler::purgeEverything() {
-		//LOG(LogDebug, "[TEMP] Purge cpu profiles");
-
 		purge_milestone.fetch_add(1);
 
 		for (auto it = profiles.begin(); it != profiles.end(); ++it) {
