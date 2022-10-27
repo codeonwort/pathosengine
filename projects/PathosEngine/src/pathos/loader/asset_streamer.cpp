@@ -26,7 +26,7 @@ namespace pathos {
 
 		arg->loader = loader;
 		loader->setMaterialOverrides(std::move(arg->materialOverrides));
-		bool bLoaded = loader->load(arg->filepath, arg->mtlDir);
+		bool bLoaded = loader->load(arg->filepath.c_str(), arg->mtlDir.c_str());
 
 		// #todo-asset-streamer: How to inform load failure?
 		if (bLoaded) {

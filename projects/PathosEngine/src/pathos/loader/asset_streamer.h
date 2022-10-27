@@ -53,8 +53,8 @@ namespace pathos {
 			materialOverrides.push_back(std::make_pair(mtlName, newMaterial));
 		}
 
-		const char* filepath;
-		const char* baseDir;
+		std::string filepath;
+		std::string baseDir;
 		std::vector<std::pair<std::string, Material*>> materialOverrides;
 	};
 
@@ -80,8 +80,8 @@ namespace pathos {
 
 		AssetStreamer* streamer;
 		OBJLoader* loader;
-		const char* filepath;
-		const char* mtlDir;
+		std::string filepath;
+		std::string mtlDir;
 		std::vector<std::pair<std::string, Material*>> materialOverrides;
 
 		uint64 payload;

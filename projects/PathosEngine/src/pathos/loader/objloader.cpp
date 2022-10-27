@@ -8,84 +8,36 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+// 0: Just use fallback material
+// 1: Assert if invalid material
+#define WARN_INVALID_FACE_MARTERIAL 0
+
+// Vertex deduplication: https://vulkan-tutorial.com/Loading_models
 struct MetaVertex {
 	vector3 position;
 	vector2 texcoord;
+	vector3 normal;
 
 	MetaVertex() = default;
 
 	bool operator==(const MetaVertex& other) const {
-		return position == other.position && texcoord == other.texcoord;
+		return position == other.position
+			&& texcoord == other.texcoord
+			&& normal == other.normal;
 	}
 };
-
 namespace std {
 	template<> struct std::hash<MetaVertex> {
 		size_t operator()(MetaVertex const& vertex) const {
-			return
-				((std::hash<vector3>()(vertex.position) >> 1) ^
-				(std::hash<vector2>()(vertex.texcoord) << 1));
+			return (
+				std::hash<vector3>()(vertex.position) ^
+				(std::hash<vector2>()(vertex.texcoord) << 1) ^
+				((std::hash<vector3>()(vertex.normal) << 1) >> 1));
 		}
 	};
 }
 
-#define LOAD_NORMAL_DATA            0
-#define WARN_INVALID_FACE_MARTERIAL 0
-
 namespace pathos {
-
-	// #todo: Same as that in geometry.cpp
-	void calculateNormal(const std::vector<GLfloat>& positions, const std::vector<GLuint>& indices, std::vector<GLfloat>& outNormals) {
-		CHECK(indices.size() % 3 == 0);
-		outNormals.resize(positions.size());
-
-		const uint32 numPos = (uint32)(positions.size() / 3);
-		std::vector<vector3> accum(numPos, vector3(0.0f, 0.0f, 0.0f));
-
-		const auto& P = positions;
-
-		for (size_t i = 0u; i < indices.size(); i += 3) {
-			GLuint i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
-			GLuint p0 = i0 * 3, p1 = i1 * 3, p2 = i2 * 3;
-			vector3 a = vector3(P[p1] - P[p0], P[p1 + 1] - P[p0 + 1], P[p1 + 2] - P[p0 + 2]);
-			vector3 b = vector3(P[p2] - P[p0], P[p2 + 1] - P[p0 + 1], P[p2 + 2] - P[p0 + 2]);
-
-			// #todo-loader: Well... we have a problem.
-			if (a == b || i0 == i1 || i1 == i2 || i2 == i0) {
-				continue;
-			}
-
-			vector3 norm = glm::normalize(glm::cross(a, b));
-			if (isnan(norm.x) || isnan(norm.y) || isnan(norm.z)) {
-				continue;
-			}
-
-			accum[i0] += norm;
-			accum[i1] += norm;
-			accum[i2] += norm;
-		}
-		const vector3 zero(0.0f);
-		for (uint32 i = 0u; i < accum.size(); i++) {
-			vector3 N = glm::normalize(accum[i]);
-			if (accum[i] == zero) {
-				N = vector3(0, 1, 0);
-			}
-			outNormals[i * 3 + 0] = N.x;
-			outNormals[i * 3 + 1] = N.y;
-			outNormals[i * 3 + 2] = N.z;
-		}
-	}
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	OBJLoader::OBJLoader()
-		: bIsValid(false)
-	{
-	}
-
-	OBJLoader::OBJLoader(const char* inObjFile, const char* inMtlDir) {
-		load(inObjFile, inMtlDir);
-	}
 
 	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides) {
 		materialOverrides = overrides;
@@ -104,7 +56,7 @@ namespace pathos {
 		// Read data using tinyobjloader
 		std::string err;
 		bool loaded = tinyobj::LoadObj(
-			&t_attrib, &t_shapes, &t_materials, &err,
+			&tiny_attrib, &tiny_shapes, &tiny_materials, &err,
 			objFile.c_str(), mtlDir.c_str());
 
 		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
@@ -115,12 +67,11 @@ namespace pathos {
 				return bIsValid;
 			}
 		}
-		LOG(LogInfo, "Number of shapes: %d", (int32)t_shapes.size());
-		LOG(LogInfo, "Number of materials: %d", (int32)t_materials.size());
+		LOG(LogInfo, "Number of shapes: %d", (int32)tiny_shapes.size());
+		LOG(LogInfo, "Number of materials: %d", (int32)tiny_materials.size());
 
-		// Reconstruct meshes and materials
-		analyzeMaterials(t_materials, materials);
-		reconstructShapes(t_shapes, t_attrib, pendingShapes);
+		analyzeMaterials();
+		reconstructShapes();
 
 		bIsValid = true;
 		return bIsValid;
@@ -128,26 +79,26 @@ namespace pathos {
 
 	void OBJLoader::unload() {
 		mtlDir.clear();
-		t_shapes.clear();
-		t_materials.clear();
-		t_attrib.normals.clear();
-		t_attrib.texcoords.clear();
-		t_attrib.vertices.clear();
+		tiny_shapes.clear();
+		tiny_materials.clear();
+		tiny_attrib.normals.clear();
+		tiny_attrib.texcoords.clear();
+		tiny_attrib.vertices.clear();
 		pendingShapes.clear();
 		materials.clear();
 		cachedBitmapDB.clear();
 		pendingTextureData.clear();
 	}
 
-	void OBJLoader::analyzeMaterials(const std::vector<tinyobj::material_t>& tiny_materials, std::vector<Material*>& output) {
-		for (size_t i = 0; i < t_materials.size(); i++) {
-			tinyobj::material_t& t_mat = t_materials[i];
+	void OBJLoader::analyzeMaterials() {
+		for (size_t i = 0; i < tiny_materials.size(); i++) {
+			tinyobj::material_t& t_mat = tiny_materials[i];
 			Material* M = nullptr;
 
 			int32 overrideIx = -1;
-			for (size_t i = 0; i < materialOverrides.size(); ++i) {
-				if (materialOverrides[i].first == t_mat.name) {
-					overrideIx = (int32)i;
+			for (size_t k = 0; k < materialOverrides.size(); ++k) {
+				if (materialOverrides[k].first == t_mat.name) {
+					overrideIx = (int32)k;
 					break;
 				}
 			}
@@ -236,19 +187,19 @@ namespace pathos {
 		defaultMaterial->setConstantParameter("emissive", vector3(0.0f));
 	}
 
-	void OBJLoader::reconstructShapes(const std::vector<tinyobj::shape_t>& tiny_shapes, const tinyobj::attrib_t& tiny_attrib, std::vector<PendingShape>& outPendingShapes) {
-		outPendingShapes.clear();
+	void OBJLoader::reconstructShapes() {
+		pendingShapes.clear();
 
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
-			const tinyobj::shape_t& src = t_shapes[i];
+			const tinyobj::shape_t& src = tiny_shapes[i];
 			const tinyobj::mesh_t& srcMesh = src.mesh;
 			PendingShape dst;
 
-			// Vertex deduplication: https://vulkan-tutorial.com/Loading_models
 			// int32 = face material id
 			// uint32 = vertex index
 			std::map<int32, std::unordered_map<MetaVertex, uint32>> uniqueVertices;
 			std::map<int32, std::vector<MetaVertex>> metaVertices;
+			std::set<int32> normalInvalidFlags;
 
 			LOG(LogDebug, "Analyzing OBJ shape[%d]: %s", i, src.name.data());
 
@@ -273,17 +224,18 @@ namespace pathos {
 
 				std::vector<GLfloat>& positionBuffer = dst.positions[materialID];
 				std::vector<GLfloat>& texcoordBuffer = dst.texcoords[materialID];
+				std::vector<GLfloat>& normalBuffer = dst.normals[materialID];
 				std::vector<GLuint>& indexBuffer = dst.indices[materialID];
 
 				for (int32 v = 0; v < fv; ++v) {
 					tinyobj::index_t idx = srcMesh.indices[index_offset + v];
 
-					// position data
+					// position data (should exist)
 					float posX = tiny_attrib.vertices[3 * idx.vertex_index + 0];
 					float posY = tiny_attrib.vertices[3 * idx.vertex_index + 1];
 					float posZ = tiny_attrib.vertices[3 * idx.vertex_index + 2];
 
-					// texcoord data
+					// texcoord data (optional)
 					float texU = 0.0f;
 					float texV = 0.0f;
 					if (idx.texcoord_index >= 0) {
@@ -291,12 +243,23 @@ namespace pathos {
 						texV = tiny_attrib.texcoords[2 * idx.texcoord_index + 1];
 					}
 
+					// normal data (optional)
+					float nx = 0.0f, ny = 0.0f, nz = 0.0f;
+					if (idx.normal_index >= 0) {
+						nx = tiny_attrib.normals[3 * idx.normal_index + 0];
+						ny = tiny_attrib.normals[3 * idx.normal_index + 1];
+						nz = tiny_attrib.normals[3 * idx.normal_index + 2];
+					} else {
+						normalInvalidFlags.insert(materialID);
+					}
+
 					MetaVertex metaV;
 					metaV.position = vector3(posX, posY, posZ);
 					metaV.texcoord = vector2(texU, texV);
+					metaV.normal = vector3(nx, ny, nz);
 
 					if (uniqueVertices[materialID].count(metaV) == 0) {
-						uniqueVertices[materialID][metaV] = static_cast<uint32>(metaVertices[materialID].size());
+						uniqueVertices[materialID][metaV] = (uint32)metaVertices[materialID].size();
 						metaVertices[materialID].push_back(metaV);
 
 						positionBuffer.push_back(posX);
@@ -304,41 +267,33 @@ namespace pathos {
 						positionBuffer.push_back(posZ);
 						texcoordBuffer.push_back(texU);
 						texcoordBuffer.push_back(texV);
+						normalBuffer.push_back(nx);
+						normalBuffer.push_back(ny);
+						normalBuffer.push_back(nz);
 					}
 
 					indexBuffer.push_back(uniqueVertices[materialID][metaV]);
-
-#if LOAD_NORMAL_DATA
-					// normal data
-					if (idx.normal_index >= 0) {
-						float nx = tiny_attrib.normals[3 * idx.normal_index + 0];
-						float ny = tiny_attrib.normals[3 * idx.normal_index + 1];
-						float nz = tiny_attrib.normals[3 * idx.normal_index + 2];
-						dst.normals[materialID].push_back(nx);
-						dst.normals[materialID].push_back(ny);
-						dst.normals[materialID].push_back(nz);
-					}
-#endif // LOAD_NORMAL_DATA
-
-					//if (dst.indices[materialID].size() == 0) {
-					//	dst.indices[materialID].push_back(0);
-					//} else {
-					//	GLuint lastIx = dst.indices[materialID].back();
-					//	dst.indices[materialID].push_back(lastIx + 1);
-					//}
 				}
 				index_offset += fv;
 			}
 
-			outPendingShapes.emplace_back(std::move(dst));
+			for (const auto& it : dst.normals) {
+				int32 mat = it.first;
+				if (normalInvalidFlags.find(mat) != normalInvalidFlags.end()) {
+					dst.normals[mat].clear();
+					LOG(LogWarning, "(Material ID = %d) Vertex normals are invalid and will be recalculated", mat);
+				}
+			}
+
+			pendingShapes.emplace_back(dst);
 
 			LOG(LogDebug, "Shape has been parsed");
 		}
 	}
 
 	Mesh* OBJLoader::craftMeshFrom(const std::string& shapeName) {
-		for (size_t i = 0; i < t_shapes.size(); ++i) {
-			if (t_shapes[i].name == shapeName) {
+		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
+			if (tiny_shapes[i].name == shapeName) {
 				return craftMeshFrom(static_cast<uint32>(i));
 			}
 		}
@@ -361,7 +316,7 @@ namespace pathos {
 		for (unsigned int i = from; i <= to; ++i) {
 			PendingShape& shape = pendingShapes[i];
 
-			for (auto materialID : shape.materialIDs) {
+			for (int32 materialID : shape.materialIDs) {
 #if WARN_INVALID_FACE_MARTERIAL
 				CHECK(materialID >= 0);
 #endif
@@ -370,19 +325,16 @@ namespace pathos {
 				auto& texcoords = shape.texcoords[materialID];
 				auto& indices = shape.indices[materialID];
 
-#if LOAD_NORMAL_DATA
-				if (normals.size() < positions.size()) calculateNormal(t_attrib, indices, normals);
-#else
-				calculateNormal(positions, indices, normals);
-#endif
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(false);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
-				geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
-				if (texcoords.size() > 0) {
-					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
-				}
+				geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
+				if (shape.containsValidNormals(materialID)) {
+					geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
+				} else {
+					geom->calculateNormals();
+				}
 				geom->calculateTangentBasis();
 
 				mesh->add(geom, getMaterial(materialID));
