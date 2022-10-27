@@ -8,7 +8,6 @@
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 #include "pathos/render/sky_atmosphere.h"
-#include "pathos/render/sky_clouds.h"
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
@@ -25,13 +24,15 @@
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
 
+#include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
+
+#include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/texture/volume_texture.h"
-#include "pathos/shader/shader_program.h"
-#include "pathos/shader/material_shader.h"
 
 #include "pathos/console.h"
 #include "pathos/util/log.h"

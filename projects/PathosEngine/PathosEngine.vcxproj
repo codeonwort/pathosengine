@@ -162,7 +162,6 @@
     <ClCompile Include="src\pathos\render\scene_proxy.cpp" />
     <ClCompile Include="src\pathos\render\screen_space_reflection.cpp" />
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp" />
-    <ClCompile Include="src\pathos\render\sky_clouds.cpp" />
     <ClCompile Include="src\pathos\render\volumetric_clouds.cpp" />
     <ClCompile Include="src\pathos\scene\scene.cpp" />
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
@@ -282,12 +281,13 @@
     <ClInclude Include="src\pathos\render\scene_proxy.h" />
     <ClInclude Include="src\pathos\render\screen_space_reflection.h" />
     <ClInclude Include="src\pathos\render\sky_atmosphere.h" />
-    <ClInclude Include="src\pathos\render\sky_clouds.h" />
     <ClInclude Include="src\pathos\render\postprocessing\super_res.h" />
     <ClInclude Include="src\pathos\render\volumetric_clouds.h" />
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
+    <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h" />
+    <ClInclude Include="src\pathos\scene\volumetric_cloud_component.h" />
     <ClInclude Include="src\pathos\shader\material_shader.h" />
     <ClInclude Include="src\pathos\shader\material_shader_assembler.h" />
     <ClInclude Include="src\pathos\shader\shader_program.h" />

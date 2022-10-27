@@ -3,24 +3,27 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
-#include "badger/math/random.h"
-
 #include "pathos/render/sky_ansel.h"
-#include "pathos/render/sky_clouds.h"
-#include "pathos/loader/imageloader.h"
-#include "pathos/loader/objloader.h"
-#include "pathos/loader/spline_loader.h"
-#include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
+#include "pathos/texture/volume_texture.h"
+
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
-#include "pathos/texture/volume_texture.h"
+#include "pathos/scene/volumetric_cloud_component.h"
+#include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
+
+#include "pathos/loader/imageloader.h"
+#include "pathos/loader/objloader.h"
+#include "pathos/loader/spline_loader.h"
+#include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
+
+#include "badger/math/random.h"
 
 // --------------------------------------------------------
 // Constants

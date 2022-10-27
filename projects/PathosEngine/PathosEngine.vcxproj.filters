@@ -264,9 +264,6 @@
     <ClCompile Include="src\pathos\light\shadow_omni.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\sky_clouds.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\texture\volume_texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -680,9 +677,6 @@
     <ClInclude Include="src\pathos\light\shadow_omni.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\sky_clouds.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\texture\volume_texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -792,6 +786,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\volumetric_clouds.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\volumetric_cloud_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

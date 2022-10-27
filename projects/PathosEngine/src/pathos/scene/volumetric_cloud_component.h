@@ -1,13 +1,11 @@
 #pragma once
 
 #include "pathos/gl_handles.h"
-#include "pathos/actor/actor.h"
+#include "pathos/texture/volume_texture.h"
 #include "pathos/actor/scene_component.h"
 #include "pathos/render/scene_proxy.h"
 
 namespace pathos {
-
-	class VolumeTexture;
 
 	struct VolumetricCloudProxy : public SceneComponentProxy {
 		GLuint         weatherTexture;
@@ -16,11 +14,19 @@ namespace pathos {
 	};
 
 	class VolumetricCloudComponent : public SceneComponent {
-		
-	public:
-		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise);
 
-		bool hasValidResources() const;
+	public:
+		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
+			weatherTexture = inWeatherTexture;
+			shapeNoise = inShapeNoise;
+			erosionNoise = inErosionNoise;
+		}
+
+		bool hasValidResources() const {
+			return weatherTexture != 0
+				&& shapeNoise != nullptr && shapeNoise->isValid()
+				&& erosionNoise != nullptr && erosionNoise->isValid();
+		}
 
 	protected:
 		virtual void createRenderProxy(SceneProxy* scene) override
@@ -43,23 +49,6 @@ namespace pathos {
 		GLuint weatherTexture = 0;
 		VolumeTexture* shapeNoise = nullptr;
 		VolumeTexture* erosionNoise = nullptr;
-
-	};
-
-	// Placeholder for world logic.
-	// NOTE: Should be assigned to the Scene::cloud member variable.
-	class VolumetricCloudActor : public Actor {
-
-	public:
-		VolumetricCloudActor();
-		~VolumetricCloudActor() = default;
-
-		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise);
-
-		inline VolumetricCloudComponent* getCloudComponent() const { return cloudComponent; }
-
-	private:
-		VolumetricCloudComponent* cloudComponent;
 
 	};
 
