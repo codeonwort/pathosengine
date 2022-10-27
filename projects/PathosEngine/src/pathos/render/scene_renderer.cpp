@@ -117,8 +117,8 @@ namespace pathos {
 		badger::HaltonSequence(2, JITTER_SEQ_LENGTH, temporalJitterSequenceX);
 		badger::HaltonSequence(3, JITTER_SEQ_LENGTH, temporalJitterSequenceY);
 		for (uint32 i = 0; i < JITTER_SEQ_LENGTH; ++i) {
-			temporalJitterSequenceX[i] = 2.0f * temporalJitterSequenceX[i] - 1.0f;
-			temporalJitterSequenceY[i] = 2.0f * temporalJitterSequenceY[i] - 1.0f;
+			temporalJitterSequenceX[i] = temporalJitterSequenceX[i] - 0.5f;
+			temporalJitterSequenceY[i] = temporalJitterSequenceY[i] - 0.5f;
 		}
 	}
 
