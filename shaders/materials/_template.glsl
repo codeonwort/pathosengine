@@ -16,10 +16,19 @@
 // VERTEX_SHADER or FRAGMENT_SHADER
 $NEED SHADERSTAGE
 
+// Material shaders should define this.
 // Should be one of MATERIAL_SHADINGMODEL_XXX in common.glsl.
 $NEED SHADINGMODEL
 
-// NOTE: Define 'NONTRIVIALDEPTH' in a material shader if needed.
+// Material shaders may define optional symbols:
+// [NONTRIVIALDEPTH]
+// - Depth write is not trivial (MVP * localPos).
+// - Textures and other vertex attributes will be bound.
+// [OUTPUTWORLDNORMAL]
+// - getMaterialAttributes() returns world normal, not local normal.
+// - Normal mapping will be skipped.
+
+$NEED OUTPUTWORLDNORMAL
 
 #define FORWARD_SHADING (SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
@@ -208,12 +217,16 @@ void main() {
 	MaterialAttributes attr = getMaterialAttributes();
 
 #if SHADINGMODEL != MATERIAL_SHADINGMODEL_UNLIT
-	vec3 detailNormal = applyNormalMap(
-		normalize(interpolants.normal),
-		normalize(interpolants.tangent),
-		normalize(interpolants.bitangent),
-		attr.normal);
-	detailNormal = (uboPerFrame.viewTransform * vec4(detailNormal, 0.0)).xyz;
+	#if OUTPUTWORLDNORMAL
+		vec3 worldNormal = attr.normal;
+	#else
+		vec3 worldNormal = applyNormalMap(
+			normalize(interpolants.normal),
+			normalize(interpolants.tangent),
+			normalize(interpolants.bitangent),
+			attr.normal);
+	#endif
+	vec3 normalVS = (uboPerFrame.viewTransform * vec4(worldNormal, 0.0)).xyz;
 #endif
 
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
@@ -231,7 +244,7 @@ void main() {
 #if SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
 	packGBuffer(
 		attr.albedo,
-		detailNormal,
+		normalVS,
 		SHADINGMODEL,
 		interpolants.positionVS,
 		attr.metallic,

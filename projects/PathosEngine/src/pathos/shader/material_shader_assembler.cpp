@@ -17,6 +17,7 @@
 #define NEED_HEADER                "$NEED"
 #define NEED_SHADERSTAGE           "SHADERSTAGE"
 #define NEED_SHADINGMODEL          "SHADINGMODEL"
+#define NEED_OUTPUTWORLDNORMAL     "OUTPUTWORLDNORMAL"
 #define NEED_UBO                   "UBO_Material"
 #define NEED_TEXTUREPARAMETERS     "TEXTURE_PARAMETERS"
 #define NEED_VPO                   "getVertexPositionOffset"
@@ -42,6 +43,8 @@ namespace pathos {
 					MT.lineIx_shaderstage = lineIx;
 				} else if (header == NEED_SHADINGMODEL) {
 					MT.lineIx_shadingmodel = lineIx;
+				} else if (header == NEED_OUTPUTWORLDNORMAL) {
+					MT.lineIx_outputworldnormal = lineIx;
 				} else if (header == NEED_UBO) {
 					MT.lineIx_ubo = lineIx;
 				} else if (header == NEED_TEXTUREPARAMETERS) {
@@ -284,12 +287,15 @@ namespace pathos {
 		int32 getSceneColorBeginIx = -1; // inclusive
 		int32 getSceneColorEndIx = -1; // inclusive
 		bool bTrivialDepthOnlyPass = true;
+		bool bOutputWorldNormal = false;
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
 			if (0 == line.find("#define SHADINGMODEL")) {
 				materialShadingModelIx = lineIx;
 			} else if (0 == line.find("#define NONTRIVIALDEPTH")) {
 				bTrivialDepthOnlyPass = false;
+			} else if (0 == line.find("#define OUTPUTWORLDNORMAL")) {
+				bOutputWorldNormal = true;
 			} else if (0 == line.find("VPO_BEGIN")) {
 				materialVPOBeginIx = lineIx + 1;
 			} else if (0 == line.find("VPO_END")) {
@@ -316,6 +322,12 @@ namespace pathos {
 
 		MaterialTemplate MT = materialTemplate->makeClone();
 		MT.replaceShadingModel(materialLines[materialShadingModelIx]);
+
+		if (bOutputWorldNormal) {
+			MT.replaceOutputWorldNormal("#define OUTPUTWORLDNORMAL 1");
+		} else {
+			MT.replaceOutputWorldNormal("");
+		}
 
 		// Construct material uniform buffer.
 		uint32 uboTotalElements = 0; // 1 element = 4 bytes

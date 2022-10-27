@@ -14,6 +14,7 @@ namespace pathos {
 		bool checkPlaceholders() const {
 			return lineIx_shaderstage != -1
 				&& lineIx_shadingmodel != -1
+				&& lineIx_outputworldnormal != -1 // Optional
 				&& lineIx_ubo != -1
 				&& lineIx_textureParams != -1
 				&& lineIx_getVPO != -1
@@ -41,6 +42,9 @@ namespace pathos {
 		void replaceShadingModel(const std::string& defineShadingModel) {
 			sourceLines[lineIx_shadingmodel] = defineShadingModel;
 		}
+		void replaceOutputWorldNormal(const std::string& outputWorldNormal) {
+			sourceLines[lineIx_outputworldnormal] = outputWorldNormal;
+		}
 		void replaceUBO(const std::string& defineUBO) {
 			sourceLines[lineIx_ubo] = defineUBO;
 		}
@@ -61,6 +65,7 @@ namespace pathos {
 
 		int32 lineIx_shaderstage = -1;
 		int32 lineIx_shadingmodel = -1;
+		int32 lineIx_outputworldnormal = -1;
 		int32 lineIx_ubo = -1;
 		int32 lineIx_textureParams = -1;
 		int32 lineIx_getVPO = -1;
