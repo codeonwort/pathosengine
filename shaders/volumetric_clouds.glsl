@@ -307,8 +307,7 @@ bool isMinus(vec3 v) {
 #endif
 
 // #todo: This is a total mess
-vec4 scene(ray_t camera, vec3 sunDir, vec2 uv)
-{
+vec4 traceScene(ray_t camera, vec3 sunDir, vec2 uv) {
     sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
     sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
 
@@ -601,7 +600,7 @@ void main() {
     
 	vec3 sunDir = uboPerFrame.sunLight.wsDirection;
 
-    vec4 result = scene(eye_ray, sunDir, uv);
+    vec4 result = traceScene(eye_ray, sunDir, uv);
 
     imageStore(renderTarget, currentTexel, result);
 }

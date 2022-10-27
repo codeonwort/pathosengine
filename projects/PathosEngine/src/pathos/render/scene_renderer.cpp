@@ -9,6 +9,7 @@
 #include "pathos/render/sky_ansel.h"
 #include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/sky_clouds.h"
+#include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
 #include "pathos/render/render_target.h"

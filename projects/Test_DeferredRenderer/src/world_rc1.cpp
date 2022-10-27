@@ -30,11 +30,11 @@
 #define OBJ_SPACESHIP_FILE       "render_challenge_1/spaceship.obj"
 #define OBJ_SPACESHIP_DIR        "render_challenge_1/"
 
-#define RING_ALBEDO       "resources/render_challenge_1/T_Brick.png"
-#define RING_NORMAL       "resources/render_challenge_1/N_Brick.png"
-#define RING_METALLIC     "resources/render_challenge_1/M_Brick.png"
-#define RING_ROUGHNESS    "resources/render_challenge_1/R_Brick.png"
-#define RING_LOCAL_AO     "resources/render_challenge_1/A_Brick.png"
+#define RING_ALBEDO              "resources/render_challenge_1/T_Brick.png"
+#define RING_NORMAL              "resources/render_challenge_1/N_Brick.png"
+#define RING_METALLIC            "resources/render_challenge_1/M_Brick.png"
+#define RING_ROUGHNESS           "resources/render_challenge_1/R_Brick.png"
+#define RING_LOCAL_AO            "resources/render_challenge_1/A_Brick.png"
 
 #define SPLINE_1                 "render_challenge_1/SpaceshipCurve1.spline"
 #define SPLINE_2                 "render_challenge_1/SpaceshipCurve2.spline"
@@ -43,11 +43,11 @@
 #define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
 #define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
-static const vector3      CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
-static const vector3      CAMERA_LOOK_AT       = vector3(20.0f, 25.0f, 190.0f);
-static const vector3      SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3      SUN_RADIANCE         = 1.0f * vector3(1.0f, 1.0f, 1.0f);
-static constexpr float    Y_OFFSET             = 6500.0f; // Offset every actor to match with cloud layer
+static const vector3             CAMERA_POSITION = vector3(20.0f, 25.0f, 200.0f);
+static const vector3             CAMERA_LOOK_AT  = vector3(20.0f, 25.0f, 190.0f);
+static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
+static const vector3             SUN_RADIANCE    = 1.0f * vector3(1.0f, 1.0f, 1.0f);
+static constexpr float           Y_OFFSET        = 6000.0f; // Offset every actor to match with cloud layer
 
 // --------------------------------------------------------
 // World
