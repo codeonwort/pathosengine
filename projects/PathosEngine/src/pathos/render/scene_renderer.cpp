@@ -1,17 +1,28 @@
 #include "scene_renderer.h"
 
+// Engine core
 #include "pathos/engine_policy.h"
+#include "pathos/console.h"
+#include "pathos/util/log.h"
+#include "pathos/util/math_lib.h"
+#include "pathos/util/cpu_profiler.h"
+#include "pathos/util/gl_debug_group.h"
 
+// Render core
+#include "pathos/shader/shader_program.h"
+#include "pathos/shader/material_shader.h"
 #include "pathos/render/render_device.h"
+#include "pathos/render/render_target.h"
+#include "pathos/texture/volume_texture.h"
+
+// Render passes
 #include "pathos/render/depth_prepass.h"
-#include "pathos/render/sky.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 #include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
-#include "pathos/render/render_target.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
@@ -24,21 +35,12 @@
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/render/postprocessing/super_res_fsr1.h"
 
-#include "pathos/shader/shader_program.h"
-#include "pathos/shader/material_shader.h"
-
+// Render proxies
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/light/directional_light_component.h"
 #include "pathos/light/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/texture/volume_texture.h"
-
-#include "pathos/console.h"
-#include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
-#include "pathos/util/cpu_profiler.h"
-#include "pathos/util/gl_debug_group.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"

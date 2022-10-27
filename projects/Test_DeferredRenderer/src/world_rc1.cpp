@@ -3,7 +3,6 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
-#include "pathos/render/sky_ansel.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/texture/volume_texture.h"
 
@@ -11,8 +10,8 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
-#include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
+#include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/light/point_light_actor.h"
 

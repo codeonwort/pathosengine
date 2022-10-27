@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "sky.h"
 #include "pathos/gl_handles.h"
-#include "pathos/render/scene_proxy.h"
-#include "pathos/actor/scene_component.h"
 #include "pathos/shader/uniform_buffer.h"
 
-// #todo-refactoring: Separate pass and actor code
+#include "badger/types/noncopyable.h"
+
 namespace pathos {
+
+	class SceneProxy;
 
 	class SkyAtmospherePass : public Noncopyable {
 
@@ -23,42 +23,6 @@ namespace pathos {
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
 		GLuint vao;
-
-	};
-
-	struct SkyAtmosphereProxy : SceneComponentProxy {
-		// No parameters for now
-		float dummy = 0.0f;
-	};
-
-}
-
-namespace pathos {
-
-	class AtmosphereScatteringComponent : public SceneComponent {
-		
-	public:
-		virtual void createRenderProxy(SceneProxy* scene) override {
-			SkyAtmosphereProxy* proxy = ALLOC_RENDER_PROXY<SkyAtmosphereProxy>(scene);
-			proxy->dummy = 0.0f;
-
-			scene->skyAtmosphere = proxy;
-		}
-
-	};
-
-	class AtmosphereScattering : public SkyActor {
-		
-	public:
-		AtmosphereScattering() {
-			component = createDefaultComponent<AtmosphereScatteringComponent>();
-			setAsRootComponent(component);
-		}
-
-		AtmosphereScatteringComponent* getComponent() const { return component; }
-
-	private:
-		AtmosphereScatteringComponent* component;
 
 	};
 

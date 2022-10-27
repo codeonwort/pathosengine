@@ -4,12 +4,14 @@
 #include "pathos/render_minimal.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/shader/material_shader.h"
+#include "pathos/loader/gltf_loader.h"
+#include "pathos/loader/asset_streamer.h"
+
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/light/directional_light_actor.h"
-#include "pathos/loader/gltf_loader.h"
-#include "pathos/loader/asset_streamer.h"
 #include "pathos/light/point_light_actor.h"
+#include "pathos/scene/sky_ansel_actor.h"
 //#include "pathos/light/rect_light_actor.h"
 
 #include "player_controller.h"

@@ -1,14 +1,14 @@
 #include "scene_loader.h"
+
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/actor/world.h"
 #include "pathos/light/point_light_actor.h"
 #include "pathos/light/directional_light_actor.h"
 #include "pathos/mesh/static_mesh_actor.h"
-#include "pathos/render/render_device.h"
-#include "pathos/render/sky_atmosphere.h"
-#include "pathos/render/skybox.h"
-#include "pathos/render/sky_ansel.h"
+#include "pathos/scene/skybox_actor.h"
+#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_atmosphere_actor.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>
@@ -77,7 +77,7 @@ namespace pathos {
 		// sky
 		bool skyBound = false;
 		if (sceneDesc.skyAtmosphere.valid) {
-			AtmosphereScattering* actor = world->spawnActor<AtmosphereScattering>();
+			SkyAtmosphereActor* actor = world->spawnActor<SkyAtmosphereActor>();
 
 			world->getScene().sky = actor;
 			skyBound = true;
@@ -92,7 +92,7 @@ namespace pathos {
 			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
 			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps, sceneDesc.skybox.name.c_str());
 
-			Skybox* actor = world->spawnActor<Skybox>();
+			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
 			actor->initialize(cubeTexture);
 
 			if (!skyBound) {

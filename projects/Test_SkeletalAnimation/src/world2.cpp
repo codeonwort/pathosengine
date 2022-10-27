@@ -7,6 +7,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/skybox_actor.h"
 
 #include <time.h>
 
@@ -147,7 +148,7 @@ void World2::setupScene()
 	text1->setActorScale(1000.0f);
 #endif
 
-	Skybox* sky = spawnActor<Skybox>();
+	SkyboxActor* sky = spawnActor<SkyboxActor>();
 	sky->initialize(cubeTexture);
 
 	scene.sky = sky;

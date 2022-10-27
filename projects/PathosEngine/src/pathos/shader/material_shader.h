@@ -1,14 +1,12 @@
 #pragma once
 
 #include "uniform_buffer.h"
+#include "pathos/gl_handles.h"
 #include "pathos/material/material_id.h"
 
 #include "badger/types/vector_types.h"
 #include <vector>
 #include <string>
-
-// #todo-refactoring: Wanna get rid of GLuint from this header.
-typedef unsigned int GLuint;
 
 namespace pathos {
 
@@ -73,7 +71,7 @@ namespace pathos {
 	private:
 		uint32 lastInstanceID = 0;
 
-		// These are just ketp as original data.
+		// These are just kept as original data.
 		// Actual parameter values are controlled by Material.
 		std::vector<MaterialConstantParameter> constantParameters;
 		std::vector<MaterialTextureParameter> textureParameters;

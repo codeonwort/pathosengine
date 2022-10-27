@@ -363,6 +363,15 @@
     <ClCompile Include="src\pathos\render\volumetric_clouds.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\scene\skybox_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\skybox_actor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -475,9 +484,6 @@
     </ClInclude>
     <ClInclude Include="src\pathos\render_minimal.h">
       <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\sky.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\skybox.h">
       <Filter>헤더 파일</Filter>
@@ -625,9 +631,6 @@
     </ClInclude>
     <ClInclude Include="src\pathos\light\directional_light_actor.h">
       <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\light\light_all.h">
-      <Filter>헤더 파일\pathos\light</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\vector_types.h">
       <Filter>헤더 파일</Filter>
@@ -792,6 +795,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\sky_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\skybox_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\skybox_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\sky_ansel_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\sky_ansel_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\sky_atmosphere_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

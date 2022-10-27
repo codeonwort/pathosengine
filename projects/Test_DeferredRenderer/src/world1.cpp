@@ -6,12 +6,13 @@
 #include "pathos/render_minimal.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/render/render_target.h"
-#include "pathos/render/sky_atmosphere.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
+#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/shader/material_shader.h"
 
 // --------------------------------------------------------
@@ -154,12 +155,12 @@ void World1::setupSky()
 	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
 	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true, "skybox cubemap");
 
-	Skybox* skybox = spawnActor<Skybox>();
+	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->initialize(cubeTexture);
 	skybox->setLOD(1.0f);
 	scene.sky = skybox;
 #elif SKY_METHOD == 1
-	scene.sky = spawnActor<AtmosphereScattering>();
+	scene.sky = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
 	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
 	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
@@ -167,7 +168,7 @@ void World1::setupSky()
 	scene.sky = ansel;
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
-	Skybox* skybox = spawnActor<Skybox>();
+	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
 	scene.sky = skybox;
 #endif

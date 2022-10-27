@@ -2,9 +2,9 @@
 #include "pathos/engine_policy.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/camera/camera.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/shader/shader_program.h"
+#include "pathos/camera/camera.h"
+#include "pathos/scene/skybox_component.h"
 
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
@@ -55,7 +55,7 @@ namespace pathos {
 	}
 
 	void SkyboxPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(Skybox);
+		SCOPED_DRAW_EVENT(SkyboxActor);
 
 		const Camera& camera = scene->camera;
 		SkyboxProxy* skybox = scene->skybox;
@@ -94,56 +94,6 @@ namespace pathos {
 		skybox->cube->drawPrimitive(cmdList);
 
 		cmdList.cullFace(GL_BACK);
-	}
-
-}
-
-namespace pathos {
-
-	SkyboxComponent::~SkyboxComponent() {
-		if (cube) {
-			delete cube;
-			cube = nullptr;
-		}
-	}
-
-	void SkyboxComponent::initialize(GLuint inTextureID) {
-		textureID = inTextureID;
-		lod = 0.0f;
-		cube = new CubeGeometry(vector3(1.0f));
-	}
-
-	void SkyboxComponent::setLOD(float inLOD) {
-		lod = pathos::max(0.0f, inLOD);
-	}
-
-	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
-		if (!hasValidResources()) {
-			scene->skybox = nullptr;
-			return;
-		}
-
-		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
-		proxy->cube = cube;
-		proxy->textureID = textureID;
-		proxy->textureLod = lod;
-
-		scene->skybox = proxy;
-	}
-
-}
-
-namespace pathos {
-
-	/**
-	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
-	*/
-	void Skybox::initialize(GLuint inTextureID) {
-		component->initialize(inTextureID);
-	}
-
-	void Skybox::setLOD(float inLOD) {
-		component->setLOD(inLOD);
 	}
 
 }

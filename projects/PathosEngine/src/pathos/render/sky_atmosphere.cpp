@@ -108,7 +108,7 @@ namespace pathos {
 	}
 
 	void SkyAtmospherePass::render(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(AtmosphereScattering);
+		SCOPED_DRAW_EVENT(SkyAtmosphereActor);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 

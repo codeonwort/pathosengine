@@ -169,6 +169,9 @@
     <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
+    <ClCompile Include="src\pathos\scene\skybox_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\skybox_component.cpp" />
+    <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp" />
     <ClCompile Include="src\pathos\shader\material_shader.cpp" />
     <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp" />
     <ClCompile Include="src\pathos\shader\shader_program.cpp" />
@@ -248,7 +251,6 @@
     <ClInclude Include="src\pathos\mesh\static_mesh_component.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
-    <ClInclude Include="src\pathos\light\light_all.h" />
     <ClInclude Include="src\pathos\light\shadow_directional.h" />
     <ClInclude Include="src\pathos\loader\imageloader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
@@ -286,6 +288,13 @@
     <ClInclude Include="src\pathos\scene\scene_render_settings.h" />
     <ClInclude Include="src\pathos\render\scene_render_targets.h" />
     <ClInclude Include="src\pathos\scene\scene_capture_component.h" />
+    <ClInclude Include="src\pathos\scene\skybox_actor.h" />
+    <ClInclude Include="src\pathos\scene\skybox_component.h" />
+    <ClInclude Include="src\pathos\scene\sky_actor.h" />
+    <ClInclude Include="src\pathos\scene\sky_ansel_actor.h" />
+    <ClInclude Include="src\pathos\scene\sky_ansel_component.h" />
+    <ClInclude Include="src\pathos\scene\sky_atmosphere_actor.h" />
+    <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h" />
     <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h" />
     <ClInclude Include="src\pathos\scene\volumetric_cloud_component.h" />
     <ClInclude Include="src\pathos\shader\material_shader.h" />
@@ -307,7 +316,6 @@
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />
-    <ClInclude Include="src\pathos\render\sky.h" />
     <ClInclude Include="src\pathos\mesh\geometry.h" />
     <ClInclude Include="src\pathos\material\material.h" />
     <ClInclude Include="src\pathos\material\material_id.h" />
