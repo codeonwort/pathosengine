@@ -158,7 +158,7 @@ vec4 sampleWeather(vec3 wPos) {
     vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
     vec4 data = textureLod(weatherMap, uv, 0);
 
-    data.x = max(0.0, data.x + uboCloud.cloudCoverageOffset);
+    data.x = saturate(data.x + uboCloud.cloudCoverageOffset);
     return data;
 }
 
@@ -179,9 +179,10 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     float lowFreqNoise = baseNoises.x;
     float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
     
-    // #todo-wip: Not good
-    float baseCloud = remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0);
-    baseCloud += uboCloud.baseNoiseOffset;
+    // #todo-wip: Too many holes in the final result.
+    // Is it due to bad noise sampling or bad raymarching?
+    float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
+    baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
     vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
 
@@ -207,7 +208,9 @@ float sampleCloud(vec3 P, float lod) {
 
     // 1. Apply density gradient
     float heightFraction = getHeightFraction(P);
+    // #todo-wip: Random cloud type
     float cloudType = 0.5 * (1.0 + sin(P.x * 0.0005));
+    //float cloudType = 0.0;
     baseCloud *= getDensityOverHeight(heightFraction, cloudType);
     // Reduce density at the bottoms of the clouds (density increases over altitude)
     baseCloud *= heightFraction;
