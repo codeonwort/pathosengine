@@ -13,17 +13,20 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
-	// #todo-cloud: Expose in VolumetricCloudComponent
+	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
+	// But without a good GUI it's rather convenient to control them with cvars...
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
 	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
-	// #todo-cloud: Should be 0.0 but then totally blocky. Density is not decreasing over height... I have to fix it first.
-	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", -0.92f, "Base cloud coverage offset");
 	static ConsoleVariable<float> cvar_cloud_cloudScale("r.cloud.cloudScale", 0.4f, "Scale factor of basic shape of clouds");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
+	
+	// #todo-cloud: Should be 0.0 but then totally blocky. Density is not decreasing over height... I have to fix it first.
+	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", 0.0f, "Cloud coverage offset");
+	static ConsoleVariable<float> cvar_cloud_baseNoiseOffset("r.cloud.baseNoiseOffset", 0.0f, "Base noise offset");
 
 	struct UBO_VolumetricCloud {
 		float earthRadius;
@@ -33,10 +36,11 @@ namespace pathos {
 
 		float windSpeedZ;
 		float weatherScale;
-		float cloudCoverageOffset;
 		float cloudScale;
-
 		float cloudCurliness;
+
+		float cloudCoverageOffset;
+		float baseNoiseOffset;
 		uint32 frameCounter;
 	};
 
@@ -110,11 +114,14 @@ namespace pathos {
 			uboData.cloudLayerMinY = cvar_cloud_minY.getFloat();
 			uboData.cloudLayerMaxY = cvar_cloud_maxY.getFloat();
 			uboData.windSpeedX = cvar_cloud_windSpeedX.getFloat();
+
 			uboData.windSpeedZ = cvar_cloud_windSpeedZ.getFloat();
 			uboData.weatherScale = cvar_cloud_weatherScale.getFloat();
-			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
 			uboData.cloudScale = cvar_cloud_cloudScale.getFloat();
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
+
+			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
+			uboData.baseNoiseOffset = cvar_cloud_baseNoiseOffset.getFloat();
 			uboData.frameCounter = scene->frameNumber;
 		}
 		ubo.update(cmdList, 1, &uboData);
