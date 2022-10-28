@@ -20,6 +20,8 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
+	// #todo-cloud: Should be 0.0 but then totally blocky. Density is not decreasing over height... I have to fix it first.
+	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", -0.92f, "Base cloud coverage offset");
 	static ConsoleVariable<float> cvar_cloud_cloudScale("r.cloud.cloudScale", 0.4f, "Scale factor of basic shape of clouds");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 
@@ -28,12 +30,14 @@ namespace pathos {
 		float cloudLayerMinY;
 		float cloudLayerMaxY;
 		float windSpeedX;
+
 		float windSpeedZ;
 		float weatherScale;
+		float cloudCoverageOffset;
 		float cloudScale;
+
 		float cloudCurliness;
 		uint32 frameCounter;
-		uint32 enabled;
 	};
 
 	// #todo-cloud: Use clearTexImage instead of dispatching a CS...
@@ -108,6 +112,7 @@ namespace pathos {
 			uboData.windSpeedX = cvar_cloud_windSpeedX.getFloat();
 			uboData.windSpeedZ = cvar_cloud_windSpeedZ.getFloat();
 			uboData.weatherScale = cvar_cloud_weatherScale.getFloat();
+			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
 			uboData.cloudScale = cvar_cloud_cloudScale.getFloat();
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
 			uboData.frameCounter = scene->frameNumber;

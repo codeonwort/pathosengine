@@ -1,5 +1,7 @@
 #version 460 core
 
+#include "common.glsl"
+#include "geom_common.glsl"
 #include "deferred_common.glsl"
 
 // Tuning -----------------------------------------------------
@@ -25,9 +27,10 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 
     float windSpeedZ;
     float weatherScale;
+    float cloudCoverageOffset;
     float cloudScale;
+    
     float cloudCurliness;
-
     uint  frameCounter;
 } uboCloud;
 
@@ -42,7 +45,6 @@ layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
-#define PI                    3.14159265359
 
 // Cone sampling random offsets
 const vec3 noiseKernel[6u] = vec3[]
@@ -75,97 +77,13 @@ float getCloudScale() { return uboCloud.cloudScale; }
 float getCloudCurliness() { return uboCloud.cloudCurliness; }
 
 //////////////////////////////////////////////////////////////////////////
-// Ray, sphere code from https://www.shadertoy.com/view/XtBXDw
-struct ray_t {
-	vec3 origin;
-	vec3 direction;
-};
-
-struct sphere_t {
-	vec3 origin;
-	float radius;
-};
-
-struct hit_t {
-	float t;
-	vec3 normal;
-	vec3 origin;
-};
-
-#define max_dist 1e8
-hit_t no_hit = hit_t(
-	float(max_dist + 1e1), // 'infinite' distance
-	vec3(0., 0., 0.), // normal
-	vec3(0., 0., 0.) // origin
-);
-
-void intersect_sphere(
-	in ray_t ray,
-	in sphere_t sphere,
-	inout hit_t hit
-){
-// Original code from shadertoy
-#if PRECISE_RAY_SPHERE_INTERSECTION == 0
-	vec3 rc = sphere.origin - ray.origin;
-	float radius2 = sphere.radius * sphere.radius;
-	float tca = dot(rc, ray.direction);
-//	if (tca < 0.) return;
-
-	float d2 = dot(rc, rc) - tca * tca;
-	if (d2 > radius2)
-		return;
-
-	float thc = sqrt(radius2 - d2);
-	float t0 = tca - thc;
-	float t1 = tca + thc;
-
-	if (t0 < 0.) t0 = t1;
-	if (t0 > hit.t)
-		return;
-
-	vec3 impact = ray.origin + ray.direction * t0;
-
-    hit.t = t0;
-	hit.origin = impact;
-	hit.normal = (impact - sphere.origin) / sphere.radius;
-// -> Well, no visual differences. Let's use the original code.
-#else
-    vec3 d = ray.direction;
-    vec3 f = ray.origin - sphere.origin;
-    float r = sphere.radius;
-    float a = dot(d, d);
-    float b = -dot(f, d);
-    vec3 X = f + (b/a)*d;
-    float det = r*r - dot(X,X);
-    
-    if (det < 0.0) return;
-
-    float c = dot(f,f) - r*r;
-    float q = b + sign(b) * sqrt(a * det);
-    float t0 = c/q;
-    float t1 = q/a;
-    float t = t0 < 0.0 ? t1 : t1 < 0.0 ? t0 : min(t0, t1);
-
-    hit.t = t;
-    hit.origin = ray.origin + t * ray.direction;
-    hit.normal = (hit.origin - sphere.origin) / sphere.radius;
-#endif
-}
-
-bool isInvalidHit(hit_t hit) {
-    return hit.t < 0.0 || hit.t > max_dist;
-}
-
-//////////////////////////////////////////////////////////////////////////
 
 // Rayleigh
-float phaseR(float cosTheta)
-{
+float phaseR(float cosTheta) {
     return 3.0 / (16.0 * PI) * (1.0 + cosTheta * cosTheta);
 }
 // Mie
-float phaseM(float t)
-{
+float phaseM(float t) {
     const float g = 0.76;
     float gg = g * g;
     float tt = t * t;
@@ -230,6 +148,7 @@ vec4 sampleWeather(vec3 wPos) {
     vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
     vec4 data = textureLod(weatherMap, uv, 0);
 
+    // #todo-fatal: Weather coverage control
     data.x = max(0.0, data.x - 0.1); // If overall coverage is too high
     return data;
 }
@@ -250,8 +169,7 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     vec4 baseNoises = textureLod(shapeNoise, samplePos, lod);
     float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
 
-    // #todo: baseCloud values are too high
-    float baseCloud = baseNoises.x - 0.92;
+    float baseCloud = baseNoises.x + uboCloud.cloudCoverageOffset;
 
     vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
 
@@ -307,18 +225,17 @@ bool isMinus(vec3 v) {
 #endif
 
 // #todo: This is a total mess
-vec4 traceScene(ray_t camera, vec3 sunDir, vec2 uv) {
-    sphere_t cloudInnerSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
-    sphere_t cloudOuterSphere = sphere_t(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
+vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
+    Sphere cloudInnerSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
+    Sphere cloudOuterSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
 
     float cameraHeight = camera.origin.y;
     float totalRayMarchLength = 0.0;
     vec3 raymarchStartPos = vec3(0.0);
 
-    hit_t hit1 = no_hit;
-    hit_t hit2 = no_hit;
-    intersect_sphere(camera, cloudInnerSphere, hit1);
-    intersect_sphere(camera, cloudOuterSphere, hit2);
+    HitResult hit1, hit2;
+    hit1 = hit_ray_sphere(camera, cloudInnerSphere);
+    hit2 = hit_ray_sphere(camera, cloudOuterSphere);
     if (cameraHeight < getCloudLayerMin()) {
         raymarchStartPos = hit1.origin;
         totalRayMarchLength = hit2.t - hit1.t;
@@ -372,7 +289,7 @@ vec4 traceScene(ray_t camera, vec3 sunDir, vec2 uv) {
     float occluderDepth = texture(sceneDepth, uv).r;
     vec3 occluderPos = getViewPositionFromSceneDepth(uv, occluderDepth);
 
-    // (#todo: empty-space optimization)
+    // #todo: empty-space optimization
     // Raymarching
     for (int i = 0; i < numSteps; ++i) {
         if (P.y < 0.0)
@@ -399,9 +316,9 @@ vec4 traceScene(ray_t camera, vec3 sunDir, vec2 uv) {
         float TL = 1.0; // transmittance(P->Sun) or light visibility
 
         {
-            hit_t hitL = no_hit;
-            ray_t ray2 = ray_t(P, -sunDir);
-            intersect_sphere(ray2, cloudOuterSphere, hitL);
+            HitResult hitL;
+            Ray ray2 = Ray(P, -sunDir);
+            hitL = hit_ray_sphere(ray2, cloudOuterSphere);
 
             float tau = 0.0; // optical thickness
             if (isInvalidHit(hitL) == false) {
@@ -548,7 +465,7 @@ vec2 viewDirectionToUV_prevFrame(vec3 dir) {
 
 void main() {
     ivec2 sceneSize = imageSize(renderTarget);
-    if (gl_GlobalInvocationID.x >= sceneSize.x || gl_GlobalInvocationID.y >= sceneSize.y) {
+    if (any(greaterThanEqual(gl_GlobalInvocationID.xy, sceneSize.xy))) {
 		return;
 	}
 
@@ -589,7 +506,7 @@ void main() {
 #endif // REPROJECTION_METHOD
 #endif // TEMPORAL_REPROJECTION
 
-	ray_t eye_ray;
+	Ray eye_ray;
     eye_ray.origin = uboPerFrame.ws_eyePosition;
 	eye_ray.direction = viewDir;
 

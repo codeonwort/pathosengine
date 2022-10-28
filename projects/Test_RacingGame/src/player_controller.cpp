@@ -73,6 +73,8 @@ void PlayerController::setupInput()
 	inputManager->bindUniqueAxis("moveFast", moveFast);
 	inputManager->bindUniqueAxis("rotateYaw", rotateYaw);
 	inputManager->bindUniqueAxis("rotatePitch", rotatePitch);
+	// #todo-game: Need to unbind previous mapping.
+	// 'reload_scene' command respawns the player controller but this binding is not being renewed.
 	inputManager->bindUniqueButtonPressed("RMB", rmb, [this]() { rotateByMouse = true; });
 	inputManager->bindUniqueButtonReleased("RMB", rmb, [this]() { rotateByMouse = false; });
 }

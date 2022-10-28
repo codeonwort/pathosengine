@@ -9,10 +9,15 @@
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/loader/scene_loader.h"
 #include "pathos/input/input_manager.h"
 
 #define SCENE_DESC_FILE "resources/racing_game/test_scene.json"
+
+#define CLOUD_WEATHER_MAP_FILE   "racing_game/WeatherMap.png"
+#define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
+#define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
 const vector3 CAMERA_POSITION = vector3(0.0f, 0.0f, 50.0f);
 const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);
@@ -69,6 +74,22 @@ void World_Game1::prepareAssets()
 
 	sphereMesh = new Mesh(G_sphere, M_color);
 	landscapeMesh = new Mesh(G_plane, M_landscape);
+
+	weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false, "Texture: WeatherMap");
+	cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
+	{
+		uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
+		uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
+		CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+		cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+	}
+	cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
+	{
+		uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
+		uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
+		CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+		cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
+	}
 }
 
 void World_Game1::reloadScene()
@@ -90,6 +111,10 @@ void World_Game1::reloadScene()
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();
 	playerController->setPlayerPawn(sphere0);
+
+	cloudscape = spawnActor<VolumetricCloudActor>();
+	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
+	scene.cloud = cloudscape;
 
 	setupScene();
 }

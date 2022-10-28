@@ -8,6 +8,7 @@ extern const vector3       CAMERA_POSITION;
 extern const vector3       CAMERA_LOOK_AT;
 
 namespace pathos {
+	class VolumetricCloudActor;
 	class SkyAtmosphereActor;
 	class SkyboxActor;
 	class AnselSkyActor;
@@ -15,6 +16,7 @@ namespace pathos {
 	class PointLightActor;
 	class StaticMeshActor;
 	class Mesh;
+	class VolumeTexture;
 }
 class PlayerController;
 
@@ -33,6 +35,11 @@ public:
 	void setupScene();
 
 private:
+	GLuint weatherTexture = 0;
+	VolumeTexture* cloudShapeNoise = nullptr;
+	VolumeTexture* cloudErosionNoise = nullptr;
+	VolumetricCloudActor* cloudscape = nullptr;
+
 	SkyAtmosphereActor* skyAtmosphere = nullptr;
 	SkyboxActor* skybox = nullptr;
 	AnselSkyActor* skyEquimap = nullptr;

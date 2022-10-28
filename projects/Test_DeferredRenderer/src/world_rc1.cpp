@@ -41,7 +41,7 @@
 #define SPLINE_1                 "render_challenge_1/SpaceshipCurve1.spline"
 #define SPLINE_2                 "render_challenge_1/SpaceshipCurve2.spline"
 
-#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.png"
+#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.tga"
 #define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
 #define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
 
