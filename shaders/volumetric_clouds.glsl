@@ -124,8 +124,7 @@ float saturate(float x) {
 
 // bottom layer = 0.0, top layer = 1.0
 float getHeightFraction(vec3 wPos) {
-    float h = length(wPos) - getEarthRadius();
-    float fraction = (h - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
+    float fraction = (wPos.y - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
     return saturate(fraction);
 }
 
@@ -141,12 +140,16 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
 	float stratusFactor = 1.0 - clamp(cloudType * 2.0, 0.0, 1.0);
 	float stratoCumulusFactor = 1.0 - abs(cloudType - 0.5) * 2.0;
 	float cumulusFactor = clamp(cloudType - 0.5, 0.0, 1.0) * 2.0;
-
-	vec4 baseGradient = stratusFactor * STRATUS_GRADIENT + stratoCumulusFactor * STRATOCUMULUS_GRADIENT + cumulusFactor * CUMULUS_GRADIENT;
-
-	// gradicent computation (see Siggraph 2017 Nubis-Decima talk)
-	return remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0) * remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0);
-	//return smoothstep(baseGradient.x, baseGradient.y, heightFraction) - smoothstep(baseGradient.z, baseGradient.w, heightFraction);
+	vec4 baseGradient
+        = stratusFactor * STRATUS_GRADIENT
+        + stratoCumulusFactor * STRATOCUMULUS_GRADIENT
+        + cumulusFactor * CUMULUS_GRADIENT;
+    
+    // p.28 of Nubis pdf shows the formula for stratus.
+    // https://advances.realtimerendering.com/s2017/index.html
+    float x = remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0);
+    float y = remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0);
+    return x * y;
 }
 
 // Returns (cloudCoverage, ?, ?, ?)
@@ -173,13 +176,18 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     // R: Perlin-Worley noise
     // G,B,A: Worley noises at increasing frequencies
     vec4 baseNoises = textureLod(shapeNoise, samplePos, lod);
-    float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
-
-    float baseCloud = baseNoises.x + uboCloud.baseNoiseOffset;
+    float lowFreqNoise = baseNoises.x;
+    float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
+    
+    // #todo-wip: Not good
+    float baseCloud = remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0);
+    baseCloud += uboCloud.baseNoiseOffset;
 
     vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
 
-    result.x = saturate(remap(baseCloud, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
+    // #todo-wip
+    //result.x = saturate(remap(baseNoises.x, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
+    result.x = baseCloud;
     result.y = dot(vec3(0.625, 0.25, 0.125), detailNoises);
     return result;
 }
@@ -195,28 +203,23 @@ float sampleCloud(vec3 P, float lod) {
 #endif
 
     vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod);
-
     float baseCloud = cloudNoiseSamples.x;
+
+    // 1. Apply density gradient
     float heightFraction = getHeightFraction(P);
+    float cloudType = 0.5 * (1.0 + sin(P.x * 0.0005));
+    baseCloud *= getDensityOverHeight(heightFraction, cloudType);
+    // Reduce density at the bottoms of the clouds (density increases over altitude)
+    baseCloud *= heightFraction;
 
-    baseCloud *= 1.0 - heightFraction;
-
-    // #todo-wip: heightFraction itself seems calculated wrong?
-    if (heightFraction > 0.5) baseCloud = 0.0;
-    //baseCloud *= getDensityOverHeight(heightFraction, 1.0);
-
-#if 1
-    float baseCloudWithCoverage = baseCloud * cloudCoverage;
-#else
-    // #todo-wip: It makes inside of coverage area totally empty
-    float baseCloudWithCoverage = remap(baseCloud, cloudCoverage, 1.0, 0.0, 1.0);
-    baseCloudWithCoverage *= cloudCoverage;
-#endif
+    // 2. Apply cloudCoverage
+    float baseCloudWithCoverage = remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0);
 
 #if DEBUG_MODE == DEBUG_MODE_NO_EROSION
     return saturate(baseCloudWithCoverage);
 #endif
 
+    // 3. Apply erosion
     float erosion = cloudNoiseSamples.y;
 #if 0
     // Erosion is supposed to add small details to the basic shape of cloud,
@@ -310,8 +313,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
     // #todo: empty-space optimization
     // Raymarching
     for (int i = 0; i < numSteps; ++i) {
-        if (currentPos.y < 0.0)
-        {
+        if (currentPos.y < 0.0) {
             isGround = true;
             break;
         }
@@ -334,9 +336,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
         float TL = 1.0; // transmittance(P->Sun) or light visibility
 
         {
-            HitResult hitL;
             Ray ray2 = Ray(currentPos, -sunDir);
-            hitL = hit_ray_sphere(ray2, cloudOuterSphere);
+            HitResult hitL = hit_ray_sphere(ray2, cloudOuterSphere);
 
             float tau = 0.0; // optical thickness
             if (isInvalidHit(hitL) == false) {

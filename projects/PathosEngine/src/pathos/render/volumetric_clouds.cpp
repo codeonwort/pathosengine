@@ -29,6 +29,8 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_baseNoiseOffset("r.cloud.baseNoiseOffset", 0.0f, "Base noise offset");
 
 	struct UBO_VolumetricCloud {
+		static constexpr uint32 BINDING_POINT = 1;
+
 		float earthRadius;
 		float cloudLayerMinY;
 		float cloudLayerMaxY;
@@ -124,7 +126,7 @@ namespace pathos {
 			uboData.baseNoiseOffset = cvar_cloud_baseNoiseOffset.getFloat();
 			uboData.frameCounter = scene->frameNumber;
 		}
-		ubo.update(cmdList, 1, &uboData);
+		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture);
