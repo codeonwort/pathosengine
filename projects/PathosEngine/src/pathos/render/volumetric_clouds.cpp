@@ -14,17 +14,18 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
 	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
-	// But without a good GUI it's rather convenient to control them with cvars...
+	// But without a good GUI it's rather convenient to control them with cvars.
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
 	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
-	static ConsoleVariable<float> cvar_cloud_cloudScale("r.cloud.cloudScale", 0.4f, "Scale factor of basic shape of clouds");
+	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.00001f, "Scale factor for base noise sampling");
+	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.25f, "Scale factor for erosion noise sampling");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 	
-	// #todo-cloud: Should be 0.0 but then totally blocky. Density is not decreasing over height... I have to fix it first.
+	// #todo-cloud: Deprecated.
 	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", 0.0f, "Cloud coverage offset");
 	static ConsoleVariable<float> cvar_cloud_baseNoiseOffset("r.cloud.baseNoiseOffset", 0.0f, "Base noise offset");
 
@@ -38,15 +39,16 @@ namespace pathos {
 
 		float windSpeedZ;
 		float weatherScale;
-		float cloudScale;
-		float cloudCurliness;
+		float baseNoiseScale;
+		float erosionNoiseScale;
 
+		float cloudCurliness;
 		float cloudCoverageOffset;
 		float baseNoiseOffset;
 		uint32 frameCounter;
 	};
 
-	// #todo-cloud: Use clearTexImage instead of dispatching a CS...
+	// #todo-cloud: Use clearTexImage instead of dispatching a CS.
 	class VolumetricCloudClearCS : public ShaderStage {
 	public:
 		VolumetricCloudClearCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudClearCS") {
@@ -119,9 +121,10 @@ namespace pathos {
 
 			uboData.windSpeedZ = cvar_cloud_windSpeedZ.getFloat();
 			uboData.weatherScale = cvar_cloud_weatherScale.getFloat();
-			uboData.cloudScale = cvar_cloud_cloudScale.getFloat();
-			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
+			uboData.baseNoiseScale = cvar_cloud_baseNoiseScale.getFloat();
+			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
 
+			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
 			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
 			uboData.baseNoiseOffset = cvar_cloud_baseNoiseOffset.getFloat();
 			uboData.frameCounter = scene->frameNumber;

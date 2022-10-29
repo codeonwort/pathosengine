@@ -27,9 +27,10 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 
     float windSpeedZ;
     float weatherScale;
-    float cloudScale;
-    float cloudCurliness;
+    float baseNoiseScale;
+    float erosionNoiseScale;
 
+    float cloudCurliness;
     float cloudCoverageOffset;
     float baseNoiseOffset;
     uint  frameCounter;
@@ -74,7 +75,8 @@ float getCloudLayerMin() { return uboCloud.cloudLayerMinY; }
 float getCloudLayerMax() { return uboCloud.cloudLayerMaxY; }
 vec2 getWindSpeed() { return vec2(uboCloud.windSpeedX, uboCloud.windSpeedZ); }
 float getWeatherScale() { return uboCloud.weatherScale; }
-float getCloudScale() { return uboCloud.cloudScale; }
+float getBaseNoiseScale() { return uboCloud.baseNoiseScale; }
+float getErosionNoiseScale() { return uboCloud.erosionNoiseScale; }
 float getCloudCurliness() { return uboCloud.cloudCurliness; }
 
 //////////////////////////////////////////////////////////////////////////
@@ -139,7 +141,7 @@ float getHeightFraction(vec3 wPos) {
 float getDensityOverHeight(float heightFraction, float cloudType) {
 	float stratusFactor = 1.0 - clamp(cloudType * 2.0, 0.0, 1.0);
 	float stratoCumulusFactor = 1.0 - abs(cloudType - 0.5) * 2.0;
-	float cumulusFactor = clamp(cloudType - 0.5, 0.0, 1.0) * 2.0;
+	float cumulusFactor = clamp(cloudType - 0.5, 0.0, 0.5) * 2.0;
 	vec4 baseGradient
         = stratusFactor * STRATUS_GRADIENT
         + stratoCumulusFactor * STRATOCUMULUS_GRADIENT
@@ -147,8 +149,8 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
     
     // p.28 of Nubis pdf shows the formula for stratus.
     // https://advances.realtimerendering.com/s2017/index.html
-    float x = remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0);
-    float y = remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0);
+    float x = saturate(remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0));
+    float y = saturate(remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0));
     return x * y;
 }
 
@@ -163,15 +165,14 @@ vec4 sampleWeather(vec3 wPos) {
 }
 
 // #todo: Replace with a packed texture
-vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
-    vec2 uv = 0.5 + wPos.xz / getCloudLayerMin();
-    vec2 moving_uv = uv + getWorldTime() * getWindSpeed();
+vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
+    // #todo-wip: noise sampling position
+    vec3 samplePos = wPos;
+    //samplePos.xz += getWorldTime() * getWindSpeed();
+    samplePos.xz += heightFraction * getWindSpeed() * 500.0;
+    samplePos *= getBaseNoiseScale() / 128.0;
 
-    float heightFraction = getHeightFraction(wPos);
-    vec3 samplePos = vec3(getCloudScale() * moving_uv, heightFraction);
-    vec3 samplePos2 = vec3(getCloudScale() * uv, heightFraction);
-
-    vec2 result = vec2(0.0);
+    vec3 samplePos2 = wPos * getErosionNoiseScale() / 32.0;
 
     // R: Perlin-Worley noise
     // G,B,A: Worley noises at increasing frequencies
@@ -179,18 +180,18 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod) {
     float lowFreqNoise = baseNoises.x;
     float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
     
-    // #todo-wip: Too many holes in the final result.
-    // Is it due to bad noise sampling or bad raymarching?
+    // #todo-wip: low freq only should look like clouds
+    //float baseCloud = lowFreqNoise;
     float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
     baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
-    vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
+    // #todo-wip: GPU Pro 7 suggests this but SIGGRAPH 2017 suggests above formula.
+    //baseCloud = saturate(remap(lowFreqNoise, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
 
-    // #todo-wip
-    //result.x = saturate(remap(baseNoises.x, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
-    result.x = baseCloud;
-    result.y = dot(vec3(0.625, 0.25, 0.125), detailNoises);
-    return result;
+    vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
+    float erosion = dot(vec3(0.625, 0.25, 0.125), detailNoises);
+
+    return vec2(baseCloud, erosion);
 }
 
 // Returns final cloud density for raymarching, all factors considered.
@@ -199,24 +200,25 @@ float sampleCloud(vec3 P, float lod) {
     vec4 weatherData = sampleWeather(P);
     float cloudCoverage = weatherData.x;
 
+    float heightFraction = getHeightFraction(P);
+
 #if DEBUG_MODE == DEBUG_MODE_NO_NOISE || DEBUG_MODE == DEBUG_MODE_WEATHER
-    return cloudCoverage * getDensityOverHeight(getHeightFraction(P), 1.0);
+    return cloudCoverage * getDensityOverHeight(heightFraction, 1.0);
 #endif
 
-    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod);
+    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod, heightFraction);
     float baseCloud = cloudNoiseSamples.x;
 
     // 1. Apply density gradient
-    float heightFraction = getHeightFraction(P);
     // #todo-wip: Random cloud type
-    float cloudType = 0.5 * (1.0 + sin(P.x * 0.0005));
-    //float cloudType = 0.0;
+    //float cloudType = 0.5 * (1.0 + sin(P.x * 0.0005));
+    float cloudType = 0.5;
     baseCloud *= getDensityOverHeight(heightFraction, cloudType);
     // Reduce density at the bottoms of the clouds (density increases over altitude)
     baseCloud *= heightFraction;
 
     // 2. Apply cloudCoverage
-    float baseCloudWithCoverage = remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0);
+    float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
 
 #if DEBUG_MODE == DEBUG_MODE_NO_EROSION
     return saturate(baseCloudWithCoverage);
@@ -224,22 +226,24 @@ float sampleCloud(vec3 P, float lod) {
 
     // 3. Apply erosion
     float erosion = cloudNoiseSamples.y;
-#if 0
+#if 1
     // Erosion is supposed to add small details to the basic shape of cloud,
     // but it decreases cloud coverage too much.
-    float erosionModifier = mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0));
-    float finalCloud = baseCloudWithCoverage - erosionModifier * (1.0 - baseCloudWithCoverage);
-    finalCloud = remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0);
+    float erosionModifier = saturate(mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0)));
+    //erosionModifier *= 0.35 * exp(-cloudCoverage * 0.75);
+    //float finalCloud = saturate(remap(baseCloudWithCoverage, erosionModifier, 1.0, 0.0, 1.0));
+    float finalCloud = baseCloudWithCoverage - erosionModifier * baseCloudWithCoverage;
+    finalCloud = saturate(remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0));
 #elif 0
-    float erosionModifier = 0.01 * erosion * heightFraction;
-	float finalCloud = baseCloudWithCoverage - erosionModifier;
-    finalCloud = remap(finalCloud, erosionModifier, 1.0, 0.0, 1.0);
+    float erosionModifier = 1.5 * erosion * saturate(heightFraction - 0.1);
+	float finalCloud = saturate(baseCloudWithCoverage - erosionModifier);
+    //finalCloud = saturate(remap(finalCloud, erosionModifier, 1.0, 0.0, 1.0));
 #else
     // #todo-wip: Temp disable erosion
     float finalCloud = baseCloudWithCoverage;
 #endif
 
-    return saturate(finalCloud);
+    return finalCloud;
 }
 
 #if DEBUG_MINUS_COLOR
@@ -279,7 +283,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
         totalRayMarchLength = hit1.t - hit2.t;
     }
     // raymarch length is too long near horizon
-    totalRayMarchLength = min(4.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
+    totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
 
     // DEBUG: intersection test failed
     if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
