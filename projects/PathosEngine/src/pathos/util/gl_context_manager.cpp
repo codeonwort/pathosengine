@@ -27,9 +27,10 @@ namespace pathos {
 	void OpenGLContextManager_Windows::takeContext() {
 		CHECKF(contextOwnerThreadId == 0, "GL context is already taken");
 
+		// #todo-fatal: wglMakeCurrent() randomly does not return on startup.
 		BOOL result = wglMakeCurrent(hdc, glContext);
 		if (result == false) {
-			DWORD lastError = GetLastError();
+			DWORD lastError = ::GetLastError();
 			LOG(LogFatal, "wglMakeCurrent() failed, GetLastError()=%u", lastError);
 		}
 		CHECKF(result, "Failed to switch GL context");
@@ -39,7 +40,13 @@ namespace pathos {
 
 	void OpenGLContextManager_Windows::returnContext() {
 		CHECK(contextOwnerThreadId == GetCurrentThreadId());
-		wglMakeCurrent(hdc, NULL);
+		// https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-wglmakecurrent
+		// MSDN says if hglrc is NULL then hdc is ignored, but actually it does not?
+		BOOL result = wglMakeCurrent(/*hdc*/NULL, NULL);
+		if (result == false) {
+			DWORD lastError = ::GetLastError();
+			LOG(LogFatal, "wglMakeCurrent() failed, GetLastError()=%u", lastError);
+		}
 		contextOwnerThreadId = 0;
 	}
 

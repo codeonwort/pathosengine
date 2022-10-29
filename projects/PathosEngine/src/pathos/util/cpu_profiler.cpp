@@ -153,7 +153,11 @@ namespace pathos {
 
 	void CpuProfiler::purgeEverything() {
 		purge_milestone.fetch_add(1);
-
+		// #todo-fatal: Ok, atomic add won't save this from crash.
+		// 1. fetch_add() is executed.
+		// 2. New cpu counter is started.
+		// 3. Profiles are cleared.
+		// 4. New cpu counter is finished -> CRASH
 		for (auto it = profiles.begin(); it != profiles.end(); ++it) {
 			if (it->second.items.size() >= PURGE_ITEMS_AFTER) {
 				it->second.clearItems();
