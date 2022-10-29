@@ -154,7 +154,7 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
     return x * y;
 }
 
-// Returns (cloudCoverage, ?, ?, ?)
+// Returns (cloudCoverage, ?, cloudType, ?)
 vec4 sampleWeather(vec3 wPos) {
     wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed();
     vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
@@ -199,6 +199,7 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 float sampleCloud(vec3 P, float lod) {
     vec4 weatherData = sampleWeather(P);
     float cloudCoverage = weatherData.x;
+    float cloudType = weatherData.z;
 
     float heightFraction = getHeightFraction(P);
 
@@ -210,9 +211,6 @@ float sampleCloud(vec3 P, float lod) {
     float baseCloud = cloudNoiseSamples.x;
 
     // 1. Apply density gradient
-    // #todo-wip: Random cloud type
-    //float cloudType = 0.5 * (1.0 + sin(P.x * 0.0005));
-    float cloudType = 0.5;
     baseCloud *= getDensityOverHeight(heightFraction, cloudType);
     // Reduce density at the bottoms of the clouds (density increases over altitude)
     baseCloud *= heightFraction;
