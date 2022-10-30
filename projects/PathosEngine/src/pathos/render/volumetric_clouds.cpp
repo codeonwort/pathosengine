@@ -3,6 +3,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/volumetric_cloud_component.h"
+#include "pathos/light/directional_light_component.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/console.h"
@@ -18,10 +19,10 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
-	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
-	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
+	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.2f, "Speed along u of the weather texture");
+	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.1f, "Speed along v of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
-	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.00001f, "Scale factor for base noise sampling");
+	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.005f, "Scale factor for base noise sampling");
 	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.25f, "Scale factor for erosion noise sampling");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 	
@@ -41,6 +42,8 @@ namespace pathos {
 		float weatherScale;
 		float baseNoiseScale;
 		float erosionNoiseScale;
+
+		vector4 sunIntensity;
 
 		float cloudCurliness;
 		float cloudCoverageOffset;
@@ -123,6 +126,12 @@ namespace pathos {
 			uboData.weatherScale = cvar_cloud_weatherScale.getFloat();
 			uboData.baseNoiseScale = cvar_cloud_baseNoiseScale.getFloat();
 			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
+
+			if (scene->proxyList_directionalLight.size() > 0) {
+				uboData.sunIntensity = vector4(scene->proxyList_directionalLight[0]->radiance, 0.0f);
+			} else {
+				uboData.sunIntensity = vector4(0.0f);
+			}
 
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
 			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();

@@ -4,9 +4,15 @@
 #include "geom_common.glsl"
 #include "deferred_common.glsl"
 
+// References
+// [SIG2017] SIGGRAPH 2017, "Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine"
+//           https://advances.realtimerendering.com/s2017/index.html
+// [GPUPRO7] GPU Pro 7, "Real-Time Volumetric Cloudscapes"
+
 // Tuning -----------------------------------------------------
 // #todo-cloud: wip temporal reprojection
 #define TEMPORAL_REPROJECTION 0
+#define CLOUD_EMIT_LIGHT      0
 // Ray Tracing Gems - Chapter 7. Precision Improvements for Ray/Sphere Intersection
 #define PRECISE_RAY_SPHERE_INTERSECTION 0
 // ------------------------------------------------------------
@@ -29,6 +35,8 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
     float weatherScale;
     float baseNoiseScale;
     float erosionNoiseScale;
+
+    vec4 sunIntensity; // (r, g, b, ?)
 
     float cloudCurliness;
     float cloudCoverageOffset;
@@ -78,6 +86,7 @@ float getWeatherScale() { return uboCloud.weatherScale; }
 float getBaseNoiseScale() { return uboCloud.baseNoiseScale; }
 float getErosionNoiseScale() { return uboCloud.erosionNoiseScale; }
 float getCloudCurliness() { return uboCloud.cloudCurliness; }
+vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -147,8 +156,6 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
         + stratoCumulusFactor * STRATOCUMULUS_GRADIENT
         + cumulusFactor * CUMULUS_GRADIENT;
     
-    // p.28 of Nubis pdf shows the formula for stratus.
-    // https://advances.realtimerendering.com/s2017/index.html
     float x = saturate(remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0));
     float y = saturate(remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0));
     return x * y;
@@ -166,10 +173,9 @@ vec4 sampleWeather(vec3 wPos) {
 
 // #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
-    // #todo-wip: noise sampling position
     vec3 samplePos = wPos;
-    //samplePos.xz += getWorldTime() * getWindSpeed();
-    samplePos.xz += heightFraction * getWindSpeed() * 500.0;
+    samplePos.xz += getWorldTime() * getWindSpeed();
+    samplePos.xz += heightFraction * getWindSpeed() * 5000.0;
     samplePos *= getBaseNoiseScale() / 128.0;
 
     vec3 samplePos2 = wPos * getErosionNoiseScale() / 32.0;
@@ -180,12 +186,10 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
     float lowFreqNoise = baseNoises.x;
     float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
     
-    // #todo-wip: low freq only should look like clouds
-    //float baseCloud = lowFreqNoise;
     float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
     baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
-    // #todo-wip: GPU Pro 7 suggests this but SIGGRAPH 2017 suggests above formula.
+    // [GPUPRO7] suggests below but [SIG2017] suggests above. [SIG2017] is newer so adopt it.
     //baseCloud = saturate(remap(lowFreqNoise, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
 
     vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
@@ -209,6 +213,7 @@ float sampleCloud(vec3 P, float lod) {
 
     vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod, heightFraction);
     float baseCloud = cloudNoiseSamples.x;
+    float erosion = cloudNoiseSamples.y;
 
     // 1. Apply density gradient
     baseCloud *= getDensityOverHeight(heightFraction, cloudType);
@@ -223,23 +228,9 @@ float sampleCloud(vec3 P, float lod) {
 #endif
 
     // 3. Apply erosion
-    float erosion = cloudNoiseSamples.y;
-#if 1
-    // Erosion is supposed to add small details to the basic shape of cloud,
-    // but it decreases cloud coverage too much.
     float erosionModifier = saturate(mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0)));
-    //erosionModifier *= 0.35 * exp(-cloudCoverage * 0.75);
-    //float finalCloud = saturate(remap(baseCloudWithCoverage, erosionModifier, 1.0, 0.0, 1.0));
     float finalCloud = baseCloudWithCoverage - erosionModifier * baseCloudWithCoverage;
     finalCloud = saturate(remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0));
-#elif 0
-    float erosionModifier = 1.5 * erosion * saturate(heightFraction - 0.1);
-	float finalCloud = saturate(baseCloudWithCoverage - erosionModifier);
-    //finalCloud = saturate(remap(finalCloud, erosionModifier, 1.0, 0.0, 1.0));
-#else
-    // #todo-wip: Temp disable erosion
-    float finalCloud = baseCloudWithCoverage;
-#endif
 
     return finalCloud;
 }
@@ -334,13 +325,13 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 
         float cloudDensity = sampleCloud(currentPos, float(i) / 16);
         
-        float sigma_a = 0.003; // absorption coeff
-        float sigma_s = 0.1; // scattering coeff
+        float sigma_a = 0.2; // absorption coeff
+        float sigma_s = 0.05; // scattering coeff
 
         // Raymarch from current position to Sun
         float TL = 1.0; // transmittance(P->Sun) or light visibility
 
-        {
+        if (cloudDensity > 0.0) {
             Ray ray2 = Ray(currentPos, -sunDir);
             HitResult hitL = hit_ray_sphere(ray2, cloudOuterSphere);
 
@@ -384,29 +375,30 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
         float dT = exp(-dOT);
         T *= dT;
 
-        // Emission
-        // #todo: Does cloud emits light?
+        // Emission (#todo: Does cloud emits light?)
+#if CLOUD_EMIT_LIGHT
         // http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
-        // #todo: Multiply with cloudDensity?
         vec3 Lem = T * (0.05 * vec3(0.13, 0.13, 0.27));
+#else
+        vec3 Lem = vec3(0.0);
+#endif
 
         // In-scattering
-        vec3 SUN_RADIANCE = 0.4 * vec3(0.9, 0.8, 1.1); // #todo
-        vec3 Lsc = T * sigma_s * phaseFn * (SUN_RADIANCE * TL);
+        vec3 Lsc = T * sigma_s * phaseFn * (getSunIntensity() * TL);
+
+        // [SIG2017]
+        if (cloudDensity > 0.0) {
+            float heightFraction = getHeightFraction(currentPos);
+            float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
+            float verticalProb = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.8);
+            // #todo-wip: Where to apply this factor?
+            float inscatterProb = depthProb * verticalProb;
+            Lsc *= inscatterProb;
+        }
 
         // #todo: Multiply with cloudDensity?
         vec3 Lsample = Lem + Lsc;
         L += Lsample;
-
-        // Beer-Powder (GPU Pro 7: Real-Time Volumetric Clouds)
-        bool usePowder = false;
-        //usePowder = true;
-        if (usePowder) {
-            float powder_sugar_effect = 1.0 - exp(-opticalThickness * 2.0);
-            float beers_law = exp(-opticalThickness);
-            float light_energy = 2.0 * beers_law * powder_sugar_effect;
-            L = mix(vec3(1.0), L, light_energy);
-        }
 
         if (T < 0.01) {
             break;
