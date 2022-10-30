@@ -9,12 +9,28 @@
 //           https://advances.realtimerendering.com/s2017/index.html
 // [GPUPRO7] GPU Pro 7, "Real-Time Volumetric Cloudscapes"
 
-// Tuning -----------------------------------------------------
-// #todo-cloud: wip temporal reprojection
-#define TEMPORAL_REPROJECTION 0
-#define CLOUD_EMIT_LIGHT      0
-// Ray Tracing Gems - Chapter 7. Precision Improvements for Ray/Sphere Intersection
-#define PRECISE_RAY_SPHERE_INTERSECTION 0
+// ------------------------------------------------------------
+// Tuning
+
+// #todo-cloud-wip: Temporal reprojection
+#define TEMPORAL_REPROJECTION        0
+
+// #todo-cloud-wip: No visual difference?
+#define CONE_SAMPLING_ENABLED        0
+#define CONE_SAMPLING_INIT_RADIUS    1.0
+#define CONE_SAMPLING_STEP           (1.0 / 6.0)
+
+#define RAYMARCH_PRIMARY_MIN_STEP    54
+#define RAYMARCH_PRIMARY_MAX_STEP    96
+#define RAYMARCH_SECONDARY_STEP      6
+#define RAYMARCH_MIN_TRANSMITTANCE   0.01
+
+#define CLOUD_EMIT_LIGHT             0
+#define CLOUD_ABSOPRTION_COEFF       0.2
+// For both in-scattering and out-scattering
+#define CLOUD_SCATTER_COEFF          0.05
+// Absoprtion + out-scattering
+#define CLOUD_EXTINCTION_COEFF       min(1.0, CLOUD_ABSOPRTION_COEFF + CLOUD_SCATTER_COEFF)
 // ------------------------------------------------------------
 
 #define DEBUG_MODE            0 // Set to one of values for visualization
@@ -26,32 +42,32 @@
 #define DEBUG_MINUS_COLOR     0
 
 layout (std140, binding = 1) uniform UBO_VolumetricCloud {
-    float earthRadius;    // in meters
-    float cloudLayerMinY; // in meters
-    float cloudLayerMaxY; // in meters
-    float windSpeedX;
+	float earthRadius;    // in meters
+	float cloudLayerMinY; // in meters
+	float cloudLayerMaxY; // in meters
+	float windSpeedX;
 
-    float windSpeedZ;
-    float weatherScale;
-    float baseNoiseScale;
-    float erosionNoiseScale;
+	float windSpeedZ;
+	float weatherScale;
+	float baseNoiseScale;
+	float erosionNoiseScale;
 
-    vec4 sunIntensity; // (r, g, b, ?)
+	vec4 sunIntensity; // (r, g, b, ?)
 
-    float cloudCurliness;
-    float cloudCoverageOffset;
-    float baseNoiseOffset;
-    uint  frameCounter;
+	float cloudCurliness;
+	float cloudCoverageOffset;
+	float baseNoiseOffset;
+	uint  frameCounter;
 } uboCloud;
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0) uniform sampler2D sceneDepth;
-layout (binding = 1) uniform sampler2D weatherMap;
-layout (binding = 2) uniform sampler3D shapeNoise;
-layout (binding = 3) uniform sampler3D erosionNoise;
-layout (binding = 4) uniform sampler2D reprojectionHistory; // cloud RT of prev frame
-layout (binding = 5, rgba16f) writeonly uniform image2D renderTarget;
+layout (binding = 0) uniform sampler2D inSceneDepth;
+layout (binding = 1) uniform sampler2D inWeatherMap;
+layout (binding = 2) uniform sampler3D inShapeNoise;
+layout (binding = 3) uniform sampler3D inErosionNoise;
+layout (binding = 4) uniform sampler2D inReprojectionHistory; // cloud RT of prev frame
+layout (binding = 5, rgba16f) writeonly uniform image2D outRenderTarget;
 
 //////////////////////////////////////////////////////////////////////////
 // Constants
@@ -69,10 +85,10 @@ const vec3 noiseKernel[6u] = vec3[]
 
 const uint bayerPattern[16u] = uint[]
 (
-    0, 8, 2, 10,
-    12, 4, 14, 6,
-    3, 11, 1, 9,
-    15, 7, 13, 5
+	0, 8, 2, 10,
+	12, 4, 14, 6,
+	3, 11, 1, 9,
+	15, 7, 13, 5
 );
 
 //////////////////////////////////////////////////////////////////////////
@@ -92,33 +108,33 @@ vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
 
 // Rayleigh
 float phaseR(float cosTheta) {
-    return 3.0 / (16.0 * PI) * (1.0 + cosTheta * cosTheta);
+	return 3.0 / (16.0 * PI) * (1.0 + cosTheta * cosTheta);
 }
 // Mie
 float phaseM(float t) {
-    const float g = 0.76;
-    float gg = g * g;
-    float tt = t * t;
-    float gt = g * t;
-    
-    float num = 3.0 * (1.0 - gg) * (1.0 + tt);
+	const float g = 0.76;
+	float gg = g * g;
+	float tt = t * t;
+	float gt = g * t;
+	
+	float num = 3.0 * (1.0 - gg) * (1.0 + tt);
 	float denom = (8.0 * PI) * (2.0 + gg) * pow(1.0 + gg - 2.0 * gt, 1.5);
-    return num / denom;
+	return num / denom;
 }
 // Henyey-Greenstein
 float phaseHG(float t, float g) {
-    float gg = g * g;
-    float num = 1 - gg;
-    float denom = 4 * PI * pow(1 + gg - 2 * g * cos(t), 1.5);
-    return num / denom;
+	float gg = g * g;
+	float num = 1 - gg;
+	float denom = 4 * PI * pow(1 + gg - 2 * g * cos(t), 1.5);
+	return num / denom;
 }
 // Cornette-Shank
 float phaseCS(float t, float g) {
-    float gg = g * g;
-    float cost = cos(t);
-    float num = 3 * (1 - gg) * (1 + cost * cost);
-    float denom = 2 * (2 + gg) * pow(1 + gg - 2 * g * cost, 1.5);
-    return num / denom;
+	float gg = g * g;
+	float cost = cos(t);
+	float num = 3 * (1 - gg) * (1 + cost * cost);
+	float denom = 2 * (2 + gg) * pow(1 + gg - 2 * g * cost, 1.5);
+	return num / denom;
 }
 
 float powder(float d) {
@@ -126,17 +142,21 @@ float powder(float d) {
 }
 
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
-    return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
+	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
 }
 
 float saturate(float x) {
-    return clamp(x, 0.0, 1.0);
+	return clamp(x, 0.0, 1.0);
+}
+
+bool isMinusColor(vec3 v) {
+	return v.x < 0.0 || v.y < 0.0 || v.z < 0.0;
 }
 
 // bottom layer = 0.0, top layer = 1.0
 float getHeightFraction(vec3 wPos) {
-    float fraction = (wPos.y - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
-    return saturate(fraction);
+	float fraction = (wPos.y - getCloudLayerMin()) / (getCloudLayerMax() - getCloudLayerMin());
+	return saturate(fraction);
 }
 
 // Density gradients over height for each cloud type
@@ -152,343 +172,339 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
 	float stratoCumulusFactor = 1.0 - abs(cloudType - 0.5) * 2.0;
 	float cumulusFactor = clamp(cloudType - 0.5, 0.0, 0.5) * 2.0;
 	vec4 baseGradient
-        = stratusFactor * STRATUS_GRADIENT
-        + stratoCumulusFactor * STRATOCUMULUS_GRADIENT
-        + cumulusFactor * CUMULUS_GRADIENT;
-    
-    float x = saturate(remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0));
-    float y = saturate(remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0));
-    return x * y;
+		= stratusFactor * STRATUS_GRADIENT
+		+ stratoCumulusFactor * STRATOCUMULUS_GRADIENT
+		+ cumulusFactor * CUMULUS_GRADIENT;
+	
+	float x = saturate(remap(heightFraction, baseGradient.x, baseGradient.y, 0.0, 1.0));
+	float y = saturate(remap(heightFraction, baseGradient.z, baseGradient.w, 1.0, 0.0));
+	return x * y;
 }
 
 // Returns (cloudCoverage, ?, cloudType, ?)
 vec4 sampleWeather(vec3 wPos) {
-    wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed();
-    vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
-    vec4 data = textureLod(weatherMap, uv, 0);
+	wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed();
+	vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
+	vec4 data = textureLod(inWeatherMap, uv, 0);
 
-    data.x = saturate(data.x + uboCloud.cloudCoverageOffset);
-    return data;
+	data.x = saturate(data.x + uboCloud.cloudCoverageOffset);
+	return data;
 }
 
 // #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
-    vec3 samplePos = wPos;
-    samplePos.xz += getWorldTime() * getWindSpeed();
-    samplePos.xz += heightFraction * getWindSpeed() * 5000.0;
-    samplePos *= getBaseNoiseScale() / 128.0;
+	vec3 samplePos = wPos;
+	samplePos.xz += getWorldTime() * getWindSpeed();
+	samplePos.xz += heightFraction * getWindSpeed() * 5000.0;
+	samplePos *= getBaseNoiseScale() / 128.0;
 
-    vec3 samplePos2 = wPos * getErosionNoiseScale() / 32.0;
+	vec3 samplePos2 = wPos * getErosionNoiseScale() / 32.0;
 
-    // R: Perlin-Worley noise
-    // G,B,A: Worley noises at increasing frequencies
-    vec4 baseNoises = textureLod(shapeNoise, samplePos, lod);
-    float lowFreqNoise = baseNoises.x;
-    float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
-    
-    float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
-    baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
+	// R: Perlin-Worley noise
+	// G,B,A: Worley noises at increasing frequencies
+	vec4 baseNoises = textureLod(inShapeNoise, samplePos, lod);
+	float lowFreqNoise = baseNoises.x;
+	float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
+	
+	float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
+	baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
-    // [GPUPRO7] suggests below but [SIG2017] suggests above. [SIG2017] is newer so adopt it.
-    //baseCloud = saturate(remap(lowFreqNoise, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
+	// [GPUPRO7] suggests below but [SIG2017] suggests above. [SIG2017] is newer so adopt it.
+	//baseCloud = saturate(remap(lowFreqNoise, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
 
-    vec3 detailNoises = textureLod(erosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
-    float erosion = dot(vec3(0.625, 0.25, 0.125), detailNoises);
+	vec3 detailNoises = textureLod(inErosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
+	float erosion = dot(vec3(0.625, 0.25, 0.125), detailNoises);
 
-    return vec2(baseCloud, erosion);
+	return vec2(baseCloud, erosion);
 }
 
 // Returns final cloud density for raymarching, all factors considered.
 // (cloud coverage, density gradient, detail noise, ...)
 float sampleCloud(vec3 P, float lod) {
-    vec4 weatherData = sampleWeather(P);
-    float cloudCoverage = weatherData.x;
-    float cloudType = weatherData.z;
+	vec4 weatherData = sampleWeather(P);
+	float cloudCoverage = weatherData.x;
+	float cloudType = weatherData.z;
 
-    float heightFraction = getHeightFraction(P);
+	float heightFraction = getHeightFraction(P);
 
 #if DEBUG_MODE == DEBUG_MODE_NO_NOISE || DEBUG_MODE == DEBUG_MODE_WEATHER
-    return cloudCoverage * getDensityOverHeight(heightFraction, 1.0);
+	return cloudCoverage * getDensityOverHeight(heightFraction, 1.0);
 #endif
 
-    vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod, heightFraction);
-    float baseCloud = cloudNoiseSamples.x;
-    float erosion = cloudNoiseSamples.y;
+	vec2 cloudNoiseSamples = sampleCloudShapeAndErosion(P, lod, heightFraction);
+	float baseCloud = cloudNoiseSamples.x;
+	float erosion = cloudNoiseSamples.y;
 
-    // 1. Apply density gradient
-    baseCloud *= getDensityOverHeight(heightFraction, cloudType);
-    // Reduce density at the bottoms of the clouds (density increases over altitude)
-    baseCloud *= heightFraction;
+	// 1. Apply density gradient
+	baseCloud *= getDensityOverHeight(heightFraction, cloudType);
+	// Reduce density at the bottoms of the clouds (density increases over altitude)
+	baseCloud *= heightFraction;
 
-    // 2. Apply cloudCoverage
-    float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
+	// 2. Apply cloudCoverage
+	float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
 
 #if DEBUG_MODE == DEBUG_MODE_NO_EROSION
-    return saturate(baseCloudWithCoverage);
+	return saturate(baseCloudWithCoverage);
 #endif
 
-    // 3. Apply erosion
-    float erosionModifier = saturate(mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0)));
-    float finalCloud = baseCloudWithCoverage - erosionModifier * baseCloudWithCoverage;
-    finalCloud = saturate(remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0));
+	// 3. Apply erosion
+	float erosionModifier = saturate(mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0)));
+	float finalCloud = baseCloudWithCoverage - erosionModifier * baseCloudWithCoverage;
+	finalCloud = saturate(remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0));
 
-    return finalCloud;
+	return finalCloud;
 }
-
-#if DEBUG_MINUS_COLOR
-bool isMinus(vec3 v) {
-    return v.x < 0.0 || v.y < 0.0 || v.z < 0.0;
-}
-#endif
 
 // #todo: This is a total mess
 vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
-    Sphere cloudInnerSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
-    Sphere cloudOuterSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
+	Sphere cloudInnerSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
+	Sphere cloudOuterSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
 
-    float cameraHeight = camera.origin.y;
-    float totalRayMarchLength = 0.0;
-    vec3 raymarchStartPos = vec3(0.0);
+	float cameraHeight = camera.origin.y;
+	float totalRayMarchLength = 0.0;
+	vec3 raymarchStartPos = vec3(0.0);
 
-    HitResult hit1, hit2;
-    hit1 = hit_ray_sphere(camera, cloudInnerSphere);
-    hit2 = hit_ray_sphere(camera, cloudOuterSphere);
-    if (cameraHeight < getCloudLayerMin()) {
-        raymarchStartPos = hit1.origin;
-        totalRayMarchLength = hit2.t - hit1.t;
-    } else if (cameraHeight < getCloudLayerMax()) {
-        // DEBUG
-        if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
-            return vec4(1.0, 1.0, 0.0, 0.0);
-        }
-        raymarchStartPos = camera.origin;
-        totalRayMarchLength = hit1.t < 0.0 ? hit2.t : hit2.t < 0.0 ? hit1.t : min(hit1.t, hit2.t);
-    } else {
-        if (isInvalidHit(hit2)) {
-            // There's nothing above cloud layer
-            return vec4(0.0, 0.0, 0.0, 1.0);
-        }
-        raymarchStartPos = hit2.origin;
-        totalRayMarchLength = hit1.t - hit2.t;
-    }
-    // raymarch length is too long near horizon
-    totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
+	HitResult hit1, hit2;
+	hit1 = hit_ray_sphere(camera, cloudInnerSphere);
+	hit2 = hit_ray_sphere(camera, cloudOuterSphere);
+	if (cameraHeight < getCloudLayerMin()) {
+		raymarchStartPos = hit1.origin;
+		totalRayMarchLength = hit2.t - hit1.t;
+	} else if (cameraHeight < getCloudLayerMax()) {
+		// DEBUG
+		if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
+			return vec4(1.0, 1.0, 0.0, 0.0);
+		}
+		raymarchStartPos = camera.origin;
+		totalRayMarchLength = hit1.t < 0.0 ? hit2.t : hit2.t < 0.0 ? hit1.t : min(hit1.t, hit2.t);
+	} else {
+		if (isInvalidHit(hit2)) {
+			// There's nothing above cloud layer
+			return vec4(0.0, 0.0, 0.0, 1.0);
+		}
+		raymarchStartPos = hit2.origin;
+		totalRayMarchLength = hit1.t - hit2.t;
+	}
+	// raymarch length is too long near horizon
+	totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
 
-    // DEBUG: intersection test failed
-    if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
-        return vec4(1.0, 0.0, 0.0, 1.0);
-    }
+	// DEBUG: intersection test failed
+	if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
+		return vec4(1.0, 0.0, 0.0, 1.0);
+	}
 
-    vec3 result = vec3(0.0); // final luminance
-    bool isGround = false;
+	vec3 result = vec3(0.0); // final luminance
+	bool isGround = false;
 
-    bool useDebugColor = false;
+	bool useDebugColor = false;
 
-    int numSteps = 64;
-    float lengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
-    lengthRatio = clamp(lengthRatio, 1.0, 2.0);
-    numSteps = int(float(numSteps) * lengthRatio);
+	float primaryLengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
+	primaryLengthRatio = clamp(primaryLengthRatio, 1.0, 2.0) - 1.0;
+	const int primarySteps = int(mix(
+		float(RAYMARCH_PRIMARY_MIN_STEP),
+		float(RAYMARCH_PRIMARY_MAX_STEP),
+		primaryLengthRatio));
+	const int lightingSteps = RAYMARCH_SECONDARY_STEP;
+	
+	float cosTheta = dot(camera.direction, -sunDir);
+	float phaseFn = phaseHG(cosTheta, 0.42);
 
-    const int inscatSteps = 6;
-    
-    float cosTheta = dot(camera.direction, -sunDir);
-    float phaseFn = phaseHG(cosTheta, 0.42);
+	float opticalThickness = 0.0;
+	float T = 1.0;      // Transmittance
+	vec3 L = vec3(0.0); // Luminance
+	
+	vec3 currentPos = raymarchStartPos; // Current sample position
+	float segLength = totalRayMarchLength / float(primarySteps);
+	vec3 P_step = camera.direction * segLength; // Fixed step size between sample positions
 
-    float opticalThickness = 0.0;
-    float T = 1.0; // transmittance
-    
-    vec3 L = vec3(0.0); // luminance
-    
-    vec3 currentPos = raymarchStartPos; // Current sample position
-    float seg = totalRayMarchLength / float(numSteps);
-    vec3 P_step = camera.direction * seg; // Fixed step size between sample positions
+	float occluderDepth = texture(inSceneDepth, uv).r;
+	vec3 occluderPos = getViewPositionFromSceneDepth(uv, occluderDepth);
 
-    float occluderDepth = texture(sceneDepth, uv).r;
-    vec3 occluderPos = getViewPositionFromSceneDepth(uv, occluderDepth);
+	// #todo: empty-space optimization
+	// Raymarching
+	for (int i = 0; i < primarySteps; ++i) {
+		if (currentPos.y < 0.0) {
+			isGround = true;
+			break;
+		}
 
-    // #todo: empty-space optimization
-    // Raymarching
-    for (int i = 0; i < numSteps; ++i) {
-        if (currentPos.y < 0.0) {
-            isGround = true;
-            break;
-        }
-
-        vec3 VP = getViewPositionFromWorldPosition(currentPos);
-        if (VP.z < occluderPos.z) {
-            break;
-        }
+		vec3 VP = getViewPositionFromWorldPosition(currentPos);
+		if (VP.z < occluderPos.z) {
+			break;
+		}
 
 #if DEBUG_MODE == DEBUG_MODE_WEATHER
-        return vec4(vec3(sampleWeather(currentPos).x), 0.0);
+		return vec4(vec3(sampleWeather(currentPos).x), 0.0);
 #endif
 
-        float cloudDensity = sampleCloud(currentPos, float(i) / 16);
-        
-        float sigma_a = 0.2; // absorption coeff
-        float sigma_s = 0.05; // scattering coeff
+		float cloudDensity = sampleCloud(currentPos, float(i) / 16);
 
-        // Raymarch from current position to Sun
-        float TL = 1.0; // transmittance(P->Sun) or light visibility
+		// Raymarch from current position to Sun.
+		// - Attenuate transmittance and accumulate lighting.
+		// - Only meaningful when cloudDensity is non-zero.
+		float TL = 1.0; // transmittance(P->Sun) or 'light visibility'
+		if (cloudDensity > 0.0) {
+			Ray lightRay = Ray(currentPos, -sunDir);
+			HitResult hitL = hit_ray_sphere(lightRay, cloudOuterSphere);
 
-        if (cloudDensity > 0.0) {
-            Ray ray2 = Ray(currentPos, -sunDir);
-            HitResult hitL = hit_ray_sphere(ray2, cloudOuterSphere);
+			float tau = 0.0; // Optical thickness
+			if (isInvalidHit(hitL) == false) {
+				// This is too large and will sample densities too far from currentPos
+				//float segLight = hitL.t / float(lightingSteps);
 
-            float tau = 0.0; // optical thickness
-            if (isInvalidHit(hitL) == false) {
-                // This is too large and will sample densities too far from currentPos
-                //float segLight = hitL.t / float(inscatSteps);
+				float segLight = segLength * 0.1 * float(lightingSteps);
+				vec3 PL_step = lightRay.direction * segLight;
+				vec3 PL = currentPos;
 
-                float segLight = seg * 0.1 * float(inscatSteps);
-                vec3 PL_step = ray2.direction * segLight;
-                vec3 PL = currentPos;
-
-                float coneRadius = 1.0;
-                const float CONE_STEP = 1.0/6.0;
-
-                for (int j = 0; j < inscatSteps; ++j) {
-#if 0 // Cone sample
-                    vec3 samplePos = currentPos + coneRadius * noiseKernel[j] * float(j);
-                    tau += (sigma_a + sigma_s) * sampleCloud(samplePos, 0) * segLight;
-
-                    PL += PL_step;
-                    coneRadius += CONE_STEP;
+				float coneRadius = CONE_SAMPLING_INIT_RADIUS;
+				for (int j = 0; j < lightingSteps; ++j) {
+#if CONE_SAMPLING_ENABLED
+					vec3 samplePos = PL + coneRadius * noiseKernel[j] * float(j);
+					tau += CLOUD_SCATTER_COEFF * sampleCloud(samplePos, 0) * segLight;
+					PL += PL_step;
+					coneRadius += CONE_SAMPLING_STEP;
 #else
-                    tau += (sigma_a + sigma_s) * sampleCloud(PL, 0) * segLight;
-                    PL += PL_step;
+					tau += CLOUD_SCATTER_COEFF * sampleCloud(PL, 0) * segLight;
+					PL += PL_step;
 #endif
-                }
-            }
-            TL = exp(-tau);
-        }
+				}
+			}
+			TL = exp(-tau);
+		} // if (cloudDensity > 0.0)
 
-        // Lighting equations for volume rendering
-        // dL(p,w) = Li(p,w) - Lo(p,w) = emission + scattering_in - scattering_out - absorption
-        // absorption : dLa = -sigma_a * Li(p,w) * ds
-        // emission   : dLe = Le(p,w) * ds
-        // scattering : dLout(p,w) = -sigma_s * Li(p,w) * ds
-        //              dLin(p,w) = sigma_s * phase_fn(w,w') * incoming_radiance(p,w') * ds
+		// Lighting equations for volume rendering
+		// dL(p,w) = Li(p,w) - Lo(p,w) = emission + scattering_in - scattering_out - absorption
+		// absorption : dLa = -sigma_a * Li(p,w) * ds
+		// emission   : dLe = Le(p,w) * ds
+		// scattering : dLout(p,w) = -sigma_s * Li(p,w) * ds
+		//              dLin(p,w) = sigma_s * phase_fn(w,w') * incoming_radiance(p,w') * ds
 
-        float dOT = (sigma_a + sigma_s) * cloudDensity * seg;
-        opticalThickness += dOT;
-        float dT = exp(-dOT);
-        T *= dT;
-
-        // Emission (#todo: Does cloud emits light?)
+		float dOT = CLOUD_EXTINCTION_COEFF * cloudDensity * segLength;
+		opticalThickness += dOT;
+		float dT = exp(-dOT);
+		T *= dT;
+		
+		// Emission (#todo: Does cloud emits light?)
+		vec3 Lem = vec3(0.0);
 #if CLOUD_EMIT_LIGHT
-        // http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
-        vec3 Lem = T * (0.05 * vec3(0.13, 0.13, 0.27));
-#else
-        vec3 Lem = vec3(0.0);
+		// http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
+		if (cloudDensity > 0.0) {
+			Lem = T * (0.05 * vec3(0.13, 0.13, 0.27));
+		}
 #endif
 
-        // In-scattering
-        vec3 Lsc = T * sigma_s * phaseFn * (getSunIntensity() * TL);
+		// In-scattering
+#if 0
+		// #todo-wip: Inscattered light should be added only if cloud is there, but then too dark.
+		vec3 Lsc = vec3(0.0);
+		if (cloudDensity > 0.0) {
+			float randBig = 500.0;
+			Lsc += randBig * T * CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
+		}
+#else
+		vec3 Lsc = T * CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
+#endif
 
-        // [SIG2017]
-        if (cloudDensity > 0.0) {
-            float heightFraction = getHeightFraction(currentPos);
-            float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
-            float verticalProb = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.8);
-            // #todo-wip: Where to apply this factor?
-            float inscatterProb = depthProb * verticalProb;
-            Lsc *= inscatterProb;
-        }
+		if (cloudDensity > 0.0) {
+			float heightFraction = getHeightFraction(currentPos);
+			float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
+			float verticalProb = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.8);
+			float inscatterProb = depthProb * verticalProb;
+			Lsc *= inscatterProb;
+		}
 
-        // #todo: Multiply with cloudDensity?
-        vec3 Lsample = Lem + Lsc;
-        L += Lsample;
+		vec3 Lsample = Lem + Lsc;
+		L += Lsample;
 
-        if (T < 0.01) {
-            break;
-        }
+		if (T < RAYMARCH_MIN_TRANSMITTANCE) {
+			break;
+		}
 
 #if DEBUG_MINUS_COLOR
-        if (isMinus(Lsc)) {
-            useDebugColor = true;
-            result = vec3(1.0, 0.0, 0.0);
-            break;
-        }
+		if (isMinusColor(Lsc)) {
+			useDebugColor = true;
+			result = vec3(1.0, 0.0, 0.0);
+			break;
+		}
 #endif
 
-        currentPos += P_step;
-    }
-    
-    if (isGround) {
+		currentPos += P_step;
+	}
+	
+	if (isGround) {
 		result = vec3(0.0, 0.0, 0.0);
-    } else if (useDebugColor == false) {
+	} else if (useDebugColor == false) {
 #if DEBUG_TRANSMITTANCE
-        result = vec3(1.0) - T; // DEBUG: transmittance
+		result = vec3(1.0) - T; // DEBUG: transmittance
 #else
-        result = L;
+		result = L;
 #endif
-    }
+	}
 
 #if DEBUG_MINUS_COLOR
-    if (isMinus(result) && useDebugColor == false) {
-        result = vec3(0.0, 1.0, 1.0);
-    }
+	if (isMinusColor(result) && useDebugColor == false) {
+		result = vec3(0.0, 1.0, 1.0);
+	}
 #endif
 
-    return vec4(result, T); // luminance and transmittance
+	return vec4(result, T); // luminance and transmittance
 }
 
 vec3 getViewDirection(vec2 uv) {
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-    P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-    P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
+	P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
 	P = normalize(P);
-    
-    mat3 camera_transform = mat3(uboPerFrame.inverseViewTransform);
+	
+	mat3 camera_transform = mat3(uboPerFrame.inverseViewTransform);
 	vec3 ray_forward = camera_transform * P;
-    
-    return ray_forward;
+	
+	return ray_forward;
 }
 
 vec3 getPrevViewDirection(vec2 uv) {
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-    P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-    P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
+	P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
 	P = normalize(P);
-    
-    mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
+	
+	mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
 	vec3 ray_forward = camera_transform * P;
-    
-    return ray_forward;
+	
+	return ray_forward;
 }
 
 vec2 viewDirectionToUV_prevFrame(vec3 dir) {
-    vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
+	vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
 
 #if 1
-    float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
-    P.xy *= zOnPlane / P.z;
-    P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
-    return 0.5 * (P.xy + vec2(1.0));
+	float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P.xy *= zOnPlane / P.z;
+	P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+	return 0.5 * (P.xy + vec2(1.0));
 #else
-    float a = P.x;
-    float b = P.y;
-    float c = P.z;
-    float z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
-    float k = uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
-    float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
-    float u = 0.5 * (1.0 + a*m*k);
-    float v = 0.5 * (1.0 + b*m);
-    return vec2(u, v);
+	float a = P.x;
+	float b = P.y;
+	float c = P.z;
+	float z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	float k = uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+	float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
+	float u = 0.5 * (1.0 + a*m*k);
+	float v = 0.5 * (1.0 + b*m);
+	return vec2(u, v);
 #endif
 }
 
 void main() {
-    ivec2 sceneSize = imageSize(renderTarget);
-    if (any(greaterThanEqual(gl_GlobalInvocationID.xy, sceneSize.xy))) {
+	ivec2 sceneSize = imageSize(outRenderTarget);
+	if (any(greaterThanEqual(gl_GlobalInvocationID.xy, sceneSize.xy))) {
 		return;
 	}
 
-    ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
-    vec3 viewDir = getViewDirection(uv);
-    vec3 prevViewDir = getPrevViewDirection(uv);
+	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
+	vec3 viewDir = getViewDirection(uv);
+	vec3 prevViewDir = getPrevViewDirection(uv);
 
 #if TEMPORAL_REPROJECTION
 
@@ -496,45 +512,44 @@ void main() {
 // #todo: Bad at camera rotation or at the interface between cloud and non-cloud texels
 // #todo: Neighborhood clamping
 #if REPROJECTION_METHOD == 1
-    const vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
-    const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
-    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-        // #todo: Am I doing this wrong?
-        vec2 prevUV = viewDirectionToUV_prevFrame(viewDir);
-        if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
-            //ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize) + REPROJECTION_FETCH_OFFSET);
-            ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
-            vec4 prevResult = texelFetch(reprojectionHistory, prevTexel, 0);
-            //vec4 prevResult = texture(reprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
-            imageStore(renderTarget, currentTexel, prevResult);
-            return;
-        }
-    }
+	const vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
+	const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
+	uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+	if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+		// #todo: Am I doing this wrong?
+		vec2 prevUV = viewDirectionToUV_prevFrame(viewDir);
+		if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
+			//ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize) + REPROJECTION_FETCH_OFFSET);
+			ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
+			vec4 prevResult = texelFetch(inReprojectionHistory, prevTexel, 0);
+			//vec4 prevResult = texture(inReprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
+			imageStore(outRenderTarget, currentTexel, prevResult);
+			return;
+		}
+	}
 // Reference quality for static camera
 #elif REPROJECTION_METHOD == 2
-    uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-    if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-        vec4 prevResult = texelFetch(reprojectionHistory, currentTexel, 0);
-        imageStore(renderTarget, currentTexel, prevResult);
-        return;
-    }
+	uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+	if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+		vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
+		imageStore(outRenderTarget, currentTexel, prevResult);
+		return;
+	}
 #endif // REPROJECTION_METHOD
 #endif // TEMPORAL_REPROJECTION
 
 	Ray cameraRay;
-    cameraRay.origin = uboPerFrame.ws_eyePosition;
+	cameraRay.origin = uboPerFrame.ws_eyePosition;
 	cameraRay.direction = viewDir;
 
-    // Raymarching will be broken if eye location is too close to the interface of cloud layers
-    if (abs(cameraRay.origin.y - getCloudLayerMin()) <= 1.5 || abs(cameraRay.origin.y - getCloudLayerMax()) <= 1.5) {
-        cameraRay.origin.y += 1.5;
-    }
-    
+	// Raymarching will be broken if eye location is too close to the interface of cloud layers
+	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= 1.5 || abs(cameraRay.origin.y - getCloudLayerMax()) <= 1.5) {
+		cameraRay.origin.y += 1.5;
+	}
+	
 	vec3 sunDir = uboPerFrame.sunLight.wsDirection;
 
-    // (x, y, z) = luminance, w = transmittance
-    vec4 result = traceScene(cameraRay, sunDir, uv);
-
-    imageStore(renderTarget, currentTexel, result);
+	// (x, y, z) = luminance, w = transmittance
+	vec4 outResult = traceScene(cameraRay, sunDir, uv);
+	imageStore(outRenderTarget, currentTexel, outResult);
 }

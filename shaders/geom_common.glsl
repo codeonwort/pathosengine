@@ -32,6 +32,8 @@ bool isInvalidHit(HitResult hit) {
 	return hit.t < 0.0 || hit.t > MAX_HIT_DISTANCE;
 }
 
+// #todo: Ray Tracing Gems - Chapter 7. Precision Improvements for Ray/Sphere Intersection
+// (not adopted due to no visual differernce)
 HitResult hit_ray_sphere(Ray ray, Sphere sphere) {
 	HitResult hit = NO_HIT_RESULT;
 
