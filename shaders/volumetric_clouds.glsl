@@ -83,8 +83,9 @@ layout (binding = 0) uniform sampler2D inSceneDepth;
 layout (binding = 1) uniform sampler2D inWeatherMap;
 layout (binding = 2) uniform sampler3D inShapeNoise;
 layout (binding = 3) uniform sampler3D inErosionNoise;
-layout (binding = 4) uniform sampler2D inReprojectionHistory; // cloud RT of prev frame
-layout (binding = 5, rgba16f) writeonly uniform image2D outRenderTarget;
+layout (binding = 4) uniform sampler3D inSTBN;
+layout (binding = 5) uniform sampler2D inReprojectionHistory; // cloud RT of prev frame
+layout (binding = 6, rgba16f) writeonly uniform image2D outRenderTarget;
 
 // ------------------------------------------------------------
 // Constants
@@ -296,7 +297,7 @@ float sampleCloudCoarse(vec3 P, float lod) {
 	return baseCloudWithCoverage;
 }
 
-vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
+vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	Sphere cloudInnerSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
 	Sphere cloudOuterSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
 
@@ -325,7 +326,12 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 		raymarchStartPos = hit2.origin;
 		totalRayMarchLength = hit1.t - hit2.t;
 	}
-	// raymarch length is too long near horizon
+
+	// Additionally jitter sample position with STBN
+	// #todo: Determine jitter multiplier? 25.0 is my empirical value.
+	raymarchStartPos += 25.0 * camera.direction * (stbn - 0.5);
+
+	// Raymarch length is too long near horizon.
 	totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
 
 	// DEBUG: intersection test failed
@@ -333,7 +339,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 		return vec4(1.0, 0.0, 0.0, 1.0);
 	}
 
-	vec3 result = vec3(0.0); // final luminance
+	vec3 result = vec3(0.0); // Final luminance or debug output
 	bool isGround = false;
 
 	bool useDebugColor = false;
@@ -422,7 +428,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 				// This is too large and will sample densities too far from currentPos
 				//float lightStepLength = hitL.t / float(numLightingSteps);
 
-				float lightStepLength = primaryStepLength / float(numLightingSteps);
+				float lightStepLength = 0.2 * primaryStepLength / float(numLightingSteps);
 				vec3 lightStep = lightRay.direction * lightStepLength;
 				vec3 lightSamplePos = currentPos;
 
@@ -566,14 +572,18 @@ vec2 viewDirectionToUV_prevFrame(vec3 dir) {
 
 void main() {
 	ivec2 sceneSize = imageSize(outRenderTarget);
-	if (any(greaterThanEqual(gl_GlobalInvocationID.xy, sceneSize.xy))) {
+	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
+
+	if (any(greaterThanEqual(currentTexel, sceneSize))) {
 		return;
 	}
-
-	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
 	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
 	vec3 viewDir = getViewDirection(uv);
 	vec3 prevViewDir = getPrevViewDirection(uv);
+
+	// NOTE: GL_REPEAT has no effect to texelFetch()
+	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
+	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
 
 #if TEMPORAL_REPROJECTION
 
@@ -619,6 +629,6 @@ void main() {
 	vec3 sunDir = getSunDirection();
 
 	// (x, y, z) = luminance, w = transmittance
-	vec4 outResult = traceScene(cameraRay, sunDir, uv);
+	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
 	imageStore(outRenderTarget, currentTexel, outResult);
 }

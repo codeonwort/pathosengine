@@ -7,6 +7,9 @@
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/console.h"
+// For NVidia STBN
+#include "pathos/util/resource_finder.h"
+#include "pathos/loader/imageloader.h"
 
 namespace pathos {
 
@@ -24,6 +27,7 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
 	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.1f, "Scale factor for base noise sampling");
 	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.2f, "Scale factor for erosion noise sampling");
+	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 10.0f, "Scale factor for Sun light's intensity");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 	
 	// #todo-cloud: Deprecated.
@@ -75,10 +79,35 @@ namespace pathos {
 
 	void VolumetricCloudPass::initializeResources(RenderCommandList& cmdList) {
 		ubo.init<UBO_VolumetricCloud>();
+
+		// #todo: Make STBN a system texture if needed.
+		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
+		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "NVidiaSTBN");
+		cmdList.textureStorage3D(texSTBN, 1, GL_RGBA8, 128, 128, 64);
+		for (uint32 i = 0; i < 64; ++i) {
+			char buf[256];
+			sprintf_s(buf,
+				"resources_external/NVidiaSpatioTemporalBlueNoise/STBN/%s_%u.png",
+				"stbn_scalar_2Dx1Dx1D_128x128x64x1",
+				i);
+			std::string filepath = ResourceFinder::get().find(buf);
+			CHECKF(filepath.size() > 0, "Run Setup.ps1 to download NVidia STBN");
+			
+			BitmapBlob* blob = pathos::loadImage(filepath.c_str());
+			CHECK(blob->width == 128 && blob->height == 128 && blob->bpp == 32);
+			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
+				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->getRawBytes());
+
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		}
 	}
 
 	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList) {
-		//
+		gRenderDevice->deleteTextures(1, &texSTBN);
 	}
 
 	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -129,7 +158,9 @@ namespace pathos {
 			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
 
 			if (scene->proxyList_directionalLight.size() > 0) {
-				uboData.sunIntensity = vector4(scene->proxyList_directionalLight[0]->radiance, 0.0f);
+				vector3 intensity = scene->proxyList_directionalLight[0]->radiance;
+				intensity *= std::max(0.0f, cvar_cloud_sunIntensityScale.getFloat());
+				uboData.sunIntensity = vector4(intensity, 0.0f);
 				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);
 			} else {
 				uboData.sunIntensity = vector4(0.0f);
@@ -147,8 +178,9 @@ namespace pathos {
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture);
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->getGLName());
 		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->getGLName());
-		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
-		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
+		cmdList.bindTextureUnit(4, texSTBN);
+		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
+		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
