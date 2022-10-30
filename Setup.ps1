@@ -24,7 +24,12 @@ $content_dir    = "$pwd/resources_external"
 
 $contents_list  = @(
 	# Format: (url, zip_name, unzip_name)
-	,@(
+	@(
+		'https://github.com/NVIDIAGameWorks/SpatiotemporalBlueNoiseSDK/raw/main/STBN.zip',
+		'STBN.zip',
+		'NVidiaSpatioTemporalBlueNoise'
+	),
+	@(
 		'https://casual-effects.com/g3d/data10/research/model/breakfast_room/breakfast_room.zip',
 		'breakfast_room.zip',
 		'breakfast_room'
