@@ -13,6 +13,10 @@
 // ------------------------------------------------------------
 // Tuning
 
+// 0: noiseShape.tga and noiseErosion.tga
+// 1: noiseShapePacked.tga and noiseErosionPacked.tga
+#define PACKED_NOISE_TEXTURES        0
+
 // #todo-cloud-wip: Temporal reprojection
 #define TEMPORAL_REPROJECTION        0
 
@@ -22,8 +26,6 @@
 #define CONE_SAMPLING_STEP           (1.0 / 6.0)
 
 // #todo-wip: Should look good with these values (reference: x10 times)
-// #todo-wip: With x10 steps base cloud looks blocky.
-//            Maybe my noise texture quality is not good? Let's try other formats than TGA.
 #define RAYMARCH_PRIMARY_MIN_STEP    54
 #define RAYMARCH_PRIMARY_MAX_STEP    96
 #define RAYMARCH_SECONDARY_STEP      6
@@ -214,17 +216,21 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 	// R: Perlin-Worley noise
 	// G,B,A: Worley noises at increasing frequencies
 	vec4 baseNoises = textureLod(inShapeNoise, samplePos, lod);
-	float lowFreqNoise = baseNoises.x;
-	float highFreqNoise = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
-	
-	float baseCloud = saturate(remap(lowFreqNoise, highFreqNoise, 1.0, 0.0, 1.0));
+#if PACKED_NOISE_TEXTURES
+	float baseCloud = baseNoises.x;
+#else
+	float perlinWorley = baseNoises.x;
+	float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
+	float baseCloud = saturate(remap(perlinWorley, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
+#endif
 	baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
-	// [GPUPRO7] suggests below but [SIG2017] suggests above. [SIG2017] is newer so adopt it.
-	//baseCloud = saturate(remap(lowFreqNoise, -(1.0 - highFreqNoise), 1.0, 0.0, 1.0));
-
 	vec3 detailNoises = textureLod(inErosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
+#if PACKED_NOISE_TEXTURES
+	float erosion = detailNoises.x;
+#else
 	float erosion = dot(vec3(0.625, 0.25, 0.125), detailNoises);
+#endif
 
 	return vec2(baseCloud, erosion);
 }
