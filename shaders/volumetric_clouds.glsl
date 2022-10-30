@@ -69,6 +69,7 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 	float erosionNoiseScale;
 
 	vec4 sunIntensity; // (r, g, b, ?)
+	vec4 sunDirection; // (x, y, z, ?)
 
 	float cloudCurliness;
 	float cloudCoverageOffset;
@@ -119,6 +120,7 @@ float getBaseNoiseScale() { return uboCloud.baseNoiseScale; }
 float getErosionNoiseScale() { return uboCloud.erosionNoiseScale; }
 float getCloudCurliness() { return uboCloud.cloudCurliness; }
 vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
+vec3 getSunDirection() { return uboCloud.sunDirection.xyz; }
 
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
 	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
@@ -379,6 +381,17 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 #endif
 
 		float cloudLOD = 0.5 * float(i) / float(RAYMARCH_PRIMARY_MIN_STEP);
+
+		if (bCoarseMarch) {
+			if (sampleCloudCoarse(currentPos, cloudLOD) > 0.0) {
+				currentPos -= primaryStep;
+				primaryStepLength *= FINE_MARCH_FACTOR;
+				primaryStep *= FINE_MARCH_FACTOR;
+				bCoarseMarch = false;
+				currentPos += primaryStep;
+			}
+		}
+
 		float cloudDensity = sampleCloud(currentPos, cloudLOD);
 
 		if (!bCoarseMarch) {
@@ -485,13 +498,6 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv) {
 #endif
 
 		currentPos += primaryStep;
-		if (bCoarseMarch && sampleCloudCoarse(currentPos, cloudLOD) > 0.0) {
-			currentPos -= primaryStep;
-			primaryStepLength *= FINE_MARCH_FACTOR;
-			primaryStep *= FINE_MARCH_FACTOR;
-			bCoarseMarch = false;
-			currentPos += primaryStep;
-		}
 	}
 	
 	if (isGround) {
@@ -610,7 +616,7 @@ void main() {
 		cameraRay.origin.y += 1.5;
 	}
 	
-	vec3 sunDir = uboPerFrame.sunLight.wsDirection;
+	vec3 sunDir = getSunDirection();
 
 	// (x, y, z) = luminance, w = transmittance
 	vec4 outResult = traceScene(cameraRay, sunDir, uv);

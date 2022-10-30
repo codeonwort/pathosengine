@@ -44,6 +44,7 @@ namespace pathos {
 		float erosionNoiseScale;
 
 		vector4 sunIntensity;
+		vector4 sunDirection;
 
 		float cloudCurliness;
 		float cloudCoverageOffset;
@@ -129,8 +130,10 @@ namespace pathos {
 
 			if (scene->proxyList_directionalLight.size() > 0) {
 				uboData.sunIntensity = vector4(scene->proxyList_directionalLight[0]->radiance, 0.0f);
+				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);
 			} else {
 				uboData.sunIntensity = vector4(0.0f);
+				uboData.sunDirection = vector4(0.0f, -1.0f, 0.0f, 0.0f);
 			}
 
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
