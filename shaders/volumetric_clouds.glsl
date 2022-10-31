@@ -21,25 +21,25 @@
 #define TEMPORAL_REPROJECTION        0
 
 #define STBN_ENABLED                 1
-#define STBN_SCALE                   25.0
+#define STBN_SCALE                   50.0
 
-// #todo-wip: Should look good with these values (reference: x10 times)
 #define RAYMARCH_PRIMARY_MIN_STEP    54
 #define RAYMARCH_PRIMARY_MAX_STEP    96
 #define RAYMARCH_SECONDARY_STEP      6
 #define RAYMARCH_MIN_TRANSMITTANCE   0.01
 
-// #todo-wip: No visual difference?
 #define CONE_SAMPLING_ENABLED        1
 #define CONE_SAMPLING_INIT_RADIUS    100.0
 #define CONE_SAMPLING_STEP           (10.0 / float(RAYMARCH_SECONDARY_STEP))
 
 // Reduce step size if hits a density.
-#define FINE_MARCH_FACTOR            0.25
+#define FINE_MARCH_LENGTH            50.0
 // Restore coarse step size if fine march hits nothing several times.
 #define FINE_MARCH_EXIT_COUNT        10
 
-#define CLOUD_EMIT_LIGHT             0
+// #todo: Does cloud emits light?
+#define CLOUD_EMIT_LIGHT             1
+
 // If absorption or scattering coeff is too big (>= 0.1),
 // cloud bottom layer will be too dark as sun light can't penetrate cloud density.
 #define CLOUD_ABSOPRTION_COEFF       0.02
@@ -221,7 +221,6 @@ WeatherData sampleWeather(vec3 wPos) {
 	return weather;
 }
 
-// #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 	vec3 samplePos = wPos;
 	samplePos.xz += getWorldTime() * getWindSpeed() / getWeatherScale() * 128.0;
@@ -344,8 +343,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	}
 
 #if STBN_ENABLED
-	// Additionally jitter sample position with STBN
-	// #todo: Determine jitter multiplier? 25.0 is my empirical value.
+	// Additionally jitter the sample position with STBN.
 	raymarchStartPos += STBN_SCALE * camera.direction * (stbn - 0.5);
 #endif
 
@@ -379,13 +377,15 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	vec3 currentPos = raymarchStartPos; // Current sample position
 	float primaryStepLength = totalRayMarchLength / float(numPrimarySteps);
 	vec3 primaryStep = camera.direction * primaryStepLength; // Fixed step size between sample positions
+
 	bool bCoarseMarch = true;
 	int fineMarchMissCount = 0;
+	float primaryStepLengthBackup = primaryStepLength;
+	vec3 primaryStepBackup = primaryStep;
 
 	float occluderDepth = texture(inSceneDepth, uv).r;
 	vec3 occluderPosVS = getViewPositionFromSceneDepth(uv, occluderDepth);
 
-	// #todo: empty-space optimization
 	// Raymarching
 	for (int i = 0; i < numPrimarySteps; ++i) {
 		if (currentPos.y < 0.0) {
@@ -408,8 +408,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		if (bCoarseMarch) {
 			if (sampleCloudCoarse(currentPos, cloudLOD) > 0.0) {
 				currentPos -= primaryStep;
-				primaryStepLength *= FINE_MARCH_FACTOR;
-				primaryStep *= FINE_MARCH_FACTOR;
+				primaryStepLength = FINE_MARCH_LENGTH;
+				primaryStep = camera.direction * FINE_MARCH_LENGTH;
 				bCoarseMarch = false;
 				currentPos += primaryStep;
 			}
@@ -423,15 +423,14 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			} else {
 				fineMarchMissCount += 1;
 				if (fineMarchMissCount > FINE_MARCH_EXIT_COUNT) {
-					primaryStepLength /= FINE_MARCH_FACTOR;
-					primaryStep /= FINE_MARCH_FACTOR;
+					primaryStepLength = primaryStepLengthBackup;
+					primaryStep = primaryStepBackup;
 					bCoarseMarch = true;
 					fineMarchMissCount = 0;
 				}
 			}
 		}
 
-		// #todo: Separate this logic to sampleLight()?
 		// Raymarch from current position to Sun.
 		// - Attenuate transmittance and accumulate lighting.
 		// - Only meaningful when cloudDensity is non-zero.
@@ -474,23 +473,18 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			//              dLin(p,w) = sigma_s * phase_fn(w,w') * incoming_radiance(p,w') * ds
 
 			float dOT = CLOUD_EXTINCTION_COEFF * cloudDensity * primaryStepLength;
-			if (!bCoarseMarch) {
-				// #todo: I think this is wrong but transmittance is too high
-				// if I don't compensate for the small step size.
-				dOT /= FINE_MARCH_FACTOR;
-			}
 			opticalThickness += dOT;
 			float dT = exp(-dOT);
 			T *= dT;
 		} // if (cloudDensity > 0.0)
 		
-		vec3 Lem = vec3(0.0); // Emission (#todo: Does cloud emits light?)
+		vec3 Lem = vec3(0.0); // Emission
 		vec3 Lsc = vec3(0.0); // In-scattering
 		
 		if (cloudDensity > 0.0) {
 #if CLOUD_EMIT_LIGHT
 			// http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
-			Lem = cloudDensity * phaseFn * getSunIntensity() * vec3(0.13, 0.13, 0.27);
+			Lem = 0.2 * cloudDensity * phaseFn * getSunIntensity() * vec3(0.13, 0.13, 0.27);
 #endif
 			Lsc = CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
 
@@ -634,6 +628,7 @@ void main() {
 	cameraRay.origin = uboPerFrame.ws_eyePosition;
 	cameraRay.direction = viewDir;
 
+	// #todo-wip: Does not prevent raymarching from being broken.
 	// Raymarching will be broken if eye location is too close to the interface of cloud layers
 	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= 1.5 || abs(cameraRay.origin.y - getCloudLayerMax()) <= 1.5) {
 		cameraRay.origin.y += 1.5;
