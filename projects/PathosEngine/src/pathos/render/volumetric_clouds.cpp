@@ -29,9 +29,9 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.2f, "Scale factor for erosion noise sampling");
 	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 10.0f, "Scale factor for Sun light's intensity");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
-	
+	static ConsoleVariable<float> cvar_cloud_globalCoverage("r.cloud.globalCoverage", 0.0f, "Global cloud coverage");
+
 	// #todo-cloud: Deprecated.
-	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", 0.0f, "Cloud coverage offset");
 	static ConsoleVariable<float> cvar_cloud_baseNoiseOffset("r.cloud.baseNoiseOffset", 0.0f, "Base noise offset");
 
 	struct UBO_VolumetricCloud {
@@ -51,7 +51,7 @@ namespace pathos {
 		vector4 sunDirection;
 
 		float cloudCurliness;
-		float cloudCoverageOffset;
+		float globalCoverage;
 		float baseNoiseOffset;
 		uint32 frameCounter;
 	};
@@ -168,7 +168,7 @@ namespace pathos {
 			}
 
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
-			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
+			uboData.globalCoverage = cvar_cloud_globalCoverage.getFloat();
 			uboData.baseNoiseOffset = cvar_cloud_baseNoiseOffset.getFloat();
 			uboData.frameCounter = scene->frameNumber;
 		}

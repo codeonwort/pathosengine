@@ -68,11 +68,11 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 	float baseNoiseScale;
 	float erosionNoiseScale;
 
-	vec4 sunIntensity; // (r, g, b, ?)
-	vec4 sunDirection; // (x, y, z, ?)
+	vec4  sunIntensity; // (r, g, b, ?)
+	vec4  sunDirection; // (x, y, z, ?)
 
 	float cloudCurliness;
-	float cloudCoverageOffset;
+	float globalCoverage;
 	float baseNoiseOffset;
 	uint  frameCounter;
 } uboCloud;
@@ -111,6 +111,11 @@ const uint bayerPattern[16u] = uint[]
 
 // ------------------------------------------------------------
 // Utils
+
+struct WeatherData {
+	float cloudCoverage;
+	float cloudType;
+};
 
 float getEarthRadius() { return uboCloud.earthRadius; }
 float getCloudLayerMin() { return uboCloud.cloudLayerMinY; }
@@ -197,24 +202,29 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
 	return x * y;
 }
 
-// Returns (cloudCoverage, ?, cloudType, ?)
-vec4 sampleWeather(vec3 wPos) {
+WeatherData sampleWeather(vec3 wPos) {
 	wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed() / getWeatherScale();
 	vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
-	vec4 data = textureLod(inWeatherMap, uv, 0);
+	// (lowCoverage, highCoverage, cloudType, ?)
+	vec4 rawData = textureLod(inWeatherMap, uv, 0);
 
-	data.x = saturate(data.x + uboCloud.cloudCoverageOffset);
-	return data;
+	WeatherData weather;
+	weather.cloudCoverage = max(rawData.x, saturate(rawData.y * uboCloud.globalCoverage));
+	weather.cloudType = rawData.z;
+
+	return weather;
 }
 
 // #todo: Replace with a packed texture
 vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 	vec3 samplePos = wPos;
-	samplePos.xz += getWorldTime() * getWindSpeed() / getWeatherScale();
+	samplePos.xz += getWorldTime() * getWindSpeed() / getWeatherScale() * 128.0;
 	samplePos.xz += heightFraction * getWindSpeed() / getWeatherScale() * 500.0;
 	samplePos *= getBaseNoiseScale() / 128.0;
 
-	vec3 samplePos2 = wPos * getErosionNoiseScale() / 32.0;
+	vec3 samplePos2 = wPos;
+	//samplePos2.xz += getWorldTime() * getWindSpeed() / getWeatherScale();
+	samplePos2 *= getErosionNoiseScale() / 32.0;
 
 	// R: Perlin-Worley noise
 	// G,B,A: Worley noises at increasing frequencies
@@ -241,9 +251,9 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 // Returns final cloud density for raymarching, all factors considered.
 // (cloud coverage, density gradient, detail noise, ...)
 float sampleCloud(vec3 P, float lod) {
-	vec4 weatherData = sampleWeather(P);
-	float cloudCoverage = weatherData.x;
-	float cloudType = weatherData.z;
+	WeatherData weather = sampleWeather(P);
+	float cloudCoverage = weather.cloudCoverage;
+	float cloudType = weather.cloudType;
 
 	float heightFraction = getHeightFraction(P);
 
@@ -277,9 +287,9 @@ float sampleCloud(vec3 P, float lod) {
 
 // sampleCloud() without erosion noise.
 float sampleCloudCoarse(vec3 P, float lod) {
-	vec4 weatherData = sampleWeather(P);
-	float cloudCoverage = weatherData.x;
-	float cloudType = weatherData.z;
+	WeatherData weather = sampleWeather(P);
+	float cloudCoverage = weather.cloudCoverage;
+	float cloudType = weather.cloudType;
 
 	float heightFraction = getHeightFraction(P);
 
@@ -383,7 +393,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		}
 
 #if DEBUG_MODE == DEBUG_MODE_WEATHER
-		return vec4(vec3(sampleWeather(currentPos).x), 0.0);
+		return vec4(vec3(sampleWeather(currentPos).cloudCoverage), 0.0);
 #endif
 
 		float cloudLOD = 0.5 * float(i) / float(RAYMARCH_PRIMARY_MIN_STEP);
