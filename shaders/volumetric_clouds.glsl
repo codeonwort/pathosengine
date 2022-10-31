@@ -17,13 +17,11 @@
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
 #define PACKED_NOISE_TEXTURES        0
 
-// #todo-cloud-wip: Temporal reprojection
+// #todo-wip: Temporal reprojection
 #define TEMPORAL_REPROJECTION        0
 
-// #todo-cloud-wip: No visual difference?
-#define CONE_SAMPLING_ENABLED        1
-#define CONE_SAMPLING_INIT_RADIUS    1.0
-#define CONE_SAMPLING_STEP           (1.0 / 6.0)
+#define STBN_ENABLED                 1
+#define STBN_SCALE                   25.0
 
 // #todo-wip: Should look good with these values (reference: x10 times)
 #define RAYMARCH_PRIMARY_MIN_STEP    54
@@ -31,15 +29,22 @@
 #define RAYMARCH_SECONDARY_STEP      6
 #define RAYMARCH_MIN_TRANSMITTANCE   0.01
 
+// #todo-wip: No visual difference?
+#define CONE_SAMPLING_ENABLED        1
+#define CONE_SAMPLING_INIT_RADIUS    100.0
+#define CONE_SAMPLING_STEP           (10.0 / float(RAYMARCH_SECONDARY_STEP))
+
 // Reduce step size if hits a density.
 #define FINE_MARCH_FACTOR            0.25
 // Restore coarse step size if fine march hits nothing several times.
 #define FINE_MARCH_EXIT_COUNT        10
 
 #define CLOUD_EMIT_LIGHT             0
-#define CLOUD_ABSOPRTION_COEFF       0.9
+// If absorption or scattering coeff is too big (>= 0.1),
+// cloud bottom layer will be too dark as sun light can't penetrate cloud density.
+#define CLOUD_ABSOPRTION_COEFF       0.02
 // For both in-scattering and out-scattering
-#define CLOUD_SCATTER_COEFF          0.5
+#define CLOUD_SCATTER_COEFF          0.01
 // Absoprtion + out-scattering
 #define CLOUD_EXTINCTION_COEFF       min(1.0, CLOUD_ABSOPRTION_COEFF + CLOUD_SCATTER_COEFF)
 
@@ -120,6 +125,7 @@ struct WeatherData {
 float getEarthRadius() { return uboCloud.earthRadius; }
 float getCloudLayerMin() { return uboCloud.cloudLayerMinY; }
 float getCloudLayerMax() { return uboCloud.cloudLayerMaxY; }
+float getCloudLayerThickness() { return uboCloud.cloudLayerMaxY - uboCloud.cloudLayerMinY; }
 vec2 getWindSpeed() { return vec2(uboCloud.windSpeedX, uboCloud.windSpeedZ); }
 float getWeatherScale() { return uboCloud.weatherScale; }
 float getBaseNoiseScale() { return uboCloud.baseNoiseScale; }
@@ -268,7 +274,7 @@ float sampleCloud(vec3 P, float lod) {
 	// 1. Apply density gradient
 	baseCloud *= getDensityOverHeight(heightFraction, cloudType);
 	// Reduce density at the bottoms of the clouds (density increases over altitude)
-	baseCloud *= heightFraction;
+	baseCloud *= max(0.2, heightFraction);
 
 	// 2. Apply cloudCoverage
 	float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
@@ -299,7 +305,7 @@ float sampleCloudCoarse(vec3 P, float lod) {
 	// 1. Apply density gradient
 	baseCloud *= getDensityOverHeight(heightFraction, cloudType);
 	// Reduce density at the bottoms of the clouds (density increases over altitude)
-	baseCloud *= heightFraction;
+	baseCloud *= max(0.2, heightFraction);
 
 	// 2. Apply cloudCoverage
 	float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
@@ -337,9 +343,11 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		totalRayMarchLength = hit1.t - hit2.t;
 	}
 
+#if STBN_ENABLED
 	// Additionally jitter sample position with STBN
 	// #todo: Determine jitter multiplier? 25.0 is my empirical value.
-	raymarchStartPos += 25.0 * camera.direction * (stbn - 0.5);
+	raymarchStartPos += STBN_SCALE * camera.direction * (stbn - 0.5);
+#endif
 
 	// Raymarch length is too long near horizon.
 	totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
@@ -437,20 +445,22 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			if (isInvalidHit(hitL) == false) {
 				// This is too large and will sample densities too far from currentPos
 				//float lightStepLength = hitL.t / float(numLightingSteps);
+				//float lightStepLength = 0.2 * primaryStepLength / float(numLightingSteps);
+				float lightStepLength = 0.5 * getCloudLayerThickness() / float(numLightingSteps);
 
-				float lightStepLength = 0.2 * primaryStepLength / float(numLightingSteps);
 				vec3 lightStep = lightRay.direction * lightStepLength;
 				vec3 lightSamplePos = currentPos;
 
 				float coneRadius = CONE_SAMPLING_INIT_RADIUS;
 				for (int j = 0; j < numLightingSteps; ++j) {
+					float lightLOD = float(j) * 0.5;
 #if CONE_SAMPLING_ENABLED
 					vec3 samplePos = lightSamplePos + coneRadius * noiseKernel[j] * float(j);
-					tau += CLOUD_SCATTER_COEFF * sampleCloud(samplePos, 0) * lightStepLength;
+					tau += CLOUD_SCATTER_COEFF * sampleCloud(samplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 					coneRadius += CONE_SAMPLING_STEP;
 #else
-					tau += CLOUD_SCATTER_COEFF * sampleCloud(lightSamplePos, 0) * lightStepLength;
+					tau += CLOUD_SCATTER_COEFF * sampleCloud(lightSamplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 #endif
 				}
@@ -470,33 +480,22 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			T *= dT;
 		} // if (cloudDensity > 0.0)
 		
-		// Emission (#todo: Does cloud emits light?)
-		vec3 Lem = vec3(0.0);
+		vec3 Lem = vec3(0.0); // Emission (#todo: Does cloud emits light?)
+		vec3 Lsc = vec3(0.0); // In-scattering
+		
+		if (cloudDensity > 0.0) {
 #if CLOUD_EMIT_LIGHT
-		// http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
-		if (cloudDensity > 0.0) {
-			Lem = 0.05 * vec3(0.13, 0.13, 0.27);
-		}
+			// http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
+			Lem = cloudDensity * phaseFn * getSunIntensity() * vec3(0.13, 0.13, 0.27);
 #endif
+			Lsc = CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
 
-		// In-scattering
-#if 1
-		// #todo-wip: Inscattered light should be added only if cloud is there, but then too dark.
-		vec3 Lsc = vec3(0.0);
-		if (cloudDensity > 0.0) {
-			Lsc += CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
-		}
-#else
-		vec3 Lsc = CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
-#endif
-
-		if (cloudDensity > 0.0) {
 			float heightFraction = getHeightFraction(currentPos);
 			float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
 			float verticalProb = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.8);
 			float inscatterProb = depthProb * verticalProb;
 			Lsc *= inscatterProb;
-		}
+		} // if (cloudDensity > 0.0)
 
 		vec3 Lsample = Lem + Lsc;
 		L += T * Lsample;

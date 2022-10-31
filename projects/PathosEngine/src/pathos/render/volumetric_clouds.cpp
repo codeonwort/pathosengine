@@ -27,7 +27,7 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
 	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.1f, "Scale factor for base noise sampling");
 	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.2f, "Scale factor for erosion noise sampling");
-	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 10.0f, "Scale factor for Sun light's intensity");
+	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 200.0f, "Scale factor for Sun light's intensity");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 	static ConsoleVariable<float> cvar_cloud_globalCoverage("r.cloud.globalCoverage", 0.0f, "Global cloud coverage");
 
