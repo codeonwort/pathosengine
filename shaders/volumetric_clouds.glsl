@@ -369,9 +369,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		float(RAYMARCH_PRIMARY_MAX_STEP),
 		primaryLengthRatio));
 	const int numLightingSteps = RAYMARCH_SECONDARY_STEP;
-	
-	float cosTheta = dot(camera.direction, -sunDir);
-	float phaseFn = phaseHG(cosTheta, 0.42);
+
+	float phaseFn = phaseHG(dot(camera.direction, -sunDir), 0.42);
 
 	float opticalThickness = 0.0;
 	float T = 1.0;      // Transmittance
@@ -475,6 +474,11 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			//              dLin(p,w) = sigma_s * phase_fn(w,w') * incoming_radiance(p,w') * ds
 
 			float dOT = CLOUD_EXTINCTION_COEFF * cloudDensity * primaryStepLength;
+			if (!bCoarseMarch) {
+				// #todo: I think this is wrong but transmittance is too high
+				// if I don't compensate for the small step size.
+				dOT /= FINE_MARCH_FACTOR;
+			}
 			opticalThickness += dOT;
 			float dT = exp(-dOT);
 			T *= dT;
@@ -639,5 +643,6 @@ void main() {
 
 	// (x, y, z) = luminance, w = transmittance
 	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
+
 	imageStore(outRenderTarget, currentTexel, outResult);
 }
