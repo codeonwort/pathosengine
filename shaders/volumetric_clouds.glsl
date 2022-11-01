@@ -9,6 +9,8 @@
 // [SIG2017] SIGGRAPH 2017, "Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine"
 //           https://advances.realtimerendering.com/s2017/index.html
 // [GPUPRO7] GPU Pro 7, "Real-Time Volumetric Cloudscapes"
+// [HANIKA] Fast Temporal Reprojection without Motion Vectors
+//          https://jcgt.org/published/0010/03/02/
 
 // ------------------------------------------------------------
 // Tuning
@@ -23,15 +25,16 @@
 #define STBN_ENABLED                 1
 #define STBN_SCALE                   50.0
 
-#define RAYMARCH_PRIMARY_MIN_STEP    54
-#define RAYMARCH_PRIMARY_MAX_STEP    96
+#define RAYMARCH_PRIMARY_MIN_STEP    (54 * 1)
+#define RAYMARCH_PRIMARY_MAX_STEP    (96 * 1)
 #define RAYMARCH_SECONDARY_STEP      6
-#define RAYMARCH_MIN_TRANSMITTANCE   0.01
+#define RAYMARCH_MIN_TRANSMITTANCE   0.05
 
 #define CONE_SAMPLING_ENABLED        1
 #define CONE_SAMPLING_INIT_RADIUS    100.0
 #define CONE_SAMPLING_STEP           (10.0 / float(RAYMARCH_SECONDARY_STEP))
 
+#define RAYMARCH_ADAPTIVE            1
 // Reduce step size if hits a density.
 #define FINE_MARCH_LENGTH            50.0
 // Restore coarse step size if fine march hits nothing several times.
@@ -134,6 +137,9 @@ float getCloudCurliness() { return uboCloud.cloudCurliness; }
 vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
 vec3 getSunDirection() { return uboCloud.sunDirection.xyz; }
 
+float getFOV() { return uboPerFrame.zRange.z; }
+float getAspectRatioWH() { return uboPerFrame.zRange.w; }
+
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
 	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
 }
@@ -191,9 +197,9 @@ float getHeightFraction(vec3 wPos) {
 // cloudType = 0.5 -> stratocumulus
 // cloudType = 1.0 -> cumulus
 // in-between values -> mix of these types
-#define STRATUS_GRADIENT vec4(0.0, 0.1, 0.2, 0.3)
-#define STRATOCUMULUS_GRADIENT vec4(0.02, 0.2, 0.48, 0.625)
-#define CUMULUS_GRADIENT vec4(0.00, 0.1625, 0.88, 0.98)
+#define STRATUS_GRADIENT         vec4(0.00, 0.1000, 0.20, 0.300)
+#define STRATOCUMULUS_GRADIENT   vec4(0.02, 0.2000, 0.48, 0.625)
+#define CUMULUS_GRADIENT         vec4(0.00, 0.1625, 0.88, 0.980)
 float getDensityOverHeight(float heightFraction, float cloudType) {
 	float stratusFactor = 1.0 - clamp(cloudType * 2.0, 0.0, 1.0);
 	float stratoCumulusFactor = 1.0 - abs(cloudType - 0.5) * 2.0;
@@ -273,19 +279,19 @@ float sampleCloud(vec3 P, float lod) {
 	// 1. Apply density gradient
 	baseCloud *= getDensityOverHeight(heightFraction, cloudType);
 	// Reduce density at the bottoms of the clouds (density increases over altitude)
-	baseCloud *= max(0.2, heightFraction);
+	baseCloud *= heightFraction;
 
 	// 2. Apply cloudCoverage
 	float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
 
 #if DEBUG_MODE == DEBUG_MODE_NO_EROSION
-	return saturate(baseCloudWithCoverage);
+	return baseCloudWithCoverage;
 #endif
 
 	// 3. Apply erosion
-	float erosionModifier = saturate(mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0)));
-	float finalCloud = baseCloudWithCoverage - erosionModifier * baseCloudWithCoverage;
-	finalCloud = saturate(remap(finalCloud, erosionModifier * 0.2, 1.0, 0.0, 1.0));
+	float erosionModifier = mix(erosion, 1.0 - erosion, saturate(heightFraction * 10.0));
+	float finalCloud = remap(baseCloudWithCoverage, erosionModifier * 0.2, 1.0, 0.0, 1.0);
+	finalCloud = saturate(finalCloud);
 
 	return finalCloud;
 }
@@ -304,7 +310,7 @@ float sampleCloudCoarse(vec3 P, float lod) {
 	// 1. Apply density gradient
 	baseCloud *= getDensityOverHeight(heightFraction, cloudType);
 	// Reduce density at the bottoms of the clouds (density increases over altitude)
-	baseCloud *= max(0.2, heightFraction);
+	baseCloud *= heightFraction;
 
 	// 2. Apply cloudCoverage
 	float baseCloudWithCoverage = saturate(remap(baseCloud, 1.0 - cloudCoverage, 1.0, 0.0, 1.0));
@@ -405,18 +411,21 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 
 		float cloudLOD = 0.5 * float(i) / float(RAYMARCH_PRIMARY_MIN_STEP);
 
+#if RAYMARCH_ADAPTIVE
 		if (bCoarseMarch) {
 			if (sampleCloudCoarse(currentPos, cloudLOD) > 0.0) {
 				currentPos -= primaryStep;
-				primaryStepLength = FINE_MARCH_LENGTH;
-				primaryStep = camera.direction * FINE_MARCH_LENGTH;
+				primaryStepLength = min(primaryStepLengthBackup, FINE_MARCH_LENGTH);
+				primaryStep = camera.direction * primaryStepLength;
 				bCoarseMarch = false;
 				currentPos += primaryStep;
 			}
 		}
+#endif // RAYMARCH_ADAPTIVE
 
 		float cloudDensity = sampleCloud(currentPos, cloudLOD);
 
+#if RAYMARCH_ADAPTIVE
 		if (!bCoarseMarch) {
 			if (cloudDensity > 0.0) {
 				fineMarchMissCount = 0;
@@ -430,6 +439,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 				}
 			}
 		}
+#endif // RAYMARCH_ADAPTIVE
 
 		// Raymarch from current position to Sun.
 		// - Attenuate transmittance and accumulate lighting.
@@ -534,8 +544,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 
 vec3 getViewDirection(vec2 uv) {
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-	P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-	P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P.x *= getAspectRatioWH();
+	P.z = -(1.0 / tan(getFOV() * 0.5));
 	P = normalize(P);
 	
 	mat3 camera_transform = mat3(uboPerFrame.inverseViewTransform);
@@ -546,8 +556,8 @@ vec3 getViewDirection(vec2 uv) {
 
 vec3 getPrevViewDirection(vec2 uv) {
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-	P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-	P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	P.x *= getAspectRatioWH();
+	P.z = -(1.0 / tan(getFOV() * 0.5));
 	P = normalize(P);
 	
 	mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
@@ -556,20 +566,25 @@ vec3 getPrevViewDirection(vec2 uv) {
 	return ray_forward;
 }
 
-vec2 viewDirectionToUV_prevFrame(vec3 dir) {
-	vec3 P = mat3(uboPerFrame.prevViewTransform) * dir;
+// #todo-wip: Implement proper temporal reprojection.
+// Unlike TAA I can't derive exact prev/current world positions of first-hit cloud particles.
+// This is never working well. Maybe I'll need to implement [HANIKA].
+vec2 getPrevScreenUV(vec2 currentUV) {
+	vec3 currentDir = getViewDirection(currentUV);
+	vec3 P = mat3(uboPerFrame.prevViewTransform) * currentDir;
 
 #if 1
-	float zOnPlane = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+	float zOnPlane = -(1.0 / tan(getFOV() * 0.5));
 	P.xy *= zOnPlane / P.z;
-	P.x *= uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+	P.x /= getAspectRatioWH();
 	return 0.5 * (P.xy + vec2(1.0));
 #else
+	// I don't remember where I got this from?
 	float a = P.x;
 	float b = P.y;
 	float c = P.z;
-	float z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
-	float k = uboPerFrame.screenResolution.y / uboPerFrame.screenResolution.x;
+	float z = -(1.0 / tan(getFOV() * 0.5));
+	float k = 1.0 / getAspectRatioWH();
 	float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
 	float u = 0.5 * (1.0 + a*m*k);
 	float v = 0.5 * (1.0 + b*m);
@@ -593,20 +608,16 @@ void main() {
 	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
 
 #if TEMPORAL_REPROJECTION
-
 #define REPROJECTION_METHOD 1
-// #todo: Bad at camera rotation or at the interface between cloud and non-cloud texels
-// #todo: Neighborhood clamping
 #if REPROJECTION_METHOD == 1
-	const vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
+	vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
 	const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
 	uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
 	if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-		// #todo: Am I doing this wrong?
-		vec2 prevUV = viewDirectionToUV_prevFrame(viewDir);
+		vec2 prevUV = getPrevScreenUV(uv);
 		if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
-			//ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize) + REPROJECTION_FETCH_OFFSET);
-			ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
+			ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize));
+			//ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
 			vec4 prevResult = texelFetch(inReprojectionHistory, prevTexel, 0);
 			//vec4 prevResult = texture(inReprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
 			imageStore(outRenderTarget, currentTexel, prevResult);
@@ -638,6 +649,7 @@ void main() {
 
 	// (x, y, z) = luminance, w = transmittance
 	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
+	outResult.xyz = min(outResult.xyz, vec3(65535.0));
 
 	imageStore(outRenderTarget, currentTexel, outResult);
 }
