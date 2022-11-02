@@ -16,8 +16,8 @@
 #define SCENE_DESC_FILE "resources/racing_game/test_scene.json"
 
 #define CLOUD_WEATHER_MAP_FILE   "racing_game/WeatherMap.png"
-#define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
-#define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
+#define CLOUD_SHAPE_NOISE_FILE   "common/noiseShapePacked.tga"
+#define CLOUD_EROSION_NOISE_FILE "common/noiseErosionPacked.tga"
 
 const vector3 CAMERA_POSITION = vector3(0.0f, 0.0f, 50.0f);
 const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);

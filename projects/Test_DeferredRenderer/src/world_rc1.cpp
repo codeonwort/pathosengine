@@ -41,9 +41,9 @@
 #define SPLINE_1                 "render_challenge_1/SpaceshipCurve1.spline"
 #define SPLINE_2                 "render_challenge_1/SpaceshipCurve2.spline"
 
-#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.tga"
-#define CLOUD_SHAPE_NOISE_FILE   "render_challenge_1/noiseShape.tga"
-#define CLOUD_EROSION_NOISE_FILE "render_challenge_1/noiseErosion.tga"
+#define CLOUD_WEATHER_MAP_FILE   "render_challenge_1/WeatherMap.png"
+#define CLOUD_SHAPE_NOISE_FILE   "common/noiseShapePacked.tga"
+#define CLOUD_EROSION_NOISE_FILE "common/noiseErosionPacked.tga"
 
 static const vector3             CAMERA_POSITION = vector3(20.0f, 25.0f, 200.0f);
 static const vector3             CAMERA_LOOK_AT  = vector3(20.0f, 25.0f, 190.0f);

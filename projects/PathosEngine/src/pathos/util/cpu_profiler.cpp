@@ -99,6 +99,8 @@ namespace pathos {
 	}
 
 	uint32 CpuProfiler::beginItem(uint32 threadId, const char* counterName) {
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
+
 #if 0	// Create anonymous profile rather than assert
 		CHECKF(profiles.find(threadId) != profiles.end(), "No profile exists for current thread");
 #else
@@ -119,8 +121,16 @@ namespace pathos {
 	}
 
 	void CpuProfiler::finishItem(uint32 itemHandle, uint32 threadId) {
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
+
 		ProfilePerThread& currentProfile = profiles[threadId];
-		CHECK(currentProfile.currentTab > 0);
+		// #todo-fatal: profilesMutex won't prevent ~ScopedCpuCounter()
+		// from calling finishItem(), but at least access to profiles is safe.
+		// If currentTab is zero, that counter is already invalidated.
+		if (currentProfile.currentTab == 0) {
+			return;
+		}
+		//CHECK(currentProfile.currentTab > 0);
 
 		ProfileItem& item = currentProfile.items[itemHandle];
 		item.endTime = getGlobalClockTime();
@@ -130,6 +140,8 @@ namespace pathos {
 	}
 
 	void CpuProfiler::getLastFrameSnapshot(uint32 threadID, std::vector<ProfileItem>& outSnapshot) {
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
+
 		outSnapshot.clear();
 		if (profiles.find(threadID) == profiles.end()) {
 			return;
@@ -152,8 +164,18 @@ namespace pathos {
 	}
 
 	void CpuProfiler::purgeEverything() {
-		purge_milestone.fetch_add(1);
+		std::lock_guard<std::mutex> profileLock(profilesMutex);
 
+		purge_milestone.fetch_add(1);
+		// #todo-fatal: Ok, just atomic add won't save this from crash.
+		// 1. fetch_add() is executed.
+		// 2. New cpu counter is started.
+		// 3. Profiles are cleared.
+		// 4. New cpu counter is finished -> CRASH
+		// Inefficient but also use profilesMutex for now.
+		// Anyway all the problem comes from periodic temp purge.
+		// Or... itemHandle is just an array element index,
+		// maybe I'll need a way to check if itemHandle is invalidated.
 		for (auto it = profiles.begin(); it != profiles.end(); ++it) {
 			if (it->second.items.size() >= PURGE_ITEMS_AFTER) {
 				it->second.clearItems();

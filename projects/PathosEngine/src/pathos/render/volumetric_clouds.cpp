@@ -3,9 +3,15 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/volumetric_cloud_component.h"
+#include "pathos/light/directional_light_component.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/console.h"
+// For NVidia STBN
+#include "pathos/util/resource_finder.h"
+#include "pathos/loader/imageloader.h"
+
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -13,19 +19,35 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
 
-	// #todo-cloud: Expose in VolumetricCloudComponent
-	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius");
-	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 2000.0f, "Cloud layer range (min)");
-	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 5000.0f, "Cloud layer range (max)");
-	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.05f, "Speed along u of the weather texture");
-	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.02f, "Speed along v of the weather texture");
+	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
+	// But without a good GUI it's rather convenient to control them with cvars.
+	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius (in meters)");
+	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 1000.0f, "Cloud layer's min height from ground (in meters)");
+	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 6000.0f, "Cloud layer's max height from ground (in meters)");
+	static ConsoleVariable<float> cvar_cloud_windSpeedX("r.cloud.windSpeedX", 0.002f, "Speed along u of the weather texture");
+	static ConsoleVariable<float> cvar_cloud_windSpeedZ("r.cloud.windSpeedZ", 0.001f, "Speed along v of the weather texture");
 	static ConsoleVariable<float> cvar_cloud_weatherScale("r.cloud.weatherScale", 0.01f, "Scale factor when sampling the weather texture");
-	// #todo-cloud: Should be 0.0 but then totally blocky. Density is not decreasing over height... I have to fix it first.
-	static ConsoleVariable<float> cvar_cloud_coverageOffset("r.cloud.coverageOffset", -0.92f, "Base cloud coverage offset");
-	static ConsoleVariable<float> cvar_cloud_cloudScale("r.cloud.cloudScale", 0.4f, "Scale factor of basic shape of clouds");
+	static ConsoleVariable<float> cvar_cloud_baseNoiseScale("r.cloud.baseNoiseScale", 0.1f, "Scale factor for base noise sampling");
+	static ConsoleVariable<float> cvar_cloud_erosionNoiseScale("r.cloud.erosionNoiseScale", 0.2f, "Scale factor for erosion noise sampling");
+	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 200.0f, "Scale factor for Sun light's intensity");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
+	static ConsoleVariable<float> cvar_cloud_globalCoverage("r.cloud.globalCoverage", 0.0f, "Global cloud coverage");
+	static ConsoleVariable<int32> cvar_cloud_minSteps("r.cloud.minSteps", 54, "Raymarch min steps");
+	static ConsoleVariable<int32> cvar_cloud_maxSteps("r.cloud.maxSteps", 96, "Raymarch max steps");
+	static ConsoleVariable<float> cvar_cloud_falloffDistance("r.cloud.falloffDistance", 100000.0f, "Clouds farther than this distance is invisible");
+
+	// NOTE: If absorption or scattering coeff is too big (>= 0.1),
+	//       cloud bottom layer will be too dark as sun light can't penetrate cloud density.
+	static ConsoleVariable<float> cvar_cloud_sigma_a("r.cloud.sigma_a", 0.02f, "Absorption coefficient");
+	static ConsoleVariable<float> cvar_cloud_sigma_s("r.cloud.sigma_s", 0.01f, "Scattering coefficient");
+
+	// #todo-cloud: Temporal reprojection is incomplete.
+	// Struggling with reprojecting first-hit positions to prev frame's UVs.
+	static ConsoleVariable<int32> cvar_cloud_temporalReprojection("r.cloud.temporalReprojection", 0, "(WIP) Temporal reprojection");
 
 	struct UBO_VolumetricCloud {
+		static constexpr uint32 BINDING_POINT = 1;
+
 		float earthRadius;
 		float cloudLayerMinY;
 		float cloudLayerMaxY;
@@ -33,14 +55,28 @@ namespace pathos {
 
 		float windSpeedZ;
 		float weatherScale;
-		float cloudCoverageOffset;
-		float cloudScale;
+		float baseNoiseScale;
+		float erosionNoiseScale;
+
+		// w components are unused but not a big deal
+		vector4 sunIntensity;
+		vector4 sunDirection;
 
 		float cloudCurliness;
+		float globalCoverage;
+		int32 minSteps;
+		int32 maxSteps;
+
+		float falloffDistance;
+		float absorptionCoeff;
+		float scatteringCoeff; // for both in-scattering and out-scattering
+		float extinctionCoeff; // absorption + out-scattering
+
+		int32 bTemporalReprojection;
 		uint32 frameCounter;
 	};
 
-	// #todo-cloud: Use clearTexImage instead of dispatching a CS...
+	// #todo-cloud: Use clearTexImage instead of dispatching a CS.
 	class VolumetricCloudClearCS : public ShaderStage {
 	public:
 		VolumetricCloudClearCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudClearCS") {
@@ -63,10 +99,35 @@ namespace pathos {
 
 	void VolumetricCloudPass::initializeResources(RenderCommandList& cmdList) {
 		ubo.init<UBO_VolumetricCloud>();
+
+		// #todo: Make STBN a system texture if needed.
+		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
+		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "NVidiaSTBN");
+		cmdList.textureStorage3D(texSTBN, 1, GL_RGBA8, 128, 128, 64);
+		for (uint32 i = 0; i < 64; ++i) {
+			char buf[256];
+			sprintf_s(buf,
+				"resources_external/NVidiaSpatioTemporalBlueNoise/STBN/%s_%u.png",
+				"stbn_scalar_2Dx1Dx1D_128x128x64x1",
+				i);
+			std::string filepath = ResourceFinder::get().find(buf);
+			CHECKF(filepath.size() > 0, "Run Setup.ps1 to download NVidia STBN");
+			
+			BitmapBlob* blob = pathos::loadImage(filepath.c_str());
+			CHECK(blob->width == 128 && blob->height == 128 && blob->bpp == 32);
+			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
+				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->getRawBytes());
+
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		}
 	}
 
 	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList) {
-		//
+		gRenderDevice->deleteTextures(1, &texSTBN);
 	}
 
 	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -110,21 +171,44 @@ namespace pathos {
 			uboData.cloudLayerMinY = cvar_cloud_minY.getFloat();
 			uboData.cloudLayerMaxY = cvar_cloud_maxY.getFloat();
 			uboData.windSpeedX = cvar_cloud_windSpeedX.getFloat();
+
 			uboData.windSpeedZ = cvar_cloud_windSpeedZ.getFloat();
 			uboData.weatherScale = cvar_cloud_weatherScale.getFloat();
-			uboData.cloudCoverageOffset = cvar_cloud_coverageOffset.getFloat();
-			uboData.cloudScale = cvar_cloud_cloudScale.getFloat();
+			uboData.baseNoiseScale = cvar_cloud_baseNoiseScale.getFloat();
+			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
+
+			if (scene->proxyList_directionalLight.size() > 0) {
+				vector3 intensity = scene->proxyList_directionalLight[0]->radiance;
+				intensity *= std::max(0.0f, cvar_cloud_sunIntensityScale.getFloat());
+				uboData.sunIntensity = vector4(intensity, 0.0f);
+				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);
+			} else {
+				uboData.sunIntensity = vector4(0.0f);
+				uboData.sunDirection = vector4(0.0f, -1.0f, 0.0f, 0.0f);
+			}
+
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
+			uboData.globalCoverage = cvar_cloud_globalCoverage.getFloat();
+			uboData.minSteps = std::max(cvar_cloud_minSteps.getInt(), 1);
+			uboData.maxSteps = std::max(cvar_cloud_maxSteps.getInt(), uboData.minSteps);
+
+			uboData.falloffDistance = std::max(1.0f, cvar_cloud_falloffDistance.getFloat());
+			uboData.absorptionCoeff = badger::clamp(0.0f, cvar_cloud_sigma_a.getFloat(), 1.0f);
+			uboData.scatteringCoeff = badger::clamp(0.0f, cvar_cloud_sigma_s.getFloat(), 1.0f);
+			uboData.extinctionCoeff = std::min(1.0f, uboData.absorptionCoeff + uboData.scatteringCoeff);
+
+			uboData.bTemporalReprojection = (0 != cvar_cloud_temporalReprojection.getInt());
 			uboData.frameCounter = scene->frameNumber;
 		}
-		ubo.update(cmdList, 1, &uboData);
+		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture);
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->getGLName());
 		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->getGLName());
-		cmdList.bindTextureUnit(4, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
-		cmdList.bindImageTexture(5, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
+		cmdList.bindTextureUnit(4, texSTBN);
+		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
+		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
