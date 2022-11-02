@@ -19,7 +19,7 @@
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
 #define PACKED_NOISE_TEXTURES        0
 
-// #todo-wip: Temporal reprojection
+// #todo-cloud: Temporal reprojection
 #define TEMPORAL_REPROJECTION        0
 
 #define STBN_ENABLED                 1
@@ -31,8 +31,8 @@
 #define RAYMARCH_MIN_TRANSMITTANCE   0.05
 
 #define CONE_SAMPLING_ENABLED        1
-#define CONE_SAMPLING_INIT_RADIUS    100.0
-#define CONE_SAMPLING_STEP           (10.0 / float(RAYMARCH_SECONDARY_STEP))
+#define CONE_SAMPLING_INIT_RADIUS    10.0
+#define CONE_SAMPLING_STEP           (CONE_SAMPLING_INIT_RADIUS / 6.0)
 
 #define RAYMARCH_ADAPTIVE            1
 // Reduce step size if hits a density.
@@ -40,7 +40,10 @@
 // Restore coarse step size if fine march hits nothing several times.
 #define FINE_MARCH_EXIT_COUNT        10
 
-// #todo: Does cloud emits light?
+// Clouds farther than this distance will be not seen.
+#define DISTANCE_FALLOFF             100000.0
+
+// #todo-cloud: Does cloud emits light?
 #define CLOUD_EMIT_LIGHT             1
 
 // If absorption or scattering coeff is too big (>= 0.1),
@@ -215,8 +218,8 @@ float getDensityOverHeight(float heightFraction, float cloudType) {
 }
 
 WeatherData sampleWeather(vec3 wPos) {
-	wPos.xz += getWorldTime() * getCloudLayerMin() * getWindSpeed() / getWeatherScale();
 	vec2 uv = vec2(0.5) + (getWeatherScale() * wPos.xz / getCloudLayerMin());
+	uv += getWorldTime() * getWindSpeed();
 	// (lowCoverage, highCoverage, cloudType, ?)
 	vec4 rawData = textureLod(inWeatherMap, uv, 0);
 
@@ -364,6 +367,10 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	vec3 result = vec3(0.0); // Final luminance or debug output
 	bool isGround = false;
 
+	// For distance falloff
+	vec3 firstHitPos = camera.direction * totalRayMarchLength + raymarchStartPos;
+	bool bFirstHit = true;
+
 	bool useDebugColor = false;
 
 	float primaryLengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
@@ -429,6 +436,10 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		if (!bCoarseMarch) {
 			if (cloudDensity > 0.0) {
 				fineMarchMissCount = 0;
+				if (bFirstHit) {
+					bFirstHit = false;
+					firstHitPos = currentPos;
+				}
 			} else {
 				fineMarchMissCount += 1;
 				if (fineMarchMissCount > FINE_MARCH_EXIT_COUNT) {
@@ -539,6 +550,13 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	}
 #endif
 
+	// Distance falloff
+	float firstHitDist = length(firstHitPos - camera.origin);
+	// clipping ver.
+	//if (firstHitDist >= DISTANCE_FALLOFF) { T = 1.0; }
+	// attenuation ver.
+	T = mix(T, 1.0, pow(saturate(firstHitDist / DISTANCE_FALLOFF), 8.0));
+
 	return vec4(result, T); // luminance and transmittance
 }
 
@@ -554,19 +572,7 @@ vec3 getViewDirection(vec2 uv) {
 	return ray_forward;
 }
 
-vec3 getPrevViewDirection(vec2 uv) {
-	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-	P.x *= getAspectRatioWH();
-	P.z = -(1.0 / tan(getFOV() * 0.5));
-	P = normalize(P);
-	
-	mat3 camera_transform = mat3(uboPerFrame.prevInverseViewTransform);
-	vec3 ray_forward = camera_transform * P;
-	
-	return ray_forward;
-}
-
-// #todo-wip: Implement proper temporal reprojection.
+// #todo-cloud: Implement proper temporal reprojection.
 // Unlike TAA I can't derive exact prev/current world positions of first-hit cloud particles.
 // This is never working well. Maybe I'll need to implement [HANIKA].
 vec2 getPrevScreenUV(vec2 currentUV) {
@@ -601,7 +607,6 @@ void main() {
 	}
 	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
 	vec3 viewDir = getViewDirection(uv);
-	vec3 prevViewDir = getPrevViewDirection(uv);
 
 	// NOTE: GL_REPEAT has no effect to texelFetch()
 	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
@@ -617,9 +622,7 @@ void main() {
 		vec2 prevUV = getPrevScreenUV(uv);
 		if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
 			ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize));
-			//ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize - ivec2(1,1)) + REPROJECTION_FETCH_OFFSET);
 			vec4 prevResult = texelFetch(inReprojectionHistory, prevTexel, 0);
-			//vec4 prevResult = texture(inReprojectionHistory, prevUV + REPROJECTION_FETCH_OFFSET, 0);
 			imageStore(outRenderTarget, currentTexel, prevResult);
 			return;
 		}
@@ -639,10 +642,12 @@ void main() {
 	cameraRay.origin = uboPerFrame.ws_eyePosition;
 	cameraRay.direction = viewDir;
 
-	// #todo-wip: Does not prevent raymarching from being broken.
-	// Raymarching will be broken if eye location is too close to the interface of cloud layers
-	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= 1.5 || abs(cameraRay.origin.y - getCloudLayerMax()) <= 1.5) {
-		cameraRay.origin.y += 1.5;
+	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.
+	// This constant is empirical and needs to be adaptive to cloud layer min/max heights.
+	float layerD = 15.0;
+	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= layerD
+		|| abs(cameraRay.origin.y - getCloudLayerMax()) <= layerD) {
+		cameraRay.origin.y += layerD;
 	}
 	
 	vec3 sunDir = getSunDirection();
