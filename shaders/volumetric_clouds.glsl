@@ -25,9 +25,9 @@
 #define STBN_ENABLED                 1
 #define STBN_SCALE                   50.0
 
-#define RAYMARCH_PRIMARY_MIN_STEP    (54 * 1)
-#define RAYMARCH_PRIMARY_MAX_STEP    (96 * 1)
+// Should be 6 as my noiseKernel's length is fixed to 6.
 #define RAYMARCH_SECONDARY_STEP      6
+// Stop raymarch if nearly opaque.
 #define RAYMARCH_MIN_TRANSMITTANCE   0.05
 
 #define CONE_SAMPLING_ENABLED        1
@@ -40,19 +40,8 @@
 // Restore coarse step size if fine march hits nothing several times.
 #define FINE_MARCH_EXIT_COUNT        10
 
-// Clouds farther than this distance will be not seen.
-#define DISTANCE_FALLOFF             100000.0
-
 // #todo-cloud: Does cloud emits light?
 #define CLOUD_EMIT_LIGHT             1
-
-// If absorption or scattering coeff is too big (>= 0.1),
-// cloud bottom layer will be too dark as sun light can't penetrate cloud density.
-#define CLOUD_ABSOPRTION_COEFF       0.02
-// For both in-scattering and out-scattering
-#define CLOUD_SCATTER_COEFF          0.01
-// Absoprtion + out-scattering
-#define CLOUD_EXTINCTION_COEFF       min(1.0, CLOUD_ABSOPRTION_COEFF + CLOUD_SCATTER_COEFF)
 
 // ------------------------------------------------------------
 // Debugging
@@ -86,6 +75,14 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 
 	float cloudCurliness;
 	float globalCoverage;
+	int   minSteps;
+	int   maxSteps;
+
+	float falloffDistance;
+	float absorptionCoeff;
+	float scatteringCoeff;
+	float extinctionCoeff;
+
 	uint  frameCounter;
 } uboCloud;
 
@@ -375,8 +372,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	float primaryLengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
 	primaryLengthRatio = clamp(primaryLengthRatio, 1.0, 2.0) - 1.0;
 	const int numPrimarySteps = int(mix(
-		float(RAYMARCH_PRIMARY_MIN_STEP),
-		float(RAYMARCH_PRIMARY_MAX_STEP),
+		float(uboCloud.minSteps),
+		float(uboCloud.maxSteps),
 		primaryLengthRatio));
 	const int numLightingSteps = RAYMARCH_SECONDARY_STEP;
 	
@@ -422,7 +419,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		return vec4(vec3(sampleWeather(currentPos).cloudCoverage), 0.0);
 #endif
 
-		float cloudLOD = 0.5 * float(i) / float(RAYMARCH_PRIMARY_MIN_STEP);
+		float cloudLOD = 0.5 * float(i) / float(uboCloud.minSteps);
 
 #if RAYMARCH_ADAPTIVE
 		if (bCoarseMarch) {
@@ -481,11 +478,11 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 					float lightLOD = float(j) * 0.5;
 #if CONE_SAMPLING_ENABLED
 					vec3 samplePos = lightSamplePos + coneRadius * noiseKernel[j] * float(j);
-					tau += CLOUD_SCATTER_COEFF * sampleCloud(samplePos, lightLOD) * lightStepLength;
+					tau += uboCloud.scatteringCoeff * sampleCloud(samplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 					coneRadius += CONE_SAMPLING_STEP;
 #else
-					tau += CLOUD_SCATTER_COEFF * sampleCloud(lightSamplePos, lightLOD) * lightStepLength;
+					tau += uboCloud.scatteringCoeff * sampleCloud(lightSamplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 #endif
 				}
@@ -499,7 +496,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			// scattering : dLout(p,w) = -sigma_s * Li(p,w) * ds
 			//              dLin(p,w) = sigma_s * phase_fn(w,w') * incoming_radiance(p,w') * ds
 
-			float dOT = CLOUD_EXTINCTION_COEFF * cloudDensity * primaryStepLength;
+			float dOT = uboCloud.extinctionCoeff * cloudDensity * primaryStepLength;
 			opticalThickness += dOT;
 			float dT = exp(-dOT);
 			finalTransmittance *= dT;
@@ -513,7 +510,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			// http://www.sc.chula.ac.th/courseware/2309507/Lecture/remote10.htm
 			Lem = 0.2 * cloudDensity * phaseFn * getSunIntensity() * vec3(0.13, 0.13, 0.27);
 #endif
-			Lsc = CLOUD_SCATTER_COEFF * phaseFn * (getSunIntensity() * TL);
+			Lsc = uboCloud.scatteringCoeff * phaseFn * (getSunIntensity() * TL);
 
 			float heightFraction = getHeightFraction(currentPos);
 			float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
@@ -539,9 +536,9 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	// Distance falloff
 	float firstHitDist = length(firstHitPos - camera.origin);
 	// clipping ver.
-	//if (firstHitDist >= DISTANCE_FALLOFF) { T = 1.0; }
+	//if (firstHitDist >= uboCloud.falloffDistance) { T = 1.0; }
 	// attenuation ver.
-	float distFalloff = pow(saturate(firstHitDist / DISTANCE_FALLOFF), 8.0);
+	float distFalloff = pow(saturate(firstHitDist / uboCloud.falloffDistance), 8.0);
 	finalTransmittance = mix(finalTransmittance, 1.0, distFalloff);
 
 #if DEBUG_BAD_LIGHTING

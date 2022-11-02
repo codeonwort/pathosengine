@@ -11,6 +11,8 @@
 #include "pathos/util/resource_finder.h"
 #include "pathos/loader/imageloader.h"
 
+#include "badger/math/minmax.h"
+
 namespace pathos {
 
 	static constexpr GLenum PF_volumetricCloud = GL_RGBA16F;
@@ -30,6 +32,14 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_sunIntensityScale("r.cloud.sunIntensityScale", 200.0f, "Scale factor for Sun light's intensity");
 	static ConsoleVariable<float> cvar_cloud_cloudCurliness("r.cloud.cloudCurliness", 0.1f, "Curliness of clouds");
 	static ConsoleVariable<float> cvar_cloud_globalCoverage("r.cloud.globalCoverage", 0.0f, "Global cloud coverage");
+	static ConsoleVariable<int32> cvar_cloud_minSteps("r.cloud.minSteps", 54, "Raymarch min steps");
+	static ConsoleVariable<int32> cvar_cloud_maxSteps("r.cloud.maxSteps", 96, "Raymarch max steps");
+	static ConsoleVariable<float> cvar_cloud_falloffDistance("r.cloud.falloffDistance", 100000.0f, "Clouds farther than this distance is invisible");
+
+	// NOTE: If absorption or scattering coeff is too big (>= 0.1),
+	//       cloud bottom layer will be too dark as sun light can't penetrate cloud density.
+	static ConsoleVariable<float> cvar_cloud_sigma_a("r.cloud.sigma_a", 0.02f, "Absorption coefficient");
+	static ConsoleVariable<float> cvar_cloud_sigma_s("r.cloud.sigma_s", 0.01f, "Scattering coefficient");
 
 	struct UBO_VolumetricCloud {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -44,11 +54,20 @@ namespace pathos {
 		float baseNoiseScale;
 		float erosionNoiseScale;
 
+		// w components are unused but not a big deal
 		vector4 sunIntensity;
 		vector4 sunDirection;
 
 		float cloudCurliness;
 		float globalCoverage;
+		int32 minSteps;
+		int32 maxSteps;
+
+		float falloffDistance;
+		float absorptionCoeff;
+		float scatteringCoeff; // for both in-scattering and out-scattering
+		float extinctionCoeff; // absorption + out-scattering
+
 		uint32 frameCounter;
 	};
 
@@ -165,6 +184,14 @@ namespace pathos {
 
 			uboData.cloudCurliness = cvar_cloud_cloudCurliness.getFloat();
 			uboData.globalCoverage = cvar_cloud_globalCoverage.getFloat();
+			uboData.minSteps = std::max(cvar_cloud_minSteps.getInt(), 1);
+			uboData.maxSteps = std::max(cvar_cloud_maxSteps.getInt(), uboData.minSteps);
+
+			uboData.falloffDistance = std::max(1.0f, cvar_cloud_falloffDistance.getFloat());
+			uboData.absorptionCoeff = badger::clamp(0.0f, cvar_cloud_sigma_a.getFloat(), 1.0f);
+			uboData.scatteringCoeff = badger::clamp(0.0f, cvar_cloud_sigma_s.getFloat(), 1.0f);
+			uboData.extinctionCoeff = std::min(1.0f, uboData.absorptionCoeff + uboData.scatteringCoeff);
+
 			uboData.frameCounter = scene->frameNumber;
 		}
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
