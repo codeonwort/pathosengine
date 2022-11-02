@@ -52,6 +52,8 @@
 #define DEBUG_TRANSPARENCY    0
 // Check if volume lighting resulted in NaN or minus values.
 #define DEBUG_BAD_LIGHTING    0
+// Check actual number of iterations.
+#define DEBUG_NUM_ITERATIONS  0
 
 // ------------------------------------------------------------
 // Input
@@ -402,7 +404,11 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	// ------------------------------------------------------------
 	// Perform raymarching
 
+	int actualIter = 0;
 	for (int i = 0; i < numPrimarySteps; ++i) {
+#if DEBUG_NUM_ITERATIONS
+		actualIter += 1;
+#endif
 		if (currentPos.y < 0.0) {
 			bIsGround = true;
 			break;
@@ -548,6 +554,14 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 
 #if DEBUG_TRANSPARENCY
 	finalLuminance = vec3(1.0) - finalTransmittance;
+#endif
+
+#if DEBUG_NUM_ITERATIONS
+	finalLuminance = mix(
+		vec3(0.0, 0.0, 1.0),
+		vec3(1.0, 0.0, 0.0),
+		float(actualIter) / float(numPrimarySteps));
+	//finalTransmittance = 0.0;
 #endif
 
 	return vec4(finalLuminance, finalTransmittance);
