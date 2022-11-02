@@ -519,7 +519,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 
 			float heightFraction = getHeightFraction(currentPos);
 			float depthProb = 0.05 + pow(cloudDensity, remap(heightFraction, 0.0, 0.85, 0.5, 2.0));
-			float verticalProb = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.8);
+			float verticalProb = pow(max(0.0, remap(heightFraction, 0.07, 0.14, 0.1, 1.0)), 0.8);
 			float inscatterProb = depthProb * verticalProb;
 			Lsc *= inscatterProb;
 		} // if (cloudDensity > 0.0)
