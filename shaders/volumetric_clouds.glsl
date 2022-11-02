@@ -483,11 +483,11 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 					float lightLOD = float(j) * 0.5;
 #if CONE_SAMPLING_ENABLED
 					vec3 samplePos = lightSamplePos + coneRadius * noiseKernel[j] * float(j);
-					tau += uboCloud.scatteringCoeff * sampleCloud(samplePos, lightLOD) * lightStepLength;
+					tau += uboCloud.extinctionCoeff * sampleCloud(samplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 					coneRadius += CONE_SAMPLING_STEP;
 #else
-					tau += uboCloud.scatteringCoeff * sampleCloud(lightSamplePos, lightLOD) * lightStepLength;
+					tau += uboCloud.extinctionCoeff * sampleCloud(lightSamplePos, lightLOD) * lightStepLength;
 					lightSamplePos += lightStep;
 #endif
 				}
