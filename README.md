@@ -6,14 +6,6 @@ OpenGL rendering library (for 3d graphics study)
 * Language: C++17
 * GL version: OpenGL 4.6 Core Profile
 
-## Third-party Libraries
-* OpenGL        : [glm](https://github.com/g-truc/glm), glLoadGen
-* Window system : [freeglut](https://github.com/FreeGLUTProject/freeglut)
-* Image         : [freeimage](https://freeimage.sourceforge.io/), [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
-* Font          : [freetype](https://github.com/freetype/freetype)
-* 3D model      : [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader), [tinygltf](https://github.com/syoyo/tinygltf), [assimp](https://github.com/assimp/assimp)
-* JSON          : [nlohmann](https://github.com/nlohmann/json)
-
 ## Features
 * Rendering pipeline
   * Depth prepass
@@ -44,7 +36,15 @@ OpenGL rendering library (for 3d graphics study)
 ## Sample Images
 
 ![AreaLightTest](https://user-images.githubusercontent.com/11644393/191719865-a5db07fa-336b-4d3c-96cf-5b0da60812c5.jpg)
-
 ![McGuireFireplaceRoom](https://user-images.githubusercontent.com/11644393/191719903-67ba8cf6-887c-40a9-a386-8d32a91323a7.jpg)
+![RenderChallenge1](https://user-images.githubusercontent.com/11644393/199479187-dd45c3cc-5202-4e1a-8f4a-68a81c938c23.jpg)
+![GLTF-DamagedHelmet](https://user-images.githubusercontent.com/11644393/199479537-4e5abc6a-7f5a-4236-a84f-8a5ef1296f2f.jpg)
+![GLTF-Sponza](https://user-images.githubusercontent.com/11644393/199479551-c4d0a6f8-e705-4570-9b7d-c2a43f785b74.jpg)
 
-![RC1](https://user-images.githubusercontent.com/11644393/191719967-fa640a08-7b4c-4e8e-9a94-36550ef605fe.jpg)
+## Third-party Libraries
+* OpenGL        : [glm](https://github.com/g-truc/glm), glLoadGen
+* Window system : [freeglut](https://github.com/FreeGLUTProject/freeglut)
+* Image         : [freeimage](https://freeimage.sourceforge.io/), [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
+* Font          : [freetype](https://github.com/freetype/freetype)
+* 3D model      : [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader), [tinygltf](https://github.com/syoyo/tinygltf), [assimp](https://github.com/assimp/assimp)
+* JSON          : [nlohmann](https://github.com/nlohmann/json)
