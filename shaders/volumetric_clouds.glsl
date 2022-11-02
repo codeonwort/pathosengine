@@ -43,9 +43,9 @@
 // ------------------------------------------------------------
 // Debugging
 
-#define DEBUG_MODE            0 // Set to one of values for visualization
+#define DEBUG_MODE            0 // Set to one of the values below for visualization
 #define DEBUG_MODE_WEATHER    1 // Cloud coverage in weather texture
-#define DEBUG_MODE_NO_NOISE   2 // Raymarching result without applying cloud noise
+#define DEBUG_MODE_NO_NOISE   2 // Raymarching result without applying cloud noises (should look blocky)
 #define DEBUG_MODE_NO_EROSION 3 // Apply shape noise, but no erosion noise
 
 // Replace luminance with transparency (which is 1.0 - transmittance)
@@ -353,7 +353,8 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 #endif
 
 	// Raymarch length is too long near horizon.
-	totalRayMarchLength = min(16.0 * (getCloudLayerMax() - getCloudLayerMin()), totalRayMarchLength);
+	float maxRaymarchLength = 8.0 * (getCloudLayerMax() - getCloudLayerMin());
+	totalRayMarchLength = min(maxRaymarchLength, totalRayMarchLength);
 
 	// DEBUG: intersection test failed
 	if (isInvalidHit(hit1) && isInvalidHit(hit2)) {
