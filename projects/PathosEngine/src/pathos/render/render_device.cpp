@@ -5,6 +5,8 @@
 
 #include <mutex>
 
+#define GL_ERROR_CALLBACK 1
+
 #if GL_ERROR_CALLBACK
 void glErrorCallback(
 	GLenum source,

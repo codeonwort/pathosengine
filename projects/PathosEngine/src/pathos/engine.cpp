@@ -23,9 +23,11 @@
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
 
-#define CONSOLE_WINDOW_MIN_HEIGHT 400
-#define ENGINE_CONFIG_FILE        "EngineConfig.ini"
-#define ENGINE_CONFIG_EXTRA_FILE  "EngineConfigOverride.ini"
+#define CONSOLE_WINDOW_MIN_HEIGHT    400
+#define ENGINE_CONFIG_FILE           "EngineConfig.ini"
+#define ENGINE_CONFIG_EXTRA_FILE     "EngineConfigOverride.ini"
+
+#define GL_DEBUG_CONTEXT             0
 
 // Misc
 namespace pathos {
