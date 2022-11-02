@@ -17,7 +17,7 @@
 
 // 0: noiseShape.tga and noiseErosion.tga
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
-#define PACKED_NOISE_TEXTURES        0
+#define PACKED_NOISE_TEXTURES        1
 
 // #todo-cloud: Temporal reprojection
 #define TEMPORAL_REPROJECTION        0
@@ -86,7 +86,6 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 
 	float cloudCurliness;
 	float globalCoverage;
-	float baseNoiseOffset;
 	uint  frameCounter;
 } uboCloud;
 
@@ -252,7 +251,6 @@ vec2 sampleCloudShapeAndErosion(vec3 wPos, float lod, float heightFraction) {
 	float lowFreqFBM = dot(vec3(0.625, 0.25, 0.125), baseNoises.yzw);
 	float baseCloud = saturate(remap(perlinWorley, -(1.0 - lowFreqFBM), 1.0, 0.0, 1.0));
 #endif
-	baseCloud = saturate(baseCloud + uboCloud.baseNoiseOffset);
 
 	vec3 detailNoises = textureLod(inErosionNoise, getCloudCurliness() * samplePos2, lod).xyz;
 #if PACKED_NOISE_TEXTURES
