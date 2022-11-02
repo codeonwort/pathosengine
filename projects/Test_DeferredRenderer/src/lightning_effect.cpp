@@ -7,16 +7,24 @@
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/loader/imageloader.h"
 
-static const vector3 LIGHTNING_PARTICLE_EMISSIVE(20.0f, 20.0f, 20.0f);
-static const float LIGHTNING_PARTICLE_THICKNESS = 5.0f;
+static const vector3 LIGHTNING_PARTICLE_EMISSIVE(10.0f, 10.0f, 25.0f);
+static const float LIGHTNING_PARTICLE_THICKNESS = 80.0f;
+
+#define LIGHTNING_MASK_TEXTURE  "resources/render_challenge_1/lightning_mask.jpg"
+#define LIGHTNING_WARP_TEXTURE  "resources/render_challenge_1/lightning_warp.jpg"
+#define BEND_LIHGTNING_GEOMETRY 1
+
+// ------------------------------------------------------------
+// LightningActor
 
 LightningActor::LightningActor()
 {
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
 
-	sphereGeometry = new SphereGeometry(1.0f, 50);
-	sphereMaterial = Material::createMaterialInstance("solid_color");
+	SphereGeometry* sphereGeometry = new SphereGeometry(1.0f, 50);
+	Material* sphereMaterial = Material::createMaterialInstance("solid_color");
 	sphereMaterial->setConstantParameter("albedo", vector3(0.2f, 0.3f, 0.8f));
 	sphereMaterial->setConstantParameter("roughness", 0.0f);
 	sphereMaterial->setConstantParameter("metallic", 0.0f);
@@ -32,8 +40,25 @@ void LightningActor::generateParticle(const vector3& p0, const vector3& p1)
 	registerComponent(component);
 
 	particleComponents.push_back(component);
+	component->setParameters(maskTexture, warpTexture);
 	component->generateParticle(p0, p1);
 }
+
+void LightningActor::onSpawn()
+{
+	maskTexture = pathos::createTextureFromBitmap(
+		pathos::loadImage(LIGHTNING_MASK_TEXTURE), false, false, "Tex_Lightning_Mask");
+	warpTexture = pathos::createTextureFromBitmap(
+		pathos::loadImage(LIGHTNING_WARP_TEXTURE), false, false, "Tex_Lightning_Mask");
+}
+
+void LightningActor::onDestroy()
+{
+	// #todo: Destroy maskTexture and warpTexture
+}
+
+// ------------------------------------------------------------
+// LightningParticleComponent
 
 LightningParticleComponent::LightningParticleComponent()
 {
@@ -42,9 +67,16 @@ LightningParticleComponent::LightningParticleComponent()
 	M = Material::createMaterialInstance("lightning_bolt");
 	M->setConstantParameter("emissive", LIGHTNING_PARTICLE_EMISSIVE);
 	M->setConstantParameter("billboardWidth", LIGHTNING_PARTICLE_THICKNESS);
+	M->setConstantParameter("warpAngle", 15.0f + 30.0f * Random());
 
 	setStaticMesh(new Mesh(G, M));
 	getStaticMesh()->doubleSided = true;
+}
+
+void LightningParticleComponent::setParameters(GLuint maskTexture, GLuint warpTexture)
+{
+	M->setTextureParameter("maskTexture", maskTexture);
+	M->setTextureParameter("warpTexture", warpTexture);
 }
 
 void LightningParticleComponent::generateParticle(const vector3& startPosition, const vector3& endPosition)
@@ -56,11 +88,19 @@ void LightningParticleComponent::generateParticle(const vector3& startPosition, 
 	std::vector<uint32> indices;
 
 	const uint32 numSubdivisions = 4;
-	const float jitter = glm::length(endPosition - startPosition) * 0.03f;
+#if BEND_LIHGTNING_GEOMETRY
+	const float jitter = glm::length(endPosition - startPosition) * 0.01f;
+#else
+	const float jitter = 0.0f;
+#endif
 	
 	auto recurse = [&](const vector3& p0, const vector3& p1, uint32 depth) -> void {
 		auto recurse_impl = [&](const vector3& p0, const vector3& p1, uint32 depth, auto& impl) -> void {
+#if BEND_LIHGTNING_GEOMETRY
 			vector3 middle = (0.5f + ((Random() - 0.5f) * 0.2f)) * (p0 + p1);
+#else
+			vector3 middle = 0.5f * (p0 + p1);
+#endif
 			vector3 T, B;
 			pathos::calculateOrthonormalBasis(glm::normalize(p1 - p0), T, B);
 			float jitter_scaled = jitter * (1.0f - (float)depth / numSubdivisions);

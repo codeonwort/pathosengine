@@ -13,7 +13,10 @@ namespace pathos {
 class LightningParticleComponent : public StaticMeshComponent {
 public:
 	LightningParticleComponent();
+
+	void setParameters(GLuint maskTexture, GLuint warpTexture);
 	void generateParticle(const vector3& p0, const vector3& p1);
+
 private:
 	ProceduralGeometry* G;
 	Material* M;
@@ -26,11 +29,13 @@ public:
 
 	std::vector<LightningParticleComponent*>& getParticleComponents() { return particleComponents; }
 	void generateParticle(const vector3& p0, const vector3& p1);
+
+	virtual void onSpawn() override;
+	virtual void onDestroy() override;
 	
 private:
-	StaticMeshComponent* sphereComponent;
-	SphereGeometry* sphereGeometry;
-	Material* sphereMaterial;
-
+	StaticMeshComponent* sphereComponent = nullptr;
 	std::vector<LightningParticleComponent*> particleComponents;
+	GLuint maskTexture = 0;
+	GLuint warpTexture = 0;
 };

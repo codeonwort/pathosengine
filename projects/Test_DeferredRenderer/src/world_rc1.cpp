@@ -23,6 +23,7 @@
 #include "pathos/util/log.h"
 
 #include "badger/math/random.h"
+#include "badger/math/minmax.h"
 
 // --------------------------------------------------------
 // Constants
@@ -45,11 +46,13 @@
 #define CLOUD_SHAPE_NOISE_FILE   "common/noiseShapePacked.tga"
 #define CLOUD_EROSION_NOISE_FILE "common/noiseErosionPacked.tga"
 
+#define NUM_LIGHTNING_PARTICLES  22
+
 static const vector3             CAMERA_POSITION = vector3(20.0f, 25.0f, 200.0f);
 static const vector3             CAMERA_LOOK_AT  = vector3(20.0f, 25.0f, 190.0f);
 static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
 static const vector3             SUN_RADIANCE    = 1.0f * vector3(1.0f, 1.0f, 1.0f);
-static constexpr float           Y_OFFSET        = 6000.0f; // Offset every actor to match with cloud layer
+static constexpr float           Y_OFFSET        = 5000.0f; // Offset every actor to match with cloud layer
 
 // --------------------------------------------------------
 // World
@@ -300,9 +303,9 @@ void World_RC1::setupScene()
 		ring->getStaticMesh()->setMaterial(0, material_ring);
 	}
 
-	const uint32 numParticles = 10;
-	for (uint32 i = 0; i < numParticles; ++i) {
-		uint32 ringIx = (uint32)(numRings * Random());
+	for (uint32 i = 0; i < NUM_LIGHTNING_PARTICLES; ++i) {
+		// Select outer rings more frequently
+		uint32 ringIx = badger::clamp(0u, (uint32)(numRings * Random()), numRings - 1);
 		RingActor* ring = rings[ringIx];
 		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition());
 		ringIndicesForParticleRotation.push_back(ringIx);
@@ -346,7 +349,11 @@ RingActor::RingActor()
 	setStaticMesh(new Mesh(G, M));
 }
 
-void RingActor::buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges)
+void RingActor::buildRing(
+	float innerRadius,
+	float outerRadius,
+	float thickness,
+	const std::vector<float>& segmentRanges)
 {
 	G->clear();
 	innerVertexIndices.clear();
