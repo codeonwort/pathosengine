@@ -62,8 +62,10 @@
 #define DEBUG_MODE_NO_NOISE   2 // Raymarching result without applying cloud noise
 #define DEBUG_MODE_NO_EROSION 3 // Apply shape noise, but no erosion noise
 
-#define DEBUG_TRANSMITTANCE   0
-#define DEBUG_MINUS_COLOR     0
+// Replace luminance with transparency (which is 1.0 - transmittance)
+#define DEBUG_TRANSPARENCY    0
+// Check if volume lighting resulted in NaN or minus values.
+#define DEBUG_BAD_LIGHTING    0
 
 // ------------------------------------------------------------
 // Input
@@ -321,6 +323,7 @@ float sampleCloudCoarse(vec3 P, float lod) {
 	return baseCloudWithCoverage;
 }
 
+// Returns (xyz = luminance, w = transmittance)
 vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	Sphere cloudInnerSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMin());
 	Sphere cloudOuterSphere = Sphere(vec3(0.0, -getEarthRadius(), 0.0), getEarthRadius() + getCloudLayerMax());
@@ -364,14 +367,12 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		return vec4(1.0, 0.0, 0.0, 1.0);
 	}
 
-	vec3 result = vec3(0.0); // Final luminance or debug output
-	bool isGround = false;
+	// ------------------------------------------------------------
+	// Prepare raymarching parameters
 
 	// For distance falloff
 	vec3 firstHitPos = camera.direction * totalRayMarchLength + raymarchStartPos;
 	bool bFirstHit = true;
-
-	bool useDebugColor = false;
 
 	float primaryLengthRatio = totalRayMarchLength / (getCloudLayerMax() - getCloudLayerMin());
 	primaryLengthRatio = clamp(primaryLengthRatio, 1.0, 2.0) - 1.0;
@@ -380,12 +381,6 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		float(RAYMARCH_PRIMARY_MAX_STEP),
 		primaryLengthRatio));
 	const int numLightingSteps = RAYMARCH_SECONDARY_STEP;
-
-	float phaseFn = phaseHG(dot(camera.direction, -sunDir), 0.42);
-
-	float opticalThickness = 0.0;
-	float T = 1.0;      // Transmittance
-	vec3 L = vec3(0.0); // Luminance
 	
 	vec3 currentPos = raymarchStartPos; // Current sample position
 	float primaryStepLength = totalRayMarchLength / float(numPrimarySteps);
@@ -399,10 +394,23 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 	float occluderDepth = texture(inSceneDepth, uv).r;
 	vec3 occluderPosVS = getViewPositionFromSceneDepth(uv, occluderDepth);
 
-	// Raymarching
+	// ------------------------------------------------------------
+	// Prepare lighting parameters
+
+	float finalTransmittance = 1.0;
+	vec3 finalLuminance = vec3(0.0);
+
+	bool bIsGround = false;
+
+	float phaseFn = phaseHG(dot(camera.direction, -sunDir), 0.42);
+	float opticalThickness = 0.0;
+
+	// ------------------------------------------------------------
+	// Perform raymarching
+
 	for (int i = 0; i < numPrimarySteps; ++i) {
 		if (currentPos.y < 0.0) {
-			isGround = true;
+			bIsGround = true;
 			break;
 		}
 
@@ -496,7 +504,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			float dOT = CLOUD_EXTINCTION_COEFF * cloudDensity * primaryStepLength;
 			opticalThickness += dOT;
 			float dT = exp(-dOT);
-			T *= dT;
+			finalTransmittance *= dT;
 		} // if (cloudDensity > 0.0)
 		
 		vec3 Lem = vec3(0.0); // Emission
@@ -517,47 +525,38 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 		} // if (cloudDensity > 0.0)
 
 		vec3 Lsample = Lem + Lsc;
-		L += T * Lsample;
+		finalLuminance += finalTransmittance * Lsample;
 
-		if (T < RAYMARCH_MIN_TRANSMITTANCE) {
+		if (finalTransmittance < RAYMARCH_MIN_TRANSMITTANCE) {
 			break;
 		}
-
-#if DEBUG_MINUS_COLOR
-		if (isMinusColor(Lsc)) {
-			useDebugColor = true;
-			result = vec3(1.0, 0.0, 0.0);
-			break;
-		}
-#endif
 
 		currentPos += primaryStep;
 	}
 	
-	if (isGround) {
-		result = vec3(0.0, 0.0, 0.0);
-	} else if (useDebugColor == false) {
-#if DEBUG_TRANSMITTANCE
-		result = vec3(1.0) - T; // DEBUG: transmittance
-#else
-		result = L;
-#endif
+	if (bIsGround) {
+		finalLuminance = vec3(0.0, 0.0, 0.0);
 	}
-
-#if DEBUG_MINUS_COLOR
-	if (isMinusColor(result) && useDebugColor == false) {
-		result = vec3(0.0, 1.0, 1.0);
-	}
-#endif
 
 	// Distance falloff
 	float firstHitDist = length(firstHitPos - camera.origin);
 	// clipping ver.
 	//if (firstHitDist >= DISTANCE_FALLOFF) { T = 1.0; }
 	// attenuation ver.
-	T = mix(T, 1.0, pow(saturate(firstHitDist / DISTANCE_FALLOFF), 8.0));
+	float distFalloff = pow(saturate(firstHitDist / DISTANCE_FALLOFF), 8.0);
+	finalTransmittance = mix(finalTransmittance, 1.0, distFalloff);
 
-	return vec4(result, T); // luminance and transmittance
+#if DEBUG_BAD_LIGHTING
+	if (any(isnan(finalLuminance)) || isMinusColor(finalLuminance)) {
+		finalLuminance = vec3(1.0, 0.0, 0.0);
+	}
+#endif
+
+#if DEBUG_TRANSPARENCY
+	finalLuminance = vec3(1.0) - finalTransmittance;
+#endif
+
+	return vec4(finalLuminance, finalTransmittance);
 }
 
 vec3 getViewDirection(vec2 uv) {
