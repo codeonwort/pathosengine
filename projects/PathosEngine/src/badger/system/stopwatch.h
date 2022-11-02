@@ -15,10 +15,11 @@ public:
 
 	// Elapsed seconds since start()
 	float stop() {
-		std::chrono::duration<float> diff = std::chrono::system_clock::now() - startTime;
-		float seconds = diff.count();
+		auto diff = std::chrono::system_clock::now() - startTime;
+		std::chrono::milliseconds elapsedMS
+			= std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 
-		return seconds;
+		return 0.001f * (float)elapsedMS.count();
 	}
 
 private:

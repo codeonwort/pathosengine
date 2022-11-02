@@ -93,7 +93,7 @@ namespace pathos {
 				} else {
 					// Main scene
 					SceneRenderSettings settings;
-					settings.sceneWidth = screenWidth; // #todo-renderer: Upscaling
+					settings.sceneWidth = screenWidth;
 					settings.sceneHeight = screenHeight;
 					settings.frameCounter = renderThread->currentFrame;
 					settings.enablePostProcess = true;

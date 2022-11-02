@@ -27,6 +27,7 @@
 #define ENGINE_CONFIG_FILE        "EngineConfig.ini"
 #define ENGINE_CONFIG_EXTRA_FILE  "EngineConfigOverride.ini"
 
+// Misc
 namespace pathos {
 
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
@@ -34,9 +35,11 @@ namespace pathos {
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
 
-	//////////////////////////////////////////////////////////////////////////
+}
 
-	// static
+// Engine (static)
+namespace pathos {
+
 	bool Engine::init(int argc, char** argv, const EngineConfig& config) {
 		if (gEngine) {
 			LOG(LogWarning, "The engine is already initialized");
@@ -71,22 +74,13 @@ namespace pathos {
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	Engine::Engine()
-		: frameCounter_gameThread(0)
-		, elapsed_gameThread(0.0f)
-		, elapsed_renderThread(0.0f)
-		, currentWorld(nullptr)
-		, pendingNewWorld(nullptr)
-		, renderThread(nullptr)
-		, elapsed_gpu(0)
-	{
-	}
+}
 
-	Engine::~Engine()
-	{
-	}
+// Engine (member)
+namespace pathos {
 
+	// Initilaize the engine instance and its subsystems.
+	// Init order of subsystems is carefully hard-coded. Do not reorder in random.
 	bool Engine::initialize(int argc, char** argv, const EngineConfig& config) {
 		conf = config;
 
@@ -127,26 +121,28 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
 
-		// #todo: Where to put this
-		registerExec("profile_gpu", [](const std::string& command) {
-			gEngine->dumpGPUProfile();
-		});
-		registerExec("stat", [](const std::string& command) {
-			gEngine->toggleFrameStat();
-		});
-		registerExec("set_window_size", [](const std::string& command) {
-			char unused[16];
-			int w, h;
-			int ret = sscanf_s(command.c_str(), "%s %d %d", unused, (unsigned)_countof(unused), &w, &h);
-			if (ret == 3 && w > 0 && h > 0) {
-				gEngine->getMainWindow()->setSize((uint32)w, (uint32)h);
-			} else {
-				gConsole->addLine(L"Usage: set_window_size <new_width> <new_height>");
-			}
-		});
-		registerExec("screenshot", [this](const std::string& command) {
-			renderThread->takeScreenshot();
-		});
+		// Register engine commands
+		{
+			registerExec("profile_gpu", [](const std::string& command) {
+				gEngine->dumpGPUProfile();
+			});
+			registerExec("stat", [](const std::string& command) {
+				gEngine->toggleFrameStat();
+			});
+			registerExec("set_window_size", [](const std::string& command) {
+				char unused[16];
+				int w, h;
+				int ret = sscanf_s(command.c_str(), "%s %d %d", unused, (unsigned)_countof(unused), &w, &h);
+				if (ret == 3 && w > 0 && h > 0) {
+					gEngine->getMainWindow()->setSize((uint32)w, (uint32)h);
+				} else {
+					gConsole->addLine(L"Usage: set_window_size <new_width> <new_height>");
+				}
+			});
+			registerExec("screenshot", [this](const std::string& command) {
+				renderThread->takeScreenshot();
+			});
+		}
 
 		for (const auto& line : configLines) {
 			gConsole->addLine(line.c_str(), false);
@@ -421,18 +417,17 @@ namespace pathos {
 		}
 
 		// Start world tick
+		bool bShouldTickWorld = true;
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
 			float deltaSeconds = stopwatch_gameThread.stop();
 
-			// #todo-fps: It only controls the game thread. What about the render thread + GPU?
 			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
-				elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
-				return;
+				bShouldTickWorld = false;
+			} else {
+				stopwatch_gameThread.start();
 			}
-
-			stopwatch_gameThread.start();
 
 			//
 			// Process input
@@ -451,7 +446,7 @@ namespace pathos {
 				const float ar = (float)conf.windowWidth / conf.windowHeight;
 				currentWorld->getCamera().getLens().setAspectRatio(ar);
 
-				{
+				if (bShouldTickWorld) {
 					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
 					currentWorld->tick(deltaSeconds);
 				}
@@ -516,8 +511,11 @@ namespace pathos {
 
 		CpuProfiler::getInstance().finishCheckpoint();
 
-		elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
-		stopwatch_gameThread.start();
+		if (bShouldTickWorld) {
+			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+			stopwatch_gameThread.start();
+		}
+
 		if (frameCounter_gameThread == (uint32)(-1)) {
 			frameCounter_gameThread = 1;
 		} else {

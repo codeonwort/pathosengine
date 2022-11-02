@@ -127,8 +127,8 @@ namespace pathos {
 		inline const std::map<std::string, ExecProc>& getExecMap() const { return execMap; }
 
 	private:
-		Engine();
-		~Engine();
+		Engine() = default;
+		~Engine() = default;
 
 		bool initialize(int argcp, char** argv, const EngineConfig& conf);
 		bool destroy();
@@ -164,11 +164,11 @@ namespace pathos {
 		Stopwatch stopwatch_gameThread;
 		Stopwatch stopwatch_app;
 
-		uint32 frameCounter_gameThread;
-		float elapsed_gameThread;
+		uint32 frameCounter_gameThread = 0;
+		float elapsed_gameThread = 0.0f;
 
-		World* currentWorld;
-		World* pendingNewWorld;
+		World* currentWorld = nullptr;
+		World* pendingNewWorld = nullptr;
 
 		std::map<std::string, ExecProc> execMap;
 
@@ -178,11 +178,11 @@ namespace pathos {
 
 	// Render thread
 	private:
-		RenderThread* renderThread;
+		RenderThread* renderThread = nullptr;
 
 		// Render thread will fill in these
-		float elapsed_renderThread;
-		float elapsed_gpu;
+		float elapsed_renderThread = 0.0f;
+		float elapsed_gpu = 0.0f;
 		std::vector<std::string> lastGpuCounterNames;
 		std::vector<float> lastGpuCounterTimes;
 		std::mutex gpuQueryMutex;
