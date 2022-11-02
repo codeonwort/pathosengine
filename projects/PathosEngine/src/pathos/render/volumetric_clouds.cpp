@@ -41,6 +41,10 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_cloud_sigma_a("r.cloud.sigma_a", 0.02f, "Absorption coefficient");
 	static ConsoleVariable<float> cvar_cloud_sigma_s("r.cloud.sigma_s", 0.01f, "Scattering coefficient");
 
+	// #todo-cloud: Temporal reprojection is incomplete.
+	// Struggling with reprojecting first-hit positions to prev frame's UVs.
+	static ConsoleVariable<int32> cvar_cloud_temporalReprojection("r.cloud.temporalReprojection", 0, "(WIP) Temporal reprojection");
+
 	struct UBO_VolumetricCloud {
 		static constexpr uint32 BINDING_POINT = 1;
 
@@ -68,6 +72,7 @@ namespace pathos {
 		float scatteringCoeff; // for both in-scattering and out-scattering
 		float extinctionCoeff; // absorption + out-scattering
 
+		int32 bTemporalReprojection;
 		uint32 frameCounter;
 	};
 
@@ -192,6 +197,7 @@ namespace pathos {
 			uboData.scatteringCoeff = badger::clamp(0.0f, cvar_cloud_sigma_s.getFloat(), 1.0f);
 			uboData.extinctionCoeff = std::min(1.0f, uboData.absorptionCoeff + uboData.scatteringCoeff);
 
+			uboData.bTemporalReprojection = (0 != cvar_cloud_temporalReprojection.getInt());
 			uboData.frameCounter = scene->frameNumber;
 		}
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);

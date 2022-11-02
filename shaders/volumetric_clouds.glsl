@@ -19,9 +19,6 @@
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
 #define PACKED_NOISE_TEXTURES        1
 
-// #todo-cloud: Temporal reprojection
-#define TEMPORAL_REPROJECTION        0
-
 #define STBN_ENABLED                 1
 #define STBN_SCALE                   50.0
 
@@ -83,6 +80,7 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 	float scatteringCoeff;
 	float extinctionCoeff;
 
+	int   bTemporalReprojection;
 	uint  frameCounter;
 } uboCloud;
 
@@ -606,31 +604,31 @@ void main() {
 	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
 	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
 
-#if TEMPORAL_REPROJECTION
+	if (uboCloud.bTemporalReprojection != 0) {
 #define REPROJECTION_METHOD 1
 #if REPROJECTION_METHOD == 1
-	vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
-	const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
-	uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-	if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-		vec2 prevUV = getPrevScreenUV(uv);
-		if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
-			ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize));
-			vec4 prevResult = texelFetch(inReprojectionHistory, prevTexel, 0);
+		vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
+		const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
+		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+			vec2 prevUV = getPrevScreenUV(uv);
+			if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
+				ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize));
+				vec4 prevResult = texelFetch(inReprojectionHistory, prevTexel, 0);
+				imageStore(outRenderTarget, currentTexel, prevResult);
+				return;
+			}
+		}
+		// Reference quality for static camera
+#elif REPROJECTION_METHOD == 2
+		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+			vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
 			imageStore(outRenderTarget, currentTexel, prevResult);
 			return;
 		}
-	}
-// Reference quality for static camera
-#elif REPROJECTION_METHOD == 2
-	uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-	if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-		vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
-		imageStore(outRenderTarget, currentTexel, prevResult);
-		return;
-	}
 #endif // REPROJECTION_METHOD
-#endif // TEMPORAL_REPROJECTION
+	}
 
 	Ray cameraRay;
 	cameraRay.origin = uboPerFrame.ws_eyePosition;
