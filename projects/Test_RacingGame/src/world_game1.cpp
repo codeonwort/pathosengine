@@ -5,7 +5,7 @@
 #include "pathos/render_minimal.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/mesh/static_mesh_actor.h"
-#include "pathos/light/directional_light_actor.h"
+#include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"

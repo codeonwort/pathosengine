@@ -9,11 +9,10 @@
 
 #include "pathos/camera/camera.h"
 
-#include "pathos/light/directional_light_actor.h"
-#include "pathos/light/directional_light_component.h"
-#include "pathos/light/point_light_actor.h"
-#include "pathos/light/point_light_component.h"
-
+#include "pathos/scene/directional_light_actor.h"
+#include "pathos/scene/directional_light_component.h"
+#include "pathos/scene/point_light_actor.h"
+#include "pathos/scene/point_light_component.h"
 
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"

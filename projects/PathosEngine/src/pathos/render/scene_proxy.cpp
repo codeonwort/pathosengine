@@ -4,9 +4,9 @@
 #include "pathos/shader/material_shader.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/mesh/static_mesh_component.h"
-#include "pathos/light/point_light_component.h"
-#include "pathos/light/rect_light_component.h"
-#include "pathos/light/directional_light_component.h"
+#include "pathos/scene/point_light_component.h"
+#include "pathos/scene/rect_light_component.h"
+#include "pathos/scene/directional_light_component.h"
 
 #include "badger/math/hit_test.h"
 

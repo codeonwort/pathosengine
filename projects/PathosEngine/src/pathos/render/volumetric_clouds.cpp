@@ -3,7 +3,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/volumetric_cloud_component.h"
-#include "pathos/light/directional_light_component.h"
+#include "pathos/scene/directional_light_component.h"
 #include "pathos/texture/volume_texture.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/console.h"

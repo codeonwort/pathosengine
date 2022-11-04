@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/actor/actor.h"
-#include "pathos/light/rect_light_component.h"
+#include "rect_light_component.h"
 
 namespace pathos {
 

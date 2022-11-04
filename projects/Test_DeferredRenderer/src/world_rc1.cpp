@@ -12,8 +12,8 @@
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/scene/sky_ansel_actor.h"
-#include "pathos/light/directional_light_actor.h"
-#include "pathos/light/point_light_actor.h"
+#include "pathos/scene/directional_light_actor.h"
+#include "pathos/scene/point_light_actor.h"
 
 #include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"

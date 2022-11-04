@@ -10,8 +10,6 @@
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/camera/camera.h"
-#include "pathos/light/shadow_directional.h"
-#include "pathos/light/shadow_omni.h"
 #include "pathos/smart_pointer.h"
 
 #include <memory>
@@ -53,8 +51,8 @@ namespace pathos {
 
 		// Full-screen processing
 		static uniquePtr<class DepthPrepass>          depthPrepass;
-		static uniquePtr<DirectionalShadowMap>        sunShadowMap;
-		static uniquePtr<OmniShadowPass>              omniShadowPass;
+		static uniquePtr<class DirectionalShadowMap>  sunShadowMap;
+		static uniquePtr<class OmniShadowPass>        omniShadowPass;
 		static uniquePtr<class VisualizeBufferPass>   visualizeBuffer;
 
 		// Post-processing

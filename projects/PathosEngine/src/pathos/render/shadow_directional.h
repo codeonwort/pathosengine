@@ -2,8 +2,8 @@
 
 #include "pathos/gl_handles.h"
 #include "pathos/camera/camera.h"
-#include "pathos/render/scene_proxy.h"
 #include "pathos/shader/uniform_buffer.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_command_list.h"
 
 #include "badger/types/noncopyable.h"
@@ -14,7 +14,7 @@
 namespace pathos {
 
 	// Shadow pass for a directional light. (usually Sun)
-	class DirectionalShadowMap : public Noncopyable {
+	class DirectionalShadowMap final : public Noncopyable {
 
 	public:
 		virtual ~DirectionalShadowMap();

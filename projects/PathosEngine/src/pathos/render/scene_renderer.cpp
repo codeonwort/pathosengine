@@ -17,6 +17,8 @@
 
 // Render passes
 #include "pathos/render/depth_prepass.h"
+#include "pathos/render/shadow_directional.h"
+#include "pathos/render/shadow_omni.h"
 #include "pathos/render/skybox.h"
 #include "pathos/render/sky_ansel.h"
 #include "pathos/render/sky_atmosphere.h"
@@ -37,8 +39,8 @@
 
 // Render proxies
 #include "pathos/scene/volumetric_cloud_component.h"
-#include "pathos/light/directional_light_component.h"
-#include "pathos/light/point_light_component.h"
+#include "pathos/scene/directional_light_component.h"
+#include "pathos/scene/point_light_component.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 
