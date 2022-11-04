@@ -128,6 +128,10 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_CLAMP);
 	}
 
+	float DirectionalShadowMap::getShadowMapZFar() const {
+		return std::max(1.0f, cvar_csm_zFar.getFloat());
+	}
+
 	void DirectionalShadowMap::updateUniformBufferData(
 		RenderCommandList& cmdList,
 		const SceneProxy* scene,
@@ -168,9 +172,8 @@ namespace pathos {
 			viewProjectionMatrices.emplace_back(projection * lightView);
 		};
 
-		const float zFar = std::max(1.0f, cvar_csm_zFar.getFloat());
 		std::vector<vector3> frustumPlanes;
-		camera.getFrustumVertices(frustumPlanes, numCascades, zFar);
+		camera.getFrustumVertices(frustumPlanes, numCascades, getShadowMapZFar());
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
 		}

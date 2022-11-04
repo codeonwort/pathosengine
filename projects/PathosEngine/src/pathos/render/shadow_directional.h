@@ -28,6 +28,8 @@ namespace pathos {
 
 		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
 
+		float getShadowMapZFar() const;
+
 	private:
 		void setLightDirection(const vector3& direction);
 		// Update viewProjectionMatrices

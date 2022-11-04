@@ -14,6 +14,7 @@
 #define VIEWMODE_SSAO        7
 #define VIEWMODE_SSR         8
 #define VIEWMODE_VELOCITY    9
+#define VIEWMODE_CSMLAYER    10
 
 in VS_OUT {
 	vec2 screenUV;
@@ -63,5 +64,19 @@ void main() {
 	} else if (viewmode == VIEWMODE_VELOCITY) {
 		float fps = 144.0;
 		outColor = vec4(abs(texture2D(velocityMap, screenUV).rg) * fps, 0.0, 1.0);
+	} else if (viewmode == VIEWMODE_CSMLAYER) {
+		// Green = near, blue = far, red = out of range
+		float zNear = uboPerFrame.zRange.x;
+		float zFar = uboPerFrame.sunParameters.x;
+		float currZ = gbufferData.vs_coords.z;
+		float numCascades = uboPerFrame.sunParameters.y;
+		float linearZ = (-currZ - zNear) / (zFar - zNear);
+		if (linearZ < 1.0 && gbufferData.material_id != 0) {
+			float k = float(int(linearZ * numCascades)) / numCascades;
+			//outColor = vec4(k, k, k, 1.0);
+			outColor = vec4(mix(vec3(0, 1, 0), vec3(0, 0, 1), k), 1.0);
+		} else {
+			outColor = vec4(1.0, 0.0, 0.0, 1.0);
+		}
 	}
 }

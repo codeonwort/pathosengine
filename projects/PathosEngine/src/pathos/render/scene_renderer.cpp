@@ -96,6 +96,7 @@ namespace pathos {
 		vector4               time; // (currentTime, ?, ?, ?)
 
 		matrix4               sunViewProj[4];
+		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
 
 		vector3               eyeDirection;
 		float                 __pad0;
@@ -767,6 +768,9 @@ namespace pathos {
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
 		data.sunViewProj[2] = sunShadowMap->getViewProjection(2);
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
+		
+		data.sunParameters.x = sunShadowMap->getShadowMapZFar();
+		data.sunParameters.y = (float)sceneRenderTargets.numCascades;
 
 		data.eyeDirection = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
 		data.eyePosition  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));

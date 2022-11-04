@@ -35,7 +35,8 @@ namespace pathos {
 
 	static ConsoleVariable<int32> cvar_viewmode("r.viewmode", 0,
 		"0 = disable visualization, 1 = sceneDepth, 2 = albedo, 3 = worldNormal,\
-		 4 = metallic, 5 = roughness, 6 = emissive, 7 = ssao, 8 = ssr, 9 = velocity");
+		 4 = metallic, 5 = roughness, 6 = emissive, 7 = ssao, 8 = ssr, 9 = velocity,\
+		 10 = CSM layer");
 
 	VisualizeBufferPass::VisualizeBufferPass()
 		: dummyVAO(0)
