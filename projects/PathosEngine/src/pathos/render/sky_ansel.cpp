@@ -6,10 +6,20 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/util/gl_debug_group.h"
+#include "pathos/console.h"
 
 #include <string>
 
 namespace pathos {
+
+	static ConsoleVariable<float> cvar_anselSkyIntensity("r.anselSky.intensity", 1.0f, "Sky light intensity");
+
+	struct UBO_AnselSky {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		matrix4 viewProj;
+		float intensity;
+	};
 	
 	class AnselSkyVS : public ShaderStage {
 	public:
@@ -41,7 +51,7 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_AnselSky");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		uniform_transform = 0;
+		ubo.init<UBO_AnselSky>("UBO_AnselSky");
 	}
 
 	void AnselSkyPass::releaseResources(RenderCommandList& cmdList) {
@@ -52,13 +62,12 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(AnselSkyActor);
 
 		const Camera& camera = scene->camera;
-		AnselSkyProxy* anselSky = scene->anselSky;
+		AnselSkyProxy* skyProxy = scene->anselSky;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
 		const matrix4 view = matrix4(matrix3(camera.getViewMatrix())); // view transform without transition
 		const matrix4& proj = camera.getProjectionMatrix();
-		const matrix4 transform = proj * view;
 
 		// Write to only far plane.
 		cmdList.depthFunc(GL_EQUAL);
@@ -72,14 +81,18 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 
-		cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &transform[0][0]);
-		cmdList.bindTextureUnit(0, anselSky->textureID);
+		UBO_AnselSky uboData;
+		uboData.viewProj = proj * view;
+		uboData.intensity = std::max(0.0f, cvar_anselSkyIntensity.getFloat());
+		ubo.update(cmdList, UBO_AnselSky::BINDING_POINT, &uboData);
+
+		cmdList.bindTextureUnit(0, skyProxy->textureID);
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
-		anselSky->sphere->activate_position(cmdList);
-		anselSky->sphere->activateIndexBuffer(cmdList);
-		anselSky->sphere->drawPrimitive(cmdList);
+		skyProxy->sphere->activate_position(cmdList);
+		skyProxy->sphere->activateIndexBuffer(cmdList);
+		skyProxy->sphere->drawPrimitive(cmdList);
 	}
 
 }

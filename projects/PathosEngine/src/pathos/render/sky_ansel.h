@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/gl_handles.h"
+#include "pathos/shader/uniform_buffer.h"
 
 #include "badger/types/noncopyable.h"
 
@@ -18,7 +19,7 @@ namespace pathos {
 
 	private:
 		GLuint fbo = 0xffffffff;
-		GLint uniform_transform = 0xffffffff;
+		UniformBuffer ubo;
 
 	};
 

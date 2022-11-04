@@ -1,18 +1,27 @@
 #version 460 core
 
-layout (location = 0) uniform mat4 viewProj;
+// --------------------------------------------------------
+// Input
+
+layout (std140, binding = 1) uniform UBO_AnselSky {
+	mat4 viewProj;
+	float intensity;
+} ubo;
+
+// --------------------------------------------------------
+// Vertex Shader
 
 #if VERTEX_SHADER
 
-layout (location = 0) in vec3 position;
+layout (location = 0) in vec3 inPosition;
 
 out VS_OUT {
 	vec3 r;
 } vs_out;
 
 void main() {
-	vs_out.r = position;
-	gl_Position = (viewProj * vec4(position, 1)).xyww;
+	vs_out.r = inPosition;
+	gl_Position = (ubo.viewProj * vec4(inPosition, 1)).xyww;
 #if REVERSE_Z
 	gl_Position.z = 0.0;
 #endif
@@ -20,7 +29,8 @@ void main() {
 
 #endif // VERTEX_SHADER
 
-//////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------
+// Fragment Shader
 
 #if FRAGMENT_SHADER
 
@@ -51,7 +61,7 @@ void main() {
 	vec2 tc = CubeToEquirectangular(normalize(fs_in.r));
 #endif
 
-	vec3 sky = texture(texSky, tc).xyz;
+	vec3 sky = ubo.intensity * texture(texSky, tc).xyz;
 	outSceneColor = vec4(sky, 1.0);
 }
 

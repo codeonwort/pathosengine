@@ -48,6 +48,10 @@
 
 #define NUM_LIGHTNING_PARTICLES  22
 
+#define STARFIELD_WIDTH          4096
+#define STARFIELD_HEIGHT         2048
+#define STARFIELD_CUBEMAP_SIZE   512
+
 static const vector3             CAMERA_POSITION = vector3(20.0f, 25.0f, 200.0f);
 static const vector3             CAMERA_LOOK_AT  = vector3(20.0f, 25.0f, 190.0f);
 static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
@@ -199,18 +203,23 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(starfield, 4096, 2048);
-	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(starfield, 512, "Texture IBL: cubemapForIBL");
+	GalaxyGenerator::createStarField(
+		starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
-	// diffuse irradiance
-	GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-	scene.irradianceMap = irradianceMap;
+	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(
+		starfield, STARFIELD_CUBEMAP_SIZE, "Texture: starfield cube");
 
-	// specular IBL
+	// Irradiance map
+	GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
+		cubemapForIBL, 32, false, "Texture: starfield irradiance map");
+
+	// Specular IBL
 	GLuint prefilteredEnvMap;
 	uint32 mipLevels;
-	IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
+	IrradianceBaker::bakePrefilteredEnvMap(
+		cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture: starfield specular IBL");
 
+	scene.irradianceMap = irradianceMap;
 	scene.prefilterEnvMap = prefilteredEnvMap;
 	scene.prefilterEnvMapMipLevels = mipLevels;
 
@@ -315,7 +324,7 @@ void World_RC1::setupScene()
 void World_RC1::updateStarfield()
 {
 	gEngine->execute("recompile_shaders");
-	GalaxyGenerator::createStarField(starfield, 2048, 1024);
+	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 }
 
 void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
