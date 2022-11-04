@@ -1,11 +1,30 @@
-// Well, I know the code quality is shit. Just wanted to try Rust...
-// CAUTION: This generates several ill-formed functions. Need to fix them by hand for now.
+// ------------------------------------------------------------------------------
+// OVERVIEW
+// - Parse glcorearb.h and generate wrappers for GL calls.
+// - See render_commands.h and render_command_list.h.
+//
+// CAUTION: This script generates several ill-formed functions.
+//          Actual files in the engine are manually fixed, so
+//          compare them with auto-generated files.
+// ------------------------------------------------------------------------------
 
-//use std::io::{stdin, stdout};
-use std::io::Write;
-use std::io::{BufRead, BufReader};
+// #todo: Ignore certain old functions? (e.g., glActiveTexture)
+
+use std::io::{Write, BufRead, BufReader};
 use std::fs::File;
 
+// Should exist in the same directory.
+const INPUT_GLCOREARB: &str = "glcorearb.h";
+// Contains render packets (wrappers for GL device calls).
+const OUTPUT_RENDER_PACKET: &str = "render_commands.generated.h";
+// Contains render commands that create render packets.
+const OUTPUT_RENDER_COMMAND_LIST: &str = "render_command_list.generated.h";
+
+// All GL function signatures are in-between these markers.
+const GLAPI_BEGIN_MARKER: &str = "#ifdef GL_GLEXT_PROTOTYPES";
+const GLAPI_END_MARKER: &str = "#endif";
+
+// Represents a GL function signature.
 struct GLFnInfo {
 	return_type: String,
 	gl_func_name: String,
@@ -15,49 +34,89 @@ struct GLFnInfo {
 }
 
 fn main() {
+	// ------------------------------------------------------------------------------
+	// Parse the input file
+	// ------------------------------------------------------------------------------
 
-	let arb_file = "glcorearb.h";
-	let file = File::open(arb_file).unwrap();
-	let reader = BufReader::new(file);
-
-	let api_begin = "#ifdef GL_GLEXT_PROTOTYPES";
-	let api_end = "#endif";
-
-	let mut is_parsing_api = false;
-
-	let mut out_file = File::create("render_commands.generated.h").unwrap();
+	let input_file = File::open(INPUT_GLCOREARB).unwrap();
+	let reader = BufReader::new(input_file);
 
 	let mut function_db: Vec<GLFnInfo> = Vec::new();
 
-	// ------------------------------------------------------------------------------
-	// render_commands.generated.h
-	// ------------------------------------------------------------------------------
-	// parse line by line
+	println!("Input: {}", INPUT_GLCOREARB);
+
+	let mut is_parsing_api = false;
 	for (_, line) in reader.lines().enumerate() {
 		let line = line.unwrap();
-
 		if is_parsing_api == false {
-			if line == api_begin {
+			if line == GLAPI_BEGIN_MARKER {
 				is_parsing_api = true;
 			}
 		} else {
-			if line == api_end {
+			if line == GLAPI_END_MARKER {
 				is_parsing_api = false;
 			} else {
 				let mut parse_result = GLFnInfo {
-					return_type: String::new(),
+					return_type:  String::new(),
 					gl_func_name: String::new(),
 					func_name:    String::new(),
 					params:       Vec::new(),
 					param_names:  Vec::new()
 				};
-				parse_api(&mut out_file, line, &mut parse_result);
+				parse_api(line, &mut parse_result);
 				function_db.push(parse_result);
 			}
 		}
 	}
 
-	// write packet union
+	println!("GL functions parsed: {}", function_db.len());
+
+	// ------------------------------------------------------------------------------
+	// render_commands.generated.h
+	// ------------------------------------------------------------------------------
+
+	let mut out_file = File::create(OUTPUT_RENDER_PACKET).unwrap();
+
+	// Write each render packet.
+	for fn_info in &function_db {
+		let mut var_decls = String::new();
+		for param in fn_info.params.iter() {
+			if param != &"void" {
+				var_decls.push('\t');
+				var_decls.push_str(param);
+				var_decls.push(';');
+				var_decls.push('\n');
+			}
+		}
+	
+		let mut gl_call_arguments = String::new();
+		for (ix, param) in fn_info.param_names.iter().enumerate() {
+			gl_call_arguments.push_str("\t\t\t");
+			gl_call_arguments.push_str(&format!("params->{}", param));
+			if ix != fn_info.param_names.len() - 1 {
+				gl_call_arguments.push_str(",\n");
+			} else {
+				gl_call_arguments.push_str("\n");
+			}
+		}
+
+		out_file.write_fmt(format_args!(
+r"struct RenderCommand_{} : public RenderCommandBase {{
+{}
+	static void APIENTRY execute(const RenderCommand_{}* __restrict params) {{
+		{}(
+{}		);
+	}}
+}};
+",
+			fn_info.func_name,
+			var_decls,
+			fn_info.func_name,
+			fn_info.gl_func_name,
+			gl_call_arguments)).unwrap();
+	}
+
+	// Write the union packet.
 	let mut union_members = String::new();
 	for fn_info in &function_db {
 		union_members.push_str(&format!("\tRenderCommand_{} {};\n", fn_info.func_name, fn_info.func_name));
@@ -70,15 +129,16 @@ public:
 private:
 {}
 }};
-"
-, union_members)).unwrap();
+", union_members)).unwrap();
 
 	out_file.sync_all().unwrap();
+
+	println!("Generated: {}", OUTPUT_RENDER_PACKET);
 
 	// ------------------------------------------------------------------------------
 	// render_command_list.generated.h
 	// ------------------------------------------------------------------------------
-	let mut cmd_list_file = File::create("render_command_list.generated.h").unwrap();
+	let mut cmd_list_file = File::create(OUTPUT_RENDER_COMMAND_LIST).unwrap();
 
 	for fn_info in function_db {
 		let mut fn_args = String::new();
@@ -101,14 +161,31 @@ r"{} {}(
 	RenderCommand_{}* __restrict packet = (RenderCommand_{}*)getNextPacket();
 	packet->pfn_execute = PFN_EXECUTE(RenderCommand_{}::execute);
 {}}}
-"
-		, fn_info.return_type, fn_info.func_name, fn_args, fn_info.func_name, fn_info.func_name, fn_info.func_name, assign_args)).unwrap();
+",
+		fn_info.return_type,
+		fn_info.func_name,
+		fn_args,
+		fn_info.func_name,
+		fn_info.func_name,
+		fn_info.func_name,
+		assign_args)).unwrap();
 	}
 
 	cmd_list_file.sync_all().unwrap();
+
+	println!("Generated: {}", OUTPUT_RENDER_COMMAND_LIST);
 }
 
-fn parse_api(out_file: &mut File, line: String, parse_result: &mut GLFnInfo) {
+// <Example>
+// line = "GLAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);"
+// parse_result = GLFnInfo {
+//     return_type  : "void",
+//     gl_func_name : "glDrawElements",
+//     func_name    : "drawElements",
+//     params       : ["GLenum mode", "GLsizei count", "GLenum type", "const void *indices"],
+//     param_names  : ["mode", "count", "type", "indices"]
+// }
+fn parse_api(line: String, parse_result: &mut GLFnInfo) {
 	// GLAPI <return_type> APIENTRY
 	let mut tokens = line.split(" ");
 	let _ = tokens.next().unwrap();
@@ -151,37 +228,6 @@ fn parse_api(out_file: &mut File, line: String, parse_result: &mut GLFnInfo) {
 		}
 	}
 
-	let mut var_decls = String::new();
-	for param in params.iter() {
-		if param != &"void" {
-			var_decls.push('\t');
-			var_decls.push_str(param);
-			var_decls.push(';');
-			var_decls.push('\n');
-		}
-	}
-
-	let mut gl_call_arguments = String::new();
-	for (ix, param) in param_names.iter().enumerate() {
-		gl_call_arguments.push_str("\t\t\t");
-		gl_call_arguments.push_str(&format!("params->{}", param));
-		if ix != param_names.len() - 1 {
-			gl_call_arguments.push_str(",\n");
-		} else {
-			gl_call_arguments.push_str("\n");
-		}
-	}
-
-	out_file.write_fmt(format_args!(
-r"struct RenderCommand_{} : public RenderCommandBase {{
-{}
-	static void APIENTRY execute(const RenderCommand_{}* __restrict params) {{
-		{}(
-{}		);
-	}}
-}};
-", func_name, var_decls, func_name, gl_func_name, gl_call_arguments)).unwrap();
-
 	// Write GLFnInfo
 	parse_result.return_type = String::from(return_type);
 	parse_result.gl_func_name = String::from(gl_func_name);
@@ -193,4 +239,3 @@ r"struct RenderCommand_{} : public RenderCommandBase {{
 		parse_result.param_names.push(String::from(param));
 	}
 }
-
