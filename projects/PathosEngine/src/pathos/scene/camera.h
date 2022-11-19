@@ -36,7 +36,8 @@ namespace pathos {
 		float z_far;
 	};
 
-	// flying camera
+	// Free-fly camera.
+	// #todo-camera: Turn into an ActorComponent?
 	class Camera {
 	public:
 		Camera(const PerspectiveLens& lens);

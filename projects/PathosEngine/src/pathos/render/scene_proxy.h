@@ -9,7 +9,7 @@
 #include "pathos/scene/scene_render_settings.h"
 #include "pathos/render/render_command_list.h"
 #include "pathos/material/material_id.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 
 /**
  * Scene representation for the render thread.

@@ -3,7 +3,7 @@
 #include "pathos/render/renderer.h"
 #include "pathos/render/render_command_list.h"
 #include "pathos/shader/uniform_buffer.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 
 namespace pathos {
 

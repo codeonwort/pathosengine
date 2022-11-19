@@ -9,7 +9,7 @@
 #include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/shader/uniform_buffer.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/smart_pointer.h"
 
 #include <memory>

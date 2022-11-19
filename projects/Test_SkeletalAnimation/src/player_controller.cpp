@@ -3,7 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/actor/world.h"
 #include "pathos/util/math_lib.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/input/input_manager.h"
 
 void PlayerController::onSpawn()

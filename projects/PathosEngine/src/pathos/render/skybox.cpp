@@ -3,7 +3,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/shader/shader_program.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/scene/skybox_component.h"
 
 #include "badger/types/vector_types.h"

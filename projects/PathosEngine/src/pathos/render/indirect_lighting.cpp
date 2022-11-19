@@ -7,7 +7,7 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/shader/shader_program.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/log.h"

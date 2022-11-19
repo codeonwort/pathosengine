@@ -1,4 +1,4 @@
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/engine_policy.h"
 
 #include "badger/math/minmax.h"

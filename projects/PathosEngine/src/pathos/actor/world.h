@@ -3,7 +3,7 @@
 #include "badger/types/noncopyable.h"
 
 #include "pathos/scene/scene.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 
 namespace pathos {
 

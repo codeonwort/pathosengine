@@ -2,7 +2,7 @@
 #include "scene_render_targets.h"
 #include "render_device.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/shader/shader_program.h"
 
 namespace pathos {

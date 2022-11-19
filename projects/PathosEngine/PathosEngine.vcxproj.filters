@@ -69,7 +69,7 @@
     <ClCompile Include="src\pathos\wrapper\transform.cpp">
       <Filter>소스 파일\pathos\wrapper</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\camera\camera.cpp">
+    <ClCompile Include="src\pathos\scene\camera.cpp">
       <Filter>소스 파일\pathos\camera</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\imageloader.cpp">
@@ -386,7 +386,7 @@
     <ClInclude Include="src\pathos\wrapper\transform.h">
       <Filter>헤더 파일\pathos\wrapper</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\camera\camera.h">
+    <ClInclude Include="src\pathos\scene\camera.h">
       <Filter>헤더 파일\pathos\camera</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\imageloader.h">

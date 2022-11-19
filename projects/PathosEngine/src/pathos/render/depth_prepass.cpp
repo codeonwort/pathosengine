@@ -3,7 +3,7 @@
 #include "scene_render_targets.h"
 #include "scene_proxy.h"
 #include "pathos/engine_policy.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/shader/shader_program.h"
 #include "pathos/shader/material_shader.h"
 #include "pathos/mesh/geometry.h"

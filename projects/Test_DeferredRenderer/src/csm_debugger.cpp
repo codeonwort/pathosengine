@@ -1,6 +1,6 @@
 #include "csm_debugger.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/util/math_lib.h"
 
 // #todo-shadow: Make it variable?

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/gl_handles.h"
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 #include "pathos/shader/uniform_buffer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_command_list.h"

@@ -7,7 +7,7 @@
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/sky_ansel_actor.h"
 
-#include "pathos/camera/camera.h"
+#include "pathos/scene/camera.h"
 
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/directional_light_component.h"
