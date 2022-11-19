@@ -7,9 +7,6 @@
 #include "badger/types/matrix_types.h"
 #include <vector>
 
-// #todo: Don't expose GLuint here
-typedef unsigned int GLuint;
-
 namespace pathos {
 
 	// a MaterialShader relates to a unique material shader program.

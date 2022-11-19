@@ -1,7 +1,7 @@
 #pragma once
 
-#include "uniform_buffer.h"
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/uniform_buffer.h"
 #include "pathos/material/material_id.h"
 
 #include "badger/types/vector_types.h"

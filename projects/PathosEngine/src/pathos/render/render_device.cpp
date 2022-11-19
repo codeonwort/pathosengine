@@ -1,7 +1,7 @@
 #include "render_device.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
-#include "pathos/util/gl_context_manager.h"
+#include "pathos/rhi/gl_context_manager.h"
 
 #include <mutex>
 

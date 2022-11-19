@@ -9,7 +9,7 @@
 #include "pathos/util/math_lib.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/string_conversion.h"
-#include "pathos/thread/engine_thread.h"
+#include "pathos/util/engine_thread.h"
 
 #include <algorithm>
 

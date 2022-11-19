@@ -1,9 +1,9 @@
 #pragma once
 
-#include "badger/types/noncopyable.h"
-
+#include "pathos/rhi/uniform_buffer.h"
 #include "render_command_list.h"
-#include "pathos/shader/uniform_buffer.h"
+
+#include "badger/types/noncopyable.h"
 
 namespace pathos {
 

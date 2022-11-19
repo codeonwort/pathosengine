@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pathos/rhi/uniform_buffer.h"
 #include "pathos/render/renderer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
@@ -8,7 +9,6 @@
 #include "pathos/render/resolve_unlit.h"
 #include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/postprocessing/anti_aliasing.h"
-#include "pathos/shader/uniform_buffer.h"
 #include "pathos/scene/camera.h"
 #include "pathos/smart_pointer.h"
 

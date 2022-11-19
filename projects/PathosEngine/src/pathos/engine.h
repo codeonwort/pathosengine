@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/smart_pointer.h"
 #include "pathos/input/input_system.h"
 #include "pathos/render/render_command_list.h"

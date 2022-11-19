@@ -1,7 +1,7 @@
 #pragma once
 
+#include "pathos/rhi/uniform_buffer.h"
 #include "pathos/render/render_command_list.h"
-#include "pathos/shader/uniform_buffer.h"
 
 // - Calculate indirect lighting (global illumination) and write to sceneColor.
 // - Direct lighting pass already wrote its result to sceneColor,

@@ -2,7 +2,7 @@
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/util/cpu_profiler.h"
-#include "pathos/thread/engine_thread.h"
+#include "pathos/util/engine_thread.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"

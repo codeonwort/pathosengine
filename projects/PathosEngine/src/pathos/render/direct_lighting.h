@@ -1,9 +1,9 @@
 #pragma once
 
+#include "pathos/rhi/uniform_buffer.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
-#include "pathos/shader/uniform_buffer.h"
 
 // Calculate direct lighting (= local illumination) and write to sceneColor.
 

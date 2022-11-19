@@ -5,7 +5,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/util/log.h"
-#include "pathos/util/gl_context_manager.h"
+#include "pathos/rhi/gl_context_manager.h"
 
 #include "GL/freeglut.h"
 #include <stdio.h>

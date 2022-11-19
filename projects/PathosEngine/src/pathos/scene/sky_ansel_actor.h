@@ -2,7 +2,7 @@
 
 #include "sky_actor.h"
 #include "sky_ansel_component.h"
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 
 namespace pathos {
 

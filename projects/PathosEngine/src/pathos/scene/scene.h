@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/actor/actor.h"
 #include "pathos/material/material_id.h"
 #include "pathos/scene/camera.h"

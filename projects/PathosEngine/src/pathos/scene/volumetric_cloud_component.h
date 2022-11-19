@@ -1,9 +1,9 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
-#include "pathos/texture/volume_texture.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/actor/scene_component.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/rhi/volume_texture.h"
 
 namespace pathos {
 

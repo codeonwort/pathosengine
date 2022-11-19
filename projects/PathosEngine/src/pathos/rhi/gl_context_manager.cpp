@@ -1,5 +1,6 @@
 #include "gl_context_manager.h"
-#include "log.h"
+#include "pathos/util/log.h"
+
 #include "badger/assertion/assertion.h"
 
 #if PLATFORM_WINDOWS

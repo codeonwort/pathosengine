@@ -17,7 +17,7 @@
 #include "pathos/render/scene_renderer.h"
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
-#include "pathos/util/gl_context_manager.h"
+#include "pathos/rhi/gl_context_manager.h"
 #include "pathos/overlay/display_object_proxy.h"
 
 #define SAFE_RELEASE(x) { if (x) delete x; x = nullptr; }

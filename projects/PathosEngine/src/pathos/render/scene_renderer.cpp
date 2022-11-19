@@ -6,14 +6,14 @@
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/cpu_profiler.h"
-#include "pathos/util/gl_debug_group.h"
+#include "pathos/rhi/gl_debug_group.h"
 
 // Render core
 #include "pathos/shader/shader_program.h"
 #include "pathos/shader/material_shader.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_target.h"
-#include "pathos/texture/volume_texture.h"
+#include "pathos/rhi/volume_texture.h"
 
 // Render passes
 #include "pathos/render/depth_prepass.h"

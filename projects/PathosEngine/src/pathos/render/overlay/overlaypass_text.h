@@ -1,7 +1,7 @@
 #pragma once
 
 #include "overlaypass_base.h"
-#include "pathos/shader/uniform_buffer.h"
+#include "pathos/rhi/uniform_buffer.h"
 
 #include "badger/types/vector_types.h"
 

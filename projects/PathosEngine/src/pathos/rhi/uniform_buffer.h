@@ -3,7 +3,7 @@
 // #todo-persistent-map-buffer
 // https://www.bfilipek.com/2015/01/persistent-mapped-buffers-in-opengl.html
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_command_list.h"
 #include "badger/assertion/assertion.h"

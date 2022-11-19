@@ -1,5 +1,5 @@
 #include "pathos/loader/imageloader.h"
-#include "pathos/texture/volume_texture.h"
+#include "pathos/rhi/volume_texture.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 

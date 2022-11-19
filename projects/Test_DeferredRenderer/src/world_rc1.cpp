@@ -4,7 +4,7 @@
 #include "lightning_effect.h"
 
 #include "pathos/render/irradiance_baker.h"
-#include "pathos/texture/volume_texture.h"
+#include "pathos/rhi/volume_texture.h"
 
 #include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"

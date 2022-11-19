@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/uniform_buffer.h"
 #include "pathos/scene/camera.h"
-#include "pathos/shader/uniform_buffer.h"
 
 #include "badger/types/vector_types.h"
 

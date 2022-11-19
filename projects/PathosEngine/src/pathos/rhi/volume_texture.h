@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/render/render_device.h"
 
 #include "badger/types/noncopyable.h"

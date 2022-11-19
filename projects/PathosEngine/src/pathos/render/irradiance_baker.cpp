@@ -6,7 +6,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
-#include "pathos/thread/engine_thread.h"
+#include "pathos/util/engine_thread.h"
 
 namespace pathos {
 	

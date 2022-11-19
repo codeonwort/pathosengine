@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "badger/types/int_types.h"
 
 namespace pathos {

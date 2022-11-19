@@ -171,7 +171,7 @@
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\util\gl_debug_group.cpp">
+    <ClCompile Include="src\pathos\rhi\gl_debug_group.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp">
@@ -264,7 +264,7 @@
     <ClCompile Include="src\pathos\render\shadow_omni.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\texture\volume_texture.cpp">
+    <ClCompile Include="src\pathos\rhi\volume_texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\depth_prepass.cpp">
@@ -309,16 +309,16 @@
     <ClCompile Include="src\pathos\util\engine_util.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\thread\render_thread.cpp">
+    <ClCompile Include="src\pathos\render_thread.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\scene_proxy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\util\gl_context_manager.cpp">
+    <ClCompile Include="src\pathos\rhi\gl_context_manager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\thread\engine_thread.cpp">
+    <ClCompile Include="src\pathos\util\engine_thread.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\indirect_lighting.cpp">
@@ -479,7 +479,7 @@
     <ClInclude Include="src\pathos\render\visualize_buffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\shader\uniform_buffer.h">
+    <ClInclude Include="src\pathos\rhi\uniform_buffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render_minimal.h">
@@ -494,7 +494,7 @@
     <ClInclude Include="src\pathos\util\renderdoc_integration.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\util\gl_debug_group.h">
+    <ClInclude Include="src\pathos\rhi\gl_debug_group.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h">
@@ -656,7 +656,7 @@
     <ClInclude Include="src\pathos\render\render_target.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\thread\engine_thread.h">
+    <ClInclude Include="src\pathos\util\engine_thread.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\rotator.h">
@@ -680,7 +680,7 @@
     <ClInclude Include="src\pathos\render\shadow_omni.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\texture\volume_texture.h">
+    <ClInclude Include="src\pathos\rhi\volume_texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\depth_prepass.h">
@@ -719,16 +719,16 @@
     <ClInclude Include="src\pathos\text\text_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\thread\render_thread.h">
+    <ClInclude Include="src\pathos\render_thread.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_proxy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\util\gl_context_manager.h">
+    <ClInclude Include="src\pathos\rhi\gl_context_manager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\shader\shader_storage_buffer.h">
+    <ClInclude Include="src\pathos\rhi\shader_storage_buffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\indirect_lighting.h">
@@ -779,7 +779,7 @@
     <ClInclude Include="src\pathos\render\postprocessing\super_res.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\gl_handles.h">
+    <ClInclude Include="src\pathos\rhi\gl_handles.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\gltf_loader.h">

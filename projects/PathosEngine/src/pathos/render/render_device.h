@@ -1,12 +1,11 @@
 #pragma once
 
-#include "badger/types/noncopyable.h"
-
 #include "render_command_list.h"
 #include "pathos/smart_pointer.h"
-#include "pathos/thread/engine_thread.h"
-#include "pathos/util/gl_debug_group.h"
+#include "pathos/rhi/gl_debug_group.h"
+#include "pathos/util/engine_thread.h"
 
+#include "badger/types/noncopyable.h"
 #include <functional>
 #include <memory>
 

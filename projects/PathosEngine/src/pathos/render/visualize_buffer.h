@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/core_minimal.h"
-#include "pathos/shader/uniform_buffer.h"
+#include "pathos/rhi/uniform_buffer.h"
 
 namespace pathos {
 

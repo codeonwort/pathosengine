@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/gl_handles.h"
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/render/render_command_list.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/wrapper/transform.h"

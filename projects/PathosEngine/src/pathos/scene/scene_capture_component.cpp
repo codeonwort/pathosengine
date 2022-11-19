@@ -7,7 +7,7 @@
 #include "pathos/render/render_target.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/scene/camera.h"
-#include "pathos/util/gl_debug_group.h"
+#include "pathos/rhi/gl_debug_group.h"
 
 namespace pathos {
 
