@@ -1,13 +1,13 @@
 #include "lightning_effect.h"
 
-#include "badger/math/random.h"
-
-#include "pathos/util/math_lib.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/loader/imageloader.h"
+
+#include "badger/math/vector_math.h"
+#include "badger/math/random.h"
 
 static const vector3 LIGHTNING_PARTICLE_EMISSIVE(10.0f, 10.0f, 25.0f);
 static const float LIGHTNING_PARTICLE_THICKNESS = 80.0f;
@@ -102,7 +102,7 @@ void LightningParticleComponent::generateParticle(const vector3& startPosition, 
 			vector3 middle = 0.5f * (p0 + p1);
 #endif
 			vector3 T, B;
-			pathos::calculateOrthonormalBasis(glm::normalize(p1 - p0), T, B);
+			badger::calculateOrthonormalBasis(glm::normalize(p1 - p0), T, B);
 			float jitter_scaled = jitter * (1.0f - (float)depth / numSubdivisions);
 			T = jitter * Random() * T;
 			B = jitter * Random() * B;

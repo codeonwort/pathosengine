@@ -4,8 +4,9 @@
 #include "pathos/scene/world.h"
 #include "pathos/scene/camera.h"
 #include "pathos/input/input_manager.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/log.h"
+
+#include "badger/math/minmax.h"
 
 void PlayerController::onSpawn()
 {
@@ -94,7 +95,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	vector3 linearVelocity = linearSpeed * forwardDir;
 
 	// #todo-game: torque
-	float turnRate = powf(pathos::min(1.0f, fabs(linearSpeed) / 500.0f), 3.0f);
+	float turnRate = powf(badger::min(1.0f, fabs(linearSpeed) / 500.0f), 3.0f);
 	//LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
 	if (linearSpeed > 0.0f) {
 		pawnRotation.yaw -= turnRate * powerTurn * deltaSeconds;
@@ -125,7 +126,7 @@ void PlayerController::tickPhotoMode(float deltaSeconds)
 	int32 currMouseY = input->getMouseY();
 
 	// movement per seconds
-	const float moveMultiplier = pathos::max(1.0f, input->getAxis("moveFast") * 10.0f);
+	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
 	const float speedRight = 200.0f * deltaSeconds * moveMultiplier;
 	const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
 	const float speedUp = 200.0f * deltaSeconds * moveMultiplier;

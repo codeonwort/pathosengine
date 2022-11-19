@@ -2,19 +2,19 @@
 
 #include "pathos/engine.h"
 #include "pathos/console.h"
+#include "pathos/rhi/render_device.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/irradiance_baker.h"
-#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -92,8 +92,8 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.prefilterEnvMapMaxLOD = std::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
-		uboData.intensity = std::max(0.0f, cvar_gi_intensity.getFloat());
+		uboData.prefilterEnvMapMaxLOD = badger::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
+		uboData.intensity = badger::max(0.0f, cvar_gi_intensity.getFloat());
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));

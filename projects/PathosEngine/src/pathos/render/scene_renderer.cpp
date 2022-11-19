@@ -4,16 +4,15 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/cpu_profiler.h"
-#include "pathos/rhi/gl_debug_group.h"
 
 // Render core
-#include "pathos/rhi/shader_program.h"
-#include "pathos/material/material_shader.h"
 #include "pathos/rhi/render_device.h"
-#include "pathos/render/render_target.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/gl_debug_group.h"
 #include "pathos/rhi/volume_texture.h"
+#include "pathos/render/render_target.h"
+#include "pathos/material/material_shader.h"
 
 // Render passes
 #include "pathos/render/depth_prepass.h"
@@ -666,7 +665,7 @@ namespace pathos {
 		directLightingPass->bindFramebuffer(cmdList);
 		directLightingPass->renderDirectLighting(cmdList, scene, camera);
 
-		// #todo-refactoring: Actually not an unpack work, but rendering order is here
+		// #note-lighting: After direct lighting, render sky at zFar.
 		const bool bRenderSkybox = scene->isSkyboxValid();
 		const bool bRenderAnsel = scene->isAnselSkyValid();
 		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();

@@ -1,5 +1,5 @@
 #include "skybox_component.h"
-#include "pathos/util/math_lib.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -17,7 +17,7 @@ namespace pathos {
 	}
 
 	void SkyboxComponent::setLOD(float inLOD) {
-		lod = pathos::max(0.0f, inLOD);
+		lod = badger::max(0.0f, inLOD);
 	}
 
 	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {

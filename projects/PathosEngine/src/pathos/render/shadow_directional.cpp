@@ -1,16 +1,17 @@
 #include "shadow_directional.h"
 #include "pathos/rhi/render_device.h"
-#include "pathos/render/scene_render_targets.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/minmax.h"
+#include "badger/math/vector_math.h"
 
 namespace pathos {
 
@@ -151,7 +152,7 @@ namespace pathos {
 		auto calcBounds = [this](const vector3* frustum) -> void {
 			vector3 L_forward = lightDirection;
 			vector3 L_up, L_right;
-			pathos::calculateOrthonormalBasis(L_forward, L_up, L_right);
+			badger::calculateOrthonormalBasis(L_forward, L_up, L_right);
 
 			vector3 center(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
@@ -162,9 +163,9 @@ namespace pathos {
 			vector3 lengths(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
 				vector3 delta = frustum[i] - center;
-				lengths.x = pathos::max(lengths.x, fabs(glm::dot(delta, L_right)));
-				lengths.y = pathos::max(lengths.y, fabs(glm::dot(delta, L_up)));
-				lengths.z = pathos::max(lengths.z, fabs(glm::dot(delta, L_forward)));
+				lengths.x = badger::max(lengths.x, fabs(glm::dot(delta, L_right)));
+				lengths.y = badger::max(lengths.y, fabs(glm::dot(delta, L_up)));
+				lengths.z = badger::max(lengths.z, fabs(glm::dot(delta, L_forward)));
 			}
 
 			matrix4 lightView = glm::lookAt(center, center + L_forward, L_up);

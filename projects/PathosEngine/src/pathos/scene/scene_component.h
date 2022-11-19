@@ -1,12 +1,11 @@
 #pragma once
 
-#include "badger/math/rotator.h"
-
 #include "actor_component.h"
 #include "pathos/scene/scene.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/mesh/model_transform.h"
 
+#include "badger/math/rotator.h"
 #include <vector>
 
 namespace pathos {

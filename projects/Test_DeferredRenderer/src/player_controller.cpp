@@ -2,9 +2,10 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/scene/camera.h"
 #include "pathos/input/input_manager.h"
+
+#include "badger/math/minmax.h"
 
 void PlayerController::onSpawn()
 {
@@ -24,7 +25,7 @@ void PlayerController::onTick(float deltaSeconds)
 	int32 currMouseY = input->getMouseY();
 
 	// movement per seconds
-	const float moveMultiplier = pathos::max(1.0f, input->getAxis("moveFast") * 10.0f);
+	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
 	const float speedRight = 200.0f * deltaSeconds * moveMultiplier;
 	const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
 	const float speedUp = 200.0f * deltaSeconds * moveMultiplier;

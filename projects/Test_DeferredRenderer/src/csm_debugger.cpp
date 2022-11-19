@@ -1,7 +1,9 @@
 #include "csm_debugger.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/camera.h"
-#include "pathos/util/math_lib.h"
+
+#include "badger/math/minmax.h"
+#include "badger/math/vector_math.h"
 
 // #todo-shadow: Make it variable?
 constexpr uint32 NUM_CSM_FRUSTUMS = 4;
@@ -70,7 +72,7 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 
 		auto calcBounds = [&sunDirection](const vector3* frustum, std::vector<vector3>& outVertices) -> void {
 			vector3 sun_up, sun_right;
-			pathos::calculateOrthonormalBasis(sunDirection, sun_up, sun_right);
+			badger::calculateOrthonormalBasis(sunDirection, sun_up, sun_right);
 
 			vector3 frustum_center(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
@@ -81,9 +83,9 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 			vector3 frustum_size(0.0f);
 			for (int32 i = 0; i < 8; ++i) {
 				vector3 delta = frustum[i] - frustum_center;
-				frustum_size.x = pathos::max(frustum_size.x, fabs(glm::dot(delta, sun_right)));
-				frustum_size.y = pathos::max(frustum_size.y, fabs(glm::dot(delta, sun_up)));
-				frustum_size.z = pathos::max(frustum_size.z, fabs(glm::dot(delta, sunDirection)));
+				frustum_size.x = (badger::max)(frustum_size.x, fabs(glm::dot(delta, sun_right)));
+				frustum_size.y = (badger::max)(frustum_size.y, fabs(glm::dot(delta, sun_up)));
+				frustum_size.z = (badger::max)(frustum_size.z, fabs(glm::dot(delta, sunDirection)));
 			}
 
 			const vector3 signs[8] = {

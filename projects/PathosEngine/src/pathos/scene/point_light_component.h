@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pathos/scene/scene_component.h"
-#include <algorithm>
 
 // Role model for parameters of point light:
 // https://docs.unrealengine.com/en-US/Engine/Rendering/LightingAndShadows/LightTypes/Point/index.html

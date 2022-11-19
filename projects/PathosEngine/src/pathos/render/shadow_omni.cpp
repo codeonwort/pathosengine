@@ -6,11 +6,11 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/static_mesh_component.h"
-#include "pathos/util/math_lib.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
 #include "badger/math/hit_test.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -118,7 +118,7 @@ namespace pathos {
 			}
 
 			constexpr float zNear = 0.1f;
-			const float zFar = pathos::max(1.0f, light->attenuationRadius);
+			const float zFar = badger::max(1.0f, light->attenuationRadius);
 			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
 
 			PerspectiveLens shadowLens(90.0f, 1.0f, zNear, zFar);

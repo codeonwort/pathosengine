@@ -6,7 +6,8 @@
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/brush.h"
 #include "pathos/util/string_conversion.h"
-#include "pathos/util/math_lib.h"
+
+#include "badger/math/minmax.h"
 
 #define MAX_HINT_LIST       8
 #define HINT_LABEL_WIDTH    300
@@ -116,7 +117,7 @@ namespace pathos {
 
 	void ConsoleWindow::showPreviousHistory() {
 		if (inputHistory.size() > 0) {
-			inputHistoryCursor = pathos::max(0, inputHistoryCursor - 1);
+			inputHistoryCursor = badger::max(0, inputHistoryCursor - 1);
 			currentInput = inputHistory[inputHistoryCursor];
 			updateInputLine();
 		}
@@ -124,7 +125,7 @@ namespace pathos {
 
 	void ConsoleWindow::showNextHistory() {
 		if (inputHistory.size() > 0) {
-			inputHistoryCursor = pathos::min((int32)inputHistory.size(), inputHistoryCursor + 1);
+			inputHistoryCursor = badger::min((int32)inputHistory.size(), inputHistoryCursor + 1);
 			currentInput = (inputHistoryCursor == (int32)inputHistory.size()) ? L"" : inputHistory[inputHistoryCursor];
 			updateInputLine();
 		}
@@ -297,7 +298,7 @@ namespace pathos {
 	///////////////////////////////////////////////////////////
 	// ConsoleVariable
 
-	pathos::ConsoleVariableManager& ConsoleVariableManager::get()
+	ConsoleVariableManager& ConsoleVariableManager::get()
 	{
 		static ConsoleVariableManager inst;
 		return inst;

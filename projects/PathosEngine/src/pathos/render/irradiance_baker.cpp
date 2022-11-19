@@ -3,9 +3,10 @@
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/engine_thread.h"
+
+#include "badger/math/minmax.h"
 
 namespace pathos {
 	
@@ -201,7 +202,7 @@ namespace pathos {
 		CHECK(isInMainThread());
 
 		GLuint envMap = 0;
-		uint32 maxMipLevels = pathos::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
+		uint32 maxMipLevels = badger::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
 
 		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
 			SCOPED_DRAW_EVENT(PrefilteredEnvMap);

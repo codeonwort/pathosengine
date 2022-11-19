@@ -6,11 +6,11 @@
 #include "pathos/overlay/brush.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/render/postprocessing/super_res.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/string_conversion.h"
 #include "pathos/util/engine_thread.h"
 
+#include "badger/math/minmax.h"
 #include <algorithm>
 
 namespace pathos {
@@ -80,7 +80,7 @@ namespace pathos {
 			[](const ProfileItem& x, const ProfileItem& y) {
 				return x.elapsedMS > y.elapsedMS;
 			});
-		const int32 numValidCounters = std::min(maxItems, (int32)profileSnapshot.size());
+		const int32 numValidCounters = badger::min(maxItems, (int32)profileSnapshot.size());
 		for (int32 i = 0; i < numValidCounters; ++i) {
 			const ProfileItem& item = profileSnapshot[i];
 			std::wstring wname;
@@ -103,7 +103,7 @@ namespace pathos {
 		const std::vector<std::string>& names,
 		const std::vector<float>& times)
 	{
-		const int32 numValidCounters = std::min(maxItems, (int32)names.size());
+		const int32 numValidCounters = badger::min(maxItems, (int32)names.size());
 		for (int32 i = 0; i < numValidCounters; ++i) {
 			std::wstring wname;
 			pathos::MBCS_TO_WCHAR(names[i], wname);
@@ -203,8 +203,8 @@ namespace pathos {
 			}
 			resolutionLabel->setText(buffer);
 			
-			const float baseX = std::max(0.0f, (float)screenWidth - FRAME_STAT_WIDTH);
-			const float baseY = std::min(FRAME_STAT_BASE_Y, (float)screenHeight);
+			const float baseX = badger::max(0.0f, (float)screenWidth - FRAME_STAT_WIDTH);
+			const float baseY = badger::min(FRAME_STAT_BASE_Y, (float)screenHeight);
 			gameThreadTimeLabel->setX(baseX);
 			gameThreadTimeLabel->setY(baseY);
 			renderThreadTimeLabel->setX(baseX);
@@ -214,11 +214,11 @@ namespace pathos {
 			resolutionLabel->setX(baseX - ((superResFactor == 1.0f) ? 0.0f : 100.0f));
 			resolutionLabel->setY(baseY + 3.0f * FRAME_STAT_SPACE_Y);
 
-			cpuCounterList->setX(std::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
-			cpuCounterList->setY(std::min(CYCLE_COUNTER_BASE_Y, (float)screenHeight));
+			cpuCounterList->setX(badger::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
+			cpuCounterList->setY(badger::min(CYCLE_COUNTER_BASE_Y, (float)screenHeight));
 
-			gpuCounterList->setX(std::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
-			gpuCounterList->setY(std::min(
+			gpuCounterList->setX(badger::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
+			gpuCounterList->setY(badger::min(
 				CYCLE_COUNTER_BASE_Y + CYCLE_COUNTER_SPACE_Y * (2 + MAX_CYCLE_COUNTER_DISPLAY),
 				(float)screenHeight));
 

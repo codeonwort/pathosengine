@@ -207,6 +207,7 @@
     <ClInclude Include="src\badger\math\random.h" />
     <ClInclude Include="src\badger\math\rotator.h" />
     <ClInclude Include="src\badger\math\spline.h" />
+    <ClInclude Include="src\badger\math\vector_math.h" />
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
     <ClInclude Include="src\badger\system\platform.h" />
     <ClInclude Include="src\badger\thread\cpu.h" />
@@ -312,7 +313,6 @@
     <ClInclude Include="src\pathos\util\file_system.h" />
     <ClInclude Include="src\pathos\rhi\gl_context_manager.h" />
     <ClInclude Include="src\pathos\rhi\gl_debug_group.h" />
-    <ClInclude Include="src\pathos\util\math_lib.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h" />

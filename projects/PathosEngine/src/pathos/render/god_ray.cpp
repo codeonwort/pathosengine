@@ -1,20 +1,20 @@
 #include "god_ray.h"
 #include "pathos/engine_policy.h"
-#include "pathos/render/scene_renderer.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/render/scene_renderer.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/console.h"
-#include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/console.h"
+#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/minmax.h"
 
 static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
 static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.92f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
@@ -212,8 +212,8 @@ namespace pathos {
 			UBO_GodRayLightScattering uboData;
 			uboData.lightPos.x = (lightPos.x + 1.0f) / 2.0f;
 			uboData.lightPos.y = (lightPos.y + 1.0f) / 2.0f;
-			uboData.alphaDecay = pathos::max(0.0f, pathos::min(1.0f, cvar_godray_alphaDecay.getFloat()));
-			uboData.density    = pathos::max(1.0f, cvar_godray_density.getFloat());
+			uboData.alphaDecay = badger::clamp(0.0f, cvar_godray_alphaDecay.getFloat(), 1.0f);
+			uboData.density    = badger::max(1.0f, cvar_godray_density.getFloat());
 			uboLightScattering.update(cmdList, 1, &uboData);
 
 			cmdList.bindVertexArray(vao_dummy);

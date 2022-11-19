@@ -575,9 +575,6 @@
     <ClInclude Include="src\pathos\mesh\model_transform.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\util\math_lib.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\badger\system\stopwatch.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -816,6 +813,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_atmosphere_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\badger\math\vector_math.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,9 +1,10 @@
 #include "screen_space_reflection.h"
-#include "pathos/render/scene_render_targets.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/mesh/geometry.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/engine_policy.h"
+
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -225,8 +226,8 @@ namespace pathos {
 				uint32 prevHeight = sceneContext.sceneHeight;
 				uint32 currentWidth, currentHeight;
 				for (uint32 currentMip = 1; currentMip < sceneContext.sceneDepthHiZMipmapCount; ++currentMip) {
-					currentWidth = pathos::max(1u, prevWidth >> 1);
-					currentHeight = pathos::max(1u, prevHeight >> 1);
+					currentWidth = badger::max(1u, prevWidth >> 1);
+					currentHeight = badger::max(1u, prevHeight >> 1);
 
 					cmdList.viewport(0, 0, currentWidth, currentHeight);
 
@@ -276,8 +277,8 @@ namespace pathos {
 			uint32 prevHeight = sceneContext.sceneHeight;
 			uint32 currentWidth, currentHeight;
 			for (uint32 currentMip = 1; currentMip < sceneContext.ssrPreintegrationMipmapCount; ++currentMip) {
-				currentWidth = pathos::max(1u, prevWidth >> 1);
-				currentHeight = pathos::max(1u, prevHeight >> 1);
+				currentWidth = badger::max(1u, prevWidth >> 1);
+				currentHeight = badger::max(1u, prevHeight >> 1);
 
 				cmdList.viewport(0, 0, currentWidth, currentHeight);
 

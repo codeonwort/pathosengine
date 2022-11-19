@@ -12,10 +12,10 @@
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/rect_light_component.h"
 #include "pathos/util/log.h"
-#include "pathos/util/math_lib.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
+#include "badger/math/minmax.h"
 
 namespace pathos {
 
@@ -159,7 +159,7 @@ namespace pathos {
 				uboData.enableShadowing = cvar_enable_shadow.getInt();
 				// #todo-light: Support shadow map for secondary directional lights.
 				uboData.haveShadowMap = (lightIx == 0);
-				uboData.csmZFar = std::max(1.0f, cvarZFar->getFloat());
+				uboData.csmZFar = badger::max(1.0f, cvarZFar->getFloat());
 				uboData.lightParameters = *light;
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
