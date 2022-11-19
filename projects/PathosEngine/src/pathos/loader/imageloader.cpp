@@ -77,6 +77,7 @@ namespace pathos {
 	void destroyImageLibrary()
 	{
 		FreeImage_DeInitialise();
+		LOG(LogInfo, "[ThirdParty] Destroy image libraries");
 	}
 
 	BitmapBlob* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {

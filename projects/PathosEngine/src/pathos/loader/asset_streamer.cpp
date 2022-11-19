@@ -89,6 +89,7 @@ namespace pathos {
 	void AssetStreamer::destroy()
 	{
 		threadPool.Stop();
+		LOG(LogInfo, "[AssetStreamer] Destroy asset streamer");
 	}
 
 	void AssetStreamer::wakeThreadPool() {

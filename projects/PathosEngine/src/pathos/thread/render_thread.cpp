@@ -316,6 +316,8 @@ namespace pathos {
 
 		std::unique_lock<std::mutex> cvLock(terminateMutex);
 		terminateCondVar.wait(cvLock);
+
+		LOG(LogInfo, "Destroy render thread");
 	}
 	
 	bool RenderThread::isSceneProxyQueueEmpty() {

@@ -131,7 +131,6 @@ namespace pathos {
 		~Engine() = default;
 
 		bool initialize(int argcp, char** argv, const EngineConfig& conf);
-		bool destroy();
 
 		bool initializeMainWindow(int argcp, char** argv);
 		bool initializeInput();

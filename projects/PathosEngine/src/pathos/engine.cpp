@@ -158,32 +158,20 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::destroy() {
-		LOG(LogInfo, "");
-		LOG(LogInfo, "=== Destroy PATHOS ===");
-
-		// #todo: Destroy subsystems managed on main thread.
-
-		LOG(LogInfo, "=== PATHOS has been destroyed ===");
-		LOG(LogInfo, "");
-
-		return true;
-	}
-
 	bool Engine::initializeMainWindow(int argc, char** argv)
 	{
 		GUIWindowCreateParams createParams;
-		createParams.argc           = argc;
-		createParams.argv           = argv;
+		createParams.argc              = argc;
+		createParams.argv              = argv;
 
-		createParams.width          = conf.windowWidth;
-		createParams.height         = conf.windowHeight;
-		createParams.fullscreen     = conf.fullscreen;
-		createParams.title          = conf.title;
+		createParams.width             = conf.windowWidth;
+		createParams.height            = conf.windowHeight;
+		createParams.fullscreen        = conf.fullscreen;
+		createParams.title             = conf.title;
 
-		createParams.glMajorVersion = REQUIRED_GL_MAJOR_VERSION;
-		createParams.glMinorVersion = REQUIRED_GL_MINOR_VERSION;
-		createParams.glDebugContext = GL_DEBUG_CONTEXT;
+		createParams.glMajorVersion    = REQUIRED_GL_MAJOR_VERSION;
+		createParams.glMinorVersion    = REQUIRED_GL_MINOR_VERSION;
+		createParams.glDebugContext    = GL_DEBUG_CONTEXT;
 
 		createParams.onClose           = Engine::onCloseWindow;
 		createParams.onIdle            = Engine::onIdle;
@@ -251,6 +239,9 @@ namespace pathos {
 	}
 
 	void Engine::stop() {
+		LOG(LogInfo, "");
+		LOG(LogInfo, "=== Destroy PATHOS ===");
+
 		mainWindow->stopMainLoop();
 
 		assetStreamer->destroy();
@@ -258,8 +249,8 @@ namespace pathos {
 
 		renderThread->terminate();
 
-		bool engineDestroyed = destroy();
-		CHECKF(engineDestroyed, "Failed to destroy the engine properly !!!");
+		LOG(LogInfo, "=== PATHOS has been destroyed ===");
+		LOG(LogInfo, "");
 	}
 
 	// For scene capture
