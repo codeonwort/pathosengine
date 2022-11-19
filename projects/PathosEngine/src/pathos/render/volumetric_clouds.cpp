@@ -5,7 +5,7 @@
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/rhi/volume_texture.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/console.h"
 // For NVidia STBN
 #include "pathos/util/resource_finder.h"

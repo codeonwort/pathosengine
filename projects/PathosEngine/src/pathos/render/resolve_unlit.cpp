@@ -3,7 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/render_device.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/engine_util.h"
 

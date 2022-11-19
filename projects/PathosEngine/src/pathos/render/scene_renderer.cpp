@@ -9,8 +9,8 @@
 #include "pathos/rhi/gl_debug_group.h"
 
 // Render core
-#include "pathos/shader/shader_program.h"
-#include "pathos/shader/material_shader.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/render_target.h"
 #include "pathos/rhi/volume_texture.h"

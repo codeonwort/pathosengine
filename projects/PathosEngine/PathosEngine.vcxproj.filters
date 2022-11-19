@@ -222,7 +222,7 @@
     <ClCompile Include="src\pathos\render\irradiance_baker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\shader\shader_program.cpp">
+    <ClCompile Include="src\pathos\rhi\shader_program.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\actor\actor.cpp">
@@ -336,10 +336,10 @@
     <ClCompile Include="src\pathos\overlay\display_object_proxy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp">
+    <ClCompile Include="src\pathos\material\material_shader_assembler.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\shader\material_shader.cpp">
+    <ClCompile Include="src\pathos\material\material_shader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\resolve_unlit.cpp">
@@ -602,7 +602,7 @@
     <ClInclude Include="src\pathos\render\irradiance_baker.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\shader\shader_program.h">
+    <ClInclude Include="src\pathos\rhi\shader_program.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\actor\actor.h">
@@ -764,10 +764,10 @@
     <ClInclude Include="src\pathos\scene\rect_light_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\shader\material_shader_assembler.h">
+    <ClInclude Include="src\pathos\material\material_shader_assembler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\shader\material_shader.h">
+    <ClInclude Include="src\pathos\material\material_shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\resolve_unlit.h">

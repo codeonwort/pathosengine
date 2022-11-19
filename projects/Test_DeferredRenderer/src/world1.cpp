@@ -13,7 +13,7 @@
 #include "pathos/scene/scene_capture_component.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
-#include "pathos/shader/material_shader.h"
+#include "pathos/material/material_shader.h"
 
 // --------------------------------------------------------
 // Constants

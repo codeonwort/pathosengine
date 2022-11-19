@@ -172,9 +172,9 @@
     <ClCompile Include="src\pathos\scene\skybox_actor.cpp" />
     <ClCompile Include="src\pathos\scene\skybox_component.cpp" />
     <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp" />
-    <ClCompile Include="src\pathos\shader\material_shader.cpp" />
-    <ClCompile Include="src\pathos\shader\material_shader_assembler.cpp" />
-    <ClCompile Include="src\pathos\shader\shader_program.cpp" />
+    <ClCompile Include="src\pathos\material\material_shader.cpp" />
+    <ClCompile Include="src\pathos\material\material_shader_assembler.cpp" />
+    <ClCompile Include="src\pathos\rhi\shader_program.cpp" />
     <ClCompile Include="src\pathos\rhi\volume_texture.cpp" />
     <ClCompile Include="src\pathos\text\font_mgr.cpp" />
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp" />
@@ -297,9 +297,9 @@
     <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h" />
     <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h" />
     <ClInclude Include="src\pathos\scene\volumetric_cloud_component.h" />
-    <ClInclude Include="src\pathos\shader\material_shader.h" />
-    <ClInclude Include="src\pathos\shader\material_shader_assembler.h" />
-    <ClInclude Include="src\pathos\shader\shader_program.h" />
+    <ClInclude Include="src\pathos\material\material_shader.h" />
+    <ClInclude Include="src\pathos\material\material_shader_assembler.h" />
+    <ClInclude Include="src\pathos\rhi\shader_program.h" />
     <ClInclude Include="src\pathos\rhi\shader_storage_buffer.h" />
     <ClInclude Include="src\pathos\smart_pointer.h" />
     <ClInclude Include="src\pathos\rhi\volume_texture.h" />

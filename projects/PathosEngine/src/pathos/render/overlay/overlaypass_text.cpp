@@ -1,7 +1,7 @@
 #include "overlaypass_text.h"
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/display_object_proxy.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 
 namespace pathos {
 

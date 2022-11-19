@@ -3,7 +3,7 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
 #include "pathos/render/irradiance_baker.h"
-#include "pathos/shader/material_shader.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/loader/asset_streamer.h"
 

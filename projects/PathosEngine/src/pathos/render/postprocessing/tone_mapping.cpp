@@ -1,6 +1,6 @@
 #include "tone_mapping.h"
 #include "pathos/console.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/util/engine_util.h"

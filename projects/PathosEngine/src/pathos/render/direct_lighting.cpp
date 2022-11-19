@@ -6,7 +6,7 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/point_light_component.h"

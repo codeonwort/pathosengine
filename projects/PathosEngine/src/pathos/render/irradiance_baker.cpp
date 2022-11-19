@@ -1,7 +1,7 @@
 #include "irradiance_baker.h"
 #include "render_device.h"
 #include "pathos/engine.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/render/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/math_lib.h"

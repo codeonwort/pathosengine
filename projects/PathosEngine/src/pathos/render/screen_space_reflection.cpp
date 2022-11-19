@@ -1,6 +1,6 @@
 #include "screen_space_reflection.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/engine_policy.h"

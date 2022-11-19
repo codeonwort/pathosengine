@@ -4,7 +4,7 @@
 #include "pathos/scene/sky_ansel_component.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/gl_debug_group.h"
 #include "pathos/console.h"
 

@@ -1,7 +1,7 @@
 #include "material_shader.h"
 #include "material_shader_assembler.h"
-#include "shader_program.h"
 #include "pathos/material/material.h"
+#include "pathos/rhi/shader_program.h"
 
 namespace pathos {
 

@@ -1,6 +1,6 @@
 #include "overlaypass_standard.h"
 #include "pathos/overlay/display_object_proxy.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 
 #include "badger/types/matrix_types.h"
 

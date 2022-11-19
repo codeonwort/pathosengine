@@ -8,7 +8,7 @@
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_renderer.h"
 #include "pathos/render/render_overlay.h"
-#include "pathos/shader/material_shader_assembler.h"
+#include "pathos/material/material_shader_assembler.h"
 
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"

@@ -2,7 +2,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_device.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh_component.h"

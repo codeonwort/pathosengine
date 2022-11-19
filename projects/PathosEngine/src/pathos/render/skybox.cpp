@@ -2,7 +2,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/skybox_component.h"
 

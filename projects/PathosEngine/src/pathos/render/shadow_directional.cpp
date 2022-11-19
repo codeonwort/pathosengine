@@ -4,7 +4,7 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/static_mesh_component.h"
 #include "pathos/scene/directional_light_component.h"
-#include "pathos/shader/shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/util/log.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/console.h"

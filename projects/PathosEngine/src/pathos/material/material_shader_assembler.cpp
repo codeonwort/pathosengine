@@ -1,6 +1,6 @@
 #include "material_shader_assembler.h"
 #include "material_shader.h"
-#include "shader_program.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/util/file_system.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"

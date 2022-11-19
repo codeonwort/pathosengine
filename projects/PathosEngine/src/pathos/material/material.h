@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/material/material_id.h"
-#include "pathos/shader/material_shader.h"
+#include "pathos/material/material_shader.h"
 
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
