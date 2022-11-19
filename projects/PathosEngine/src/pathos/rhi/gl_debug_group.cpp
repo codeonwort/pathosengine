@@ -1,6 +1,6 @@
 #include "gl_debug_group.h"
-#include "pathos/render/render_device.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_device.h"
+#include "pathos/rhi/render_command_list.h"
 
 namespace pathos {
 

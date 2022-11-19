@@ -5,7 +5,7 @@
 #include "debug_overlay.h"
 
 #include "pathos/rhi/gl_context_manager.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_renderer.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/material/material_shader_assembler.h"
@@ -15,7 +15,7 @@
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/renderdoc_integration.h"
 
-#include "pathos/actor/world.h"
+#include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"

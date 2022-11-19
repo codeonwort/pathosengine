@@ -2,7 +2,7 @@
 
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/mesh/geometry.h"
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/scene_component.h"
 
 namespace pathos {
 

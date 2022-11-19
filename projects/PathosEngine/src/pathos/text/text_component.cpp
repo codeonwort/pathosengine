@@ -1,7 +1,7 @@
 #include "text_component.h"
 // For static mesh proxy
-#include "pathos/mesh/static_mesh_component.h"
-#include "pathos/render/render_device.h"
+#include "pathos/scene/static_mesh_component.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
 
 // Fallback font that must exist.

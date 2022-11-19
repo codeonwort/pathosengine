@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/actor/actor.h"
+#include "pathos/scene/actor.h"
 #include "rect_light_component.h"
 
 namespace pathos {

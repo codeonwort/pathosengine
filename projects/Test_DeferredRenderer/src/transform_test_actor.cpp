@@ -1,6 +1,6 @@
 #include "transform_test_actor.h"
 
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/mesh.h"
 

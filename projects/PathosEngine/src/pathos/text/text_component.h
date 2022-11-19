@@ -3,7 +3,7 @@
 #include "pathos/text/text_geometry.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/material/material.h"
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/scene_component.h"
 #include "pathos/smart_pointer.h"
 
 namespace pathos {

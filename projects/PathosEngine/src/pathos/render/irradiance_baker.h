@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 
 #include "badger/types/int_types.h"
 #include "badger/types/matrix_types.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/uniform_buffer.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 
 // Based on GPU Pro 5, "HiZ Screen-Space Cone-Traced Reflections", Yasin Uludag.
 

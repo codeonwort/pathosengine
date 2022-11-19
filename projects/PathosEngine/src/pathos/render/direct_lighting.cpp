@@ -4,7 +4,7 @@
 #include "pathos/console.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/irradiance_baker.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"

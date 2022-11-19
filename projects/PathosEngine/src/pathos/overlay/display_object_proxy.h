@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/wrapper/transform.h"
+#include "pathos/util/transform_helper.h"
 #include "pathos/text/font_mgr.h"
 
 #include "badger/memory/mem_alloc.h"

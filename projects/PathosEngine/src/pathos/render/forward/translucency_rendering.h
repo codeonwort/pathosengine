@@ -1,8 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/uniform_buffer.h"
-#include "pathos/render/renderer.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/scene/camera.h"
 
 namespace pathos {

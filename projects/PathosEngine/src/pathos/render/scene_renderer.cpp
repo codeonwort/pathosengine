@@ -11,7 +11,7 @@
 // Render core
 #include "pathos/rhi/shader_program.h"
 #include "pathos/material/material_shader.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/render_target.h"
 #include "pathos/rhi/volume_texture.h"
 
@@ -41,7 +41,7 @@
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/point_light_component.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 
 #include "badger/assertion/assertion.h"

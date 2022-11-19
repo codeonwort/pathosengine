@@ -7,7 +7,8 @@
 #pragma once
 
 #include "scene_desc_parser.h"
-#include "pathos/actor/actor.h"
+#include "pathos/scene/actor.h"
+
 #include <vector>
 #include <map>
 

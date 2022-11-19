@@ -1,12 +1,12 @@
 #include "scene.h"
 #include "pathos/console.h"
-#include "pathos/actor/world.h"
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/world.h"
+#include "pathos/scene/scene_component.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/directional_light_component.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 
 namespace pathos {
 

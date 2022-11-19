@@ -1,5 +1,5 @@
 #include "font_texture_cache.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/util/log.h"
 
 #define DRAW_GLYPH_BORDER 0 // Debug

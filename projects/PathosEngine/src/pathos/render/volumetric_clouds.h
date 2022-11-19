@@ -2,7 +2,7 @@
 
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/rhi/uniform_buffer.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 
 #include "badger/types/noncopyable.h"
 

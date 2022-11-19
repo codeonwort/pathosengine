@@ -2,7 +2,7 @@
 
 #include "badger/assertion/assertion.h"
 
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/util/engine_thread.h"
 #include "pathos/mesh/geometry_primitive.h"

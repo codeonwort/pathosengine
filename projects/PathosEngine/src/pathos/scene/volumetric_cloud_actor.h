@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/actor/actor.h"
+#include "pathos/scene/actor.h"
 #include "pathos/scene/volumetric_cloud_component.h"
 
 namespace pathos {

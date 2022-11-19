@@ -1,7 +1,7 @@
 #pragma once
 
 #include "static_mesh_component.h"
-#include "pathos/actor/actor.h"
+#include "pathos/scene/actor.h"
 
 namespace pathos {
 

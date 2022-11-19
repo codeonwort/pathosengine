@@ -1,5 +1,5 @@
 #include "volumetric_clouds.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/volumetric_cloud_component.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/scene_component.h"
 #include "badger/types/matrix_types.h"
 #include "badger/math/aabb.h"
 

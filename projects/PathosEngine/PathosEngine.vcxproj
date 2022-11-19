@@ -100,10 +100,10 @@
     </ClCompile>
     <ClCompile Include="src\init_tinygltf.cpp" />
     <ClCompile Include="src\init_tinyobjloader.cpp" />
-    <ClCompile Include="src\pathos\actor\actor.cpp" />
-    <ClCompile Include="src\pathos\actor\actor_component.cpp" />
-    <ClCompile Include="src\pathos\actor\scene_component.cpp" />
-    <ClCompile Include="src\pathos\actor\world.cpp" />
+    <ClCompile Include="src\pathos\scene\actor.cpp" />
+    <ClCompile Include="src\pathos\scene\actor_component.cpp" />
+    <ClCompile Include="src\pathos\scene\scene_component.cpp" />
+    <ClCompile Include="src\pathos\scene\world.cpp" />
     <ClCompile Include="src\pathos\scene\camera.cpp" />
     <ClCompile Include="src\pathos\console.cpp" />
     <ClCompile Include="src\pathos\debug_overlay.cpp" />
@@ -119,7 +119,7 @@
     <ClCompile Include="src\pathos\loader\scene_loader.cpp" />
     <ClCompile Include="src\pathos\loader\spline_loader.cpp" />
     <ClCompile Include="src\pathos\mesh\model_transform.cpp" />
-    <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp" />
+    <ClCompile Include="src\pathos\scene\static_mesh_component.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\render\shadow_directional.cpp" />
     <ClCompile Include="src\pathos\loader\imageloader.cpp" />
@@ -153,9 +153,9 @@
     <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\ssao.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\tone_mapping.cpp" />
-    <ClCompile Include="src\pathos\render\render_command_list.cpp" />
+    <ClCompile Include="src\pathos\rhi\render_command_list.cpp" />
     <ClCompile Include="src\pathos\render\scene_renderer.cpp" />
-    <ClCompile Include="src\pathos\render\render_device.cpp" />
+    <ClCompile Include="src\pathos\rhi\render_device.cpp" />
     <ClCompile Include="src\pathos\render\render_overlay.cpp" />
     <ClCompile Include="src\pathos\render\render_target.cpp" />
     <ClCompile Include="src\pathos\render\resolve_unlit.cpp" />
@@ -192,7 +192,7 @@
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\util\string_conversion.cpp" />
-    <ClCompile Include="src\pathos\wrapper\transform.cpp" />
+    <ClCompile Include="src\pathos\util\transform_helper.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -219,10 +219,10 @@
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
-    <ClInclude Include="src\pathos\actor\actor.h" />
-    <ClInclude Include="src\pathos\actor\actor_component.h" />
-    <ClInclude Include="src\pathos\actor\scene_component.h" />
-    <ClInclude Include="src\pathos\actor\world.h" />
+    <ClInclude Include="src\pathos\scene\actor.h" />
+    <ClInclude Include="src\pathos\scene\actor_component.h" />
+    <ClInclude Include="src\pathos\scene\scene_component.h" />
+    <ClInclude Include="src\pathos\scene\world.h" />
     <ClInclude Include="src\pathos\scene\camera.h" />
     <ClInclude Include="src\pathos\console.h" />
     <ClInclude Include="src\pathos\debug_overlay.h" />
@@ -247,8 +247,8 @@
     <ClInclude Include="src\pathos\loader\spline_loader.h" />
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h" />
     <ClInclude Include="src\pathos\mesh\model_transform.h" />
-    <ClInclude Include="src\pathos\mesh\static_mesh_actor.h" />
-    <ClInclude Include="src\pathos\mesh\static_mesh_component.h" />
+    <ClInclude Include="src\pathos\scene\static_mesh_actor.h" />
+    <ClInclude Include="src\pathos\scene\static_mesh_component.h" />
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\render\shadow_directional.h" />
@@ -273,11 +273,11 @@
     <ClInclude Include="src\pathos\render\postprocessing\ssao.h" />
     <ClInclude Include="src\pathos\render\postprocessing\ssr.h" />
     <ClInclude Include="src\pathos\render\postprocessing\tone_mapping.h" />
-    <ClInclude Include="src\pathos\render\render_commands.generated.h" />
-    <ClInclude Include="src\pathos\render\render_commands.h" />
-    <ClInclude Include="src\pathos\render\render_command_list.generated.h" />
-    <ClInclude Include="src\pathos\render\render_command_list.h" />
-    <ClInclude Include="src\pathos\render\render_device.h" />
+    <ClInclude Include="src\pathos\rhi\render_commands.generated.h" />
+    <ClInclude Include="src\pathos\rhi\render_commands.h" />
+    <ClInclude Include="src\pathos\rhi\render_command_list.generated.h" />
+    <ClInclude Include="src\pathos\rhi\render_command_list.h" />
+    <ClInclude Include="src\pathos\rhi\render_device.h" />
     <ClInclude Include="src\pathos\render\render_target.h" />
     <ClInclude Include="src\pathos\render\resolve_unlit.h" />
     <ClInclude Include="src\pathos\render\scene_proxy.h" />
@@ -345,7 +345,7 @@
     <ClInclude Include="src\pathos\util\log.h" />
     <ClInclude Include="src\pathos\util\resource_finder.h" />
     <ClInclude Include="src\pathos\util\string_conversion.h" />
-    <ClInclude Include="src\pathos\wrapper\transform.h" />
+    <ClInclude Include="src\pathos\util\transform_helper.h" />
     <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

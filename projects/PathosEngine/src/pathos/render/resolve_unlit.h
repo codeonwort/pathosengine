@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 
 // Resolve unlit color into sceneColor.
 

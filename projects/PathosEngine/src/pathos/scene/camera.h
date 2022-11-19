@@ -5,7 +5,7 @@
 #include "badger/types/matrix_types.h"
 #include "badger/math/plane.h"
 
-#include "pathos/wrapper/transform.h"
+#include "pathos/util/transform_helper.h"
 
 #include <vector>
 

@@ -6,8 +6,8 @@
 #include <map>
 
 // Very long files
-#include "pathos/render/render_command_list.h"
-#include "pathos/render/render_commands.h"
+#include "pathos/rhi/render_command_list.h"
+#include "pathos/rhi/render_commands.h"
 
 #include "pathos/smart_pointer.h"
 

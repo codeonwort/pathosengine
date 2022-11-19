@@ -4,9 +4,9 @@
 
 #include "pathos/util/math_lib.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/mesh/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/loader/imageloader.h"
 
 static const vector3 LIGHTNING_PARTICLE_EMISSIVE(10.0f, 10.0f, 25.0f);

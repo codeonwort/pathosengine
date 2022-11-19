@@ -5,13 +5,13 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "pathos/rhi/render_command_list.h"
+
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include <map>
 #include <list>
 #include <string>
-
-#include "pathos/render/render_command_list.h"
 
 #pragma comment(lib, "freetype.lib")
 

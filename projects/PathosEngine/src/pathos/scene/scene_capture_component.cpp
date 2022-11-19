@@ -1,12 +1,13 @@
 #include "scene_capture_component.h"
+#include "world.h"
+#include "actor.h"
 #include "scene.h"
-#include "pathos/actor/world.h"
-#include "pathos/actor/actor.h"
+#include "camera.h"
+
 #include "pathos/render/scene_renderer.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/scene/camera.h"
 #include "pathos/rhi/gl_debug_group.h"
 
 namespace pathos {

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/overlay/display_object.h"
-#include "pathos/wrapper/transform.h"
+#include "pathos/util/transform_helper.h"
 
 #include "badger/types/noncopyable.h"
 

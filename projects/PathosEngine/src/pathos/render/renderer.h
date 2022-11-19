@@ -1,10 +1,10 @@
 #pragma once
 
-#include "badger/types/noncopyable.h"
-
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/scene/scene_render_settings.h"
-#include "pathos/render/render_command_list.h"
 #include "pathos/material/material_id.h"
+
+#include "badger/types/noncopyable.h"
 
 namespace pathos {
 

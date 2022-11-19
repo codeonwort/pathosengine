@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/mesh/geometry.h"
-#include "pathos/wrapper/transform.h"
+#include "pathos/util/transform_helper.h"
 #include <vector>
 
 namespace pathos {

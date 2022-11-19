@@ -7,7 +7,7 @@
 // Only recently used glyphs are maintained in a limited number of textures.
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/text/font_mgr.h"
 
 #include "badger/types/noncopyable.h"

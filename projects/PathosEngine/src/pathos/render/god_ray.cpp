@@ -1,7 +1,7 @@
 #include "god_ray.h"
 #include "pathos/engine_policy.h"
 #include "pathos/render/scene_renderer.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/console.h"
@@ -11,7 +11,7 @@
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/mesh.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/scene/static_mesh_component.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"

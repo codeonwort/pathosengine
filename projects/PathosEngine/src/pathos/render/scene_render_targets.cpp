@@ -1,5 +1,5 @@
 #include "scene_render_targets.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/console.h"
 

@@ -1,15 +1,15 @@
 #pragma once
 
+#include "pathos/rhi/render_command_list.h"
+#include "pathos/material/material_id.h"
+#include "pathos/scene/camera.h"
+#include "pathos/scene/scene_render_settings.h"
+
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
 #include "badger/memory/mem_alloc.h"
 #include <vector>
-
-#include "pathos/scene/scene_render_settings.h"
-#include "pathos/render/render_command_list.h"
-#include "pathos/material/material_id.h"
-#include "pathos/scene/camera.h"
 
 /**
  * Scene representation for the render thread.

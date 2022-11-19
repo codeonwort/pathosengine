@@ -2,13 +2,13 @@
 
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
-#include "pathos/actor/world.h"
+#include "pathos/scene/world.h"
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/directional_light_actor.h"
-#include "pathos/mesh/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/static_mesh_actor.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>

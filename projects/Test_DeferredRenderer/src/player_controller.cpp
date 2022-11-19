@@ -1,7 +1,7 @@
 #include "player_controller.h"
 
 #include "pathos/engine.h"
-#include "pathos/actor/world.h"
+#include "pathos/scene/world.h"
 #include "pathos/util/math_lib.h"
 #include "pathos/scene/camera.h"
 #include "pathos/input/input_manager.h"

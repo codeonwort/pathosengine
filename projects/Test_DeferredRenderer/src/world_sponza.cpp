@@ -7,7 +7,7 @@
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/loader/asset_streamer.h"
 
-#include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"

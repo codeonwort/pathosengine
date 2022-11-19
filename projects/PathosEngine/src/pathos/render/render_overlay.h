@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render_command_list.h"
-#include "pathos/wrapper/transform.h"
+#include "pathos/rhi/render_command_list.h"
+#include "pathos/util/transform_helper.h"
 
 #include "badger/types/noncopyable.h"
 

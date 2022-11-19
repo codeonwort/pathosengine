@@ -6,7 +6,7 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
 #include "pathos/gui/gui_window.h"
-#include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
 
 #include <time.h>

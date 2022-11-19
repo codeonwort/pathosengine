@@ -3,7 +3,7 @@
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 
-#include "pathos/render/render_command_list.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/smart_pointer.h"
 
 #include <vector>

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "pathos/engine.h"
-#include "pathos/actor/world.h"
-#include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/world.h"
+#include "pathos/scene/static_mesh_actor.h"
 using namespace pathos;
 
 #include <vector>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/scene_component.h"
 
 #include <vector>
 

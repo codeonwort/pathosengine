@@ -6,7 +6,7 @@
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/rhi/volume_texture.h"
 
-#include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"

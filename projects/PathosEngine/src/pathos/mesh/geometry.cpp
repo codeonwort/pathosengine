@@ -1,6 +1,6 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/log.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 
 #include "badger/assertion/assertion.h"
 #include <vector>

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/smart_pointer.h"
 #include "pathos/input/input_system.h"
-#include "pathos/render/render_command_list.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"

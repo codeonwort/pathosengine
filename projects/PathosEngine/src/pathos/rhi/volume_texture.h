@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 
 #include "badger/types/noncopyable.h"
 

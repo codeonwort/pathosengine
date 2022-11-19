@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/actor/world.h"
+#include "pathos/scene/world.h"
 #include "pathos/smart_pointer.h"
 using namespace pathos;
 

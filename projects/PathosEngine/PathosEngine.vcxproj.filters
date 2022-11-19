@@ -66,7 +66,7 @@
     <ClCompile Include="src\pathos\mesh\mesh.cpp">
       <Filter>소스 파일\pathos\mesh</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\wrapper\transform.cpp">
+    <ClCompile Include="src\pathos\util\transform_helper.cpp">
       <Filter>소스 파일\pathos\wrapper</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\camera.cpp">
@@ -159,13 +159,13 @@
     <ClCompile Include="src\pathos\util\string_conversion.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\render_device.cpp">
+    <ClCompile Include="src\pathos\rhi\render_device.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\memory\mem_alloc.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\render_command_list.cpp">
+    <ClCompile Include="src\pathos\rhi\render_command_list.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp">
@@ -225,19 +225,19 @@
     <ClCompile Include="src\pathos\rhi\shader_program.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\actor\actor.cpp">
+    <ClCompile Include="src\pathos\scene\actor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\actor\actor_component.cpp">
+    <ClCompile Include="src\pathos\scene\actor_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\actor\scene_component.cpp">
+    <ClCompile Include="src\pathos\scene\scene_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\static_mesh_component.cpp">
+    <ClCompile Include="src\pathos\scene\static_mesh_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\assertion\assertion.cpp">
@@ -252,7 +252,7 @@
     <ClCompile Include="src\badger\math\rotator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\actor\world.cpp">
+    <ClCompile Include="src\pathos\scene\world.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\input\xinput_manager.cpp">
@@ -383,7 +383,7 @@
     <ClInclude Include="src\pathos\engine.h">
       <Filter>헤더 파일\pathos</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\wrapper\transform.h">
+    <ClInclude Include="src\pathos\util\transform_helper.h">
       <Filter>헤더 파일\pathos\wrapper</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\camera.h">
@@ -506,13 +506,13 @@
     <ClInclude Include="src\pathos\util\string_conversion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\render_device.h">
+    <ClInclude Include="src\pathos\rhi\render_device.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\render_commands.h">
+    <ClInclude Include="src\pathos\rhi\render_commands.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\render_command_list.h">
+    <ClInclude Include="src\pathos\rhi\render_command_list.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\memory\mem_alloc.h">
@@ -524,10 +524,10 @@
     <ClInclude Include="src\badger\assertion\assertion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\render_commands.generated.h">
+    <ClInclude Include="src\pathos\rhi\render_commands.generated.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\render_command_list.generated.h">
+    <ClInclude Include="src\pathos\rhi\render_command_list.generated.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_render_targets.h">
@@ -605,16 +605,16 @@
     <ClInclude Include="src\pathos\rhi\shader_program.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\actor\actor.h">
+    <ClInclude Include="src\pathos\scene\actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\actor\actor_component.h">
+    <ClInclude Include="src\pathos\scene\actor_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\actor\scene_component.h">
+    <ClInclude Include="src\pathos\scene\scene_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\point_light_component.h">
@@ -635,13 +635,13 @@
     <ClInclude Include="src\badger\types\vector_types.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\static_mesh_component.h">
+    <ClInclude Include="src\pathos\scene\static_mesh_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\matrix_types.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\static_mesh_actor.h">
+    <ClInclude Include="src\pathos\scene\static_mesh_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\noncopyable.h">
@@ -668,7 +668,7 @@
     <ClInclude Include="src\badger\types\os.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\actor\world.h">
+    <ClInclude Include="src\pathos\scene\world.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\input\xinput_manager.h">

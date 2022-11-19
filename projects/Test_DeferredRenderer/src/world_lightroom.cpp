@@ -3,7 +3,7 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
 #include "pathos/material/material_shader.h"
-#include "pathos/mesh/static_mesh_actor.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/rect_light_actor.h"

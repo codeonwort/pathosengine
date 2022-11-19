@@ -1,6 +1,6 @@
 #include "anti_aliasing_fxaa.h"
 #include "pathos/rhi/shader_program.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/util/engine_util.h"
 

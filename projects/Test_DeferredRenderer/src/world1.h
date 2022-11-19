@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/engine.h"
-#include "pathos/actor/world.h"
+#include "pathos/scene/world.h"
 using namespace pathos;
 
 #include <vector>

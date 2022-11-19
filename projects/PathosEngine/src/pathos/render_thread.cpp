@@ -10,7 +10,7 @@
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/text/font_mgr.h"
 #include "pathos/scene/scene_render_settings.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/renderer.h"
 #include "pathos/render/render_overlay.h"

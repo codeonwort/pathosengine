@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/actor/scene_component.h"
+#include "pathos/scene/scene_component.h"
 #include <algorithm>
 
 // Role model for parameters of point light:

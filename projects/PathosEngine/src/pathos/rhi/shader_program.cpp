@@ -1,7 +1,7 @@
 #include "shader_program.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
-#include "pathos/render/render_device.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 

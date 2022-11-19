@@ -4,8 +4,8 @@
 #include "badger/types/matrix_types.h"
 
 namespace pathos {
-
-	// #todo-camera: Actually I need this. Don't remove but requires renaming.
+	
+	// Quite a legacy wrapper still used by Camera and DisplayObject.
 	class Transform {
 
 	protected:

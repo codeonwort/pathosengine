@@ -3,7 +3,7 @@
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/rhi/shader_program.h"
-#include "pathos/mesh/static_mesh_component.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/rect_light_component.h"
 #include "pathos/scene/directional_light_component.h"

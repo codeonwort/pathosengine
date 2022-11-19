@@ -1,9 +1,9 @@
 #include "visualize_buffer.h"
 #include "scene_render_targets.h"
-#include "render_device.h"
-#include "pathos/render/scene_proxy.h"
-#include "pathos/scene/camera.h"
+#include "scene_proxy.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/scene/camera.h"
 
 namespace pathos {
 
