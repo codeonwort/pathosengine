@@ -36,7 +36,7 @@ namespace pathos {
 
 	public:
 		vector3 direction;
-		vector3 radiance;
+		vector3 radiance; // #todo-measurement: Use illuminance.
 
 	};
 
