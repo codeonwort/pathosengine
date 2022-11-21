@@ -130,9 +130,10 @@ namespace pathos {
 		// point lights
 		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
 			PointLightActor* actor = world->spawnActor<PointLightActor>();
-			// #todo-measurement: Use other setters + Rename 'radiance'
-			actor->setLightParameters(pLight.radiance, pLight.attenuationRadius,
-				pLight.falloffExponent, pLight.castsShadow);
+			actor->setIntensity(pLight.radiance);
+			actor->setAttenuationRadius(pLight.attenuationRadius);
+			actor->setFalloffExponent(pLight.falloffExponent);
+			actor->setCastsShadow(pLight.castsShadow);
 			actor->setActorLocation(pLight.location);
 
 			outActorMap.insert(std::make_pair(pLight.name, actor));

@@ -13,14 +13,18 @@
 #include "pathos/loader/scene_loader.h"
 #include "pathos/input/input_manager.h"
 
-#define SCENE_DESC_FILE "resources/racing_game/test_scene.json"
+#define SCENE_DESC_FILE          "resources/racing_game/test_scene.json"
+#define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/landscape.jpg"
 
-#define CLOUD_WEATHER_MAP_FILE   "racing_game/WeatherMap.png"
-#define CLOUD_SHAPE_NOISE_FILE   "common/noiseShapePacked.tga"
-#define CLOUD_EROSION_NOISE_FILE "common/noiseErosionPacked.tga"
+#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
+#define CLOUD_SHAPE_NOISE_FILE   "resources/common/noiseShapePacked.tga"
+#define CLOUD_EROSION_NOISE_FILE "resources/common/noiseErosionPacked.tga"
 
-const vector3 CAMERA_POSITION = vector3(0.0f, 0.0f, 50.0f);
+const vector3 CAMERA_POSITION = vector3(0.0f, 0.0f, 0.5f);
 const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);
+
+const float   PLAYERCAM_HEIGHT_OFFSET  = 2.8f;
+const float   PLAYERCAM_FORWARD_OFFSET = 10.0f;
 
 World_Game1::World_Game1()
 {
@@ -29,6 +33,8 @@ World_Game1::World_Game1()
 void World_Game1::onInitialize()
 {
 	SCOPED_CPU_COUNTER(World_Game1_initialize);
+
+	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 
 	prepareAssets();
 	reloadScene();
@@ -66,7 +72,7 @@ void World_Game1::prepareAssets()
 	M_color->setConstantParameter("roughness", 0.2f);
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
-	GLuint landscapeAlbedo = pathos::createTextureFromBitmap(pathos::loadImage("resources/racing_game/landscape.jpg"), true, true);
+	GLuint landscapeAlbedo = pathos::createTextureFromBitmap(pathos::loadImage(LANDSCAPE_ALBEDO_MAP), true, true);
 	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
@@ -111,6 +117,8 @@ void World_Game1::reloadScene()
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();
 	playerController->setPlayerPawn(sphere0);
+	playerController->cameraHeightOffset = PLAYERCAM_HEIGHT_OFFSET;
+	playerController->cameraForwardOffset = PLAYERCAM_FORWARD_OFFSET;
 
 	cloudscape = spawnActor<VolumetricCloudActor>();
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
