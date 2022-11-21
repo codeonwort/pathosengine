@@ -84,7 +84,7 @@ namespace pathos {
 		std::string path = ResourceFinder::get().find(inFilename);
 		CHECK(path.size() != 0);
 
-		LOG(LogDebug, "load image: %s", path.c_str());
+		//LOG(LogDebug, "load image: %s", path.c_str());
 
 		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
 		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
