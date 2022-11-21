@@ -1,5 +1,7 @@
 //? #version 460 core
 
+// #todo: If you see a term 'radiance' in shaders, probably it means 'luminance'.
+
 // #todo: Remove common defines in separate .glsl files and use common.glsl
 #define PI         3.14159265359
 #define TWO_PI     6.28318530718
