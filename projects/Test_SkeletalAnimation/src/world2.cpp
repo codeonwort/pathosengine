@@ -20,8 +20,8 @@
 
 #define DIR_MY_ANIMTEST           "resources/models/animtest/"
 #define FILE_MY_ANIMTEST          "resources/models/animtest/animtest.dae"
-#define DIR_RIGGED_FIGURE         "resources_external/"
-#define FILE_RIGGED_FIGURE        "resources_external/RiggedFigure.dae"
+#define DIR_RIGGED_FIGURE         "resources_external/KhronosGroup/RiggedFigure/"
+#define FILE_RIGGED_FIGURE        "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
 #define DOWNLOAD_ALERT_MSG1       L"If you can't see 2 animated models, run Setup.ps1"
 #define DOWNLOAD_ALERT_MSG2       L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
 
