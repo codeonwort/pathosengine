@@ -22,14 +22,14 @@
 		{
 			"name": "Sun",
 			"direction": [0, -0.4, -1],
-			"radiance": [1.2, 1.2, 1.2]
+			"illuminance": [1.2, 1.2, 1.2]
 		}
 	],
 	"pointLight": [
 		{
 			"name": "PointLight0",
 			"location": [0.0, 0.5, 4.0],
-			"radiance": [10, 100, 10],
+			"intensity": [10, 100, 10],
 			"attenuationRadius": 50,
 			"falloffExponent": 0.001,
 			"castsShadow": true

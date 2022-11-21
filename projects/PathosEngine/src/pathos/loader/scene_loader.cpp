@@ -124,14 +124,14 @@ namespace pathos {
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
 			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();
 			actor->setDirection(dirLight.direction);
-			actor->setIlluminance(dirLight.radiance);
+			actor->setIlluminance(dirLight.illuminance);
 
 			outActorMap.insert(std::make_pair(dirLight.name, actor));
 		}
 		// point lights
 		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
 			PointLightActor* actor = world->spawnActor<PointLightActor>();
-			actor->setIntensity(pLight.radiance);
+			actor->setIntensity(pLight.intensity);
 			actor->setAttenuationRadius(pLight.attenuationRadius);
 			actor->setFalloffExponent(pLight.falloffExponent);
 			actor->setCastsShadow(pLight.castsShadow);
