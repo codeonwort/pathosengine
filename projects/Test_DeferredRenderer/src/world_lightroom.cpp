@@ -25,7 +25,7 @@
 static const vector3 CAMERA_POSITION    = vector3(0.7f, 0.6f, 2.5f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 0.1f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 0.05f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_ILLUMINANCE    = 0.05f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -129,7 +129,8 @@ void World_LightRoom::setupScene() {
 	// Lights
 
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
-	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
+	sun->setDirection(SUN_DIRECTION);
+	sun->setIlluminance(SUN_ILLUMINANCE);
 
 #if TEST_POINT_LIGHT
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);

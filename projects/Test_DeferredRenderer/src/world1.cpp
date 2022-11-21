@@ -18,10 +18,10 @@
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION      = vector3(20.0f, 25.0f, 200.0f);
-static const vector3 CAMERA_LOOK_AT       = vector3(20.0f, 25.0f, 190.0f);
+static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 2.0f);
+static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE         = 1.2f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_ILLUMINANCE      = 1.2f * vector3(1.0f, 1.0f, 1.0f);
 
 #define              SKY_METHOD           2
 static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
@@ -231,7 +231,8 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Lighting
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
-	dirLight->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
+	dirLight->setDirection(SUN_DIRECTION);
+	dirLight->setIlluminance(SUN_ILLUMINANCE);
 
 	PointLightActor* pointLight0 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = spawnActor<PointLightActor>();
