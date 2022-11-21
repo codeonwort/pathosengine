@@ -10,7 +10,7 @@
 #include "badger/math/random.h"
 
 static const vector3 LIGHTNING_PARTICLE_EMISSIVE(10.0f, 10.0f, 25.0f);
-static const float LIGHTNING_PARTICLE_THICKNESS = 80.0f;
+static const float LIGHTNING_PARTICLE_THICKNESS = 0.8f;
 
 #define LIGHTNING_MASK_TEXTURE  "resources/render_challenge_1/lightning_mask.jpg"
 #define LIGHTNING_WARP_TEXTURE  "resources/render_challenge_1/lightning_warp.jpg"
