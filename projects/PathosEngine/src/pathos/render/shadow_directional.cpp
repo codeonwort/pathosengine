@@ -16,7 +16,7 @@
 namespace pathos {
 
 	// Light frustum could be too large if we use camera's zFar as is.
-	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 5000.0f, "Custom zFar for CSM");
+	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 50.0f, "Custom zFar for CSM");
 
 	struct UBO_CascadedShadowMap {
 		static constexpr uint32 BINDING_POINT = 1;
