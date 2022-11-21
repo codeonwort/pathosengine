@@ -115,11 +115,13 @@ void World_Sponza::setupScene() {
 #if POINTLIGHT
 	PointLightActor* pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(600.0f, 150.0f, 0.0f);
-	pointLight0->setLightParameters(500000.0f * vector3(1.0f, 0.5f, 0.5f), 1000.0f);
+	pointLight0->setIntensity(500000.0f * vector3(1.0f, 0.5f, 0.5f));
+	pointLight0->setAttenuationRadius(1000.0f);
 
 	PointLightActor* pointLight1 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight1->setActorLocation(-600.0f, 150.0f, 0.0f);
-	pointLight1->setLightParameters(500000.0f * vector3(0.5f, 0.5f, 1.0f), 1000.0f);
+	pointLight1->setIntensity(500000.0f * vector3(0.5f, 0.5f, 1.0f));
+	pointLight1->setAttenuationRadius(1000.0f);
 #endif
 
 	// --------------------------------------------------------

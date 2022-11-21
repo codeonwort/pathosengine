@@ -22,7 +22,7 @@ namespace pathos {
 		
 	public:
 		PointLightComponent()
-			: intensity(vector3(100.0f, 100.0f, 100.0f))
+			: intensity(vector3(10.0f, 10.0f, 10.0f))
 			, attenuationRadius(1.0f)
 			, falloffExponent(0.001f)
 			, castsShadow(true)
@@ -46,11 +46,11 @@ namespace pathos {
 		}
 
 	public:
-		vector3   intensity;         // #todo-measurement: Photometric unit (maybe candela)
-		float     attenuationRadius; // in meters
+		vector3   intensity;         // Unit: candela = lm/sr = luminuous intensity
+		float     attenuationRadius; // Unit: meter
 		float     falloffExponent;
 		bool      castsShadow;
-		float     sourceRadius;      // in meters
+		float     sourceRadius;      // Unit: meter
 
 	};
 

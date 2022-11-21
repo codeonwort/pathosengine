@@ -21,19 +21,6 @@ namespace pathos {
 		void setCastsShadow(bool value)             { lightComponent->castsShadow = value; }
 		void setSourceRadius(float inRadius)        { lightComponent->sourceRadius = inRadius; }
 
-		// #todo-measurement: Temporary API
-		void setLightParameters(
-			const vector3& inIntensity = vector3(1.0f, 1.0f, 1.0f),
-			float inAttenuationRadius = 1.0f,
-			float inFalloffExponent = 0.001f,
-			bool castsShadow = true)
-		{
-			lightComponent->intensity = inIntensity;
-			lightComponent->attenuationRadius = inAttenuationRadius;
-			lightComponent->falloffExponent = inFalloffExponent;
-			lightComponent->castsShadow = castsShadow;
-		}
-
 		inline PointLightComponent* getLightComponent() const { return lightComponent; }
 
 	private:

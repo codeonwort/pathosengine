@@ -241,10 +241,17 @@ void World1::setupScene()
 	pointLight2->setActorLocation(vector3(-0.2f + 7.0f, 0.5f, 0.5f));
 	pointLight3->setActorLocation(vector3(-0.2f + 7.0f, 0.5f, 1.5f));
 
-	pointLight0->setLightParameters(5.0f * vector3(0.2f, 2.0f, 1.0f), 1.0f, 0.001f, true);
-	pointLight1->setLightParameters(3.0f * vector3(2.0f, 0.2f, 1.0f), 1.0f, 0.001f, true);
-	pointLight2->setLightParameters(5.0f * vector3(2.0f, 0.0f, 0.0f), 1.5f, 0.001f, true);
-	pointLight3->setLightParameters(2.0f * vector3(2.0f, 2.0f, 2.0f), 2.0f, 0.0001f, true);
+	pointLight0->setIntensity(5.0f * vector3(0.2f, 2.0f, 1.0f));
+	pointLight0->setAttenuationRadius(1.0f);
+
+	pointLight1->setIntensity(4.0f * vector3(0.1f, 0.1f, 1.0f));
+	pointLight1->setAttenuationRadius(1.0f);
+
+	pointLight2->setIntensity(10.0f * vector3(1.0f, 0.0f, 0.0f));
+	pointLight2->setAttenuationRadius(1.5f);
+
+	pointLight3->setIntensity(3.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight3->setAttenuationRadius(2.0f);
 
 	godRaySource = spawnActor<StaticMeshActor>();
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
