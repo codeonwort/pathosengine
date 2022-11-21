@@ -43,6 +43,11 @@ $contents_list  = @(
 		''
 	),
 	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.bin',
+		'KhronosGroup/DamagedHelmet/DamagedHelmet.bin',
+		''
+	),
+	@(
 		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
 		'KhronosGroup/DamagedHelmet/DamagedHelmet.gltf',
 		''

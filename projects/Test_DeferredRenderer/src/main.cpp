@@ -14,7 +14,7 @@ const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
-	static const int32 numWorlds = 3;
+	static const int32 numWorlds = 4;
 	static int32 worldIndex = 0;
 
 	World* newWorld = nullptr;
@@ -31,13 +31,9 @@ void changeWorld() {
 		newWorld = new World_LightRoom;
 		gEngine->getMainWindow()->setTitle("Light Room");
 		break;
-	// #todo-gltf
-	//case 3:
-	//	newWorld = new World_Sponza;
-	//	gEngine->getMainWindow()->setTitle("Yet another Sponza");
-	//	break;
 	case 3:
-		// More worlds here...
+		newWorld = new World_Sponza;
+		gEngine->getMainWindow()->setTitle("Yet another Sponza");
 		break;
 	default:
 		CHECK_NO_ENTRY();
