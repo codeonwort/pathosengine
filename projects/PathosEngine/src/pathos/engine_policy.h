@@ -32,15 +32,4 @@ namespace pathos {
 		return (getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1.0f : 0.0f;
 	}
 
-	namespace measurement {
-
-		// World unit distance is centimeter.
-		constexpr float  worldUnitToMeter(float unitDistance)  { return unitDistance * 100.0f; }
-		constexpr double worldUnitToMeter(double unitDistance) { return unitDistance * 100.0;  }
-
-		constexpr float  meterToWorldUnit(float meter)  { return meter * 0.01f; }
-		constexpr double meterToWorldUnit(double meter) { return meter * 0.01;  }
-
-	}
-
 }
