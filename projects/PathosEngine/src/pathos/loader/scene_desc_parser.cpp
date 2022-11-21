@@ -100,18 +100,18 @@ namespace pathos {
 		}
 
 		for (auto& [unused_key, L] : document[KEY_DIRECTIONAL_LIGHTS].items()) {
-			if (!checkMembers(L, { "name", "direction", "radiance" })) {
+			if (!checkMembers(L, { "name", "direction", "illuminance" })) {
 				continue;
 			}
 
 			std::string name(parseName(L));
 			vector3 dir = parseVec3(L["direction"]);
-			vector3 radiance = parseVec3(L["radiance"]);
+			vector3 illuminance = parseVec3(L["illuminance"]);
 
 			SceneDescription::DirLight desc;
 			desc.name = name;
 			desc.direction = glm::normalize(dir);
-			desc.radiance = radiance;
+			desc.illuminance = illuminance;
 
 			outDesc.dirLights.emplace_back(desc);
 		}
@@ -123,20 +123,20 @@ namespace pathos {
 		}
 
 		for (auto& [unused_key, L] : document[KEY_POINT_LIGHTS].items()) {
-			if (!checkMembers(L, { "name", "location", "radiance",
+			if (!checkMembers(L, { "name", "location", "intensity",
 					"attenuationRadius", "falloffExponent", "castsShadow" })) {
 				continue;
 			}
 
 			std::string name(parseName(L));
 			vector3 loc = parseVec3(L["location"]);
-			vector3 radiance = parseVec3(L["radiance"]);
+			vector3 intensity = parseVec3(L["intensity"]);
 			float attenuationR = L["attenuationRadius"];
 			float falloffExp = L["falloffExponent"];
 			bool castsShadow = L["castsShadow"];
 
 			SceneDescription::PointLight desc{
-				name, loc, radiance, attenuationR, falloffExp, castsShadow
+				name, loc, intensity, attenuationR, falloffExp, castsShadow
 			};
 			outDesc.pointLights.emplace_back(desc);
 		}

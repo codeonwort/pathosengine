@@ -14,14 +14,8 @@ namespace pathos {
 			setAsRootComponent(lightComponent);
 		}
 
-		// #todo-light: Temporary API
-		void setLightParameters(
-			const vector3& inDirection,
-			const vector3& inRadiance)
-		{
-			lightComponent->direction = inDirection;
-			lightComponent->radiance = inRadiance;
-		}
+		void setDirection(const vector3& direction)     { lightComponent->direction = glm::normalize(direction); }
+		void setIlluminance(const vector3& illuminance) { lightComponent->illuminance = illuminance; }
 
 	private:
 		DirectionalLightComponent* lightComponent;

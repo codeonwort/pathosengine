@@ -10,6 +10,15 @@ public:
 	virtual void onSpawn() override;
 	virtual void onTick(float deltaSeconds) override;
 
+	// movement (meters/sec)
+	float speedRight   = 2.0f;
+	float speedForward = 2.0f;
+	float speedUp      = 2.0f;
+
+	// rotation (degrees/sec)
+	float speedYaw    = 120.0f;
+	float speedPitch  = 120.0f;
+
 private:
 	void setupInput();
 

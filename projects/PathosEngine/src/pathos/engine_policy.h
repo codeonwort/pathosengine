@@ -1,18 +1,23 @@
 #pragma once
 
-// WARNING: Minimize includes!!!
-//          Never include other than primitive types.
+// Configurations that globally affect the engine.
+// These policies should be constant in entire lifetime of the application.
+// Separated here to minimize #include dependencies.
+
+// WARNING: Minimize includes!!! Never include other than primitive types.
 #include <inttypes.h>
 
-// Configurations that globally affect the engine.
-// Separated here to minimize #include dependencies, but is this too random?
+// References:
+// 
+// [Reverse-Z]
+// https://developer.nvidia.com/content/depth-precision-visualized
+// https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/
+//
+// [Units of measurement]
+// https://seblagarde.wordpress.com/2015/07/14/siggraph-2014-moving-frostbite-to-physically-based-rendering/
 
 namespace pathos {
 
-	// - Reverse-Z policy should be constant in entire lifetime of the application.
-	// - References:
-	//   - https://developer.nvidia.com/content/depth-precision-visualized
-	//   - https://nlguillemot.wordpress.com/2016/12/07/reversed-z-in-opengl/
 	enum class EReverseZPolicy : uint8_t {
 		Traditional = 0,
 		Reverse = 1

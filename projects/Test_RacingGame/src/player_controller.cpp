@@ -85,7 +85,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	Camera& camera = getWorld()->getCamera();
 	InputManager* input = getWorld()->getInputManager();
 
-	float powerForward = input->getAxis("moveForward") * 500.0f;
+	float powerForward = input->getAxis("moveForward") * 50.0f;
 	float powerTurn = input->getAxis("moveRight") * 50.0f;
 
 	vector3 forwardDir = pawnRotation.toDirection();
@@ -108,11 +108,10 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	playerPawn->setActorLocation(pawnLoc);
 	playerPawn->setActorRotation(pawnRotation);
 
-	const float CAMERA_HEIGHT_OFFSET = 40.0f;
 	vector3 cameraLoc = pawnLoc;
-	cameraLoc -= forwardDir * 200.0f;
-	cameraLoc.y += CAMERA_HEIGHT_OFFSET;
-	camera.lookAt(cameraLoc, pawnLoc + vector3(0.0f, CAMERA_HEIGHT_OFFSET, 0.0f), vector3(0.0f, 1.0f, 0.0f));
+	cameraLoc -= forwardDir * cameraForwardOffset;
+	cameraLoc.y += cameraHeightOffset;
+	camera.lookAt(cameraLoc, pawnLoc + vector3(0.0f, cameraHeightOffset, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 }
 
 void PlayerController::tickPhotoMode(float deltaSeconds)
@@ -127,17 +126,17 @@ void PlayerController::tickPhotoMode(float deltaSeconds)
 
 	// movement per seconds
 	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
-	const float speedRight = 200.0f * deltaSeconds * moveMultiplier;
-	const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
-	const float speedUp = 200.0f * deltaSeconds * moveMultiplier;
-	const float rotateYaw = 120.0f * deltaSeconds;
-	const float rotatePitch = 120.0f * deltaSeconds;
+	const float speedRight   = 2.0f * deltaSeconds * moveMultiplier;
+	const float speedForward = 2.0f * deltaSeconds * moveMultiplier;
+	const float speedUp      = 2.0f * deltaSeconds * moveMultiplier;
+	const float rotateYaw    = 120.0f * deltaSeconds;
+	const float rotatePitch  = 120.0f * deltaSeconds;
 
-	float deltaRight = input->getAxis("moveRight") * speedRight;
+	float deltaRight   = input->getAxis("moveRight") * speedRight;
 	float deltaForward = input->getAxis("moveForward") * speedForward;
-	float deltaUp = input->getAxis("moveUp") * speedUp;
-	float rotY = 0.1f * (currMouseX - prevMouseX) * rotateYaw;
-	float rotX = 0.1f * (currMouseY - prevMouseY) * rotatePitch;
+	float deltaUp      = input->getAxis("moveUp") * speedUp;
+	float rotY         = 0.1f * (currMouseX - prevMouseX) * rotateYaw;
+	float rotX         = 0.1f * (currMouseY - prevMouseY) * rotatePitch;
 
 	camera.moveForward(deltaForward);
 	camera.moveRight(deltaRight);

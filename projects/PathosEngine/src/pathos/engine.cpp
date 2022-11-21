@@ -35,7 +35,9 @@
 // Misc
 namespace pathos {
 
-	static ConsoleVariable<int32> maxFPS("t.maxFPS", 0, "Limit max framerate (0 = no limit)");
+	// #note: Setting this to 0 can make world delta seconds = 0.0
+	//        and the world will look like frozen.
+	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;

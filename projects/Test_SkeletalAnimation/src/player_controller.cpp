@@ -26,17 +26,17 @@ void PlayerController::onTick(float deltaSeconds)
 
 	// movement per seconds
 	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
-	const float speedRight = 200.0f * deltaSeconds * moveMultiplier;
-	const float speedForward = 200.0f * deltaSeconds * moveMultiplier;
-	const float speedUp = 200.0f * deltaSeconds * moveMultiplier;
-	const float rotateYaw = 120.0f * deltaSeconds;
-	const float rotatePitch = 120.0f * deltaSeconds;
+	const float speedRight   = 2.0f * deltaSeconds * moveMultiplier;
+	const float speedForward = 2.0f * deltaSeconds * moveMultiplier;
+	const float speedUp      = 2.0f * deltaSeconds * moveMultiplier;
+	const float rotateYaw    = 120.0f * deltaSeconds;
+	const float rotatePitch  = 120.0f * deltaSeconds;
 
-	float deltaRight = input->getAxis("moveRight") * speedRight;
+	float deltaRight   = input->getAxis("moveRight") * speedRight;
 	float deltaForward = input->getAxis("moveForward") * speedForward;
-	float deltaUp = input->getAxis("moveUp") * speedUp;
-	float rotY = 0.1f * (currMouseX - prevMouseX) * rotateYaw;
-	float rotX = 0.1f * (currMouseY - prevMouseY) * rotatePitch;
+	float deltaUp      = input->getAxis("moveUp") * speedUp;
+	float rotY         = 0.1f * (currMouseX - prevMouseX) * rotateYaw;
+	float rotX         = 0.1f * (currMouseY - prevMouseY) * rotatePitch;
 
 	camera.moveForward(deltaForward);
 	camera.moveRight(deltaRight);

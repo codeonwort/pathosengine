@@ -2,6 +2,9 @@
 # - Download and unzip large contents.
 # - Download and build third-party libraries.
 
+# Run this script with execution policy like this:
+# > powershell -ExecutionPolicy Bypass -File Setup.ps1
+
 #
 # Script arguments
 #
@@ -33,6 +36,46 @@ $contents_list  = @(
 		'https://casual-effects.com/g3d/data10/research/model/breakfast_room/breakfast_room.zip',
 		'breakfast_room.zip',
 		'breakfast_room'
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/sourceModels/RiggedFigure/RiggedFigure.dae',
+		'KhronosGroup/RiggedFigure/RiggedFigure.dae',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.bin',
+		'KhronosGroup/DamagedHelmet/DamagedHelmet.bin',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
+		'KhronosGroup/DamagedHelmet/DamagedHelmet.gltf',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_AO.jpg',
+		'KhronosGroup/DamagedHelmet/Default_AO.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_albedo.jpg',
+		'KhronosGroup/DamagedHelmet/Default_albedo.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_emissive.jpg',
+		'KhronosGroup/DamagedHelmet/Default_emissive.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_metalRoughness.jpg',
+		'KhronosGroup/DamagedHelmet/Default_metalRoughness.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_normal.jpg',
+		'KhronosGroup/DamagedHelmet/Default_normal.jpg',
+		''
 	)
 )
 
@@ -102,8 +145,13 @@ if ($should_download) {
 		
 		$zip_path = "$content_dir/$content_zip"
 		$unzip_path = "$content_dir/$content_unzip"
+		Ensure-Subdirectory ([IO.Path]::GetDirectoryName($zip_path))
 		Download-URL $webclient $content_url $zip_path
-		Unzip $zip_path $unzip_path
+		
+		$file_ext = [IO.Path]::GetExtension($zip_path)
+		if ($file_ext -eq ".zip") {
+			Unzip $zip_path $unzip_path
+		}
 	}
 	
 	# TODO: How to close connection

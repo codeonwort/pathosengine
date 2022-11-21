@@ -34,14 +34,16 @@ namespace pathos {
 			nodeTransformMapping[name] = transform;
 		}
 
-		// TODO: switch to hardware skinning
+		// #todo-skinning: switch to hardware skinning
 		void setInitialPositions(uint32_t geomIndex, const std::vector<float>& positions0);
 		void updateSoftwareSkinning();
-		void updateAnimation(std::string name, double progress);
+		void updateAnimation(const std::string& name, double progress);
 		void updateAnimation(int index, double progress);
 		void updateGlobalTransform();
 
 		inline ModelTransform& getTransform() { return transform; }
+		inline SkeletalAnimation* getAnimationInfo(size_t ix) const { return animations[ix]; }
+		inline size_t numAnimations() const { return animations.size(); }
 
 	protected:
 		ModelTransform transform;
@@ -52,9 +54,9 @@ namespace pathos {
 		std::vector<SkeletalAnimation*> animations;
 		std::map<std::string, Node*> nodeMapping;
 		std::map<std::string, glm::mat4> nodeTransformMapping;
-		Node* root;
+		Node* root = nullptr;
 
-		// TODO: switch to hardware skinning
+		// #todo-skinning: switch to hardware skinning
 		void updateBoneTransform();
 
 		int translation_lower_bound(aiNodeAnim* channel, double time);

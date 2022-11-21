@@ -27,15 +27,16 @@ public:
 private:
 	PlayerController* playerController = nullptr;
 
-	DirectionalLightActor* dirLight = nullptr;
+	DirectionalLightActor* sunLight = nullptr;
 	PointLightActor* pointLight0 = nullptr;
 
-	StaticMeshActor* model = nullptr;
-	StaticMeshActor* model2 = nullptr;
-	SkinnedMesh* daeModel = nullptr;
-	SkinnedMesh* daeModel2 = nullptr;
-	std::vector<StaticMeshActor*> boxes;
+	StaticMeshActor* ground = nullptr;
+	StaticMeshActor* godRaySourceMesh = nullptr;
 
-	TextMeshActor* text1 = nullptr;
+	SkinnedMesh* daeModel_my = nullptr;
+	SkinnedMesh* daeModel_riggedFigure = nullptr;
+
+	TextMeshActor* alertText1 = nullptr;
+	TextMeshActor* alertText2 = nullptr;
 
 };

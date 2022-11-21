@@ -72,7 +72,7 @@ namespace pathos {
 
 	AABB StaticMeshComponent::getWorldBounds() const
 	{
-		AABB total;
+		AABB total = AABB::fromMinMax(vector3(0.0f), vector3(0.0f));
 		auto& geoms = mesh->getGeometries();
 		if (geoms.size() > 0) {
 			total = calculateWorldBounds(geoms[0]->getLocalBounds(), getLocalMatrix());

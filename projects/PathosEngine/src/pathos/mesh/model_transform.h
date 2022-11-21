@@ -29,7 +29,7 @@ namespace pathos {
 		const matrix4& getMatrix() const;
 
 	private:
-		vector3 location;
+		vector3 location; // Unit: meter
 		Rotator rotation;
 		vector3 scale;
 

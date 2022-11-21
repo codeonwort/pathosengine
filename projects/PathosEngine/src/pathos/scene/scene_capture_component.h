@@ -22,7 +22,7 @@ namespace pathos {
 
 	public:
 		float fovY = 60.0f; // in degrees
-		float zNear = 1.0f;
+		float zNear = 0.01f;
 		float zFar = 10000.0f;
 		RenderTarget2D* renderTarget = nullptr;
 		bool captureHDR = true; // Ignored if render target has depth format.

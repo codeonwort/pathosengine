@@ -13,6 +13,9 @@ public:
 	void setPlayerPawn(Actor* player);
 	void togglePhotoMode();
 
+	float cameraHeightOffset  = 1.8f;
+	float cameraForwardOffset = 3.0f;
+
 private:
 	void setupInput();
 	void tickGameplay(float deltaSeconds);

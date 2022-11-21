@@ -14,7 +14,7 @@ namespace pathos {
 		if (boneMapping.size() <= geomIndex) {
 			boneMapping.resize(geomIndex + 1);
 		}
-		boneMapping[geomIndex].push_back(std::move(bone));
+		boneMapping[geomIndex].push_back(bone);
 	}
 
 	void SkinnedMesh::addAnimation(SkeletalAnimation* animation) {
@@ -40,7 +40,7 @@ namespace pathos {
 		if (initialPositionsMapping.size() <= geomIndex) {
 			initialPositionsMapping.resize(geomIndex + 1);
 		}
-		initialPositionsMapping[geomIndex] = std::move(positions0);
+		initialPositionsMapping[geomIndex] = positions0;
 	}
 
 	void SkinnedMesh::updateSoftwareSkinning() {
@@ -68,10 +68,9 @@ namespace pathos {
 			++geomIndex;
 		}
 	}
-	void SkinnedMesh::updateAnimation(int index, double progress) {
+	void SkinnedMesh::updateAnimation(int index, double time) {
 		aiAnimation* anim = animations[index]->anim;
-		progress = std::min(1.0, std::max(0.0, progress));
-		double time = anim->mDuration * progress;
+		time = std::max(0.0, std::min(time, anim->mDuration));
 
 		for (auto i = 0u; i < anim->mNumChannels; ++i) {
 			aiNodeAnim* chan = anim->mChannels[i];
@@ -92,11 +91,11 @@ namespace pathos {
 			node->localTransform = T * R * S;
 		}
 	}
-	void SkinnedMesh::updateAnimation(std::string name, double progress) {
+	void SkinnedMesh::updateAnimation(const std::string& name, double time) {
 		// TODO: encalsulate aiAnimation
 		for (auto i = 0u; i < animations.size(); ++i) {
 			if (std::string(animations[i]->getName()) == name) {
-				updateAnimation(i, progress);
+				updateAnimation(i, time);
 				break;
 			}
 		}

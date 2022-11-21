@@ -117,8 +117,8 @@ namespace pathos {
 				continue;
 			}
 
-			constexpr float zNear = 0.1f;
-			const float zFar = badger::max(1.0f, light->attenuationRadius);
+			constexpr float zNear = 0.01f;
+			const float zFar = badger::max(zNear, light->attenuationRadius);
 			matrix4 projection = glm::perspective(glm::radians(90.0f), 1.0f, zNear, zFar);
 
 			PerspectiveLens shadowLens(90.0f, 1.0f, zNear, zFar);

@@ -43,7 +43,7 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 #endif
 
 	const float SLOPE_BIAS = 0.005;
-	const float NORMAL_OFFSET = 10.0; // #todo-glsl: Magic value for world_rc1, but too big for world1.
+	const float NORMAL_OFFSET = 0.01; // #todo-glsl: Magic value for world_rc1, but too big for world1.
 
 	// Convert world query position to the shadow texture coordinate
 	vec4 ls_coords = uboPerFrame.sunViewProjection[csmLayer] * vec4(query.wPos + NORMAL_OFFSET * query.wNormal, 1.0);

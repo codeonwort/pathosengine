@@ -110,7 +110,7 @@ namespace pathos {
 		if (normalTex != 0) {
 			M->setTextureParameter("normal", normalTex);
 		} else {
-			M->setTextureParameter("normal", gEngine->getSystemTexture2DBlue());
+			M->setTextureParameter("normal", gEngine->getSystemTexture2DNormalmap());
 			//M->setConstantParameter("normalOverride", vector3(0.0f, 0.0f, 1.0f));
 			//M->setConstantParameter("bOverrideNormal", true);
 		}

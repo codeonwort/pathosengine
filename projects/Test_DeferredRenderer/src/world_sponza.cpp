@@ -25,26 +25,26 @@
 // Configuration
 #define GLTF_TESTCASE 1
 #define SKYLIGHT      1
-#define POINTLIGHT    0
+#define POINTLIGHT    1
 
-// #todo-gltf: Download these GLTF assets via Setup.ps1
+// #todo-gltf: Intel Sponza is way too big (a few gigabytes) to include in the download list.
 #if GLTF_TESTCASE == 0
 	#define GLTF_FILENAME "intel_sponza/Main.1_Sponza/NewSponza_Main_glTF_002.gltf"
-	#define GLTF_SCALE_MULT 100.0f
+	#define GLTF_SCALE_MULT 1.0f
 	#define GLTF_ROT Rotator(0.0f, 0.0f, 0.0f)
 #elif GLTF_TESTCASE == 1
-	#define GLTF_FILENAME "damaged_helmet/DamagedHelmet.gltf"
-	#define GLTF_SCALE_MULT 100.0f
+	#define GLTF_FILENAME "resources_external/KhronosGroup/DamagedHelmet/DamagedHelmet.gltf"
+	#define GLTF_SCALE_MULT 1.0f
 	#define GLTF_ROT Rotator(0.0f, -90.0f, 0.0f)
 #endif
 
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION    = vector3(70.0f, 60.0f, 250.0f);
-static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 10.0f, 0.0f);
+static const vector3 CAMERA_POSITION    = vector3(0.7f, 0.6f, 2.5f);
+static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 0.1f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_RADIANCE       = 5.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_ILLUMINANCE    = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
 // --------------------------------------------------------
 // World
@@ -87,7 +87,7 @@ void World_Sponza::setupScene() {
 	// --------------------------------------------------------
 	// Ground
 
-	MeshGeometry* G_ground = new PlaneGeometry(1000.0f, 1000.0f, 10, 10);
+	MeshGeometry* G_ground = new PlaneGeometry(100.0f, 100.0f, 10, 10);
 
 	Material* M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.33f, 0.22f, 0.18f)); // brown
@@ -95,30 +95,36 @@ void World_Sponza::setupScene() {
 	M_ground->setConstantParameter("metallic", 0.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
-	//ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	//ground->setStaticMesh(new Mesh(G_ground, M_ground));
-	//ground->setActorLocation(0.0f, 0.0f, 0.0f);
-	//ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
+#if GLTF_TESTCASE == 1
+	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	ground->setStaticMesh(new Mesh(G_ground, M_ground));
+	ground->getStaticMesh()->doubleSided = true;
+	ground->setActorLocation(0.0f, -1.0f, 0.0f);
+	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
+#endif
 
 	textActor = spawnActor<TextMeshActor>();
 	textActor->setText(L"Loading GLTF asset...");
 	textActor->setColor(1.0f, 0.0f, 0.0f);
-	textActor->setActorScale(300.0f);
+	textActor->setActorScale(3.0f);
 
 	// --------------------------------------------------------
 	// Lights
 
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
-	sun->setLightParameters(SUN_DIRECTION, SUN_RADIANCE);
+	sun->setDirection(SUN_DIRECTION);
+	sun->setIlluminance(SUN_ILLUMINANCE);
 
 #if POINTLIGHT
 	PointLightActor* pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
-	pointLight0->setActorLocation(600.0f, 150.0f, 0.0f);
-	pointLight0->setLightParameters(500000.0f * vector3(1.0f, 0.5f, 0.5f), 1000.0f);
+	pointLight0->setActorLocation(6.0f, 1.5f, 0.0f);
+	pointLight0->setIntensity(5000.0f * vector3(1.0f, 0.5f, 0.5f));
+	pointLight0->setAttenuationRadius(10.0f);
 
 	PointLightActor* pointLight1 = TEMP_SPAWN_ACTOR(PointLightActor);
-	pointLight1->setActorLocation(-600.0f, 150.0f, 0.0f);
-	pointLight1->setLightParameters(500000.0f * vector3(0.5f, 0.5f, 1.0f), 1000.0f);
+	pointLight1->setActorLocation(-6.0f, 1.5f, 0.0f);
+	pointLight1->setIntensity(5000.0f * vector3(0.5f, 0.5f, 1.0f));
+	pointLight1->setAttenuationRadius(10.0f);
 #endif
 
 	// --------------------------------------------------------
