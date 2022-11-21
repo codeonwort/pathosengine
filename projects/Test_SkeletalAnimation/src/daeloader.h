@@ -23,7 +23,7 @@ namespace pathos {
 		DAELoader();
 		DAELoader(
 			const char* filename, const char* material_dir,
-			unsigned int flags = aiProcessPreset_TargetRealtime_MaxQuality,
+			unsigned int assimpFlags = aiProcessPreset_TargetRealtime_MaxQuality,
 			bool invertWinding = false);
 
 		virtual ~DAELoader();

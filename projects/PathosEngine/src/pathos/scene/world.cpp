@@ -8,7 +8,7 @@
 namespace pathos {
 
 	World::World()
-		: camera(PerspectiveLens(60.0f, 16.0f / 9.0f, 0.1f, 100000.0f))
+		: camera(PerspectiveLens(60.0f, 16.0f / 9.0f, 0.01f, 100000.0f))
 		, inputManager(nullptr)
 	{
 		scene.owner = this;
