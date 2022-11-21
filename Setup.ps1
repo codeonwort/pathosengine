@@ -2,6 +2,9 @@
 # - Download and unzip large contents.
 # - Download and build third-party libraries.
 
+# Run this script with execution policy like this:
+# > powershell -ExecutionPolicy Bypass -File Setup.ps1
+
 #
 # Script arguments
 #
@@ -33,6 +36,11 @@ $contents_list  = @(
 		'https://casual-effects.com/g3d/data10/research/model/breakfast_room/breakfast_room.zip',
 		'breakfast_room.zip',
 		'breakfast_room'
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/sourceModels/RiggedFigure/RiggedFigure.dae',
+		'RiggedFigure.dae',
+		''
 	)
 )
 
@@ -103,7 +111,11 @@ if ($should_download) {
 		$zip_path = "$content_dir/$content_zip"
 		$unzip_path = "$content_dir/$content_unzip"
 		Download-URL $webclient $content_url $zip_path
-		Unzip $zip_path $unzip_path
+		
+		$file_ext = [IO.Path]::GetExtension($zip_path)
+		if ($file_ext -eq ".zip") {
+			Unzip $zip_path $unzip_path
+		}
 	}
 	
 	# TODO: How to close connection
