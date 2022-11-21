@@ -39,7 +39,37 @@ $contents_list  = @(
 	),
 	@(
 		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/sourceModels/RiggedFigure/RiggedFigure.dae',
-		'RiggedFigure.dae',
+		'KhronosGroup/RiggedFigure/RiggedFigure.dae',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf',
+		'KhronosGroup/DamagedHelmet/DamagedHelmet.gltf',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_AO.jpg',
+		'KhronosGroup/DamagedHelmet/Default_AO.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_albedo.jpg',
+		'KhronosGroup/DamagedHelmet/Default_albedo.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_emissive.jpg',
+		'KhronosGroup/DamagedHelmet/Default_emissive.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_metalRoughness.jpg',
+		'KhronosGroup/DamagedHelmet/Default_metalRoughness.jpg',
+		''
+	),
+	@(
+		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_normal.jpg',
+		'KhronosGroup/DamagedHelmet/Default_normal.jpg',
 		''
 	)
 )
@@ -110,6 +140,7 @@ if ($should_download) {
 		
 		$zip_path = "$content_dir/$content_zip"
 		$unzip_path = "$content_dir/$content_unzip"
+		Ensure-Subdirectory ([IO.Path]::GetDirectoryName($zip_path))
 		Download-URL $webclient $content_url $zip_path
 		
 		$file_ext = [IO.Path]::GetExtension($zip_path)
