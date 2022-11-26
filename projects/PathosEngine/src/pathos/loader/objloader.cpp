@@ -11,6 +11,7 @@
 // 0: Just use fallback material
 // 1: Assert if invalid material
 #define WARN_INVALID_FACE_MARTERIAL 0
+#define VERBOSE_LOG                 0
 
 // Vertex deduplication: https://vulkan-tutorial.com/Loading_models
 struct MetaVertex {
@@ -67,8 +68,8 @@ namespace pathos {
 				return bIsValid;
 			}
 		}
-		LOG(LogInfo, "Number of shapes: %d", (int32)tiny_shapes.size());
-		LOG(LogInfo, "Number of materials: %d", (int32)tiny_materials.size());
+		LOG(LogInfo, "    Number of shapes: %d", (int32)tiny_shapes.size());
+		LOG(LogInfo, "    Number of materials: %d", (int32)tiny_materials.size());
 
 		analyzeMaterials();
 		reconstructShapes();
@@ -191,8 +192,7 @@ namespace pathos {
 		pendingShapes.clear();
 
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
-			const tinyobj::shape_t& src = tiny_shapes[i];
-			const tinyobj::mesh_t& srcMesh = src.mesh;
+			const tinyobj::mesh_t& srcMesh = tiny_shapes[i].mesh;
 			PendingShape dst;
 
 			// int32 = face material id
@@ -201,7 +201,9 @@ namespace pathos {
 			std::map<int32, std::vector<MetaVertex>> metaVertices;
 			std::set<int32> normalInvalidFlags;
 
+#if VERBOSE_LOG
 			LOG(LogDebug, "Analyzing OBJ shape[%d]: %s", i, src.name.data());
+#endif
 
 			for (size_t f = 0; f < srcMesh.num_face_vertices.size(); ++f) {
 				int32 faceMaterialID = (int32)(srcMesh.material_ids[f]);
@@ -214,7 +216,9 @@ namespace pathos {
 			size_t numMaterials = dst.materialIDs.size();
 			size_t index_offset = 0;
 
+#if VERBOSE_LOG
 			LOG(LogDebug, "Number of materials for this shape: %d", numMaterials);
+#endif
 
 			for (size_t f = 0u; f < srcMesh.num_face_vertices.size(); ++f) {
 				int32 fv = srcMesh.num_face_vertices[f];
@@ -281,13 +285,17 @@ namespace pathos {
 				int32 mat = it.first;
 				if (normalInvalidFlags.find(mat) != normalInvalidFlags.end()) {
 					dst.normals[mat].clear();
+#if VERBOSE_LOG
 					LOG(LogWarning, "(Material ID = %d) Vertex normals are invalid and will be recalculated", mat);
+#endif
 				}
 			}
 
 			pendingShapes.emplace_back(dst);
 
+#if VERBOSE_LOG
 			LOG(LogDebug, "Shape has been parsed");
+#endif
 		}
 	}
 
@@ -302,35 +310,112 @@ namespace pathos {
 	Mesh* OBJLoader::craftMeshFrom(uint32 shapeIndex) {
 		return craftMesh(shapeIndex, shapeIndex);
 	}
-	Mesh* OBJLoader::craftMeshFromAllShapes() {
-		return craftMesh(0, static_cast<uint32>(pendingShapes.size() - 1));
+	Mesh* OBJLoader::craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial) {
+		return craftMesh(0, static_cast<uint32>(pendingShapes.size() - 1), bMergeShapesIfSameMaterial);
 	}
 
-	Mesh* OBJLoader::craftMesh(uint32 from, uint32 to) {
+	Mesh* OBJLoader::craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial) {
 		CHECK(0 <= from && from < pendingShapes.size());
 		CHECK(0 <= to && to < pendingShapes.size());
 		CHECK(from <= to);
 
 		Mesh* mesh = new Mesh;
 
-		for (unsigned int i = from; i <= to; ++i) {
-			PendingShape& shape = pendingShapes[i];
+		if (bMergeShapesIfSameMaterial) {
+			std::map<int32, std::vector<uint32>> materialToShapes;
+			for (uint32 shapeIx = from; shapeIx <= to; ++shapeIx) {
+				const PendingShape& shape = pendingShapes[shapeIx];
+				for (int32 materialID : shape.materialIDs) {
+					materialToShapes[materialID].push_back(shapeIx);
+				}
+			}
+			for (auto it = materialToShapes.begin(); it != materialToShapes.end(); ++it) {
+				const int32 materialID = it->first;
+				const std::vector<uint32>& shapeIxArray = it->second;
 
-			for (int32 materialID : shape.materialIDs) {
-#if WARN_INVALID_FACE_MARTERIAL
-				CHECK(materialID >= 0);
+				// Merged buffers
+				std::vector<float> positions, normals, texcoords;
+				std::vector<uint32> indices;
+				bool bValidNormal = true;
+				for (uint32 shapeIx : shapeIxArray) {
+					bValidNormal = bValidNormal && pendingShapes[shapeIx].containsValidNormals(materialID);
+				}
+
+#if 0
+				size_t posLength = 0, normLength = 0, texLength = 0, ixLength = 0;
+				for (uint32 shapeIx : shapeIxArray) {
+					posLength += pendingShapes[shapeIx].positions[materialID].size();
+					normLength += pendingShapes[shapeIx].normals[materialID].size();
+					texLength += pendingShapes[shapeIx].texcoords[materialID].size();
+					ixLength += pendingShapes[shapeIx].indices[materialID].size();
+				}
+
+				positions.resize(posLength);
+				normals.resize(normLength);
+				texcoords.resize(texLength);
+				indices.resize(ixLength);
+
+				posLength = normLength = texLength = ixLength = 0;
+				for (uint32 shapeIx : shapeIxArray) {
+					auto& partPositions = pendingShapes[shapeIx].positions[materialID];
+					auto& partNormals = pendingShapes[shapeIx].normals[materialID];
+					auto& partTexcoords = pendingShapes[shapeIx].texcoords[materialID];
+					auto& partIndices = pendingShapes[shapeIx].indices[materialID];
+					positions.insert(positions.begin() + posLength, partPositions.begin(), partPositions.end());
+					normals.insert(normals.begin() + normLength, partNormals.begin(), partNormals.end());
+					texcoords.insert(texcoords.begin() + texLength, partTexcoords.begin(), partTexcoords.end());
+					indices.insert(indices.begin() + ixLength, partIndices.begin(), partIndices.end());
+					for (size_t ix = ixLength; ix < ixLength + partIndices.size(); ++ix) {
+						indices[ix] += (uint32)(posLength / 3);
+					}
+					posLength += partPositions.size();
+					normLength += partNormals.size();
+					texLength += partTexcoords.size();
+					ixLength += partIndices.size();
+				}
+#else
+				std::unordered_map<MetaVertex, uint32> uniqueVertices;
+				std::vector<MetaVertex> metaVertices;
+				for (uint32 shapeIx : shapeIxArray) {
+					auto& partPositions = pendingShapes[shapeIx].positions[materialID];
+					auto& partNormals = pendingShapes[shapeIx].normals[materialID];
+					auto& partTexcoords = pendingShapes[shapeIx].texcoords[materialID];
+					auto& partIndices = pendingShapes[shapeIx].indices[materialID];
+
+					for (uint32 i : partIndices) {
+						MetaVertex metaV;
+						metaV.position = vector3(partPositions[i * 3 + 0], partPositions[i * 3 + 1], partPositions[i * 3 + 2]);
+						metaV.texcoord = vector2(partTexcoords[i * 2 + 0], partTexcoords[i * 2 + 1]);
+						if (bValidNormal) {
+							metaV.normal = vector3(partNormals[i * 3 + 0], partNormals[i * 3 + 1], partNormals[i * 3 + 2]);
+						} else {
+							metaV.normal = vector3(0.0f);
+						}
+
+						if (uniqueVertices.count(metaV) == 0) {
+							uniqueVertices[metaV] = (uint32)metaVertices.size();
+							metaVertices.push_back(metaV);
+
+							positions.push_back(metaV.position.x);
+							positions.push_back(metaV.position.y);
+							positions.push_back(metaV.position.z);
+							texcoords.push_back(metaV.texcoord.x);
+							texcoords.push_back(metaV.texcoord.y);
+							normals.push_back(metaV.normal.x);
+							normals.push_back(metaV.normal.y);
+							normals.push_back(metaV.normal.z);
+						}
+						indices.push_back(uniqueVertices[metaV]);
+					}
+				}
 #endif
-				auto& positions = shape.positions[materialID];
-				auto& normals = shape.normals[materialID];
-				auto& texcoords = shape.texcoords[materialID];
-				auto& indices = shape.indices[materialID];
 
 				MeshGeometry* geom = new MeshGeometry;
 				geom->setDrawArraysMode(false);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
-				if (shape.containsValidNormals(materialID)) {
+				if (bValidNormal) {
 					geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
 				} else {
 					geom->calculateNormals();
@@ -338,6 +423,34 @@ namespace pathos {
 				geom->calculateTangentBasis();
 
 				mesh->add(geom, getMaterial(materialID));
+			}
+		} else {
+			for (uint32 i = from; i <= to; ++i) {
+				PendingShape& shape = pendingShapes[i];
+
+				for (int32 materialID : shape.materialIDs) {
+#if WARN_INVALID_FACE_MARTERIAL
+					CHECK(materialID >= 0);
+#endif
+					auto& positions = shape.positions[materialID];
+					auto& normals = shape.normals[materialID];
+					auto& texcoords = shape.texcoords[materialID];
+					auto& indices = shape.indices[materialID];
+
+					MeshGeometry* geom = new MeshGeometry;
+					geom->setDrawArraysMode(false);
+					geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
+					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
+					geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
+					if (shape.containsValidNormals(materialID)) {
+						geom->updateNormalData(&normals[0], static_cast<uint32>(normals.size()));
+					} else {
+						geom->calculateNormals();
+					}
+					geom->calculateTangentBasis();
+
+					mesh->add(geom, getMaterial(materialID));
+				}
 			}
 		}
 

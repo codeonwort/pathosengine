@@ -9,11 +9,12 @@
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/text/text_actor.h"
+#include "pathos/loader/asset_streamer.h"
 
 #include <time.h>
 
 #define FOV_Y                     60.0f
-#define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, 1.0f))
+#define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, -1.0f))
 #define SUN_ILLUMINANCE           vector3(2.0f)
 #define CAMERA_POSITION           vector3(0.0f, 2.0f, 6.0f)
 #define CAMERA_LOOK_AT            vector3(0.0f, 2.0f, 4.0f)
@@ -22,12 +23,17 @@
 #define FILE_MY_ANIMTEST          "resources/models/animtest/animtest.dae"
 #define DIR_RIGGED_FIGURE         "resources_external/KhronosGroup/RiggedFigure/"
 #define FILE_RIGGED_FIGURE        "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
+#define FILE_LPS_HEAD             "resources_external/LPSHead/head.obj"
+#define DIR_LPS_HEAD              "resources_external/LPSHead/"
 #define DOWNLOAD_ALERT_MSG1       L"If you can't see 2 animated models, run Setup.ps1"
 #define DOWNLOAD_ALERT_MSG2       L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
 
 
 void World2::onInitialize()
 {
+	AssetReferenceWavefrontOBJ assetRef(FILE_LPS_HEAD, DIR_LPS_HEAD);
+	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World2::onLoadWavefrontOBJ, 0);
+
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 
 	playerController = spawnActor<PlayerController>();
@@ -176,4 +182,18 @@ void World2::loadDAE()
 	} else {
 		LOG(LogError, "Failed to load model: %s", FILE_RIGGED_FIGURE);
 	}
+}
+
+void World2::onLoadWavefrontOBJ(OBJLoader* loader, uint64 payload)
+{
+	if (!loader->isValid()) {
+		LOG(LogError, "Failed to load: %s", FILE_LPS_HEAD);
+		return;
+	}
+
+	// #todo-sss: Implement subsurface scattering using this model.
+	lpsHead = spawnActor<StaticMeshActor>();
+	lpsHead->setStaticMesh(loader->craftMeshFromAllShapes(true));
+	lpsHead->setActorLocation(0.0f, 10.0f, -10.0f);
+	lpsHead->setActorScale(32.0f);
 }

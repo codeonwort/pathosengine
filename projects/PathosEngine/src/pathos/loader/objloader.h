@@ -87,7 +87,7 @@ namespace pathos {
 		Mesh* craftMeshFrom(uint32 shapeIndex);
 
 		// CAUTION: Must be called in render thread
-		Mesh* craftMeshFromAllShapes();
+		Mesh* craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial = false);
 
 		const std::vector<Material*>& getMaterials() { return materials; }
 
@@ -95,7 +95,7 @@ namespace pathos {
 		void analyzeMaterials();
 		void reconstructShapes();
 		Material* getMaterial(int32 index);
-		Mesh* craftMesh(uint32 from, uint32 to); // both inclusive
+		Mesh* craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
 
 	private:
 		std::string objFile;

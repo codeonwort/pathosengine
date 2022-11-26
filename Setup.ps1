@@ -76,6 +76,11 @@ $contents_list  = @(
 		'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF/Default_normal.jpg',
 		'KhronosGroup/DamagedHelmet/Default_normal.jpg',
 		''
+	),
+	@(
+		'https://casual-effects.com/g3d/data10/research/model/lpshead/lpshead.zip',
+		'LPSHead.zip',
+		'LPSHead'
 	)
 )
 

@@ -12,6 +12,7 @@ namespace pathos {
 	class DirectionalLightActor;
 	class PointLightActor;
 	class TextMeshActor;
+	class OBJLoader;
 }
 class PlayerController;
 
@@ -24,6 +25,8 @@ public:
 	void setupScene();
 	void loadDAE();
 
+	void onLoadWavefrontOBJ(OBJLoader* loader, uint64 payload);
+
 private:
 	PlayerController* playerController = nullptr;
 
@@ -32,6 +35,8 @@ private:
 
 	StaticMeshActor* ground = nullptr;
 	StaticMeshActor* godRaySourceMesh = nullptr;
+
+	StaticMeshActor* lpsHead = nullptr;
 
 	SkinnedMesh* daeModel_my = nullptr;
 	SkinnedMesh* daeModel_riggedFigure = nullptr;
