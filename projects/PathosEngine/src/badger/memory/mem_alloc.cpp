@@ -1,9 +1,8 @@
 #include "mem_alloc.h"
-#include "badger/assertion/assertion.h"
 
 StackAllocator::StackAllocator(uint32 bytes)
 {
-	memblock = malloc(bytes);
+	memblock = ::malloc(bytes);
 	current = memblock;
 	totalBytes = bytes;
 	usedBytes = 0;
@@ -11,7 +10,7 @@ StackAllocator::StackAllocator(uint32 bytes)
 
 StackAllocator::~StackAllocator()
 {
-	free(memblock);
+	::free(memblock);
 }
 
 void* StackAllocator::alloc(uint32 bytes)
