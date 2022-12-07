@@ -86,6 +86,11 @@ $contents_list  = @(
 		'https://casual-effects.com/g3d/data10/research/model/sportsCar/sportsCar.zip',
 		'SportsCar.zip',
 		'SportsCar'
+	),
+	@(
+		'https://casual-effects.com/g3d/data10/research/model/scrubPine/pine.zip',
+		'ScrubPineTree.zip',
+		'ScrubPineTree'
 	)
 )
 

@@ -53,5 +53,8 @@ private:
 	Mesh* carDummyMesh = nullptr;
 	Mesh* landscapeMesh = nullptr;
 
+	std::vector<StaticMeshActor*> treeActors;
+	Mesh* treeMesh = nullptr;
+
 	PlayerController* playerController = nullptr;
 };

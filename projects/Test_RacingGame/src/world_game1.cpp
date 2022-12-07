@@ -14,6 +14,8 @@
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 
+#include "badger/math/random.h"
+
 #define SCENE_DESC_FILE          "resources/racing_game/test_scene.json"
 #define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/landscape.jpg"
 
@@ -28,10 +30,16 @@
 #define PLAYERCAM_HEIGHT_OFFSET  2.8f
 #define PLAYERCAM_FORWARD_OFFSET 10.0f
 
+#define NUM_TREES                100
+
 const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	{
 		"resources_external/SportsCar/sportsCar.obj",
 		"resources_external/SportsCar/",
+	},
+	{
+		"resources_external/ScrubPineTree/scrubPine.obj",
+		"resources_external/ScrubPineTree/",
 	},
 };
 
@@ -134,6 +142,18 @@ void World_Game1::reloadScene()
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 	scene.cloud = cloudscape;
 
+	treeActors.clear();
+	for (uint32 i = 0; i < NUM_TREES; ++i) {
+		StaticMeshActor* tree = spawnActor<StaticMeshActor>();
+		float x = (Random() + 0.02f) * 500.0f;
+		float z = (Random() + 0.02f) * 500.0f;
+		if (Random() < 0.5f) x *= -1;
+		if (Random() < 0.5f) z *= -1;
+		tree->setActorLocation(x, -2.0f, z);
+		tree->setActorScale(0.05f);
+		treeActors.push_back(tree);
+	}
+
 	setupScene();
 }
 
@@ -142,6 +162,9 @@ void World_Game1::setupScene()
 	playerCar->setStaticMesh(carMesh ? carMesh : carDummyMesh);
 	landscape->setStaticMesh(landscapeMesh);
 	landscape->getStaticMeshComponent()->castsShadow = false;
+	for (size_t i = 0; i < treeActors.size(); ++i) {
+		treeActors[i]->setStaticMesh(treeMesh);
+	}
 }
 
 void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload)
@@ -155,6 +178,10 @@ void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 
 	if (assetIndex == 0) {
 		carMesh = loader->craftMeshFromAllShapes();
+		setupScene();
+	} else if (assetIndex == 1) {
+		treeMesh = loader->craftMeshFromAllShapes();
+		treeMesh->doubleSided = true;
 		setupScene();
 	}
 }
