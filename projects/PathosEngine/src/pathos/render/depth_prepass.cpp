@@ -13,36 +13,12 @@
 
 namespace pathos {
 
-	class DepthPrepassVS : public ShaderStage {
-	public:
-		DepthPrepassVS() : ShaderStage(GL_VERTEX_SHADER, "DepthPrepassVS")
-		{
-			addDefine("VERTEX_SHADER", 1);
-			setFilepath("depth_prepass.glsl");
-		}
-	};
-
-	class DepthPrepassFS : public ShaderStage {
-	public:
-		DepthPrepassFS() : ShaderStage(GL_FRAGMENT_SHADER, "DepthPrepassFS")
-		{
-			addDefine("FRAGMENT_SHADER", 1);
-			setFilepath("depth_prepass.glsl");
-		}
-	};
-
-	DEFINE_SHADER_PROGRAM2(Program_DepthPrepass, DepthPrepassVS, DepthPrepassFS);
-
-}
-
-namespace pathos {
-
 	void DepthPrepass::initializeResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
-		uboPerObject.init<Material::UBO_PerObject>();
+		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_DepthPrepass");
 	}
 
 	void DepthPrepass::releaseResources(RenderCommandList& cmdList)
@@ -55,9 +31,6 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DepthPrepass);
-		cmdList.useProgram(program.getGLName());
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {

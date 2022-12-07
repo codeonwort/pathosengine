@@ -35,33 +35,26 @@ namespace pathos {
 
 		if (castsShadow) {
 			for (size_t i = 0u; i < numSections; ++i) {
-				MeshGeometry* G = geoms[i];
-				Material* M = materials[i];
-
 				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>(scene);
 				proxy->modelMatrix = getLocalMatrix();
 				proxy->geometry = geoms[i];
+				proxy->material = materials[i];
 				proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
+				proxy->doubleSided = mesh->doubleSided;
+				proxy->renderInternal = mesh->renderInternal;
 
-				if (M->bWireframe) {
-					scene->proxyList_wireframeShadowMesh.push_back(proxy);
-				} else {
-					scene->proxyList_shadowMesh.push_back(proxy);
-				}
+				scene->addShadowMeshProxy(proxy);
 			}
 		}
 
 		for (size_t i = 0u; i < numSections; ++i) {
-			MeshGeometry* G = geoms[i];
-			Material* M = materials[i];
-
 			StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
 			proxy->doubleSided = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix = getLocalMatrix();
 			proxy->prevModelMatrix = prevModelMatrix;
-			proxy->geometry = G;
-			proxy->material = M;
+			proxy->geometry = geoms[i];
+			proxy->material = materials[i];
 			proxy->worldBounds = calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
 			scene->addStaticMeshProxy(proxy);

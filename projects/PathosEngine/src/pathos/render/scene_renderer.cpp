@@ -75,41 +75,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 
-	struct UBO_PerFrame {
-		matrix4               view;
-		matrix4               inverseView;
-		matrix3x4             view3x3; // Name is 3x3, but type should be 3x4 due to how padding works in glsl
-		matrix4               viewProj;
-		matrix4               proj;
-		matrix4               inverseProj;
-
-		// For reprojection
-		matrix4               prevView;
-		matrix4               prevInverseView;
-		matrix4               prevViewProj;
-
-		vector4               projParams;
-		vector4               temporalJitter; // (x, y, ?, ?)
-		vector4               screenResolution; // (w, h, 1/w, 1/h)
-		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-		vector4               time; // (currentTime, ?, ?, ?)
-
-		matrix4               sunViewProj[4];
-		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
-
-		vector3               eyeDirection;
-		float                 __pad0;
-
-		vector3               eyePosition;
-		float                 __pad1;
-
-		vector3               ws_eyePosition;
-		uint32                sunExists;
-
-		DirectionalLightProxy sunLight;
-	};
-	static constexpr GLuint SCENE_UNIFORM_BINDING_INDEX = 0;
-
 	SceneRenderer::SceneRenderer()
 		: scene(nullptr)
 		, camera(nullptr)
@@ -255,7 +220,8 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 			// #todo-performance: This is incredibly slow in debug build
-			sunShadowMap->renderShadowMap(cmdList, scene, camera);
+			sunShadowMap->renderShadowMap(cmdList, scene, camera, cachedPerFrameUBOData);
+			revertHackedSceneUniformBuffer(cmdList);
 		}
 
 		{
@@ -780,11 +746,17 @@ namespace pathos {
 		data.sunExists = scene->proxyList_directionalLight.size() > 0;
 		data.sunLight = *(scene->proxyList_directionalLight[0]);
 
-		ubo_perFrame->update(cmdList, SCENE_UNIFORM_BINDING_INDEX, &data);
+		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 
 		prevView = data.view;
 		prevInverseView = data.inverseView;
 		prevViewProj = data.viewProj;
+
+		cachedPerFrameUBOData = std::move(data);
+	}
+
+	void SceneRenderer::revertHackedSceneUniformBuffer(RenderCommandList& cmdList) {
+		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &cachedPerFrameUBOData);
 	}
 
 }

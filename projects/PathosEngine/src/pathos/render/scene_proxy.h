@@ -45,6 +45,8 @@ namespace pathos {
 		const StaticMeshProxyList& getOpaqueStaticMeshes() const { return proxyList_staticMeshOpaque; }
 		const StaticMeshProxyList& getTranslucentStaticMeshes() const { return proxyList_staticMeshTranslucent; }
 
+		void addShadowMeshProxy(struct ShadowMeshProxy* proxy);
+
 		//
 		// Utilities to check if various proxies are valid.
 		//
@@ -60,7 +62,7 @@ namespace pathos {
 		Camera                                     camera;
 
 		bool                                       bScreenshotReserved = false;
-		vector2i                                   screenshotSize;
+		vector2i                                   screenshotSize = vector2i(0, 0);
 		std::vector<uint16>                        screenshotRawData;
 
 		SceneRenderSettings                        sceneRenderSettingsOverride;
@@ -75,8 +77,8 @@ namespace pathos {
 
 		// Shadowmap rendering
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
-		std::vector<struct ShadowMeshProxy*>       proxyList_wireframeShadowMesh;
 
+		// Standard mesh proxies
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		
@@ -88,7 +90,7 @@ namespace pathos {
 		// #todo-godray: Wrap with GodRayProxy class.
 		//               These are filled by Scene::createRenderProxy() for now.
 		std::vector<StaticMeshProxy*>              godRayMeshes;
-		vector3                                    godRayLocation;
+		vector3                                    godRayLocation = vector3(0.0f);
 
 		// IBL
 		GLuint                                     irradianceMap = 0;

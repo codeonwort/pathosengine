@@ -18,34 +18,6 @@ namespace pathos {
 	// Light frustum could be too large if we use camera's zFar as is.
 	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 50.0f, "Custom zFar for CSM");
 
-	struct UBO_CascadedShadowMap {
-		static constexpr uint32 BINDING_POINT = 1;
-
-		matrix4 depthMVP;
-	};
-
-	class CascadedShadowMapVS : public ShaderStage {
-	public:
-		CascadedShadowMapVS() : ShaderStage(GL_VERTEX_SHADER, "CascadedShadowMapVS") {
-			addDefine("VERTEX_SHADER", 1);
-			setFilepath("cascaded_shadow_map.glsl");
-		}
-	};
-
-	class CascadedShadowMapFS : public ShaderStage {
-	public:
-		CascadedShadowMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "CascadedShadowMapFS") {
-			addDefine("FRAGMENT_SHADER", 1);
-			setFilepath("cascaded_shadow_map.glsl");
-		}
-	};
-
-	DEFINE_SHADER_PROGRAM2(Program_CSM, CascadedShadowMapVS, CascadedShadowMapFS);
-
-}
-
-namespace pathos {
-
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(destroyed, "Resource leak");
 	}
@@ -59,7 +31,8 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_CascadedShadowMap");
 
-		ubo.init<UBO_CascadedShadowMap>("UBO_CascadedShadowMap");
+		uboPerFrame.init<UBO_PerFrame>("UBO_PerFrame_CSM");
+		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_CSM");
 	}
 
 	void DirectionalShadowMap::releaseResources(RenderCommandList& cmdList) {
@@ -69,19 +42,24 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera) {
+	void DirectionalShadowMap::renderShadowMap(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		const Camera* camera,
+		const UBO_PerFrame& cachedPerFrameUBOData)
+	{
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		const ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CSM);
-
-		cmdList.useProgram(program.getGLName());
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.enable(GL_DEPTH_CLAMP); // Let vertices farther than zFar to be clamped to zFar
 		cmdList.depthFunc(GL_LESS);
+
+		uint32 currentProgramHash = 0;
+		uint32 currentMIID = 0xffffffff;
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
 		for (uint32 i = 0u; i < sceneContext.numCascades; ++i) {
@@ -92,36 +70,82 @@ namespace pathos {
 			pathos::checkFramebufferStatus(cmdList, fbo, "DirectionalShadowMap::renderShadowMap");
 
 			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
-			const matrix4& VP = viewProjectionMatrices[i];
 
-			for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
-				matrix4 mvp = VP * batch->modelMatrix;
+			// Hack uboPerFrame.
+			{
+				UBO_PerFrame uboData = cachedPerFrameUBOData;
+				uboData.view = viewMatrices[i];
+				uboData.viewProj = viewProjectionMatrices[i];
+				uboData.temporalJitter = vector4(0.0f);
 
-				UBO_CascadedShadowMap uboData;
-				uboData.depthMVP = mvp;
-				ubo.update(cmdList, UBO_CascadedShadowMap::BINDING_POINT, &uboData);
-
-				batch->geometry->activate_position(cmdList);
-				batch->geometry->activateIndexBuffer(cmdList);
-				batch->geometry->drawPrimitive(cmdList);
+				uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, &uboData);
 			}
 
-			if (scene->proxyList_wireframeShadowMesh.size() > 0) {
-				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			for (ShadowMeshProxy* proxy : scene->proxyList_shadowMesh) {
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
+				
+				// #todo-frustum-culling: Frustum culling for CSM
+				// ...
 
-				for (ShadowMeshProxy* batch : scene->proxyList_wireframeShadowMesh) {
-					matrix4 mvp = VP * batch->modelMatrix;
+				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
+				bool bShouldUpdateMaterialParameters = (!materialShader->bTrivialDepthOnlyPass)
+					&& (bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID()));
+				bool bUseWireframeMode = material->bWireframe;
+				currentProgramHash = materialShader->programHash;
+				currentMIID = material->internal_getMaterialInstanceID();
 
-					UBO_CascadedShadowMap uboData;
-					uboData.depthMVP = mvp;
-					ubo.update(cmdList, UBO_CascadedShadowMap::BINDING_POINT, &uboData);
+				if (bShouldBindProgram) {
+					SCOPED_DRAW_EVENT(BindMaterialProgram);
 
-					batch->geometry->activate_position(cmdList);
-					batch->geometry->activateIndexBuffer(cmdList);
-					batch->geometry->drawPrimitive(cmdList);
+					uint32 programName = materialShader->program->getGLName();
+					CHECK(programName != 0 && programName != 0xffffffff);
+					cmdList.useProgram(programName);
 				}
 
-				cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				// Update UBO (per object)
+				{
+					Material::UBO_PerObject uboData;
+					uboData.modelTransform = proxy->modelMatrix;
+					uboData.prevModelTransform = proxy->modelMatrix; // Doesn't matter
+					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+				}
+
+				// Update UBO (material)
+				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
+					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
+					material->internal_fillUniformBuffer(uboMemory);
+					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
+				}
+
+				// #todo-material-assembler: How to detect if binding textures is mandatory?
+				// Example cases:
+				// - The vertex shader uses VTF(Vertex Texture Fetch)
+				// - The pixel shader uses discard
+				if (bShouldUpdateMaterialParameters) {
+					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+					}
+				}
+
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided) cmdList.disable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+				if (materialShader->bTrivialDepthOnlyPass) {
+					proxy->geometry->activate_position(cmdList);
+				} else {
+					proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
+				}
+
+				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->drawPrimitive(cmdList);
+
+				// #todo-renderer: Batching by same state
+				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
+				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
+				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 		}
 
@@ -147,6 +171,7 @@ namespace pathos {
 
 	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades)
 	{
+		viewMatrices.clear();
 		viewProjectionMatrices.clear();
 
 		auto calcBounds = [this](const vector3* frustum) -> void {
@@ -170,6 +195,7 @@ namespace pathos {
 
 			matrix4 lightView = glm::lookAt(center, center + L_forward, L_up);
 			matrix4 projection = glm::ortho(-lengths.x, lengths.x, -lengths.y, lengths.y, -lengths.z, lengths.z);
+			viewMatrices.push_back(lightView);
 			viewProjectionMatrices.emplace_back(projection * lightView);
 		};
 

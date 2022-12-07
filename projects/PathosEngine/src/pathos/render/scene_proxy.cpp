@@ -28,7 +28,6 @@ namespace pathos {
 		proxyList_pointLight.clear();
 		proxyList_rectLight.clear();
 		proxyList_shadowMesh.clear();
-		proxyList_wireframeShadowMesh.clear();
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
 		skybox = nullptr;
@@ -130,6 +129,14 @@ namespace pathos {
 		} else {
 			proxyList_staticMeshOpaque.push_back(proxy);
 		}
+	}
+
+	void SceneProxy::addShadowMeshProxy(ShadowMeshProxy* proxy) {
+		if (proxy->material->internal_getMaterialShader() == nullptr) {
+			return;
+		}
+
+		proxyList_shadowMesh.push_back(proxy);
 	}
 
 }
