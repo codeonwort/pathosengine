@@ -14,14 +14,13 @@ namespace pathos {
 	class StaticMeshActor;
 	class Mesh;
 	class VolumeTexture;
+	class OBJLoader;
 }
 class PlayerController;
 
 class World_Game1 : public World {
 	
 public:
-	World_Game1();
-
 	// BEGIN_INTERFACE: World
 	virtual void onInitialize() override;
 	virtual void onTick(float deltaSeconds) override;
@@ -30,6 +29,9 @@ public:
 	void prepareAssets();
 	void reloadScene();
 	void setupScene();
+
+private:
+	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
 	GLuint weatherTexture = 0;
@@ -43,10 +45,12 @@ private:
 
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;
-	StaticMeshActor* sphere0 = nullptr;
+
+	StaticMeshActor* playerCar = nullptr;
 	StaticMeshActor* landscape = nullptr; // #todo-landscape: Implement LandscapeActor
 
-	Mesh* sphereMesh = nullptr;
+	Mesh* carMesh = nullptr;
+	Mesh* carDummyMesh = nullptr;
 	Mesh* landscapeMesh = nullptr;
 
 	PlayerController* playerController = nullptr;

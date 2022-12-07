@@ -95,7 +95,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	vector3 linearVelocity = linearSpeed * forwardDir;
 
 	// #todo-game: torque
-	float turnRate = powf(badger::min(1.0f, fabs(linearSpeed) / 500.0f), 3.0f);
+	float turnRate = powf(badger::min(1.0f, fabs(linearSpeed) / 50.0f), 3.0f);
 	//LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
 	if (linearSpeed > 0.0f) {
 		pawnRotation.yaw -= turnRate * powerTurn * deltaSeconds;
@@ -106,7 +106,11 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	vector3 pawnLoc = playerPawn->getActorLocation();
 	pawnLoc += linearVelocity * deltaSeconds;
 	playerPawn->setActorLocation(pawnLoc);
-	playerPawn->setActorRotation(pawnRotation);
+	
+	// Because SportsCar asset is facing +X...
+	Rotator pawnMeshRotation = pawnRotation;
+	pawnMeshRotation.yaw += 90.0f;
+	playerPawn->setActorRotation(pawnMeshRotation);
 
 	vector3 cameraLoc = pawnLoc;
 	cameraLoc -= forwardDir * cameraForwardOffset;
