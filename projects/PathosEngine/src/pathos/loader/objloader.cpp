@@ -54,19 +54,23 @@ namespace pathos {
 		objFile = ResourceFinder::get().find(inObjFile);
 		mtlDir = ResourceFinder::get().find(inMtlDir);
 
+		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
+
 		// Read data using tinyobjloader
-		std::string err;
-		bool loaded = tinyobj::LoadObj(
-			&tiny_attrib, &tiny_shapes, &tiny_materials, &err,
+		std::string warn, err;
+		bool bLoadSuccessful = tinyobj::LoadObj(
+			&tiny_attrib, &tiny_shapes, &tiny_materials, &warn, &err,
 			objFile.c_str(), mtlDir.c_str());
 
-		LOG(LogInfo, "Loading .obj file: %s", objFile.data());
+		if (!warn.empty()) {
+			LOG(LogWarning, "Warning while loading OBJ file: %s", warn.data());
+		}
 		if (!err.empty()) {
 			LOG(LogError, "Error while loading OBJ file: %s", err.data());
-			if (!loaded) {
-				bIsValid = false;
-				return bIsValid;
-			}
+		}
+		if (!bLoadSuccessful) {
+			bIsValid = false;
+			return bIsValid;
 		}
 		LOG(LogInfo, "    Number of shapes: %d", (int32)tiny_shapes.size());
 		LOG(LogInfo, "    Number of materials: %d", (int32)tiny_materials.size());
