@@ -7,6 +7,13 @@
 
 namespace pathos {
 
+	// #todo-vertex-pool
+	// - Accumulate whenever vertex/index buffers are filled
+	//   to guess the default size of global vertex pool I'll make in future... probably.
+	// - Loading World_RC1, World1, World_LightRoom, and World_Sponza
+	//   increase the total usage as 10.477 -> 54.465 -> 69.670 -> 87.922 MiB.
+	size_t gTotalGeometryBufferSize = 0;
+
 	static constexpr GLuint positionLocation  = 0;
 	static constexpr GLuint uvLocation        = 1;
 	static constexpr GLuint normalLocation    = 2;
@@ -58,6 +65,7 @@ namespace pathos {
 			// 'data' could be volatile, so flush here
 			TEMP_FLUSH_RENDER_COMMAND(true);
 		}
+		gTotalGeometryBufferSize += size;
 	}
 
 	// #todo-renderthread: No flush when called in non-render thread

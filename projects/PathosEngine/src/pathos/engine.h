@@ -90,6 +90,7 @@ namespace pathos {
 			const std::vector<std::string>& inGpuCounterNames,
 			const std::vector<float>& inGpuCounterTimes);
 
+		// proc = [](const std::string& command) { ... }
 		void registerExec(const char* command, ExecProc proc);
 		bool execute(const std::string& command);
 

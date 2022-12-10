@@ -44,6 +44,10 @@ void changeWorld() {
 	gEngine->setWorld(newWorld);
 }
 
+namespace pathos {
+	extern size_t gTotalGeometryBufferSize;
+}
+
 int main(int argc, char** argv) {
 	EngineConfig conf;
 	conf.windowWidth  = WINDOW_WIDTH;
@@ -61,6 +65,16 @@ int main(int argc, char** argv) {
 		gEngine->getInputSystem()->getDefaultInputManager()->bindButtonPressed("switchWorld", switchWorldBinding, changeWorld);
 
 		gConsole->addLine(L"Press 'P' to switch between sample worlds.");
+	}
+
+	{
+		gEngine->registerExec("vertex_usage", [](const std::string& command) {
+			char msg[256];
+			sprintf_s(msg, "Vertex usage : %zu bytes (%.3lf MiB)",
+				gTotalGeometryBufferSize,
+				(double)gTotalGeometryBufferSize / (1024.0 * 1024.0));
+			gConsole->addLine(msg, false, true);
+		});
 	}
 
 	gEngine->start();
