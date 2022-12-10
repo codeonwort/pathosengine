@@ -3,8 +3,15 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/engine_policy.h"
+#include "pathos/console.h"
 
 #include "badger/math/minmax.h"
+
+namespace pathos {
+	
+	static ConsoleVariable<float> cvar_ssrObjectThickness("r.ssr.objectThickness", 1.0f, "(Unit: meters) objects are assumed to have a constant thickness in camera space");
+
+}
 
 namespace pathos {
 
@@ -94,7 +101,8 @@ namespace pathos {
 
 		vector2 sceneSize;
 		vector2 preconvolutionSize;
-		uint32 hiZMipCount;
+		uint32  hiZMipCount;
+		float   objectThickness;
 	};
 	class ScreenSpaceRayTracingFS : public ShaderStage {
 	public:
@@ -376,9 +384,10 @@ namespace pathos {
 			cmdList.useProgram(program.getGLName());
 
 			UBO_ScreenSpaceRayTracing uboData;
-			uboData.sceneSize = vector2(sceneContext.sceneWidth, sceneContext.sceneHeight);
+			uboData.sceneSize          = vector2(sceneContext.sceneWidth, sceneContext.sceneHeight);
 			uboData.preconvolutionSize = vector2(sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
-			uboData.hiZMipCount = sceneContext.sceneDepthHiZMipmapCount;
+			uboData.hiZMipCount        = sceneContext.sceneDepthHiZMipmapCount;
+			uboData.objectThickness    = badger::max(0.01f, cvar_ssrObjectThickness.getFloat());
 			uboRayTracing.update(cmdList, UBO_ScreenSpaceRayTracing::BINDING_POINT, &uboData);
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_raytracing);

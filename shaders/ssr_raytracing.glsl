@@ -16,7 +16,6 @@
 #define HIZ_MAX_LEVEL        6
 // #todo-ssr: Blocky artifacts if too small, but I want this value below 32.
 #define MAX_ITERATIONS       64
-#define MAX_THICKNESS        100.0
 
 // Set to 1 to disable HiZ and perform naive linear search.
 #define DEBUG_LINEAR_SEARCH  0
@@ -29,9 +28,10 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_RayTracing {
-	vec2 sceneSize;
-	vec2 preconvolutionSize;
-	uint hiZMipCount;
+	vec2  sceneSize;
+	vec2  preconvolutionSize;
+	uint  hiZMipCount;
+	float objectThickness;
 } ubo;
 
 layout (binding = 0) uniform sampler2D inSceneColor;
@@ -193,7 +193,7 @@ bool traceHiZ(
 		float thickness = rayVS.z - cellMinVS.z;
 
 		bool crossed = (isBackwardRay && (cellMinZ > ray.z))
-					|| ((thickness <= MAX_THICKNESS) && crossedCellBoundary(oldCellIx, newCellIx));
+					|| ((thickness <= ubo.objectThickness) && crossedCellBoundary(oldCellIx, newCellIx));
 		
 		if (crossed) {
 			ray = intersectCellBoundary(o, d, oldCellIx, cellCount, crossStep, crossOffset);
