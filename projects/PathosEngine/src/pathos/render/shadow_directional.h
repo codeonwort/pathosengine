@@ -34,6 +34,7 @@ namespace pathos {
 		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
 
 		float getShadowMapZFar() const;
+		inline float getZSlice(uint32 ix) const { return zSlices[ix]; }
 
 	private:
 		void setLightDirection(const vector3& direction);
@@ -51,7 +52,7 @@ namespace pathos {
 		vector3 lightDirection = vector3(0.0f, -1.0f, 0.0f);
 		std::vector<matrix4> viewMatrices; // Light view matrices
 		std::vector<matrix4> viewProjectionMatrices; // ViewProj matrices that perfectly cover each camera frustum
-
+		float zSlices[4];
 	};
 
 }

@@ -43,6 +43,7 @@ namespace pathos {
 
 		matrix4               sunViewProj[4];
 		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
+		vector4               csmDepths;     // 4 cascades
 
 		vector3               eyeDirection;
 		float                 __pad0;

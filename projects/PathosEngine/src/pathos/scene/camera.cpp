@@ -172,7 +172,8 @@ namespace pathos {
 	void Camera::getFrustumVertices(
 		std::vector<vector3>& outFrustum,
 		uint32 numCascades,
-		float zFarOverride /*= -1.0f*/) const
+		float zFarOverride /*= -1.0f*/,
+		float* outZSlices /*= nullptr*/) const
 	{
 		CHECK(numCascades >= 1);
 
@@ -189,11 +190,24 @@ namespace pathos {
 		float zi, hwi, hhi;
 		outFrustum.resize(4 * (1 + numCascades));
 		for (uint32 i = 0u; i <= numCascades; ++i) {
+#if 0
 			float k = static_cast<float>(i) / static_cast<float>(numCascades);
-			// #todo-shadow: Needs exponential division. Close view needs far more precision than just 1/n range of depths.
-			//k = powf(k, 2.0f);
-
 			zi = zn + (zf - zn) * k;
+#else
+			// https://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
+			const float correctionStrength = 0.9f;
+			float ratio = (float)(i) / numCascades;
+			zi = glm::mix(
+				zn + ratio * (zf - zn),
+				zn * ::powf(zf / zn, ratio),
+				correctionStrength);
+			float k = (zi - zn) / (zf - zn);
+
+			if (outZSlices != nullptr && i > 0)
+			{
+				outZSlices[i - 1] = zi;
+			}
+#endif
 
 			hwi = hw_near + (hw_far - hw_near) * k;
 			hhi = hh_near + (hh_far - hh_near) * k;

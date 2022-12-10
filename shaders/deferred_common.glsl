@@ -99,6 +99,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	mat4x4 sunViewProjection[4];
 	vec4 sunParameters;
+	vec4 csmDepths;
 	
 	vec3 eyeDirection;   // view space
 	float _padding0;

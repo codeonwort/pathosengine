@@ -31,9 +31,22 @@ struct OmniShadowQuery {
 float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	vec3 vSun = uboPerFrame.sunLight.vsDirection;
 	float zNear = uboPerFrame.zRange.x; // zNear is same as that of primary view. (no reason, just same)
-	float linearZ = (-query.vPos.z - zNear) / (query.zFar - zNear);
+	//float linearZ = (-query.vPos.z - zNear) / (query.zFar - zNear);
+	float linearZ = -query.vPos.z;
 
-	int csmLayer = int(linearZ * NUM_CASCADES);
+	// Make array here due to stupid uniform alignment
+	float csmDepths[4];
+	csmDepths[0] = uboPerFrame.csmDepths.x;
+	csmDepths[1] = uboPerFrame.csmDepths.y;
+	csmDepths[2] = uboPerFrame.csmDepths.z;
+	csmDepths[3] = uboPerFrame.csmDepths.w;
+	
+	uint csmLayer = 0;
+	for (; csmLayer < NUM_CASCADES; ++csmLayer) {
+		if (linearZ < csmDepths[csmLayer]) {
+			break;
+		}
+	}
 	if (csmLayer >= NUM_CASCADES) {
 		return 1.0;
 	}

@@ -737,6 +737,11 @@ namespace pathos {
 		data.sunParameters.x = sunShadowMap->getShadowMapZFar();
 		data.sunParameters.y = (float)sceneRenderTargets.numCascades;
 
+		data.csmDepths.x = sunShadowMap->getZSlice(0);
+		data.csmDepths.y = sunShadowMap->getZSlice(1);
+		data.csmDepths.z = sunShadowMap->getZSlice(2);
+		data.csmDepths.w = sunShadowMap->getZSlice(3);
+
 		data.eyeDirection = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
 		data.eyePosition  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
 

@@ -16,7 +16,7 @@
 namespace pathos {
 
 	// Light frustum could be too large if we use camera's zFar as is.
-	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 50.0f, "Custom zFar for CSM");
+	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 500.0f, "Custom zFar for CSM");
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(destroyed, "Resource leak");
@@ -200,7 +200,7 @@ namespace pathos {
 		};
 
 		std::vector<vector3> frustumPlanes;
-		camera.getFrustumVertices(frustumPlanes, numCascades, getShadowMapZFar());
+		camera.getFrustumVertices(frustumPlanes, numCascades, getShadowMapZFar(), zSlices);
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
 		}
