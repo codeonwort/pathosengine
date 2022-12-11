@@ -8,6 +8,7 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
+#include "pathos/scene/light_probe_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
 
@@ -68,6 +69,9 @@ void World2::setupScene()
 {
 	srand(static_cast<unsigned int>(time(NULL)));
 
+	//---------------------------------------------------------------------------------------
+	// Light sources
+
 	sunLight = spawnActor<DirectionalLightActor>();
 	sunLight->setDirection(SUN_DIRECTION);
 	sunLight->setIlluminance(SUN_ILLUMINANCE);
@@ -77,6 +81,13 @@ void World2::setupScene()
 	pointLight0->setIntensity(100.0f * vector3(1.0f, 5.0f, 1.0f));
 	pointLight0->setAttenuationRadius(10.0f);
 	pointLight0->setSourceRadius(0.2f);
+
+	//---------------------------------------------------------------------------------------
+	// Local light probes
+
+	LightProbeActor* lightProbe0 = spawnActor<LightProbeActor>();
+	lightProbe0->setProbeType(ELightProbeType::Radiance);
+	lightProbe0->setActorLocation(vector3(-1.0f, 2.0f, 2.0f));
 
 	//---------------------------------------------------------------------------------------
 	// Materials

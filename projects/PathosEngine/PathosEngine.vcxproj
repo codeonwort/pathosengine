@@ -222,6 +222,8 @@
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
+    <ClInclude Include="src\pathos\scene\light_probe_actor.h" />
+    <ClInclude Include="src\pathos\scene\light_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />
     <ClInclude Include="src\pathos\scene\world.h" />
     <ClInclude Include="src\pathos\scene\camera.h" />

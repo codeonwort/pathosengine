@@ -818,5 +818,11 @@
     <ClInclude Include="src\badger\math\vector_math.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\scene\light_probe_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\light_probe_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

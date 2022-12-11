@@ -97,6 +97,9 @@ namespace pathos {
 		GLuint                                     prefilterEnvMap = 0;
 		uint32                                     prefilterEnvMapMipLevels = 0;
 
+		// Local light probes
+		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;
+		std::vector<struct IrradianceProbeProxy*>  proxyList_irradianceProbe;
 	};
 
 }
