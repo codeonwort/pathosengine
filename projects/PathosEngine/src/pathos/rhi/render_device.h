@@ -8,6 +8,7 @@
 #include "badger/types/noncopyable.h"
 #include <functional>
 #include <memory>
+#include <set>
 
 // Device API wrapper
 
@@ -60,6 +61,8 @@ namespace pathos {
 
 		bool initialize();
 
+		void memreport(int64& outTotalBufferMemory, int64& outTotalTextureMemory);
+
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
 		const OpenGLDriverCapabilities& getCapabilities() const { return capabilities; }
 
@@ -107,6 +110,10 @@ namespace pathos {
 		uniquePtr<RenderCommandList> immediate_command_list; // For render thread itself
 		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> hook_command_list;
+
+		// Track alive GPU resources
+		std::set<GLuint> aliveGLBuffers;
+		std::set<GLuint> aliveGLTextures;
 	};
 
 	extern OpenGLDevice* gRenderDevice;

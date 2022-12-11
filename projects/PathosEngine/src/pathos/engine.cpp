@@ -26,6 +26,8 @@
 #include "pathos/input/input_system.h"    // subsystem: input
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
 
+#include <inttypes.h>
+
 #define CONSOLE_WINDOW_MIN_HEIGHT    400
 #define ENGINE_CONFIG_FILE           "EngineConfig.ini"
 #define ENGINE_CONFIG_EXTRA_FILE     "EngineConfigOverride.ini"
@@ -148,6 +150,20 @@ namespace pathos {
 			});
 			registerExec("screenshot", [this](const std::string& command) {
 				renderThread->takeScreenshot();
+			});
+			registerExec("memreport", [](const std::string& command) {
+				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
+					int64 bufferMem, textureMem;
+					gRenderDevice->memreport(bufferMem, textureMem);
+					char msg[256];
+					sprintf_s(msg, "buffer memory  : %" PRId64 " bytes (%.3lf MiB)",
+						bufferMem, (double)bufferMem / (1024.0 * 1024.0));
+					gConsole->addLine(msg, false, true);
+					sprintf_s(msg, "texture memory : %" PRId64 " bytes (%.3lf MiB)",
+						textureMem, (double)textureMem / (1024.0 * 1024.0));
+					gConsole->addLine(msg, false, true);
+					gConsole->addLine("Warning: For all textures, only mip0 is counted so total usage maybe bigger.", false, true);
+				});
 			});
 		}
 
