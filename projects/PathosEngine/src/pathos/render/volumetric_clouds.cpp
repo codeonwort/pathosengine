@@ -21,6 +21,7 @@ namespace pathos {
 
 	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
 	// But without a good GUI it's rather convenient to control them with cvars.
+	static ConsoleVariable<int32> cvar_enable_volClouds("r.cloud.enable", 1, "[0/1] Toggle volumetric clouds");
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius (in meters)");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 1000.0f, "Cloud layer's min height from ground (in meters)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 6000.0f, "Cloud layer's max height from ground (in meters)");
@@ -142,7 +143,7 @@ namespace pathos {
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
 		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
 
-		const bool bRenderClouds = scene->isVolumetricCloudValid();
+		const bool bRenderClouds = scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
 		if (!bRenderClouds) {
 #if 0
 			// #todo-cloud: How to do this correctly?
