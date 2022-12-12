@@ -66,7 +66,7 @@ namespace pathos {
 		GLuint omniShadowMaps = 0; // cubemap array
 
 		// Deferred renderer only
-		bool useGBuffer = false;
+		bool useGBuffer = true;
 		GLuint gbufferA = 0;
 		GLuint gbufferB = 0;
 		GLuint gbufferC = 0;

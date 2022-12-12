@@ -85,6 +85,7 @@ namespace pathos {
 
 			std::vector<SceneProxy*> sceneProxiesToDelete;
 
+			// Render all scene proxies at once.
 			while (renderThread->isSceneProxyQueueEmpty() == false) {
 				SceneProxy* sceneProxy = renderThread->popSceneProxy();
 				sceneProxiesToDelete.push_back(sceneProxy);
@@ -122,7 +123,18 @@ namespace pathos {
 				// Renderer will add more immediate commands
 				if (renderer && sceneProxy) {
 					SCOPED_CPU_COUNTER(ExecuteRenderer);
-					renderer->renderScene(immediateContext, sceneProxy, &sceneProxy->camera);
+
+					// #todo-light-probe: Different SceneRenderTargets instances for different sources
+					SceneRenderTargets* sceneRTs = nullptr;
+					if (sceneProxy->sceneProxySource == SceneProxySource::MainScene || sceneProxy->sceneProxySource == SceneProxySource::SceneCapture) {
+						sceneRTs = renderThread->sceneRenderTargets_primary;
+					} else if (sceneProxy->sceneProxySource == SceneProxySource::RadianceCapture) {
+						sceneRTs = renderThread->sceneRenderTargets_lightProbe;
+					} else {
+						CHECK_NO_ENTRY();
+					}
+					renderer->renderScene(immediateContext, sceneRTs, sceneProxy, &sceneProxy->camera);
+
 					immediateContext.flushAllCommands();
 					//deferredContext.flushAllCommands();
 
@@ -167,6 +179,9 @@ namespace pathos {
 					}
 				}
 			}
+
+			// Restore sceneRenderTargets to the one for main scene.
+			immediateContext.sceneRenderTargets = renderThread->sceneRenderTargets_primary;
 
 			// Render debug overlay and command console
 			OverlaySceneProxy* overlayProxy = renderThread->popOverlayProxy();
@@ -256,6 +271,12 @@ namespace pathos {
 			}
 			cmdList.flushAllCommands();
 
+			renderThread->sceneRenderTargets_primary->freeSceneTextures(cmdList);
+			renderThread->sceneRenderTargets_lightProbe->freeSceneTextures(cmdList);
+			cmdList.flushAllCommands();
+			SAFE_RELEASE(renderThread->sceneRenderTargets_primary);
+			SAFE_RELEASE(renderThread->sceneRenderTargets_lightProbe);
+
 			SAFE_RELEASE(renderThread->renderer);
 			SAFE_RELEASE(renderThread->renderer2D);
 			SAFE_RELEASE(renderThread->debugOverlay);
@@ -279,7 +300,7 @@ namespace pathos {
 
 		renderThread->terminateCondVar.notify_all();
 
-		SAFE_RELEASE(renderThread->render_device);
+		SAFE_RELEASE(renderThread->renderDevice);
 
 		//delete renderThread;
 
@@ -292,14 +313,7 @@ namespace pathos {
 		: nativeThread()
 		, threadID(0xffffffff)
 		, threadName("Render Thread")
-		, render_device(nullptr)
-		, renderer(nullptr)
-		, renderer2D(nullptr)
-		, debugOverlay(nullptr)
 		, currentFrame(0)
-		, elapsed_renderThread(0.0f)
-		, gpuTimerQuery(0)
-		, elapsed_gpu(0.0f)
 	{
 		// Thread id and name are set in the thread entry point (renderThreadMain()).
 	}
@@ -387,21 +401,21 @@ namespace pathos {
 	}
 
 	bool RenderThread::initializeOpenGL() {
-		render_device = new OpenGLDevice;
-		bool validDevice = render_device->initialize();
+		renderDevice = new OpenGLDevice;
+		bool validDevice = renderDevice->initialize();
 		
 		if (!validDevice) {
 			return false;
 		}
 
-		RenderCommandList& cmdList = render_device->getImmediateCommandList();
+		RenderCommandList& cmdList = renderDevice->getImmediateCommandList();
 
-		render_device->genQueries(1, &gpuTimerQuery);
+		renderDevice->genQueries(1, &gpuTimerQuery);
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
 		GLuint systemTextures[5];
-		render_device->createTextures(GL_TEXTURE_2D, 5, systemTextures);
+		renderDevice->createTextures(GL_TEXTURE_2D, 5, systemTextures);
 
 		gEngine->texture2D_black = systemTextures[0];
 		gEngine->texture2D_white = systemTextures[1];
@@ -450,6 +464,8 @@ namespace pathos {
 	}
 
 	bool RenderThread::initializeRenderer(RenderCommandList& cmdList) {
+		sceneRenderTargets_primary = new SceneRenderTargets;
+		sceneRenderTargets_lightProbe = new SceneRenderTargets;
 		renderer = new SceneRenderer;
 
 		const EngineConfig& conf = gEngine->getConfig();

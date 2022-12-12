@@ -114,7 +114,12 @@ namespace pathos {
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
 		virtual void setFinalRenderTarget(RenderTargetView* finalRenderTarget) override;
 		virtual void setFinalRenderTargetToBackbuffer() override;
-		virtual void renderScene(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
+
+		virtual void renderScene(
+			RenderCommandList& cmdList,
+			SceneRenderTargets* sceneRenderTargets,
+			SceneProxy* scene,
+			Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.
 		void copyTexture(RenderCommandList& cmdList, GLuint source,
@@ -122,7 +127,6 @@ namespace pathos {
 
 	private:
 		void reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling);
-		void destroySceneRenderTargets(RenderCommandList& cmdList);
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
@@ -139,10 +143,8 @@ namespace pathos {
 		bool destroyed = false;
 		uint32 frameCounter = 0;
 
-		// #todo-renderer: Implement render target pool
-		SceneRenderTargets sceneRenderTargets;
+		// #todo-renderer: Move to base_pass.cpp
 		GLuint gbufferFBO = 0;
-
 		UniformBuffer uboPerObject;
 
 		SceneRenderSettings sceneRenderSettings;
@@ -151,6 +153,7 @@ namespace pathos {
 		GLuint fboScreenshot = 0; // Dummy FBO to read screenshot.
 
 		// temporary save
+		SceneRenderTargets* sceneRenderTargets = nullptr;
 		SceneProxy* scene = nullptr;
 		Camera* camera = nullptr;
 		matrix4 prevView;

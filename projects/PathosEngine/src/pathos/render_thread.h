@@ -20,6 +20,7 @@ namespace pathos {
 	class OverlayRenderer;
 	class DebugOverlay;
 	class OverlaySceneProxy;
+	struct SceneRenderTargets;
 
 	class RenderThread final : public Noncopyable {
 		static void renderThreadMain(RenderThread* renderThread);
@@ -89,14 +90,18 @@ namespace pathos {
 		std::mutex                 initMutex;
 		std::condition_variable    initCondVar;
 
-		OpenGLDevice*              render_device;
-		Renderer*                  renderer;
-		OverlayRenderer*           renderer2D;
-		DebugOverlay*              debugOverlay;
+		OpenGLDevice*              renderDevice = nullptr;
+
+		Renderer*                  renderer = nullptr;
+		SceneRenderTargets*        sceneRenderTargets_primary;    // SceneProxySource::MainScene, SceneCapture
+		SceneRenderTargets*        sceneRenderTargets_lightProbe; // SceneProxySource::RadianceCapture
+
+		OverlayRenderer*           renderer2D = nullptr;
+		DebugOverlay*              debugOverlay = nullptr;
 
 		uint32                     currentFrame;
 		Stopwatch                  stopwatch; // for render thread
-		float                      elapsed_renderThread;
+		float                      elapsed_renderThread = 0.0f;
 
 		std::list<SceneProxy*>     sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
 		std::mutex                 sceneProxyQueueMutex;
@@ -108,8 +113,8 @@ namespace pathos {
 
 	// GPU
 	private:
-		GLuint                     gpuTimerQuery;
-		float                      elapsed_gpu; // in milliseconds
+		GLuint                     gpuTimerQuery = 0;
+		float                      elapsed_gpu = 0.0f; // in milliseconds
 		std::vector<std::string>   lastGpuCounterNames;
 		std::vector<float>         lastGpuCounterTimes;
 	};
