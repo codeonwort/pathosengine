@@ -85,9 +85,11 @@ void World2::setupScene()
 	//---------------------------------------------------------------------------------------
 	// Local light probes
 
-	LightProbeActor* lightProbe0 = spawnActor<LightProbeActor>();
+	lightProbe0 = spawnActor<LightProbeActor>();
 	lightProbe0->setProbeType(ELightProbeType::Radiance);
-	lightProbe0->setActorLocation(vector3(-1.0f, 2.0f, 2.0f));
+	lightProbe0->setActorLocation(vector3(-1.0f, 3.0f, 2.0f));
+	// #todo-light-probe: Performs very poorly.
+	//lightProbe0->bUpdateEveryFrame = false;
 
 	//---------------------------------------------------------------------------------------
 	// Materials

@@ -13,6 +13,7 @@ namespace pathos {
 	class PointLightActor;
 	class TextMeshActor;
 	class OBJLoader;
+	class LightProbeActor;
 }
 class PlayerController;
 
@@ -43,5 +44,7 @@ private:
 
 	TextMeshActor* alertText1 = nullptr;
 	TextMeshActor* alertText2 = nullptr;
+
+	LightProbeActor* lightProbe0 = nullptr;
 
 };

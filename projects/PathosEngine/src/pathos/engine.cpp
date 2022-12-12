@@ -17,6 +17,7 @@
 
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
+#include "pathos/scene/light_probe_actor.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
@@ -469,6 +470,15 @@ namespace pathos {
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
 					SCOPED_CPU_COUNTER(CreateRenderProxy);
+
+					// Update light probes
+					for (Actor* actor : currentWorld->actors) {
+						LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
+						if (probeActor == nullptr || probeActor->bUpdateEveryFrame == false) {
+							continue;
+						}
+						probeActor->captureScene();
+					}
 
 					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
 						SceneProxySource::MainScene,

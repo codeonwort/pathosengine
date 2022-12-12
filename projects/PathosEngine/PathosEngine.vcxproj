@@ -102,6 +102,7 @@
     <ClCompile Include="src\init_tinyobjloader.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
+    <ClCompile Include="src\pathos\scene\light_probe_actor.cpp" />
     <ClCompile Include="src\pathos\scene\light_probe_component.cpp" />
     <ClCompile Include="src\pathos\scene\scene_component.cpp" />
     <ClCompile Include="src\pathos\scene\world.cpp" />

@@ -26,6 +26,15 @@ namespace pathos {
 		RadianceCapture = 2,
 	};
 
+	inline const char* getSceneProxySourceString(SceneProxySource source) {
+		const char* str[] = {
+			"MainScene",
+			"SceneCapture",
+			"RadianceCapture",
+		};
+		return str[(uint8)source];
+	}
+
 	class SceneProxy final {
 		
 	public:
@@ -98,7 +107,6 @@ namespace pathos {
 		GLuint                                     prefilterEnvMap = 0;
 		uint32                                     prefilterEnvMapMipLevels = 0;
 
-		// #todo-light-probe: No need to store here, maybe?
 		// Local light probes
 		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;
 		std::vector<struct IrradianceProbeProxy*>  proxyList_irradianceProbe;

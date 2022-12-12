@@ -33,25 +33,42 @@ namespace pathos {
 		}
 	}
 
-	void LightProbeComponent::captureScene() {
+	void LightProbeComponent::captureScene(uint32 faceIndex) {
+		CHECK(0 <= faceIndex && faceIndex < 6);
+
 		if (renderTarget == nullptr) {
 			renderTarget = makeUnique<RenderTargetCube>();
 			renderTarget->respecTexture(RADIANCE_PROBE_CUBEMAP_SIZE, RADIANCE_PROBE_FORMAT, "RadianceProbe");
 		}
 
+		const vector3 lookAtOffsets[6] = {
+			vector3(+1.0f, 0.0f, 0.0f), // posX
+			vector3(-1.0f, 0.0f, 0.0f), // negX
+			vector3(0.0f, +1.0f, 0.0f), // posY
+			vector3(0.0f, -1.0f, 0.0f), // negY
+			vector3(0.0f, 0.0f, +1.0f), // posZ
+			vector3(0.0f, 0.0f, -1.0f), // negZ
+		};
+		// #todo-light-probe: Check up vectors
+		const vector3 upVectors[6] = {
+			vector3(0.0f, +1.0f, 0.0f), // posX
+			vector3(0.0f, +1.0f, 0.0f), // negX
+			vector3(-1.0f, 0.0f, 0.0f), // posY
+			vector3(+1.0f, 0.0f, 0.0f), // negY
+			vector3(0.0f, +1.0f, 0.0f), // posZ
+			vector3(0.0f, +1.0f, 0.0f), // negZ
+		};
+
 		if (probeType == ELightProbeType::Radiance) {
-			// #todo-light-probe: Test render only posX face.
 			SceneRenderSettings settings;
 			settings.sceneWidth = renderTarget->getWidth();
 			settings.sceneHeight = renderTarget->getWidth();
 			settings.enablePostProcess = false;
-			settings.finalRenderTarget = renderTarget->getRenderTargetView(0);
+			settings.finalRenderTarget = renderTarget->getRenderTargetView(faceIndex);
 
 			Scene& scene = getOwner()->getWorld()->getScene();
 			Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));
-
-			tempCamera.setYaw(0.0f);
-			tempCamera.setPitch(0.0f);
+			tempCamera.lookAt(getLocation(), getLocation() + lookAtOffsets[faceIndex], upVectors[faceIndex]);
 
 			const uint32 tempFrameNumber = 0;
 			SceneProxy* sceneProxy = scene.createRenderProxy(

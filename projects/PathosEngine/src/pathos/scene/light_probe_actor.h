@@ -12,13 +12,19 @@ namespace pathos {
 			setAsRootComponent(probeComponent);
 		}
 
+		void captureScene();
+
 		void setProbeType(ELightProbeType type) { probeComponent->probeType = type; }
 		void setCaptureRadius(float radius) { probeComponent->captureRadius = radius; }
 
 		inline LightProbeComponent* getProbeComponent() const { return probeComponent; }
 
+	public:
+		bool bUpdateEveryFrame = true;
+
 	private:
 		LightProbeComponent* probeComponent;
+		uint32 updatePhase = 0;
 
 	};
 

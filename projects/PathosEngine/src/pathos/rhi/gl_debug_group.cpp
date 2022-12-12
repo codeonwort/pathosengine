@@ -18,8 +18,8 @@ namespace pathos {
 
 namespace pathos {
 
-	const uint32                ScopedGpuCounter::MAX_GPU_COUNTERS = 16;
-	bool                        ScopedGpuCounter::enable = true;
+	const uint32                ScopedGpuCounter::MAX_GPU_COUNTERS = 64;
+	bool                        ScopedGpuCounter::bEnableCounter = true;
 
 	bool                        ScopedGpuCounter::poolInitialized = false;
 	bool                        ScopedGpuCounter::canBeginQuery = false;
@@ -36,7 +36,7 @@ namespace pathos {
 	{
 		CHECK(isInRenderThread());
 
-		if (!ScopedGpuCounter::enable) {
+		if (!ScopedGpuCounter::bEnableCounter) {
 			return;
 		}
 
@@ -54,7 +54,7 @@ namespace pathos {
 	ScopedGpuCounter::~ScopedGpuCounter() {
 		CHECK(isInRenderThread());
 
-		if (!ScopedGpuCounter::enable) {
+		if (!ScopedGpuCounter::bEnableCounter) {
 			return;
 		}
 
