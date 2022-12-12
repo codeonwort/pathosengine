@@ -14,7 +14,7 @@ namespace pathos {
 
 	public:
 		ActorComponent() = default;
-		~ActorComponent() = default;
+		virtual ~ActorComponent() = default;
 
 		void unregisterFromParent();
 

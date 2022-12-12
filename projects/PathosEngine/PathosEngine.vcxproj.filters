@@ -372,6 +372,9 @@
     <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\scene\light_probe_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
