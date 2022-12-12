@@ -114,7 +114,7 @@ namespace pathos {
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
 		virtual void setFinalRenderTarget(RenderTargetView* finalRenderTarget) override;
 		virtual void setFinalRenderTargetToBackbuffer() override;
-		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
+		virtual void renderScene(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.
 		void copyTexture(RenderCommandList& cmdList, GLuint source,

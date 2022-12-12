@@ -122,7 +122,7 @@ namespace pathos {
 				// Renderer will add more immediate commands
 				if (renderer && sceneProxy) {
 					SCOPED_CPU_COUNTER(ExecuteRenderer);
-					renderer->render(immediateContext, sceneProxy, &sceneProxy->camera);
+					renderer->renderScene(immediateContext, sceneProxy, &sceneProxy->camera);
 					immediateContext.flushAllCommands();
 					//deferredContext.flushAllCommands();
 

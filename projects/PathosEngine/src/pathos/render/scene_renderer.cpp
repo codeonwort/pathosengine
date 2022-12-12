@@ -168,7 +168,7 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 	}
 
-	void SceneRenderer::render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
+	void SceneRenderer::renderScene(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
 		scene = inScene;
 		camera = inCamera;
 
