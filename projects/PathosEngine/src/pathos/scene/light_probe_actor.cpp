@@ -5,6 +5,7 @@ namespace pathos {
 	void LightProbeActor::captureScene() {
 		probeComponent->captureScene(updatePhase);
 		updatePhase = (updatePhase + 1) % 6;
+		lastUpdateTime = gEngine->getWorldTime();
 	}
 
 }

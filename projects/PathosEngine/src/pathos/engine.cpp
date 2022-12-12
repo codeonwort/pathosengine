@@ -42,6 +42,8 @@ namespace pathos {
 	//        and the world will look like frozen.
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
 
+	static ConsoleVariable<int32> cvar_probegi_numUpdates("r.probegi.updatesPerFrame", 1, "Number of light probes to update per frame");
+
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
 
@@ -470,12 +472,22 @@ namespace pathos {
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
 					// Update light probes
+					std::vector<LightProbeActor*> probeActors;
 					for (Actor* actor : currentWorld->actors) {
 						LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
 						if (probeActor == nullptr || probeActor->bUpdateEveryFrame == false) {
 							continue;
 						}
-						probeActor->captureScene();
+						probeActors.push_back(probeActor);
+					}
+					std::sort(probeActors.begin(), probeActors.end(),
+						[](const LightProbeActor* A, const LightProbeActor* B) {
+							return A->lastUpdateTime < B->lastUpdateTime;
+						}
+					);
+					int32 numProbeUpdatesPerFrame = std::min(cvar_probegi_numUpdates.getInt(), (int32)probeActors.size());
+					for (int32 i = 0; i < numProbeUpdatesPerFrame; ++i) {
+						probeActors[i]->captureScene();
 					}
 
 					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(

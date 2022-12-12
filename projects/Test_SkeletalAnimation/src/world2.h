@@ -46,5 +46,6 @@ private:
 	TextMeshActor* alertText2 = nullptr;
 
 	LightProbeActor* lightProbe0 = nullptr;
+	LightProbeActor* lightProbe1 = nullptr;
 
 };

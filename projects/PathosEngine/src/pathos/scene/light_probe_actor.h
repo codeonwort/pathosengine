@@ -21,6 +21,7 @@ namespace pathos {
 
 	public:
 		bool bUpdateEveryFrame = true;
+		float lastUpdateTime = 0.0f;
 
 	private:
 		LightProbeComponent* probeComponent;

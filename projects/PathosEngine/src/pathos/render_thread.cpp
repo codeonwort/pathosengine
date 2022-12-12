@@ -124,7 +124,6 @@ namespace pathos {
 				if (renderer && sceneProxy) {
 					SCOPED_CPU_COUNTER(ExecuteRenderer);
 
-					// #todo-light-probe: Different SceneRenderTargets instances for different sources
 					SceneRenderTargets* sceneRTs = nullptr;
 					if (sceneProxy->sceneProxySource == SceneProxySource::MainScene || sceneProxy->sceneProxySource == SceneProxySource::SceneCapture) {
 						sceneRTs = renderThread->sceneRenderTargets_primary;
