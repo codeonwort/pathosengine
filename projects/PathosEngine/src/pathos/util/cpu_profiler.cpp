@@ -14,7 +14,7 @@ namespace pathos {
 
 	// #todo-cpu: Cleanup everything periodically for now
 	static constexpr size_t PURGE_BETWEEN_CHECKPOINTS = 256;
-	static constexpr size_t PURGE_ITEMS_AFTER = 512;
+	static constexpr size_t PURGE_ITEMS_AFTER = 2048;
 
 	ScopedCpuCounter::ScopedCpuCounter(const char* inName)
 		: name(inName)
@@ -25,7 +25,7 @@ namespace pathos {
 		// #todo-cpu: Temp logic for periodic purge
 		purge_milestone = CpuProfiler::getInstance().purge_milestone.load();
 
-		itemHandle = CpuProfiler::getInstance().beginItem(threadId, name);
+		itemHandle = CpuProfiler::getInstance().beginItem(threadId, name.c_str());
 	}
 
 	ScopedCpuCounter::~ScopedCpuCounter() {
@@ -134,7 +134,7 @@ namespace pathos {
 
 		ProfileItem& item = currentProfile.items[itemHandle];
 		item.endTime = getGlobalClockTime();
-		item.elapsedMS = (item.endTime - item.startTime) * 1000.0f;
+		item.elapsedMS = item.endTime - item.startTime;
 
 		currentProfile.currentTab -= 1;
 	}
@@ -254,7 +254,7 @@ namespace pathos {
 						const ProfileItem& item = profile.items[i];
 						if (dumpStartTime <= item.startTime && item.startTime <= dumpEndTime && item.elapsedMS > 0.0f) {
 							sprintf_s(eventMsg, "{\"name\":\"%s\", \"cat\":\"CPU\", \"ph\":\"X\", \"ts\":%u, \"dur\":%u, \"pid\":%u, \"tid\":%u}",
-								item.name, (uint32)(item.startTime * 1000 * 1000), (uint32)(item.elapsedMS * 1000), pid, tid);
+								item.name.c_str(), (uint32)(item.startTime * 1000), (uint32)(item.elapsedMS * 1000), pid, tid);
 							events.push_back(eventMsg);
 						}
 					}

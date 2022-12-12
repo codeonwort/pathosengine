@@ -60,6 +60,10 @@ namespace pathos {
 
 		// Main loop for render thread
 		while (renderThread->bPendingKill == false) {
+			char frameCounterMsg[64];
+			sprintf_s(frameCounterMsg, "Frame %u", renderThread->currentFrame);
+			SCOPED_CPU_COUNTER_STRING(frameCounterMsg);
+
 			//
 			// Start a frame!
 			//
@@ -89,7 +93,7 @@ namespace pathos {
 				char drawEventMsg[64];
 				sprintf_s(drawEventMsg, "RenderSceneProxy (source=%s)", pathos::getSceneProxySourceString(sceneProxy->sceneProxySource));
 				SCOPED_DRAW_EVENT_STRING(drawEventMsg);
-
+				
 				bool bMainScene = (sceneProxy == nullptr) || (sceneProxy->sceneProxySource == SceneProxySource::MainScene);
 
 				if (bMainScene && sceneProxy != nullptr && renderThread->bScreenshotReserved) {
@@ -215,7 +219,7 @@ namespace pathos {
 			FontManager::get().onFrameEnd();
 
 			// Pass render stats to the game thread.
-			renderThread->elapsed_renderThread = renderThread->stopwatch.stop() * 1000.0f;
+			renderThread->elapsed_renderThread = renderThread->stopwatch.stop();
 			if (bNewSceneRendered) {
 				gEngine->updateGPUQuery_renderThread(
 					renderThread->elapsed_renderThread,

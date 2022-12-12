@@ -58,6 +58,9 @@ namespace pathos {
 
 // Assumes 'RenderCommandList& cmdList' is defined in the caller
 #define SCOPED_DRAW_EVENT(EventName) pathos::DebugGroupMarker DebugGroup_##EventName(&cmdList, #EventName);
-#define SCOPED_DRAW_EVENT_STRING(EventString) pathos::DebugGroupMarker DebugGroup_##EventName(&cmdList, EventString);
+
+#define SCOPED_DRAW_EVENT_STRING_INTERNAL2(X, Y, Z) X ## Y ## Z
+#define SCOPED_DRAW_EVENT_STRING_INTERNAL(EventString, Line) SCOPED_DRAW_EVENT_STRING_INTERNAL2(pathos::DebugGroupMarker DebugGroup, Line, (&cmdList, EventString));
+#define SCOPED_DRAW_EVENT_STRING(EventString) SCOPED_DRAW_EVENT_STRING_INTERNAL(EventString, __LINE__)
 
 #define SCOPED_GPU_COUNTER(CounterName) pathos::ScopedGpuCounter ScopedGpuCounter_##CounterName(&cmdList, #CounterName);

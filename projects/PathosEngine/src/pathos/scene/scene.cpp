@@ -7,10 +7,15 @@
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/util/cpu_profiler.h"
 
 namespace pathos {
 
 	SceneProxy* Scene::createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera) {
+		char counterName[64];
+		sprintf_s(counterName, "CreateRenderProxy (%s)", pathos::getSceneProxySourceString(source));
+		SCOPED_CPU_COUNTER_STRING(counterName);
+
 		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera);
 
 		World* const world = getWorld();

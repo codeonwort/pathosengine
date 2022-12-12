@@ -13,13 +13,13 @@ public:
 		startTime = std::chrono::system_clock::now();
 	}
 
-	// Elapsed seconds since start()
+	// Elapsed milliseconds since start()
 	float stop() {
 		auto diff = std::chrono::system_clock::now() - startTime;
 		std::chrono::milliseconds elapsedMS
 			= std::chrono::duration_cast<std::chrono::milliseconds>(diff);
 
-		return 0.001f * (float)elapsedMS.count();
+		return (float)elapsedMS.count();
 	}
 
 private:

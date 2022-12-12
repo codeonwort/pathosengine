@@ -436,7 +436,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
-			float deltaSeconds = stopwatch_gameThread.stop();
+			float deltaSeconds = 0.001f * stopwatch_gameThread.stop();
 
 			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
 				bShouldTickWorld = false;
@@ -469,8 +469,6 @@ namespace pathos {
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
-					SCOPED_CPU_COUNTER(CreateRenderProxy);
-
 					// Update light probes
 					for (Actor* actor : currentWorld->actors) {
 						LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
@@ -536,7 +534,7 @@ namespace pathos {
 		CpuProfiler::getInstance().finishCheckpoint();
 
 		if (bShouldTickWorld) {
-			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+			elapsed_gameThread = stopwatch_gameThread.stop();
 			stopwatch_gameThread.start();
 		}
 
