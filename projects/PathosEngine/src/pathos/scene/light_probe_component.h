@@ -32,11 +32,15 @@ namespace pathos {
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
 		void captureScene(uint32 faceIndex);
+		void bakeIBL();
 
 	public:
 		ELightProbeType probeType = ELightProbeType::Unknown;
 		float captureRadius = 50.0f;
-		uniquePtr<RenderTargetCube> renderTarget;
+
+	private:
+		uniquePtr<RenderTargetCube> renderTarget; // Radiance capture
+		uniquePtr<RenderTargetCube> specularIBL;  // Baked IBL
 
 	};
 

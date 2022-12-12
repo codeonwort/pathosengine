@@ -3,8 +3,13 @@
 namespace pathos {
 
 	void LightProbeActor::captureScene() {
-		probeComponent->captureScene(updatePhase);
-		updatePhase = (updatePhase + 1) % 6;
+		if (0 <= updatePhase && updatePhase < 6) {
+			probeComponent->captureScene(updatePhase);
+		} else if (updatePhase == 6) {
+			probeComponent->bakeIBL();
+		}
+
+		updatePhase = (updatePhase + 1) % 7;
 		lastUpdateTime = gEngine->getWorldTime();
 	}
 

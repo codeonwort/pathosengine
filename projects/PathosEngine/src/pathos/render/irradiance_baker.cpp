@@ -198,6 +198,58 @@ namespace pathos {
 		return irradianceMap;
 	}
 
+	void IrradianceBaker::bakeSpecularIBL_renderThread(
+		RenderCommandList& cmdList,
+		GLuint inputTexture,
+		uint32 textureSize,
+		uint32 numMips,
+		GLuint outputTexture)
+	{
+		SCOPED_DRAW_EVENT(BakeSpecularIBL);
+
+		GLuint fbo = IrradianceBaker::dummyFBO;
+		CubeGeometry* cube = IrradianceBaker::dummyCube;
+		constexpr GLint uniform_transform = 0;
+		constexpr GLint uniform_roughness = 1;
+
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PrefilterEnvMap);
+		cmdList.useProgram(program.getGLName());
+		cmdList.bindTextureUnit(0, inputTexture);
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+		for (uint32 mip = 0; mip < numMips; ++mip) {
+			// resize framebuffer according to mip-level size
+			uint32 mipWidth = (uint32)(textureSize * std::pow(0.5f, mip));
+			cmdList.viewport(0, 0, mipWidth, mipWidth);
+
+			float roughness = (float)mip / (float)(numMips - 1);
+			cmdList.uniform1f(uniform_roughness, roughness);
+			for (uint32 i = 0; i < 6; ++i) {
+				const glm::mat4& viewproj = cubeTransforms[i];
+
+				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, mip, i);
+				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
+
+				cube->activate_position(cmdList);
+				cube->activateIndexBuffer(cmdList);
+				cube->drawPrimitive(cmdList);
+			}
+		}
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
+	}
+
 	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
 		CHECK(isInMainThread());
 
@@ -205,56 +257,14 @@ namespace pathos {
 		uint32 maxMipLevels = badger::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
 
 		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
-			SCOPED_DRAW_EVENT(PrefilteredEnvMap);
-
-			GLuint fbo = IrradianceBaker::dummyFBO;
-			CubeGeometry* cube = IrradianceBaker::dummyCube;
-			constexpr GLint uniform_transform = 0;
-			constexpr GLint uniform_roughness = 1;
-
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
 			if (debugName != nullptr) {
 				gRenderDevice->objectLabel(GL_TEXTURE, *envMapPtr, -1, debugName);
 			}
-			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			cmdList.textureParameteri(*envMapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			cmdList.textureStorage2D(*envMapPtr, maxMipLevels, GL_RGB16F, size, size);
 			cmdList.generateTextureMipmap(*envMapPtr);
 
-			cmdList.disable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_FRONT);
-
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PrefilterEnvMap);
-			cmdList.useProgram(program.getGLName());
-			cmdList.bindTextureUnit(0, cubemap);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-
-			for (uint32 mip = 0; mip < maxMipLevels; ++mip) {
-				// resize framebuffer according to mip-level size
-				uint32 mipWidth = (uint32)(size * std::pow(0.5f, mip));
-				uint32 mipHeight = (uint32)(size * std::pow(0.5f, mip));
-				cmdList.viewport(0, 0, mipWidth, mipHeight);
-
-				float roughness = (float)mip / (float)(maxMipLevels - 1);
-				cmdList.uniform1f(uniform_roughness, roughness);
-				for (uint32 i = 0; i < 6; ++i) {
-					const glm::mat4& viewproj = cubeTransforms[i];
-
-					cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *envMapPtr, mip, i);
-					cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
-
-					cube->activate_position(cmdList);
-					cube->activateIndexBuffer(cmdList);
-					cube->drawPrimitive(cmdList);
-				}
-			}
-
-			cmdList.enable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_BACK);
+			bakeSpecularIBL_renderThread(cmdList, cubemap, size, maxMipLevels, *envMapPtr);
 		});
 
 		FLUSH_RENDER_COMMAND();

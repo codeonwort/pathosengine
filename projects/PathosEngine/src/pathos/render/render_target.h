@@ -88,7 +88,11 @@ namespace pathos {
 		~RenderTargetCube();
 
 		// Cubemap width = height
-		void respecTexture(uint32 inWidth, RenderTargetFormat inFormat, const char* inDebugName = nullptr);
+		void respecTexture(
+			uint32 inWidth,
+			RenderTargetFormat inFormat,
+			uint32 inNumMips, // 0 = full mips
+			const char* inDebugName = nullptr);
 
 		// Call if the GL texture should be visible to main thread immediately.
 		void immediateUpdateResources();
@@ -98,6 +102,7 @@ namespace pathos {
 		RenderTargetView* getRenderTargetView(uint32 faceIndex) const;
 
 		inline uint32 getWidth() const { return width; }
+		inline uint32 getNumMips() const { return numMips; }
 
 		inline GLuint getGLTexture() const { return glTextureObject; }
 		inline GLuint getGLTextureView(uint32 faceIndex) { return glTextureViews[faceIndex]; }
@@ -110,6 +115,7 @@ namespace pathos {
 		GLuint glTextureObject = 0;
 		GLuint glTextureViews[6] = { 0, };
 		uint32 width = 0;
+		uint32 numMips = 0;
 		RenderTargetFormat format = RenderTargetFormat::RGBA16F;
 		uniquePtr<RenderTargetView> renderTargetViews[6];
 

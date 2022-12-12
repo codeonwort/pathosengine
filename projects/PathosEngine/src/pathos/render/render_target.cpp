@@ -171,6 +171,7 @@ namespace pathos {
 	void RenderTargetCube::respecTexture(
 		uint32 inWidth,
 		RenderTargetFormat inFormat,
+		uint32 inNumMips,
 		const char* inDebugName)
 	{
 		const bool bValidDimension = (inWidth != 0);
@@ -186,20 +187,22 @@ namespace pathos {
 		format = inFormat;
 
 		const GLenum glFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
+		
+		uint32 fullMips = (uint32)(floor(log2(width)) + 1);
+		numMips = (inNumMips == 0) ? fullMips : std::min(inNumMips, fullMips);
 
 		GLuint* texturePtr = &glTextureObject;
 		GLuint* textureViewsPtr = glTextureViews;
 		std::string debugName = inDebugName;
 		ENQUEUE_RENDER_COMMAND(
-			[texturePtr, textureViewsPtr, glFormat, inWidth, debugName](RenderCommandList& cmdList) {
+			[texturePtr, textureViewsPtr, glFormat, inWidth, numMips = this->numMips, debugName](RenderCommandList& cmdList) {
 				// Cubemap texture
 				gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
 				if (debugName.size() > 0) {
 					gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName.c_str());
 				}
 
-				const uint32 numLODs = (uint32)(floor(log2(inWidth)) + 1);
-				cmdList.textureStorage2D(*texturePtr, numLODs, glFormat, inWidth, inWidth);
+				cmdList.textureStorage2D(*texturePtr, numMips, glFormat, inWidth, inWidth);
 
 				// Texture views
 				gRenderDevice->genTextures(6, textureViewsPtr);
