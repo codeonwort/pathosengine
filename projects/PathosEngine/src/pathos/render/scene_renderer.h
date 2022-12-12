@@ -18,7 +18,7 @@
 namespace pathos {
 
 	class OpenGLDevice;
-	class RenderTarget2D;
+	class RenderTargetView;
 
 	struct UBO_PerFrame {
 		static constexpr uint32 BINDING_POINT = 0;
@@ -112,7 +112,7 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) override;
-		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) override;
+		virtual void setFinalRenderTarget(RenderTargetView* finalRenderTarget) override;
 		virtual void setFinalRenderTargetToBackbuffer() override;
 		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) override;
 
@@ -146,7 +146,7 @@ namespace pathos {
 		UniformBuffer uboPerObject;
 
 		SceneRenderSettings sceneRenderSettings;
-		RenderTarget2D* finalRenderTarget = nullptr;
+		RenderTargetView* finalRenderTarget = nullptr;
 
 		GLuint fboScreenshot = 0; // Dummy FBO to read screenshot.
 

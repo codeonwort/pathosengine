@@ -126,7 +126,7 @@ namespace pathos {
 		}
 	}
 
-	void SceneRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+	void SceneRenderer::setFinalRenderTarget(RenderTargetView* inFinalRenderTarget) {
 		CHECKF(inFinalRenderTarget != nullptr, "null is not accepted. Use setFinalRenderTargetToBackbuffer() for backbuffer");
 		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
 		finalRenderTarget = inFinalRenderTarget;

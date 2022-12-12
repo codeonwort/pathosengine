@@ -63,7 +63,33 @@ namespace pathos {
 
 }
 
+// RenderTargetView
 namespace pathos {
+
+	GLuint RenderTargetView::getGLName() const {
+		if (renderTarget2D != nullptr) {
+			return renderTarget2D->getGLName();
+		} else {
+			return renderTargetCube->getGLTextureView(layer);
+		}
+	}
+
+	bool RenderTargetView::isDepthFormat() const {
+		if (renderTarget2D != nullptr) {
+			return renderTarget2D->isDepthFormat();
+		} else {
+			return renderTargetCube->isDepthFormat();
+		}
+	}
+
+}
+
+// RenderTarget2D
+namespace pathos {
+
+	RenderTarget2D::RenderTarget2D() {
+		renderTargetView = makeUnique<RenderTargetView>(this);
+	}
 
 	RenderTarget2D::~RenderTarget2D() {
 		destroyResource();
@@ -111,6 +137,10 @@ namespace pathos {
 		}
 	}
 
+	RenderTargetView* RenderTarget2D::getRenderTargetView() const {
+		return renderTargetView.get();
+	}
+
 	bool RenderTarget2D::isTextureValid() const {
 		return (glTextureObject != 0 && width != 0 && height != 0);
 	}
@@ -125,7 +155,14 @@ namespace pathos {
 
 }
 
+// RenderTargetCube
 namespace pathos {
+
+	RenderTargetCube::RenderTargetCube() {
+		for (uint32 i = 0; i < 6; ++i) {
+			renderTargetViews[i] = makeUnique<RenderTargetView>(this, i);
+		}
+	}
 
 	RenderTargetCube::~RenderTargetCube() {
 		destroyResources();
@@ -155,7 +192,7 @@ namespace pathos {
 		std::string debugName = inDebugName;
 		ENQUEUE_RENDER_COMMAND(
 			[texturePtr, textureViewsPtr, glFormat, inWidth, debugName](RenderCommandList& cmdList) {
-				// Source cubemap texture
+				// Cubemap texture
 				gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
 				if (debugName.size() > 0) {
 					gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName.c_str());
@@ -164,8 +201,7 @@ namespace pathos {
 				const uint32 numLODs = (uint32)(floor(log2(inWidth)) + 1);
 				cmdList.textureStorage2D(*texturePtr, numLODs, glFormat, inWidth, inWidth);
 
-				// #todo-light-probe: Do I need this?
-				// Attaching the cubemap to framebuffer and specifying its layer also works.
+				// Texture views
 				gRenderDevice->genTextures(6, textureViewsPtr);
 				for (uint32 i = 0; i < 6; ++i) {
 					GLuint view = textureViewsPtr[i];
@@ -210,6 +246,11 @@ namespace pathos {
 			glTextureObject = 0;
 			::memset(glTextureViews, 0, 6 * sizeof(GLuint));
 		}
+	}
+
+	RenderTargetView* RenderTargetCube::getRenderTargetView(uint32 faceIndex) const {
+		CHECK(0 <= faceIndex && faceIndex < 6);
+		return renderTargetViews[faceIndex].get();
 	}
 
 	bool RenderTargetCube::isTextureValid() const {

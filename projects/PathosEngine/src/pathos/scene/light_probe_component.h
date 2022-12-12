@@ -31,6 +31,8 @@ namespace pathos {
 
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
+		void captureScene();
+
 	public:
 		ELightProbeType probeType = ELightProbeType::Unknown;
 		float captureRadius = 50.0f;

@@ -5,7 +5,7 @@
 
 namespace pathos {
 
-	class RenderTarget2D;
+	class RenderTargetView;
 
 	struct SceneRenderSettings {
 
@@ -18,7 +18,7 @@ namespace pathos {
 		uint32 frameCounter = 0;
 		bool enablePostProcess = true;
 
-		RenderTarget2D* finalRenderTarget = nullptr;
+		RenderTargetView* finalRenderTarget = nullptr;
 
 	};
 

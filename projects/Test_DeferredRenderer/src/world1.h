@@ -20,6 +20,7 @@ namespace pathos {
 	class OBJLoader;
 	class StaticMeshActor;
 	class SceneCaptureComponent;
+	class RenderTarget2D;
 }
 class CSMDebugger;
 class TransformTestActor;

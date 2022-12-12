@@ -21,8 +21,9 @@ namespace pathos {
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 
 	enum class SceneProxySource : uint8 {
-		MainScene    = 0,
-		SceneCapture = 1,
+		MainScene       = 0,
+		SceneCapture    = 1,
+		RadianceCapture = 2,
 	};
 
 	class SceneProxy final {
@@ -97,6 +98,7 @@ namespace pathos {
 		GLuint                                     prefilterEnvMap = 0;
 		uint32                                     prefilterEnvMapMipLevels = 0;
 
+		// #todo-light-probe: No need to store here, maybe?
 		// Local light probes
 		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;
 		std::vector<struct IrradianceProbeProxy*>  proxyList_irradianceProbe;
