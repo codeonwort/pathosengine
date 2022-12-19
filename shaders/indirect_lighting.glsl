@@ -4,6 +4,8 @@
 #include "deferred_common.glsl"
 #include "brdf.glsl"
 
+// #todo-light-probe: SH encoding for indirect diffuse
+
 // --------------------------------------------------------
 // Input
 
@@ -16,13 +18,13 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	float intensity;
 } ubo;
 
-layout (binding = 0) uniform usampler2D gbuf0;
-layout (binding = 1) uniform sampler2D gbuf1;
-layout (binding = 2) uniform usampler2D gbuf2;
-layout (binding = 3) uniform sampler2D ssaoMap;
-layout (binding = 4) uniform samplerCube irradianceMap;    // Diffuse IBL
-layout (binding = 5) uniform samplerCube prefilterEnvMap;  // Specular IBL
-layout (binding = 6) uniform sampler2D brdfIntegrationMap; // Specular IBL
+layout (binding = 0) uniform usampler2D  gbufferA;
+layout (binding = 1) uniform sampler2D   gbufferB;
+layout (binding = 2) uniform usampler2D  gbufferC;
+layout (binding = 3) uniform sampler2D   ssaoMap;
+layout (binding = 4) uniform samplerCube skyIrradianceProbe; // Sky diffuse IBL
+layout (binding = 5) uniform samplerCube skyRadianceProbe;   // Sky specular IBL
+layout (binding = 6) uniform sampler2D   brdfIntegrationMap; // Specular IBL
 
 // --------------------------------------------------------
 // Output
@@ -32,7 +34,7 @@ layout (location = 0) out vec4 outSceneColor;
 // --------------------------------------------------------
 // Shader
 
-vec3 getIBL(GBufferData gbufferData) {
+vec3 getImageBasedLighting(GBufferData gbufferData) {
 	vec3 N = gbufferData.normal;
 	vec3 V = normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
 	float NdotV = max(dot(N, V), 0.0);
@@ -58,16 +60,16 @@ vec3 getIBL(GBufferData gbufferData) {
 	kD *= 1.0 - metallic;
 
 	// Diffuse GI
-	vec3 diffuseIndirect = texture(irradianceMap, N_world).rgb * albedo;
+	vec3 diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
 
 	// Specular GI
-	vec3 prefilteredColor = textureLod(prefilterEnvMap, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
-	vec2 envBRDF  = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
+	vec3 prefilteredColor = textureLod(skyRadianceProbe, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
+	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
 	vec3 specularIndirect = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
 
 	// Ambient occlusion
 	// NOTE: Applying occlusion AFTER integrating over hemisphere
-	//       is physically wrong but that's a limit of an IBL approach.
+	//       is physically wrong but that's a limit of IBL approaches.
 	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
 
 	vec3 irradiance = ssao * (kD * diffuseIndirect + specularIndirect);
@@ -79,7 +81,7 @@ vec3 getGlobalIllumination(GBufferData gbufferData) {
 	vec3 irradiance = vec3(0.0);
 
 	if (shadingModel == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
-		irradiance.rgb = getIBL(gbufferData);
+		irradiance.rgb = getImageBasedLighting(gbufferData);
 	}
 
 	return irradiance;
@@ -87,7 +89,7 @@ vec3 getGlobalIllumination(GBufferData gbufferData) {
 
 void main() {
 	GBufferData gbufferData;
-	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
+	unpackGBuffer(ivec2(gl_FragCoord.xy), gbufferA, gbufferB, gbufferC, gbufferData);
 
 	vec3 irradiance = getGlobalIllumination(gbufferData);
 	irradiance.rgb = max(vec3(0.0), irradiance.rgb);

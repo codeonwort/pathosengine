@@ -4,9 +4,11 @@
 #include "pathos/render/render_target.h"
 #include "pathos/render/irradiance_baker.h"
 
-#define RADIANCE_PROBE_CUBEMAP_SIZE    256
-#define RADIANCE_PROBE_MAX_MIPS        5
-#define RADIANCE_PROBE_FORMAT          RenderTargetFormat::RGBA16F
+namespace pathos {
+	const uint32 radianceProbeCubemapSize = 256;
+	const uint32 radianceProbeNumMips = 5;
+	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
+}
 
 namespace pathos {
 
@@ -24,6 +26,7 @@ namespace pathos {
 			proxy->positionWS = getLocation();
 			proxy->captureRadius = captureRadius;
 			proxy->renderTarget = renderTarget.get();
+			proxy->specularIBL = specularIBL.get();
 			scene->proxyList_radianceProbe.push_back(proxy);
 		} else if (probeType == ELightProbeType::Irradiance) {
 			IrradianceProbeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceProbeProxy>(scene);
@@ -44,16 +47,16 @@ namespace pathos {
 			// #note: If small mips are created, IBL baker will pick black mips
 			// and it will result in too-dark IBL for non-mip0 output.
 			renderTarget->respecTexture(
-				RADIANCE_PROBE_CUBEMAP_SIZE,
-				RADIANCE_PROBE_FORMAT,
+				radianceProbeCubemapSize,
+				radianceProbeFormat,
 				1, // Only mip0
 				"RadianceProbe_Capture");
 
 			specularIBL = makeUnique<RenderTargetCube>();
 			specularIBL->respecTexture(
-				RADIANCE_PROBE_CUBEMAP_SIZE,
-				RADIANCE_PROBE_FORMAT,
-				RADIANCE_PROBE_MAX_MIPS,
+				radianceProbeCubemapSize,
+				radianceProbeFormat,
+				radianceProbeNumMips,
 				"RadianceProbe_IBL");
 		}
 
@@ -111,7 +114,7 @@ namespace pathos {
 				IrradianceBaker::bakeSpecularIBL_renderThread(
 					cmdList,
 					radianceCapture,
-					RADIANCE_PROBE_CUBEMAP_SIZE,
+					radianceProbeCubemapSize,
 					numMips,
 					textureIBL);
 			});

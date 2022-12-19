@@ -126,7 +126,10 @@ namespace pathos {
 			GLuint target, uint32 targetWidth, uint32 targetHeight);
 
 	private:
-		void reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling);
+		void reallocateSceneRenderTargets(
+			RenderCommandList& cmdList,
+			SceneProxySource sceneProxySource,
+			bool bEnableResolutionScaling);
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 

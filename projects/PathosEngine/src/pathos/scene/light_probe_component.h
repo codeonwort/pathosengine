@@ -7,12 +7,16 @@
 
 namespace pathos {
 
+	extern const uint32 radianceProbeCubemapSize;
+	extern const uint32 radianceProbeNumMips;
+
 	class RenderTargetCube;
 
 	struct RadianceProbeProxy : public SceneComponentProxy {
 		vector3           positionWS;
 		float             captureRadius;
 		RenderTargetCube* renderTarget; // #todo-light-probe: Not thread-safe but do it anyway. Fix later.
+		RenderTargetCube* specularIBL;
 	};
 
 	struct IrradianceProbeProxy : public SceneComponentProxy {

@@ -7,7 +7,9 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/irradiance_baker.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/render/render_target.h"
 #include "pathos/scene/camera.h"
+#include "pathos/scene/light_probe_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/log.h"
@@ -74,6 +76,32 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(IndirectLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		// #todo-light-probe: Only copy the cubemaps that need to be updated.
+		// Copy local cubemaps to the cubemap array.
+		{
+			GLuint cubemapArray = sceneContext.localSpecularIBLs;
+			int32 numRadianceProbes = (int32)scene->proxyList_radianceProbe.size();
+			int32 cubemapIndex = 0;
+			for (int32 i = 0; i < numRadianceProbes; ++i)
+			{
+				RenderTargetCube* cubeRT = scene->proxyList_radianceProbe[i]->specularIBL;
+				if (cubeRT == nullptr) {
+					continue;
+				}
+
+				GLuint cubemap = cubeRT->getGLTexture();
+				GLuint size = radianceProbeCubemapSize;
+				for (int32 mip = 0; mip < (int32)radianceProbeNumMips; ++mip) {
+					cmdList.copyImageSubData(
+						cubemap, GL_TEXTURE_CUBE_MAP, mip, 0, 0, 0,
+						cubemapArray, GL_TEXTURE_CUBE_MAP_ARRAY, mip, 0, 0, cubemapIndex * 6,
+						size, size, 6);
+					size /= 2;
+				}
+				++cubemapIndex;
+			}
+		}
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IndirectLighting);
 		cmdList.useProgram(program.getGLName());

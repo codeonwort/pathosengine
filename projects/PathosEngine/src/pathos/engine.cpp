@@ -490,6 +490,7 @@ namespace pathos {
 						probeActors[i]->captureScene();
 					}
 
+					// Render the main view.
 					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
 						SceneProxySource::MainScene,
 						frameCounter_gameThread,

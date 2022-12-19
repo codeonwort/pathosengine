@@ -129,8 +129,17 @@ namespace pathos {
 		finalRenderTarget = 0;
 	}
 
-	void SceneRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling) {
-		sceneRenderTargets->reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, bEnableResolutionScaling);
+	void SceneRenderer::reallocateSceneRenderTargets(
+		RenderCommandList& cmdList,
+		SceneProxySource sceneProxySource,
+		bool bEnableResolutionScaling)
+	{
+		sceneRenderTargets->reallocSceneTextures(
+			cmdList,
+			sceneProxySource,
+			sceneRenderSettings.sceneWidth,
+			sceneRenderSettings.sceneHeight,
+			bEnableResolutionScaling);
 
 		if (gbufferFBO == 0) {
 			gRenderDevice->createFramebuffers(1, &gbufferFBO);
@@ -173,7 +182,7 @@ namespace pathos {
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
-		reallocateSceneRenderTargets(cmdList, bEnableResolutionScaling);
+		reallocateSceneRenderTargets(cmdList, scene->sceneProxySource, bEnableResolutionScaling);
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
