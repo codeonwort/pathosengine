@@ -168,7 +168,8 @@ namespace pathos {
 
 		CHECK(sceneRenderSettings.isValid());
 
-		bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bLightProbeRendering = (scene->sceneProxySource == SceneProxySource::RadianceCapture);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -210,6 +211,8 @@ namespace pathos {
 			depthPrepass->renderPreDepth(cmdList, scene, camera);
 		}
 
+		// #todo-light-probe: Don't need to render this per scene proxy,
+		// but scene proxies for light probes are processed prior to the scene proxy for the main view.
 		{
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
@@ -218,6 +221,8 @@ namespace pathos {
 			revertHackedSceneUniformBuffer(cmdList);
 		}
 
+		// #todo-light-probe: Don't need to render this per scene proxy,
+		// but scene proxies for light probes are processed prior to the scene proxy for the main view.
 		{
 			SCOPED_CPU_COUNTER(RenderOmniShadowMaps);
 			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
@@ -226,7 +231,7 @@ namespace pathos {
 		}
 
 		// Volumetric clouds
-		{
+		if (bLightProbeRendering == false) {
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
@@ -234,9 +239,8 @@ namespace pathos {
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
-		{
+		if (bLightProbeRendering == false) {
 			SCOPED_GPU_COUNTER(RenderGodRay);
-
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
@@ -268,7 +272,7 @@ namespace pathos {
 			renderDirectLighting(cmdList);
 		}
 
-		if (cvar_enable_probegi.getInt() != 0) {
+		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
@@ -277,7 +281,7 @@ namespace pathos {
 		// Add unlit and emissive
 		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
 
-		if (cvar_enable_ssr.getInt() != 0) {
+		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
 		}
@@ -290,6 +294,9 @@ namespace pathos {
 
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		// 
+		// #note: Light probe rendering is not supported to enable post processing passes.
+
 		GLuint sceneAfterLastPP = 0;
 
 		if (sceneRenderSettings.enablePostProcess == false)

@@ -205,6 +205,7 @@ namespace pathos {
 		uint32 numMips,
 		GLuint outputTexture)
 	{
+		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
 
 		GLuint fbo = IrradianceBaker::dummyFBO;
