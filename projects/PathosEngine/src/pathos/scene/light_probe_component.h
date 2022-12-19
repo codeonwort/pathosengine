@@ -9,6 +9,7 @@ namespace pathos {
 
 	extern const uint32 radianceProbeCubemapSize;
 	extern const uint32 radianceProbeNumMips;
+	constexpr uint32 radianceProbeMaxCount = 10;
 
 	class RenderTargetCube;
 

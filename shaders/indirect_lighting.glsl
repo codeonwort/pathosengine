@@ -6,6 +6,12 @@
 
 // #todo-light-probe: SH encoding for indirect diffuse
 
+#define MAX_RADIANCE_PROBES 10
+struct RadianceProbe {
+	vec3 positionWS;
+	float captureRadius;
+};
+
 // --------------------------------------------------------
 // Input
 
@@ -14,17 +20,21 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_IndirectLighting {
-	float prefilterEnvMapMaxLOD;
-	float intensity;
+	float radianceProbeMaxLOD;
+	float overallIntensity;
+	uint numRadianceProbes;
+	uint _pad0;
+	RadianceProbe localRadianceProbes[MAX_RADIANCE_PROBES];
 } ubo;
 
-layout (binding = 0) uniform usampler2D  gbufferA;
-layout (binding = 1) uniform sampler2D   gbufferB;
-layout (binding = 2) uniform usampler2D  gbufferC;
-layout (binding = 3) uniform sampler2D   ssaoMap;
-layout (binding = 4) uniform samplerCube skyIrradianceProbe; // Sky diffuse IBL
-layout (binding = 5) uniform samplerCube skyRadianceProbe;   // Sky specular IBL
-layout (binding = 6) uniform sampler2D   brdfIntegrationMap; // Specular IBL
+layout (binding = 0) uniform usampler2D       gbufferA;
+layout (binding = 1) uniform sampler2D        gbufferB;
+layout (binding = 2) uniform usampler2D       gbufferC;
+layout (binding = 3) uniform sampler2D        ssaoMap;
+layout (binding = 4) uniform samplerCube      skyIrradianceProbe;     // Sky diffuse IBL
+layout (binding = 5) uniform samplerCube      skyRadianceProbe;       // Sky specular IBL
+layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
+layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // local specular IBLs
 
 // --------------------------------------------------------
 // Output
@@ -63,9 +73,24 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	vec3 diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
 
 	// Specular GI
-	vec3 prefilteredColor = textureLod(skyRadianceProbe, R, roughness * ubo.prefilterEnvMapMaxLOD).rgb;
+	int localSpecularIndex = -1;
+	for (uint i = 0; i < ubo.numRadianceProbes; ++i) {
+		RadianceProbe probe = ubo.localRadianceProbes[i];
+		float dist = length(gbufferData.ws_coords - probe.positionWS);
+		if (dist <= probe.captureRadius) {
+			localSpecularIndex = int(i);
+			break;
+		}
+	}
+	vec3 specularSample;
+	if (localSpecularIndex == -1) {
+		specularSample = textureLod(skyRadianceProbe, R, roughness * ubo.radianceProbeMaxLOD).rgb;
+	} else {
+		vec4 R4 = vec4(R, float(localSpecularIndex));
+		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.radianceProbeMaxLOD).rgb;
+	}
 	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
-	vec3 specularIndirect = prefilteredColor * (kS * envBRDF.x + envBRDF.y);
+	vec3 specularIndirect = specularSample * (kS * envBRDF.x + envBRDF.y);
 
 	// Ambient occlusion
 	// NOTE: Applying occlusion AFTER integrating over hemisphere
@@ -94,7 +119,7 @@ void main() {
 	vec3 irradiance = getGlobalIllumination(gbufferData);
 	irradiance.rgb = max(vec3(0.0), irradiance.rgb);
 
-	irradiance.rgb *= ubo.intensity;
+	irradiance.rgb *= ubo.overallIntensity;
 
 	outSceneColor = vec4(irradiance, 0.0);
 }

@@ -22,11 +22,17 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_gi_intensity("r.probegi.intensity", 1.0f, "Indirect lighting boost coeff");
 
+	// #todo-light-probe: Put this data into SSBO, not UBO.
+	struct RadianceProbeUBOData { vector3 positionWS; float captureRadius; };
+
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
 
-		float prefilterEnvMapMaxLOD;
+		float radianceProbeMaxLOD;
 		float intensity;
+		uint32 numRadianceProbes;
+		uint32 _pad0;
+		RadianceProbeUBOData radianceProbes[radianceProbeMaxCount];
 	};
 
 	class IndirectLightingVS : public ShaderStage {
@@ -79,18 +85,20 @@ namespace pathos {
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
+		std::vector<RadianceProbeUBOData> radianceProbeUBOData;
+		radianceProbeUBOData.reserve(scene->proxyList_radianceProbe.size());
 		{
 			GLuint cubemapArray = sceneContext.localSpecularIBLs;
 			int32 numRadianceProbes = (int32)scene->proxyList_radianceProbe.size();
 			int32 cubemapIndex = 0;
 			for (int32 i = 0; i < numRadianceProbes; ++i)
 			{
-				RenderTargetCube* cubeRT = scene->proxyList_radianceProbe[i]->specularIBL;
-				if (cubeRT == nullptr) {
+				RadianceProbeProxy* proxy = scene->proxyList_radianceProbe[i];
+				if (proxy->specularIBL == nullptr) {
 					continue;
 				}
 
-				GLuint cubemap = cubeRT->getGLTexture();
+				GLuint cubemap = proxy->specularIBL->getGLTexture();
 				GLuint size = radianceProbeCubemapSize;
 				for (int32 mip = 0; mip < (int32)radianceProbeNumMips; ++mip) {
 					cmdList.copyImageSubData(
@@ -100,6 +108,9 @@ namespace pathos {
 					size /= 2;
 				}
 				++cubemapIndex;
+
+				RadianceProbeUBOData uboData{ proxy->positionWS, proxy->captureRadius };
+				radianceProbeUBOData.emplace_back(uboData);
 			}
 		}
 
@@ -120,8 +131,13 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.prefilterEnvMapMaxLOD = badger::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
+		uboData.radianceProbeMaxLOD = badger::max(0.0f, (float)(scene->prefilterEnvMapMipLevels - 1));
 		uboData.intensity = badger::max(0.0f, cvar_gi_intensity.getFloat());
+		uboData.numRadianceProbes = (uint32)radianceProbeUBOData.size();
+		for (size_t i = 0; i < radianceProbeUBOData.size(); ++i)
+		{
+			uboData.radianceProbes[i] = radianceProbeUBOData[i];
+		}
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
@@ -136,6 +152,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(4, scene->irradianceMap);
 		cmdList.bindTextureUnit(5, scene->prefilterEnvMap);
 		cmdList.bindTextureUnit(6, IrradianceBaker::getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);

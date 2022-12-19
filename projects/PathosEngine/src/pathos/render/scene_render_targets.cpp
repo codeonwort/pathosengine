@@ -1,6 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/postprocessing/super_res.h"
+#include "pathos/scene/light_probe_component.h"
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
@@ -113,10 +114,7 @@ namespace pathos {
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
 			// #todo-light-probe: format and size should match with light_probe_component.cpp
-			constexpr uint32 maxCubemaps = 10;
-			constexpr uint32 CUBEMAP_SIZE = 256;
-			constexpr uint32 NUM_MIPS = 5;
-			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, CUBEMAP_SIZE, maxCubemaps, NUM_MIPS, "LocalSpecularIBLs");
+			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, radianceProbeCubemapSize, radianceProbeMaxCount, radianceProbeNumMips, "LocalSpecularIBLs");
 		}
 
 		//////////////////////////////////////////////////////////////////////////
