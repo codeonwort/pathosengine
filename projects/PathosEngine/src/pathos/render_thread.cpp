@@ -128,7 +128,9 @@ namespace pathos {
 					if (sceneProxy->sceneProxySource == SceneProxySource::MainScene || sceneProxy->sceneProxySource == SceneProxySource::SceneCapture) {
 						sceneRTs = renderThread->sceneRenderTargets_primary;
 					} else if (sceneProxy->sceneProxySource == SceneProxySource::RadianceCapture) {
-						sceneRTs = renderThread->sceneRenderTargets_lightProbe;
+						sceneRTs = renderThread->sceneRenderTargets_radianceProbe;
+					} else if (sceneProxy->sceneProxySource == SceneProxySource::IrradianceCapture) {
+						sceneRTs = renderThread->sceneRenderTargets_irradianceProbe;
 					} else {
 						CHECK_NO_ENTRY();
 					}
@@ -271,10 +273,12 @@ namespace pathos {
 			cmdList.flushAllCommands();
 
 			renderThread->sceneRenderTargets_primary->freeSceneTextures(cmdList);
-			renderThread->sceneRenderTargets_lightProbe->freeSceneTextures(cmdList);
+			renderThread->sceneRenderTargets_radianceProbe->freeSceneTextures(cmdList);
+			renderThread->sceneRenderTargets_irradianceProbe->freeSceneTextures(cmdList);
 			cmdList.flushAllCommands();
 			SAFE_RELEASE(renderThread->sceneRenderTargets_primary);
-			SAFE_RELEASE(renderThread->sceneRenderTargets_lightProbe);
+			SAFE_RELEASE(renderThread->sceneRenderTargets_radianceProbe);
+			SAFE_RELEASE(renderThread->sceneRenderTargets_irradianceProbe);
 
 			SAFE_RELEASE(renderThread->renderer);
 			SAFE_RELEASE(renderThread->renderer2D);
@@ -464,7 +468,8 @@ namespace pathos {
 
 	bool RenderThread::initializeRenderer(RenderCommandList& cmdList) {
 		sceneRenderTargets_primary = new SceneRenderTargets;
-		sceneRenderTargets_lightProbe = new SceneRenderTargets;
+		sceneRenderTargets_radianceProbe = new SceneRenderTargets;
+		sceneRenderTargets_irradianceProbe = new SceneRenderTargets;
 		renderer = new SceneRenderer;
 
 		const EngineConfig& conf = gEngine->getConfig();

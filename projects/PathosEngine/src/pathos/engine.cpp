@@ -42,7 +42,8 @@ namespace pathos {
 	//        and the world will look like frozen.
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
 
-	static ConsoleVariable<int32> cvar_probegi_numUpdates("r.probegi.updatesPerFrame", 1, "Number of light probes to update per frame");
+	static ConsoleVariable<int32> cvar_probegi_radiance_numUpdates("r.probegi.radiance.updatesPerFrame", 1, "Number of radiance probes to update per frame");
+	static ConsoleVariable<int32> cvar_probegi_irradiance_numUpdates("r.probegi.irradiance.updatesPerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -471,33 +472,50 @@ namespace pathos {
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
-					// Update light probes
-					std::vector<LightProbeActor*> probeActors;
-					for (Actor* actor : currentWorld->actors) {
-						LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
-						if (probeActor == nullptr || probeActor->bUpdateEveryFrame == false) {
-							continue;
+					// Update light probes.
+					{
+						std::vector<LightProbeActor*> radianceProbes, irradianceProbes;
+						for (Actor* actor : currentWorld->actors) {
+							LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
+							if (probeActor == nullptr || probeActor->bUpdateEveryFrame == false) {
+								continue;
+							}
+							if (probeActor->getProbeComponent()->probeType == ELightProbeType::Radiance) {
+								radianceProbes.push_back(probeActor);
+							} else {
+								irradianceProbes.push_back(probeActor);
+							}
 						}
-						probeActors.push_back(probeActor);
-					}
-					std::sort(probeActors.begin(), probeActors.end(),
-						[](const LightProbeActor* A, const LightProbeActor* B) {
-							return A->lastUpdateTime < B->lastUpdateTime;
+						std::sort(radianceProbes.begin(), radianceProbes.end(),
+							[](const LightProbeActor* A, const LightProbeActor* B) {
+								return A->lastUpdateTime < B->lastUpdateTime;
+							}
+						);
+						std::sort(irradianceProbes.begin(), irradianceProbes.end(),
+							[](const LightProbeActor* A, const LightProbeActor* B) {
+								return A->lastUpdateTime < B->lastUpdateTime;
+							}
+						);
+						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)radianceProbes.size());
+						for (int32 i = 0; i < numProbeUpdates; ++i) {
+							radianceProbes[i]->captureScene();
 						}
-					);
-					int32 numProbeUpdatesPerFrame = std::min(cvar_probegi_numUpdates.getInt(), (int32)probeActors.size());
-					for (int32 i = 0; i < numProbeUpdatesPerFrame; ++i) {
-						probeActors[i]->captureScene();
+						numProbeUpdates = std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceProbes.size());
+						for (int32 i = 0; i < numProbeUpdates; ++i) {
+							irradianceProbes[i]->captureScene();
+						}
 					}
 
 					// Render the main view.
-					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
-						SceneProxySource::MainScene,
-						frameCounter_gameThread,
-						currentWorld->getCamera());
-					CHECK(sceneProxy != nullptr);
+					{
+						SceneProxy* mainSceneProxy = currentWorld->getScene().createRenderProxy(
+							SceneProxySource::MainScene,
+							frameCounter_gameThread,
+							currentWorld->getCamera());
+						CHECK(mainSceneProxy != nullptr);
 
-					renderThread->pushSceneProxy(sceneProxy);
+						renderThread->pushSceneProxy(mainSceneProxy);
+					}
 				}
 			}
 

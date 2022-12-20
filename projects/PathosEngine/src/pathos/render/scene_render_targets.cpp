@@ -25,7 +25,7 @@ namespace pathos {
 		bool bEnableResolutionScaling)
 	{
 		CHECK(newWidth > 0 && newHeight > 0);
-		const bool bLightProbeRendering = (sceneProxySource == SceneProxySource::RadianceCapture);
+		const bool bLightProbeRendering = isLightProbeRendering(sceneProxySource);
 
 		destroyed = false;
 

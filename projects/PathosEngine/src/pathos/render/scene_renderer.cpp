@@ -178,7 +178,7 @@ namespace pathos {
 		CHECK(sceneRenderSettings.isValid());
 
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
-		const bool bLightProbeRendering = (scene->sceneProxySource == SceneProxySource::RadianceCapture);
+		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;

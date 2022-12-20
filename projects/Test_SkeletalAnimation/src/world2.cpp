@@ -85,14 +85,18 @@ void World2::setupScene()
 	//---------------------------------------------------------------------------------------
 	// Local light probes
 
-	lightProbe0 = spawnActor<LightProbeActor>();
-	lightProbe0->setProbeType(ELightProbeType::Radiance);
-	lightProbe0->setActorLocation(vector3(-1.0f, 3.0f, 2.0f));
-	//lightProbe0->bUpdateEveryFrame = false;
+	radianceProbe0 = spawnActor<LightProbeActor>();
+	radianceProbe0->setProbeType(ELightProbeType::Radiance);
+	radianceProbe0->setActorLocation(vector3(-1.0f, 3.0f, 2.0f));
+	//radianceProbe0->bUpdateEveryFrame = false;
 
-	lightProbe1 = spawnActor<LightProbeActor>();
-	lightProbe1->setProbeType(ELightProbeType::Radiance);
-	lightProbe1->setActorLocation(vector3(3.0f, 5.0f, 1.0f));
+	radianceProbe1 = spawnActor<LightProbeActor>();
+	radianceProbe1->setProbeType(ELightProbeType::Radiance);
+	radianceProbe1->setActorLocation(vector3(3.0f, 5.0f, 1.0f));
+
+	LightProbeActor* irradianceProbe0 = spawnActor<LightProbeActor>();
+	irradianceProbe0->setProbeType(ELightProbeType::Irradiance);
+	irradianceProbe0->setActorLocation(vector3(0.0f, 3.0f, 1.0f));
 
 	//---------------------------------------------------------------------------------------
 	// Materials

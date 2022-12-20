@@ -8,6 +8,9 @@ namespace pathos {
 	const uint32 radianceProbeCubemapSize = 256;
 	const uint32 radianceProbeNumMips = 5;
 	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
+
+	const uint32 irradianceProbeCubemapSize = 32;
+	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
 }
 
 namespace pathos {
@@ -41,23 +44,33 @@ namespace pathos {
 
 	void LightProbeComponent::captureScene(uint32 faceIndex) {
 		CHECK(0 <= faceIndex && faceIndex < 6);
+		CHECK(probeType != ELightProbeType::Unknown);
 
 		if (renderTarget == nullptr) {
 			renderTarget = makeUnique<RenderTargetCube>();
-			// #note: If small mips are created, IBL baker will pick black mips
-			// and it will result in too-dark IBL for non-mip0 output.
-			renderTarget->respecTexture(
-				radianceProbeCubemapSize,
-				radianceProbeFormat,
-				1, // Only mip0
-				"RadianceProbe_Capture");
 
-			specularIBL = makeUnique<RenderTargetCube>();
-			specularIBL->respecTexture(
-				radianceProbeCubemapSize,
-				radianceProbeFormat,
-				radianceProbeNumMips,
-				"RadianceProbe_IBL");
+			if (probeType == ELightProbeType::Radiance) {
+				// #note: If small mips are created, IBL baker will pick black mips
+				// and it will result in too-dark IBL for non-mip0 output.
+				renderTarget->respecTexture(
+					radianceProbeCubemapSize,
+					radianceProbeFormat,
+					1, // Only mip0
+					"RadianceProbe_Capture");
+
+				specularIBL = makeUnique<RenderTargetCube>();
+				specularIBL->respecTexture(
+					radianceProbeCubemapSize,
+					radianceProbeFormat,
+					radianceProbeNumMips,
+					"RadianceProbe_IBL");
+			} else if (probeType == ELightProbeType::Irradiance) {
+				renderTarget->respecTexture(
+					irradianceProbeCubemapSize,
+					irradianceProbeFormat,
+					1,
+					"IrradianceProbe_Capture");
+			}
 		}
 
 		const vector3 lookAtOffsets[6] = {
@@ -79,30 +92,24 @@ namespace pathos {
 			vector3(0.0f, +1.0f, 0.0f), // negZ
 		};
 
-		if (probeType == ELightProbeType::Radiance) {
-			SceneRenderSettings settings;
-			settings.sceneWidth = renderTarget->getWidth();
-			settings.sceneHeight = renderTarget->getWidth();
-			settings.enablePostProcess = false;
-			settings.finalRenderTarget = renderTarget->getRenderTargetView(faceIndex);
+		SceneRenderSettings settings;
+		settings.sceneWidth = renderTarget->getWidth();
+		settings.sceneHeight = renderTarget->getWidth();
+		settings.enablePostProcess = false;
+		settings.finalRenderTarget = renderTarget->getRenderTargetView(faceIndex);
 
-			Scene& scene = getOwner()->getWorld()->getScene();
-			Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));
-			tempCamera.lookAt(getLocation(), getLocation() + lookAtOffsets[faceIndex], upVectors[faceIndex]);
+		Scene& scene = getOwner()->getWorld()->getScene();
+		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));
+		tempCamera.lookAt(getLocation(), getLocation() + lookAtOffsets[faceIndex], upVectors[faceIndex]);
+		const uint32 tempFrameNumber = 0;
 
-			const uint32 tempFrameNumber = 0;
-			SceneProxy* sceneProxy = scene.createRenderProxy(
-				SceneProxySource::RadianceCapture,
-				tempFrameNumber,
-				tempCamera);
-			sceneProxy->overrideSceneRenderSettings(settings);
+		SceneProxy* sceneProxy = scene.createRenderProxy(
+			(probeType == ELightProbeType::Radiance) ? SceneProxySource::RadianceCapture : SceneProxySource::IrradianceCapture,
+			tempFrameNumber,
+			tempCamera);
+		sceneProxy->overrideSceneRenderSettings(settings);
 
-			gEngine->pushSceneProxy(sceneProxy);
-		} else if (probeType == ELightProbeType::Irradiance) {
-			CHECK_NO_ENTRY();
-		} else {
-			CHECK_NO_ENTRY();
-		}
+		gEngine->pushSceneProxy(sceneProxy);
 	}
 
 	void LightProbeComponent::bakeIBL() {
@@ -119,7 +126,7 @@ namespace pathos {
 					textureIBL);
 			});
 		} else {
-			CHECK_NO_ENTRY();
+			// #todo-light-probe: Bake irradiance IBL
 		}
 	}
 
