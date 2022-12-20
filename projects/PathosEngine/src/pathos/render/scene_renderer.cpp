@@ -197,7 +197,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
 
-			// They should be updated before updateSceneUniformBuffer
+			// These should be updated before updateSceneUniformBuffer
 			scene->createViewDependentRenderProxy(camera->getViewMatrix());
 			sunShadowMap->updateUniformBufferData(cmdList, scene, camera);
 
@@ -693,9 +693,10 @@ namespace pathos {
 		SceneProxy* scene,
 		Camera* camera)
 	{
-		UBO_PerFrame data;
-
 		const matrix4& projMatrix = camera->getProjectionMatrix();
+		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+
+		UBO_PerFrame data;
 
 		data.view         = camera->getViewMatrix();
 		data.inverseView  = glm::inverse(data.view);
@@ -716,7 +717,7 @@ namespace pathos {
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
-		if (getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
+		if (bMainScene && getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
 			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
 			float K = getTemporalJitterMultiplier();
 			// It reduces the effectiveness of TAA, but also relax jittering when super resolution is enabled.
@@ -764,9 +765,11 @@ namespace pathos {
 
 		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 
-		prevView = data.view;
-		prevInverseView = data.inverseView;
-		prevViewProj = data.viewProj;
+		if (bMainScene) {
+			prevView = data.view;
+			prevInverseView = data.inverseView;
+			prevViewProj = data.viewProj;
+		}
 
 		cachedPerFrameUBOData = std::move(data);
 	}
