@@ -20,10 +20,10 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_IndirectLighting {
-	float radianceProbeMaxLOD;
+	float skyRadianceProbeMaxLOD; // Max LOD of sky probe
 	float overallIntensity;
 	uint numRadianceProbes;
-	uint _pad0;
+	float radianceProbeMaxLOD; // Max LOD of local probes
 	RadianceProbe localRadianceProbes[MAX_RADIANCE_PROBES];
 } ubo;
 
@@ -84,7 +84,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	}
 	vec3 specularSample;
 	if (localSpecularIndex == -1) {
-		specularSample = textureLod(skyRadianceProbe, R, roughness * ubo.radianceProbeMaxLOD).rgb;
+		specularSample = textureLod(skyRadianceProbe, R, roughness * ubo.skyRadianceProbeMaxLOD).rgb;
 	} else {
 		vec4 R4 = vec4(R, float(localSpecularIndex));
 		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.radianceProbeMaxLOD).rgb;

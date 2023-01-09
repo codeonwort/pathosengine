@@ -109,9 +109,9 @@ namespace pathos {
 		vector3                                    godRayLocation = vector3(0.0f);
 
 		// IBL
-		GLuint                                     irradianceMap = 0;
-		GLuint                                     prefilterEnvMap = 0;
-		uint32                                     prefilterEnvMapMipLevels = 0;
+		GLuint                                     skyIrradianceMap = 0;
+		GLuint                                     skyPrefilterEnvMap = 0;
+		uint32                                     skyPrefilterEnvMapMipLevels = 0;
 
 		// Local light probes
 		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;

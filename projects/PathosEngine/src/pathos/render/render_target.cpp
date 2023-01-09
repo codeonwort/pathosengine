@@ -117,7 +117,7 @@ namespace pathos {
 		const GLenum glFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
 
 		GLuint* texturePtr = &glTextureObject;
-		std::string debugName = inDebugName;
+		std::string debugName = inDebugName ? inDebugName : std::string();
 		ENQUEUE_RENDER_COMMAND(
 			[texturePtr, glFormat, inWidth, inHeight, debugName](RenderCommandList& cmdList) {
 				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
@@ -203,7 +203,7 @@ namespace pathos {
 
 		GLuint* texturePtr = &glTextureObject;
 		GLuint* textureViewsPtr = glTextureViews;
-		std::string debugName = inDebugName;
+		std::string debugName = inDebugName ? inDebugName : std::string();
 		ENQUEUE_RENDER_COMMAND(
 			[texturePtr, textureViewsPtr, glFormat, inWidth, numMips = this->numMips, debugName](RenderCommandList& cmdList) {
 				// Cubemap texture

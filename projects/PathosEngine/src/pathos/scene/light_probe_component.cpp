@@ -9,7 +9,7 @@ namespace pathos {
 	const uint32 radianceProbeNumMips = 5;
 	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
 
-	const uint32 irradianceProbeCubemapSize = 32;
+	const uint32 irradianceProbeTileSize = 32;
 	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
 }
 
@@ -28,14 +28,14 @@ namespace pathos {
 			RadianceProbeProxy* proxy = ALLOC_RENDER_PROXY<RadianceProbeProxy>(scene);
 			proxy->positionWS = getLocation();
 			proxy->captureRadius = captureRadius;
-			proxy->renderTarget = renderTarget.get();
-			proxy->specularIBL = bakedIBL.get();
+			proxy->renderTarget = radianceCubemap.get();
+			proxy->specularIBL = specularIBL.get();
 			scene->proxyList_radianceProbe.push_back(proxy);
 		} else if (probeType == ELightProbeType::Irradiance) {
 			IrradianceProbeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceProbeProxy>(scene);
 			proxy->positionWS = getLocation();
 			proxy->captureRadius = captureRadius;
-			proxy->renderTarget = renderTarget.get();
+			proxy->renderTarget = radianceCubemap.get();
 			scene->proxyList_irradianceProbe.push_back(proxy);
 		} else {
 			CHECK_NO_ENTRY();
@@ -46,42 +46,35 @@ namespace pathos {
 		CHECK(0 <= faceIndex && faceIndex < 6);
 		CHECK(probeType != ELightProbeType::Unknown);
 
-		if (renderTarget == nullptr) {
-			renderTarget = makeUnique<RenderTargetCube>();
+		if (radianceCubemap == nullptr) {
+			radianceCubemap = makeUnique<RenderTargetCube>();
 
 			if (probeType == ELightProbeType::Radiance) {
 				// #note: If small mips are created, IBL baker will pick black mips
 				// and it will result in too-dark IBL for non-mip0 output.
-				renderTarget->respecTexture(
+				radianceCubemap->respecTexture(
 					radianceProbeCubemapSize,
 					radianceProbeFormat,
 					1, // Only mip0
 					"RadianceProbe_Capture");
 
-				bakedIBL = makeUnique<RenderTargetCube>();
-				bakedIBL->respecTexture(
+				specularIBL = makeUnique<RenderTargetCube>();
+				specularIBL->respecTexture(
 					radianceProbeCubemapSize,
 					radianceProbeFormat,
 					radianceProbeNumMips,
 					"RadianceProbe_IBL");
 			} else if (probeType == ELightProbeType::Irradiance) {
-				renderTarget->respecTexture(
-					irradianceProbeCubemapSize,
+				radianceCubemap->respecTexture(
+					irradianceProbeTileSize,
 					irradianceProbeFormat,
 					1,
 					"IrradianceProbe_Capture");
 
-				bakedIBL = makeUnique<RenderTargetCube>();
-				bakedIBL->respecTexture(
-					irradianceProbeCubemapSize,
-					irradianceProbeFormat,
-					1,
-					"IrradianceProbe_IBL");
-
 				irradianceAtlas = makeUnique<RenderTarget2D>();
 				irradianceAtlas->respecTexture(
-					irradianceProbeCubemapSize,
-					irradianceProbeCubemapSize,
+					irradianceProbeTileSize,
+					irradianceProbeTileSize,
 					irradianceProbeFormat,
 					"IrradianceProbe_Atlas");
 			}
@@ -107,10 +100,10 @@ namespace pathos {
 		};
 
 		SceneRenderSettings settings;
-		settings.sceneWidth = renderTarget->getWidth();
-		settings.sceneHeight = renderTarget->getWidth();
+		settings.sceneWidth = radianceCubemap->getWidth();
+		settings.sceneHeight = radianceCubemap->getWidth();
 		settings.enablePostProcess = false;
-		settings.finalRenderTarget = renderTarget->getRenderTargetView(faceIndex);
+		settings.finalRenderTarget = radianceCubemap->getRenderTargetView(faceIndex);
 
 		Scene& scene = getOwner()->getWorld()->getScene();
 		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));
@@ -128,9 +121,9 @@ namespace pathos {
 
 	void LightProbeComponent::bakeIBL() {
 		if (probeType == ELightProbeType::Radiance) {
-			GLuint radianceCapture = renderTarget->getGLTexture();
-			GLuint textureIBL = bakedIBL->getGLTexture();
-			uint32 numMips = bakedIBL->getNumMips();
+			GLuint radianceCapture = radianceCubemap->getGLTexture();
+			GLuint textureIBL = specularIBL->getGLTexture();
+			uint32 numMips = specularIBL->getNumMips();
 			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
 				IrradianceBaker::bakeSpecularIBL_renderThread(
 					cmdList,
@@ -140,19 +133,13 @@ namespace pathos {
 					textureIBL);
 			});
 		} else {
-			GLuint radianceCapture = renderTarget->getGLTexture();
-			GLuint textureIBL = bakedIBL->getGLTexture();
+			GLuint radianceCapture = radianceCubemap->getGLTexture();
 			GLuint atlas = irradianceAtlas->getGLName();
-			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL, atlas](RenderCommandList& cmdList) {
-				//IrradianceMapBakeDesc bakeDesc;
-				//bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
-				//bakeDesc.renderTarget = textureIBL;
-				//bakeDesc.viewportSize = irradianceProbeCubemapSize;
-				//IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
+			ENQUEUE_RENDER_COMMAND([radianceCapture, atlas](RenderCommandList& cmdList) {
 				IrradianceMapBakeDesc bakeDesc;
 				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
 				bakeDesc.renderTarget = atlas;
-				bakeDesc.viewportSize = irradianceProbeCubemapSize;
+				bakeDesc.viewportSize = irradianceProbeTileSize;
 				bakeDesc.viewportOffset = vector2ui(0, 0);
 				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
 			});

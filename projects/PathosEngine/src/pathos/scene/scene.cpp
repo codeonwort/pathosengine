@@ -44,9 +44,9 @@ namespace pathos {
 			proxy->godRayLocation = godRaySource->getLocation();
 		}
 
-		proxy->irradianceMap = irradianceMap;
-		proxy->prefilterEnvMap = prefilterEnvMap;
-		proxy->prefilterEnvMapMipLevels = prefilterEnvMapMipLevels;
+		proxy->skyIrradianceMap = skyIrradianceMap;
+		proxy->skyPrefilterEnvMap = skyPrefilterEnvMap;
+		proxy->skyPrefilterEnvMapMipLevels = skyPrefilterEnvMapMipLevels;
 
 		proxy->finalize_mainThread();
 

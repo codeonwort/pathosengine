@@ -36,10 +36,10 @@ namespace pathos {
 		StaticMeshComponent* godRaySource = nullptr;
 		VolumetricCloudActor* cloud = nullptr;
 
-		// IBL
-		GLuint irradianceMap = 0;
-		GLuint prefilterEnvMap = 0;
-		uint32 prefilterEnvMapMipLevels = 0;
+		// Sky IBL
+		GLuint skyIrradianceMap = 0;
+		GLuint skyPrefilterEnvMap = 0;
+		uint32 skyPrefilterEnvMapMipLevels = 0;
 
 	protected:
 		World* owner = nullptr;

@@ -115,7 +115,7 @@ void World1::setupSky()
 		// diffuse irradiance
 		{
 			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-			scene.irradianceMap = irradianceMap;
+			scene.skyIrradianceMap = irradianceMap;
 		}
 
 		// specular IBL
@@ -124,8 +124,8 @@ void World1::setupSky()
 			uint32 mipLevels;
 			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
 
-			scene.prefilterEnvMap = prefilteredEnvMap;
-			scene.prefilterEnvMapMipLevels = mipLevels;
+			scene.skyPrefilterEnvMap = prefilteredEnvMap;
+			scene.skyPrefilterEnvMapMipLevels = mipLevels;
 		}
 	}
 

@@ -219,9 +219,9 @@ void World_RC1::setupSky()
 	IrradianceBaker::bakePrefilteredEnvMap(
 		cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture: starfield specular IBL");
 
-	scene.irradianceMap = irradianceMap;
-	scene.prefilterEnvMap = prefilteredEnvMap;
-	scene.prefilterEnvMapMipLevels = mipLevels;
+	scene.skyIrradianceMap = irradianceMap;
+	scene.skyPrefilterEnvMap = prefilteredEnvMap;
+	scene.skyPrefilterEnvMapMipLevels = mipLevels;
 
 	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
 	ansel->initialize(starfield);

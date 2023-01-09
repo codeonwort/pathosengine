@@ -10,7 +10,7 @@ namespace pathos {
 	extern const uint32 radianceProbeCubemapSize;
 	extern const uint32 radianceProbeNumMips;
 	constexpr uint32 radianceProbeMaxCount = 10;
-	extern const uint32 irradianceProbeCubemapSize;
+	extern const uint32 irradianceProbeTileSize;
 
 	class RenderTargetCube;
 	class RenderTarget2D;
@@ -46,8 +46,8 @@ namespace pathos {
 		float captureRadius = 50.0f;
 
 	private:
-		uniquePtr<RenderTargetCube> renderTarget; // Radiance capture
-		uniquePtr<RenderTargetCube> bakedIBL;     // Specular or diffuse IBL
+		uniquePtr<RenderTargetCube> radianceCubemap;
+		uniquePtr<RenderTargetCube> specularIBL;
 		
 		uniquePtr<RenderTarget2D> irradianceAtlas;
 

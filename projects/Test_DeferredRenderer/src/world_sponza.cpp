@@ -143,7 +143,7 @@ void World_Sponza::setupScene() {
 	{
 		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
 			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-		scene.irradianceMap = irradianceMap;
+		scene.skyIrradianceMap = irradianceMap;
 	}
 
 	// Sky reflection probe
@@ -154,8 +154,8 @@ void World_Sponza::setupScene() {
 			cubemapForIBL, 128, prefilteredEnvMap, mipLevels,
 			"Texture IBL: specular IBL (prefiltered env map)");
 
-		scene.prefilterEnvMap = prefilteredEnvMap;
-		scene.prefilterEnvMapMipLevels = mipLevels;
+		scene.skyPrefilterEnvMap = prefilteredEnvMap;
+		scene.skyPrefilterEnvMapMipLevels = mipLevels;
 	}
 
 	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
