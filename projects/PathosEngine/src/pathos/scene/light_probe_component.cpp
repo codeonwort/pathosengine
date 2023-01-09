@@ -10,6 +10,8 @@ namespace pathos {
 	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
 
 	const uint32 irradianceProbeTileSize = 32;
+	const uint32 irradianceProbeTileCountX = 16;
+	const uint32 irradianceProbeTileCountY = 16;
 	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
 }
 
@@ -70,13 +72,6 @@ namespace pathos {
 					irradianceProbeFormat,
 					1,
 					"IrradianceProbe_Capture");
-
-				irradianceAtlas = makeUnique<RenderTarget2D>();
-				irradianceAtlas->respecTexture(
-					irradianceProbeTileSize,
-					irradianceProbeTileSize,
-					irradianceProbeFormat,
-					"IrradianceProbe_Atlas");
 			}
 		}
 
@@ -133,16 +128,25 @@ namespace pathos {
 					textureIBL);
 			});
 		} else {
+			Scene& currentScene = getOwner()->getWorld()->getScene();
 			GLuint radianceCapture = radianceCubemap->getGLTexture();
-			GLuint atlas = irradianceAtlas->getGLName();
-			ENQUEUE_RENDER_COMMAND([radianceCapture, atlas](RenderCommandList& cmdList) {
-				IrradianceMapBakeDesc bakeDesc;
-				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
-				bakeDesc.renderTarget = atlas;
-				bakeDesc.viewportSize = irradianceProbeTileSize;
-				bakeDesc.viewportOffset = vector2ui(0, 0);
-				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
-			});
+			GLuint RT_atlas = currentScene.getIrradianceAtlasTexture();
+			bool bValidTile = (irradianceTileID != 0xffffffff);
+			if (!bValidTile) {
+				bValidTile = currentScene.allocateIrradianceTile(irradianceTileID, irradianceRenderOffset.x, irradianceRenderOffset.y);
+			}
+
+			if (bValidTile) {
+				vector2ui viewportOffset = irradianceRenderOffset;
+				ENQUEUE_RENDER_COMMAND([radianceCapture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
+					IrradianceMapBakeDesc bakeDesc;
+					bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
+					bakeDesc.renderTarget = RT_atlas;
+					bakeDesc.viewportSize = irradianceProbeTileSize;
+					bakeDesc.viewportOffset = viewportOffset;
+					IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
+				});
+			}
 		}
 	}
 

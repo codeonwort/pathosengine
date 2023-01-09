@@ -113,6 +113,8 @@ namespace pathos {
 		GLuint                                     skyPrefilterEnvMap = 0;
 		uint32                                     skyPrefilterEnvMapMipLevels = 0;
 
+		GLuint                                     irradianceAtlas = 0;
+
 		// Local light probes
 		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;
 		std::vector<struct IrradianceProbeProxy*>  proxyList_irradianceProbe;

@@ -496,11 +496,16 @@ namespace pathos {
 								return A->lastUpdateTime < B->lastUpdateTime;
 							}
 						);
+
 						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)radianceProbes.size());
 						for (int32 i = 0; i < numProbeUpdates; ++i) {
 							radianceProbes[i]->captureScene();
 						}
+
 						numProbeUpdates = std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceProbes.size());
+						if (numProbeUpdates > 0) {
+							currentWorld->getScene().initializeIrradianceProbeAtlas();
+						}
 						for (int32 i = 0; i < numProbeUpdates; ++i) {
 							irradianceProbes[i]->captureScene();
 						}

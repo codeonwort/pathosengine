@@ -2,6 +2,7 @@
 
 #include "scene_component.h"
 #include "pathos/smart_pointer.h"
+#include "pathos/render/render_target.h"
 
 // Captures either radiance for indirect specular or irradiance for indirect diffuse.
 
@@ -10,7 +11,11 @@ namespace pathos {
 	extern const uint32 radianceProbeCubemapSize;
 	extern const uint32 radianceProbeNumMips;
 	constexpr uint32 radianceProbeMaxCount = 10;
+
 	extern const uint32 irradianceProbeTileSize;
+	extern const uint32 irradianceProbeTileCountX;
+	extern const uint32 irradianceProbeTileCountY;
+	extern const RenderTargetFormat irradianceProbeFormat;
 
 	class RenderTargetCube;
 	class RenderTarget2D;
@@ -48,8 +53,8 @@ namespace pathos {
 	private:
 		uniquePtr<RenderTargetCube> radianceCubemap;
 		uniquePtr<RenderTargetCube> specularIBL;
-		
-		uniquePtr<RenderTarget2D> irradianceAtlas;
+		uint32 irradianceTileID = 0xffffffff;
+		vector2ui irradianceRenderOffset;
 
 	};
 
