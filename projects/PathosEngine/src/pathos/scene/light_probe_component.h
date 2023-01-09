@@ -30,6 +30,8 @@ namespace pathos {
 	struct IrradianceProbeProxy : public SceneComponentProxy {
 		vector3           positionWS;
 		float             captureRadius;
+		vector4           irradianceTileBounds;
+		uint32            irradianceTileID;
 		RenderTargetCube* renderTarget;
 	};
 
@@ -54,7 +56,8 @@ namespace pathos {
 		uniquePtr<RenderTargetCube> radianceCubemap;
 		uniquePtr<RenderTargetCube> specularIBL;
 		uint32 irradianceTileID = 0xffffffff;
-		vector2ui irradianceRenderOffset;
+		vector2ui irradianceRenderOffset = vector2ui(0, 0);
+		vector4 irradianceTileBounds = vector4(0.0f);
 
 	};
 

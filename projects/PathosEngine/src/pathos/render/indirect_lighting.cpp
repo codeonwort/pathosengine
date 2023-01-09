@@ -24,6 +24,9 @@ namespace pathos {
 
 	// #todo-light-probe: Put this data into SSBO, not UBO.
 	struct RadianceProbeUBOData { vector3 positionWS; float captureRadius; };
+	struct IrradianceProbeSSBOData { vector3 positionWS; float captureRadius; vector4 uvBounds; };
+	
+	static constexpr uint32 SSBO_BINDING_SLOT = 2;
 
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
@@ -32,7 +35,10 @@ namespace pathos {
 		float intensity;
 		uint32 numRadianceProbes;
 		float radianceProbeMaxLOD;
-		RadianceProbeUBOData radianceProbes[radianceProbeMaxCount];
+
+		vector4ui irradianceAtlasParams; // (numValidTiles, ?, ?, ?)
+
+		RadianceProbeUBOData radianceProbes[pathos::radianceProbeMaxCount];
 	};
 
 	class IndirectLightingVS : public ShaderStage {
@@ -63,7 +69,10 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		ubo.init<UBO_IndirectLighting>();
+		ubo.init<UBO_IndirectLighting>("UBO_IndirectLighting");
+
+		uint32 maxAtlasTiles = pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY;
+		ssbo.init(maxAtlasTiles * sizeof(IrradianceProbeSSBOData), "SSBO_IndirectLighting");
 	}
 
 	void IndirectLightingPass::releaseResources(RenderCommandList& cmdList) {
@@ -82,6 +91,21 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(IndirectLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		//////////////////////////////////////////////////////////////////////////
+		// Prepare for UBO & SSBO data
+
+		std::vector<IrradianceProbeSSBOData> irradianceAtlasInfo;
+		irradianceAtlasInfo.reserve(pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
+		for (const IrradianceProbeProxy* probe : scene->proxyList_irradianceProbe) {
+			if (probe->irradianceTileID != 0xffffffff) {
+				IrradianceProbeSSBOData ssboItem;
+				ssboItem.positionWS = probe->positionWS;
+				ssboItem.captureRadius = probe->captureRadius;
+				ssboItem.uvBounds = probe->irradianceTileBounds;
+				irradianceAtlasInfo.emplace_back(ssboItem);
+			}
+		}
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
@@ -114,6 +138,8 @@ namespace pathos {
 			}
 		}
 
+		//////////////////////////////////////////////////////////////////////////
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IndirectLighting);
 		cmdList.useProgram(program.getGLName());
 
@@ -131,15 +157,20 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.radianceProbeMaxLOD = badger::max(0.0f, (float)(scene->skyPrefilterEnvMapMipLevels - 1));
+		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(scene->skyPrefilterEnvMapMipLevels - 1));
 		uboData.intensity = badger::max(0.0f, cvar_gi_intensity.getFloat());
 		uboData.numRadianceProbes = (uint32)radianceProbeUBOData.size();
 		uboData.radianceProbeMaxLOD = badger::max(0.0f, (float)(pathos::radianceProbeNumMips - 1));
+		uboData.irradianceAtlasParams.x = (uint32)irradianceAtlasInfo.size();
 		for (size_t i = 0; i < radianceProbeUBOData.size(); ++i)
 		{
 			uboData.radianceProbes[i] = radianceProbeUBOData[i];
 		}
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
+
+		if (irradianceAtlasInfo.size() > 0) {
+			ssbo.update(cmdList, SSBO_BINDING_SLOT, irradianceAtlasInfo.data(), irradianceAtlasInfo.size() * sizeof(IrradianceProbeSSBOData));
+		}
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;
@@ -154,6 +185,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(5, scene->skyPrefilterEnvMap);
 		cmdList.bindTextureUnit(6, IrradianceBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
+		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
 
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);

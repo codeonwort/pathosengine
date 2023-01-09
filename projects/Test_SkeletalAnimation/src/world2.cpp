@@ -94,15 +94,18 @@ void World2::setupScene()
 	radianceProbe1->setProbeType(ELightProbeType::Radiance);
 	radianceProbe1->setActorLocation(vector3(3.0f, 5.0f, 1.0f));
 
-	vector3 irradianceProbeMinPos = vector3(-200.0f, 3.0f, 1.0f);
+	// #todo-light-probe: Weird visual. Do gizmo rendering for light probes.
+	const vector3 irradianceProbeMinPos = vector3(-400.0f, 5.0f, -20.0f);
+	const float irradianceCaptureRadius = 100.0f;
 	for (uint32 tileX = 0; tileX < 8; ++tileX) {
-		for (uint32 tileY = 0; tileY < 1; ++tileY) {
+		for (uint32 tileY = 0; tileY < 2; ++tileY) {
 			LightProbeActor* irradianceProbe = spawnActor<LightProbeActor>();
 			irradianceProbe->setProbeType(ELightProbeType::Irradiance);
+			irradianceProbe->setCaptureRadius(irradianceCaptureRadius);
 
 			vector3 pos = irradianceProbeMinPos;
-			pos.x += 50.0f * tileX;
-			pos.z += 50.0f * tileY;
+			pos.x += irradianceCaptureRadius * tileX;
+			pos.z += irradianceCaptureRadius * tileY;
 			irradianceProbe->setActorLocation(pos);
 		}
 	}

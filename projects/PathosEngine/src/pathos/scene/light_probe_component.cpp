@@ -37,6 +37,8 @@ namespace pathos {
 			IrradianceProbeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceProbeProxy>(scene);
 			proxy->positionWS = getLocation();
 			proxy->captureRadius = captureRadius;
+			proxy->irradianceTileBounds = irradianceTileBounds;
+			proxy->irradianceTileID = irradianceTileID;
 			proxy->renderTarget = radianceCubemap.get();
 			scene->proxyList_irradianceProbe.push_back(proxy);
 		} else {
@@ -137,6 +139,8 @@ namespace pathos {
 			}
 
 			if (bValidTile) {
+				currentScene.getIrradianceTileBounds(irradianceTileID, irradianceTileBounds);
+
 				vector2ui viewportOffset = irradianceRenderOffset;
 				ENQUEUE_RENDER_COMMAND([radianceCapture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
 					IrradianceMapBakeDesc bakeDesc;

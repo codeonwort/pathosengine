@@ -12,6 +12,12 @@ struct RadianceProbe {
 	float captureRadius;
 };
 
+struct IrradianceProbe {
+	vec3 positionWS;
+	float captureRadius;
+	vec4 uvBounds;
+};
+
 // --------------------------------------------------------
 // Input
 
@@ -24,8 +30,15 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	float overallIntensity;
 	uint numRadianceProbes;
 	float radianceProbeMaxLOD; // Max LOD of local probes
+
+	uvec4 irradianceAtlasParams; // (numActiveTiles, ?, ?, ?)
+
 	RadianceProbe localRadianceProbes[MAX_RADIANCE_PROBES];
 } ubo;
+
+layout (std140, binding = 2) buffer SSBO_IndirectLighting {
+	IrradianceProbe irradianceAtlasInfo[];
+} ssbo;
 
 layout (binding = 0) uniform usampler2D       gbufferA;
 layout (binding = 1) uniform sampler2D        gbufferB;
@@ -34,7 +47,8 @@ layout (binding = 3) uniform sampler2D        ssaoMap;
 layout (binding = 4) uniform samplerCube      skyIrradianceProbe;     // Sky diffuse IBL
 layout (binding = 5) uniform samplerCube      skyRadianceProbe;       // Sky specular IBL
 layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
-layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // local specular IBLs
+layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Local specular IBLs
+layout (binding = 8) uniform sampler2D        irradianceAtlas;        // Irradiance maps by local light probes
 
 // --------------------------------------------------------
 // Output
@@ -70,7 +84,26 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	kD *= 1.0 - metallic;
 
 	// Diffuse GI
-	vec3 diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
+	int localDiffuseIndex = -1;
+	for (uint i = 0; i < ubo.irradianceAtlasParams.x; ++i) {
+		IrradianceProbe probe = ssbo.irradianceAtlasInfo[i];
+		vec3 dist3 = abs(gbufferData.ws_coords - probe.positionWS);
+		float dist = length(gbufferData.ws_coords - probe.positionWS);
+		if (dist <= probe.captureRadius) {
+		//if (all(lessThanEqual(dist3, vec3(probe.captureRadius)))) {
+			localDiffuseIndex = int(i);
+			break;
+		}
+	}
+	vec3 diffuseIndirect = vec3(0.0);
+	if (localDiffuseIndex == -1) {
+		diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
+	} else {
+		vec2 uv = ONVEncode(N_world);
+		vec4 uvBounds = ssbo.irradianceAtlasInfo[localDiffuseIndex].uvBounds;
+		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * uv;
+		diffuseIndirect = textureLod(irradianceAtlas, atlasUV, 0).rgb;
+	}
 
 	// Specular GI
 	int localSpecularIndex = -1;
@@ -95,10 +128,10 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	// Ambient occlusion
 	// NOTE: Applying occlusion AFTER integrating over hemisphere
 	//       is physically wrong but that's a limit of IBL approaches.
-	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
+	float ssaoSample = texture2D(ssaoMap, fs_in.screenUV).r;
 
-	vec3 irradiance = ssao * (kD * diffuseIndirect + specularIndirect);
-	return irradiance;
+	vec3 finalIrradiance = ssaoSample * (kD * diffuseIndirect + specularIndirect);
+	return finalIrradiance;
 }
 
 vec3 getGlobalIllumination(GBufferData gbufferData) {

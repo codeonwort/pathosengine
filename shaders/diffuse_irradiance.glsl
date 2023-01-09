@@ -1,8 +1,8 @@
 #version 460 core
 
-// https://learnopengl.com/PBR/IBL/Diffuse-irradiance
+#include "common.glsl"
 
-const float PI = 3.14159265359;
+// https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 
 ////////////////////////////////////////////////////////////
 
@@ -44,31 +44,6 @@ in VS_OUT {
 out vec4 outIrradiance;
 
 layout (binding = 0) uniform samplerCube envMap;
-
-#if ONV_ENCODING
-float ONVSaturate ( float x ) { return max(0.0, min(1.0, x)); }
-vec2 ONVOctWrap( vec2 v ) {
-    vec2 w = 1.0 - abs( v.yx );
-    if (w.x < 0.0) w.x = -w.x;
-    if (w.y < 0.0) w.y = -w.y;
-    return w;
-}
-vec2 ONVEncode( vec3 n ) {
-    n /= ( abs( n.x ) + abs( n.y ) + abs( n.z ) );
-    n.xy = n.z >= 0.0 ? n.xy : ONVOctWrap( n.xy );
-    n.xy = n.xy * 0.5 + 0.5;
-    return n.xy;
-}
-vec3 ONVDecode( vec2 f ) {
-    f = f * 2.0 - 1.0;
-    // https://twitter.com/Stubbesaurus/status/937994790553227264
-    vec3 n = vec3( f.x, f.y, 1.0 - abs( f.x ) - abs( f.y ) );
-    float t = ONVSaturate( -n.z );
-    n.x += n.x >= 0.0 ? -t : t;
-    n.y += n.y >= 0.0 ? -t : t;
-    return normalize( n );
-}
-#endif // ONV_ENCODING
 
 void main() {
 #if ONV_ENCODING
