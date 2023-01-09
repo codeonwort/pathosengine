@@ -46,7 +46,7 @@ namespace pathos {
 
 	private:
 		uniquePtr<RenderTargetCube> renderTarget; // Radiance capture
-		uniquePtr<RenderTargetCube> specularIBL;  // Baked IBL
+		uniquePtr<RenderTargetCube> bakedIBL;     // Specular or diffuse IBL
 
 	};
 

@@ -141,55 +141,71 @@ namespace pathos {
 		return cubemap;
 	}
 
-	GLuint IrradianceBaker::bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap, const char* debugName) {
+	void IrradianceBaker::bakeDiffuseIBL_renderThread(
+		RenderCommandList& cmdList,
+		GLuint inputTexture,
+		uint32 textureSize,
+		GLuint outputTexture)
+	{
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
+
+		GLuint fbo = IrradianceBaker::dummyFBO;
+		CubeGeometry* cubeGeom = IrradianceBaker::dummyCube;
+		constexpr GLint uniform_transform = 0;
+
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		cmdList.viewport(0, 0, textureSize, textureSize);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IrradianceMap);
+		cmdList.useProgram(program.getGLName());
+		cmdList.bindTextureUnit(0, inputTexture);
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+		for (int32 i = 0; i < 6; ++i) {
+			const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
+
+			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, 0, i);
+			cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
+
+			cubeGeom->activate_position(cmdList);
+			cubeGeom->activateIndexBuffer(cmdList);
+			cubeGeom->drawPrimitive(cmdList);
+		}
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
+	}
+
+	GLuint IrradianceBaker::bakeIrradianceMap(
+		GLuint inputCubemap,
+		uint32 size,
+		bool bAutoDestroyCubemap,
+		const char* debugName)
+	{
 		CHECK(isInMainThread());
 
 		GLuint irradianceMap = 0;
 
-		ENQUEUE_RENDER_COMMAND([cubemap, size, autoDestroyCubemap, irradianceMapPtr = &irradianceMap, debugName](RenderCommandList& cmdList) {
-			SCOPED_DRAW_EVENT(IrradianceMapFromCubemap);
-
-			GLuint fbo = IrradianceBaker::dummyFBO;
-			CubeGeometry* cube = IrradianceBaker::dummyCube;
-
+		ENQUEUE_RENDER_COMMAND([inputCubemap, size, bAutoDestroyCubemap, irradianceMapPtr = &irradianceMap, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
 			if (debugName != nullptr) {
 				gRenderDevice->objectLabel(GL_TEXTURE, *irradianceMapPtr, -1, debugName);
 			}
-			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(*irradianceMapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
 
-			cmdList.viewport(0, 0, size, size);
-			cmdList.disable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_FRONT);
+			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, size, *irradianceMapPtr);
 
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IrradianceMap);
-			cmdList.useProgram(program.getGLName());
-
-			cmdList.bindTextureUnit(0, cubemap);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-
-			for (int32 i = 0; i < 6; ++i) {
-				const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
-
-				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *irradianceMapPtr, 0, i);
-				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
-
-				cube->activate_position(cmdList);
-				cube->activateIndexBuffer(cmdList);
-				cube->drawPrimitive(cmdList);
-			}
-
-			cmdList.enable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_BACK);
-
-			if (autoDestroyCubemap) {
-				cmdList.deleteTextures(1, &cubemap);
+			if (bAutoDestroyCubemap) {
+				cmdList.deleteTextures(1, &inputCubemap);
 			}
 		});
 

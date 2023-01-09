@@ -19,6 +19,12 @@ namespace pathos {
 		// Given a 2D texture, creates and returns a new cubemap texture
 		static GLuint bakeCubemap(GLuint equirectangularMap, uint32 size, const char* debugName = nullptr);
 
+		// Generate irradiance cubemap from radiance capture cubemap.
+		// @param inputTexture  : rgba16f cubemap.
+		// @param textureSize   : Side length of cubemaps.
+		// @param outputTexture : rgb16f cubemap.
+		static void bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 textureSize, GLuint outputTexture);
+
 		// cubemap : a texture returned by bakeCubemap()
 		// size    : size of the cubemap that will be returned
 		static GLuint bakeIrradianceMap(GLuint cubemap, uint32 size, bool autoDestroyCubemap, const char* debugName = nullptr);

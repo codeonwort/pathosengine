@@ -29,7 +29,7 @@ namespace pathos {
 			proxy->positionWS = getLocation();
 			proxy->captureRadius = captureRadius;
 			proxy->renderTarget = renderTarget.get();
-			proxy->specularIBL = specularIBL.get();
+			proxy->specularIBL = bakedIBL.get();
 			scene->proxyList_radianceProbe.push_back(proxy);
 		} else if (probeType == ELightProbeType::Irradiance) {
 			IrradianceProbeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceProbeProxy>(scene);
@@ -58,8 +58,8 @@ namespace pathos {
 					1, // Only mip0
 					"RadianceProbe_Capture");
 
-				specularIBL = makeUnique<RenderTargetCube>();
-				specularIBL->respecTexture(
+				bakedIBL = makeUnique<RenderTargetCube>();
+				bakedIBL->respecTexture(
 					radianceProbeCubemapSize,
 					radianceProbeFormat,
 					radianceProbeNumMips,
@@ -70,6 +70,13 @@ namespace pathos {
 					irradianceProbeFormat,
 					1,
 					"IrradianceProbe_Capture");
+
+				bakedIBL = makeUnique<RenderTargetCube>();
+				bakedIBL->respecTexture(
+					irradianceProbeCubemapSize,
+					irradianceProbeFormat,
+					1,
+					"IrradianceProbe_IBL");
 			}
 		}
 
@@ -115,8 +122,8 @@ namespace pathos {
 	void LightProbeComponent::bakeIBL() {
 		if (probeType == ELightProbeType::Radiance) {
 			GLuint radianceCapture = renderTarget->getGLTexture();
-			GLuint textureIBL = specularIBL->getGLTexture();
-			uint32 numMips = specularIBL->getNumMips();
+			GLuint textureIBL = bakedIBL->getGLTexture();
+			uint32 numMips = bakedIBL->getNumMips();
 			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
 				IrradianceBaker::bakeSpecularIBL_renderThread(
 					cmdList,
@@ -126,7 +133,15 @@ namespace pathos {
 					textureIBL);
 			});
 		} else {
-			// #todo-light-probe: Bake irradiance IBL
+			GLuint radianceCapture = renderTarget->getGLTexture();
+			GLuint textureIBL = bakedIBL->getGLTexture();
+			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL](RenderCommandList& cmdList) {
+				IrradianceBaker::bakeDiffuseIBL_renderThread(
+					cmdList,
+					radianceCapture,
+					irradianceProbeCubemapSize,
+					textureIBL);
+			});
 		}
 	}
 
