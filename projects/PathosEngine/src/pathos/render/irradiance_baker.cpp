@@ -26,21 +26,31 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_EquirectangularToCubemap, EquirectangularToCubeVS, EquirectangularToCubeFS);
 
+	template<EIrradianceMapEncoding encoding>
 	class IrradianceMapVS : public ShaderStage {
 	public:
 		IrradianceMapVS() : ShaderStage(GL_VERTEX_SHADER, "IrradianceMapVS") {
-			addDefine("VERTEX_SHADER", 1);
-			setFilepath("diffuse_irradiance.glsl");
+			if (encoding == EIrradianceMapEncoding::Cubemap) {
+				addDefine("VERTEX_SHADER", 1);
+				setFilepath("diffuse_irradiance.glsl");
+			} else if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
+				setFilepath("fullscreen_quad.glsl");
+			}
 		}
 	};
+	template<EIrradianceMapEncoding encoding>
 	class IrradianceMapFS : public ShaderStage {
 	public:
 		IrradianceMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "IrradianceMapFS") {
 			addDefine("FRAGMENT_SHADER", 1);
+			if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
+				addDefine("ONV_ENCODING", 1);
+			}
 			setFilepath("diffuse_irradiance.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap, IrradianceMapVS, IrradianceMapFS);
+	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_Cube, IrradianceMapVS<EIrradianceMapEncoding::Cubemap>, IrradianceMapFS<EIrradianceMapEncoding::Cubemap>);
+	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_ONV, IrradianceMapVS<EIrradianceMapEncoding::OctahedralNormalVector>, IrradianceMapFS<EIrradianceMapEncoding::OctahedralNormalVector>);
 
 	class PrefilterEnvMapVS : public ShaderStage {
 	public:
@@ -87,7 +97,7 @@ namespace pathos {
 	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
 	glm::mat4 IrradianceBaker::cubeTransforms[6];
 
-	GLuint IrradianceBaker::bakeCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
+	GLuint IrradianceBaker::projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint cubemap = 0;
@@ -144,45 +154,70 @@ namespace pathos {
 	void IrradianceBaker::bakeDiffuseIBL_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
-		uint32 textureSize,
-		GLuint outputTexture)
+		const IrradianceMapBakeDesc& bakeDesc)
 	{
 		CHECK(isInRenderThread());
+		CHECK(bakeDesc.encoding == EIrradianceMapEncoding::Cubemap || bakeDesc.encoding == EIrradianceMapEncoding::OctahedralNormalVector);
 		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
 
 		GLuint fbo = IrradianceBaker::dummyFBO;
 		CubeGeometry* cubeGeom = IrradianceBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
+		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
 
-		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(outputTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(outputTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		if (bBakeCubemap) {
+			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.viewport(0, 0, bakeDesc.viewportSize, bakeDesc.viewportSize);
+		} else {
+			cmdList.viewport(
+				bakeDesc.viewportOffset.x, bakeDesc.viewportOffset.y,
+				bakeDesc.viewportSize, bakeDesc.viewportSize);
+		}
 
-		cmdList.viewport(0, 0, textureSize, textureSize);
 		cmdList.disable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_FRONT);
+		if (bBakeCubemap) {
+			cmdList.cullFace(GL_FRONT);
+		}
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IrradianceMap);
-		cmdList.useProgram(program.getGLName());
+		GLuint glProgram = 0;
+		if (bBakeCubemap) {
+			glProgram = FIND_SHADER_PROGRAM(Program_IrradianceMap_Cube).getGLName();
+		} else {
+			glProgram = FIND_SHADER_PROGRAM(Program_IrradianceMap_ONV).getGLName();
+		}
+		CHECK(glProgram != 0);
+
+		cmdList.useProgram(glProgram);
 		cmdList.bindTextureUnit(0, inputTexture);
-
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-		for (int32 i = 0; i < 6; ++i) {
-			const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
+		if (bBakeCubemap) {
+			for (int32 i = 0; i < 6; ++i) {
+				const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
 
-			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, 0, i);
-			cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
+				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0, i);
+				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
 
-			cubeGeom->activate_position(cmdList);
-			cubeGeom->activateIndexBuffer(cmdList);
-			cubeGeom->drawPrimitive(cmdList);
+				cubeGeom->activate_position(cmdList);
+				cubeGeom->activateIndexBuffer(cmdList);
+				cubeGeom->drawPrimitive(cmdList);
+			}
+		} else {
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0);
+
+			fullscreenQuad->activate_position_uv(cmdList);
+			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
 		}
 
 		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_BACK);
+		if (bBakeCubemap) {
+			cmdList.cullFace(GL_BACK);
+		}
 	}
 
 	GLuint IrradianceBaker::bakeIrradianceMap(
@@ -202,7 +237,11 @@ namespace pathos {
 			}
 			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
 
-			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, size, *irradianceMapPtr);
+			IrradianceMapBakeDesc bakeDesc;
+			bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
+			bakeDesc.renderTarget = *irradianceMapPtr;
+			bakeDesc.viewportSize = size;
+			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, bakeDesc);
 
 			if (bAutoDestroyCubemap) {
 				cmdList.deleteTextures(1, &inputCubemap);

@@ -136,7 +136,7 @@ void World_Sponza::setupScene() {
 	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
 		pathos::loadHDRImage(SKY_HDRI), true,
 		"Texture IBL: equirectangularMap");
-	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(
+	GLuint cubemapForIBL = IrradianceBaker::projectToCubemap(
 		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 	// Sky irradiance map

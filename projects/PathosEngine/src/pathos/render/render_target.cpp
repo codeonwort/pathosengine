@@ -95,7 +95,12 @@ namespace pathos {
 		destroyResource();
 	}
 
-	void RenderTarget2D::respecTexture(uint32 inWidth, uint32 inHeight, RenderTargetFormat inFormat) {
+	void RenderTarget2D::respecTexture(
+		uint32 inWidth,
+		uint32 inHeight,
+		RenderTargetFormat inFormat,
+		const char* inDebugName)
+	{
 		const bool validDimension = inWidth != 0 && inHeight != 0;
 		CHECKF(validDimension, "Invalid width or height");
 
@@ -112,11 +117,16 @@ namespace pathos {
 		const GLenum glFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
 
 		GLuint* texturePtr = &glTextureObject;
+		std::string debugName = inDebugName;
 		ENQUEUE_RENDER_COMMAND(
-			[texturePtr, glFormat, inWidth, inHeight](RenderCommandList& cmdList) {
+			[texturePtr, glFormat, inWidth, inHeight, debugName](RenderCommandList& cmdList) {
 				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
 				cmdList.textureStorage2D(*texturePtr, 1, glFormat, inWidth, inHeight);
-				cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, "RenderTarget2D");
+				if (debugName.size() > 0) {
+					cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, debugName.c_str());
+				} else {
+					cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, "RenderTarget2D_noname");
+				}
 			}
 		);
 	}

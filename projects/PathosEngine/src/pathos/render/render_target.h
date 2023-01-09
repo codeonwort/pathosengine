@@ -54,7 +54,11 @@ namespace pathos {
 		RenderTarget2D();
 		~RenderTarget2D();
 
-		void respecTexture(uint32 inWidth, uint32 inHeight, RenderTargetFormat inFormat);
+		void respecTexture(
+			uint32 inWidth,
+			uint32 inHeight,
+			RenderTargetFormat inFormat,
+			const char* inDebugName = nullptr);
 
 		// Call if the GL texture should be visible to main thread immediately.
 		void immediateUpdateResource();

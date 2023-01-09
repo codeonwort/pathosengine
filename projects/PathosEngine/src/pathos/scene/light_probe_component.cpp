@@ -77,6 +77,13 @@ namespace pathos {
 					irradianceProbeFormat,
 					1,
 					"IrradianceProbe_IBL");
+
+				irradianceAtlas = makeUnique<RenderTarget2D>();
+				irradianceAtlas->respecTexture(
+					irradianceProbeCubemapSize,
+					irradianceProbeCubemapSize,
+					irradianceProbeFormat,
+					"IrradianceProbe_Atlas");
 			}
 		}
 
@@ -135,12 +142,19 @@ namespace pathos {
 		} else {
 			GLuint radianceCapture = renderTarget->getGLTexture();
 			GLuint textureIBL = bakedIBL->getGLTexture();
-			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL](RenderCommandList& cmdList) {
-				IrradianceBaker::bakeDiffuseIBL_renderThread(
-					cmdList,
-					radianceCapture,
-					irradianceProbeCubemapSize,
-					textureIBL);
+			GLuint atlas = irradianceAtlas->getGLName();
+			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL, atlas](RenderCommandList& cmdList) {
+				//IrradianceMapBakeDesc bakeDesc;
+				//bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
+				//bakeDesc.renderTarget = textureIBL;
+				//bakeDesc.viewportSize = irradianceProbeCubemapSize;
+				//IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
+				IrradianceMapBakeDesc bakeDesc;
+				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
+				bakeDesc.renderTarget = atlas;
+				bakeDesc.viewportSize = irradianceProbeCubemapSize;
+				bakeDesc.viewportOffset = vector2ui(0, 0);
+				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
 			});
 		}
 	}

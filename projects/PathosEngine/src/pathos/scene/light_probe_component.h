@@ -13,6 +13,7 @@ namespace pathos {
 	extern const uint32 irradianceProbeCubemapSize;
 
 	class RenderTargetCube;
+	class RenderTarget2D;
 
 	struct RadianceProbeProxy : public SceneComponentProxy {
 		vector3           positionWS;
@@ -47,6 +48,8 @@ namespace pathos {
 	private:
 		uniquePtr<RenderTargetCube> renderTarget; // Radiance capture
 		uniquePtr<RenderTargetCube> bakedIBL;     // Specular or diffuse IBL
+		
+		uniquePtr<RenderTarget2D> irradianceAtlas;
 
 	};
 

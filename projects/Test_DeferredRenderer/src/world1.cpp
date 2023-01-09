@@ -110,7 +110,7 @@ void World1::setupSky()
 {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+		GLuint cubemapForIBL = IrradianceBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
@@ -169,7 +169,7 @@ void World1::setupSky()
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+	skybox->initialize(IrradianceBaker::projectToCubemap(hdri_temp, 512));
 	scene.sky = skybox;
 #endif
 }
