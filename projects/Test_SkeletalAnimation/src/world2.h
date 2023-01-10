@@ -47,5 +47,6 @@ private:
 
 	LightProbeActor* radianceProbe0 = nullptr;
 	LightProbeActor* radianceProbe1 = nullptr;
+	LightProbeActor* radianceProbe2 = nullptr;
 
 };

@@ -157,6 +157,9 @@ namespace pathos {
 			ssbo1.update(cmdList, SSBO_1_BINDING_SLOT, ssbo1Data.data(), bytes);
 		}
 
+		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		cmdList.bindTextureUnit(0, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(1, sceneContext.localSpecularIBLs);
 

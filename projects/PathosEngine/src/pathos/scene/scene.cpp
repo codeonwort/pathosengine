@@ -60,10 +60,12 @@ namespace pathos {
 			getIrradianceTileOffset(tileID, x0, y0);
 			x1 = x0 + pathos::irradianceProbeTileSize;
 			y1 = y0 + pathos::irradianceProbeTileSize;
-			outBounds.x = x0 / (float)irradianceProbeAtlas->getWidth();
-			outBounds.y = y0 / (float)irradianceProbeAtlas->getHeight();
-			outBounds.z = x1 / (float)irradianceProbeAtlas->getWidth();
-			outBounds.w = y1 / (float)irradianceProbeAtlas->getHeight();
+			float dx = 0.5f / (float)irradianceProbeAtlas->getWidth();
+			float dy = 0.5f / (float)irradianceProbeAtlas->getHeight();
+			outBounds.x = +dx + x0 / (float)irradianceProbeAtlas->getWidth();
+			outBounds.y = +dy + y0 / (float)irradianceProbeAtlas->getHeight();
+			outBounds.z = -dx + x1 / (float)irradianceProbeAtlas->getWidth();
+			outBounds.w = -dy + y1 / (float)irradianceProbeAtlas->getHeight();
 		}
 	}
 

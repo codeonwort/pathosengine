@@ -88,26 +88,37 @@ void World2::setupScene()
 
 	radianceProbe0 = spawnActor<LightProbeActor>();
 	radianceProbe0->setProbeType(ELightProbeType::Radiance);
-	radianceProbe0->setActorLocation(vector3(-1.0f, 3.0f, 2.0f));
+	radianceProbe0->setActorLocation(vector3(0.0f, 4.0f, 3.0f));
 	//radianceProbe0->bUpdateEveryFrame = false;
 
 	radianceProbe1 = spawnActor<LightProbeActor>();
 	radianceProbe1->setProbeType(ELightProbeType::Radiance);
-	radianceProbe1->setActorLocation(vector3(3.0f, 5.0f, 1.0f));
+	radianceProbe1->setActorLocation(vector3(10.0f, 5.0f, 1.0f));
+
+	radianceProbe2 = spawnActor<LightProbeActor>();
+	radianceProbe2->setProbeType(ELightProbeType::Radiance);
+	radianceProbe2->setActorLocation(vector3(-10.0f, 5.0f, 1.0f));
 
 	// #todo-light-probe: Weird visual. Do gizmo rendering for light probes.
-	const vector3 irradianceProbeMinPos = vector3(-400.0f, 5.0f, -20.0f);
-	const float irradianceCaptureRadius = 100.0f;
-	for (uint32 tileX = 0; tileX < 8; ++tileX) {
-		for (uint32 tileY = 0; tileY < 2; ++tileY) {
-			LightProbeActor* irradianceProbe = spawnActor<LightProbeActor>();
-			irradianceProbe->setProbeType(ELightProbeType::Irradiance);
-			irradianceProbe->setCaptureRadius(irradianceCaptureRadius);
+	const vector3ui IRRADIANCE_GRID_SIZE(8, 3, 4);
+	const float IRRADIANCE_CAPTURE_RADII = 10.0f;
+	const vector3 irradianceProbeMinPos = vector3(
+		-0.5f * (float)IRRADIANCE_GRID_SIZE.x * IRRADIANCE_CAPTURE_RADII,
+		5.0f,
+		-20.0f);
+	for (uint32 tileX = 0; tileX < IRRADIANCE_GRID_SIZE.x; ++tileX) {
+		for (uint32 tileY = 0; tileY < IRRADIANCE_GRID_SIZE.y; ++tileY) {
+			for (uint32 tileZ = 0; tileZ < IRRADIANCE_GRID_SIZE.z; ++tileZ) {
+				LightProbeActor* irradianceProbe = spawnActor<LightProbeActor>();
+				irradianceProbe->setProbeType(ELightProbeType::Irradiance);
+				irradianceProbe->setCaptureRadius(IRRADIANCE_CAPTURE_RADII);
 
-			vector3 pos = irradianceProbeMinPos;
-			pos.x += irradianceCaptureRadius * tileX;
-			pos.z += irradianceCaptureRadius * tileY;
-			irradianceProbe->setActorLocation(pos);
+				vector3 pos = irradianceProbeMinPos;
+				pos.x += IRRADIANCE_CAPTURE_RADII * tileX;
+				pos.y += IRRADIANCE_CAPTURE_RADII * tileY;
+				pos.z += IRRADIANCE_CAPTURE_RADII * tileZ;
+				irradianceProbe->setActorLocation(pos);
+			}
 		}
 	}
 
