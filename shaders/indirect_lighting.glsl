@@ -65,7 +65,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 
 	vec3 N_world = gbufferData.ws_normal;
 	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - gbufferData.ws_coords);
-	vec3 R = reflect(-V_world, N_world);
+	vec3 R_world = reflect(-V_world, N_world);
 
 	vec3 albedo = gbufferData.albedo;
 	float metallic = gbufferData.metallic;
@@ -84,28 +84,47 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	kD *= 1.0 - metallic;
 
 	// Diffuse GI
-	int localDiffuseIndex = -1;
+	// Select up to 4 irradiance probes, blend them w.r.t. distance to the surface location.
+	int localDiffuseIndex[4] = { -1, -1, -1, -1 };
+	int numDiffuseIndex = 0;
 	for (uint i = 0; i < ubo.irradianceAtlasParams.x; ++i) {
 		IrradianceProbe probe = ssbo.irradianceAtlasInfo[i];
 		vec3 dist3 = abs(gbufferData.ws_coords - probe.positionWS);
 		float dist = length(gbufferData.ws_coords - probe.positionWS);
-		if (dist <= probe.captureRadius) {
-		//if (all(lessThanEqual(dist3, vec3(probe.captureRadius)))) {
-			localDiffuseIndex = int(i);
-			break;
+
+		bool bInRange = (dist <= probe.captureRadius);
+		//bool bInRange = all(lessThanEqual(dist3, vec3(probe.captureRadius)));
+		if (bInRange) {
+			localDiffuseIndex[numDiffuseIndex] = int(i);
+			++numDiffuseIndex;
+			if (numDiffuseIndex == 4) {
+				break;
+			}
 		}
 	}
 	vec3 diffuseIndirect = vec3(0.0);
-	if (localDiffuseIndex == -1) {
+	if (numDiffuseIndex == 0) {
 		diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
 	} else {
+		float distSum = 0.0;
+		for (int i = 0; i < numDiffuseIndex; ++i) {
+			distSum += length(gbufferData.ws_coords - ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].positionWS);
+		}
+
 		vec2 uv = ONVEncode(N_world);
-		vec4 uvBounds = ssbo.irradianceAtlasInfo[localDiffuseIndex].uvBounds;
-		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * uv;
-		diffuseIndirect = textureLod(irradianceAtlas, atlasUV, 0).rgb;
+		for (int i = 0; i < numDiffuseIndex; ++i) {
+			vec4 uvBounds = ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].uvBounds;
+			vec3 probePos = ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].positionWS;
+			vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * uv;
+
+			vec3 diffuseSample = textureLod(irradianceAtlas, atlasUV, 0).rgb;
+			float dist = length(gbufferData.ws_coords - probePos);
+			diffuseIndirect += (dist / distSum) * diffuseSample;
+		}
 	}
 
 	// Specular GI
+	// Select one radiance probe.
 	int localSpecularIndex = -1;
 	for (uint i = 0; i < ubo.numRadianceProbes; ++i) {
 		RadianceProbe probe = ubo.localRadianceProbes[i];
@@ -117,9 +136,9 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	}
 	vec3 specularSample;
 	if (localSpecularIndex == -1) {
-		specularSample = textureLod(skyRadianceProbe, R, roughness * ubo.skyRadianceProbeMaxLOD).rgb;
+		specularSample = textureLod(skyRadianceProbe, R_world, roughness * ubo.skyRadianceProbeMaxLOD).rgb;
 	} else {
-		vec4 R4 = vec4(R, float(localSpecularIndex));
+		vec4 R4 = vec4(R_world, float(localSpecularIndex));
 		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.radianceProbeMaxLOD).rgb;
 	}
 	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
