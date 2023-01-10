@@ -11,6 +11,7 @@
 #include "pathos/scene/light_probe_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
+#include "pathos/render/irradiance_baker.h"
 
 #include <time.h>
 
@@ -120,7 +121,7 @@ void World2::setupScene()
 	};
 	std::array<BitmapBlob*, 6> cubeImageBlobs;
 	pathos::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL, cubeImageBlobs);
-	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data());
+	GLuint skyCubemapTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data(), true, "Texture_Skybox");
 
 	Material* material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -168,10 +169,25 @@ void World2::setupScene()
 	alertText2->setActorScale(8.0f);
 
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
-	sky->initialize(cubeTexture);
+	sky->initialize(skyCubemapTexture);
 
 	scene.sky = sky;
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
+
+#if 1
+	{
+		scene.skyIrradianceMap = IrradianceBaker::bakeIrradianceMap(
+			skyCubemapTexture, 32, false, "Texture_SkyDiffuseIBL");
+
+		GLuint prefilteredEnvMap;
+		uint32 mipLevels;
+		IrradianceBaker::bakePrefilteredEnvMap(
+			skyCubemapTexture, 128, prefilteredEnvMap, mipLevels, "Texture_SkySpecularIBL");
+
+		scene.skyPrefilterEnvMap = prefilteredEnvMap;
+		scene.skyPrefilterEnvMapMipLevels = mipLevels;
+	}
+#endif
 }
 
 void World2::loadDAE()

@@ -50,6 +50,8 @@ namespace pathos {
 		} else {
 			transform = glm::perspective(fovY_radians, aspect, z_near, z_far);
 		}
+		if (bFlipX) transform[0][0] *= -1;
+		if (bFlipY) transform[1][1] *= -1;
 	}
 
 	// Camera

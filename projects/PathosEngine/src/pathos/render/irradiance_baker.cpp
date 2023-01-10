@@ -95,7 +95,7 @@ namespace pathos {
 	GLuint IrradianceBaker::dummyFBO = 0;
 	PlaneGeometry* IrradianceBaker::fullscreenQuad = nullptr;
 	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
-	glm::mat4 IrradianceBaker::cubeTransforms[6];
+	matrix4 IrradianceBaker::cubeTransforms[6];
 
 	GLuint IrradianceBaker::projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
 		CHECK(isInMainThread());
@@ -132,7 +132,7 @@ namespace pathos {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 			for (int32 i = 0; i < 6; ++i) {
-				const glm::mat4& viewproj = IrradianceBaker::cubeTransforms[i];
+				const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
 
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *cubemapPtr, 0, i);
 				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
@@ -164,6 +164,11 @@ namespace pathos {
 		CubeGeometry* cubeGeom = IrradianceBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
 		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
+
+		cmdList.textureParameteri(inputTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 		if (bBakeCubemap) {
 			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -291,7 +296,7 @@ namespace pathos {
 			float roughness = (float)mip / (float)(numMips - 1);
 			cmdList.uniform1f(uniform_roughness, roughness);
 			for (uint32 i = 0; i < 6; ++i) {
-				const glm::mat4& viewproj = cubeTransforms[i];
+				const matrix4& viewproj = cubeTransforms[i];
 
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, mip, i);
 				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
@@ -371,8 +376,8 @@ namespace pathos {
 		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
 
-		glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-		glm::mat4 captureViews[] =
+		matrix4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+		matrix4 captureViews[] =
 		{
 		   glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
 		   glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),

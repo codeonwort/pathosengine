@@ -88,12 +88,12 @@ namespace pathos {
 		// #todo-light-probe: Check up vectors.
 		// Create a mirror ball and see if mirror reflection is alright.
 		const vector3 upVectors[6] = {
-			vector3(0.0f, +1.0f, 0.0f), // posX
-			vector3(0.0f, +1.0f, 0.0f), // negX
-			vector3(-1.0f, 0.0f, 0.0f), // posY
-			vector3(+1.0f, 0.0f, 0.0f), // negY
-			vector3(0.0f, +1.0f, 0.0f), // posZ
-			vector3(0.0f, +1.0f, 0.0f), // negZ
+			vector3(0.0f, -1.0f, 0.0f), // posX
+			vector3(0.0f, -1.0f, 0.0f), // negX
+			vector3(+1.0f, 0.0f, 0.0f), // posY
+			vector3(-1.0f, 0.0f, 0.0f), // negY
+			vector3(0.0f, -1.0f, 0.0f), // posZ
+			vector3(0.0f, -1.0f, 0.0f), // negZ
 		};
 
 		SceneRenderSettings settings;
@@ -105,6 +105,9 @@ namespace pathos {
 		Scene& scene = getOwner()->getWorld()->getScene();
 		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));
 		tempCamera.lookAt(getLocation(), getLocation() + lookAtOffsets[faceIndex], upVectors[faceIndex]);
+		if (faceIndex != 2 && faceIndex != 3) {
+			tempCamera.getLens().setProjectionFlips(true, true);
+		}
 		const uint32 tempFrameNumber = 0;
 
 		SceneProxy* sceneProxy = scene.createRenderProxy(
