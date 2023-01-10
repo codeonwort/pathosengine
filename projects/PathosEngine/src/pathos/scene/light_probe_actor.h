@@ -19,6 +19,8 @@ namespace pathos {
 
 		inline LightProbeComponent* getProbeComponent() const { return probeComponent; }
 
+		inline uint32 internal_getUpdatePhase() const { return updatePhase; }
+
 	public:
 		bool bUpdateEveryFrame = true;
 		float lastUpdateTime = -1.0f;

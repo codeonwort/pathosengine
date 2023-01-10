@@ -486,16 +486,15 @@ namespace pathos {
 								irradianceProbes.push_back(probeActor);
 							}
 						}
-						std::sort(radianceProbes.begin(), radianceProbes.end(),
-							[](const LightProbeActor* A, const LightProbeActor* B) {
-								return A->lastUpdateTime < B->lastUpdateTime;
+
+						auto compareLightProbes = [](const LightProbeActor* A, const LightProbeActor* B) {
+							if (A->lastUpdateTime == B->lastUpdateTime) {
+								return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
 							}
-						);
-						std::sort(irradianceProbes.begin(), irradianceProbes.end(),
-							[](const LightProbeActor* A, const LightProbeActor* B) {
-								return A->lastUpdateTime < B->lastUpdateTime;
-							}
-						);
+							return A->lastUpdateTime < B->lastUpdateTime;
+						};
+						std::sort(radianceProbes.begin(), radianceProbes.end(), compareLightProbes);
+						std::sort(irradianceProbes.begin(), irradianceProbes.end(), compareLightProbes);
 
 						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)radianceProbes.size());
 						for (int32 i = 0; i < numProbeUpdates; ++i) {

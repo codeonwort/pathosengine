@@ -9,8 +9,10 @@ namespace pathos {
 			probeComponent->bakeIBL();
 		}
 
+		if (updatePhase == 6) {
+			lastUpdateTime = gEngine->getWorldTime();
+		}
 		updatePhase = (updatePhase + 1) % 7;
-		lastUpdateTime = gEngine->getWorldTime();
 	}
 
 }
