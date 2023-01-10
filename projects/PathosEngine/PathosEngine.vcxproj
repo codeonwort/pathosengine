@@ -100,6 +100,7 @@
     </ClCompile>
     <ClCompile Include="src\init_tinygltf.cpp" />
     <ClCompile Include="src\init_tinyobjloader.cpp" />
+    <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
     <ClCompile Include="src\pathos\scene\light_probe_actor.cpp" />
@@ -221,6 +222,7 @@
     <ClInclude Include="src\badger\types\noncopyable.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
+    <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />

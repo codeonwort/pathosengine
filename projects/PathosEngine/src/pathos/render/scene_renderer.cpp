@@ -24,6 +24,7 @@
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
+#include "pathos/render/visualize_light_probe.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
@@ -301,10 +302,14 @@ namespace pathos {
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
+		if (bLightProbeRendering == false) {
+			visualizeLightProbe->render(cmdList, scene, camera);
+		}
+
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
 		// 
-		// #note: Light probe rendering is not supported to enable post processing passes.
+		// #note: Post processing passes are not supposed to be enabled in light probe rendering.
 
 		GLuint sceneAfterLastPP = 0;
 
@@ -519,7 +524,9 @@ namespace pathos {
 		}
 
 		// Debug pass (r.viewmode)
-		visualizeBuffer->render(cmdList, scene, camera);
+		if (bLightProbeRendering == false) {
+			visualizeBuffer->render(cmdList, scene, camera);
+		}
 
 		sceneRenderTargets = nullptr;
 		scene = nullptr;
@@ -805,6 +812,7 @@ namespace pathos {
 	uniquePtr<DirectionalShadowMap>      SceneRenderer::sunShadowMap;
 	uniquePtr<OmniShadowPass>            SceneRenderer::omniShadowPass;
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
+	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
 
 	uniquePtr<GodRay>                    SceneRenderer::godRay;
 	uniquePtr<SSAO>                      SceneRenderer::ssao;
@@ -844,8 +852,13 @@ namespace pathos {
 			translucency_pass->initializeResources(cmdList);
 		}
 
-		resolveUnlitPass = makeUnique<ResolveUnlitPass>();
-		resolveUnlitPass->initializeResources(cmdList);
+		{
+			depthPrepass = makeUnique<DepthPrepass>();
+			depthPrepass->initializeResources(cmdList);
+
+			resolveUnlitPass = makeUnique<ResolveUnlitPass>();
+			resolveUnlitPass->initializeResources(cmdList);
+		}
 
 		{
 			skyboxPass = makeUnique<SkyboxPass>();
@@ -862,15 +875,19 @@ namespace pathos {
 		}
 
 		{
-			depthPrepass = makeUnique<DepthPrepass>();
 			sunShadowMap = makeUnique<DirectionalShadowMap>();
 			omniShadowPass = makeUnique<OmniShadowPass>();
-			visualizeBuffer = makeUnique<VisualizeBufferPass>();
-
-			depthPrepass->initializeResources(cmdList);
+			
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
+		}
+
+		{
+			visualizeBuffer = makeUnique<VisualizeBufferPass>();
 			visualizeBuffer->initializeResources(cmdList);
+
+			visualizeLightProbe = makeUnique<VisualizeLightProbePass>();
+			visualizeLightProbe->initializeResources(cmdList);
 		}
 
 		{
@@ -920,7 +937,9 @@ namespace pathos {
 		RELEASEPASS(depthPrepass);
 		RELEASEPASS(sunShadowMap);
 		RELEASEPASS(omniShadowPass);
+
 		RELEASEPASS(visualizeBuffer);
+		RELEASEPASS(visualizeLightProbe);
 
 		RELEASEPASS(godRay);
 		RELEASEPASS(ssao);

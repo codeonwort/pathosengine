@@ -25,14 +25,12 @@
     <None Include="bloom_setup.glsl" />
     <None Include="bloom_upsample.glsl" />
     <None Include="brdf.glsl" />
-    <None Include="cascaded_shadow_map.glsl" />
     <None Include="common.glsl" />
     <None Include="copy_texture.fs.glsl" />
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
     <None Include="direct_lighting.glsl" />
     <None Include="depth_of_field.glsl" />
-    <None Include="depth_prepass.glsl" />
     <None Include="diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
     <None Include="fsr1_wrapper_common.glsl" />
@@ -77,6 +75,7 @@
     <None Include="tone_mapping.glsl" />
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
+    <None Include="visualize_light_probe.glsl" />
     <None Include="volumetric_clouds.glsl" />
     <None Include="volumetric_clouds_clear.glsl" />
   </ItemGroup>

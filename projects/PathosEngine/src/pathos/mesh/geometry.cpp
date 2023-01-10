@@ -26,11 +26,19 @@ namespace pathos {
 
 	uint32 MeshGeometry::getIndexCount() const { return (uint32)indexData.size(); }
 
-	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList) {
-		if (drawArraysMode) {
-			cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
+	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList, int32 instanceCount) {
+		if (instanceCount == 1) {
+			if (drawArraysMode) {
+				cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
+			} else {
+				cmdList.drawElements(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0);
+			}
 		} else {
-			cmdList.drawElements(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0);
+			if (drawArraysMode) {
+				cmdList.drawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)positionData.size(), instanceCount);
+			} else {
+				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0, instanceCount);
+			}
 		}
 	}
 

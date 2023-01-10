@@ -20,7 +20,7 @@ namespace pathos {
 		void setDrawArraysMode(bool value) { drawArraysMode = value; }
 
 		// #todo-draw-prim: Remove this and call cmdList.drawElements() directly
-		void drawPrimitive(RenderCommandList& cmdList);
+		void drawPrimitive(RenderCommandList& cmdList, int32 instanceCount = 1);
 
 		inline vector3 getPosition(uint32 index) const { return positionData[index]; }
 		uint32 getIndexCount() const;
