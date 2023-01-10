@@ -13,6 +13,7 @@
 #include "pathos/scene/scene_capture_component.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/light_probe_actor.h"
 #include "pathos/material/material_shader.h"
 
 // --------------------------------------------------------
@@ -20,8 +21,8 @@
 
 static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 2.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
-static const vector3 SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_ILLUMINANCE      = 1.2f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
+static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
 #define              SKY_METHOD           2
 static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
@@ -377,6 +378,31 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	objModel->setActorRotation(desc.rotation);
 	objModel->setActorScale(desc.scale);
 	objModel->setActorLocation(desc.location);
+
+	if (payload == 1) {
+		objModel->getStaticMeshComponent()->updateTransformHierarchy();
+		AABB worldBounds = objModel->getStaticMeshComponent()->getWorldBounds();
+		worldBounds.minBounds += vector3(0.2f, 0.2f, 0.2f);
+		worldBounds.maxBounds += vector3(0.2f, 0.2f, 0.2f);
+		const vector3ui GRID_SIZE(4, 4, 4);
+		for (uint32 tileX = 0; tileX < GRID_SIZE.x; ++tileX) {
+			for (uint32 tileY = 0; tileY < GRID_SIZE.y; ++tileY) {
+				for (uint32 tileZ = 0; tileZ < GRID_SIZE.z; ++tileZ) {
+					LightProbeActor* probe = spawnActor<LightProbeActor>();
+
+					probe->setProbeType(ELightProbeType::Irradiance);
+
+					float radii = std::max(worldBounds.getSize().x, std::max(worldBounds.getSize().y, worldBounds.getSize().z));
+					radii *= 0.5f;
+					probe->setCaptureRadius(radii);
+
+					vector3 pos = worldBounds.minBounds;
+					pos += worldBounds.getSize() / 4.0f * vector3(tileX, tileY, tileZ);
+					probe->setActorLocation(pos);
+				}
+			}
+		}
+	}
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
 		if (M->getMaterialName() == "solid_color") {

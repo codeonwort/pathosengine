@@ -87,6 +87,8 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	// Select up to 4 irradiance probes, blend them w.r.t. distance to the surface location.
 	int localDiffuseIndex[4] = { -1, -1, -1, -1 };
 	int numDiffuseIndex = 0;
+	const int MAX_DIFFUSE_INDEX = 4;
+	float localDiffuseDistance[4];
 	for (uint i = 0; i < ubo.irradianceAtlasParams.x; ++i) {
 		IrradianceProbe probe = ssbo.irradianceAtlasInfo[i];
 		vec3 dist3 = abs(gbufferData.ws_coords - probe.positionWS);
@@ -96,8 +98,9 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		//bool bInRange = all(lessThanEqual(dist3, vec3(probe.captureRadius)));
 		if (bInRange) {
 			localDiffuseIndex[numDiffuseIndex] = int(i);
+			localDiffuseDistance[numDiffuseIndex] = dist;
 			++numDiffuseIndex;
-			if (numDiffuseIndex == 4) {
+			if (numDiffuseIndex == MAX_DIFFUSE_INDEX) {
 				break;
 			}
 		}
@@ -108,18 +111,19 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	} else {
 		float distSum = 0.0;
 		for (int i = 0; i < numDiffuseIndex; ++i) {
-			distSum += length(gbufferData.ws_coords - ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].positionWS);
+			distSum += localDiffuseDistance[i];
 		}
 
 		vec2 uv = ONVEncode(N_world);
 		for (int i = 0; i < numDiffuseIndex; ++i) {
-			vec4 uvBounds = ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].uvBounds;
-			vec3 probePos = ssbo.irradianceAtlasInfo[localDiffuseIndex[i]].positionWS;
+			IrradianceProbe probe = ssbo.irradianceAtlasInfo[localDiffuseIndex[i]];
+			vec4 uvBounds = probe.uvBounds;
 			vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * uv;
 
 			vec3 diffuseSample = textureLod(irradianceAtlas, atlasUV, 0).rgb;
-			float dist = length(gbufferData.ws_coords - probePos);
-			diffuseIndirect += (dist / distSum) * diffuseSample;
+			float dist = localDiffuseDistance[i];
+			float grad = dist / probe.captureRadius;
+			diffuseIndirect += (dist / distSum) * max(1.0, 1.0 - grad) * diffuseSample;
 		}
 	}
 

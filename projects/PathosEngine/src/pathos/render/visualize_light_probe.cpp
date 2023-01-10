@@ -14,7 +14,7 @@ namespace pathos {
 		0,
 		"0 = disable, 1 = enable");
 	static ConsoleVariable<float> cvar_visIrradianceProbeRadius(
-		"r.visualizeLightProbe.irradianceRadius", 0.5f,
+		"r.visualizeLightProbe.irradianceRadius", 0.05f,
 		"Radius of visualized irradiance probes (meters)");
 	static ConsoleVariable<float> cvar_visRadianceProbeRadius(
 		"r.visualizeLightProbe.radianceRadius", 1.0f,
