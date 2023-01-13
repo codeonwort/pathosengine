@@ -2,7 +2,7 @@
 
 namespace pathos {
 
-	void LightProbeActor::captureScene() {
+	void ReflectionProbeActor::captureScene() {
 		if (0 <= updatePhase && updatePhase < 6) {
 			probeComponent->captureScene(updatePhase);
 		} else if (updatePhase == 6) {

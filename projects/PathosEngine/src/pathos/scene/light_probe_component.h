@@ -8,26 +8,25 @@
 
 namespace pathos {
 
-	extern const uint32 radianceProbeCubemapSize;
-	extern const uint32 radianceProbeNumMips;
-	constexpr uint32 radianceProbeMaxCount = 10;
+	extern const uint32 reflectionProbeCubemapSize;
+	extern const uint32 reflectionProbeNumMips;
+	constexpr uint32 reflectionProbeMaxCount = 10;
 
 	class RenderTargetCube;
 	class RenderTarget2D;
 
-	struct RadianceProbeProxy : public SceneComponentProxy {
+	struct ReflectionProbeProxy : public SceneComponentProxy {
 		vector3           positionWS;
 		float             captureRadius;
 		RenderTargetCube* renderTarget; // #todo-light-probe: Not thread-safe but do it anyway. Fix later.
 		RenderTargetCube* specularIBL;
 	};
 
-	// #todo-light-probe: Rename to ReflectionProbeComponent
-	class LightProbeComponent : public SceneComponent {
+	class ReflectionProbeComponent : public SceneComponent {
 
 	public:
-		LightProbeComponent();
-		~LightProbeComponent();
+		ReflectionProbeComponent();
+		~ReflectionProbeComponent();
 
 		virtual void createRenderProxy(SceneProxy* scene) override;
 

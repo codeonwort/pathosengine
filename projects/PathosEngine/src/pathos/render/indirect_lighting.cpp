@@ -50,8 +50,8 @@ namespace pathos {
 		float _pad0;
 
 		float skyRadianceProbeMaxLOD;
-		float radianceProbeMaxLOD;
-		uint32 numRadianceProbes;
+		float localReflectionProbeMaxLOD;
+		uint32 numReflectionProbes;
 		uint32 numIrradianceVolumes;
 
 		float irradianceAtlasWidth;
@@ -93,7 +93,7 @@ namespace pathos {
 		uint32 maxAtlasTiles = pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY;
 		ssbo0.init(maxAtlasTiles * sizeof(IrradianceVolumeInfo), "SSBO_0_IndirectLighting");
 
-		uint32 maxReflectionProbes = pathos::radianceProbeMaxCount;
+		uint32 maxReflectionProbes = pathos::reflectionProbeMaxCount;
 		ssbo1.init(maxReflectionProbes * sizeof(ReflectionProbeInfo), "SSBO_1_IndirectLighting");
 	}
 
@@ -131,21 +131,21 @@ namespace pathos {
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
 		std::vector<ReflectionProbeInfo> reflectionProbeInfoArray;
-		reflectionProbeInfoArray.reserve(scene->proxyList_radianceProbe.size());
+		reflectionProbeInfoArray.reserve(scene->proxyList_reflectionProbe.size());
 		{
 			GLuint cubemapArray = sceneContext.localSpecularIBLs;
-			int32 numReflectionProbes = (int32)scene->proxyList_radianceProbe.size();
+			int32 numReflectionProbes = (int32)scene->proxyList_reflectionProbe.size();
 			int32 cubemapIndex = 0;
 			for (int32 i = 0; i < numReflectionProbes; ++i)
 			{
-				RadianceProbeProxy* proxy = scene->proxyList_radianceProbe[i];
+				ReflectionProbeProxy* proxy = scene->proxyList_reflectionProbe[i];
 				if (proxy->specularIBL == nullptr) {
 					continue;
 				}
 
 				GLuint cubemap = proxy->specularIBL->getGLTexture();
-				GLuint size = radianceProbeCubemapSize;
-				for (int32 mip = 0; mip < (int32)pathos::radianceProbeNumMips; ++mip) {
+				GLuint size = reflectionProbeCubemapSize;
+				for (int32 mip = 0; mip < (int32)pathos::reflectionProbeNumMips; ++mip) {
 					cmdList.copyImageSubData(
 						cubemap, GL_TEXTURE_CUBE_MAP, mip, 0, 0, 0,
 						cubemapArray, GL_TEXTURE_CUBE_MAP_ARRAY, mip, 0, 0, cubemapIndex * 6,
@@ -183,8 +183,8 @@ namespace pathos {
 		uboData.specularBoost = std::max(0.0f, cvar_gi_specularBoost.getFloat());
 
 		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(scene->skyPrefilterEnvMapMipLevels - 1));
-		uboData.radianceProbeMaxLOD = badger::max(0.0f, (float)(pathos::radianceProbeNumMips - 1));
-		uboData.numRadianceProbes = (uint32)reflectionProbeInfoArray.size();
+		uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
+		uboData.numReflectionProbes = (uint32)reflectionProbeInfoArray.size();
 		uboData.numIrradianceVolumes = (uint32)irradianceVolumeInfo.size();
 
 		uboData.irradianceAtlasWidth = scene->irradianceAtlasWidth;

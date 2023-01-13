@@ -476,10 +476,10 @@ namespace pathos {
 					// Process probe lighting.
 					{
 						// Gather probe lighting related actors.
-						std::vector<LightProbeActor*> reflectionProbes;
+						std::vector<ReflectionProbeActor*> reflectionProbes;
 						std::vector<IrradianceVolumeActor*> irradianceVolumes;
 						for (Actor* actor : currentWorld->actors) {
-							LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
+							ReflectionProbeActor* probeActor = dynamic_cast<ReflectionProbeActor*>(actor);
 							if (probeActor != nullptr && probeActor->bUpdateEveryFrame) {
 								reflectionProbes.push_back(probeActor);
 								continue;
@@ -491,7 +491,7 @@ namespace pathos {
 							}
 						}
 
-						auto compareReflectionProbes = [](const LightProbeActor* A, const LightProbeActor* B) {
+						auto compareReflectionProbes = [](const ReflectionProbeActor* A, const ReflectionProbeActor* B) {
 							if (A->lastUpdateTime == B->lastUpdateTime) {
 								return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
 							}

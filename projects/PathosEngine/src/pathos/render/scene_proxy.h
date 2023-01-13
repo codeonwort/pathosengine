@@ -121,7 +121,7 @@ namespace pathos {
 		uint32                                     irradianceTileSize = 0;
 
 		// Light probe based GI
-		std::vector<struct RadianceProbeProxy*>    proxyList_radianceProbe;
+		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
 	};
 

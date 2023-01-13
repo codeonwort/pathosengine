@@ -4,12 +4,11 @@
 
 namespace pathos {
 
-	// #todo-light-probe: Rename to ReflectionProbeActor.
-	class LightProbeActor : public Actor {
+	class ReflectionProbeActor : public Actor {
 
 	public:
-		LightProbeActor() {
-			probeComponent = createDefaultComponent<LightProbeComponent>();
+		ReflectionProbeActor() {
+			probeComponent = createDefaultComponent<ReflectionProbeComponent>();
 			setAsRootComponent(probeComponent);
 		}
 
@@ -17,7 +16,7 @@ namespace pathos {
 
 		void setCaptureRadius(float radius) { probeComponent->captureRadius = radius; }
 
-		inline LightProbeComponent* getProbeComponent() const { return probeComponent; }
+		inline ReflectionProbeComponent* getProbeComponent() const { return probeComponent; }
 
 		inline uint32 internal_getUpdatePhase() const { return updatePhase; }
 
@@ -26,7 +25,7 @@ namespace pathos {
 		float lastUpdateTime = -1.0f;
 
 	private:
-		LightProbeComponent* probeComponent;
+		ReflectionProbeComponent* probeComponent;
 		uint32 updatePhase = 0;
 
 	};

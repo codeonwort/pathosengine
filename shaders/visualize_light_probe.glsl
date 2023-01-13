@@ -30,7 +30,7 @@ struct IrradianceVolume {
 	uvec3 gridSize;
 	uint _pad0;
 };
-struct RadianceProbe {
+struct ReflectionProbe {
 	vec3 positionWS;
 	float captureRadius;
 };
@@ -38,10 +38,10 @@ struct RadianceProbe {
 layout (std140, binding = 1) uniform UBO_VisualizeLightProbe {
 	uint numIrradianceVolumes;
 	uint totalIrradianceProbes;
-	uint numRadianceProbes;
+	uint numReflectionProbes;
 	float irradianceProbeRadius;
 
-	float radianceProbeRadius;
+	float reflectionProbeRadius;
 	float irradianceAtlasWidth;
 	float irradianceAtlasHeight;
 	uint irradianceTileCountX;
@@ -54,7 +54,7 @@ layout (std140, binding = 2) buffer SSBO_0 {
 } ssbo0;
 
 layout (std140, binding = 3) buffer SSBO_1 {
-	RadianceProbe probeArray[];
+	ReflectionProbe probeArray[];
 } ssbo1;
 
 uvec3 getGridCoord(uint probeIndex, uvec3 gridSize) {
@@ -118,7 +118,7 @@ void main() {
 		scale = ubo.irradianceProbeRadius;
 	} else {
 		center = ssbo1.probeArray[gl_InstanceID - ubo.totalIrradianceProbes].positionWS;
-		scale = ubo.radianceProbeRadius;
+		scale = ubo.reflectionProbeRadius;
 		volumeIndex = probeIndex = 0xffffffff;
 	}
 

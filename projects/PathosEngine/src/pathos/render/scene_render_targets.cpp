@@ -113,7 +113,7 @@ namespace pathos {
 		// ...
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
-			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::radianceProbeCubemapSize, pathos::radianceProbeMaxCount, pathos::radianceProbeNumMips, "LocalSpecularIBLs");
+			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
 		}
 
 		//////////////////////////////////////////////////////////////////////////

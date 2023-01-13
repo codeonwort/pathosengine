@@ -5,32 +5,32 @@
 #include "pathos/render/irradiance_baker.h"
 
 namespace pathos {
-	const uint32 radianceProbeCubemapSize = 256;
-	const uint32 radianceProbeNumMips = 5;
-	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
+	const uint32 reflectionProbeCubemapSize = 256;
+	const uint32 reflectionProbeNumMips = 5;
+	const RenderTargetFormat reflectionProbeFormat = RenderTargetFormat::RGBA16F;
 }
 
 namespace pathos {
 
 	// Reminder for myself: They should be here for uniquePtr + forward decl to work.
-	LightProbeComponent::LightProbeComponent() {}
-	LightProbeComponent::~LightProbeComponent() {}
+	ReflectionProbeComponent::ReflectionProbeComponent() {}
+	ReflectionProbeComponent::~ReflectionProbeComponent() {}
 
-	void LightProbeComponent::createRenderProxy(SceneProxy* scene) {
+	void ReflectionProbeComponent::createRenderProxy(SceneProxy* scene) {
 		if (scene->sceneProxySource != SceneProxySource::MainScene) {
 			return;
 		}
 
-		RadianceProbeProxy* proxy = ALLOC_RENDER_PROXY<RadianceProbeProxy>(scene);
+		ReflectionProbeProxy* proxy = ALLOC_RENDER_PROXY<ReflectionProbeProxy>(scene);
 		proxy->positionWS = getLocation();
 		proxy->captureRadius = captureRadius;
 		proxy->renderTarget = radianceCubemap.get();
 		proxy->specularIBL = specularIBL.get();
 
-		scene->proxyList_radianceProbe.push_back(proxy);
+		scene->proxyList_reflectionProbe.push_back(proxy);
 	}
 
-	void LightProbeComponent::captureScene(uint32 faceIndex) {
+	void ReflectionProbeComponent::captureScene(uint32 faceIndex) {
 		CHECK(0 <= faceIndex && faceIndex < 6);
 
 		if (radianceCubemap == nullptr) {
@@ -39,17 +39,17 @@ namespace pathos {
 			// #note: If small mips are created, IBL baker will pick black mips
 			// and it will result in too-dark IBL for non-mip0 output.
 			radianceCubemap->respecTexture(
-				radianceProbeCubemapSize,
-				radianceProbeFormat,
+				reflectionProbeCubemapSize,
+				reflectionProbeFormat,
 				1, // Only mip0
-				"RadianceProbe_Capture");
+				"ReflectionProbe_Capture");
 
 			specularIBL = makeUnique<RenderTargetCube>();
 			specularIBL->respecTexture(
-				radianceProbeCubemapSize,
-				radianceProbeFormat,
-				radianceProbeNumMips,
-				"RadianceProbe_IBL");
+				reflectionProbeCubemapSize,
+				reflectionProbeFormat,
+				reflectionProbeNumMips,
+				"ReflectionProbe_IBL");
 		}
 
 		const vector3 lookAtOffsets[6] = {
@@ -92,7 +92,7 @@ namespace pathos {
 		gEngine->pushSceneProxy(sceneProxy);
 	}
 
-	void LightProbeComponent::bakeIBL() {
+	void ReflectionProbeComponent::bakeIBL() {
 		GLuint radianceCapture = radianceCubemap->getGLTexture();
 		GLuint textureIBL = specularIBL->getGLTexture();
 		uint32 numMips = specularIBL->getNumMips();
@@ -101,7 +101,7 @@ namespace pathos {
 				IrradianceBaker::bakeSpecularIBL_renderThread(
 					cmdList,
 					radianceCapture,
-					radianceProbeCubemapSize,
+					reflectionProbeCubemapSize,
 					numMips,
 					textureIBL);
 			}
