@@ -33,8 +33,10 @@ namespace pathos {
 		gridSize = inProbeGrid;
 		
 		setActorLocation(minBounds);
-
-		captureRadius = 0.5f * glm::length((maxBounds - minBounds) / vector3(gridSize));
+		
+		currentUpdateIndex = 0;
+		currentUpdatePhase = 0;
+		captureRadius = glm::length((maxBounds - minBounds) / vector3(gridSize));
 
 		bVolumeInitialized = true;
 	}
@@ -104,9 +106,9 @@ namespace pathos {
 	vector3 IrradianceVolumeActor::getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const {
 		vector3 size = maxBounds - minBounds;
 		vector3 v = minBounds;
-		if (size.x > 1) v.x += size.x * ((float)gridX / (gridSize.x - 1));
-		if (size.y > 1) v.y += size.y * ((float)gridY / (gridSize.y - 1));
-		if (size.z > 1) v.z += size.z * ((float)gridZ / (gridSize.z - 1));
+		if (gridSize.x > 1) v.x += size.x * ((float)gridX / (gridSize.x - 1));
+		if (gridSize.y > 1) v.y += size.y * ((float)gridY / (gridSize.y - 1));
+		if (gridSize.z > 1) v.z += size.z * ((float)gridZ / (gridSize.z - 1));
 		return v;
 	}
 
@@ -134,7 +136,7 @@ namespace pathos {
 		settings.enablePostProcess = false;
 		settings.finalRenderTarget = radianceCubemap->getRenderTargetView(faceIndex);
 
-		vector3 probePos = getProbeLocationByIndex(currentUpdateIndex);
+		vector3 probePos = getProbeLocationByIndex(probeIndex);
 
 		Scene& scene = getWorld()->getScene();
 		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, captureRadius));

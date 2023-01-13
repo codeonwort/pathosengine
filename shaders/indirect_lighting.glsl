@@ -135,7 +135,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		
 		vec3 diffuseSamples[8];
 		for (uint i = 0; i < 8; ++i) {
-			uvec3 gridCoord = minGridCoord + uvec3(i & 1, (i & 4) > 1, i >> 2);
+			uvec3 gridCoord = minGridCoord + uvec3(i & 1, (i & 3) >> 1, i >> 2);
 			uint probeIx = gridCoord.x
 				+ gridCoord.y * vol.gridSize.x
 				+ gridCoord.z * (vol.gridSize.x * vol.gridSize.y);
@@ -187,7 +187,10 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	//       is physically wrong but that's a limit of IBL approaches.
 	float ssaoSample = texture2D(ssaoMap, fs_in.screenUV).r;
 
-	vec3 finalIrradiance = ssaoSample * (kD * diffuseIndirect + specularIndirect);
+	vec3 finalIrradiance = kD * albedo * diffuseIndirect;
+	finalIrradiance += specularIndirect;
+	finalIrradiance *= ssaoSample;
+
 	return finalIrradiance;
 }
 

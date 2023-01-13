@@ -16,10 +16,10 @@ namespace pathos {
 		"0 = disable, 1 = enable");
 	static ConsoleVariable<float> cvar_visIrradianceProbeRadius(
 		"r.visualizeLightProbe.irradianceRadius", 0.05f,
-		"Radius of visualized irradiance probes (meters)");
+		"Radius of visualized probes in irradiance volumes (meters)");
 	static ConsoleVariable<float> cvar_visRadianceProbeRadius(
 		"r.visualizeLightProbe.radianceRadius", 1.0f,
-		"Radius of visualized radiance probes (meters)");
+		"Radius of visualized reflection probes (meters)");
 
 	class VisualizeLightProbeVS : public ShaderStage {
 	public:
@@ -46,17 +46,27 @@ namespace pathos {
 namespace pathos {
 
 	struct UBO_VisualizeLightProbe {
-		uint32 numIrradianceProbes;
+		uint32 numIrradianceVolumes;
+		uint32 totalIrradianceProbes;
 		uint32 numRadianceProbes;
 		float irradianceProbeRadius;
+
 		float radianceProbeRadius;
+		float irradianceAtlasWidth;
+		float irradianceAtlasHeight;
+		uint32 irradianceTileCountX;
+
+		uint32 irradianceTileSize;
 	};
-	struct IrradianceProbeStruct {
-		vector3 positionWS;
-		float captureRadius;
-		vector4 uvBounds;
+	struct IrradianceVolumeInfo {
+		vector3 minBounds;
+		uint32 irradianceTileFirstID;
+		vector3 maxBounds;
+		uint32 numProbes;
+		vector3ui gridSize;
+		uint32 _pad0;
 	};
-	struct RadianceProbeStruct {
+	struct ReflectionProbeInfo {
 		vector3 positionWS;
 		float captureRadius;
 	};
@@ -75,10 +85,10 @@ namespace pathos {
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
 
 		const uint32 maxIrradianceProbes = pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY;
-		ssbo0.init(sizeof(IrradianceProbeStruct) * maxIrradianceProbes, "SSBO_0_VisualizeLightProbe");
+		ssbo0.init(sizeof(IrradianceVolumeInfo) * maxIrradianceProbes, "SSBO_0_VisualizeLightProbe");
 
-		const uint32 maxRadianceProbes = pathos::radianceProbeMaxCount;
-		ssbo1.init(sizeof(RadianceProbeStruct) * maxRadianceProbes, "SSBO_1_VisualizeLightProbe");
+		const uint32 maxReflectionProbes = pathos::radianceProbeMaxCount;
+		ssbo1.init(sizeof(ReflectionProbeInfo) * maxReflectionProbes, "SSBO_1_VisualizeLightProbe");
 	}
 
 	void VisualizeLightProbePass::releaseResources(RenderCommandList& cmdList) {
@@ -101,20 +111,21 @@ namespace pathos {
 		//////////////////////////////////////////////////////////////////////////
 		// Prepare UBO & SSBO data
 
-		// #todo-light-probe: Fix visualization
-		std::vector<IrradianceProbeStruct> ssbo0Data;
-		//for (const IrradianceVolumeProxy* proxy : scene->proxyList_irradianceVolume) {
-		//	IrradianceProbeStruct ssboItem{
-		//		proxy->positionWS,
-		//		proxy->captureRadius,
-		//		proxy->irradianceTileBounds,
-		//	};
-		//	ssbo0Data.emplace_back(ssboItem);
-		//}
-		std::vector<RadianceProbeStruct> ssbo1Data;
+		std::vector<IrradianceVolumeInfo> ssbo0Data;
+		for (const IrradianceVolumeProxy* proxy : scene->proxyList_irradianceVolume) {
+			IrradianceVolumeInfo ssboItem{
+				proxy->minBounds,
+				proxy->irradianceTileFirstID,
+				proxy->maxBounds,
+				proxy->numProbes,
+				proxy->gridSize
+			};
+			ssbo0Data.emplace_back(ssboItem);
+		}
+		std::vector<ReflectionProbeInfo> ssbo1Data;
 		for (const RadianceProbeProxy* proxy : scene->proxyList_radianceProbe) {
 			if (proxy->specularIBL != nullptr) {
-				RadianceProbeStruct ssboItem{
+				ReflectionProbeInfo ssboItem{
 					proxy->positionWS,
 					proxy->captureRadius,
 				};
@@ -127,11 +138,22 @@ namespace pathos {
 			return;
 		}
 
+		uint32 totalIrradianceProbes = 0;
+		for (size_t i = 0; i < ssbo0Data.size(); ++i)
+		{
+			totalIrradianceProbes += ssbo0Data[i].numProbes;
+		}
+
 		UBO_VisualizeLightProbe uboData;
-		uboData.numIrradianceProbes = (uint32)ssbo0Data.size();
+		uboData.numIrradianceVolumes = (uint32)ssbo0Data.size();
+		uboData.totalIrradianceProbes = totalIrradianceProbes;
 		uboData.numRadianceProbes = (uint32)ssbo1Data.size();
 		uboData.irradianceProbeRadius = std::max(0.01f, cvar_visIrradianceProbeRadius.getFloat());
 		uboData.radianceProbeRadius = std::max(0.01f, cvar_visRadianceProbeRadius.getFloat());
+		uboData.irradianceAtlasWidth = scene->irradianceAtlasWidth;
+		uboData.irradianceAtlasHeight = scene->irradianceAtlasHeight;
+		uboData.irradianceTileCountX = scene->irradianceTileCountX;
+		uboData.irradianceTileSize = scene->irradianceTileSize;
 
 		//////////////////////////////////////////////////////////////////////////
 
@@ -148,12 +170,12 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		
 		ubo.update(cmdList, UBO_BINDING_SLOT, &uboData);
-		if (uboData.numIrradianceProbes > 0) {
-			GLsizeiptr bytes = ssbo0Data.size() * sizeof(IrradianceProbeStruct);
+		if (uboData.numIrradianceVolumes > 0) {
+			GLsizeiptr bytes = ssbo0Data.size() * sizeof(IrradianceVolumeInfo);
 			ssbo0.update(cmdList, SSBO_0_BINDING_SLOT, ssbo0Data.data(), bytes);
 		}
 		if (uboData.numRadianceProbes > 0) {
-			GLsizeiptr bytes = ssbo1Data.size() * sizeof(RadianceProbeStruct);
+			GLsizeiptr bytes = ssbo1Data.size() * sizeof(ReflectionProbeInfo);
 			ssbo1.update(cmdList, SSBO_1_BINDING_SLOT, ssbo1Data.data(), bytes);
 		}
 
@@ -165,7 +187,9 @@ namespace pathos {
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		
-		uint32 instanceCount = uboData.numIrradianceProbes + uboData.numRadianceProbes;
+
+
+		uint32 instanceCount = totalIrradianceProbes + uboData.numRadianceProbes;
 		sphereGeom->activate_position_normal(cmdList);
 		sphereGeom->activateIndexBuffer(cmdList);
 		sphereGeom->drawPrimitive(cmdList, instanceCount);
