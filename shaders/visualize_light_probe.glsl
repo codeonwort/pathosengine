@@ -111,7 +111,7 @@ void main() {
 
 		IrradianceVolume volume = ssbo0.volumeArray[volumeIndex];
 		uvec3 gridCoord = getGridCoord(probeIndex, volume.gridSize);
-		vec3 cellSize = (volume.maxBounds - volume.minBounds) / vec3(volume.gridSize);
+		vec3 cellSize = (volume.maxBounds - volume.minBounds) / vec3(volume.gridSize - uvec3(1, 1, 1));
 		vec3 probePos = volume.minBounds + cellSize * vec3(gridCoord);
 
 		center = probePos;

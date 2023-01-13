@@ -380,15 +380,27 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	objModel->setActorScale(desc.scale);
 	objModel->setActorLocation(desc.location);
 
-	if (payload == 0 || payload == 1) {
+	if (payload == 1) {
 		objModel->getStaticMeshComponent()->updateTransformHierarchy();
 		AABB worldBounds = objModel->getStaticMeshComponent()->getWorldBounds();
-		worldBounds.minBounds += vector3(0.2f, 0.2f, 0.2f);
-		worldBounds.maxBounds += vector3(0.2f, 0.2f, 0.2f);
+		if (payload == 0) {
+			worldBounds.minBounds += vector3(0.4f, 0.2f, 0.2f);
+			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.4f);
+		} else {
+			worldBounds.minBounds += vector3(0.2f, 0.2f, 0.2f);
+			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.2f);
+		}
 		const vector3ui GRID_SIZE(4, 4, 4);
 
 		IrradianceVolumeActor* volume = spawnActor<IrradianceVolumeActor>();
 		volume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, GRID_SIZE);
+
+		//LOG(LogDebug, "volume bounds: min(%.3f, %.3f, %.3f)", worldBounds.minBounds.x, worldBounds.minBounds.y, worldBounds.minBounds.z);
+		//LOG(LogDebug, "volume bounds: max(%.3f, %.3f, %.3f)", worldBounds.maxBounds.x, worldBounds.maxBounds.y, worldBounds.maxBounds.z);
+		//for (uint32 i = 0; i < volume->numProbes(); ++i) {
+		//	vector3 pos = volume->getProbeLocationByIndex(i);
+		//	LOG(LogDebug, "probe: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
+		//}
 	}
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {

@@ -222,7 +222,7 @@ namespace pathos {
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		// Fix a strange bug that IBL maps are randomly persistent across worlds.
-		cmdList.bindTextures(0, 7, nullptr);
+		cmdList.bindTextures(0, 9, nullptr);
 
 		// Restore render states
 		{

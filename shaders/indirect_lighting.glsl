@@ -125,12 +125,10 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	if (irradianceVolumeIndex == -1) {
 		diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
 	} else {
-		vec2 encodedUV = ONVEncode(N_world);
-
 		// #todo: Move some calculations to UBO or SSBO
 		IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
 		vec3 volSize = vol.maxBounds - vol.minBounds;
-		vec3 cellSize = volSize / vec3(vol.gridSize);
+		vec3 cellSize = volSize / vec3(vol.gridSize - uvec3(1, 1, 1));
 		uvec3 minGridCoord = uvec3(vec3(vol.gridSize) * (vol.maxBounds - gbufferData.ws_coords) / volSize);
 		
 		vec3 diffuseSamples[8];
@@ -141,6 +139,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 				+ gridCoord.z * (vol.gridSize.x * vol.gridSize.y);
 			
 			uint tileIx = probeIx + vol.firstTileID;
+			vec2 encodedUV = ONVEncode(N_world);
 			vec4 uvBounds = getIrradianceTileBounds(tileIx);
 			vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
 			
@@ -154,8 +153,8 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		vec3 C01 = mix(diffuseSamples[2], diffuseSamples[3], ratio.x);
 		vec3 C10 = mix(diffuseSamples[4], diffuseSamples[5], ratio.x);
 		vec3 C11 = mix(diffuseSamples[6], diffuseSamples[7], ratio.x);
-		vec3 C0 = mix(C00, C10, ratio.y);
-		vec3 C1 = mix(C01, C11, ratio.y);
+		vec3 C0 = mix(C00, C01, ratio.y);
+		vec3 C1 = mix(C10, C11, ratio.y);
 		vec3 C = mix(C0, C1, ratio.z);
 
 		diffuseIndirect = C;

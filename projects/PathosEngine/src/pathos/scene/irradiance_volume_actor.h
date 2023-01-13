@@ -5,6 +5,9 @@
 #include "pathos/render/render_target.h"
 #include "pathos/smart_pointer.h"
 
+// Enable if wanna debug all cubemaps in GPU debugger
+#define SEPARATE_RADIANCE_CUBEMAPS 0
+
 namespace pathos {
 	extern const uint32 irradianceProbeTileSize;
 	extern const uint32 irradianceProbeTileCountX;
@@ -57,15 +60,22 @@ namespace pathos {
 		vector3 getProbeLocationByIndex(uint32 probeIndex) const;
 		vector3 getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const;
 
-		void captureFace(uint32 probeIndex, uint32 faceIndex);
-		void bakeIrradiance(uint32 probeIndex);
+		void captureFace(RenderTargetCube* radianceCubemap, uint32 probeIndex, uint32 faceIndex);
+		void bakeIrradiance(RenderTargetCube* radianceCubemap, uint32 probeIndex);
+
+		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex);
 
 		vector3 minBounds = vector3(0.0f);
 		vector3 maxBounds = vector3(0.0f);
-		vector3ui gridSize = vector3ui(0, 0, 0);
+		vector3ui gridSize = vector3ui(0, 0, 0); // #note: For each axis (cell count = grid size - 1)
 		bool bVolumeInitialized = false;
 
-		uniquePtr<RenderTargetCube> radianceCubemap;
+#if SEPARATE_RADIANCE_CUBEMAPS
+		std::vector<uniquePtr<RenderTargetCube>> radianceCubemaps;
+#else
+		uniquePtr<RenderTargetCube> singleRadianceCubemap;
+#endif
+
 		float captureRadius = 0.0f;
 		uint32 currentUpdateIndex = 0; // Index of probe to update [0, totalProbeCount-1]
 		uint32 currentUpdatePhase = 0; // 0~5: capture cube face, 6: integrate
