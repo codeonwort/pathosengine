@@ -4,7 +4,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/render_target.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
@@ -112,11 +112,11 @@ void World1::setupSky()
 {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = IrradianceBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+		GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
-			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
+			GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
 			scene.skyIrradianceMap = irradianceMap;
 		}
 
@@ -124,7 +124,7 @@ void World1::setupSky()
 		{
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
-			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
+			ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
 
 			scene.skyPrefilterEnvMap = prefilteredEnvMap;
 			scene.skyPrefilterEnvMapMipLevels = mipLevels;
@@ -171,7 +171,7 @@ void World1::setupSky()
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(IrradianceBaker::projectToCubemap(hdri_temp, 512));
+	skybox->initialize(ImageBasedLightingBaker::projectToCubemap(hdri_temp, 512));
 	scene.sky = skybox;
 #endif
 }

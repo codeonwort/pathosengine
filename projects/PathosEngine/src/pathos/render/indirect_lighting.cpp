@@ -5,7 +5,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_target.h"
 #include "pathos/scene/camera.h"
@@ -225,7 +225,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(4, scene->skyIrradianceMap);
 		cmdList.bindTextureUnit(5, scene->skyPrefilterEnvMap);
-		cmdList.bindTextureUnit(6, IrradianceBaker::getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(6, ImageBasedLightingBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);

@@ -219,7 +219,7 @@
     <ClCompile Include="src\badger\thread\thread_pool.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\irradiance_baker.cpp">
+    <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\shader_program.cpp">
@@ -608,7 +608,7 @@
     <ClInclude Include="src\badger\thread\thread_pool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\irradiance_baker.h">
+    <ClInclude Include="src\pathos\render\image_based_lighting_baker.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\shader_program.h">

@@ -3,7 +3,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 
@@ -184,7 +184,7 @@ namespace pathos {
 				bakeDesc.depthTarget = RT_depthAtlas;
 				bakeDesc.viewportSize = irradianceProbeTileSize;
 				bakeDesc.viewportOffset = viewportOffset;
-				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
+				ImageBasedLightingBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
 			}
 		);
 	}

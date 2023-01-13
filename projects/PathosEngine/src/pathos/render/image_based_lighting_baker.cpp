@@ -1,12 +1,10 @@
-#include "irradiance_baker.h"
+#include "image_based_lighting_baker.h"
 #include "pathos/engine.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/engine_thread.h"
-
-#include "badger/math/minmax.h"
 
 namespace pathos {
 	
@@ -90,15 +88,15 @@ namespace pathos {
 
 namespace pathos {
 
-	GLuint IrradianceBaker::internal_BRDFIntegrationMap = 0xffffffff;
-	GLuint IrradianceBaker::dummyVAO = 0;
-	GLuint IrradianceBaker::dummyFBO = 0;
-	GLuint IrradianceBaker::dummyFBO_2color = 0;
-	PlaneGeometry* IrradianceBaker::fullscreenQuad = nullptr;
-	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
-	matrix4 IrradianceBaker::cubeTransforms[6];
+	GLuint ImageBasedLightingBaker::internal_BRDFIntegrationMap = 0xffffffff;
+	GLuint ImageBasedLightingBaker::dummyVAO = 0;
+	GLuint ImageBasedLightingBaker::dummyFBO = 0;
+	GLuint ImageBasedLightingBaker::dummyFBO_2color = 0;
+	PlaneGeometry* ImageBasedLightingBaker::fullscreenQuad = nullptr;
+	CubeGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
+	matrix4 ImageBasedLightingBaker::cubeTransforms[6];
 
-	GLuint IrradianceBaker::projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
+	GLuint ImageBasedLightingBaker::projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint cubemap = 0;
@@ -107,8 +105,8 @@ namespace pathos {
 		ENQUEUE_RENDER_COMMAND([equirectangularMap, size, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
 			SCOPED_DRAW_EVENT(EquirectangularMapToCubemap);
 
-			GLuint fbo = IrradianceBaker::dummyFBO;
-			CubeGeometry* cube = IrradianceBaker::dummyCube;
+			GLuint fbo = ImageBasedLightingBaker::dummyFBO;
+			CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
 			
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
 			if (debugNameStr.size() > 0) {
@@ -133,7 +131,7 @@ namespace pathos {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 			for (int32 i = 0; i < 6; ++i) {
-				const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
+				const matrix4& viewproj = ImageBasedLightingBaker::cubeTransforms[i];
 
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *cubemapPtr, 0, i);
 				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
@@ -152,7 +150,7 @@ namespace pathos {
 		return cubemap;
 	}
 
-	void IrradianceBaker::bakeDiffuseIBL_renderThread(
+	void ImageBasedLightingBaker::bakeDiffuseIBL_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputRadianceCubemap,
 		GLuint inputDepthCubemap,
@@ -163,8 +161,8 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
 
 		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
-		GLuint fbo = bBakeCubemap ? IrradianceBaker::dummyFBO : IrradianceBaker::dummyFBO_2color;
-		CubeGeometry* cubeGeom = IrradianceBaker::dummyCube;
+		GLuint fbo = bBakeCubemap ? ImageBasedLightingBaker::dummyFBO : ImageBasedLightingBaker::dummyFBO_2color;
+		CubeGeometry* cubeGeom = ImageBasedLightingBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
 
 		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -212,7 +210,7 @@ namespace pathos {
 
 		if (bBakeCubemap) {
 			for (int32 i = 0; i < 6; ++i) {
-				const matrix4& viewproj = IrradianceBaker::cubeTransforms[i];
+				const matrix4& viewproj = ImageBasedLightingBaker::cubeTransforms[i];
 
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0, i);
 				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
@@ -236,7 +234,7 @@ namespace pathos {
 		}
 	}
 
-	GLuint IrradianceBaker::bakeIrradianceMap(
+	GLuint ImageBasedLightingBaker::bakeSkyIrradianceMap(
 		GLuint inputCubemap,
 		uint32 size,
 		bool bAutoDestroyCubemap,
@@ -270,7 +268,7 @@ namespace pathos {
 		return irradianceMap;
 	}
 
-	void IrradianceBaker::bakeSpecularIBL_renderThread(
+	void ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
 		uint32 textureSize,
@@ -280,8 +278,8 @@ namespace pathos {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
 
-		GLuint fbo = IrradianceBaker::dummyFBO;
-		CubeGeometry* cube = IrradianceBaker::dummyCube;
+		GLuint fbo = ImageBasedLightingBaker::dummyFBO;
+		CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
 		constexpr GLint uniform_roughness = 1;
 
@@ -323,11 +321,11 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void IrradianceBaker::bakePrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
+	void ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint envMap = 0;
-		uint32 maxMipLevels = badger::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
+		uint32 maxMipLevels = std::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
 
 		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
@@ -346,12 +344,12 @@ namespace pathos {
 		outMipLevels = maxMipLevels;
 	}
 
-	GLuint IrradianceBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
+	GLuint ImageBasedLightingBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
 		CHECK(isInRenderThread());
 
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
-		const GLuint fbo = IrradianceBaker::dummyFBO;
+		const GLuint fbo = ImageBasedLightingBaker::dummyFBO;
 		GLuint brdfLUT = 0;
 
 		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
@@ -376,21 +374,21 @@ namespace pathos {
 		return brdfLUT;
 	}
 
-	void IrradianceBaker::internal_createIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
+	void ImageBasedLightingBaker::internal_createIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		// Dummy VAO
-		gRenderDevice->createVertexArrays(1, &IrradianceBaker::dummyVAO);
+		gRenderDevice->createVertexArrays(1, &ImageBasedLightingBaker::dummyVAO);
 
 		// Dummy FBO
-		gRenderDevice->createFramebuffers(1, &IrradianceBaker::dummyFBO);
-		cmdList.namedFramebufferDrawBuffer(IrradianceBaker::dummyFBO, GL_COLOR_ATTACHMENT0);
+		gRenderDevice->createFramebuffers(1, &ImageBasedLightingBaker::dummyFBO);
+		cmdList.namedFramebufferDrawBuffer(ImageBasedLightingBaker::dummyFBO, GL_COLOR_ATTACHMENT0);
 
 		static const GLenum drawBuffers_color2[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		gRenderDevice->createFramebuffers(1, &IrradianceBaker::dummyFBO_2color);
-		cmdList.namedFramebufferDrawBuffers(IrradianceBaker::dummyFBO_2color, _countof(drawBuffers_color2), drawBuffers_color2);
+		gRenderDevice->createFramebuffers(1, &ImageBasedLightingBaker::dummyFBO_2color);
+		cmdList.namedFramebufferDrawBuffers(ImageBasedLightingBaker::dummyFBO_2color, _countof(drawBuffers_color2), drawBuffers_color2);
 
 		// Dummy meshes
-		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
-		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
+		ImageBasedLightingBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
+		ImageBasedLightingBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
 
 		matrix4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		matrix4 captureViews[] =
@@ -403,24 +401,24 @@ namespace pathos {
 		   glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
 		};
 		for (int32 i = 0; i < 6; ++i) {
-			IrradianceBaker::cubeTransforms[i] = captureProjection * captureViews[i];
+			ImageBasedLightingBaker::cubeTransforms[i] = captureProjection * captureViews[i];
 		}
 
 		// BRDF integration map
-		IrradianceBaker::internal_BRDFIntegrationMap = IrradianceBaker::bakeBRDFIntegrationMap_renderThread(512, cmdList);
-		cmdList.objectLabel(GL_TEXTURE, IrradianceBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
+		ImageBasedLightingBaker::internal_BRDFIntegrationMap = ImageBasedLightingBaker::bakeBRDFIntegrationMap_renderThread(512, cmdList);
+		cmdList.objectLabel(GL_TEXTURE, ImageBasedLightingBaker::internal_BRDFIntegrationMap, -1, "BRDF integration map");
 	}
 
-	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		gRenderDevice->deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
-		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
-		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO_2color);
-		gRenderDevice->deleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
+	void ImageBasedLightingBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
+		gRenderDevice->deleteVertexArrays(1, &ImageBasedLightingBaker::dummyVAO);
+		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO);
+		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO_2color);
+		gRenderDevice->deleteTextures(1, &ImageBasedLightingBaker::internal_BRDFIntegrationMap);
 
-		delete IrradianceBaker::fullscreenQuad;
-		delete IrradianceBaker::dummyCube;
+		delete ImageBasedLightingBaker::fullscreenQuad;
+		delete ImageBasedLightingBaker::dummyCube;
 	}
 
-	DEFINE_GLOBAL_RENDER_ROUTINE(IrradianceBaker, IrradianceBaker::internal_createIrradianceBakerResources, IrradianceBaker::internal_destroyIrradianceBakerResources);
+	DEFINE_GLOBAL_RENDER_ROUTINE(ImageBasedLightingBaker, ImageBasedLightingBaker::internal_createIrradianceBakerResources, ImageBasedLightingBaker::internal_destroyIrradianceBakerResources);
 
 }

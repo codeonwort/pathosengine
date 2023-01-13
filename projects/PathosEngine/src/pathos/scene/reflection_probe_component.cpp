@@ -2,7 +2,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/render_target.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 
 namespace pathos {
 	const uint32 reflectionProbeCubemapSize = 256;
@@ -98,7 +98,7 @@ namespace pathos {
 		uint32 numMips = specularIBL->getNumMips();
 		ENQUEUE_RENDER_COMMAND(
 			[radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
-				IrradianceBaker::bakeSpecularIBL_renderThread(
+				ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
 					cmdList,
 					radianceCapture,
 					reflectionProbeCubemapSize,

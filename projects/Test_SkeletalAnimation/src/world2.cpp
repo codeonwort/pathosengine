@@ -12,7 +12,7 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 
 #include <time.h>
 
@@ -167,20 +167,18 @@ void World2::setupScene()
 	scene.sky = sky;
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
 
-#if 1
 	{
-		scene.skyIrradianceMap = IrradianceBaker::bakeIrradianceMap(
+		scene.skyIrradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
 			skyCubemapTexture, 32, false, "Texture_SkyDiffuseIBL");
 
 		GLuint prefilteredEnvMap;
 		uint32 mipLevels;
-		IrradianceBaker::bakePrefilteredEnvMap(
+		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
 			skyCubemapTexture, 128, prefilteredEnvMap, mipLevels, "Texture_SkySpecularIBL");
 
 		scene.skyPrefilterEnvMap = prefilteredEnvMap;
 		scene.skyPrefilterEnvMapMipLevels = mipLevels;
 	}
-#endif
 }
 
 void World2::loadDAE()

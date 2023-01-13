@@ -141,7 +141,7 @@
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\indirect_lighting.cpp" />
-    <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
+    <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_taa.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\super_res.cpp" />
@@ -271,7 +271,7 @@
     <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\indirect_lighting.h" />
-    <ClInclude Include="src\pathos\render\irradiance_baker.h" />
+    <ClInclude Include="src\pathos\render\image_based_lighting_baker.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_taa.h" />
     <ClInclude Include="src\pathos\render\postprocessing\super_res_fsr1.h" />

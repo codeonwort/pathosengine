@@ -3,7 +3,7 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/volume_texture.h"
 
 #include "pathos/scene/static_mesh_actor.h"
@@ -206,17 +206,17 @@ void World_RC1::setupSky()
 	GalaxyGenerator::createStarField(
 		starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
-	GLuint cubemapForIBL = IrradianceBaker::projectToCubemap(
+	GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(
 		starfield, STARFIELD_CUBEMAP_SIZE, "Texture: starfield cube");
 
 	// Irradiance map
-	GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
+	GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
 		cubemapForIBL, 32, false, "Texture: starfield irradiance map");
 
 	// Specular IBL
 	GLuint prefilteredEnvMap;
 	uint32 mipLevels;
-	IrradianceBaker::bakePrefilteredEnvMap(
+	ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
 		cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture: starfield specular IBL");
 
 	scene.skyIrradianceMap = irradianceMap;
