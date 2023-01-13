@@ -133,9 +133,11 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	} else {
 		// #todo: Move some calculations to UBO or SSBO
 		IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
+		vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
 		vec3 volSize = vol.maxBounds - vol.minBounds;
-		vec3 cellSize = volSize / vec3(vol.gridSize - uvec3(1, 1, 1));
-		uvec3 minGridCoord = uvec3(vec3(vol.gridSize) * (vol.maxBounds - gbufferData.ws_coords) / volSize);
+		vec3 cellSize = volSize / fNumCells;
+		vec3 relPos = (vol.maxBounds - gbufferData.ws_coords) / volSize; // [0, 1)
+		uvec3 minGridCoord = uvec3(relPos * fNumCells);
 		
 		vec3 diffuseSamples[8];
 		for (uint i = 0; i < 8; ++i) {
@@ -168,14 +170,16 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	}
 
 	// Specular GI
-	// Select one radiance probe.
+	// Select closest reflection probe.
 	int localSpecularIndex = -1;
+	float reflectionProbeMinDist = 60000.0f;
 	for (uint i = 0; i < ubo.numReflectionProbes; ++i) {
 		ReflectionProbe probe = ssbo1.reflectionProbeInfo[i];
 		float dist = length(gbufferData.ws_coords - probe.positionWS);
-		if (dist <= probe.captureRadius) {
+		// #todo: Fetch probe depth and check if this reflection probe is visible from the surface point.
+		if (dist <= probe.captureRadius && dist < reflectionProbeMinDist) {
+			dist = reflectionProbeMinDist;
 			localSpecularIndex = int(i);
-			break;
 		}
 	}
 	vec3 specularSample;
@@ -186,6 +190,10 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		vec4 R4 = vec4(R_world, float(localSpecularIndex));
 		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.reflectionProbeMaxLOD).rgb;
 		specularSample *= ubo.specularBoost;
+		//if (localSpecularIndex == 0) specularSample = vec3(10.0, 10.0, 0.0);
+		//if (localSpecularIndex == 1) specularSample = vec3(0.0, 10.0, 0.0);
+		//if (localSpecularIndex == 2) specularSample = vec3(0.0, 0.0, 10.0);
+		//if (localSpecularIndex == 3) specularSample = vec3(10.0, 0.0, 10.0);
 	}
 	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
 	vec3 specularIndirect = specularSample * (kS * envBRDF.x + envBRDF.y);

@@ -91,7 +91,7 @@ void World2::setupScene()
 		vector3(0.0f, 4.0f, 3.0f),
 		vector3(15.0f, 5.0f, -10.0f),
 		vector3(-15.0f, 5.0f, -10.0f),
-		vector3(0.0f, 4.0f, -25.0f),
+		vector3(0.0f, 7.0f, -20.0f),
 	};
 	for (size_t i = 0; i < _countof(reflectionProbeLocations); ++i) {
 		auto probe = spawnActor<ReflectionProbeActor>();
@@ -100,9 +100,9 @@ void World2::setupScene()
 
 	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(
-		vector3(-20.0f, 1.0f, -20.0f),
+		vector3(-20.0f, 1.0f, -30.0f),
 		vector3(20.0f, 20.0f, 10.0f),
-		vector3ui(8, 3, 4));
+		vector3ui(5, 5, 7));
 
 	//---------------------------------------------------------------------------------------
 	// Materials
