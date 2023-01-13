@@ -12,6 +12,7 @@ namespace pathos {
 	const uint32 irradianceProbeTileCountX = 16;
 	const uint32 irradianceProbeTileCountY = 16;
 	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
+	const RenderTargetFormat depthProbeFormat = RenderTargetFormat::R16F;
 }
 
 namespace pathos {
@@ -58,13 +59,14 @@ namespace pathos {
 
 		uint32 probeIndex = currentUpdateIndex;
 		RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex);
+		RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex);
 
 		for (int32 i = 0; i < numSteps; ++i) {
 			if (currentUpdatePhase <= 5) {
 				uint32 faceIndex = currentUpdatePhase;
-				captureFace(radianceCubemap, probeIndex, faceIndex);
+				captureFace(radianceCubemap, depthCubemap, probeIndex, faceIndex);
 			} else {
-				bakeIrradiance(radianceCubemap, probeIndex);
+				bakeIrradiance(radianceCubemap, depthCubemap, probeIndex);
 			}
 
 			currentUpdatePhase += 1;
@@ -115,7 +117,7 @@ namespace pathos {
 		return minBounds + cellSize * vector3(gridX, gridY, gridZ);
 	}
 
-	void IrradianceVolumeActor::captureFace(RenderTargetCube* radianceCubemap, uint32 probeIndex, uint32 faceIndex) {
+	void IrradianceVolumeActor::captureFace(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, uint32 faceIndex) {
 		const vector3 lookAtOffsets[6] = {
 			vector3(+1.0f, 0.0f, 0.0f), // posX
 			vector3(-1.0f, 0.0f, 0.0f), // negX
@@ -138,6 +140,7 @@ namespace pathos {
 		settings.sceneHeight = radianceCubemap->getWidth();
 		settings.enablePostProcess = false;
 		settings.finalRenderTarget = radianceCubemap->getRenderTargetView(faceIndex);
+		settings.finalDepthTarget = depthCubemap->getRenderTargetView(faceIndex);
 
 		vector3 probePos = getProbeLocationByIndex(probeIndex);
 		const float zNear = 0.01f;
@@ -160,10 +163,11 @@ namespace pathos {
 		gEngine->pushSceneProxy(sceneProxy);
 	}
 
-	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, uint32 probeIndex) {
+	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex) {
 		Scene& currentScene = getWorld()->getScene();
-		GLuint inputTexture = radianceCubemap->getGLTexture();
-		GLuint RT_atlas = currentScene.getIrradianceAtlasTexture();
+		GLuint inputRadianceTexture = radianceCubemap->getGLTexture();
+		GLuint inputDepthTexture = depthCubemap->getGLTexture();
+		GLuint RT_atlas = currentScene.getIrradianceProbeAtlasTexture();
 
 		uint32 tileID = irradianceTileFirstID + probeIndex;
 		vector2ui viewportOffset;
@@ -172,13 +176,13 @@ namespace pathos {
 		currentScene.getIrradianceTileBounds(tileID, tileBounds);
 
 		ENQUEUE_RENDER_COMMAND(
-			[inputTexture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
+			[inputRadianceTexture, inputDepthTexture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
 				IrradianceMapBakeDesc bakeDesc;
 				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
 				bakeDesc.renderTarget = RT_atlas;
 				bakeDesc.viewportSize = irradianceProbeTileSize;
 				bakeDesc.viewportOffset = viewportOffset;
-				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, inputTexture, bakeDesc);
+				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
 			}
 		);
 	}
@@ -207,6 +211,33 @@ namespace pathos {
 				"IrradianceProbe_Capture");
 		}
 		return singleRadianceCubemap.get();
+#endif
+	}
+
+	RenderTargetCube* IrradianceVolumeActor::getDepthCubemapForProbe(uint32 probeIndex) {
+#if SEPARATE_RADIANCE_CUBEMAPS
+		if (depthCubemaps[probeIndex] == nullptr) {
+			char debugName[128];
+			sprintf_s(debugName, "DepthProbe_Capture%u", probeIndex);
+
+			depthCubemaps[probeIndex] = makeUnique<RenderTargetCube>();
+			depthCubemaps[probeIndex]->respecTexture(
+				irradianceProbeTileSize,
+				depthProbeFormat,
+				1,
+				debugName);
+		}
+		return depthCubemaps[probeIndex].get();
+#else
+		if (singleDepthCubemap == nullptr) {
+			singleDepthCubemap = makeUnique<RenderTargetCube>();
+			singleDepthCubemap->respecTexture(
+				irradianceProbeTileSize,
+				depthProbeFormat,
+				1,
+				"DepthProbe_Capture");
+		}
+		return singleDepthCubemap.get();
 #endif
 	}
 

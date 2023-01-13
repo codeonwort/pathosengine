@@ -48,7 +48,7 @@ namespace pathos {
 		// outBounds = (u0, v0, u1, v1)
 		void getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const;
 
-		GLuint getIrradianceAtlasTexture() const;
+		GLuint getIrradianceProbeAtlasTexture() const;
 		//////////////////////////////////////////////////////////////////////////
 
 		// Generate frame-invariant proxy data.

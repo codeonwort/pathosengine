@@ -25,17 +25,16 @@ namespace pathos {
 			irradianceTileTotalCount = irradianceTileCountX * irradianceTileCountY;
 			irradianceTileSize = pathos::irradianceProbeTileSize;
 
-			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
-
 			uint32 paddedSide = (irradianceTileSize + 2);
 			uint32 atlasWidth = paddedSide * irradianceTileCountX;
 			uint32 atlasHeight = paddedSide * irradianceTileCountY;
+
+			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
 			irradianceProbeAtlas->respecTexture(
 				atlasWidth,
 				atlasHeight,
 				pathos::irradianceProbeFormat,
-				"Scene_IrradianceAtlas");
-
+				"Scene_IrradianceProbeAtlas");
 			irradianceProbeAtlas->immediateUpdateResource();
 		}
 	}
@@ -101,7 +100,7 @@ namespace pathos {
 		}
 	}
 
-	GLuint Scene::getIrradianceAtlasTexture() const {
+	GLuint Scene::getIrradianceProbeAtlasTexture() const {
 		return irradianceProbeAtlas->getGLName();
 	}
 
@@ -142,8 +141,8 @@ namespace pathos {
 		proxy->skyPrefilterEnvMap = skyPrefilterEnvMap;
 		proxy->skyPrefilterEnvMapMipLevels = skyPrefilterEnvMapMipLevels;
 
-		proxy->irradianceAtlas = (irradianceProbeAtlas != nullptr) ? irradianceProbeAtlas->getGLName() : 0;
 		if (irradianceProbeAtlas != nullptr) {
+			proxy->irradianceAtlas = irradianceProbeAtlas->getGLName();
 			proxy->irradianceAtlasWidth = (float)irradianceProbeAtlas->getWidth();
 			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
 			proxy->irradianceTileCountX = irradianceTileCountX;

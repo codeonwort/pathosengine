@@ -52,19 +52,22 @@ namespace pathos {
 
 	class CopyTextureVS : public ShaderStage {
 	public:
-		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS")
-		{
+		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS") {
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
+
+	template<SceneRenderer::ECopyTextureMode copyMode>
 	class CopyTextureFS : public ShaderStage {
 	public:
-		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS")
-		{
+		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS") {
+			addDefine("COPY_MODE", (uint32)copyMode);
 			setFilepath("copy_texture.fs.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
+
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_Color, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::CopyColor>);
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_SceneDepth, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::SceneDepthToLinearDepth>);
 
 }
 
@@ -316,8 +319,16 @@ namespace pathos {
 		if (sceneRenderSettings.enablePostProcess == false)
 		{
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
+
 			copyTexture(cmdList, sceneRenderTargets->sceneColor, getFinalRenderTarget(),
 				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
+			
+			if (bLightProbeRendering && sceneRenderSettings.finalDepthTarget != nullptr) {
+				GLuint depthTarget = sceneRenderSettings.finalDepthTarget->getGLName();
+				copyTexture(cmdList, sceneRenderTargets->sceneDepth, depthTarget,
+					sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight,
+					ECopyTextureMode::SceneDepthToLinearDepth);
+			}
 		}
 		else
 		{
@@ -667,12 +678,24 @@ namespace pathos {
 		}
 	}
 
-	void SceneRenderer::copyTexture(RenderCommandList& cmdList, GLuint source,
-		GLuint target, uint32 targetWidth, uint32 targetHeight)
+	void SceneRenderer::copyTexture(
+		RenderCommandList& cmdList, GLuint source,
+		GLuint target, uint32 targetWidth, uint32 targetHeight,
+		ECopyTextureMode copyMode)
 	{
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
+		GLuint program = 0;
+		switch (copyMode) {
+			case ECopyTextureMode::CopyColor:
+				program = FIND_SHADER_PROGRAM(Program_CopyTexture_Color).getGLName();
+				break;
+			case ECopyTextureMode::SceneDepthToLinearDepth:
+				program = FIND_SHADER_PROGRAM(Program_CopyTexture_SceneDepth).getGLName();
+				break;
+			default:
+				CHECK_NO_ENTRY();
+		}
 
-		cmdList.useProgram(program.getGLName());
+		cmdList.useProgram(program);
 		if (target == 0) {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 		} else {

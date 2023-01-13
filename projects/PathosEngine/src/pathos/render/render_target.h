@@ -10,6 +10,8 @@ namespace pathos {
 
 	enum class RenderTargetFormat : uint8
 	{
+		R16F,
+
 		RGBA16F,
 		RGBA16I,
 		RGBA16UI,

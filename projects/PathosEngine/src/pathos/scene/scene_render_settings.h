@@ -20,6 +20,10 @@ namespace pathos {
 
 		RenderTargetView* finalRenderTarget = nullptr;
 
+		// For probe lighting. Convert and write linear sceneDepth.
+		// Note that this texture actually has a color format.
+		RenderTargetView* finalDepthTarget = nullptr;
+
 	};
 
 }

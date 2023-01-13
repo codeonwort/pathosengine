@@ -13,6 +13,7 @@ namespace pathos {
 	extern const uint32 irradianceProbeTileCountX;
 	extern const uint32 irradianceProbeTileCountY;
 	extern const RenderTargetFormat irradianceProbeFormat;
+	extern const RenderTargetFormat depthProbeFormat;
 	constexpr uint32 IRRADIANCE_TILE_INVALID_ID = 0xffffffff;
 
 	struct IrradianceVolumeProxy : public SceneComponentProxy {
@@ -63,10 +64,11 @@ namespace pathos {
 		vector3 getProbeLocationByIndex(uint32 probeIndex) const;
 		vector3 getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const;
 
-		void captureFace(RenderTargetCube* radianceCubemap, uint32 probeIndex, uint32 faceIndex);
-		void bakeIrradiance(RenderTargetCube* radianceCubemap, uint32 probeIndex);
+		void captureFace(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, uint32 faceIndex);
+		void bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex);
 
 		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex);
+		RenderTargetCube* getDepthCubemapForProbe(uint32 probeIndex);
 
 		vector3 minBounds = vector3(0.0f);
 		vector3 maxBounds = vector3(0.0f);
@@ -75,8 +77,10 @@ namespace pathos {
 
 #if SEPARATE_RADIANCE_CUBEMAPS
 		std::vector<uniquePtr<RenderTargetCube>> radianceCubemaps;
+		std::vector<uniquePtr<RenderTargetCube>> depthCubemaps;
 #else
 		uniquePtr<RenderTargetCube> singleRadianceCubemap;
+		uniquePtr<RenderTargetCube> singleDepthCubemap;
 #endif
 
 		float captureRadius = 0.0f;

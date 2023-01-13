@@ -153,7 +153,8 @@ namespace pathos {
 
 	void IrradianceBaker::bakeDiffuseIBL_renderThread(
 		RenderCommandList& cmdList,
-		GLuint inputTexture,
+		GLuint inputRadianceCubemap,
+		GLuint inputDepthCubemap,
 		const IrradianceMapBakeDesc& bakeDesc)
 	{
 		CHECK(isInRenderThread());
@@ -165,10 +166,17 @@ namespace pathos {
 		constexpr GLint uniform_transform = 0;
 		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
 
-		cmdList.textureParameteri(inputTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(inputTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		if (inputDepthCubemap != 0) {
+			cmdList.textureParameteri(inputDepthCubemap, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(inputDepthCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(inputDepthCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(inputDepthCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		}
 
 		if (bBakeCubemap) {
 			cmdList.textureParameteri(bakeDesc.renderTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -197,7 +205,8 @@ namespace pathos {
 		CHECK(glProgram != 0);
 
 		cmdList.useProgram(glProgram);
-		cmdList.bindTextureUnit(0, inputTexture);
+		cmdList.bindTextureUnit(0, inputRadianceCubemap);
+		cmdList.bindTextureUnit(1, inputDepthCubemap);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 		if (bBakeCubemap) {
@@ -246,7 +255,7 @@ namespace pathos {
 			bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
 			bakeDesc.renderTarget = *irradianceMapPtr;
 			bakeDesc.viewportSize = size;
-			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, bakeDesc);
+			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, 0, bakeDesc);
 
 			if (bAutoDestroyCubemap) {
 				cmdList.deleteTextures(1, &inputCubemap);

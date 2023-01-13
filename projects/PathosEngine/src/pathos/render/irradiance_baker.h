@@ -33,10 +33,16 @@ namespace pathos {
 		static GLuint projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName = nullptr);
 
 		// Generate irradiance cubemap from radiance capture cubemap.
-		// @param inputCubemap : Radiance cubemap.
-		// @param bakeDesc     : Irradiance map desc.
-		static void bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputCubemap, const IrradianceMapBakeDesc& bakeDesc);
+		// @param inputRadianceCubemap : Radiance cubemap.
+		// @param inputDepthCubemap    : Depth cubemap.
+		// @param bakeDesc             : Irradiance map desc.
+		static void bakeDiffuseIBL_renderThread(
+			RenderCommandList& cmdList,
+			GLuint inputRadianceCubemap,
+			GLuint inputDepthCubemap,
+			const IrradianceMapBakeDesc& bakeDesc);
 
+		// Only for sky irradiance map.
 		// Create a cubemap texture and bake irradiance to it. Flush render thread and GPU.
 		// @param inputCubemap : Radiance cubemap from which irradiance will be integrated.
 		// @param size         : size of the cubemap that will be returned

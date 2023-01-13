@@ -41,9 +41,14 @@ in VS_OUT {
 } interpolants;
 #endif
 
-out vec4 outIrradiance;
+layout (binding = 0) uniform samplerCube inRadianceCubemap;
+#if ONV_ENCODING
+layout (binding = 1) uniform samplerCube inDepthCubemap;
+#endif
 
-layout (binding = 0) uniform samplerCube envMap;
+// Sky: (xyz = irradiance, w = dummy)
+// Light probe: (xyz = irradiance, w = linear depth)
+layout (location = 0) out vec4 outIrradiance;
 
 void main() {
 #if ONV_ENCODING
@@ -70,13 +75,18 @@ void main() {
             // Tangent space to world
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * dir;
 
-            irradiance += texture(envMap, sampleVec).rgb * cosTheta * sinTheta;
+            irradiance += texture(inRadianceCubemap, sampleVec).rgb * cosTheta * sinTheta;
             nrSamples++;
         }
     }
     irradiance = PI * irradiance * (1.0 / float(nrSamples));
 
+#if ONV_ENCODING
+    float linearDepth = texture(inDepthCubemap, dir).r;
+    outIrradiance = vec4(irradiance, linearDepth);
+#else
     outIrradiance = vec4(irradiance, 1.0);
+#endif
 }
 
 #endif // FRAGMENT_SHADER
