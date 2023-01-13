@@ -1,6 +1,6 @@
 #pragma once
 
-#include "light_probe_component.h"
+#include "reflection_probe_component.h"
 
 namespace pathos {
 

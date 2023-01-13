@@ -1,4 +1,4 @@
-#include "light_probe_actor.h"
+#include "reflection_probe_actor.h"
 
 namespace pathos {
 

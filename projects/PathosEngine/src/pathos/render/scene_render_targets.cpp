@@ -1,7 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/postprocessing/super_res.h"
-#include "pathos/scene/light_probe_component.h"
+#include "pathos/scene/reflection_probe_component.h"
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"

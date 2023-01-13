@@ -4,7 +4,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/camera.h"
-#include "pathos/scene/light_probe_component.h"
+#include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
 

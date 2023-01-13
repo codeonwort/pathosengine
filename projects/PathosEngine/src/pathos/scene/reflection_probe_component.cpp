@@ -1,4 +1,4 @@
-#include "light_probe_component.h"
+#include "reflection_probe_component.h"
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/render_target.h"

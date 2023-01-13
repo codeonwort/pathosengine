@@ -13,7 +13,7 @@
 #include "pathos/scene/scene_capture_component.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
-#include "pathos/scene/light_probe_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/material/material_shader.h"
 

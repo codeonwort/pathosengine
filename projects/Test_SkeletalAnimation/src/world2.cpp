@@ -8,7 +8,7 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
-#include "pathos/scene/light_probe_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"

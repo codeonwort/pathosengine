@@ -17,7 +17,7 @@
 
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
-#include "pathos/scene/light_probe_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"

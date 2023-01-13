@@ -2,7 +2,7 @@
 #include "pathos/console.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene_component.h"
-#include "pathos/scene/light_probe_component.h"
+#include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/directional_light_component.h"

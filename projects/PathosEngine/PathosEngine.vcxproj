@@ -104,8 +104,8 @@
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
     <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp" />
-    <ClCompile Include="src\pathos\scene\light_probe_actor.cpp" />
-    <ClCompile Include="src\pathos\scene\light_probe_component.cpp" />
+    <ClCompile Include="src\pathos\scene\reflection_probe_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\reflection_probe_component.cpp" />
     <ClCompile Include="src\pathos\scene\scene_component.cpp" />
     <ClCompile Include="src\pathos\scene\world.cpp" />
     <ClCompile Include="src\pathos\scene\camera.cpp" />
@@ -228,8 +228,8 @@
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />
-    <ClInclude Include="src\pathos\scene\light_probe_actor.h" />
-    <ClInclude Include="src\pathos\scene\light_probe_component.h" />
+    <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
+    <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />
     <ClInclude Include="src\pathos\scene\world.h" />
     <ClInclude Include="src\pathos\scene\camera.h" />
