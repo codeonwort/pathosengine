@@ -13,6 +13,7 @@ namespace pathos {
 	class PointLightActor;
 	class TextMeshActor;
 	class OBJLoader;
+	class ReflectionProbeActor;
 }
 class PlayerController;
 

@@ -4,67 +4,59 @@
 
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/rhi/render_device.h"
+
+#include "badger/types/noncopyable.h"
 #include "badger/assertion/assertion.h"
+#include <string>
 
 namespace pathos {
 
 	// #todo-shader: For now not used anywhere, not tested at all.
-	class ShaderStorageBuffer {
+	class ShaderStorageBuffer final : public Noncopyable {
 
 	public:
-		ShaderStorageBuffer()
-			: ssbo(0)
-			, bufferSize(0) {
-		}
-
+		ShaderStorageBuffer() {}
 		~ShaderStorageBuffer() {
 			safeDestroy();
 		}
 
-		ShaderStorageBuffer(const ShaderStorageBuffer&) = delete;
-		ShaderStorageBuffer& operator=(const ShaderStorageBuffer&) = delete;
+		void init(int64 inBufferSize, const char* inDebugName = nullptr) {
+			bufferSize = inBufferSize;
+			debugName = (inDebugName != nullptr) ? inDebugName : std::string();
 
-		template<typename T> void init() {
-			//bufferSize = (sizeof(T) + 255) & ~255;
-			bufferSize = sizeof(T);
-			gRenderDevice->createBuffers(1, &ssbo);
+			ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
+				// #todo-shader: Switch to AZDO version
+				const GLbitfield flags = GL_DYNAMIC_STORAGE_BIT;
 
-			// #todo-shader: Support SSBO flags for CPU-side read/write?
-			const GLbitfield flags = 0;
-
-			if (isInRenderThread()) {
-				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
+				gRenderDevice->createBuffers(1, &ssbo);
 				cmdList.namedBufferStorage(this->ssbo, this->bufferSize, (GLvoid*)0, flags);
-			} else {
-				// #todo-renderthread: No issue with order of commands?
-				ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
-					cmdList.namedBufferStorage(this->ssbo, this->bufferSize, (GLvoid*)0, flags);
-				});
-			}
+				if (debugName.size() > 0) {
+					cmdList.objectLabel(GL_BUFFER, this->ssbo, -1, this->debugName.c_str());
+				}
+			});
 		}
 
-		// #todo-shader: Support SSBO update by CPU?
-		//void update(RenderCommandList& cmdList, GLuint bindingIndex, void* data) {
-		//	CHECK(isInRenderThread());
-		//	CHECK(ssbo != 0);
-		//	cmdList.namedBufferSubData(ssbo, 0, bufferSize, data);
-		//	cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, ssbo);
-		//}
+		void update(RenderCommandList& cmdList, GLuint bindingIndex, void* srcData, GLsizeiptr srcSize) {
+			CHECK(isInRenderThread());
+			CHECK(ssbo != 0);
+			cmdList.namedBufferSubData(ssbo, 0, srcSize, srcData);
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, ssbo);
+		}
 
-		// NOTE: No need to call manually if this instance is deallocated before gRenderDevice shutdown.
 		void safeDestroy() {
 			if (ssbo != 0) {
-				gRenderDevice->deleteBuffers(1, &ssbo);
-				ssbo = 0;
+				ENQUEUE_RENDER_COMMAND([ssbo = this->ssbo](RenderCommandList& cmdList) {
+					gRenderDevice->deleteBuffers(1, &ssbo);
+				});
 			}
 		}
 
 		inline GLuint getGLName() const { return ssbo; }
 
 	private:
-		GLuint ssbo;
-		uint32 bufferSize;
-
+		GLuint ssbo = 0;
+		int64 bufferSize = 0;
+		std::string debugName;
 	};
 
 }

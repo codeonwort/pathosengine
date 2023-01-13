@@ -24,6 +24,7 @@
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
+#include "pathos/render/visualize_light_probe.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
@@ -51,19 +52,22 @@ namespace pathos {
 
 	class CopyTextureVS : public ShaderStage {
 	public:
-		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS")
-		{
+		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS") {
 			setFilepath("fullscreen_quad.glsl");
 		}
 	};
+
+	template<SceneRenderer::ECopyTextureMode copyMode>
 	class CopyTextureFS : public ShaderStage {
 	public:
-		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS")
-		{
+		CopyTextureFS() : ShaderStage(GL_FRAGMENT_SHADER, "CopyTextureFS") {
+			addDefine("COPY_MODE", (uint32)copyMode);
 			setFilepath("copy_texture.fs.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_CopyTexture, CopyTextureVS, CopyTextureFS);
+
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_Color, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::CopyColor>);
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_SceneDepth, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::SceneDepthToLinearDepth>);
 
 }
 
@@ -82,8 +86,6 @@ namespace pathos {
 		// #todo-forward-shading: Restore forward shading pipeline.
 		// ...
 
-		sceneRenderTargets.useGBuffer = true;
-
 		// [GDC2016] INSIDE uses 16 samples from Halton(2,3).
 		badger::HaltonSequence(2, JITTER_SEQ_LENGTH, temporalJitterSequenceX);
 		badger::HaltonSequence(3, JITTER_SEQ_LENGTH, temporalJitterSequenceY);
@@ -98,18 +100,13 @@ namespace pathos {
 	}
 
 	void SceneRenderer::initializeResources(RenderCommandList& cmdList) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, false);
-		cmdList.flushAllCommands();
-		cmdList.sceneRenderTargets = &sceneRenderTargets;
-
 		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_BasePass");
-
 		gRenderDevice->createFramebuffers(1, &fboScreenshot);
 	}
 
 	void SceneRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			destroySceneRenderTargets(cmdList);
+			gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 			gRenderDevice->deleteFramebuffers(1, &fboScreenshot);
 		}
 		destroyed = true;
@@ -126,7 +123,7 @@ namespace pathos {
 		}
 	}
 
-	void SceneRenderer::setFinalRenderTarget(RenderTarget2D* inFinalRenderTarget) {
+	void SceneRenderer::setFinalRenderTarget(RenderTargetView* inFinalRenderTarget) {
 		CHECKF(inFinalRenderTarget != nullptr, "null is not accepted. Use setFinalRenderTargetToBackbuffer() for backbuffer");
 		CHECKF(inFinalRenderTarget->isDepthFormat() == false, "Depth format is not supported yet");
 		finalRenderTarget = inFinalRenderTarget;
@@ -136,8 +133,17 @@ namespace pathos {
 		finalRenderTarget = 0;
 	}
 
-	void SceneRenderer::reallocateSceneRenderTargets(RenderCommandList& cmdList, bool bEnableResolutionScaling) {
-		sceneRenderTargets.reallocSceneTextures(cmdList, sceneRenderSettings.sceneWidth, sceneRenderSettings.sceneHeight, bEnableResolutionScaling);
+	void SceneRenderer::reallocateSceneRenderTargets(
+		RenderCommandList& cmdList,
+		SceneProxySource sceneProxySource,
+		bool bEnableResolutionScaling)
+	{
+		sceneRenderTargets->reallocSceneTextures(
+			cmdList,
+			sceneProxySource,
+			sceneRenderSettings.sceneWidth,
+			sceneRenderSettings.sceneHeight,
+			bEnableResolutionScaling);
 
 		if (gbufferFBO == 0) {
 			gRenderDevice->createFramebuffers(1, &gbufferFBO);
@@ -152,33 +158,35 @@ namespace pathos {
 				GL_COLOR_ATTACHMENT3,
 			};
 			
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets.gbufferA, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets.gbufferB, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets.gbufferC, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT3, sceneRenderTargets.velocityMap, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets.sceneDepth, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets->gbufferA, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets->gbufferB, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets->gbufferC, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT3, sceneRenderTargets->velocityMap, 0);
+			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets->sceneDepth, 0);
 			cmdList.namedFramebufferDrawBuffers(gbufferFBO, _countof(gbuffer_draw_buffers), gbuffer_draw_buffers);
 
 			pathos::checkFramebufferStatus(cmdList, gbufferFBO, "gbuffer setup is invalid");
 		}
 	}
 
-	void SceneRenderer::destroySceneRenderTargets(RenderCommandList& cmdList) {
-		sceneRenderTargets.freeSceneTextures(cmdList);
-		gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
-	}
-
-	void SceneRenderer::render(RenderCommandList& cmdList, SceneProxy* inScene, Camera* inCamera) {
+	void SceneRenderer::renderScene(
+		RenderCommandList& cmdList,
+		SceneRenderTargets* inSceneRenderTargets,
+		SceneProxy* inScene,
+		Camera* inCamera)
+	{
+		sceneRenderTargets = inSceneRenderTargets;
 		scene = inScene;
 		camera = inCamera;
 
 		CHECK(sceneRenderSettings.isValid());
 
-		bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
 
 		cmdList.sceneProxy = inScene;
-		cmdList.sceneRenderTargets = &sceneRenderTargets;
-		reallocateSceneRenderTargets(cmdList, bEnableResolutionScaling);
+		cmdList.sceneRenderTargets = sceneRenderTargets;
+		reallocateSceneRenderTargets(cmdList, scene->sceneProxySource, bEnableResolutionScaling);
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
@@ -193,7 +201,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
 
-			// They should be updated before updateSceneUniformBuffer
+			// These should be updated before updateSceneUniformBuffer
 			scene->createViewDependentRenderProxy(camera->getViewMatrix());
 			sunShadowMap->updateUniformBufferData(cmdList, scene, camera);
 
@@ -216,6 +224,8 @@ namespace pathos {
 			depthPrepass->renderPreDepth(cmdList, scene, camera);
 		}
 
+		// #todo-light-probe: Don't need to render this per scene proxy,
+		// but scene proxies for light probes are processed prior to the scene proxy for the main view.
 		{
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
@@ -224,6 +234,8 @@ namespace pathos {
 			revertHackedSceneUniformBuffer(cmdList);
 		}
 
+		// #todo-light-probe: Don't need to render this per scene proxy,
+		// but scene proxies for light probes are processed prior to the scene proxy for the main view.
 		{
 			SCOPED_CPU_COUNTER(RenderOmniShadowMaps);
 			SCOPED_GPU_COUNTER(RenderOmniShadowMaps);
@@ -232,7 +244,7 @@ namespace pathos {
 		}
 
 		// Volumetric clouds
-		{
+		if (bLightProbeRendering == false) {
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
@@ -240,9 +252,8 @@ namespace pathos {
 		// GodRay
 		// input: static meshes
 		// output: god ray texture
-		{
+		if (bLightProbeRendering == false) {
 			SCOPED_GPU_COUNTER(RenderGodRay);
-
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
@@ -261,7 +272,7 @@ namespace pathos {
 			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
 			cmdList.clearTexImage(
-				sceneRenderTargets.sceneColor,
+				sceneRenderTargets->sceneColor,
 				0, // mip
 				GL_RGBA,
 				GL_FLOAT,
@@ -274,7 +285,7 @@ namespace pathos {
 			renderDirectLighting(cmdList);
 		}
 
-		if (cvar_enable_probegi.getInt() != 0) {
+		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
@@ -283,7 +294,7 @@ namespace pathos {
 		// Add unlit and emissive
 		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
 
-		if (cvar_enable_ssr.getInt() != 0) {
+		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
 		}
@@ -294,15 +305,30 @@ namespace pathos {
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
+		if (bLightProbeRendering == false) {
+			visualizeLightProbe->render(cmdList, scene, camera);
+		}
+
 		//////////////////////////////////////////////////////////////////////////
 		// Post-processing
+		// 
+		// #note: Post processing passes are not supposed to be enabled in light probe rendering.
+
 		GLuint sceneAfterLastPP = 0;
 
 		if (sceneRenderSettings.enablePostProcess == false)
 		{
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
-			copyTexture(cmdList, sceneRenderTargets.sceneColor, getFinalRenderTarget(),
-				sceneRenderTargets.unscaledSceneWidth, sceneRenderTargets.unscaledSceneHeight);
+
+			copyTexture(cmdList, sceneRenderTargets->sceneColor, getFinalRenderTarget(),
+				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
+			
+			if (bLightProbeRendering && sceneRenderSettings.finalDepthTarget != nullptr) {
+				GLuint depthTarget = sceneRenderSettings.finalDepthTarget->getGLName();
+				copyTexture(cmdList, sceneRenderTargets->sceneDepth, depthTarget,
+					sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight,
+					ECopyTextureMode::SceneDepthToLinearDepth);
+			}
 		}
 		else
 		{
@@ -341,7 +367,7 @@ namespace pathos {
 			setEnablePP(EPostProcessOrder::SuperResolution, superResMethod != ESuperResolutionMethod::Disabled);
 			setEnablePP(EPostProcessOrder::DepthOfField, (cvar_enable_dof.getInt() != 0) && depthOfField->isAvailable());
 
-			sceneAfterLastPP = sceneRenderTargets.sceneColor;
+			sceneAfterLastPP = sceneRenderTargets->sceneColor;
 
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
@@ -350,17 +376,17 @@ namespace pathos {
 			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
-				copyTexture(cmdList, sceneRenderTargets.sceneColor, sceneRenderTargets.sceneColorHalfRes,
-					sceneRenderTargets.sceneWidth / 2, sceneRenderTargets.sceneHeight / 2);
+				copyTexture(cmdList, sceneRenderTargets->sceneColor, sceneRenderTargets->sceneColorHalfRes,
+					sceneRenderTargets->sceneWidth / 2, sceneRenderTargets->sceneHeight / 2);
 			}
 
 			// Post Process: Bloom
 			if (isPPEnabled(EPostProcessOrder::Bloom)) {
-				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneColorHalfRes);
-				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets.sceneBloomSetup);
+				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneColorHalfRes);
+				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets->sceneBloomSetup);
 				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
 
-				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets.sceneBloomSetup);
+				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneBloomSetup);
 				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
 			}
 
@@ -368,13 +394,13 @@ namespace pathos {
 			{
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
 
-				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets.sceneBloomChain : sceneAfterLastPP;
-				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorToneMapped;
+				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
+				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
-				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.godRayResult);
-				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.getVolumetricCloud(frameCounter));
+				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
+				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->getVolumetricCloud(frameCounter));
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
 
@@ -391,7 +417,7 @@ namespace pathos {
 				case EAntiAliasingMethod::FXAA:
 				{
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
-					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
+					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
 
 					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 					fxaa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
@@ -403,21 +429,21 @@ namespace pathos {
 				case EAntiAliasingMethod::TAA:
 				{
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
-					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorAA;
+					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
 
 					taa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
-					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets.sceneColorHistory);
-					taa->setInput(EPostProcessInput::PPI_2, sceneRenderTargets.sceneDepth);
-					taa->setInput(EPostProcessInput::PPI_3, sceneRenderTargets.velocityMap);
-					taa->setInput(EPostProcessInput::PPI_4, sceneRenderTargets.gbufferA);
+					taa->setInput(EPostProcessInput::PPI_1, sceneRenderTargets->sceneColorHistory);
+					taa->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->sceneDepth);
+					taa->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->velocityMap);
+					taa->setInput(EPostProcessInput::PPI_4, sceneRenderTargets->gbufferA);
 					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
 					taa->renderPostProcess(cmdList, fullscreenQuad.get());
 
 					{
 						SCOPED_DRAW_EVENT(SaveSceneColorHistory);
 						copyTexture(cmdList,
-							aaRenderTarget, sceneRenderTargets.sceneColorHistory,
-							sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+							aaRenderTarget, sceneRenderTargets->sceneColorHistory,
+							sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
 					}
 
 					sceneAfterLastPP = aaRenderTarget;
@@ -437,8 +463,8 @@ namespace pathos {
 				case ESuperResolutionMethod::FSR1:
 					{
 						const bool isFinalPP = isPPFinal(EPostProcessOrder::SuperResolution);
-						//const GLuint renderTarget = isFinalPP ? sceneRenderTargets.sceneFinal : sceneRenderTargets.sceneColorUpscaled;
-						const GLuint renderTarget = sceneRenderTargets.sceneColorUpscaled;
+						//const GLuint renderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorUpscaled;
+						const GLuint renderTarget = sceneRenderTargets->sceneColorUpscaled;
 
 						fsr1->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 						fsr1->setOutput(EPostProcessOutput::PPO_0, renderTarget);
@@ -451,9 +477,9 @@ namespace pathos {
 						// Even memory barrier with GL_ALL_BARRIER_BITS does not solve the problem.
 						// -> Workaround: FSR1 always renders to sceneColorUpscaled, copy sceneColorUpscaled to sceneFinal.
 						if (isFinalPP) {
-							copyTexture(cmdList, sceneAfterLastPP, sceneRenderTargets.sceneFinal,
-								sceneRenderTargets.sceneWidthSuperRes, sceneRenderTargets.sceneHeightSuperRes);
-							sceneAfterLastPP = sceneRenderTargets.sceneFinal;
+							copyTexture(cmdList, sceneAfterLastPP, sceneRenderTargets->sceneFinal,
+								sceneRenderTargets->sceneWidthSuperRes, sceneRenderTargets->sceneHeightSuperRes);
+							sceneAfterLastPP = sceneRenderTargets->sceneFinal;
 						}
 					}
 					break;
@@ -466,13 +492,13 @@ namespace pathos {
 
 			// Post Process: Depth of Field
 			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
-				const GLuint dofInput = sceneRenderTargets.sceneColorDoFInput;
-				const GLuint dofRenderTarget = sceneRenderTargets.sceneFinal;
+				const GLuint dofInput = sceneRenderTargets->sceneColorDoFInput;
+				const GLuint dofRenderTarget = sceneRenderTargets->sceneFinal;
 
 				// Force rgba32f input.
 				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
 				copyTexture(cmdList, sceneAfterLastPP, dofInput,
-					sceneRenderTargets.sceneWidthSuperRes, sceneRenderTargets.sceneHeightSuperRes);
+					sceneRenderTargets->sceneWidthSuperRes, sceneRenderTargets->sceneHeightSuperRes);
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
@@ -487,13 +513,13 @@ namespace pathos {
 		if (scene->bScreenshotReserved) {
 			SCOPED_DRAW_EVENT(ReadbackScreenshot);
 
-			CHECK(sceneAfterLastPP == sceneRenderTargets.sceneFinal);
+			CHECK(sceneAfterLastPP == sceneRenderTargets->sceneFinal);
 
 			cmdList.bindFramebuffer(GL_READ_FRAMEBUFFER, fboScreenshot);
-			cmdList.namedFramebufferTexture(fboScreenshot, GL_COLOR_ATTACHMENT0, sceneRenderTargets.sceneFinal, 0);
+			cmdList.namedFramebufferTexture(fboScreenshot, GL_COLOR_ATTACHMENT0, sceneRenderTargets->sceneFinal, 0);
 			cmdList.namedFramebufferReadBuffer(fboScreenshot, GL_COLOR_ATTACHMENT0);
 
-			vector2i screenshotSize((int32)sceneRenderTargets.sceneWidthSuperRes, (int32)sceneRenderTargets.sceneHeightSuperRes);
+			vector2i screenshotSize((int32)sceneRenderTargets->sceneWidthSuperRes, (int32)sceneRenderTargets->sceneHeightSuperRes);
 
 			scene->screenshotSize = screenshotSize;
 			scene->screenshotRawData.resize(4 * screenshotSize.x * screenshotSize.y);
@@ -505,12 +531,15 @@ namespace pathos {
 		if (sceneAfterLastPP != 0) {
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
 			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget(),
-				sceneRenderTargets.unscaledSceneWidth, sceneRenderTargets.unscaledSceneHeight);
+				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
 		}
 
 		// Debug pass (r.viewmode)
-		visualizeBuffer->render(cmdList, scene, camera);
+		if (bLightProbeRendering == false) {
+			visualizeBuffer->render(cmdList, scene, camera);
+		}
 
+		sceneRenderTargets = nullptr;
 		scene = nullptr;
 		camera = nullptr;
 	}
@@ -538,7 +567,7 @@ namespace pathos {
 
 		// Set render state
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.viewport(0, 0, sceneRenderTargets.sceneWidth, sceneRenderTargets.sceneHeight);
+		cmdList.viewport(0, 0, sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
 
 		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
 		// Switch to EQUAL when doing full-depth prepass.
@@ -649,12 +678,24 @@ namespace pathos {
 		}
 	}
 
-	void SceneRenderer::copyTexture(RenderCommandList& cmdList, GLuint source,
-		GLuint target, uint32 targetWidth, uint32 targetHeight)
+	void SceneRenderer::copyTexture(
+		RenderCommandList& cmdList, GLuint source,
+		GLuint target, uint32 targetWidth, uint32 targetHeight,
+		ECopyTextureMode copyMode)
 	{
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyTexture);
+		GLuint program = 0;
+		switch (copyMode) {
+			case ECopyTextureMode::CopyColor:
+				program = FIND_SHADER_PROGRAM(Program_CopyTexture_Color).getGLName();
+				break;
+			case ECopyTextureMode::SceneDepthToLinearDepth:
+				program = FIND_SHADER_PROGRAM(Program_CopyTexture_SceneDepth).getGLName();
+				break;
+			default:
+				CHECK_NO_ENTRY();
+		}
 
-		cmdList.useProgram(program.getGLName());
+		cmdList.useProgram(program);
 		if (target == 0) {
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, 0);
 		} else {
@@ -682,9 +723,10 @@ namespace pathos {
 		SceneProxy* scene,
 		Camera* camera)
 	{
-		UBO_PerFrame data;
-
 		const matrix4& projMatrix = camera->getProjectionMatrix();
+		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+
+		UBO_PerFrame data;
 
 		data.view         = camera->getViewMatrix();
 		data.inverseView  = glm::inverse(data.view);
@@ -705,20 +747,20 @@ namespace pathos {
 
 		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
 
-		if (getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
+		if (bMainScene && getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
 			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
 			float K = getTemporalJitterMultiplier();
 			// It reduces the effectiveness of TAA, but also relax jittering when super resolution is enabled.
 			K /= getSuperResolutionScaleFactor();
-			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets.sceneWidth;
-			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets.sceneHeight;
+			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets->sceneWidth;
+			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets->sceneHeight;
 			data.temporalJitter.z = data.temporalJitter.w = 0.0f;
 		} else {
 			data.temporalJitter = vector4(0.0f);
 		}
 
-		data.screenResolution.x = (float)sceneRenderTargets.sceneWidth;
-		data.screenResolution.y = (float)sceneRenderTargets.sceneHeight;
+		data.screenResolution.x = (float)sceneRenderTargets->sceneWidth;
+		data.screenResolution.y = (float)sceneRenderTargets->sceneHeight;
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
@@ -735,7 +777,7 @@ namespace pathos {
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 		
 		data.sunParameters.x = sunShadowMap->getShadowMapZFar();
-		data.sunParameters.y = (float)sceneRenderTargets.numCascades;
+		data.sunParameters.y = (float)sceneRenderTargets->numCascades;
 
 		data.csmDepths.x = sunShadowMap->getZSlice(0);
 		data.csmDepths.y = sunShadowMap->getZSlice(1);
@@ -753,9 +795,11 @@ namespace pathos {
 
 		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 
-		prevView = data.view;
-		prevInverseView = data.inverseView;
-		prevViewProj = data.viewProj;
+		if (bMainScene) {
+			prevView = data.view;
+			prevInverseView = data.inverseView;
+			prevViewProj = data.viewProj;
+		}
 
 		cachedPerFrameUBOData = std::move(data);
 	}
@@ -791,6 +835,7 @@ namespace pathos {
 	uniquePtr<DirectionalShadowMap>      SceneRenderer::sunShadowMap;
 	uniquePtr<OmniShadowPass>            SceneRenderer::omniShadowPass;
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
+	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
 
 	uniquePtr<GodRay>                    SceneRenderer::godRay;
 	uniquePtr<SSAO>                      SceneRenderer::ssao;
@@ -830,8 +875,13 @@ namespace pathos {
 			translucency_pass->initializeResources(cmdList);
 		}
 
-		resolveUnlitPass = makeUnique<ResolveUnlitPass>();
-		resolveUnlitPass->initializeResources(cmdList);
+		{
+			depthPrepass = makeUnique<DepthPrepass>();
+			depthPrepass->initializeResources(cmdList);
+
+			resolveUnlitPass = makeUnique<ResolveUnlitPass>();
+			resolveUnlitPass->initializeResources(cmdList);
+		}
 
 		{
 			skyboxPass = makeUnique<SkyboxPass>();
@@ -848,15 +898,19 @@ namespace pathos {
 		}
 
 		{
-			depthPrepass = makeUnique<DepthPrepass>();
 			sunShadowMap = makeUnique<DirectionalShadowMap>();
 			omniShadowPass = makeUnique<OmniShadowPass>();
-			visualizeBuffer = makeUnique<VisualizeBufferPass>();
-
-			depthPrepass->initializeResources(cmdList);
+			
 			sunShadowMap->initializeResources(cmdList);
 			omniShadowPass->initializeResources(cmdList);
+		}
+
+		{
+			visualizeBuffer = makeUnique<VisualizeBufferPass>();
 			visualizeBuffer->initializeResources(cmdList);
+
+			visualizeLightProbe = makeUnique<VisualizeLightProbePass>();
+			visualizeLightProbe->initializeResources(cmdList);
 		}
 
 		{
@@ -906,7 +960,9 @@ namespace pathos {
 		RELEASEPASS(depthPrepass);
 		RELEASEPASS(sunShadowMap);
 		RELEASEPASS(omniShadowPass);
+
 		RELEASEPASS(visualizeBuffer);
+		RELEASEPASS(visualizeLightProbe);
 
 		RELEASEPASS(godRay);
 		RELEASEPASS(ssao);

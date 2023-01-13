@@ -8,8 +8,11 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
+#include "pathos/render/image_based_lighting_baker.h"
 
 #include <time.h>
 
@@ -68,6 +71,9 @@ void World2::setupScene()
 {
 	srand(static_cast<unsigned int>(time(NULL)));
 
+	//---------------------------------------------------------------------------------------
+	// Light sources
+
 	sunLight = spawnActor<DirectionalLightActor>();
 	sunLight->setDirection(SUN_DIRECTION);
 	sunLight->setIlluminance(SUN_ILLUMINANCE);
@@ -79,6 +85,26 @@ void World2::setupScene()
 	pointLight0->setSourceRadius(0.2f);
 
 	//---------------------------------------------------------------------------------------
+	// Local light probes
+
+	vector3 reflectionProbeLocations[] = {
+		vector3(0.0f, 4.0f, 3.0f),
+		vector3(15.0f, 5.0f, -10.0f),
+		vector3(-15.0f, 5.0f, -10.0f),
+		vector3(0.0f, 7.0f, -20.0f),
+	};
+	for (size_t i = 0; i < _countof(reflectionProbeLocations); ++i) {
+		auto probe = spawnActor<ReflectionProbeActor>();
+		probe->setActorLocation(reflectionProbeLocations[i]);
+	}
+
+	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	irradianceVolume->initializeVolume(
+		vector3(-20.0f, 1.0f, -30.0f),
+		vector3(20.0f, 20.0f, 10.0f),
+		vector3ui(5, 5, 7));
+
+	//---------------------------------------------------------------------------------------
 	// Materials
 
 	std::array<const char*, 6> cubeImageNames = {
@@ -88,7 +114,7 @@ void World2::setupScene()
 	};
 	std::array<BitmapBlob*, 6> cubeImageBlobs;
 	pathos::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL, cubeImageBlobs);
-	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data());
+	GLuint skyCubemapTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data(), true, "Texture_Skybox");
 
 	Material* material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -136,10 +162,23 @@ void World2::setupScene()
 	alertText2->setActorScale(8.0f);
 
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
-	sky->initialize(cubeTexture);
+	sky->initialize(skyCubemapTexture);
 
 	scene.sky = sky;
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
+
+	{
+		scene.skyIrradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
+			skyCubemapTexture, 32, false, "Texture_SkyDiffuseIBL");
+
+		GLuint prefilteredEnvMap;
+		uint32 mipLevels;
+		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
+			skyCubemapTexture, 128, prefilteredEnvMap, mipLevels, "Texture_SkySpecularIBL");
+
+		scene.skyPrefilterEnvMap = prefilteredEnvMap;
+		scene.skyPrefilterEnvMapMipLevels = mipLevels;
+	}
 }
 
 void World2::loadDAE()

@@ -1,57 +1,91 @@
 #version 460 core
 
+#include "common.glsl"
+
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 
 ////////////////////////////////////////////////////////////
 
 #if VERTEX_SHADER
-layout (location = 0) in vec3 position;
 
-out vec3 local_position;
+layout (location = 0) in vec3 inPosition;
+
+out VS_OUT {
+    vec3 posL;
+} interpolants;
 
 layout (location = 0) uniform mat4 transform;
 
 void main() {
-    local_position = position;
-    gl_Position = transform * vec4(local_position, 1.0);
+    interpolants.posL = inPosition;
+    gl_Position = transform * vec4(inPosition, 1.0);
 }
-#endif
+
+#endif // VERTEX_SHADER
 
 ////////////////////////////////////////////////////////////
 
 #if FRAGMENT_SHADER
-in vec3 local_position;
-out vec4 out_color;
 
-layout (binding = 0) uniform samplerCube envMap;
+#ifndef ONV_ENCODING
+    #define ONV_ENCODING 0
+#endif
 
-const float PI = 3.14159265359;
+#if ONV_ENCODING
+in VS_OUT {
+	vec2 screenUV;
+} interpolants;
+#else
+in VS_OUT {
+    vec3 posL;
+} interpolants;
+#endif
+
+layout (binding = 0) uniform samplerCube inRadianceCubemap;
+#if ONV_ENCODING
+layout (binding = 1) uniform samplerCube inDepthCubemap;
+#endif
+
+layout (location = 0) out vec4 outIrradiance;
+#if ONV_ENCODING
+layout (location = 1) out float outLinearDepth;
+#endif
 
 void main() {
-    vec3 normal = normalize(local_position);
+#if ONV_ENCODING
+    vec3 dir = ONVDecode(interpolants.screenUV);
+#else
+    vec3 dir = normalize(interpolants.posL);
+#endif
+
     vec3 irradiance = vec3(0.0);
 
     vec3 up    = vec3(0.0, 1.0, 0.0);
-    vec3 right = cross(up, normal);
-    up         = cross(normal, right);
+    vec3 right = cross(up, dir);
+    up         = cross(dir, right);
 
     float sampleDelta = 0.025;
-    float nrSamples = 0.0; 
-    for(float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta)
-    {
-        for(float theta = 0.0; theta < 0.5 * PI; theta += sampleDelta)
-        {
-            // spherical to cartesian (in tangent space)
-            vec3 tangentSample = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
-            // tangent space to world
-            vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
+    float nrSamples = 0.0;
+    for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta) {
+        for (float theta = 0.0; theta < 0.5 * PI; theta += sampleDelta) {
+            float sinTheta = sin(theta);
+            float cosTheta = cos(theta);
 
-            irradiance += texture(envMap, sampleVec).rgb * cos(theta) * sin(theta);
+            // Spherical to cartesian (in tangent space)
+            vec3 tangentSample = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+            // Tangent space to world
+            vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * dir;
+
+            irradiance += texture(inRadianceCubemap, sampleVec).rgb * cosTheta * sinTheta;
             nrSamples++;
         }
     }
     irradiance = PI * irradiance * (1.0 / float(nrSamples));
 
-    out_color = vec4(irradiance, 1.0);
-}
+    outIrradiance = vec4(irradiance, 1.0);
+#if ONV_ENCODING
+    outLinearDepth = texture(inDepthCubemap, dir).r;
 #endif
+}
+
+#endif // FRAGMENT_SHADER

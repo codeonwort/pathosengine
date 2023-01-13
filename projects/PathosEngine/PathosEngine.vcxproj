@@ -100,8 +100,12 @@
     </ClCompile>
     <ClCompile Include="src\init_tinygltf.cpp" />
     <ClCompile Include="src\init_tinyobjloader.cpp" />
+    <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
+    <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\reflection_probe_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\reflection_probe_component.cpp" />
     <ClCompile Include="src\pathos\scene\scene_component.cpp" />
     <ClCompile Include="src\pathos\scene\world.cpp" />
     <ClCompile Include="src\pathos\scene\camera.cpp" />
@@ -137,7 +141,7 @@
     <ClCompile Include="src\pathos\render\depth_prepass.cpp" />
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp" />
     <ClCompile Include="src\pathos\render\indirect_lighting.cpp" />
-    <ClCompile Include="src\pathos\render\irradiance_baker.cpp" />
+    <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_taa.cpp" />
     <ClCompile Include="src\pathos\render\postprocessing\super_res.cpp" />
@@ -219,9 +223,13 @@
     <ClInclude Include="src\badger\types\noncopyable.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
+    <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
+    <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />
+    <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
+    <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />
     <ClInclude Include="src\pathos\scene\world.h" />
     <ClInclude Include="src\pathos\scene\camera.h" />
@@ -263,7 +271,7 @@
     <ClInclude Include="src\pathos\render\depth_prepass.h" />
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h" />
     <ClInclude Include="src\pathos\render\indirect_lighting.h" />
-    <ClInclude Include="src\pathos\render\irradiance_baker.h" />
+    <ClInclude Include="src\pathos\render\image_based_lighting_baker.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h" />
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_taa.h" />
     <ClInclude Include="src\pathos\render\postprocessing\super_res_fsr1.h" />

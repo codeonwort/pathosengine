@@ -8,9 +8,10 @@
 
 namespace pathos {
 
+	struct SceneRenderTargets;
 	class SceneProxy;
 	class Camera;
-	class RenderTarget2D;
+	class RenderTargetView;
 
 	class Renderer : public Noncopyable {
 		
@@ -22,9 +23,14 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
 
 		virtual void setSceneRenderSettings(const SceneRenderSettings& settings) = 0;
-		virtual void setFinalRenderTarget(RenderTarget2D* finalRenderTarget) = 0; // For custom off-screen render target
+		virtual void setFinalRenderTarget(RenderTargetView* finalRenderTarget) = 0; // For custom off-screen render target
 		virtual void setFinalRenderTargetToBackbuffer() = 0; // Final render to the default backbuffer
-		virtual void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) = 0;
+
+		virtual void renderScene(
+			RenderCommandList& cmdList,
+			SceneRenderTargets* sceneRenderTargets,
+			SceneProxy* scene,
+			Camera* camera) = 0;
 
 	};
 

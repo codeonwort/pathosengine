@@ -12,7 +12,7 @@
 
 namespace pathos {
 
-	static constexpr uint32 RENDER_PROXY_ALLOCATOR_BYTES = 32 * 1024 * 1024; // 32 MB
+	static constexpr uint32 RENDER_PROXY_ALLOCATOR_BYTES = 32 * 1024 * 1024; // 32 MiB
 
 	SceneProxy::SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera)
 		: sceneProxySource(inSource)
@@ -30,6 +30,8 @@ namespace pathos {
 		proxyList_shadowMesh.clear();
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
+		proxyList_reflectionProbe.clear();
+		proxyList_irradianceVolume.clear();
 		skybox = nullptr;
 		cloud = nullptr;
 

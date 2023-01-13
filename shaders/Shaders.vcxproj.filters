@@ -24,7 +24,6 @@
     <None Include="deferred_common_fs.glsl" />
     <None Include="direct_lighting.glsl" />
     <None Include="depth_of_field.glsl" />
-    <None Include="depth_prepass.glsl" />
     <None Include="diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
     <None Include="fullscreen_quad.glsl" />
@@ -58,7 +57,6 @@
     <None Include="ssr_composite.glsl" />
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_upsample.glsl" />
-    <None Include="cascaded_shadow_map.glsl" />
     <None Include="materials\_template.glsl" />
     <None Include="materials\pbr_texture.glsl" />
     <None Include="materials\solid_color.glsl" />
@@ -75,5 +73,6 @@
     <None Include="materials\gltf_opaque.glsl" />
     <None Include="temporal_anti_aliasing.glsl" />
     <None Include="geom_common.glsl" />
+    <None Include="visualize_light_probe.glsl" />
   </ItemGroup>
 </Project>

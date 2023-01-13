@@ -1,6 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/postprocessing/super_res.h"
+#include "pathos/scene/reflection_probe_component.h"
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
@@ -18,11 +19,13 @@ namespace pathos {
 
 	void SceneRenderTargets::reallocSceneTextures(
 		RenderCommandList& cmdList,
+		SceneProxySource sceneProxySource,
 		uint32 newWidth,
 		uint32 newHeight,
 		bool bEnableResolutionScaling)
 	{
 		CHECK(newWidth > 0 && newHeight > 0);
+		const bool bLightProbeRendering = isLightProbeRendering(sceneProxySource);
 
 		destroyed = false;
 
@@ -85,6 +88,14 @@ namespace pathos {
 			cmdList.textureStorage3D(texture, 1, format, width, height, numLayers);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
+		auto reallocTextureCubeArray = [&cmdList](GLuint& texture, GLenum format, uint32 size, uint32 numCubemaps, uint32 numMips, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &texture);
+			cmdList.textureStorage3D(texture, numMips, format, size, size, numCubemaps * 6);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
 
 		//////////////////////////////////////////////////////////////////////////
 		// Independent of screen resolution
@@ -97,6 +108,13 @@ namespace pathos {
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		
+		// reallocOmniShadowMaps() is called from shadow_omni.cpp
+		// ...
+
+		if (sceneProxySource == SceneProxySource::MainScene) {
+			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Before super resolution
@@ -107,11 +125,13 @@ namespace pathos {
 		}
 
 		// God ray
-		reallocTexture2D(godRaySource,     GL_RGBA16F, sceneWidth,     sceneHeight,     1, "godRaySource");
-		reallocTexture2D(godRayResult,     GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, 1, "godRayResult");
-		reallocTexture2D(godRayResultTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, 1, "godRayResultTemp");
-		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		if (bLightProbeRendering == false) {
+			reallocTexture2D(godRaySource,     GL_RGBA16F, sceneWidth,     sceneHeight,     1, "godRaySource");
+			reallocTexture2D(godRayResult,     GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, 1, "godRayResult");
+			reallocTexture2D(godRayResultTemp, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, 1, "godRayResultTemp");
+			cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(godRayResultTemp, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
 
 		// SSAO
 		reallocTexture2D(ssaoHalfNormalAndDepth, GL_RGBA16F, sceneWidth / 2, sceneHeight / 2, 1, "ssaoHalfNormalAndDepth");
@@ -126,7 +146,7 @@ namespace pathos {
 		reallocTexture2D(sceneDepth,        PF_sceneDepth, sceneWidth,     sceneHeight,     1, "sceneDepth");
 
 		// Screen space reflection
-		{
+		if (bLightProbeRendering == false) {
 			// HiZ
 			constexpr GLenum PF_HiZ = GL_RG32F;
 			sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
@@ -159,7 +179,7 @@ namespace pathos {
 		}
 
 		// Bloom
-		{
+		if (bLightProbeRendering == false) {
 			constexpr GLenum PF_bloom = GL_RGBA16F;
 			reallocTexture2D(sceneBloomSetup, PF_bloom, sceneWidth / 2, sceneHeight / 2, 1, "sceneBloomSetup");
 			cmdList.textureParameteri(sceneBloomSetup, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -190,7 +210,9 @@ namespace pathos {
 		reallocTexture2D(velocityMap,       PF_velocityMap,  sceneWidth, sceneHeight, 1, "velocityMap");
 
 		// Tone mapping
-		reallocTexture2D(sceneColorToneMapped, GL_RGBA16F, sceneWidth, sceneHeight, 1, "sceneColorToneMapped");
+		if (bLightProbeRendering == false) {
+			reallocTexture2D(sceneColorToneMapped, GL_RGBA16F, sceneWidth, sceneHeight, 1, "sceneColorToneMapped");
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// After super resolution
@@ -205,10 +227,12 @@ namespace pathos {
 		reallocTexture2D(sceneColorUpscaled,     PF_sceneColorAA, sceneWidth, sceneHeight, 1, "sceneColorUpscaled");
 
 		// Depth of field
-		constexpr GLenum PF_dofSubsum = GL_RGBA32F;
-		reallocTexture2D(sceneColorDoFInput, PF_dofSubsum, sceneWidth, sceneHeight, 1, "DoF_sceneColor32f");
-		reallocTexture2D(dofSubsum0,         PF_dofSubsum, sceneHeight, sceneWidth, 1, "depthOfField_subsum0");
-		reallocTexture2D(dofSubsum1,         PF_dofSubsum, sceneWidth, sceneHeight, 1, "depthOfField_subsum1");
+		if (bLightProbeRendering == false) {
+			constexpr GLenum PF_dofSubsum = GL_RGBA32F;
+			reallocTexture2D(sceneColorDoFInput, PF_dofSubsum, sceneWidth, sceneHeight, 1, "DoF_sceneColor32f");
+			reallocTexture2D(dofSubsum0,         PF_dofSubsum, sceneHeight, sceneWidth, 1, "depthOfField_subsum0");
+			reallocTexture2D(dofSubsum1,         PF_dofSubsum, sceneWidth, sceneHeight, 1, "depthOfField_subsum1");
+		}
 
 		// sceneFinal
 		static constexpr GLenum PF_sceneFinal = GL_RGBA16F;
@@ -255,6 +279,7 @@ namespace pathos {
 		safe_release(volumetricCloudB);
 		safe_release(cascadedShadowMap);
 		safe_release(omniShadowMaps);
+		safe_release(localSpecularIBLs);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);

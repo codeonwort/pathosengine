@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/render_command_list.h"
+#include "pathos/render/scene_proxy.h"
 
 namespace pathos {
 	
@@ -65,8 +66,11 @@ namespace pathos {
 		GLuint cascadedShadowMap = 0;
 		GLuint omniShadowMaps = 0; // cubemap array
 
-		// Deferred renderer only
-		bool useGBuffer = false;
+		// Indirect lighting
+		GLuint localSpecularIBLs = 0;
+
+		// Deferred shading only
+		bool useGBuffer = true;
 		GLuint gbufferA = 0;
 		GLuint gbufferB = 0;
 		GLuint gbufferC = 0;
@@ -103,8 +107,15 @@ namespace pathos {
 		SceneRenderTargets& operator=(const SceneRenderTargets&) = delete;
 
 		// Reallocate scene textures if they are invalid or the screen resolution has been changed.
-		// bEnableResolutionScaling: texture sizes will be affected by screen percentage and/or super resolution.
-		void reallocSceneTextures(RenderCommandList& cmdList, uint32 width, uint32 height, bool bEnableResolutionScaling);
+		// 
+		// @param sceneProxySource         : For light-weight sources, some render targets are not created.
+		// @param bEnableResolutionScaling : Texture sizes will be affected by screen percentage and/or super resolution.
+		void reallocSceneTextures(
+			RenderCommandList& cmdList,
+			SceneProxySource sceneProxySource,
+			uint32 width,
+			uint32 height,
+			bool bEnableResolutionScaling);
 
 		void freeSceneTextures(RenderCommandList& cmdList);
 

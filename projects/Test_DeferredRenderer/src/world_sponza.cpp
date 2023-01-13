@@ -2,7 +2,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/loader/asset_streamer.h"
@@ -136,26 +136,26 @@ void World_Sponza::setupScene() {
 	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
 		pathos::loadHDRImage(SKY_HDRI), true,
 		"Texture IBL: equirectangularMap");
-	GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(
+	GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(
 		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 	// Sky irradiance map
 	{
-		GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(
+		GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
 			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-		scene.irradianceMap = irradianceMap;
+		scene.skyIrradianceMap = irradianceMap;
 	}
 
 	// Sky reflection probe
 	{
 		GLuint prefilteredEnvMap;
 		uint32 mipLevels;
-		IrradianceBaker::bakePrefilteredEnvMap(
+		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
 			cubemapForIBL, 128, prefilteredEnvMap, mipLevels,
 			"Texture IBL: specular IBL (prefiltered env map)");
 
-		scene.prefilterEnvMap = prefilteredEnvMap;
-		scene.prefilterEnvMapMipLevels = mipLevels;
+		scene.skyPrefilterEnvMap = prefilteredEnvMap;
+		scene.skyPrefilterEnvMapMipLevels = mipLevels;
 	}
 
 	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();

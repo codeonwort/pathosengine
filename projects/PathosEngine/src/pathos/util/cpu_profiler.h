@@ -15,8 +15,8 @@ namespace pathos {
 		~ScopedCpuCounter();
 
 		uint32 threadId;
-		// #todo-stat: Assumes string literal
-		const char* name;
+		// #todo-stat: Skip string allocation if string literal is given.
+		std::string name;
 		uint32 itemHandle;
 
 		// #todo-cpu: Temp value due to temp periodic purge
@@ -32,10 +32,10 @@ namespace pathos {
 			, elapsedMS(-1.0f)
 		{
 		}
-		const char* name;
+		std::string name;
 		uint32 tab;
-		float startTime; // in seconds
-		float endTime;   // in seconds
+		float startTime; // in milliseconds
+		float endTime;   // in milliseconds
 		float elapsedMS; // in milliseconds
 	};
 
@@ -128,3 +128,7 @@ namespace pathos {
 }
 
 #define SCOPED_CPU_COUNTER(CounterName) ScopedCpuCounter cpu_counter_##CounterName(#CounterName)
+
+#define SCOPED_CPU_COUNTER_STRING_INTERNAL2(X, Y, Z) X ## Y ## Z
+#define SCOPED_CPU_COUNTER_STRING_INTERNAL(CounterString, Line) SCOPED_CPU_COUNTER_STRING_INTERNAL2(ScopedCpuCounter cpu_counter_, Line, (CounterString));
+#define SCOPED_CPU_COUNTER_STRING(CounterString) SCOPED_CPU_COUNTER_STRING_INTERNAL(CounterString, __LINE__)

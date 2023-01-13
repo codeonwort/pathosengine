@@ -108,7 +108,7 @@ namespace pathos {
 		// Called by render thread when a screenshot is taken.
 		void pushScreenshot(Screenshot screenshot);
 
-		inline float getWorldTime() { return stopwatch_app.stop(); } // Elapsed seconds since the application started.
+		inline float getWorldTime() { return 0.001f * stopwatch_app.stop(); } // Elapsed seconds since the application started.
 		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
 		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)

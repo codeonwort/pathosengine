@@ -21,9 +21,25 @@ namespace pathos {
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 
 	enum class SceneProxySource : uint8 {
-		MainScene    = 0,
-		SceneCapture = 1,
+		MainScene         = 0,
+		SceneCapture      = 1,
+		RadianceCapture   = 2,
+		IrradianceCapture = 3, // In fact same as RadianceCapture but render to smaller RT. Filtered for irradiance caching.
 	};
+
+	inline const char* getSceneProxySourceString(SceneProxySource source) {
+		const char* str[] = {
+			"MainScene",
+			"SceneCapture",
+			"RadianceCapture",
+			"IrradianceCapture",
+		};
+		return str[(uint8)source];
+	}
+
+	inline bool isLightProbeRendering(SceneProxySource source) {
+		return source == SceneProxySource::RadianceCapture || source == SceneProxySource::IrradianceCapture;
+	}
 
 	class SceneProxy final {
 		
@@ -93,10 +109,20 @@ namespace pathos {
 		vector3                                    godRayLocation = vector3(0.0f);
 
 		// IBL
-		GLuint                                     irradianceMap = 0;
-		GLuint                                     prefilterEnvMap = 0;
-		uint32                                     prefilterEnvMapMipLevels = 0;
+		GLuint                                     skyIrradianceMap = 0;
+		GLuint                                     skyPrefilterEnvMap = 0;
+		uint32                                     skyPrefilterEnvMapMipLevels = 0;
 
+		GLuint                                     irradianceAtlas = 0;
+		GLuint                                     depthProbeAtlas = 0;
+		float                                      irradianceAtlasWidth = 0.0f;
+		float                                      irradianceAtlasHeight = 0.0f;
+		uint32                                     irradianceTileCountX = 0;
+		uint32                                     irradianceTileSize = 0;
+
+		// Light probe based GI
+		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
+		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
 	};
 
 }

@@ -42,7 +42,7 @@ namespace pathos {
 		applyDescription(world, desc, actorMap);
 		bindActors(desc, actorMap, actorBinder);
 
-		LOG(LogDebug, "Loading done in %f ms", 1000.0f * timer.stop());
+		LOG(LogDebug, "Loading done in %f ms", timer.stop());
 
 		return true;
 	}

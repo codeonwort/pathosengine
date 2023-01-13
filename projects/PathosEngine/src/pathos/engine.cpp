@@ -17,6 +17,8 @@
 
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
+#include "pathos/scene/reflection_probe_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
@@ -40,6 +42,9 @@ namespace pathos {
 	// #note: Setting this to 0 can make world delta seconds = 0.0
 	//        and the world will look like frozen.
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
+
+	static ConsoleVariable<int32> cvar_probegi_radiance_numUpdates("r.probegi.radiance.updatesPerFrame", 1, "Number of radiance probes to update per frame");
+	static ConsoleVariable<int32> cvar_probegi_irradiance_numUpdates("r.probegi.irradiance.updatesPerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -435,7 +440,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
-			float deltaSeconds = stopwatch_gameThread.stop();
+			float deltaSeconds = 0.001f * stopwatch_gameThread.stop();
 
 			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
 				bShouldTickWorld = false;
@@ -468,15 +473,59 @@ namespace pathos {
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
-					SCOPED_CPU_COUNTER(CreateRenderProxy);
+					// Process probe lighting.
+					{
+						// Gather probe lighting related actors.
+						std::vector<ReflectionProbeActor*> reflectionProbes;
+						std::vector<IrradianceVolumeActor*> irradianceVolumes;
+						for (Actor* actor : currentWorld->actors) {
+							ReflectionProbeActor* probeActor = dynamic_cast<ReflectionProbeActor*>(actor);
+							if (probeActor != nullptr && probeActor->bUpdateEveryFrame) {
+								reflectionProbes.push_back(probeActor);
+								continue;
+							}
 
-					SceneProxy* sceneProxy = currentWorld->getScene().createRenderProxy(
-						SceneProxySource::MainScene,
-						frameCounter_gameThread,
-						currentWorld->getCamera());
-					CHECK(sceneProxy != nullptr);
+							IrradianceVolumeActor* volumeActor = dynamic_cast<IrradianceVolumeActor*>(actor);
+							if (volumeActor != nullptr) {
+								irradianceVolumes.push_back(volumeActor);
+							}
+						}
 
-					renderThread->pushSceneProxy(sceneProxy);
+						auto compareReflectionProbes = [](const ReflectionProbeActor* A, const ReflectionProbeActor* B) {
+							if (A->lastUpdateTime == B->lastUpdateTime) {
+								return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
+							}
+							return A->lastUpdateTime < B->lastUpdateTime;
+						};
+						const vector3 cameraPos = currentWorld->getCamera().getPosition();
+						auto compareIrradianceVolumes = [&cameraPos](const IrradianceVolumeActor* A, const IrradianceVolumeActor* B) {
+							return glm::distance(A->getActorLocation(), cameraPos) < glm::distance(B->getActorLocation(), cameraPos);
+						};
+						std::sort(reflectionProbes.begin(), reflectionProbes.end(), compareReflectionProbes);
+						std::sort(irradianceVolumes.begin(), irradianceVolumes.end(), compareIrradianceVolumes);
+
+						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)reflectionProbes.size());
+						for (int32 i = 0; i < numProbeUpdates; ++i) {
+							reflectionProbes[i]->captureScene();
+						}
+
+						numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
+						if (numProbeUpdates > 0) {
+							currentWorld->getScene().initializeIrradianceProbeAtlas();
+							irradianceVolumes[0]->updateProbes(numProbeUpdates);
+						}
+					}
+
+					// Render the main view.
+					{
+						SceneProxy* mainSceneProxy = currentWorld->getScene().createRenderProxy(
+							SceneProxySource::MainScene,
+							frameCounter_gameThread,
+							currentWorld->getCamera());
+						CHECK(mainSceneProxy != nullptr);
+
+						renderThread->pushSceneProxy(mainSceneProxy);
+					}
 				}
 			}
 
@@ -526,7 +575,7 @@ namespace pathos {
 		CpuProfiler::getInstance().finishCheckpoint();
 
 		if (bShouldTickWorld) {
-			elapsed_gameThread = stopwatch_gameThread.stop() * 1000.0f;
+			elapsed_gameThread = stopwatch_gameThread.stop();
 			stopwatch_gameThread.start();
 		}
 

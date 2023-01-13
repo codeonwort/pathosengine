@@ -226,6 +226,6 @@ namespace pathos {
 			: ShaderProgram(inDebugName, inProgramHash) {}                                           \
 	};                                                                                               \
 
-#define FIND_SHADER_PROGRAM(ShaderProgramClass) ShaderProgramClass::get();
+#define FIND_SHADER_PROGRAM(ShaderProgramClass) ShaderProgramClass::get()
 
 }

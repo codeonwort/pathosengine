@@ -219,7 +219,7 @@
     <ClCompile Include="src\badger\thread\thread_pool.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\irradiance_baker.cpp">
+    <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\shader_program.cpp">
@@ -370,6 +370,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\reflection_probe_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\reflection_probe_actor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\visualize_light_probe.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -596,7 +608,7 @@
     <ClInclude Include="src\badger\thread\thread_pool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\irradiance_baker.h">
+    <ClInclude Include="src\pathos\render\image_based_lighting_baker.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\shader_program.h">
@@ -816,6 +828,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\vector_math.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\reflection_probe_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\reflection_probe_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\visualize_light_probe.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

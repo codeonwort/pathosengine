@@ -26,6 +26,12 @@ namespace pathos {
 		void setFovY(float inFovY_degrees);
 		void setAspectRatio(float inAspectRatio);
 
+		inline void setProjectionFlips(bool bFlipHorizontal, bool bFlipVertical) {
+			bFlipX = bFlipHorizontal;
+			bFlipY = bFlipVertical;
+			updateProjectionMatrix();
+		}
+
 	private:
 		void updateProjectionMatrix();
 
@@ -34,6 +40,8 @@ namespace pathos {
 		float aspect; // (width / height)
 		float z_near;
 		float z_far;
+
+		bool bFlipX = false, bFlipY = false;
 	};
 
 	// Free-fly camera.

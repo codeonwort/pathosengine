@@ -4,7 +4,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
-#include "pathos/render/irradiance_baker.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/render_target.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
@@ -13,6 +13,8 @@
 #include "pathos/scene/scene_capture_component.h"
 #include "pathos/scene/sky_ansel_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/material/material_shader.h"
 
 // --------------------------------------------------------
@@ -20,8 +22,8 @@
 
 static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 2.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
-static const vector3 SUN_DIRECTION        = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_ILLUMINANCE      = 1.2f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
+static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
 #define              SKY_METHOD           2
 static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
@@ -110,22 +112,22 @@ void World1::setupSky()
 {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = IrradianceBaker::bakeCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+		GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
-			GLuint irradianceMap = IrradianceBaker::bakeIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-			scene.irradianceMap = irradianceMap;
+			GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
+			scene.skyIrradianceMap = irradianceMap;
 		}
 
 		// specular IBL
 		{
 			GLuint prefilteredEnvMap;
 			uint32 mipLevels;
-			IrradianceBaker::bakePrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
+			ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
 
-			scene.prefilterEnvMap = prefilteredEnvMap;
-			scene.prefilterEnvMapMipLevels = mipLevels;
+			scene.skyPrefilterEnvMap = prefilteredEnvMap;
+			scene.skyPrefilterEnvMapMipLevels = mipLevels;
 		}
 	}
 
@@ -169,7 +171,7 @@ void World1::setupSky()
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(IrradianceBaker::bakeCubemap(hdri_temp, 512));
+	skybox->initialize(ImageBasedLightingBaker::projectToCubemap(hdri_temp, 512));
 	scene.sky = skybox;
 #endif
 }
@@ -377,6 +379,29 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	objModel->setActorRotation(desc.rotation);
 	objModel->setActorScale(desc.scale);
 	objModel->setActorLocation(desc.location);
+
+	if (payload == 1) {
+		objModel->getStaticMeshComponent()->updateTransformHierarchy();
+		AABB worldBounds = objModel->getStaticMeshComponent()->getWorldBounds();
+		if (payload == 0) {
+			worldBounds.minBounds += vector3(0.4f, 0.2f, 0.2f);
+			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.4f);
+		} else {
+			worldBounds.minBounds += vector3(0.2f, 0.2f, 0.2f);
+			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.2f);
+		}
+		const vector3ui GRID_SIZE(4, 4, 4);
+
+		IrradianceVolumeActor* volume = spawnActor<IrradianceVolumeActor>();
+		volume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, GRID_SIZE);
+
+		//LOG(LogDebug, "volume bounds: min(%.3f, %.3f, %.3f)", worldBounds.minBounds.x, worldBounds.minBounds.y, worldBounds.minBounds.z);
+		//LOG(LogDebug, "volume bounds: max(%.3f, %.3f, %.3f)", worldBounds.maxBounds.x, worldBounds.maxBounds.y, worldBounds.maxBounds.z);
+		//for (uint32 i = 0; i < volume->numProbes(); ++i) {
+		//	vector3 pos = volume->getProbeLocationByIndex(i);
+		//	LOG(LogDebug, "probe: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
+		//}
+	}
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
 		if (M->getMaterialName() == "solid_color") {

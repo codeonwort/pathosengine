@@ -21,7 +21,7 @@ namespace pathos {
 		settings.sceneWidth = renderTarget->getWidth();
 		settings.sceneHeight = renderTarget->getHeight();
 		settings.enablePostProcess = !captureHDR;
-		settings.finalRenderTarget = renderTarget;
+		settings.finalRenderTarget = renderTarget->getRenderTargetView();
 
 		Scene& scene = getOwner()->getWorld()->getScene();
 
