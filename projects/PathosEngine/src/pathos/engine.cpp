@@ -18,6 +18,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
 #include "pathos/scene/light_probe_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
@@ -472,41 +473,46 @@ namespace pathos {
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
 				if (renderThread->mainSceneInSceneProxyQueue() == false) {
-					// Update light probes.
+					// Process probe lighting.
 					{
-						std::vector<LightProbeActor*> radianceProbes, irradianceProbes;
+						// Gather probe lighting related actors.
+						std::vector<LightProbeActor*> reflectionProbes;
+						std::vector<IrradianceVolumeActor*> irradianceVolumes;
 						for (Actor* actor : currentWorld->actors) {
 							LightProbeActor* probeActor = dynamic_cast<LightProbeActor*>(actor);
-							if (probeActor == nullptr || probeActor->bUpdateEveryFrame == false) {
+							if (probeActor != nullptr && probeActor->bUpdateEveryFrame) {
+								reflectionProbes.push_back(probeActor);
 								continue;
 							}
-							if (probeActor->getProbeComponent()->probeType == ELightProbeType::Radiance) {
-								radianceProbes.push_back(probeActor);
-							} else {
-								irradianceProbes.push_back(probeActor);
+
+							IrradianceVolumeActor* volumeActor = dynamic_cast<IrradianceVolumeActor*>(actor);
+							if (volumeActor != nullptr) {
+								irradianceVolumes.push_back(volumeActor);
 							}
 						}
 
-						auto compareLightProbes = [](const LightProbeActor* A, const LightProbeActor* B) {
+						auto compareReflectionProbes = [](const LightProbeActor* A, const LightProbeActor* B) {
 							if (A->lastUpdateTime == B->lastUpdateTime) {
 								return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
 							}
 							return A->lastUpdateTime < B->lastUpdateTime;
 						};
-						std::sort(radianceProbes.begin(), radianceProbes.end(), compareLightProbes);
-						std::sort(irradianceProbes.begin(), irradianceProbes.end(), compareLightProbes);
+						const vector3 cameraPos = currentWorld->getCamera().getPosition();
+						auto compareIrradianceVolumes = [&cameraPos](const IrradianceVolumeActor* A, const IrradianceVolumeActor* B) {
+							return glm::distance(A->getActorLocation(), cameraPos) < glm::distance(B->getActorLocation(), cameraPos);
+						};
+						std::sort(reflectionProbes.begin(), reflectionProbes.end(), compareReflectionProbes);
+						std::sort(irradianceVolumes.begin(), irradianceVolumes.end(), compareIrradianceVolumes);
 
-						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)radianceProbes.size());
+						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)reflectionProbes.size());
 						for (int32 i = 0; i < numProbeUpdates; ++i) {
-							radianceProbes[i]->captureScene();
+							reflectionProbes[i]->captureScene();
 						}
 
-						numProbeUpdates = std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceProbes.size());
+						numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
 						if (numProbeUpdates > 0) {
 							currentWorld->getScene().initializeIrradianceProbeAtlas();
-						}
-						for (int32 i = 0; i < numProbeUpdates; ++i) {
-							irradianceProbes[i]->captureScene();
+							irradianceVolumes[0]->updateProbes(numProbeUpdates);
 						}
 					}
 

@@ -12,12 +12,6 @@ namespace pathos {
 	extern const uint32 radianceProbeNumMips;
 	constexpr uint32 radianceProbeMaxCount = 10;
 
-	extern const uint32 irradianceProbeTileSize;
-	extern const uint32 irradianceProbeTileCountX;
-	extern const uint32 irradianceProbeTileCountY;
-	extern const RenderTargetFormat irradianceProbeFormat;
-	constexpr uint32 irradianceProbeInvalidTileID = 0xffffffff;
-
 	class RenderTargetCube;
 	class RenderTarget2D;
 
@@ -28,18 +22,7 @@ namespace pathos {
 		RenderTargetCube* specularIBL;
 	};
 
-	struct IrradianceProbeProxy : public SceneComponentProxy {
-		vector3           positionWS;
-		float             captureRadius;
-		vector4           irradianceTileBounds;
-		uint32            irradianceTileID;
-		RenderTargetCube* renderTarget;
-
-		bool hasValidTileID() const { return irradianceTileID != irradianceProbeInvalidTileID; }
-	};
-
-	enum class ELightProbeType { Unknown, Radiance, Irradiance };
-
+	// #todo-light-probe: Rename to ReflectionProbeComponent
 	class LightProbeComponent : public SceneComponent {
 
 	public:
@@ -52,15 +35,11 @@ namespace pathos {
 		void bakeIBL();
 
 	public:
-		ELightProbeType probeType = ELightProbeType::Unknown;
 		float captureRadius = 50.0f;
 
 	private:
 		uniquePtr<RenderTargetCube> radianceCubemap;
 		uniquePtr<RenderTargetCube> specularIBL;
-		uint32 irradianceTileID = irradianceProbeInvalidTileID;
-		vector2ui irradianceRenderOffset = vector2ui(0, 0);
-		vector4 irradianceTileBounds = vector4(0.0f);
 
 	};
 

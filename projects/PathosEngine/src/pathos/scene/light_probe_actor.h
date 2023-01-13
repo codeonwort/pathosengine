@@ -4,6 +4,7 @@
 
 namespace pathos {
 
+	// #todo-light-probe: Rename to ReflectionProbeActor.
 	class LightProbeActor : public Actor {
 
 	public:
@@ -14,7 +15,6 @@ namespace pathos {
 
 		void captureScene();
 
-		void setProbeType(ELightProbeType type) { probeComponent->probeType = type; }
 		void setCaptureRadius(float radius) { probeComponent->captureRadius = radius; }
 
 		inline LightProbeComponent* getProbeComponent() const { return probeComponent; }

@@ -3,6 +3,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene_component.h"
 #include "pathos/scene/light_probe_component.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/static_mesh_component.h"
@@ -18,48 +19,67 @@ namespace pathos {
 
 	void Scene::initializeIrradianceProbeAtlas() {
 		if (irradianceProbeAtlas == nullptr) {
-			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
-			irradianceTileAllocs.resize(pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY, false);
+			irradianceTileCountX = pathos::irradianceProbeTileCountX;
+			irradianceTileCountY = pathos::irradianceProbeTileCountY;
+			irradianceTileTotalCount = irradianceTileCountX * irradianceTileCountY;
+			irradianceTileSize = pathos::irradianceProbeTileSize;
 
-			uint32 paddedSide = (pathos::irradianceProbeTileSize + 2);
-			uint32 atlasWidth = paddedSide * pathos::irradianceProbeTileCountX;
-			uint32 atlasHeight = paddedSide * pathos::irradianceProbeTileCountY;
-			irradianceProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::irradianceProbeFormat, "Scene_IrradianceAtlas");
+			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
+
+			uint32 paddedSide = (irradianceTileSize + 2);
+			uint32 atlasWidth = paddedSide * irradianceTileCountX;
+			uint32 atlasHeight = paddedSide * irradianceTileCountY;
+			irradianceProbeAtlas->respecTexture(
+				atlasWidth,
+				atlasHeight,
+				pathos::irradianceProbeFormat,
+				"Scene_IrradianceAtlas");
 
 			irradianceProbeAtlas->immediateUpdateResource();
 		}
 	}
 
-	bool Scene::allocateIrradianceTile(uint32& outTileID, uint32& outViewportX, uint32& outViewportY) {
+	uint32 Scene::allocateIrradianceTiles(uint32 numRequiredTiles) {
 		if (irradianceProbeAtlas == nullptr) {
-			return false;
+			return IRRADIANCE_TILE_INVALID_ID;
 		}
-		// Super naive
-		for (size_t i = 0; i < irradianceTileAllocs.size(); ++i) {
-			if (irradianceTileAllocs[i] == false) {
-				irradianceTileAllocs[i] = true;
-				outTileID = (uint32)i;
-				getIrradianceTileOffset(outTileID, outViewportX, outViewportY);
-				return true;
+		uint32 beginID = 0, endID = numRequiredTiles - 1;
+		for (const auto& allocRange : irradianceTileAllocs) {
+			if (beginID <= allocRange.end && allocRange.begin <= endID) {
+				beginID = allocRange.end + 1;
+				endID = beginID + numRequiredTiles - 1;
+			} else {
+				break;
 			}
 		}
-		return false;
+		if (endID < irradianceTileTotalCount) {
+			irradianceTileAllocs.push_back(IrradianceTileRange{ beginID, endID });
+			return beginID;
+		}
+		return IRRADIANCE_TILE_INVALID_ID;
 	}
 
-	bool Scene::freeIrradianceTile(uint32 tileID) {
-		if (tileID < irradianceTileAllocs.size() && irradianceTileAllocs[tileID] == true) {
-			irradianceTileAllocs[tileID] = false;
+	bool Scene::freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID) {
+		auto it = std::find(irradianceTileAllocs.begin(), irradianceTileAllocs.end(),
+			IrradianceTileRange{ firstTileID, lastTileID });
+		if (it != irradianceTileAllocs.end()) {
+			irradianceTileAllocs.erase(it);
 			return true;
 		}
 		return false;
 	}
 
-	void Scene::getIrradianceTileBounds(uint32 tileID, vector4& outBounds) {
+	void Scene::getIrradianceTileTexelOffset(uint32 tileID, uint32& outX, uint32& outY) const {
+		outX = 1 + (tileID % irradianceTileCountX) * (2 + irradianceTileSize);
+		outY = 1 + (tileID / irradianceTileCountX) * (2 + irradianceTileSize);
+	}
+
+	void Scene::getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const {
 		if (irradianceProbeAtlas != nullptr) {
 			uint32 x0, y0, x1, y1;
-			getIrradianceTileOffset(tileID, x0, y0);
-			x1 = x0 + pathos::irradianceProbeTileSize;
-			y1 = y0 + pathos::irradianceProbeTileSize;
+			getIrradianceTileTexelOffset(tileID, x0, y0);
+			x1 = x0 + irradianceTileSize;
+			y1 = y0 + irradianceTileSize;
 			float dx = 0.5f / (float)irradianceProbeAtlas->getWidth();
 			float dy = 0.5f / (float)irradianceProbeAtlas->getHeight();
 			outBounds.x = +dx + x0 / (float)irradianceProbeAtlas->getWidth();
@@ -67,11 +87,6 @@ namespace pathos {
 			outBounds.z = -dx + x1 / (float)irradianceProbeAtlas->getWidth();
 			outBounds.w = -dy + y1 / (float)irradianceProbeAtlas->getHeight();
 		}
-	}
-
-	void Scene::getIrradianceTileOffset(uint32 tileID, uint32& outX, uint32& outY) const {
-		outX = 1 + (tileID % pathos::irradianceProbeTileCountX) * (2 + pathos::irradianceProbeTileSize);
-		outY = 1 + (tileID / pathos::irradianceProbeTileCountX) * (2 + pathos::irradianceProbeTileSize);
 	}
 
 	GLuint Scene::getIrradianceAtlasTexture() const {
@@ -116,6 +131,20 @@ namespace pathos {
 		proxy->skyPrefilterEnvMapMipLevels = skyPrefilterEnvMapMipLevels;
 
 		proxy->irradianceAtlas = (irradianceProbeAtlas != nullptr) ? irradianceProbeAtlas->getGLName() : 0;
+		if (irradianceProbeAtlas != nullptr) {
+			proxy->irradianceAtlasWidth = (float)irradianceProbeAtlas->getWidth();
+			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
+			proxy->irradianceTileCountX = irradianceTileCountX;
+			proxy->irradianceTileSize = irradianceTileSize;
+		}
+		for (auto& actor : world->actors) {
+			if (!actor->markedForDeath) {
+				auto vol = dynamic_cast<IrradianceVolumeActor*>(actor);
+				if (vol != nullptr) {
+					vol->internal_createRenderProxy(proxy);
+				}
+			}
+		}
 
 		proxy->finalize_mainThread();
 

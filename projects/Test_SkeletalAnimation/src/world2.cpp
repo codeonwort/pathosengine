@@ -9,6 +9,7 @@
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/light_probe_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/render/irradiance_baker.h"
@@ -87,40 +88,20 @@ void World2::setupScene()
 	// Local light probes
 
 	radianceProbe0 = spawnActor<LightProbeActor>();
-	radianceProbe0->setProbeType(ELightProbeType::Radiance);
 	radianceProbe0->setActorLocation(vector3(0.0f, 4.0f, 3.0f));
 	//radianceProbe0->bUpdateEveryFrame = false;
 
 	radianceProbe1 = spawnActor<LightProbeActor>();
-	radianceProbe1->setProbeType(ELightProbeType::Radiance);
 	radianceProbe1->setActorLocation(vector3(10.0f, 5.0f, 1.0f));
 
 	radianceProbe2 = spawnActor<LightProbeActor>();
-	radianceProbe2->setProbeType(ELightProbeType::Radiance);
 	radianceProbe2->setActorLocation(vector3(-10.0f, 5.0f, 1.0f));
 
-	// #todo-light-probe: Weird visual. Do gizmo rendering for light probes.
-	const vector3ui IRRADIANCE_GRID_SIZE(8, 3, 4);
-	const float IRRADIANCE_CAPTURE_RADII = 10.0f;
-	const vector3 irradianceProbeMinPos = vector3(
-		-0.5f * (float)IRRADIANCE_GRID_SIZE.x * IRRADIANCE_CAPTURE_RADII,
-		5.0f,
-		-20.0f);
-	for (uint32 tileX = 0; tileX < IRRADIANCE_GRID_SIZE.x; ++tileX) {
-		for (uint32 tileY = 0; tileY < IRRADIANCE_GRID_SIZE.y; ++tileY) {
-			for (uint32 tileZ = 0; tileZ < IRRADIANCE_GRID_SIZE.z; ++tileZ) {
-				LightProbeActor* irradianceProbe = spawnActor<LightProbeActor>();
-				irradianceProbe->setProbeType(ELightProbeType::Irradiance);
-				irradianceProbe->setCaptureRadius(IRRADIANCE_CAPTURE_RADII);
-
-				vector3 pos = irradianceProbeMinPos;
-				pos.x += IRRADIANCE_CAPTURE_RADII * tileX;
-				pos.y += IRRADIANCE_CAPTURE_RADII * tileY;
-				pos.z += IRRADIANCE_CAPTURE_RADII * tileZ;
-				irradianceProbe->setActorLocation(pos);
-			}
-		}
-	}
+	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	irradianceVolume->initializeVolume(
+		vector3(-40.0f, 1.0f, -20.0f),
+		vector3(40.0f, 35.0f, 20.0f),
+		vector3ui(8, 3, 4));
 
 	//---------------------------------------------------------------------------------------
 	// Materials

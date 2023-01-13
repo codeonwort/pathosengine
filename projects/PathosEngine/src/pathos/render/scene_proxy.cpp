@@ -31,7 +31,7 @@ namespace pathos {
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
 		proxyList_radianceProbe.clear();
-		proxyList_irradianceProbe.clear();
+		proxyList_irradianceVolume.clear();
 		skybox = nullptr;
 		cloud = nullptr;
 

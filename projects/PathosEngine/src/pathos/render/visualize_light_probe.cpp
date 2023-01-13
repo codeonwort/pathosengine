@@ -5,6 +5,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/light_probe_component.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
 
 namespace pathos {
@@ -100,17 +101,16 @@ namespace pathos {
 		//////////////////////////////////////////////////////////////////////////
 		// Prepare UBO & SSBO data
 
+		// #todo-light-probe: Fix visualization
 		std::vector<IrradianceProbeStruct> ssbo0Data;
-		for (const IrradianceProbeProxy* proxy : scene->proxyList_irradianceProbe) {
-			if (proxy->hasValidTileID()) {
-				IrradianceProbeStruct ssboItem{
-					proxy->positionWS,
-					proxy->captureRadius,
-					proxy->irradianceTileBounds,
-				};
-				ssbo0Data.emplace_back(ssboItem);
-			}
-		}
+		//for (const IrradianceVolumeProxy* proxy : scene->proxyList_irradianceVolume) {
+		//	IrradianceProbeStruct ssboItem{
+		//		proxy->positionWS,
+		//		proxy->captureRadius,
+		//		proxy->irradianceTileBounds,
+		//	};
+		//	ssbo0Data.emplace_back(ssboItem);
+		//}
 		std::vector<RadianceProbeStruct> ssbo1Data;
 		for (const RadianceProbeProxy* proxy : scene->proxyList_radianceProbe) {
 			if (proxy->specularIBL != nullptr) {

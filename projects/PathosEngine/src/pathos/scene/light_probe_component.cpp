@@ -8,11 +8,6 @@ namespace pathos {
 	const uint32 radianceProbeCubemapSize = 256;
 	const uint32 radianceProbeNumMips = 5;
 	const RenderTargetFormat radianceProbeFormat = RenderTargetFormat::RGBA16F;
-
-	const uint32 irradianceProbeTileSize = 32;
-	const uint32 irradianceProbeTileCountX = 16;
-	const uint32 irradianceProbeTileCountY = 16;
-	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
 }
 
 namespace pathos {
@@ -26,55 +21,35 @@ namespace pathos {
 			return;
 		}
 
-		if (probeType == ELightProbeType::Radiance) {
-			RadianceProbeProxy* proxy = ALLOC_RENDER_PROXY<RadianceProbeProxy>(scene);
-			proxy->positionWS = getLocation();
-			proxy->captureRadius = captureRadius;
-			proxy->renderTarget = radianceCubemap.get();
-			proxy->specularIBL = specularIBL.get();
-			scene->proxyList_radianceProbe.push_back(proxy);
-		} else if (probeType == ELightProbeType::Irradiance) {
-			IrradianceProbeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceProbeProxy>(scene);
-			proxy->positionWS = getLocation();
-			proxy->captureRadius = captureRadius;
-			proxy->irradianceTileBounds = irradianceTileBounds;
-			proxy->irradianceTileID = irradianceTileID;
-			proxy->renderTarget = radianceCubemap.get();
-			scene->proxyList_irradianceProbe.push_back(proxy);
-		} else {
-			CHECK_NO_ENTRY();
-		}
+		RadianceProbeProxy* proxy = ALLOC_RENDER_PROXY<RadianceProbeProxy>(scene);
+		proxy->positionWS = getLocation();
+		proxy->captureRadius = captureRadius;
+		proxy->renderTarget = radianceCubemap.get();
+		proxy->specularIBL = specularIBL.get();
+
+		scene->proxyList_radianceProbe.push_back(proxy);
 	}
 
 	void LightProbeComponent::captureScene(uint32 faceIndex) {
 		CHECK(0 <= faceIndex && faceIndex < 6);
-		CHECK(probeType != ELightProbeType::Unknown);
 
 		if (radianceCubemap == nullptr) {
 			radianceCubemap = makeUnique<RenderTargetCube>();
 
-			if (probeType == ELightProbeType::Radiance) {
-				// #note: If small mips are created, IBL baker will pick black mips
-				// and it will result in too-dark IBL for non-mip0 output.
-				radianceCubemap->respecTexture(
-					radianceProbeCubemapSize,
-					radianceProbeFormat,
-					1, // Only mip0
-					"RadianceProbe_Capture");
+			// #note: If small mips are created, IBL baker will pick black mips
+			// and it will result in too-dark IBL for non-mip0 output.
+			radianceCubemap->respecTexture(
+				radianceProbeCubemapSize,
+				radianceProbeFormat,
+				1, // Only mip0
+				"RadianceProbe_Capture");
 
-				specularIBL = makeUnique<RenderTargetCube>();
-				specularIBL->respecTexture(
-					radianceProbeCubemapSize,
-					radianceProbeFormat,
-					radianceProbeNumMips,
-					"RadianceProbe_IBL");
-			} else if (probeType == ELightProbeType::Irradiance) {
-				radianceCubemap->respecTexture(
-					irradianceProbeTileSize,
-					irradianceProbeFormat,
-					1,
-					"IrradianceProbe_Capture");
-			}
+			specularIBL = makeUnique<RenderTargetCube>();
+			specularIBL->respecTexture(
+				radianceProbeCubemapSize,
+				radianceProbeFormat,
+				radianceProbeNumMips,
+				"RadianceProbe_IBL");
 		}
 
 		const vector3 lookAtOffsets[6] = {
@@ -85,8 +60,6 @@ namespace pathos {
 			vector3(0.0f, 0.0f, +1.0f), // posZ
 			vector3(0.0f, 0.0f, -1.0f), // negZ
 		};
-		// #todo-light-probe: Check up vectors.
-		// Create a mirror ball and see if mirror reflection is alright.
 		const vector3 upVectors[6] = {
 			vector3(0.0f, -1.0f, 0.0f), // posX
 			vector3(0.0f, -1.0f, 0.0f), // negX
@@ -111,7 +84,7 @@ namespace pathos {
 		const uint32 tempFrameNumber = 0;
 
 		SceneProxy* sceneProxy = scene.createRenderProxy(
-			(probeType == ELightProbeType::Radiance) ? SceneProxySource::RadianceCapture : SceneProxySource::IrradianceCapture,
+			SceneProxySource::RadianceCapture,
 			tempFrameNumber,
 			tempCamera);
 		sceneProxy->overrideSceneRenderSettings(settings);
@@ -120,41 +93,19 @@ namespace pathos {
 	}
 
 	void LightProbeComponent::bakeIBL() {
-		if (probeType == ELightProbeType::Radiance) {
-			GLuint radianceCapture = radianceCubemap->getGLTexture();
-			GLuint textureIBL = specularIBL->getGLTexture();
-			uint32 numMips = specularIBL->getNumMips();
-			ENQUEUE_RENDER_COMMAND([radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
+		GLuint radianceCapture = radianceCubemap->getGLTexture();
+		GLuint textureIBL = specularIBL->getGLTexture();
+		uint32 numMips = specularIBL->getNumMips();
+		ENQUEUE_RENDER_COMMAND(
+			[radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
 				IrradianceBaker::bakeSpecularIBL_renderThread(
 					cmdList,
 					radianceCapture,
 					radianceProbeCubemapSize,
 					numMips,
 					textureIBL);
-			});
-		} else {
-			Scene& currentScene = getOwner()->getWorld()->getScene();
-			GLuint radianceCapture = radianceCubemap->getGLTexture();
-			GLuint RT_atlas = currentScene.getIrradianceAtlasTexture();
-			bool bValidTile = (irradianceTileID != 0xffffffff);
-			if (!bValidTile) {
-				bValidTile = currentScene.allocateIrradianceTile(irradianceTileID, irradianceRenderOffset.x, irradianceRenderOffset.y);
 			}
-
-			if (bValidTile) {
-				currentScene.getIrradianceTileBounds(irradianceTileID, irradianceTileBounds);
-
-				vector2ui viewportOffset = irradianceRenderOffset;
-				ENQUEUE_RENDER_COMMAND([radianceCapture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
-					IrradianceMapBakeDesc bakeDesc;
-					bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
-					bakeDesc.renderTarget = RT_atlas;
-					bakeDesc.viewportSize = irradianceProbeTileSize;
-					bakeDesc.viewportOffset = viewportOffset;
-					IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, radianceCapture, bakeDesc);
-				});
-			}
-		}
+		);
 	}
 
 }

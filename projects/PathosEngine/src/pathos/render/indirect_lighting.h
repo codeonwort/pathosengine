@@ -32,7 +32,8 @@ namespace pathos {
 	private:
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
-		ShaderStorageBuffer ssbo;
+		ShaderStorageBuffer ssbo0;
+		ShaderStorageBuffer ssbo1;
 
 		bool destroyed = false;
 

@@ -379,6 +379,8 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	objModel->setActorScale(desc.scale);
 	objModel->setActorLocation(desc.location);
 
+	// #todo-light-probe: Switch to irradiance volume
+#if 0
 	if (payload == 1) {
 		objModel->getStaticMeshComponent()->updateTransformHierarchy();
 		AABB worldBounds = objModel->getStaticMeshComponent()->getWorldBounds();
@@ -403,6 +405,7 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 			}
 		}
 	}
+#endif
 
 	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
 		if (M->getMaterialName() == "solid_color") {
