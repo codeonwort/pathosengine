@@ -56,6 +56,9 @@ namespace pathos {
 				&& (irradianceTileFirstID != IRRADIANCE_TILE_INVALID_ID);
 		}
 
+	protected:
+		virtual void onDestroy() override;
+
 	private:
 		vector3 getProbeLocationByIndex(uint32 probeIndex) const;
 		vector3 getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const;

@@ -11,6 +11,7 @@
 #include "pathos/render/render_target.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/util/cpu_profiler.h"
+#include "pathos/util/log.h"
 
 namespace pathos {
 
@@ -55,6 +56,17 @@ namespace pathos {
 		if (endID < irradianceTileTotalCount) {
 			irradianceTileAllocs.push_back(IrradianceTileRange{ beginID, endID });
 			return beginID;
+		}
+		
+		// Failed to allocate tiles. Find out the reason.
+		uint32 remainingTiles = irradianceTileTotalCount;
+		for (const auto& allocRange : irradianceTileAllocs) {
+			remainingTiles -= allocRange.end - allocRange.begin + 1;
+		}
+		if (remainingTiles < numRequiredTiles) {
+			LOG(LogWarning, "%s: Overflow. Required: %u, remaining: %u", __FUNCTION__, numRequiredTiles, remainingTiles);
+		} else {
+			LOG(LogWarning, "%s: Fragmentation. Required: %u, remaining: %u but remaining tiles are not contiguous", __FUNCTION__, numRequiredTiles, remainingTiles);
 		}
 		return IRRADIANCE_TILE_INVALID_ID;
 	}

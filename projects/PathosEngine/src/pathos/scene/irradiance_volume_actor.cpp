@@ -91,6 +91,16 @@ namespace pathos {
 		}
 	}
 
+	void IrradianceVolumeActor::onDestroy() {
+		if (irradianceTileFirstID != IRRADIANCE_TILE_INVALID_ID) {
+			uint32 lastID = irradianceTileFirstID + numProbes() - 1;
+			bool bFreed = getWorld()->getScene().freeIrradianceTiles(irradianceTileFirstID, lastID);
+			if (!bFreed) {
+				LOG(LogError, "%s: Failed to free irradiance tiles", __FUNCTION__);
+			}
+		}
+	}
+
 	vector3 IrradianceVolumeActor::getProbeLocationByIndex(uint32 probeIndex) const {
 		uint32 sizeXY = gridSize.x * gridSize.y;
 		uint32 gridZ = probeIndex / sizeXY;
