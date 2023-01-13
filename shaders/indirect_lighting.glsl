@@ -28,17 +28,21 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_IndirectLighting {
-	float intensityBoost;
+	// Fake intensity controls
+	float skyLightBoost;
+	float diffuseBoost;
+	float specularBoost;
+	float _pad0;
+
 	float skyReflectionProbeMaxLOD;
 	float reflectionProbeMaxLOD; // Max LOD of local reflection probes
 	uint numReflectionProbes;
+	uint numIrradianceVolumes;
 
 	float irradianceAtlasWidth;
 	float irradianceAtlasHeight;
 	uint irradianceTileCountX;
 	uint irradianceTileSize;
-
-	uint numIrradianceVolumes;
 } ubo;
 
 layout (std140, binding = 2) buffer SSBO_0_IndirectLighting {
@@ -124,6 +128,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	vec3 diffuseIndirect = vec3(0.0);
 	if (irradianceVolumeIndex == -1) {
 		diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
+		diffuseIndirect *= ubo.skyLightBoost;
 	} else {
 		// #todo: Move some calculations to UBO or SSBO
 		IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
@@ -158,6 +163,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		vec3 C = mix(C0, C1, ratio.z);
 
 		diffuseIndirect = C;
+		diffuseIndirect *= ubo.diffuseBoost;
 	}
 
 	// Specular GI
@@ -174,9 +180,11 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	vec3 specularSample;
 	if (localSpecularIndex == -1) {
 		specularSample = textureLod(skyReflectionProbe, R_world, roughness * ubo.skyReflectionProbeMaxLOD).rgb;
+		specularSample *= ubo.skyLightBoost;
 	} else {
 		vec4 R4 = vec4(R_world, float(localSpecularIndex));
 		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.reflectionProbeMaxLOD).rgb;
+		specularSample *= ubo.specularBoost;
 	}
 	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
 	vec3 specularIndirect = specularSample * (kS * envBRDF.x + envBRDF.y);
@@ -210,8 +218,6 @@ void main() {
 
 	vec3 irradiance = getGlobalIllumination(gbufferData);
 	irradiance.rgb = max(vec3(0.0), irradiance.rgb);
-
-	irradiance.rgb *= ubo.intensityBoost;
 
 	outSceneColor = vec4(irradiance, 0.0);
 }

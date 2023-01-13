@@ -87,20 +87,21 @@ void World2::setupScene()
 	//---------------------------------------------------------------------------------------
 	// Local light probes
 
-	radianceProbe0 = spawnActor<LightProbeActor>();
-	radianceProbe0->setActorLocation(vector3(0.0f, 4.0f, 3.0f));
-	//radianceProbe0->bUpdateEveryFrame = false;
-
-	radianceProbe1 = spawnActor<LightProbeActor>();
-	radianceProbe1->setActorLocation(vector3(10.0f, 5.0f, 1.0f));
-
-	radianceProbe2 = spawnActor<LightProbeActor>();
-	radianceProbe2->setActorLocation(vector3(-10.0f, 5.0f, 1.0f));
+	vector3 radianceProbeLocations[] = {
+		vector3(0.0f, 4.0f, 3.0f),
+		vector3(15.0f, 5.0f, -10.0f),
+		vector3(-15.0f, 5.0f, -10.0f),
+		vector3(0.0f, 4.0f, -25.0f),
+	};
+	for (size_t i = 0; i < _countof(radianceProbeLocations); ++i) {
+		auto probe = spawnActor<LightProbeActor>();
+		probe->setActorLocation(radianceProbeLocations[i]);
+	}
 
 	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(
-		vector3(-40.0f, 1.0f, -20.0f),
-		vector3(40.0f, 35.0f, 20.0f),
+		vector3(-20.0f, 1.0f, -20.0f),
+		vector3(20.0f, 20.0f, 10.0f),
 		vector3ui(8, 3, 4));
 
 	//---------------------------------------------------------------------------------------

@@ -21,7 +21,9 @@
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_gi_intensity("r.probegi.intensity", 1.0f, "Indirect lighting boost coeff");
+	static ConsoleVariable<float> cvar_gi_skyLightBoost("r.probegi.skyLightBoost", 1.0f, "Indirect lighting boost (sky)");
+	static ConsoleVariable<float> cvar_gi_diffuseBoost("r.probegi.diffuseBoost", 1.0f, "Indirect lighting boost (diffuse)");
+	static ConsoleVariable<float> cvar_gi_specularBoost("r.probegi.specularBoost", 1.0f, "Indirect lighting boost (specular)");
 
 	struct IrradianceVolumeInfo {
 		vector3 minBounds;
@@ -42,17 +44,20 @@ namespace pathos {
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
 
-		float intensityBoost;
+		float skyLightBoost;
+		float diffuseBoost;
+		float specularBoost;
+		float _pad0;
+
 		float skyRadianceProbeMaxLOD;
 		float radianceProbeMaxLOD;
 		uint32 numRadianceProbes;
+		uint32 numIrradianceVolumes;
 
 		float irradianceAtlasWidth;
 		float irradianceAtlasHeight;
 		uint32 irradianceTileCountX;
 		uint32 irradianceTileSize;
-
-		uint32 numIrradianceVolumes;
 	};
 
 	class IndirectLightingVS : public ShaderStage {
@@ -173,17 +178,19 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.intensityBoost = badger::max(0.0f, cvar_gi_intensity.getFloat());
+		uboData.skyLightBoost = std::max(0.0f, cvar_gi_skyLightBoost.getFloat());
+		uboData.diffuseBoost = std::max(0.0f, cvar_gi_diffuseBoost.getFloat());
+		uboData.specularBoost = std::max(0.0f, cvar_gi_specularBoost.getFloat());
+
 		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(scene->skyPrefilterEnvMapMipLevels - 1));
 		uboData.radianceProbeMaxLOD = badger::max(0.0f, (float)(pathos::radianceProbeNumMips - 1));
 		uboData.numRadianceProbes = (uint32)reflectionProbeInfoArray.size();
-		
+		uboData.numIrradianceVolumes = (uint32)irradianceVolumeInfo.size();
+
 		uboData.irradianceAtlasWidth = scene->irradianceAtlasWidth;
 		uboData.irradianceAtlasHeight = scene->irradianceAtlasHeight;
 		uboData.irradianceTileCountX = scene->irradianceTileCountX;
 		uboData.irradianceTileSize = scene->irradianceTileSize;
-
-		uboData.numIrradianceVolumes = (uint32)irradianceVolumeInfo.size();
 
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 
