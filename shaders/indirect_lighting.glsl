@@ -136,7 +136,7 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 		vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
 		vec3 volSize = vol.maxBounds - vol.minBounds;
 		vec3 cellSize = volSize / fNumCells;
-		vec3 relPos = (vol.maxBounds - gbufferData.ws_coords) / volSize; // [0, 1)
+		vec3 relPos = (gbufferData.ws_coords - vol.minBounds) / volSize; // [0, 1)
 		uvec3 minGridCoord = uvec3(relPos * fNumCells);
 		
 		vec3 diffuseSamples[8];
