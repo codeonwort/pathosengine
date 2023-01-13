@@ -46,9 +46,10 @@ layout (binding = 0) uniform samplerCube inRadianceCubemap;
 layout (binding = 1) uniform samplerCube inDepthCubemap;
 #endif
 
-// Sky: (xyz = irradiance, w = dummy)
-// Light probe: (xyz = irradiance, w = linear depth)
 layout (location = 0) out vec4 outIrradiance;
+#if ONV_ENCODING
+layout (location = 1) out float outLinearDepth;
+#endif
 
 void main() {
 #if ONV_ENCODING
@@ -81,11 +82,9 @@ void main() {
     }
     irradiance = PI * irradiance * (1.0 / float(nrSamples));
 
-#if ONV_ENCODING
-    float linearDepth = texture(inDepthCubemap, dir).r;
-    outIrradiance = vec4(irradiance, linearDepth);
-#else
     outIrradiance = vec4(irradiance, 1.0);
+#if ONV_ENCODING
+    outLinearDepth = texture(inDepthCubemap, dir).r;
 #endif
 }
 

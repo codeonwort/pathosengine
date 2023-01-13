@@ -114,6 +114,7 @@ namespace pathos {
 		uint32                                     skyPrefilterEnvMapMipLevels = 0;
 
 		GLuint                                     irradianceAtlas = 0;
+		GLuint                                     depthProbeAtlas = 0;
 		float                                      irradianceAtlasWidth = 0.0f;
 		float                                      irradianceAtlasHeight = 0.0f;
 		uint32                                     irradianceTileCountX = 0;

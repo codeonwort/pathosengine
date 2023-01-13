@@ -49,6 +49,7 @@ namespace pathos {
 		void getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const;
 
 		GLuint getIrradianceProbeAtlasTexture() const;
+		GLuint getDepthProbeAtlasTexture() const;
 		//////////////////////////////////////////////////////////////////////////
 
 		// Generate frame-invariant proxy data.
@@ -70,6 +71,8 @@ namespace pathos {
 		World* owner = nullptr;
 
 		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
+		uniquePtr<RenderTarget2D> depthProbeAtlas;
+
 		// Save as member to prepare various sizes of atlases per scene.
 		uint32 irradianceTileTotalCount = 0;
 		uint32 irradianceTileCountX = 0;

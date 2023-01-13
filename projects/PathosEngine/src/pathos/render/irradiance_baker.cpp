@@ -93,6 +93,7 @@ namespace pathos {
 	GLuint IrradianceBaker::internal_BRDFIntegrationMap = 0xffffffff;
 	GLuint IrradianceBaker::dummyVAO = 0;
 	GLuint IrradianceBaker::dummyFBO = 0;
+	GLuint IrradianceBaker::dummyFBO_2color = 0;
 	PlaneGeometry* IrradianceBaker::fullscreenQuad = nullptr;
 	CubeGeometry* IrradianceBaker::dummyCube = nullptr;
 	matrix4 IrradianceBaker::cubeTransforms[6];
@@ -161,10 +162,10 @@ namespace pathos {
 		CHECK(bakeDesc.encoding == EIrradianceMapEncoding::Cubemap || bakeDesc.encoding == EIrradianceMapEncoding::OctahedralNormalVector);
 		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
 
-		GLuint fbo = IrradianceBaker::dummyFBO;
+		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
+		GLuint fbo = bBakeCubemap ? IrradianceBaker::dummyFBO : IrradianceBaker::dummyFBO_2color;
 		CubeGeometry* cubeGeom = IrradianceBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
-		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
 
 		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -222,6 +223,7 @@ namespace pathos {
 			}
 		} else {
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0);
+			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, bakeDesc.depthTarget, 0);
 
 			fullscreenQuad->activate_position_uv(cmdList);
 			fullscreenQuad->activateIndexBuffer(cmdList);
@@ -254,6 +256,7 @@ namespace pathos {
 			IrradianceMapBakeDesc bakeDesc;
 			bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
 			bakeDesc.renderTarget = *irradianceMapPtr;
+			bakeDesc.depthTarget = 0;
 			bakeDesc.viewportSize = size;
 			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, 0, bakeDesc);
 
@@ -381,6 +384,10 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &IrradianceBaker::dummyFBO);
 		cmdList.namedFramebufferDrawBuffer(IrradianceBaker::dummyFBO, GL_COLOR_ATTACHMENT0);
 
+		static const GLenum drawBuffers_color2[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		gRenderDevice->createFramebuffers(1, &IrradianceBaker::dummyFBO_2color);
+		cmdList.namedFramebufferDrawBuffers(IrradianceBaker::dummyFBO_2color, _countof(drawBuffers_color2), drawBuffers_color2);
+
 		// Dummy meshes
 		IrradianceBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 		IrradianceBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
@@ -407,6 +414,7 @@ namespace pathos {
 	void IrradianceBaker::internal_destroyIrradianceBakerResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &IrradianceBaker::dummyVAO);
 		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO);
+		gRenderDevice->deleteFramebuffers(1, &IrradianceBaker::dummyFBO_2color);
 		gRenderDevice->deleteTextures(1, &IrradianceBaker::internal_BRDFIntegrationMap);
 
 		delete IrradianceBaker::fullscreenQuad;

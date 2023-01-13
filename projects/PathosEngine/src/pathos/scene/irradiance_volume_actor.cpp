@@ -168,6 +168,7 @@ namespace pathos {
 		GLuint inputRadianceTexture = radianceCubemap->getGLTexture();
 		GLuint inputDepthTexture = depthCubemap->getGLTexture();
 		GLuint RT_atlas = currentScene.getIrradianceProbeAtlasTexture();
+		GLuint RT_depthAtlas = currentScene.getDepthProbeAtlasTexture();
 
 		uint32 tileID = irradianceTileFirstID + probeIndex;
 		vector2ui viewportOffset;
@@ -176,10 +177,11 @@ namespace pathos {
 		currentScene.getIrradianceTileBounds(tileID, tileBounds);
 
 		ENQUEUE_RENDER_COMMAND(
-			[inputRadianceTexture, inputDepthTexture, RT_atlas, viewportOffset](RenderCommandList& cmdList) {
+			[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset](RenderCommandList& cmdList) {
 				IrradianceMapBakeDesc bakeDesc;
 				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
 				bakeDesc.renderTarget = RT_atlas;
+				bakeDesc.depthTarget = RT_depthAtlas;
 				bakeDesc.viewportSize = irradianceProbeTileSize;
 				bakeDesc.viewportOffset = viewportOffset;
 				IrradianceBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);

@@ -36,6 +36,14 @@ namespace pathos {
 				pathos::irradianceProbeFormat,
 				"Scene_IrradianceProbeAtlas");
 			irradianceProbeAtlas->immediateUpdateResource();
+
+			depthProbeAtlas = makeUnique<RenderTarget2D>();
+			depthProbeAtlas->respecTexture(
+				atlasWidth,
+				atlasHeight,
+				pathos::depthProbeFormat,
+				"Scene_DepthProbeAtlas");
+			depthProbeAtlas->immediateUpdateResource();
 		}
 	}
 
@@ -103,6 +111,9 @@ namespace pathos {
 	GLuint Scene::getIrradianceProbeAtlasTexture() const {
 		return irradianceProbeAtlas->getGLName();
 	}
+	GLuint Scene::getDepthProbeAtlasTexture() const {
+		return depthProbeAtlas->getGLName();
+	}
 
 	SceneProxy* Scene::createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera) {
 		char counterName[64];
@@ -143,6 +154,7 @@ namespace pathos {
 
 		if (irradianceProbeAtlas != nullptr) {
 			proxy->irradianceAtlas = irradianceProbeAtlas->getGLName();
+			proxy->depthProbeAtlas = depthProbeAtlas->getGLName();
 			proxy->irradianceAtlasWidth = (float)irradianceProbeAtlas->getWidth();
 			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
 			proxy->irradianceTileCountX = irradianceTileCountX;

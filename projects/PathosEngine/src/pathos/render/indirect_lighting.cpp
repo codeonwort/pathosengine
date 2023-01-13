@@ -214,6 +214,11 @@ namespace pathos {
 		gbuffer_textures[1] = sceneContext.gbufferB;
 		gbuffer_textures[2] = sceneContext.gbufferC;
 
+		if (scene->depthProbeAtlas != 0) {
+			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
@@ -223,13 +228,14 @@ namespace pathos {
 		cmdList.bindTextureUnit(6, IrradianceBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
+		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);
 
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		// Fix a strange bug that IBL maps are randomly persistent across worlds.
-		cmdList.bindTextures(0, 9, nullptr);
+		cmdList.bindTextures(0, 10, nullptr);
 
 		// Restore render states
 		{

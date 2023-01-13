@@ -60,8 +60,9 @@ layout (binding = 3) uniform sampler2D        ssaoMap;
 layout (binding = 4) uniform samplerCube      skyIrradianceProbe;     // Sky diffuse IBL
 layout (binding = 5) uniform samplerCube      skyReflectionProbe;     // Sky specular IBL
 layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
-layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Local specular IBLs
-layout (binding = 8) uniform sampler2D        irradianceAtlas;        // Irradiance maps by local light probes
+layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Prefiltered local specular IBLs
+layout (binding = 8) uniform sampler2D        irradianceAtlas;        // ONV-encoded irradiance maps from local irradiance probes
+layout (binding = 9) uniform sampler2D        depthProbeAtlas;        // ONV-encoded linear depths from local irradiance probes
 
 // --------------------------------------------------------
 // Output

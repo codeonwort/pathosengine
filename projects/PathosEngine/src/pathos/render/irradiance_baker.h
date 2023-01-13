@@ -16,7 +16,8 @@ namespace pathos {
 
 	struct IrradianceMapBakeDesc {
 		EIrradianceMapEncoding encoding;
-		GLuint renderTarget; // Cubemap or 2D texture to render the irradiance map.
+		GLuint renderTarget; // Cubemap or 2D atlas texture to render the irradiance map.
+		GLuint depthTarget; // 2D atlas to render probe linear depth.
 		uint32 viewportSize;
 		vector2ui viewportOffset = vector2ui(0, 0); // Only meaningful for ONV.
 	};
@@ -65,6 +66,7 @@ namespace pathos {
 	private:
 		static GLuint dummyVAO;
 		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
+		static GLuint dummyFBO_2color; // Dummy FBO for two color attachments
 		static class PlaneGeometry* fullscreenQuad;
 		static class CubeGeometry* dummyCube;
 		static matrix4 cubeTransforms[6];

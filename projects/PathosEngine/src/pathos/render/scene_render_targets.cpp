@@ -113,8 +113,7 @@ namespace pathos {
 		// ...
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
-			// #todo-light-probe: format and size should match with light_probe_component.cpp
-			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, radianceProbeCubemapSize, radianceProbeMaxCount, radianceProbeNumMips, "LocalSpecularIBLs");
+			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::radianceProbeCubemapSize, pathos::radianceProbeMaxCount, pathos::radianceProbeNumMips, "LocalSpecularIBLs");
 		}
 
 		//////////////////////////////////////////////////////////////////////////
