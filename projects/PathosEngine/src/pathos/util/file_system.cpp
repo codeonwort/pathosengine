@@ -26,6 +26,18 @@ namespace pathos {
 #endif
 	}
 
+	std::string getDirectoryPath(const char* filePath) {
+		std::string temp(filePath);
+		size_t ix = temp.rfind('/');
+		if (ix == std::string::npos) {
+			ix = temp.rfind('\\');
+		}
+		if (ix == std::string::npos) {
+			return "";
+		}
+		return temp.substr(0, ix + 1);
+	}
+
 	void createDirectory(const char* targetDir)
 	{
 #if PLATFORM_WINDOWS

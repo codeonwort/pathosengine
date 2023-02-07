@@ -6,6 +6,7 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/loader/objloader.h"
+#include "pathos/util/file_system.h"
 #include "pathos/console.h"
 
 void World_ModelViewer::onInitialize() {
@@ -50,7 +51,8 @@ void World_ModelViewer::registerConsoleCommands() {
 }
 
 void World_ModelViewer::tryLoadModel(const char* filepath) {
-	AssetReferenceWavefrontOBJ assetRef(filepath);
+	std::string baseDir = pathos::getDirectoryPath(filepath);
+	AssetReferenceWavefrontOBJ assetRef(filepath, baseDir.c_str());
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World_ModelViewer::onLoadOBJ, 0);
 }
 
