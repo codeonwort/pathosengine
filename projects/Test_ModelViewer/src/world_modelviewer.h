@@ -4,6 +4,7 @@
 using namespace pathos;
 
 namespace pathos {
+	class DirectionalLightActor;
 	class StaticMeshActor;
 	class OBJLoader;
 }
@@ -21,7 +22,12 @@ private:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
+	DirectionalLightActor* sun = nullptr;
 	PlayerController* playerController = nullptr;
 	StaticMeshActor* modelActor = nullptr;
+	StaticMeshActor* dummyBox = nullptr;
+
+	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
+	vector3 sunIlluminance = vector3(10.0f);
 
 };

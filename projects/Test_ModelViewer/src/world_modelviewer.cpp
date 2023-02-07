@@ -5,6 +5,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
+#include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/file_system.h"
@@ -15,19 +16,23 @@ void World_ModelViewer::onInitialize() {
 
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 
+	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
+	getScene().sky = skyAtmosphere;
+
+	sun = spawnActor<DirectionalLightActor>();
+	sun->setDirection(sunDirection);
+	sun->setIlluminance(sunIlluminance);
+
 	playerController = spawnActor<PlayerController>();
 
-	auto G = new CubeGeometry(vector3(1.0f));
-	auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DBlue());
-
-	StaticMeshActor* dummyBox = spawnActor<StaticMeshActor>();
-	dummyBox->setStaticMesh(new Mesh(G, M));
-
-	DirectionalLightActor* sun = spawnActor<DirectionalLightActor>();
-	sun->setDirection(vector3(0.0f, -1.0f, -1.0f));
-	sun->setIlluminance(vector3(10.0f));
-
 	modelActor = spawnActor<StaticMeshActor>();
+
+	{
+		auto G = new CubeGeometry(vector3(1.0f));
+		auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DWhite());
+		dummyBox = spawnActor<StaticMeshActor>();
+		dummyBox->setStaticMesh(new Mesh(G, M));
+	}
 }
 
 void World_ModelViewer::onTick(float deltaSeconds) {
@@ -37,14 +42,14 @@ void World_ModelViewer::onTick(float deltaSeconds) {
 void World_ModelViewer::registerConsoleCommands() {
 	// Help message
 	gConsole->addLine(L"== MODEL VIEWER ======================", false, true);
-	gConsole->addLine(L"Command list: load_model", false, true);
+	gConsole->addLine(L"Command list: load_model / sun_illuminance / sun_direction", false, true);
 	gConsole->addLine(L"======================================", false, true);
 
 	gEngine->registerExec("load_model",
 		[this](const std::string& command) {
 			auto it = command.find_first_of(' ');
 			if (it == std::string::npos) {
-				gConsole->addLine(L"Usage: load_model <model_filepath>", false, true);
+				gConsole->addLine(L"Usage: load_model model_filepath", false, true);
 			} else {
 				std::string filepath = command.substr(it + 1);
 
@@ -53,6 +58,38 @@ void World_ModelViewer::registerConsoleCommands() {
 				gConsole->addLine(msg, false, true);
 
 				tryLoadModel(filepath.c_str());
+			}
+		}
+	);
+
+	gEngine->registerExec("sun_illuminance",
+		[this](const std::string& command) {
+			float r, g, b;
+			int ret = sscanf_s(command.c_str(), "sun_illuminance %f %f %f", &r, &g, &b);
+			if (ret != 3) {
+				gConsole->addLine(L"Usage: sun_illuminance r g b", false, true);
+				wchar_t msg[256];
+				swprintf_s(msg, L"Sun illuminance: (%.3f, %.3f, %.3f) lux", sunIlluminance.r, sunIlluminance.g, sunIlluminance.b);
+				gConsole->addLine(msg, false, true);
+			} else {
+				sunIlluminance.r = r; sunIlluminance.g = g; sunIlluminance.b = b;
+				sun->setIlluminance(sunIlluminance);
+			}
+		}
+	);
+
+	gEngine->registerExec("sun_direction",
+		[this](const std::string& command) {
+			float x, y, z;
+			int ret = sscanf_s(command.c_str(), "sun_direction %f %f %f", &x, &y, &z);
+			if (ret != 3) {
+				gConsole->addLine(L"Usage: sun_direction x y z", false, true);
+				wchar_t msg[256];
+				swprintf_s(msg, L"Sun direction: (%.3f, %.3f, %.3f)", sunDirection.x, sunDirection.y, sunDirection.z);
+				gConsole->addLine(msg, false, true);
+			} else {
+				sunDirection.x = x; sunDirection.y = y; sunDirection.z = z;
+				sun->setDirection(sunDirection);
 			}
 		}
 	);
@@ -76,6 +113,11 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		delete oldMesh;
 	}
 	modelActor->setStaticMesh(newModelMesh);
+
+	if (dummyBox != nullptr) {
+		dummyBox->destroy();
+		dummyBox = nullptr;
+	}
 
 	loader->unload();
 }
