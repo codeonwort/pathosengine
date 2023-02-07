@@ -38,7 +38,7 @@ namespace pathos {
 
 	struct AssetReferenceWavefrontOBJ
 	{
-		AssetReferenceWavefrontOBJ(const char* inFilepath, const char* inBaseDir = nullptr)
+		AssetReferenceWavefrontOBJ(const char* inFilepath, const char* inBaseDir = "")
 			: filepath(inFilepath)
 			, baseDir(inBaseDir)
 		{
