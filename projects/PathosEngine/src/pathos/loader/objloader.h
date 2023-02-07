@@ -61,6 +61,8 @@ namespace pathos {
 
 	public:
 		OBJLoader() = default;
+		~OBJLoader();
+
 		OBJLoader(const OBJLoader& other) = delete;
 		OBJLoader(OBJLoader&& rhs) = delete;
 
@@ -101,6 +103,7 @@ namespace pathos {
 		std::string objFile;
 		std::string mtlDir;
 		bool bIsValid = false;
+		bool bUnloaded = false;
 
 		std::vector<tinyobj::shape_t> tiny_shapes;
 		std::vector<tinyobj::material_t> tiny_materials;

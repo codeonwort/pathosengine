@@ -76,4 +76,6 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		delete oldMesh;
 	}
 	modelActor->setStaticMesh(newModelMesh);
+
+	loader->unload();
 }
