@@ -38,6 +38,8 @@ namespace pathos {
 		void showPreviousHistory();
 		void showNextHistory();
 
+		void appendInput(const std::wstring& userInput); // Magic typing
+
 		Label* addLine(const char* text, bool addToHistory = false, bool skipEvalute = false);
 		Label* addLine(const wchar_t* text, bool addToHistory = false, bool skipEvalute = false);
 

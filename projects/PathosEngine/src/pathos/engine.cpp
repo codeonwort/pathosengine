@@ -11,6 +11,7 @@
 #include "pathos/material/material_shader_assembler.h"
 
 #include "pathos/util/log.h"
+#include "pathos/util/os_util.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/renderdoc_integration.h"
@@ -647,6 +648,13 @@ namespace pathos {
 	}
 
 	void Engine::onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
+		if (gConsole->isVisible() && mouseInput == InputConstants::MOUSE_MIDDLE_BUTTON) {
+			std::wstring pasteMsg;
+			if (pathos::getOSClipboardUnicodeText(pasteMsg)) {
+				gConsole->appendInput(pasteMsg);
+			}
+			return;
+		}
 		gEngine->inputSystem->processButtonDown(mouseInput);
 	}
 
