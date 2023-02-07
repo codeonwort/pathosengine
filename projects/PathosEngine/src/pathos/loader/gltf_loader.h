@@ -75,6 +75,8 @@ namespace pathos {
 		GLTFLoader();
 		~GLTFLoader();
 
+		inline bool isValid() const { return bIsValid; } // Use this to check if load was successful.
+
 		bool loadASCII(const char* inFilename);
 
 		void finalizeGPUUpload();
@@ -95,6 +97,7 @@ namespace pathos {
 	private:
 		uniquePtr<tinygltf::TinyGLTF> tinyLoader;
 		uniquePtr<tinygltf::Model> tinyModel;
+		bool bIsValid = false;
 
 		std::vector<GLTFPendingTexture> pendingTextures;
 		std::vector<GLTFPendingTextureParameter> pendingTextureParameters;

@@ -27,6 +27,7 @@ namespace pathos {
 
 		if (filename.size() == 0) {
 			LOG(LogError, "[GLTF] File not found: %s", inFilename);
+			bIsValid = false;
 			return false;
 		}
 		LOG(LogInfo, "[GLTF] Loading: %s", filename.c_str());
@@ -43,6 +44,7 @@ namespace pathos {
 		}
 		if (!ret) {
 			LOG(LogError, "[GLTF] Failed to parse: %s", filename.c_str());
+			bIsValid = false;
 			return false;
 		}
 
@@ -107,6 +109,7 @@ namespace pathos {
 
 		LOG(LogInfo, "[GLTF] Done.");
 
+		bIsValid = true;
 		return true;
 	}
 
