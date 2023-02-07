@@ -1,3 +1,5 @@
+#include "world_modelviewer.h"
+
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/input/input_manager.h"
@@ -15,6 +17,9 @@ int main(int argc, char** argv) {
 	engineConfig.fullscreen   = WINDOW_FULLSCREEN;
 	engineConfig.title        = WINDOW_TITLE;
 	Engine::init(argc, argv, engineConfig);
+
+	World* world = new World_ModelViewer;
+	gEngine->setWorld(world);
 
 	gEngine->start();
 

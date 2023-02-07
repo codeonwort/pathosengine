@@ -51,6 +51,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -77,11 +79,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main_modelviewer.cpp" />
+    <ClCompile Include="src\world_modelviewer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PathosEngine\PathosEngine.vcxproj">
       <Project>{f1c0d08f-97a0-4b71-bc64-66f86cfcbb4e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\world_modelviewer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
