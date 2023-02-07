@@ -8,9 +8,9 @@
 #include "pathos/engine.h"
 
 namespace pathos {
-	const uint32 irradianceProbeTileSize = 32;
-	const uint32 irradianceProbeTileCountX = 16;
-	const uint32 irradianceProbeTileCountY = 16;
+	const uint32 irradianceProbeTileSize = 8;
+	const uint32 irradianceProbeTileCountX = 64;
+	const uint32 irradianceProbeTileCountY = 64;
 	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
 	const RenderTargetFormat depthProbeFormat = RenderTargetFormat::R16F;
 }
