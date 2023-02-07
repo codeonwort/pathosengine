@@ -7,6 +7,7 @@ namespace pathos {
 	class DirectionalLightActor;
 	class StaticMeshActor;
 	class OBJLoader;
+	class IrradianceVolumeActor;
 }
 class PlayerController;
 
@@ -26,6 +27,8 @@ private:
 	PlayerController* playerController = nullptr;
 	StaticMeshActor* modelActor = nullptr;
 	StaticMeshActor* dummyBox = nullptr;
+
+	IrradianceVolumeActor* irradianceVolume = nullptr;
 
 	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
 	vector3 sunIlluminance = vector3(10.0f);

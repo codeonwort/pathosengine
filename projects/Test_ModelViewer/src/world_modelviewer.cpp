@@ -6,6 +6,7 @@
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/file_system.h"
@@ -33,6 +34,9 @@ void World_ModelViewer::onInitialize() {
 		dummyBox = spawnActor<StaticMeshActor>();
 		dummyBox->setStaticMesh(new Mesh(G, M));
 	}
+
+	irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	irradianceVolume->initializeVolume(vector3(-2.0f), vector3(2.0f), vector3ui(4, 4, 4));
 }
 
 void World_ModelViewer::onTick(float deltaSeconds) {
@@ -118,6 +122,22 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		dummyBox->destroy();
 		dummyBox = nullptr;
 	}
+
+	// #todo-model-viewer: Consider max size of irradiance atlas.
+	// Like this: if (required probes > max probes) { setMoreSparseGrid(); }
+	// 
+	// Recreate irradiance volume.
+	AABB worldBounds = modelActor->getStaticMeshComponent()->getWorldBounds();
+	vector3 probeGridf = worldBounds.getSize() * 0.5f; // per 0.5 meters
+	vector3ui probeGrid = vector3ui(::ceilf(probeGridf.x), ::ceilf(probeGridf.y), ::ceilf(probeGridf.z));
+	if (irradianceVolume != nullptr) {
+		irradianceVolume->destroy();
+	}
+	irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	irradianceVolume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, probeGrid);
+
+	// #todo-model-viewer: Also auto-place local reflection probes.
+	// ...
 
 	loader->unload();
 }
