@@ -1,4 +1,5 @@
 #include "world_modelviewer.h"
+#include "player_controller.h"
 
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -13,6 +14,8 @@ void World_ModelViewer::onInitialize() {
 	registerConsoleCommands();
 
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
+
+	playerController = spawnActor<PlayerController>();
 
 	auto G = new CubeGeometry(vector3(1.0f));
 	auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DBlue());
@@ -32,6 +35,11 @@ void World_ModelViewer::onTick(float deltaSeconds) {
 }
 
 void World_ModelViewer::registerConsoleCommands() {
+	// Help message
+	gConsole->addLine(L"== MODEL VIEWER ======================", false, true);
+	gConsole->addLine(L"Command list: load_model", false, true);
+	gConsole->addLine(L"======================================", false, true);
+
 	gEngine->registerExec("load_model",
 		[this](const std::string& command) {
 			auto it = command.find_first_of(' ');

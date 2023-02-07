@@ -7,6 +7,7 @@ namespace pathos {
 	class StaticMeshActor;
 	class OBJLoader;
 }
+class PlayerController;
 
 class World_ModelViewer : public World {
 
@@ -20,6 +21,7 @@ private:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
+	PlayerController* playerController = nullptr;
 	StaticMeshActor* modelActor = nullptr;
 
 };
