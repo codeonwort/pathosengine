@@ -29,10 +29,11 @@ namespace pathos {
 
 		void registerComponent(ActorComponent* component);
 		void unregisterComponent(ActorComponent* component);
+		inline const std::vector<ActorComponent*>& getAllComponents() const { return components; }
 
 		inline World* getWorld() const { return owner; }
-
 		inline SceneComponent* getRootComponent() { return rootComponent; }
+
 		vector3 getActorLocation() const;
 		Rotator getActorRotation() const;
 		vector3 getActorScale() const;

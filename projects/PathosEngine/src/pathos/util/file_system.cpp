@@ -5,7 +5,7 @@
 #include "badger/assertion/assertion.h"
 
 #if PLATFORM_WINDOWS
-// #todo: cross-platform way (std::filesystem in C++17)
+// #todo-cpp17: cross-platform way (std::filesystem in C++17)
 #include <Windows.h>
 #include <Shlwapi.h>
 #endif

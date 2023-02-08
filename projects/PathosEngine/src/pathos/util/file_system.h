@@ -2,6 +2,7 @@
 
 #include <string>
 
+// This was written before adopting C++17, so most of them are obsolete now.
 namespace pathos {
 
 	// --------------------------------------------------------
