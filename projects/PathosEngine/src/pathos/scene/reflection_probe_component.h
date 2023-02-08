@@ -10,7 +10,7 @@ namespace pathos {
 
 	extern const uint32 reflectionProbeCubemapSize;
 	extern const uint32 reflectionProbeNumMips;
-	constexpr uint32 reflectionProbeMaxCount = 10;
+	constexpr uint32 reflectionProbeMaxCount = 340;
 
 	class RenderTargetCube;
 	class RenderTarget2D;

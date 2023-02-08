@@ -18,7 +18,7 @@ namespace pathos {
 
 namespace pathos {
 
-	const uint32                ScopedGpuCounter::MAX_GPU_COUNTERS = 64;
+	const uint32                ScopedGpuCounter::MAX_GPU_COUNTERS = 256;
 	bool                        ScopedGpuCounter::bEnableCounter = true;
 
 	bool                        ScopedGpuCounter::poolInitialized = false;
