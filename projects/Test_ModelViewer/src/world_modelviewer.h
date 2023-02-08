@@ -10,6 +10,7 @@ namespace pathos {
 	class OBJLoader;
 	class GLTFLoader;
 	class IrradianceVolumeActor;
+	class ReflectionProbeActor;
 }
 class PlayerController;
 
@@ -36,6 +37,7 @@ private:
 	StaticMeshActor* dummyBox = nullptr;
 
 	IrradianceVolumeActor* irradianceVolume = nullptr;
+	std::vector<ReflectionProbeActor*> reflectionProbes;
 
 	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
 	vector3 sunIlluminance = vector3(10.0f);

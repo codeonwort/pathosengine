@@ -7,6 +7,7 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
+#include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
@@ -175,20 +176,45 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		dummyBox = nullptr;
 	}
 
-	// #todo-model-viewer: Consider max size of irradiance atlas.
-	// Like this: if (required probes > max probes) { setMoreSparseGrid(); }
-	// 
-	// Recreate irradiance volume.
 	AABB worldBounds = getActorWorldBounds(modelActor);
-	vector3 probeGridf = worldBounds.getSize() * 0.5f; // per 0.5 meters
-	vector3ui probeGrid = vector3ui(::ceilf(probeGridf.x), ::ceilf(probeGridf.y), ::ceilf(probeGridf.z));
+
+	// Calculate proper grid size for irradiance volume.
+	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
+	vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
+	// Limit the size of the probe grid.
 	probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
+	if (probeGrid.x * probeGrid.y * probeGrid.z > pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY) {
+		double total = (double)(pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
+		uint32 n = (uint32)(std::pow(total, 1.0 / 3.0));
+		probeGrid = vector3ui(n, n, n);
+	}
+	// Recreate irradiance volume.
 	if (irradianceVolume != nullptr) {
 		irradianceVolume->destroy();
 	}
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, probeGrid);
 
-	// #todo-model-viewer: Also auto-place local reflection probes.
-	// ...
+	worldBounds = AABB::fromCenterAndHalfSize(worldBounds.getCenter(), worldBounds.getHalfSize() * 1.5f);
+	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
+	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
+	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));
+	for (ReflectionProbeActor* oldProbe : reflectionProbes) {
+		oldProbe->destroy();
+	}
+	reflectionProbes.clear();
+	for (uint32 xi = 0; xi < reflectionProbeCount.x; ++xi) {
+		for (uint32 yi = 0; yi < reflectionProbeCount.y; ++yi) {
+			for (uint32 zi = 0; zi < reflectionProbeCount.z; ++zi) {
+				ReflectionProbeActor* probe = spawnActor<ReflectionProbeActor>();
+				vector3 ratio;
+				ratio.x = ((float)xi / (reflectionProbeCount.x - 1));
+				ratio.y = ((float)yi / (reflectionProbeCount.y - 1));
+				ratio.z = ((float)zi / (reflectionProbeCount.z - 1));
+				vector3 pos = worldBounds.minBounds + ratio * (worldBounds.maxBounds - worldBounds.minBounds);
+				probe->setActorLocation(pos);
+				reflectionProbes.push_back(probe);
+			}
+		}
+	}
 }
