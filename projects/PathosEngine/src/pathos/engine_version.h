@@ -2,7 +2,7 @@
 
 /**
  * Criteria
- * - Tag a milestone for each work in my kanban board. (https://github.com/codeonwort/pathosengine/projects/1)
+ * - Tag a milestone for each work in my kanban board. (https://github.com/users/codeonwort/projects/8)
  * - Increase engine version when a work is finished and merged to master branch.
  */
 #define PATHOS_MAJOR_VERSION 0
