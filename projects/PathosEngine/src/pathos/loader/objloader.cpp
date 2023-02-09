@@ -13,6 +13,16 @@
 #define WARN_INVALID_FACE_MARTERIAL 0
 #define VERBOSE_LOG                 0
 
+vector3 toVec3(const tinyobj::real_t tiny_real[3]) {
+	return vector3(tiny_real[0], tiny_real[1], tiny_real[2]);
+}
+
+// https://learn.microsoft.com/en-us/azure/remote-rendering/reference/material-mapping
+float PhongSpecularToRoughness(const vector3& specularPower, float shininess) {
+	float intensity = (specularPower.x + specularPower.y + specularPower.z) / 3.0f;
+	return std::sqrt(2.0f / (shininess * intensity + 2.0f));
+}
+
 // Vertex deduplication: https://vulkan-tutorial.com/Loading_models
 struct MetaVertex {
 	vector3 position;
@@ -185,13 +195,19 @@ namespace pathos {
 			else
 			{
 				M = Material::createMaterialInstance("solid_color");
+
+				float roughness = t_mat.roughness;
+				if (roughness <= 0.0f) {
+					vector3 specular = toVec3(t_mat.specular);
+					roughness = PhongSpecularToRoughness(specular, t_mat.shininess);
+				}
 				
-				// #todo-loader: What to do with ambient and specular
+				// Ignore ambient term and let GI system handle indirect illumination.
  				//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
- 				//solidColor->setSpecular(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
+
 				M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
 				M->setConstantParameter("metallic", t_mat.metallic);
-				M->setConstantParameter("roughness", t_mat.roughness);
+				M->setConstantParameter("roughness", roughness);
 				M->setConstantParameter("emissive", vector3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]));
 			}
 

@@ -33,6 +33,11 @@ $contents_list  = @(
 		'NVidiaSpatioTemporalBlueNoise'
 	),
 	@(
+		"https://casual-effects.com/g3d/data10/research/model/fireplace_room/fireplace_room.zip",
+		"fireplace_room.zip",
+		"fireplace_room"
+	),
+	@(
 		'https://casual-effects.com/g3d/data10/research/model/breakfast_room/breakfast_room.zip',
 		'breakfast_room.zip',
 		'breakfast_room'

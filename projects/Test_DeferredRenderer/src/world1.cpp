@@ -45,15 +45,15 @@ struct WavefrontModelDesc {
 
 std::vector<WavefrontModelDesc> wavefrontModels = {
 	{
-		"models/fireplace_room/fireplace_room.obj",
-		"models/fireplace_room/",
+		"resources_external/fireplace_room/fireplace_room.obj",
+		"resources_external/fireplace_room/",
 		vector3(6.0f, 0.0f, 0.0f),
 		Rotator(-90.0f, 0.0f, 0.0f),
 		vector3(0.5f)
 	},
 	{
-		"breakfast_room/breakfast_room.obj",
-		"breakfast_room/",
+		"resources_external/breakfast_room/breakfast_room.obj",
+		"resources_external/breakfast_room/",
 		vector3(-1.0f, 0.2f, 0.5f),
 		Rotator(90.0f, 0.0f, 0.0f),
 		vector3(0.3f)
@@ -401,12 +401,6 @@ void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 		//	vector3 pos = volume->getProbeLocationByIndex(i);
 		//	LOG(LogDebug, "probe: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
 		//}
-	}
-
-	for (Material* M : objModel->getStaticMesh()->getMaterials()) {
-		if (M->getMaterialName() == "solid_color") {
-			M->setConstantParameter("roughness", 1.0f);
-		}
 	}
 
 	objModels.push_back(objModel);
