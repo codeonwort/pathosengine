@@ -674,7 +674,7 @@ namespace pathos {
 		} else if (scene->isAnselSkyValid()) {
 			anselSkyPass->render(cmdList, scene);
 		} else if (scene->isSkyAtmosphereValid()) {
-			skyAtmospherePass->render(cmdList, scene);
+			skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
 		}
 	}
 

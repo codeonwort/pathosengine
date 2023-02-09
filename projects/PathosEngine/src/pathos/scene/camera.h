@@ -23,6 +23,9 @@ namespace pathos {
 		inline float getZNear() const { return z_near; }
 		inline float getZFar() const { return z_far; }
 
+		inline bool isFlipX() const { return bFlipX; }
+		inline bool isFlipY() const { return bFlipY; }
+
 		void setFovY(float inFovY_degrees);
 		void setAspectRatio(float inAspectRatio);
 

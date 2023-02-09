@@ -13,7 +13,8 @@
 // Input
 
 layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
-	vec4 sunParams;
+    vec2 sunParams;
+    vec2 screenFlip;
 } ubo;
 
 layout (binding = 0) uniform sampler2D transmittanceLUT;
@@ -287,6 +288,7 @@ vec3 scene(ray_t camera, vec3 sunDir)
 vec3 viewDirection() {
 	vec2 uv = gl_FragCoord.xy / uboPerFrame.screenResolution.xy;
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
+    P.xy *= ubo.screenFlip;
     P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
     P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
 	P = normalize(P);

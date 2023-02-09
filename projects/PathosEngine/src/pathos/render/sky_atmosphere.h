@@ -10,6 +10,7 @@
 namespace pathos {
 
 	class SceneProxy;
+	class Camera;
 
 	class SkyAtmospherePass : public Noncopyable {
 
@@ -17,7 +18,7 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
 		GLuint fbo = 0xffffffff;

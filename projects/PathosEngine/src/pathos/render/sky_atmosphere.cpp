@@ -1,13 +1,12 @@
 #include "sky_atmosphere.h"
-#include "scene_render_targets.h"
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
-#include "pathos/engine_policy.h"
-
-// #todo-atmosphere: for test
+#include "pathos/scene/camera.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/log.h"
+#include "pathos/engine_policy.h"
 
 // Precomputed Atmospheric Scattering
 namespace pathos {
@@ -15,8 +14,14 @@ namespace pathos {
 	// #todo-atmosphere: better lifecycle management
 	GLuint gTransmittanceLUT = 0;
 
+	static const int32 LUT_WIDTH = 64;
+	static const int32 LUT_HEIGHT = 256;
+
 	struct UBO_Atmosphere {
-		vector4 sunParams;     // (sunSizeMultiplier, sunIntensity, ?, ?)
+		static constexpr uint32 BINDING_POINT = 1;
+
+		vector2 sunParams;  // (sunSizeMultiplier, sunIntensity)
+		vector2 screenFlip; // (flipX, flipY)
 	};
 
 	template<bool bCheckReverseZ>
@@ -61,21 +66,21 @@ namespace pathos {
 		PlaneGeometry* fullscreenQuad = new PlaneGeometry(1.0, 1.0);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
-		const int32 WIDTH = 64;
-		const int32 HEIGHT = 256;
 		// This does matter; transmittance is 1 outside of atmosphere.
-		//GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-		GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		static const GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		cmdList.textureStorage2D(lut, 1, GL_RGBA32F, WIDTH, HEIGHT);
+		cmdList.textureStorage2D(lut, 1, GL_RGBA32F, LUT_WIDTH, LUT_HEIGHT);
 		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.viewport(0, 0, WIDTH, HEIGHT);
 		cmdList.useProgram(program.getGLName());
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
+
+		cmdList.viewport(0, 0, LUT_WIDTH, LUT_HEIGHT);
+
 		fullscreenQuad->activate_position_uv(cmdList);
 		fullscreenQuad->activateIndexBuffer(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
@@ -98,7 +103,7 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_SkyAtmosphere");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		ubo.init<UBO_Atmosphere>();
+		ubo.init<UBO_Atmosphere>("UBO_SkyAtmosphere");
 		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
@@ -107,7 +112,7 @@ namespace pathos {
 		gRenderDevice->deleteVertexArrays(1, &vao);
 	}
 
-	void SkyAtmospherePass::render(RenderCommandList& cmdList, SceneProxy* scene) {
+	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(SkyAtmosphereActor);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -127,7 +132,9 @@ namespace pathos {
 		UBO_Atmosphere uboData;
 		uboData.sunParams.x = 5.0f;
 		uboData.sunParams.y = 13.61839144264511f;
-		ubo.update(cmdList, 1, &uboData);
+		uboData.screenFlip.x = camera->getLens().isFlipX() ? -1.0f : 1.0f;
+		uboData.screenFlip.y = camera->getLens().isFlipY() ? -1.0f : 1.0f;
+		ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, gTransmittanceLUT);
 
