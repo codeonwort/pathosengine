@@ -203,6 +203,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		oldProbe->destroy();
 	}
 	reflectionProbes.clear();
+	bool bNeedReflectionProbeAtCenter = true;
 	for (uint32 xi = 0; xi < reflectionProbeCount.x; ++xi) {
 		for (uint32 yi = 0; yi < reflectionProbeCount.y; ++yi) {
 			for (uint32 zi = 0; zi < reflectionProbeCount.z; ++zi) {
@@ -214,7 +215,15 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 				vector3 pos = worldBounds.minBounds + ratio * (worldBounds.maxBounds - worldBounds.minBounds);
 				probe->setActorLocation(pos);
 				reflectionProbes.push_back(probe);
+				if (glm::length(pos) < 0.5f) {
+					bNeedReflectionProbeAtCenter = false;
+				}
 			}
 		}
+	}
+	if (bNeedReflectionProbeAtCenter) {
+		ReflectionProbeActor* reflectionProbe0 = spawnActor<ReflectionProbeActor>();
+		reflectionProbe0->setActorLocation(worldBounds.getCenter());
+		reflectionProbes.push_back(reflectionProbe0);
 	}
 }
