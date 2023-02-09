@@ -61,6 +61,8 @@ namespace pathos {
 
 	public:
 		OBJLoader() = default;
+		~OBJLoader();
+
 		OBJLoader(const OBJLoader& other) = delete;
 		OBJLoader(OBJLoader&& rhs) = delete;
 
@@ -75,7 +77,7 @@ namespace pathos {
 		void unload();
 
 		inline const std::string& getSourceFilepath() const { return objFile; }
-		inline bool isValid() const { return bIsValid; }
+		inline bool isValid() const { return bIsValid; } // Use this to check if load was successful.
 
 		inline uint32 numShapes() const { return static_cast<uint32>(pendingShapes.size()); }
 		inline const std::string& getShapeName(uint32 index) const { return tiny_shapes[index].name; }
@@ -101,6 +103,7 @@ namespace pathos {
 		std::string objFile;
 		std::string mtlDir;
 		bool bIsValid = false;
+		bool bUnloaded = false;
 
 		std::vector<tinyobj::shape_t> tiny_shapes;
 		std::vector<tinyobj::material_t> tiny_materials;

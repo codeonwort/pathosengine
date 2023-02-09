@@ -384,6 +384,9 @@
     <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\util\os_util.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">
@@ -840,6 +843,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\util\os_util.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

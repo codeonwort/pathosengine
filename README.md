@@ -9,7 +9,7 @@ Also I give only little effort to non-rendering subsystems.
 
 ### Development Environment
 
-It's highly probable the project won't compile nor launch in other configurations.
+This project won't compile nor launch in other configurations.
 
 * GL version: OpenGL 4.6 Core Profile
 * Language: C++17
@@ -49,8 +49,8 @@ Yet another Sponza scene.
   * Global illumination
     * Cascaded shadow map
     * Screen-space ambient occlusion
-    * Screen-space reflection (WIP)
-    * Basic sky IBL
+    * Screen-space reflection
+    * Real-time indirect illumination from irradiance/radiance probes (WIP)
   * Volumetric clouds
   * Post processing
     * God ray (light shaft)

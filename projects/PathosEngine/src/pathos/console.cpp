@@ -131,6 +131,11 @@ namespace pathos {
 		}
 	}
 
+	void ConsoleWindow::appendInput(const std::wstring& userInput) {
+		currentInput += userInput;
+		updateInputLine();
+	}
+
 	Label* ConsoleWindow::addLine(const char* text, bool addToHistory, bool skipEvaluate) {
 		std::wstring buffer;
 		pathos::MBCS_TO_WCHAR(text, buffer);

@@ -2,6 +2,7 @@
 
 #include <string>
 
+// This was written before adopting C++17, so most of them are obsolete now.
 namespace pathos {
 
 	// --------------------------------------------------------
@@ -9,6 +10,9 @@ namespace pathos {
 
 	// Returns absolute path.
 	std::string getAbsolutePath(const char* targetDir);
+
+	// @return Parent directory path of the file. Empty string if invalid.
+	std::string getDirectoryPath(const char* filePath);
 
 	// Create the directory if not exist.
 	void createDirectory(const char* targetDir);

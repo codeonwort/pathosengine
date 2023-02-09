@@ -40,6 +40,10 @@ namespace std {
 
 namespace pathos {
 
+	OBJLoader::~OBJLoader() {
+		unload();
+	}
+
 	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides) {
 		materialOverrides = overrides;
 	}
@@ -83,6 +87,24 @@ namespace pathos {
 	}
 
 	void OBJLoader::unload() {
+		if (bUnloaded) {
+			return;
+		}
+		bUnloaded = true;
+
+		std::set<BitmapBlob*> blobsToDestroy;
+		for (auto& it : pendingTextureData) {
+			if (it.second.albedo != nullptr) blobsToDestroy.insert(it.second.albedo);
+			if (it.second.normal != nullptr) blobsToDestroy.insert(it.second.normal);
+			if (it.second.roughness != nullptr) blobsToDestroy.insert(it.second.roughness);
+			if (it.second.metallic != nullptr) blobsToDestroy.insert(it.second.metallic);
+		}
+		ENQUEUE_RENDER_COMMAND([blobsToDestroy](RenderCommandList& cmdList) {
+			for (BitmapBlob* blob : blobsToDestroy) {
+				cmdList.registerDeferredCleanup(blob);
+			}
+		});
+
 		mtlDir.clear();
 		tiny_shapes.clear();
 		tiny_materials.clear();
@@ -472,21 +494,22 @@ namespace pathos {
 		if (pendingTextureData.find(index) != pendingTextureData.end()) {
 			constexpr bool generateMipmap = true;
 			constexpr bool sRGB = true;
+			constexpr bool autoDestroy = false;
 			PendingTextures& pendingTextures = pendingTextureData[index];
 			if (pendingTextures.glAlbedo == 0 && pendingTextures.albedo != nullptr) {
-				pendingTextures.glAlbedo = pathos::createTextureFromBitmap(pendingTextures.albedo, generateMipmap, sRGB);
+				pendingTextures.glAlbedo = pathos::createTextureFromBitmap(pendingTextures.albedo, generateMipmap, sRGB, pendingTextures.albedoFilename.c_str(), autoDestroy);
 				glTextureMap[pendingTextures.albedoFilename] = pendingTextures.glAlbedo;
 			}
 			if (pendingTextures.glNormal == 0 && pendingTextures.normal != nullptr) {
-				pendingTextures.glNormal = pathos::createTextureFromBitmap(pendingTextures.normal, generateMipmap, !sRGB);
+				pendingTextures.glNormal = pathos::createTextureFromBitmap(pendingTextures.normal, generateMipmap, !sRGB, pendingTextures.normalFilename.c_str(), autoDestroy);
 				glTextureMap[pendingTextures.normalFilename] = pendingTextures.glNormal;
 			}
 			if (pendingTextures.glRoughness == 0 && pendingTextures.roughness != nullptr) {
-				pendingTextures.glRoughness = pathos::createTextureFromBitmap(pendingTextures.roughness, generateMipmap, !sRGB);
+				pendingTextures.glRoughness = pathos::createTextureFromBitmap(pendingTextures.roughness, generateMipmap, !sRGB, pendingTextures.roughnessFilename.c_str(), autoDestroy);
 				glTextureMap[pendingTextures.roughnessFilename] = pendingTextures.glRoughness;
 			}
 			if (pendingTextures.glMetallic == 0 && pendingTextures.metallic != nullptr) {
-				pendingTextures.glMetallic = pathos::createTextureFromBitmap(pendingTextures.metallic, generateMipmap, !sRGB);
+				pendingTextures.glMetallic = pathos::createTextureFromBitmap(pendingTextures.metallic, generateMipmap, !sRGB, pendingTextures.metallicFilename.c_str(), autoDestroy);
 				glTextureMap[pendingTextures.metallicFilename] = pendingTextures.glMetallic;
 			}
 

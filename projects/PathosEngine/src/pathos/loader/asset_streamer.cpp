@@ -28,14 +28,13 @@ namespace pathos {
 		loader->setMaterialOverrides(std::move(arg->materialOverrides));
 		bool bLoaded = loader->load(arg->filepath.c_str(), arg->mtlDir.c_str());
 
-		// #todo-asset-streamer: How to inform load failure?
-		if (bLoaded) {
-			streamer->mutex_loadedOBJs.lock();
-			streamer->loadedOBJs.push_back(arg);
-			streamer->mutex_loadedOBJs.unlock();
-		} else {
+		if (bLoaded == false) {
 			LOG(LogError, "[AssetStreamer] Failed to load OBJ: %s", arg->filepath);
 		}
+		// Enqueue anyway. You should check loader->isValid() in the callback.
+		streamer->mutex_loadedOBJs.lock();
+		streamer->loadedOBJs.push_back(arg);
+		streamer->mutex_loadedOBJs.unlock();
 	}
 
 	void internal_loadGLTF(const WorkItemParam* param)
@@ -51,14 +50,13 @@ namespace pathos {
 		arg->loader = loader;
 		bool bLoaded = loader->loadASCII(arg->filepath.c_str());
 
-		// #todo-asset-streamer: How to inform load failure?
-		if (bLoaded) {
-			streamer->mutex_loadedGLTFs.lock();
-			streamer->loadedGLTFs.push_back(arg);
-			streamer->mutex_loadedGLTFs.unlock();
-		} else {
+		if (bLoaded == false) {
 			LOG(LogError, "[AssetStreamer] Failed to load GLTF: %s", arg->filepath.c_str());
 		}
+		// Enqueue anyway. You should check loader->isValid() in the callback.
+		streamer->mutex_loadedGLTFs.lock();
+		streamer->loadedGLTFs.push_back(arg);
+		streamer->mutex_loadedGLTFs.unlock();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

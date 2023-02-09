@@ -5,7 +5,7 @@
 #include "badger/assertion/assertion.h"
 
 #if PLATFORM_WINDOWS
-// #todo: cross-platform way (std::filesystem in C++17)
+// #todo-cpp17: cross-platform way (std::filesystem in C++17)
 #include <Windows.h>
 #include <Shlwapi.h>
 #endif
@@ -24,6 +24,18 @@ namespace pathos {
 #else
 		#error "Not implemented"
 #endif
+	}
+
+	std::string getDirectoryPath(const char* filePath) {
+		std::string temp(filePath);
+		size_t ix = temp.rfind('/');
+		if (ix == std::string::npos) {
+			ix = temp.rfind('\\');
+		}
+		if (ix == std::string::npos) {
+			return "";
+		}
+		return temp.substr(0, ix + 1);
 	}
 
 	void createDirectory(const char* targetDir)

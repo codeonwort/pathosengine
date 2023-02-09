@@ -20,6 +20,7 @@ namespace pathos {
 	}
 
 	ResourceFinder::ResourceFinder() {
+		directories.push_back(""); // For absolute path
 		directories.push_back("./");
 	}
 

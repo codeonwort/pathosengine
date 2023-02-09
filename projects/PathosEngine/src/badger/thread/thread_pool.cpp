@@ -128,6 +128,8 @@ void ThreadPool::WaitForAllWorks()
 void ThreadPool::AddWorkUnsafe(const ThreadPoolWork& workItem)
 {
 	queue.push(workItem);
+
+	WakeAllWorkers();
 }
 
 void ThreadPool::AddWorkSafe(const ThreadPoolWork& workItem)
@@ -135,6 +137,8 @@ void ThreadPool::AddWorkSafe(const ThreadPoolWork& workItem)
 	queueLock.lock();
 	queue.push(workItem);
 	queueLock.unlock();
+
+	WakeAllWorkers();
 }
 
 bool ThreadPool::Internal_PopWork(ThreadPoolWork& work)
