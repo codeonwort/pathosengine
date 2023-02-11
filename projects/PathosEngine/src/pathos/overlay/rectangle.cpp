@@ -32,6 +32,13 @@ namespace pathos {
 		return nullptr;
 	}
 
+	bool Rectangle::onMouseHitTest(int32 mouseX, int32 mouseY) const {
+		float xMax = width * scaleX;
+		float yMax = height * scaleY;
+		return x <= (float)mouseX && (float)mouseX <= xMax
+			&& y <= (float)mouseY && (float)mouseY <= yMax;
+	}
+
 	void Rectangle::setSize(float inWidth, float inHeight) {
 		CHECK(inWidth >= 0.0f && inHeight >= 0.0f);
 		width = inWidth;

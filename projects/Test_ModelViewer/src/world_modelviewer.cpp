@@ -14,6 +14,63 @@
 #include "pathos/util/file_system.h"
 #include "pathos/console.h"
 
+#include "pathos/overlay/brush.h"
+#include "pathos/util/log.h"
+
+#include "badger/system/platform.h"
+
+#if PLATFORM_WINDOWS
+// https://learn.microsoft.com/en-us/windows/win32/learnwin32/example--the-open-dialog-box
+#include <Windows.h>
+#include <ShObjIdl.h>
+std::string browseModelFile() {
+	HRESULT hr = CoInitializeEx(
+		NULL,
+		COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (FAILED(hr)) return "";
+	IFileOpenDialog* pFileOpen;
+	hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+		IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+	if (FAILED(hr)) return "";
+
+	COMDLG_FILTERSPEC filters[] = {
+		{ L"Wavefront OBj", L"*.obj" }, { L"Khronos glTF", L"*.gltf" },
+	};
+	hr = pFileOpen->SetFileTypes(_countof(filters), filters);
+	if (FAILED(hr)) return "";
+
+	hr = pFileOpen->Show(NULL);
+	if (FAILED(hr)) return "";
+	IShellItem* pItem;
+	hr = pFileOpen->GetResult(&pItem);
+	if (FAILED(hr)) return "";
+	PWSTR filePathW;
+	hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &filePathW);
+	if (FAILED(hr)) return "";
+	std::string filePathA;
+	pathos::WCHAR_TO_MBCS(filePathW, filePathA);
+	pItem->Release();
+	pFileOpen->Release();
+	CoUninitialize();
+	return filePathA;
+}
+#else
+std::string browseModelFile() {
+	return "";
+}
+#endif
+
+EModelExt findModelFileExtension(const std::string& filepath) {
+	size_t extensionIx = filepath.rfind('.');
+	EModelExt ext = EModelExt::Unknown;
+	if (extensionIx != std::string::npos) {
+		std::string s = filepath.substr(extensionIx + 1);
+		if (s == "obj") ext = EModelExt::Obj;
+		else if (s == "gltf") ext = EModelExt::GLTF;
+	}
+	return ext;
+}
+
 AABB getActorWorldBounds(Actor* actor) {
 	AABB bounds{};
 	bool bFirst = true;
@@ -52,6 +109,42 @@ void World_ModelViewer::onInitialize() {
 
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(vector3(-2.0f), vector3(2.0f), vector3ui(4, 4, 4));
+
+	// GUI
+	{
+		Label* label_load = new Label(L"Load model");
+		label_load->setX(5.0f);
+		label_load->setY(5.0f);
+
+		label_notice = new Label(L"> ");
+		label_notice->setX(130.0f);
+		label_notice->setY(15.0f);
+
+		btn_load = new pathos::Rectangle(100.0f, 40.0f);
+		btn_load->setX(10.0f);
+		btn_load->setY(10.0f);
+		btn_load->setBrush(new SolidColorBrush(0.1f, 0.1f, 0.1f));
+		btn_load->addChild(label_load);
+
+		auto pNotice = label_notice;
+		btn_load->onMouseClick = [pNotice, this](int32 mouseX, int32 mouseY) {
+			std::string filepath = browseModelFile();
+
+			if (filepath.size() > 0) {
+				std::wstring filepathW;
+				pathos::MBCS_TO_WCHAR(filepath, filepathW);
+				pNotice->setText(filepathW.c_str());
+
+				EModelExt ext = findModelFileExtension(filepath);
+				tryLoadModel(filepath.c_str(), ext);
+			} else {
+				pNotice->setText(L"Select a file to load");
+			}
+		};
+
+		gEngine->getOverlayRoot()->addChild(btn_load);
+		gEngine->getOverlayRoot()->addChild(label_notice);
+	}
 }
 
 void World_ModelViewer::onTick(float deltaSeconds) {

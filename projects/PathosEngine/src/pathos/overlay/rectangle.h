@@ -13,6 +13,9 @@ namespace pathos {
 
 		DisplayObject2DProxy* createRenderProxy(OverlaySceneProxy* sceneProxy) override;
 
+		// User input
+		virtual bool onMouseHitTest(int32 mouseX, int32 mouseY) const override;
+
 		void setSize(float inWidth, float inHeight);
 
 		virtual MeshGeometry* getGeometry() override { return geom; }

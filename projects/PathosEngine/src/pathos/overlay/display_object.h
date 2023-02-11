@@ -2,7 +2,9 @@
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/transform_helper.h"
+
 #include <vector>
+#include <functional>
 
 namespace pathos {
 
@@ -10,6 +12,11 @@ namespace pathos {
 	class OverlaySceneProxy;
 	class DisplayObject2DProxy;
 
+	namespace overlayInput {
+		using OnMouseClick = std::function<void(int32 mouseX, int32 mouseY)>;
+	}
+
+	// Base class for 2D objects.
 	class DisplayObject2D {
 
 	public:
@@ -29,6 +36,11 @@ namespace pathos {
 		bool removeChild(DisplayObject2D* child);
 		inline const std::vector<DisplayObject2D*>& getChildren() { return children; }
 
+		inline bool isRoot() { return root == this; }
+		inline DisplayObject2D* getRoot() { return root; }
+
+	// Transform & visual appearance
+	public:
 		inline float getX() const { return x; }
 		inline float getY() const { return y; }
 		inline float getScaleX() const { return scaleX; }
@@ -41,21 +53,36 @@ namespace pathos {
 
 		virtual MeshGeometry* getGeometry() { return nullptr; }
 
-		inline bool isRoot() { return root == this; }
-		inline DisplayObject2D* getRoot() { return root; }
-
-		inline bool getVisible() { return visible; }
-		inline void setVisible(bool value) { visible = value; }
+		inline bool getVisible() { return bVisible; }
+		inline void setVisible(bool value) { bVisible = value; }
 
 		inline Brush* getBrush() { return brush; }
 		inline void setBrush(Brush* newBrush) { brush = newBrush; }
+
+	// User input
+	public:
+		void handleMouseLeftClick(int32 mouseX, int32 mouseY);
+
+		bool mouseHitTest(int32 mouseX, int32 mouseY) const {
+			if (bVisible == false || bReceivesMouseInput == false) return false;
+			return onMouseHitTest(mouseX, mouseY);
+		}
+
+		virtual bool onMouseHitTest(int32 mouseX, int32 mouseY) const { return false; }
+
+		overlayInput::OnMouseClick onMouseClick = nullptr; // callback
+
+	public:
+		bool bVisible = true;
+		bool bReceivesMouseInput = true;
+		bool bStopInputPropagation = false;
 
 	protected:
 		float x = 0.0f, y = 0.0f;
 		float scaleX = 1.0f, scaleY = 1.0f;
 
 		Transform transform;
-		bool transformDirty = false; // #todo-overlay: Utilize this
+		bool bTransformDirty = false; // #todo-overlay: Utilize this
 
 		std::string displayName = "displayObject";
 		void setDisplayName(const std::string& newName) { displayName = newName; }
@@ -64,10 +91,10 @@ namespace pathos {
 		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) {}
 
 	private:
-		bool visible = true;
 		DisplayObject2D* root = nullptr;
 		DisplayObject2D* parent = nullptr;
 		std::vector<DisplayObject2D*> children;
+
 		Brush* brush = nullptr;
 
 	};

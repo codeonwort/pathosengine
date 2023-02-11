@@ -1,6 +1,8 @@
 #pragma once
 
 #include "pathos/scene/world.h"
+#include "pathos/overlay/rectangle.h"
+#include "pathos/overlay/label.h"
 using namespace pathos;
 
 namespace pathos {
@@ -14,9 +16,13 @@ namespace pathos {
 }
 class PlayerController;
 
+enum class EModelExt : uint8 { Unknown, Obj, GLTF };
+EModelExt findModelFileExtension(const std::string& filepath);
+
 class World_ModelViewer : public World {
 
-	enum class EModelExt : uint8 { Unknown, Obj, GLTF };
+public:
+	void tryLoadModel(const char* filepath, EModelExt ext);
 
 protected:
 	virtual void onInitialize() override;
@@ -24,7 +30,6 @@ protected:
 
 private:
 	void registerConsoleCommands();
-	void tryLoadModel(const char* filepath, EModelExt ext);
 
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 	void onLoadGLTF(GLTFLoader* loader, uint64 payload);
@@ -41,5 +46,9 @@ private:
 
 	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
 	vector3 sunIlluminance = vector3(10.0f);
+
+	// GUI
+	pathos::Rectangle* btn_load = nullptr;
+	pathos::Label* label_notice = nullptr;
 
 };

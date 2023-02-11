@@ -184,9 +184,15 @@ namespace pathos {
 			// Restore sceneRenderTargets to the one for main scene.
 			immediateContext.sceneRenderTargets = renderThread->sceneRenderTargets_primary;
 
-			// Render debug overlay and command console
+			// Render app UI / debug overlay / console window.
 			OverlaySceneProxy* overlayProxy = renderThread->popOverlayProxy();
 			if (bNewSceneRendered && overlayProxy != nullptr) {
+				if (overlayProxy->appOverlayRootProxy != nullptr) {
+					SCOPED_CPU_COUNTER(ExecuteApplicationUI);
+					renderThread->getRenderer2D()->renderOverlay(
+						immediateContext,
+						overlayProxy->appOverlayRootProxy);
+				}
 				if (overlayProxy->debugOverlayRootProxy != nullptr) {
 					SCOPED_CPU_COUNTER(ExecuteDebugOverlay);
 					renderThread->debugOverlay->renderDebugOverlay(

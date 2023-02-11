@@ -177,6 +177,8 @@ namespace pathos {
 			gConsole->addLine(line.c_str(), false);
 		}
 
+		appOverlayRoot = uniquePtr<DisplayObject2D>(DisplayObject2D::createRoot());
+
 		MaterialShaderAssembler::get().initializeMaterialShaders();
 
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
@@ -275,6 +277,8 @@ namespace pathos {
 		pathos::destroyImageLibrary();
 
 		renderThread->terminate();
+
+		appOverlayRoot.reset();
 
 		LOG(LogInfo, "=== PATHOS has been destroyed ===");
 		LOG(LogInfo, "");
@@ -540,6 +544,7 @@ namespace pathos {
 				DisplayObject2D* consoleWindowRoot = gConsole->internal_getRoot();
 
 				OverlaySceneProxy* overlayProxy = new OverlaySceneProxy(conf.windowWidth, conf.windowHeight);
+				overlayProxy->appOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(appOverlayRoot.get(), overlayProxy);
 				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
 				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
 				renderThread->pushOverlayProxy(overlayProxy);
@@ -655,7 +660,12 @@ namespace pathos {
 			}
 			return;
 		}
+
 		gEngine->inputSystem->processButtonDown(mouseInput);
+
+		if (mouseInput == InputConstants::MOUSE_LEFT_BUTTON) {
+			gEngine->getOverlayRoot()->handleMouseLeftClick(mouseX, mouseY);
+		}
 	}
 
 	void Engine::onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY) {

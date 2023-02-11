@@ -31,6 +31,7 @@ namespace pathos {
 	class AssetStreamer;
 	class OverlayRenderer;
 	class RenderThread;
+	class DisplayObject2D;
 
 	using Screenshot = std::pair<vector2i, uint8*>;
 
@@ -113,11 +114,13 @@ namespace pathos {
 		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
 		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
 
-		InputSystem* getInputSystem() const { return inputSystem.get(); }
+		inline InputSystem* getInputSystem() const { return inputSystem.get(); }
 
-		AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
+		inline AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
 
 		inline GUIWindow* getMainWindow() const { return mainWindow.get(); }
+
+		inline DisplayObject2D* getOverlayRoot() const { return appOverlayRoot.get(); }
 
 		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
@@ -175,6 +178,10 @@ namespace pathos {
 		uniquePtr<InputSystem> inputSystem;
 
 		uniquePtr<GUIWindow> mainWindow;
+
+		// Root for 2D objects that are created by application.
+		// ConsoleWindow and DebugOverlay have their own roots.
+		uniquePtr<DisplayObject2D> appOverlayRoot;
 
 	// Render thread
 	private:

@@ -67,6 +67,7 @@ namespace pathos {
 		uint32 viewportWidth;
 		uint32 viewportHeight;
 
+		DisplayObject2DProxy* appOverlayRootProxy = nullptr;
 		DisplayObject2DProxy* debugOverlayRootProxy = nullptr;
 		DisplayObject2DProxy* consoleWindowRootProxy = nullptr;
 	};

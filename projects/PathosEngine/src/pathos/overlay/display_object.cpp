@@ -86,6 +86,21 @@ namespace pathos {
 		return false;
 	}
 
+	void DisplayObject2D::handleMouseLeftClick(int32 mouseX, int32 mouseY) {
+		bool bHandled = false;
+		if (mouseHitTest(mouseX, mouseY)) {
+			if (onMouseClick != nullptr) {
+				onMouseClick(mouseX, mouseY);
+				bHandled = true;
+			}
+		}
+		if (!bHandled || !bStopInputPropagation) {
+			for (DisplayObject2D* child : children) {
+				child->handleMouseLeftClick(mouseX, mouseY);
+			}
+		}
+	}
+
 	void DisplayObject2D::setRoot(DisplayObject2D* newRoot) {
 		if (root == newRoot) {
 			return;

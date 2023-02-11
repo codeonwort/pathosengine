@@ -12,6 +12,8 @@ namespace pathos {
 		setDisplayName("label");
 		setFont(DEFAULT_FONT_TAG);
 
+		bReceivesMouseInput = false;
+
 		geometry = new TextGeometry;
 		geometry->bCalculateLocalBounds = false;
 
