@@ -125,7 +125,7 @@ namespace pathos {
 			Camera* camera) override;
 
 		// #todo: Make as a utility function, not a method of renderer.
-		enum class ECopyTextureMode { CopyColor = 0, SceneDepthToLinearDepth = 1 };
+		enum class ECopyTextureMode { CopyColor = 0, LightProbeDepth = 1 };
 		void copyTexture(
 			RenderCommandList& cmdList, GLuint source,
 			GLuint target, uint32 targetWidth, uint32 targetHeight,

@@ -31,7 +31,7 @@ namespace pathos {
 		vector3 maxBounds;
 		uint32 numProbes;
 		vector3ui gridSize;
-		uint32 _pad0;
+		float captureRadius;
 	};
 	struct ReflectionProbeInfo {
 		vector3 positionWS;
@@ -125,6 +125,7 @@ namespace pathos {
 			info.maxBounds = volume->maxBounds;
 			info.numProbes = volume->numProbes;
 			info.gridSize = volume->gridSize;
+			info.captureRadius = volume->captureRadius;
 			irradianceVolumeInfo.emplace_back(info);
 		}
 

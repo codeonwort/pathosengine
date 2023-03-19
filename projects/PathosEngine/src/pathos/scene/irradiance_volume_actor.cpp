@@ -7,6 +7,7 @@
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 
+// #todo-light-probe: Depth atlas is too low-res for visibility test.
 namespace pathos {
 	const uint32 irradianceProbeTileSize = 8;
 	const uint32 irradianceProbeTileCountX = 64;
@@ -88,6 +89,7 @@ namespace pathos {
 			proxy->maxBounds = maxBounds;
 			proxy->numProbes = numProbes();
 			proxy->gridSize = gridSize;
+			proxy->captureRadius = captureRadius;
 
 			scene->proxyList_irradianceVolume.push_back(proxy);
 		}

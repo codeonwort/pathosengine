@@ -3,12 +3,12 @@
 #include "deferred_common.glsl"
 
 //?#define COPY_MODE
-#define COPY_MODE_COLOR      0
-#define COPY_MODE_SCENEDEPTH 1
+#define COPY_MODE_COLOR           0
+#define COPY_MODE_LIGHTPROBEDEPTH 1
 
 #if COPY_MODE == COPY_MODE_COLOR
 	#define OUT_TYPE vec4
-#elif COPY_MODE == COPY_MODE_SCENEDEPTH
+#elif COPY_MODE == COPY_MODE_LIGHTPROBEDEPTH
 	#define OUT_TYPE float
 #endif
 
@@ -22,9 +22,9 @@ in VS_OUT {
 void main() {
 #if COPY_MODE == COPY_MODE_COLOR
 	outValue = texture(sourceTexture, fs_in.screenUV);
-#elif COPY_MODE == COPY_MODE_SCENEDEPTH
-	float sceneDepth = texture(sourceTexture, fs_in.screenUV).r;
-	float linearDepth = sceneDepthToLinearDepth(fs_in.screenUV, sceneDepth);
-	outValue = min(65000.0, linearDepth);
+#elif COPY_MODE == COPY_MODE_LIGHTPROBEDEPTH
+	float deviceZ = texture(sourceTexture, fs_in.screenUV).r;
+	float lightProbeDepth = -getViewPositionFromSceneDepth(fs_in.screenUV, deviceZ).z;
+	outValue = min(65000.0, lightProbeDepth);
 #endif
 }

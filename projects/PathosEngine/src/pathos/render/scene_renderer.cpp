@@ -67,7 +67,7 @@ namespace pathos {
 	};
 
 	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_Color, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::CopyColor>);
-	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_SceneDepth, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::SceneDepthToLinearDepth>);
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_LightProbeDepth, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::LightProbeDepth>);
 
 }
 
@@ -216,6 +216,11 @@ namespace pathos {
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		}
+		if (bLightProbeRendering) {
+			cmdList.disable(GL_CULL_FACE);
+		} else {
+			cmdList.enable(GL_CULL_FACE);
+		}
 
 		{
 			SCOPED_CPU_COUNTER(RenderPreDepth);
@@ -327,7 +332,7 @@ namespace pathos {
 				GLuint depthTarget = sceneRenderSettings.finalDepthTarget->getGLName();
 				copyTexture(cmdList, sceneRenderTargets->sceneDepth, depthTarget,
 					sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight,
-					ECopyTextureMode::SceneDepthToLinearDepth);
+					ECopyTextureMode::LightProbeDepth);
 			}
 		}
 		else
@@ -688,8 +693,8 @@ namespace pathos {
 			case ECopyTextureMode::CopyColor:
 				program = FIND_SHADER_PROGRAM(Program_CopyTexture_Color).getGLName();
 				break;
-			case ECopyTextureMode::SceneDepthToLinearDepth:
-				program = FIND_SHADER_PROGRAM(Program_CopyTexture_SceneDepth).getGLName();
+			case ECopyTextureMode::LightProbeDepth:
+				program = FIND_SHADER_PROGRAM(Program_CopyTexture_LightProbeDepth).getGLName();
 				break;
 			default:
 				CHECK_NO_ENTRY();

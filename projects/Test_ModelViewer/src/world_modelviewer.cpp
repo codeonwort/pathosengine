@@ -105,6 +105,11 @@ void World_ModelViewer::onInitialize() {
 		auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DWhite());
 		dummyBox = spawnActor<StaticMeshActor>();
 		dummyBox->setStaticMesh(new Mesh(G, M));
+
+		auto dummyBox2 = spawnActor<StaticMeshActor>();
+		dummyBox2->setStaticMesh(new Mesh(G, M));
+		dummyBox2->setActorScale(0.8f);
+		dummyBox2->getStaticMesh()->renderInternal = true;
 	}
 
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
@@ -269,7 +274,9 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		dummyBox = nullptr;
 	}
 
-	AABB worldBounds = getActorWorldBounds(modelActor);
+	AABB originalWorldBounds = getActorWorldBounds(modelActor);
+
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.1f);
 
 	// Calculate proper grid size for irradiance volume.
 	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
@@ -288,7 +295,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, probeGrid);
 
-	worldBounds = AABB::fromCenterAndHalfSize(worldBounds.getCenter(), worldBounds.getHalfSize() * 1.5f);
+	worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.5f);
 	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
 	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
 	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));

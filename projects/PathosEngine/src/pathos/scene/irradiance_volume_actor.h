@@ -22,6 +22,7 @@ namespace pathos {
 		vector3 maxBounds;
 		uint32 numProbes;
 		vector3ui gridSize;
+		float captureRadius;
 	};
 }
 
