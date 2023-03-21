@@ -309,7 +309,9 @@ namespace pathos {
 
 		renderThread->terminateCondVar.notify_all();
 
-		SAFE_RELEASE(renderThread->renderDevice);
+		gRenderDevice->reportLiveObjects();
+		SAFE_RELEASE(gRenderDevice);
+		renderThread->renderDevice = nullptr;
 
 		//delete renderThread;
 

@@ -62,6 +62,7 @@ namespace pathos {
 		bool initialize();
 
 		void memreport(int64& outTotalBufferMemory, int64& outTotalTextureMemory);
+		void reportLiveObjects();
 
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
 		const OpenGLDriverCapabilities& getCapabilities() const { return capabilities; }
@@ -96,7 +97,7 @@ namespace pathos {
 		void deleteSamplers(GLsizei n, const GLuint* samplers);
 		void deleteQueries(GLsizei n, const GLuint* ids);
 		void deleteBuffers(GLsizei n, const GLuint* buffers);
-		void deleteProgram(GLuint program);
+		void deleteProgramPipelines(GLsizei n, GLuint* pipelines);
 
 		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
@@ -112,8 +113,15 @@ namespace pathos {
 		uniquePtr<RenderCommandList> hook_command_list;
 
 		// Track alive GPU resources
-		std::set<GLuint> aliveGLBuffers;
+		std::set<GLuint> aliveGLVertexArrays;
 		std::set<GLuint> aliveGLTextures;
+		std::set<GLuint> aliveGLFramebuffers;
+		std::set<GLuint> aliveGLSamplers;
+		std::set<GLuint> aliveGLQueries;
+		std::set<GLuint> aliveGLTransformFeedbacks;
+		std::set<GLuint> aliveGLBuffers;
+		std::set<GLuint> aliveGLRenderBuffers;
+		std::set<GLuint> aliveGLProgramPipelines;
 	};
 
 	extern OpenGLDevice* gRenderDevice;

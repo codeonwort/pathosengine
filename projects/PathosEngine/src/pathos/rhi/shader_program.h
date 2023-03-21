@@ -15,6 +15,7 @@ namespace pathos {
 
 	// Needed to traverse shader programs for runtime reload.
 	class ShaderDB final {
+		friend class OpenGLDevice;
 	
 	public:
 		static ShaderDB& get() {

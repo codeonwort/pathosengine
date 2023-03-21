@@ -2,6 +2,7 @@
 #include "pathos/console.h"
 #include "pathos/util/log.h"
 #include "pathos/rhi/gl_context_manager.h"
+#include "pathos/rhi/shader_program.h"
 
 #include <mutex>
 
@@ -141,16 +142,14 @@ namespace pathos {
 		}
 	}
 
-	OpenGLDevice::OpenGLDevice()
-	{
+	OpenGLDevice::OpenGLDevice() {
 		CHECKF(gRenderDevice == nullptr, "Render device already exists");
 		gRenderDevice = this;
 
 		::memset(&extensionSupport, 0, sizeof(extensionSupport));
 	}
 
-	OpenGLDevice::~OpenGLDevice()
-	{
+	OpenGLDevice::~OpenGLDevice() {
 	}
 
 	bool OpenGLDevice::initialize()
@@ -231,6 +230,34 @@ namespace pathos {
 				outTotalTextureMemory += mipSize;
 			}
 		}
+	}
+
+	// Cannot track GL objects that were created by direct GL calls.
+	void OpenGLDevice::reportLiveObjects() {
+		LOG(LogDebug, "=== Report Live Objects ===");
+		LOG(LogDebug, "Vertex Array       : %u", aliveGLVertexArrays.size());
+		LOG(LogDebug, "Texture            : %u", aliveGLTextures.size());
+		LOG(LogDebug, "Framebuffer        : %u", aliveGLFramebuffers.size());
+		LOG(LogDebug, "Sampler            : %u", aliveGLSamplers.size());
+		LOG(LogDebug, "Query              : %u", aliveGLQueries.size());
+		LOG(LogDebug, "Transform Feedback : %u", aliveGLTransformFeedbacks.size());
+		LOG(LogDebug, "Buffer             : %u", aliveGLBuffers.size());
+		LOG(LogDebug, "Renderbuffer       : %u", aliveGLRenderBuffers.size());
+		LOG(LogDebug, "Program Pipeline   : %u", aliveGLProgramPipelines.size());
+		LOG(LogDebug, "Program            : %u", ShaderDB::get().programMap.size());
+		
+		size_t totalAlive = 0;
+		totalAlive += aliveGLVertexArrays.size();
+		totalAlive += aliveGLTextures.size();
+		totalAlive += aliveGLFramebuffers.size();
+		totalAlive += aliveGLSamplers.size();
+		totalAlive += aliveGLQueries.size();
+		totalAlive += aliveGLTransformFeedbacks.size();
+		totalAlive += aliveGLBuffers.size();
+		totalAlive += aliveGLRenderBuffers.size();
+		totalAlive += aliveGLProgramPipelines.size();
+		totalAlive += ShaderDB::get().programMap.size();
+		LOG(LogDebug, "> Total %u GL objects are leaking", totalAlive);
 	}
 
 	void OpenGLDevice::queryCapabilities() {
@@ -320,115 +347,125 @@ namespace pathos {
 // 
 namespace pathos {
 
+	// CREATE -----------------------------------------------------------------
+
 	void OpenGLDevice::genTextures(GLsizei n, GLuint* textures) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glGenTextures(n, textures);
-		for (GLsizei i = 0; i < n; ++i) {
-			aliveGLTextures.insert(textures[i]);
-		}
+		for (GLsizei i = 0; i < n; ++i) aliveGLTextures.insert(textures[i]);
 	}
 
 	void OpenGLDevice::genQueries(GLsizei n, GLuint* queries) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glGenQueries(n, queries);
+		for (GLsizei i = 0; i < n; ++i) aliveGLQueries.insert(queries[i]);
 	}
 
 	void OpenGLDevice::createTextures(GLenum target, GLsizei n, GLuint* textures) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateTextures(target, n, textures);
-		for (GLsizei i = 0; i < n; ++i) {
-			aliveGLTextures.insert(textures[i]);
-		}
+		for (GLsizei i = 0; i < n; ++i) aliveGLTextures.insert(textures[i]);
 	}
 
 	void OpenGLDevice::createFramebuffers(GLsizei n, GLuint* framebuffers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateFramebuffers(n, framebuffers);
+		for (GLsizei i = 0; i < n; ++i) aliveGLFramebuffers.insert(framebuffers[i]);
 	}
 
 	void OpenGLDevice::createVertexArrays(GLsizei n, GLuint* arrays) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateVertexArrays(n, arrays);
+		for (GLsizei i = 0; i < n; ++i) aliveGLVertexArrays.insert(arrays[i]);
 	}
 
 	void OpenGLDevice::createSamplers(GLsizei n, GLuint* samplers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateSamplers(n, samplers);
+		for (GLsizei i = 0; i < n; ++i) aliveGLSamplers.insert(samplers[i]);
 	}
 
 	void OpenGLDevice::createQueries(GLenum target, GLsizei n, GLuint* ids) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateQueries(target, n, ids);
+		for (GLsizei i = 0; i < n; ++i) aliveGLQueries.insert(ids[i]);
 	}
 
 	void OpenGLDevice::createTransformFeedbacks(GLsizei n, GLuint* ids) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateTransformFeedbacks(n, ids);
+		for (GLsizei i = 0; i < n; ++i) aliveGLTransformFeedbacks.insert(ids[i]);
 	}
 
 	void OpenGLDevice::createBuffers(GLsizei n, GLuint* buffers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateBuffers(n, buffers);
-		for (GLsizei i = 0; i < n; ++i) {
-			aliveGLBuffers.insert(buffers[i]);
-		}
+		for (GLsizei i = 0; i < n; ++i) aliveGLBuffers.insert(buffers[i]);
 	}
 
 	void OpenGLDevice::createRenderbuffers(GLsizei n, GLuint* renderbuffers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateRenderbuffers(n, renderbuffers);
+		for (GLsizei i = 0; i < n; ++i) aliveGLRenderBuffers.insert(renderbuffers[i]);
 	}
 
 	void OpenGLDevice::createProgramPipelines(GLsizei n, GLuint* pipelines) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glCreateProgramPipelines(n, pipelines);
+		for (GLsizei i = 0; i < n; ++i) aliveGLProgramPipelines.insert(pipelines[i]);
 	}
+
+	// DELETE -----------------------------------------------------------------
 
 	void OpenGLDevice::deleteQueries(GLsizei n, const GLuint* ids) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteQueries(n, ids);
+		for (GLsizei i = 0; i < n; ++i) aliveGLQueries.erase(ids[i]);
 	}
 
 	void OpenGLDevice::deleteBuffers(GLsizei n, const GLuint* buffers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteBuffers(n, buffers);
-		for (GLsizei i = 0; i < n; ++i) {
-			aliveGLBuffers.erase(buffers[i]);
-		}
+		for (GLsizei i = 0; i < n; ++i) aliveGLBuffers.erase(buffers[i]);
 	}
 
-	void OpenGLDevice::deleteProgram(GLuint program) {
+	void OpenGLDevice::deleteProgramPipelines(GLsizei n, GLuint* pipelines)
+	{
 		CHECK_GL_CONTEXT_TAKEN();
-		glDeleteProgram(program);
-	}
-
-	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {
-		CHECK_GL_CONTEXT_TAKEN();
-		CHECKF(::strlen(label) <= capabilities.glObjectLabelMaxLength, "objectLabel is too long");
-		glObjectLabel(identifier, name, length, label);
+		glDeleteProgramPipelines(n, pipelines);
+		for (GLsizei i = 0; i < n; ++i) aliveGLProgramPipelines.erase(pipelines[i]);
 	}
 
 	void OpenGLDevice::deleteFramebuffers(GLsizei n, const GLuint* framebuffers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteFramebuffers(n, framebuffers);
+		for (GLsizei i = 0; i < n; ++i) aliveGLFramebuffers.erase(framebuffers[i]);
 	}
 
 	void OpenGLDevice::deleteSamplers(GLsizei n, const GLuint* samplers) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteSamplers(n, samplers);
+		for (GLsizei i = 0; i < n; ++i) aliveGLSamplers.erase(samplers[i]);
 	}
 
 	void OpenGLDevice::deleteVertexArrays(GLsizei n, const GLuint* arrays) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteVertexArrays(n, arrays);
+		for (GLsizei i = 0; i < n; ++i) aliveGLVertexArrays.erase(arrays[i]);
 	}
 
 	void OpenGLDevice::deleteTextures(GLsizei n, const GLuint* textures) {
 		CHECK_GL_CONTEXT_TAKEN();
 		glDeleteTextures(n, textures);
-		for (GLsizei i = 0; i < n; ++i) {
-			aliveGLTextures.erase(textures[i]);
-		}
+		for (GLsizei i = 0; i < n; ++i) aliveGLTextures.erase(textures[i]);
+	}
+
+	// MISC -----------------------------------------------------------------
+
+	void OpenGLDevice::objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label) {
+		CHECK_GL_CONTEXT_TAKEN();
+		CHECKF(::strlen(label) <= capabilities.glObjectLabelMaxLength, "objectLabel is too long");
+		glObjectLabel(identifier, name, length, label);
 	}
 
 }
