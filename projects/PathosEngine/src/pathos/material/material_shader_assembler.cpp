@@ -151,7 +151,7 @@ namespace pathos {
 		std::string shaderDir = ResourceFinder::get().find(MATERIAL_FOLDER);
 		shaderDir = pathos::getAbsolutePath(shaderDir.c_str());
 		std::vector<std::string> files;
-		pathos::enumerateFiles(shaderDir.c_str(), files);
+		pathos::enumerateFiles(shaderDir.c_str(), false, files);
 		for (const std::string& filename : files) {
 			if (filename == MATERIAL_TEMPLATE_FILENAME) {
 				continue;

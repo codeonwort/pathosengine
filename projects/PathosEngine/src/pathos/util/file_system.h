@@ -8,7 +8,7 @@ namespace pathos {
 	// --------------------------------------------------------
 	// Generic filesystem functions
 
-	// Returns absolute path.
+	// @return Absolute path. Empty string if invalid path.
 	std::string getAbsolutePath(const char* targetDir);
 
 	// @return Parent directory path of the file. Empty string if invalid.
@@ -17,11 +17,12 @@ namespace pathos {
 	// Create the directory if not exist.
 	void createDirectory(const char* targetDir);
 
+	// @return true if exist, false otherwise.
 	bool pathExists(const char* path);
 
 	// Find files in the given directory.
-	// Returns false if the directory does not exist.
-	bool enumerateFiles(const char* targetDir, std::vector<std::string>& outFilepaths);
+	// @return false if the directory does not exist.
+	bool enumerateFiles(const char* targetDir, bool recursive, std::vector<std::string>& outFilepaths);
 
 	// --------------------------------------------------------
 	// Project-specific utils

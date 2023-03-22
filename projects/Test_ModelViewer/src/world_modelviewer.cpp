@@ -106,10 +106,10 @@ void World_ModelViewer::onInitialize() {
 		dummyBox = spawnActor<StaticMeshActor>();
 		dummyBox->setStaticMesh(new Mesh(G, M));
 
-		auto dummyBox2 = spawnActor<StaticMeshActor>();
-		dummyBox2->setStaticMesh(new Mesh(G, M));
-		dummyBox2->setActorScale(0.8f);
-		dummyBox2->getStaticMesh()->renderInternal = true;
+		//auto dummyBox2 = spawnActor<StaticMeshActor>();
+		//dummyBox2->setStaticMesh(new Mesh(G, M));
+		//dummyBox2->setActorScale(0.8f);
+		//dummyBox2->getStaticMesh()->renderInternal = true;
 	}
 
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();

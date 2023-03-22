@@ -4,86 +4,55 @@
 #include "badger/system/platform.h"
 #include "badger/assertion/assertion.h"
 
+#include <filesystem>
+
+// For getExecPath()
 #if PLATFORM_WINDOWS
-// #todo-cpp17: cross-platform way (std::filesystem in C++17)
 #include <Windows.h>
-#include <Shlwapi.h>
 #endif
 
 namespace pathos {
 
-	std::string getAbsolutePath(const char* targetDir)
-	{
-#if PLATFORM_WINDOWS
-		char buffer[1024];
-		if (::GetFullPathNameA(targetDir, 1024, buffer, NULL) != 0) {
-			return std::string(buffer);
-		} else {
-			return "";
+	std::string getAbsolutePath(const char* targetDir) {
+		if (std::filesystem::exists(targetDir)) {
+			return std::filesystem::absolute(targetDir).string();
 		}
-#else
-		#error "Not implemented"
-#endif
+		return "";
 	}
 
 	std::string getDirectoryPath(const char* filePath) {
-		std::string temp(filePath);
-		size_t ix = temp.rfind('/');
-		if (ix == std::string::npos) {
-			ix = temp.rfind('\\');
-		}
-		if (ix == std::string::npos) {
-			return "";
-		}
-		return temp.substr(0, ix + 1);
+		std::filesystem::path stdPath = filePath;
+		stdPath.remove_filename();
+		return stdPath.string();
 	}
 
-	void createDirectory(const char* targetDir)
-	{
-#if PLATFORM_WINDOWS
-		::CreateDirectoryA(targetDir, NULL);
-#else
-		#error "Not implemented"
-#endif
+	void createDirectory(const char* targetDir) {
+		std::filesystem::create_directories(targetDir);
 	}
 
 	bool pathExists(const char* path) {
-#if PLATFORM_WINDOWS
-		return (TRUE == ::PathFileExistsA(path));
-#else
-		#error "Not implemented"
-#endif
+		return std::filesystem::exists(path);
 	}
 
-	bool enumerateFiles(const char* targetDir, std::vector<std::string>& outFilepaths) {
-		if (pathExists(targetDir) == false) {
+	static void enumerateFilesSub(std::filesystem::path dir, bool recursive, std::vector<std::string>& outFilepaths) {
+		for (const auto& dir_entry : std::filesystem::directory_iterator(dir)) {
+			if (recursive && dir_entry.is_directory()) {
+				enumerateFilesSub(dir_entry.path(), recursive, outFilepaths);
+			} else {
+				outFilepaths.push_back(dir_entry.path().filename().string());
+			}
+		}
+	}
+	bool enumerateFiles(const char* targetDir, bool recursive, std::vector<std::string>& outFilepaths) {
+		if (std::filesystem::is_directory(targetDir) == false) {
 			return false;
 		}
-
 		outFilepaths.clear();
-
-#if PLATFORM_WINDOWS
-		WIN32_FIND_DATAA findData;
-		HANDLE hFind;
-		char targetDirEx[1024];
-		sprintf_s(targetDirEx, "%s\\*", targetDir);
-		hFind = ::FindFirstFileA(targetDirEx, &findData);
-		do {
-			if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-				// #todo-filesystem: Support recursive enumeration?
-			} else {
-				outFilepaths.push_back(findData.cFileName);
-			}
-		} while (::FindNextFileA(hFind, &findData) != FALSE);
-		::FindClose(hFind);
-#else
-		#error "Not implemented"
-#endif
+		enumerateFilesSub(targetDir, recursive, outFilepaths);
 		return true;
 	}
 
-	void getExecPath(std::wstring& outPath)
-	{
+	void getExecPath(std::wstring& outPath) {
 #if PLATFORM_WINDOWS
 		wchar_t buffer[1024];
 		DWORD length = ::GetModuleFileName(NULL, buffer, sizeof(buffer));
@@ -93,22 +62,20 @@ namespace pathos {
 #endif
 	}
 
-	void getExecDir(std::wstring& outDir)
-	{
+	void getExecDir(std::wstring& outDir) {
 		std::wstring path;
 		getExecPath(path);
 		size_t ix = path.find_last_of(L'\\');
 		outDir = path.substr(0, ix + 1);
 	}
 
-	std::string getSolutionDir()
-	{
+	std::string getSolutionDir() {
 		std::string solutionPath = ResourceFinder::get().find("PathosEngine.sln");
 		std::string solutionDir;
 		if (solutionPath.size() > 0) {
 			solutionDir = solutionPath.substr(0, solutionPath.size() - std::string("PathosEngine.sln").size());
 		}
-		CHECKF(solutionDir.size() != 0, "Maybe the solution name has been changed?");
+		CHECKF(solutionDir.size() != 0, "Couldn't find PathosEngine.sln");
 		solutionDir = getAbsolutePath(solutionDir.c_str());
 		return solutionDir;
 	}
