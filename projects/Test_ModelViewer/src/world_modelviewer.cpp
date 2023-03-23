@@ -18,6 +18,8 @@
 #include "pathos/util/log.h"
 
 #include "badger/system/platform.h"
+#include "badger/math/constants.h"
+#include "badger/math/minmax.h"
 
 #if PLATFORM_WINDOWS
 // https://learn.microsoft.com/en-us/windows/win32/learnwin32/example--the-open-dialog-box
@@ -147,8 +149,37 @@ void World_ModelViewer::onInitialize() {
 			}
 		};
 
-		gEngine->getOverlayRoot()->addChild(btn_load);
-		gEngine->getOverlayRoot()->addChild(label_notice);
+		board_sunControl = new pathos::Rectangle(100.0f, 100.0f);
+		board_sunControl->setX(10.0f);
+		board_sunControl->setY(60.0f);
+		board_sunControl->setBrush(new SolidColorBrush(0.2f, 0.2f, 0.2f));
+
+		auto gizmo_sunControl = new pathos::Rectangle(8.0f, 8.0f);
+		gizmo_sunControl->setX(board_sunControl->getWidth() / 2.0f);
+		gizmo_sunControl->setY(board_sunControl->getHeight() / 2.0f);
+		gizmo_sunControl->setBrush(new SolidColorBrush(0.8f, 0.8f, 0.8f));
+		gizmo_sunControl->bReceivesMouseInput = false;
+		board_sunControl->addChild(gizmo_sunControl);
+
+		board_sunControl->onMouseDrag = [this, gizmo_sunControl](int32 mouseX, int32 mouseY) {
+			float u = ((float)mouseX - board_sunControl->getX()) / board_sunControl->getWidth();
+			float v = ((float)mouseY - board_sunControl->getY()) / board_sunControl->getHeight();
+			u = badger::clamp(0.0f, u, 1.0f);
+			v = badger::clamp(0.0f, v, 1.0f);
+			u = 2.0f * badger::f_PI * u;
+			v = badger::f_PI_2 * (1.0f - v);
+			sunDirection.x = std::cos(u) * std::cos(v);
+			sunDirection.z = std::sin(u) * std::cos(v);
+			sunDirection.y = -std::sin(v);
+			sun->setDirection(sunDirection);
+			gizmo_sunControl->setX(mouseX - board_sunControl->getX() - (gizmo_sunControl->getWidth() / 2.0f));
+			gizmo_sunControl->setY(mouseY - board_sunControl->getY() - (gizmo_sunControl->getHeight() / 2.0f));
+		};
+
+		auto root = gEngine->getOverlayRoot();
+		root->addChild(btn_load);
+		root->addChild(label_notice);
+		root->addChild(board_sunControl);
 	}
 }
 

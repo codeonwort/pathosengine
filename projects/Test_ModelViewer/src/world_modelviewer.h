@@ -50,5 +50,6 @@ private:
 	// GUI
 	pathos::Rectangle* btn_load = nullptr;
 	pathos::Label* label_notice = nullptr;
+	pathos::Rectangle* board_sunControl = nullptr;
 
 };
