@@ -187,8 +187,7 @@ namespace pathos {
 		return true;
 	}
 
-	bool Engine::initializeMainWindow(int argc, char** argv)
-	{
+	bool Engine::initializeMainWindow(int argc, char** argv) {
 		GUIWindowCreateParams createParams;
 		createParams.argc              = argc;
 		createParams.argv              = argv;
@@ -212,6 +211,7 @@ namespace pathos {
 		createParams.onReshape         = Engine::onMainWindowReshape;
 		createParams.onMouseDown       = Engine::onMouseDown;
 		createParams.onMouseUp         = Engine::onMouseUp;
+		createParams.onMouseDrag       = Engine::onMouseDrag;
 
 		mainWindow = makeUnique<GUIWindow>();
 		mainWindow->create(createParams);
@@ -670,6 +670,10 @@ namespace pathos {
 
 	void Engine::onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY) {
 		gEngine->inputSystem->processButtonUp(mouseInput);
+	}
+
+	void Engine::onMouseDrag(int32 mouseX, int32 mouseY) {
+		gEngine->getOverlayRoot()->handleMouseDrag(mouseX, mouseY);
 	}
 
 }

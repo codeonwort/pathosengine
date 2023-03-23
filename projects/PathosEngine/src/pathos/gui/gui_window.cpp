@@ -80,6 +80,11 @@ namespace pathos {
 		window->onMouseFunc(button, state, x, y);
 	}
 
+	static void onGlutMotionFunc(int x, int y) {
+		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
+		window->onMouseDrag(x, y);
+	}
+
 	static void onGlutReshape(int width, int height) {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
 		window->onReshape((int32)width, (int32)height);
@@ -130,6 +135,7 @@ namespace pathos {
 		callback_onReshape         = createParams.onReshape;
 		callback_onMouseDown       = createParams.onMouseDown;
 		callback_onMouseUp         = createParams.onMouseUp;
+		callback_onMouseDrag       = createParams.onMouseDrag;
 
 		CHECKF(windowWidth > 0 && windowHeight > 0, "Invalid window size");
 		CHECKF(title.size() > 0, "Invalid window title");
@@ -173,6 +179,7 @@ namespace pathos {
 		glutSpecialFunc(onGlutSpecialKeyDown);
 		glutSpecialUpFunc(onGlutSpecialKeyUp);
 		glutMouseFunc(onGlutMouseFunc);
+		glutMotionFunc(onGlutMotionFunc);
 
 		GUIWindow::handleToWindow[nativeHandle] = this;
 
@@ -333,6 +340,10 @@ namespace pathos {
 		} else {
 			CHECKF(0, "Unexpected mouse button state");
 		}
+	}
+
+	void GUIWindow::onMouseDrag(int x, int y) {
+		callback_onMouseDrag(x, y);
 	}
 
 }

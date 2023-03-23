@@ -146,7 +146,9 @@ namespace pathos {
 
 		void readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines);
 
-		// GUI event listeners //
+		// GUI event listeners
+		// - GLUT callbacks -> GUIWindow callbacks -> engine callbacks (here).
+		// - These callbacks are grouped by GUIWindowCreateParams and passed to GUIWindow.
 		static void onCloseWindow();
 		static void onIdle();
 		static void onMainWindowDisplay();
@@ -157,6 +159,7 @@ namespace pathos {
 		static void onSpecialKeyUp(InputConstants specialKey);
 		static void onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY);
 		static void onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY);
+		static void onMouseDrag(int32 mouseX, int32 mouseY);
 
 	private:
 		void tick();

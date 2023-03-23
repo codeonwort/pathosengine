@@ -14,6 +14,7 @@ namespace pathos {
 
 	namespace overlayInput {
 		using OnMouseClick = std::function<void(int32 mouseX, int32 mouseY)>;
+		using OnMouseDrag = std::function<void(int32 mouseX, int32 mouseY)>;
 	}
 
 	// Base class for 2D objects.
@@ -62,6 +63,7 @@ namespace pathos {
 	// User input
 	public:
 		void handleMouseLeftClick(int32 mouseX, int32 mouseY);
+		void handleMouseDrag(int32 mouseX, int32 mouseY);
 
 		bool mouseHitTest(int32 mouseX, int32 mouseY) const {
 			if (bVisible == false || bReceivesMouseInput == false) return false;
@@ -70,7 +72,9 @@ namespace pathos {
 
 		virtual bool onMouseHitTest(int32 mouseX, int32 mouseY) const { return false; }
 
-		overlayInput::OnMouseClick onMouseClick = nullptr; // callback
+		// Application-provided callbacks
+		overlayInput::OnMouseClick onMouseClick = nullptr;
+		overlayInput::OnMouseDrag onMouseDrag = nullptr;
 
 	public:
 		bool bVisible = true;

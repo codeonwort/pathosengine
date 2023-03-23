@@ -101,6 +101,21 @@ namespace pathos {
 		}
 	}
 
+	void DisplayObject2D::handleMouseDrag(int32 mouseX, int32 mouseY) {
+		bool bHandled = false;
+		if (mouseHitTest(mouseX, mouseY)) {
+			if (onMouseDrag != nullptr) {
+				onMouseDrag(mouseX, mouseY);
+				bHandled = true;
+			}
+		}
+		if (!bHandled || !bStopInputPropagation) {
+			for (DisplayObject2D* child : children) {
+				child->handleMouseDrag(mouseX, mouseY);
+			}
+		}
+	}
+
 	void DisplayObject2D::setRoot(DisplayObject2D* newRoot) {
 		if (root == newRoot) {
 			return;

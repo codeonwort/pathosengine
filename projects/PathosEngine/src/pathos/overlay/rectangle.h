@@ -18,6 +18,11 @@ namespace pathos {
 
 		void setSize(float inWidth, float inHeight);
 
+		inline float getWidth() const { return width * scaleX; }
+		inline float getHeight() const { return height * scaleY; }
+		inline float getUnscaledWidth() const { return width; }
+		inline float getUnscaledHeight() const { return height; }
+
 		virtual MeshGeometry* getGeometry() override { return geom; }
 
 	protected:

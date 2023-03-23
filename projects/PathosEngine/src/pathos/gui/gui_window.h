@@ -37,6 +37,7 @@ namespace pathos {
 		std::function<void(InputConstants)> onSpecialKeyUp;
 		std::function<void(InputConstants, int32 mouseX, int32 mouseY)> onMouseDown;
 		std::function<void(InputConstants, int32 mouseX, int32 mouseY)> onMouseUp;
+		std::function<void(int32 mouseX, int32 mouseY)> onMouseDrag;
 	};
 
 	class GUIWindow {
@@ -64,6 +65,7 @@ namespace pathos {
 		void checkSpecialKeyDown(int specialKey);    // modifiers(ctrl/shift/alt), arrows
 		void checkSpecialKeyUp(int specialKey);      // modifiers(ctrl/shift/alt), arrows
 		void onMouseFunc(int button, int state, int x, int y);
+		void onMouseDrag(int x, int y);
 
 		void setTitle(const char* newTitle);
 		void setTitle(std::string&& newTitle);
@@ -91,6 +93,7 @@ namespace pathos {
 		std::function<void(InputConstants modifier)> callback_onSpecialKeyUp;
 		std::function<void(InputConstants mouseInput, int32 mouseX, int32 mouseY)> callback_onMouseDown;
 		std::function<void(InputConstants mouseInput, int32 mouseX, int32 mouseY)> callback_onMouseUp;
+		std::function<void(int32 mouseX, int32 mouseY)> callback_onMouseDrag;
 
 	};
 
