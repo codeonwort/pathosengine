@@ -848,5 +848,8 @@
     <ClInclude Include="src\pathos\util\os_util.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\badger\math\constants.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
