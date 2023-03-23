@@ -33,8 +33,8 @@ namespace pathos {
 	}
 
 	bool Rectangle::onMouseHitTest(int32 mouseX, int32 mouseY) const {
-		float xMax = width * scaleX;
-		float yMax = height * scaleY;
+		float xMax = x + width * scaleX;
+		float yMax = y + height * scaleY;
 		return x <= (float)mouseX && (float)mouseX <= xMax
 			&& y <= (float)mouseY && (float)mouseY <= yMax;
 	}
