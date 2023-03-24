@@ -14,7 +14,7 @@ class LightningParticleComponent : public StaticMeshComponent {
 public:
 	LightningParticleComponent();
 
-	void setParameters(GLuint maskTexture, GLuint warpTexture);
+	void setParameters(GLuint maskTexture, GLuint warpTexture, float rc1Scale);
 	void generateParticle(const vector3& p0, const vector3& p1);
 
 private:
@@ -28,7 +28,7 @@ public:
 	LightningActor();
 
 	std::vector<LightningParticleComponent*>& getParticleComponents() { return particleComponents; }
-	void generateParticle(const vector3& p0, const vector3& p1);
+	void generateParticle(const vector3& p0, const vector3& p1, float rc1Scale);
 
 	virtual void onSpawn() override;
 	virtual void onDestroy() override;

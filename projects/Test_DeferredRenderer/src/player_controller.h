@@ -10,6 +10,8 @@ public:
 	virtual void onSpawn() override;
 	virtual void onTick(float deltaSeconds) override;
 
+	float speedScale = 1.0f;
+
 	// movement (meters/sec)
 	float speedRight   = 2.0f;
 	float speedForward = 2.0f;

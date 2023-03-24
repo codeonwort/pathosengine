@@ -34,13 +34,13 @@ LightningActor::LightningActor()
 	setAsRootComponent(sphereComponent);
 }
 
-void LightningActor::generateParticle(const vector3& p0, const vector3& p1)
+void LightningActor::generateParticle(const vector3& p0, const vector3& p1, float rc1Scale)
 {
 	LightningParticleComponent* component = new LightningParticleComponent;
 	registerComponent(component);
 
 	particleComponents.push_back(component);
-	component->setParameters(maskTexture, warpTexture);
+	component->setParameters(maskTexture, warpTexture, rc1Scale);
 	component->generateParticle(p0, p1);
 }
 
@@ -73,10 +73,11 @@ LightningParticleComponent::LightningParticleComponent()
 	getStaticMesh()->doubleSided = true;
 }
 
-void LightningParticleComponent::setParameters(GLuint maskTexture, GLuint warpTexture)
+void LightningParticleComponent::setParameters(GLuint maskTexture, GLuint warpTexture, float rc1Scale)
 {
 	M->setTextureParameter("maskTexture", maskTexture);
 	M->setTextureParameter("warpTexture", warpTexture);
+	M->setConstantParameter("billboardWidth", rc1Scale * LIGHTNING_PARTICLE_THICKNESS);
 }
 
 void LightningParticleComponent::generateParticle(const vector3& startPosition, const vector3& endPosition)

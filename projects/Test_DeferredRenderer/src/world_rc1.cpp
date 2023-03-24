@@ -52,8 +52,13 @@
 #define STARFIELD_HEIGHT         2048
 #define STARFIELD_CUBEMAP_SIZE   512
 
-static const vector3             CAMERA_POSITION = vector3(0.2f, 0.25f, 2.0f);
-static const vector3             CAMERA_LOOK_AT  = vector3(0.2f, 0.25f, 1.9f);
+// #todo-cloud: I downscaled everything to 1/100 in https://github.com/codeonwort/pathosengine/pull/41,
+// but volumetric clouds' min march step is tens of meters, so can't deal with 1 meter-sized occluders.
+// Temporarily revert the scale of only world_rc1.
+#define RC1_SCALE                100.0f
+
+static const vector3             CAMERA_POSITION = RC1_SCALE * vector3(0.2f, 0.25f, 2.0f);
+static const vector3             CAMERA_LOOK_AT  = RC1_SCALE * vector3(0.2f, 0.25f, 1.9f);
 static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
 static const vector3             SUN_ILLUMINANCE = 1.0f * vector3(1.0f, 1.0f, 1.0f);
 static constexpr float           Y_OFFSET        = 5000.0f; // Offset every actor to match with cloud layer
@@ -71,8 +76,8 @@ void World_RC1::onInitialize()
 	gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRefGuardTower, this, &World_RC1::onLoadOBJ, 0);
 	
 	spaceship1 = spawnActor<SpaceshipActor>();
-	spaceship1->setActorScale(0.3f);
-	spaceship1->setActorLocation(vector3(-3.47f, Y_OFFSET - 10.98f, 16.48f));
+	spaceship1->setActorScale(RC1_SCALE * 0.3f);
+	spaceship1->setActorLocation(RC1_SCALE * vector3(-3.47f, (Y_OFFSET / RC1_SCALE)- 10.98f, 16.48f));
 	spaceship1->setActorRotation(Rotator(92.91f, 41.14f, 0.0f));
 	{
 		SplineLoader loader;
@@ -82,8 +87,8 @@ void World_RC1::onInitialize()
 		spaceship1->setSpline(std::move(spline1));
 	}
 	spaceship2 = spawnActor<SpaceshipActor>();
-	spaceship2->setActorScale(0.3f);
-	spaceship2->setActorLocation(vector3(12.57f, Y_OFFSET - 10.98f, 3.48f));
+	spaceship2->setActorScale(RC1_SCALE * 0.3f);
+	spaceship2->setActorLocation(RC1_SCALE * vector3(12.57f, (Y_OFFSET / RC1_SCALE) - 10.98f, 3.48f));
 	spaceship2->setActorRotation(Rotator(112.91f, -21.14f, 0.0f));
 	{
 		SplineLoader loader;
@@ -96,11 +101,12 @@ void World_RC1::onInitialize()
 	// --------------------------------------------------------
 	// Spawn actors
 	playerController = spawnActor<PlayerController>();
+	playerController->speedScale = RC1_SCALE;
 	setupSky();
 	setupScene();
 
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
-	getCamera().moveToPosition(0.0f, Y_OFFSET - 1.0f, 40.0f);
+	getCamera().moveToPosition(RC1_SCALE * vector3(0.0f, (Y_OFFSET / RC1_SCALE) - 1.0f, 40.0f));
 
 	// --------------------------------------------------------
 	// Setup input
@@ -165,7 +171,10 @@ void World_RC1::onTick(float deltaSeconds)
 		//vector3 splineLocation = spline.locationAtTime(sampleTime);
 		//vector3 splineTangent  = glm::normalize(spline.tangentAtTime(sampleTime));
 
-		ModelTransform transform(vector3(-3.47f, Y_OFFSET - 10.98f, 16.48f), Rotator(), vector3(10.0f));
+		ModelTransform transform(
+			RC1_SCALE * vector3(-3.47f, (Y_OFFSET / RC1_SCALE) - 10.98f, 16.48f),
+			Rotator(),
+			RC1_SCALE * vector3(10.0f));
 		splineLocation = vector3(transform.getMatrix() * vector4(splineLocation, 1.0f));
 
 		spaceship1->setActorLocation(splineLocation);
@@ -193,7 +202,10 @@ void World_RC1::onTick(float deltaSeconds)
 		//vector3 splineLocation = spline.locationAtTime(sampleTime);
 		//vector3 splineTangent  = glm::normalize(spline.tangentAtTime(sampleTime));
 
-		ModelTransform transform(vector3(-23.47f, Y_OFFSET - 10.98f, 16.48f), Rotator(), vector3(10.0f));
+		ModelTransform transform(
+			RC1_SCALE * vector3(-23.47f, (Y_OFFSET / RC1_SCALE) - 10.98f, 16.48f),
+			Rotator(),
+			RC1_SCALE * vector3(10.0f));
 		splineLocation = vector3(transform.getMatrix() * vector4(splineLocation, 1.0f));
 
 		spaceship2->setActorLocation(splineLocation);
@@ -259,9 +271,9 @@ void World_RC1::setupScene()
 
 	PointLightActor* pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-	pointLight->setIntensity(1000.0f * vector3(1.0f, 1.0f, 1.0f));
-	pointLight->setAttenuationRadius(50.0f);
-	pointLight->setSourceRadius(0.4f);
+	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight->setAttenuationRadius(RC1_SCALE * 50.0f);
+	pointLight->setSourceRadius(RC1_SCALE * 0.4f);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Materials
@@ -286,14 +298,15 @@ void World_RC1::setupScene()
 	// Objects
 
 	lightningSphere = spawnActor<LightningActor>();
-	lightningSphere->setActorScale(0.4f);
+	lightningSphere->setActorScale(RC1_SCALE * 0.4f);
 	lightningSphere->setActorLocation(pointLight->getActorLocation());
 
-	constexpr uint32 numRings = 6;
-	const float ring_gap = 0.4f;
-	const float ring_width = 1.0f;
-	const float ring_thickness = 0.5f;
-	float innerRadius = 1.5f;
+	constexpr uint32 numRings  = 6;
+	const float ring_gap       = RC1_SCALE * 0.4f;
+	const float ring_width     = RC1_SCALE * 1.0f;
+	const float ring_thickness = RC1_SCALE * 0.5f;
+
+	float innerRadius = RC1_SCALE * 1.5f;
 	float outerRadius = innerRadius + ring_width;
 	std::vector<std::vector<float>> ringSegRanges = {
 		{0.0f, 280.0f},
@@ -305,9 +318,9 @@ void World_RC1::setupScene()
 	};
 	for (uint32 i = 0; i < numRings; ++i) {
 		auto ring = spawnActor<RingActor>();
-		ring->buildRing(innerRadius, outerRadius, ring_thickness + (i * 0.2f), ringSegRanges[i]);
+		ring->buildRing(innerRadius, outerRadius, ring_thickness + (i * RC1_SCALE * 0.2f), ringSegRanges[i]);
 		innerRadius = outerRadius + ring_gap;
-		outerRadius = innerRadius + (ring_width + i * 0.55f);
+		outerRadius = innerRadius + (ring_width + i * RC1_SCALE * 0.55f);
 		rings.push_back(ring);
 
 		ring->setActorLocation(0.0f, Y_OFFSET, 0.0f);
@@ -318,7 +331,7 @@ void World_RC1::setupScene()
 		// Select outer rings more frequently
 		uint32 ringIx = badger::clamp(0u, (uint32)(numRings * Random()), numRings - 1);
 		RingActor* ring = rings[ringIx];
-		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition());
+		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition(), RC1_SCALE);
 		ringIndicesForParticleRotation.push_back(ringIx);
 	}
 }
@@ -335,8 +348,8 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 
 	guardTower = spawnActor<StaticMeshActor>();
 	guardTower->setStaticMesh(loader->craftMeshFromAllShapes());
-	guardTower->setActorScale(10.0f);
-	guardTower->setActorLocation(vector3(0.0f, Y_OFFSET - 47.0f, 0.0f));
+	guardTower->setActorScale(RC1_SCALE * 10.0f);
+	guardTower->setActorLocation(RC1_SCALE * vector3(0.0f, (Y_OFFSET / RC1_SCALE) - 47.0f, 0.0f));
 
 	M_tower->setTextureParameter("albedo", loader->findGLTexture("T_Tower.png"));
 	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));

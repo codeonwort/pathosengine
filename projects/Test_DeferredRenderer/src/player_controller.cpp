@@ -24,7 +24,7 @@ void PlayerController::onTick(float deltaSeconds)
 	int32 currMouseX = input->getMouseX();
 	int32 currMouseY = input->getMouseY();
 
-	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
+	const float moveMultiplier = speedScale * badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
 	float moveRight    = deltaSeconds * (speedRight * moveMultiplier);
 	float moveForward  = deltaSeconds * (speedForward * moveMultiplier);
 	float moveUp       = deltaSeconds * (speedUp * moveMultiplier);
