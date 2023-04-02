@@ -85,7 +85,7 @@ namespace pathos {
 
 		// Sky & atmosphere
 		static uniquePtr<class SkyboxPass>              skyboxPass;
-		static uniquePtr<class AnselSkyPass>            anselSkyPass;
+		static uniquePtr<class PanoramaSkyPass>         panoramaSkyPass;
 		static uniquePtr<class SkyAtmospherePass>       skyAtmospherePass;
 		static uniquePtr<class VolumetricCloudPass>     volumetricCloud;
 

@@ -1,18 +1,17 @@
 #pragma once
 
 #include "sky_actor.h"
-#include "sky_ansel_component.h"
+#include "sky_panorama_component.h"
 #include "pathos/rhi/gl_handles.h"
 
 namespace pathos {
 
 	// Use panorama (i.e., equirectangular map) texture as sky.
-	// #wip: Rename to PanoramaSkyActor
-	class AnselSkyActor : public SkyActor {
+	class PanoramaSkyActor : public SkyActor {
 
 	public:
-		AnselSkyActor() {
-			component = createDefaultComponent<AnselSkyComponent>();
+		PanoramaSkyActor() {
+			component = createDefaultComponent<PanoramaSkyComponent>();
 			setAsRootComponent(component);
 		}
 
@@ -20,10 +19,10 @@ namespace pathos {
 			component->initialize(textureID);
 		}
 
-		AnselSkyComponent* getSkyComponent() const { return component; }
+		PanoramaSkyComponent* getSkyComponent() const { return component; }
 
 	private:
-		AnselSkyComponent* component;
+		PanoramaSkyComponent* component;
 
 	};
 

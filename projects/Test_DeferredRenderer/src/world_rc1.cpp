@@ -11,7 +11,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 
@@ -235,9 +235,9 @@ void World_RC1::setupSky()
 	scene.skyPrefilterEnvMap = prefilteredEnvMap;
 	scene.skyPrefilterEnvMapMipLevels = mipLevels;
 
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	ansel->initialize(starfield);
-	scene.sky = ansel;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	panoramaSky->initialize(starfield);
+	scene.sky = panoramaSky;
 
 	// Volumetric cloud
 	{

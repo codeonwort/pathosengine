@@ -5,7 +5,7 @@
 #include "pathos/scene/scene.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/skybox_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 
 #include "pathos/scene/camera.h"
 

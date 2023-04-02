@@ -8,7 +8,7 @@ namespace pathos {
 	class VolumetricCloudActor;
 	class SkyAtmosphereActor;
 	class SkyboxActor;
-	class AnselSkyActor;
+	class PanoramaSkyActor;
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
@@ -41,7 +41,7 @@ private:
 
 	SkyAtmosphereActor* skyAtmosphere = nullptr;
 	SkyboxActor* skybox = nullptr;
-	AnselSkyActor* skyEquimap = nullptr;
+	PanoramaSkyActor* skyEquimap = nullptr;
 
 	DirectionalLightActor* sun = nullptr;
 	PointLightActor* pointLight0 = nullptr;

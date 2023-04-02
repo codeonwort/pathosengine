@@ -6,7 +6,7 @@
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/static_mesh_actor.h"
 
@@ -111,7 +111,7 @@ namespace pathos {
 				texture = pathos::createTextureFromBitmap(metadata, false, true);
 			}
 
-			AnselSkyActor* actor = world->spawnActor<AnselSkyActor>();
+			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
 			actor->initialize(texture);
 
 			if (!skyBound) {

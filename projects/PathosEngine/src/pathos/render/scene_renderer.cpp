@@ -19,7 +19,7 @@
 #include "pathos/render/shadow_directional.h"
 #include "pathos/render/shadow_omni.h"
 #include "pathos/render/skybox.h"
-#include "pathos/render/sky_ansel.h"
+#include "pathos/render/sky_panorama.h"
 #include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
@@ -667,17 +667,17 @@ namespace pathos {
 
 		// #note-lighting: After direct lighting, render sky at zFar.
 		const bool bRenderSkybox = scene->isSkyboxValid();
-		const bool bRenderAnsel = scene->isAnselSkyValid();
+		const bool bRenderPanorama = scene->isPanoramaSkyValid();
 		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
 		{
 			// #todo-sky: What to choose when multiple sky proxies are active?
-			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderAnsel + (int32)bRenderAtmosphere;
+			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
 			//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 		}
 		if (scene->isSkyboxValid()) {
 			skyboxPass->render(cmdList, scene);
-		} else if (scene->isAnselSkyValid()) {
-			anselSkyPass->render(cmdList, scene);
+		} else if (scene->isPanoramaSkyValid()) {
+			panoramaSkyPass->render(cmdList, scene);
 		} else if (scene->isSkyAtmosphereValid()) {
 			skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
 		}
@@ -832,7 +832,7 @@ namespace pathos {
 	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
 
 	uniquePtr<SkyboxPass>                SceneRenderer::skyboxPass;
-	uniquePtr<AnselSkyPass>              SceneRenderer::anselSkyPass;
+	uniquePtr<PanoramaSkyPass>           SceneRenderer::panoramaSkyPass;
 	uniquePtr<SkyAtmospherePass>         SceneRenderer::skyAtmospherePass;
 	uniquePtr<VolumetricCloudPass>       SceneRenderer::volumetricCloud;
 
@@ -892,8 +892,8 @@ namespace pathos {
 			skyboxPass = makeUnique<SkyboxPass>();
 			skyboxPass->initializeResources(cmdList);
 
-			anselSkyPass = makeUnique<AnselSkyPass>();
-			anselSkyPass->initializeResources(cmdList);
+			panoramaSkyPass = makeUnique<PanoramaSkyPass>();
+			panoramaSkyPass->initializeResources(cmdList);
 
 			skyAtmospherePass = makeUnique<SkyAtmospherePass>();
 			skyAtmospherePass->initializeResources(cmdList);
@@ -958,7 +958,7 @@ namespace pathos {
 		RELEASEPASS(resolveUnlitPass);
 
 		RELEASEPASS(skyboxPass);
-		RELEASEPASS(anselSkyPass);
+		RELEASEPASS(panoramaSkyPass);
 		RELEASEPASS(skyAtmospherePass);
 		RELEASEPASS(volumetricCloud);
 

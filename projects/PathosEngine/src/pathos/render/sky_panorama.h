@@ -9,7 +9,7 @@ namespace pathos {
 
 	class SceneProxy;
 
-	class AnselSkyPass : public Noncopyable {
+	class PanoramaSkyPass : public Noncopyable {
 		
 	public:
 		void initializeResources(RenderCommandList& cmdList);

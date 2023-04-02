@@ -11,7 +11,7 @@
 #include "pathos/text/text_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 //#include "pathos/scene/rect_light_actor.h"
 
 #include "player_controller.h"
@@ -158,9 +158,9 @@ void World_Sponza::setupScene() {
 		scene.skyPrefilterEnvMapMipLevels = mipLevels;
 	}
 
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	GLuint anselTex = equirectangularMap;
-	ansel->initialize(anselTex);
-	scene.sky = ansel;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	GLuint panoramaTex = equirectangularMap;
+	panoramaSky->initialize(panoramaTex);
+	scene.sky = panoramaSky;
 #endif
 }

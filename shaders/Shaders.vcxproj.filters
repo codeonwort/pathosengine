@@ -36,7 +36,7 @@
     <None Include="overlay_text.glsl" />
     <None Include="prefix_sum.glsl" />
     <None Include="shadow_mapping.glsl" />
-    <None Include="sky_ansel.glsl" />
+    <None Include="sky_panorama.glsl" />
     <None Include="skybox.glsl" />
     <None Include="specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />

@@ -68,7 +68,7 @@ namespace pathos {
 		//
 		inline bool isGodRayValid() const { return godRayMeshes.size() > 0; }
 		inline bool isSkyboxValid() const { return skybox != nullptr; }
-		inline bool isAnselSkyValid() const { return anselSky != nullptr; }
+		inline bool isPanoramaSkyValid() const { return panoramaSky != nullptr; }
 		inline bool isSkyAtmosphereValid() const { return skyAtmosphere != nullptr; }
 		inline bool isVolumetricCloudValid() const { return cloud != nullptr; }
 
@@ -99,7 +99,7 @@ namespace pathos {
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		
 		struct SkyboxProxy*                        skybox = nullptr;
-		struct AnselSkyProxy*                      anselSky = nullptr;
+		struct PanoramaSkyProxy*                   panoramaSky = nullptr;
 		struct SkyAtmosphereProxy*                 skyAtmosphere = nullptr;
 		struct VolumetricCloudProxy*               cloud = nullptr;
 

@@ -3,7 +3,7 @@
 // --------------------------------------------------------
 // Input
 
-layout (std140, binding = 1) uniform UBO_AnselSky {
+layout (std140, binding = 1) uniform UBO_PanoramaSky {
 	mat4 viewProj;
 	float intensity;
 } ubo;

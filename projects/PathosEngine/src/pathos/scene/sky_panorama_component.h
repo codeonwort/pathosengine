@@ -34,15 +34,15 @@ namespace pathos {
 
 namespace pathos {
 
-	struct AnselSkyProxy : SceneComponentProxy {
+	struct PanoramaSkyProxy : SceneComponentProxy {
 		MeshGeometry* sphere;
 		GLuint textureID;
 	};
 
-	class AnselSkyComponent : public SceneComponent {
+	class PanoramaSkyComponent : public SceneComponent {
 
 	public:
-		~AnselSkyComponent();
+		~PanoramaSkyComponent();
 
 		void initialize(GLuint textureID);
 

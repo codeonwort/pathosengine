@@ -11,7 +11,7 @@
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
@@ -165,10 +165,10 @@ void World1::setupSky()
 #elif SKY_METHOD == 1
 	scene.sky = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
-	ansel->initialize(anselTex);
-	scene.sky = ansel;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	GLuint panoramaTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
+	panoramaSky->initialize(panoramaTex);
+	scene.sky = panoramaSky;
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
