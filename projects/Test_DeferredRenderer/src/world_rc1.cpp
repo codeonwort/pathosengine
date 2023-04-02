@@ -218,7 +218,7 @@ void World_RC1::setupSky()
 	GalaxyGenerator::createStarField(
 		starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
-	GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(
+	GLuint cubemapForIBL = ImageBasedLightingBaker::projectPanoramaToCubemap(
 		starfield, STARFIELD_CUBEMAP_SIZE, "Texture: starfield cube");
 
 	// Irradiance map

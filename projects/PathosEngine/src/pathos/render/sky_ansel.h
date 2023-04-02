@@ -18,7 +18,13 @@ namespace pathos {
 		void render(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
+		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
+
 		GLuint fbo = 0xffffffff;
+		GLuint cubemapTexture = 0;
 		UniformBuffer ubo;
 
 	};

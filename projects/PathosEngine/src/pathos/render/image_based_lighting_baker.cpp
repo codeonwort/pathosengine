@@ -96,18 +96,17 @@ namespace pathos {
 	CubeGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
 	matrix4 ImageBasedLightingBaker::cubeTransforms[6];
 
-	GLuint ImageBasedLightingBaker::projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName) {
+	GLuint ImageBasedLightingBaker::projectPanoramaToCubemap(
+		GLuint equirectangularMap,
+		uint32 outputSize,
+		const char* debugName)
+	{
 		CHECK(isInMainThread());
 
 		GLuint cubemap = 0;
 		const std::string debugNameStr = debugName ? debugName : "";
 		
-		ENQUEUE_RENDER_COMMAND([equirectangularMap, size, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
-			SCOPED_DRAW_EVENT(EquirectangularMapToCubemap);
-
-			GLuint fbo = ImageBasedLightingBaker::dummyFBO;
-			CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
-			
+		ENQUEUE_RENDER_COMMAND([equirectangularMap, outputSize, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
 			if (debugNameStr.size() > 0) {
 				gRenderDevice->objectLabel(GL_TEXTURE, *cubemapPtr, -1, debugNameStr.c_str());
@@ -118,36 +117,55 @@ namespace pathos {
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureStorage2D(*cubemapPtr, 1, GL_RGB16F, size, size);
+			cmdList.textureStorage2D(*cubemapPtr, 1, GL_RGB16F, outputSize, outputSize);
 
-			cmdList.viewport(0, 0, size, size);
-			cmdList.disable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_FRONT);
-
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_EquirectangularToCubemap);
-			cmdList.useProgram(program.getGLName());
-			cmdList.bindTextureUnit(0, equirectangularMap);
-
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-
-			for (int32 i = 0; i < 6; ++i) {
-				const matrix4& viewproj = ImageBasedLightingBaker::cubeTransforms[i];
-
-				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, *cubemapPtr, 0, i);
-				cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
-
-				cube->activate_position(cmdList);
-				cube->activateIndexBuffer(cmdList);
-				cube->drawPrimitive(cmdList);
-			}
-
-			cmdList.enable(GL_DEPTH_TEST);
-			cmdList.cullFace(GL_BACK);
+			projectPanoramaToCubemap_renderThread(cmdList, equirectangularMap, *cubemapPtr, outputSize);
 		});
 		
 		FLUSH_RENDER_COMMAND();
 
 		return cubemap;
+	}
+
+	void ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
+		RenderCommandList& cmdList,
+		GLuint inputTexture,
+		GLuint outputTexture,
+		uint32 outputTextureSize)
+	{
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(PanoramaToCubemap);
+
+		GLuint fbo = ImageBasedLightingBaker::dummyFBO;
+		CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
+
+		cmdList.viewport(0, 0, outputTextureSize, outputTextureSize);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_EquirectangularToCubemap);
+		cmdList.useProgram(program.getGLName());
+		cmdList.bindTextureUnit(0, inputTexture);
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+		cube->activate_position(cmdList);
+		cube->activateIndexBuffer(cmdList);
+
+		for (int32 i = 0; i < 6; ++i) {
+			const matrix4& viewproj = ImageBasedLightingBaker::cubeTransforms[i];
+
+			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, 0, i);
+			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
+
+			cube->drawPrimitive(cmdList);
+		}
+
+		cube->deactivate(cmdList);
+		cube->deactivateIndexBuffer(cmdList);
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
 	}
 
 	void ImageBasedLightingBaker::bakeDiffuseIBL_renderThread(

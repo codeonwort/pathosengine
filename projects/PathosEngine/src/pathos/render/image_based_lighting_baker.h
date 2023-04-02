@@ -55,7 +55,21 @@ namespace pathos {
 		// @param equirectangularMap : 2D input texture.
 		// @param size               : Output cubemap size.
 		// @param debugName          : Output cubemap's GL name.
-		static GLuint projectToCubemap(GLuint equirectangularMap, uint32 size, const char* debugName = nullptr);
+		static GLuint projectPanoramaToCubemap(
+			GLuint equirectangularMap,
+			uint32 size,
+			const char* debugName = nullptr);
+
+		// Render the given equirectangular (panorama) texture to the cubemap.
+		// @param cmdList           : Render command list.
+		// @param inputTexture      : Input panorama texture2D.
+		// @param outputTexture     : Output textureCube.
+		// @param outputTextureSize : Output texture size.
+		static void projectPanoramaToCubemap_renderThread(
+			RenderCommandList& cmdList,
+			GLuint inputTexture,
+			GLuint outputTexture,
+			uint32 outputTextureSize);
 
 		// Create a cubemap texture and bake irradiance to it.
 		// NOTE: Flush render thread and GPU.
@@ -64,7 +78,11 @@ namespace pathos {
 		// @param bAutoDestroyInputCubemap : Destroy input cubemap texture after irradiance map is generated.
 		// @param debugName                : GL debug name of the returned texture.
 		// @return Name of GL texture that represents irradiance map.
-		static GLuint bakeSkyIrradianceMap(GLuint inputCubemap, uint32 size, bool bAutoDestroyInputCubemap, const char* debugName = nullptr);
+		static GLuint bakeSkyIrradianceMap(
+			GLuint inputCubemap,
+			uint32 size,
+			bool bAutoDestroyInputCubemap,
+			const char* debugName = nullptr);
 
 		static void bakeSkyIrradianceMap_renderThread(
 			RenderCommandList& cmdList,

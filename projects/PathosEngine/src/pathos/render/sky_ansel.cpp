@@ -4,6 +4,7 @@
 #include "pathos/rhi/gl_debug_group.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/scene/sky_ansel_component.h"
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
@@ -13,6 +14,8 @@
 namespace pathos {
 
 	static ConsoleVariable<float> cvar_anselSkyIntensity("r.anselSky.intensity", 1.0f, "Sky light intensity");
+
+	static constexpr uint32 PANORAMA_TO_CUBEMAP_SIZE = 256; // #wip
 
 	struct UBO_AnselSky {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -51,15 +54,28 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_AnselSky");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
+		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTexture);
+		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, PANORAMA_TO_CUBEMAP_SIZE, PANORAMA_TO_CUBEMAP_SIZE);
+
 		ubo.init<UBO_AnselSky>("UBO_AnselSky");
 	}
 
 	void AnselSkyPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteTextures(1, &cubemapTexture);
 	}
 
 	void AnselSkyPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(AnselSkyActor);
+		renderToScreen(cmdList, scene);
+		if (scene->sceneProxySource == SceneProxySource::MainScene) {
+			renderToCubemap(cmdList, scene);
+			renderSkyIrradianceMap(cmdList, scene);
+			renderSkyPrefilterMap(cmdList, scene);
+		}
+	}
+
+	void AnselSkyPass::renderToScreen(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(PanoramaSkyToScreen);
 
 		const Camera& camera = scene->camera;
 		AnselSkyProxy* skyProxy = scene->anselSky;
@@ -93,6 +109,45 @@ namespace pathos {
 		skyProxy->sphere->activate_position(cmdList);
 		skyProxy->sphere->activateIndexBuffer(cmdList);
 		skyProxy->sphere->drawPrimitive(cmdList);
+	}
+
+	void AnselSkyPass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(PanoramaToSkybox);
+
+		GLuint panoramaTexture = scene->anselSky->textureID;
+		ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
+			cmdList,
+			panoramaTexture,
+			cubemapTexture,
+			PANORAMA_TO_CUBEMAP_SIZE);
+	}
+
+	void AnselSkyPass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+			cmdList,
+			cubemapTexture,
+			sceneContext.skyIrradianceMap,
+			pathos::SKY_IRRADIANCE_MAP_SIZE);
+	}
+
+	void AnselSkyPass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
+
+		constexpr uint32 targetCubemapSize = 256; // #wip: How to determine
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
+
+		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+			cmdList,
+			cubemapTexture,
+			targetCubemapSize,
+			sceneContext.skyPrefilterMapMipCount,
+			sceneContext.skyPrefilteredMap);
 	}
 
 }

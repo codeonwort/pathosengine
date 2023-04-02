@@ -25,8 +25,8 @@ static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
-// #wip
-#define              SKY_METHOD           0
+// #wip: 0=skybox, 1=atmosphere, 2=panorama
+#define              SKY_METHOD           2
 static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 static const uint32  NUM_BALLS            = 10;
@@ -113,7 +113,7 @@ void World1::setupSky()
 {
 	{
 		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
+		GLuint cubemapForIBL = ImageBasedLightingBaker::projectPanoramaToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
 		// diffuse irradiance
 		{
@@ -172,7 +172,7 @@ void World1::setupSky()
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(ImageBasedLightingBaker::projectToCubemap(hdri_temp, 512));
+	skybox->initialize(ImageBasedLightingBaker::projectPanoramaToCubemap(hdri_temp, 512));
 	scene.sky = skybox;
 #endif
 }
