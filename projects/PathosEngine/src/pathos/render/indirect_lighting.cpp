@@ -224,7 +224,12 @@ namespace pathos {
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
-		cmdList.bindTextureUnit(4, scene->skyIrradianceMap);
+		if (sceneContext.skyIrradianceMap != 0) {
+			cmdList.bindTextureUnit(4, sceneContext.skyIrradianceMap);
+		} else {
+			// #wip: Remove skyIrradianceMap from SceneProxy
+			cmdList.bindTextureUnit(4, scene->skyIrradianceMap);
+		}
 		cmdList.bindTextureUnit(5, scene->skyPrefilterEnvMap);
 		cmdList.bindTextureUnit(6, ImageBasedLightingBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);

@@ -108,7 +108,7 @@ namespace pathos {
 		std::vector<StaticMeshProxy*>              godRayMeshes;
 		vector3                                    godRayLocation = vector3(0.0f);
 
-		// IBL
+		// #wip: Handle sky IBL from SkyActor
 		GLuint                                     skyIrradianceMap = 0;
 		GLuint                                     skyPrefilterEnvMap = 0;
 		uint32                                     skyPrefilterEnvMapMipLevels = 0;

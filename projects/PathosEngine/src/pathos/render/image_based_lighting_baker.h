@@ -66,6 +66,12 @@ namespace pathos {
 		// @return Name of GL texture that represents irradiance map.
 		static GLuint bakeSkyIrradianceMap(GLuint inputCubemap, uint32 size, bool bAutoDestroyInputCubemap, const char* debugName = nullptr);
 
+		static void bakeSkyIrradianceMap_renderThread(
+			RenderCommandList& cmdList,
+			GLuint inputSkyCubemap,
+			GLuint targetCubemap,
+			uint32 targetSize);
+
 		// Create a cubemap texture and bake specular IBL to it.
 		// NOTE: Flush render thread and GPU.
 		static void bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName = nullptr);

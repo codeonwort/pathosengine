@@ -4,6 +4,7 @@
 
 namespace pathos {
 
+	// Just a marker class.
 	class SkyActor : public Actor {
 		//
 	};

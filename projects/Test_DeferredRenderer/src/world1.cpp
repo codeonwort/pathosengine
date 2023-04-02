@@ -25,7 +25,8 @@ static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
-#define              SKY_METHOD           2
+// #wip
+#define              SKY_METHOD           0
 static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 static const uint32  NUM_BALLS            = 10;

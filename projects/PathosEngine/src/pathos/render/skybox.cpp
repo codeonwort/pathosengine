@@ -2,6 +2,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/skybox_component.h"
@@ -47,7 +48,7 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_Skybox");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		ubo.init<UBO_Skybox>();
+		ubo.init<UBO_Skybox>("UBO_Skybox");
 	}
 
 	void SkyboxPass::releaseResources(RenderCommandList& cmdList) {
@@ -55,7 +56,14 @@ namespace pathos {
 	}
 
 	void SkyboxPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(SkyboxActor);
+		renderSkyboxToScreen(cmdList, scene);
+		if (scene->sceneProxySource == SceneProxySource::MainScene) {
+			renderSkyIrradianceMap(cmdList, scene);
+		}
+	}
+
+	void SkyboxPass::renderSkyboxToScreen(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyboxToScreen);
 
 		const Camera& camera = scene->camera;
 		SkyboxProxy* skybox = scene->skybox;
@@ -94,6 +102,22 @@ namespace pathos {
 		skybox->cube->drawPrimitive(cmdList);
 
 		cmdList.cullFace(GL_BACK);
+	}
+
+	void SkyboxPass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		GLuint inputCubemap = scene->skybox->textureID;
+		GLuint targetCubemap = sceneContext.skyIrradianceMap;
+		uint32 targetSize = pathos::SKY_IRRADIANCE_MAP_SIZE;
+
+		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+			cmdList,
+			inputCubemap,
+			targetCubemap,
+			targetSize);
 	}
 
 }

@@ -6,6 +6,8 @@
 
 namespace pathos {
 
+	// Use panorama (i.e., equirectangular map) texture as sky.
+	// #wip: Rename to PanoramaSkyActor
 	class AnselSkyActor : public SkyActor {
 
 	public:

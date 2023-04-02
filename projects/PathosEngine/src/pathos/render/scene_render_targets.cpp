@@ -88,6 +88,14 @@ namespace pathos {
 			cmdList.textureStorage3D(texture, 1, format, width, height, numLayers);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
+		auto reallocTextureCube = [&cmdList](GLuint& texture, GLenum format, uint32 size, uint32 numMips, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &texture);
+			cmdList.textureStorage2D(texture, numMips, format, size, size);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
 		auto reallocTextureCubeArray = [&cmdList](GLuint& texture, GLenum format, uint32 size, uint32 numCubemaps, uint32 numMips, char* objectLabel) -> void {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
@@ -114,6 +122,7 @@ namespace pathos {
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
+			reallocTextureCube(skyIrradianceMap, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, 1, "SkyIrradianceMap");
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -280,6 +289,7 @@ namespace pathos {
 		safe_release(cascadedShadowMap);
 		safe_release(omniShadowMaps);
 		safe_release(localSpecularIBLs);
+		safe_release(skyIrradianceMap);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -351,6 +361,10 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, gbufferA, -1, "gbufferA");
 		cmdList.objectLabel(GL_TEXTURE, gbufferB, -1, "gbufferB");
 		cmdList.objectLabel(GL_TEXTURE, gbufferC, -1, "gbufferC");
+	}
+
+	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
+		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
 	}
 
 }

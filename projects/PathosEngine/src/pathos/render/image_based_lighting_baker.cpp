@@ -251,12 +251,7 @@ namespace pathos {
 			}
 			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
 
-			IrradianceMapBakeDesc bakeDesc;
-			bakeDesc.encoding = EIrradianceMapEncoding::Cubemap;
-			bakeDesc.renderTarget = *irradianceMapPtr;
-			bakeDesc.depthTarget = 0;
-			bakeDesc.viewportSize = size;
-			bakeDiffuseIBL_renderThread(cmdList, inputCubemap, 0, bakeDesc);
+			bakeSkyIrradianceMap_renderThread(cmdList, inputCubemap, *irradianceMapPtr, size);
 
 			if (bAutoDestroyCubemap) {
 				cmdList.deleteTextures(1, &inputCubemap);
@@ -266,6 +261,23 @@ namespace pathos {
 		FLUSH_RENDER_COMMAND();
 
 		return irradianceMap;
+	}
+
+	void ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+		RenderCommandList& cmdList,
+		GLuint inputSkyCubemap,
+		GLuint targetCubemap,
+		uint32 targetSize)
+	{
+		CHECK(isInRenderThread());
+		
+		// #wip: Optimize diffuse_irradiance.glsl (too many loops)
+		IrradianceMapBakeDesc bakeDesc;
+		bakeDesc.encoding     = EIrradianceMapEncoding::Cubemap;
+		bakeDesc.renderTarget = targetCubemap;
+		bakeDesc.depthTarget  = 0;
+		bakeDesc.viewportSize = targetSize;
+		bakeDiffuseIBL_renderThread(cmdList, inputSkyCubemap, 0, bakeDesc);
 	}
 
 	void ImageBasedLightingBaker::bakeSpecularIBL_renderThread(

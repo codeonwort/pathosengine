@@ -17,6 +17,9 @@ namespace pathos {
 		void render(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
+		void renderSkyboxToScreen(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
+
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
 
