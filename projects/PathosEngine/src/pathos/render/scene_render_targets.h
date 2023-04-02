@@ -6,6 +6,7 @@
 namespace pathos {
 
 	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
+	constexpr uint32 SKY_PREFTILER_MAX_MIP_COUNT = 5;
 	
 	// Textures for scene rendering
 	// #todo-renderer: render target pool for temporary textures
@@ -69,9 +70,11 @@ namespace pathos {
 		GLuint omniShadowMaps = 0; // cubemap array
 
 		// Indirect lighting
-		GLuint localSpecularIBLs = 0; // cubemap array
-		GLuint skyIrradianceMap = 0; // cubemap
-		// #wip: Move skyPrefilteredEnvMap here
+		GLuint localSpecularIBLs = 0;        // Cubemap array for local reflection probes
+		GLuint skyIrradianceMap = 0;         // Cubemap for sky indirect diffuse
+		GLuint skyPrefilteredMap = 0;        // Cubemap for sky indirect specular
+		uint32 skyPrefilterMapMipCount = 1;
+		uint32 skyPrefilterMapSize = 0;
 
 		// Deferred shading only
 		bool useGBuffer = true;
@@ -129,7 +132,11 @@ namespace pathos {
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
 
+		void reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize);
+
 		GLuint getSkyIrradianceMapWithFallback() const;
+		GLuint getSkyPrefilterMapWithFallback() const;
+		uint32 getSkyPrefilterMapMipCount() const;
 
 		GLuint getVolumetricCloud(uint32 frameCounter) const {
 			return (frameCounter % 2 == 0) ? volumetricCloudA : volumetricCloudB;

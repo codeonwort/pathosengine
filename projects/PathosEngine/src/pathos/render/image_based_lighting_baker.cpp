@@ -283,7 +283,7 @@ namespace pathos {
 	void ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
-		uint32 textureSize,
+		uint32 outputTextureSize,
 		uint32 numMips,
 		GLuint outputTexture)
 	{
@@ -312,7 +312,7 @@ namespace pathos {
 
 		for (uint32 mip = 0; mip < numMips; ++mip) {
 			// resize framebuffer according to mip-level size
-			uint32 mipWidth = (uint32)(textureSize * std::pow(0.5f, mip));
+			uint32 mipWidth = (uint32)(outputTextureSize * std::pow(0.5f, mip));
 			cmdList.viewport(0, 0, mipWidth, mipWidth);
 
 			float roughness = (float)mip / (float)(numMips - 1);
@@ -333,21 +333,21 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
+	void ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 targetSize, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
 		CHECK(isInMainThread());
 
 		GLuint envMap = 0;
-		uint32 maxMipLevels = std::min(static_cast<uint32>(floor(log2(size)) + 1), 5u);
+		uint32 maxMipLevels = std::min(static_cast<uint32>(floor(log2(targetSize)) + 1), 5u);
 
-		ENQUEUE_RENDER_COMMAND([cubemap, size, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
+		ENQUEUE_RENDER_COMMAND([cubemap, targetSize, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
 			if (debugName != nullptr) {
 				gRenderDevice->objectLabel(GL_TEXTURE, *envMapPtr, -1, debugName);
 			}
-			cmdList.textureStorage2D(*envMapPtr, maxMipLevels, GL_RGB16F, size, size);
+			cmdList.textureStorage2D(*envMapPtr, maxMipLevels, GL_RGB16F, targetSize, targetSize);
 			cmdList.generateTextureMipmap(*envMapPtr);
 
-			bakeSpecularIBL_renderThread(cmdList, cubemap, size, maxMipLevels, *envMapPtr);
+			bakeSpecularIBL_renderThread(cmdList, cubemap, targetSize, maxMipLevels, *envMapPtr);
 		});
 
 		FLUSH_RENDER_COMMAND();

@@ -41,7 +41,7 @@ namespace pathos {
 		static void bakeSpecularIBL_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
-			uint32 textureSize,
+			uint32 outputTextureSize,
 			uint32 numMips,
 			GLuint outputTexture);
 
@@ -74,7 +74,12 @@ namespace pathos {
 
 		// Create a cubemap texture and bake specular IBL to it.
 		// NOTE: Flush render thread and GPU.
-		static void bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 size, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName = nullptr);
+		static void bakeSkyPrefilteredEnvMap(
+			GLuint cubemap,
+			uint32 targetSize,
+			GLuint& outEnvMap,
+			uint32& outMipLevels,
+			const char* debugName = nullptr);
 
 		// -----------------------------------------------------------------------
 

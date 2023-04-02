@@ -59,6 +59,7 @@ namespace pathos {
 		renderSkyboxToScreen(cmdList, scene);
 		if (scene->sceneProxySource == SceneProxySource::MainScene) {
 			renderSkyIrradianceMap(cmdList, scene);
+			renderSkyPreftilerMap(cmdList, scene);
 		}
 	}
 
@@ -118,6 +119,22 @@ namespace pathos {
 			inputCubemap,
 			targetCubemap,
 			targetSize);
+	}
+
+	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
+
+		constexpr uint32 targetCubemapSize = 256; // #wip: How to determine
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
+
+		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+			cmdList,
+			scene->skybox->textureID,
+			targetCubemapSize,
+			sceneContext.skyPrefilterMapMipCount,
+			sceneContext.skyPrefilteredMap);
 	}
 
 }

@@ -123,6 +123,7 @@ namespace pathos {
 		if (sceneProxySource == SceneProxySource::MainScene) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
 			reallocTextureCube(skyIrradianceMap, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, 1, "SkyIrradianceMap");
+			// One of sky passes will invoke reallocSkyPrefilterMap()
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -290,6 +291,7 @@ namespace pathos {
 		safe_release(omniShadowMaps);
 		safe_release(localSpecularIBLs);
 		safe_release(skyIrradianceMap);
+		safe_release(skyPrefilteredMap);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -363,8 +365,36 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, gbufferC, -1, "gbufferC");
 	}
 
+	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
+		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {
+			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
+			skyPrefilteredMap = 0;
+		}
+		skyPrefilterMapMipCount = (uint32)(std::floor(std::log2(cubemapSize)) + 1);
+		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFTILER_MAX_MIP_COUNT);
+		skyPrefilterMapSize = cubemapSize;
+		if (skyPrefilteredMap == 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyPrefilteredMap);
+			cmdList.textureStorage2D(
+				skyPrefilteredMap,
+				skyPrefilterMapMipCount,
+				GL_RGBA16F,
+				cubemapSize,
+				cubemapSize);
+			cmdList.objectLabel(GL_TEXTURE, skyPrefilteredMap, -1, "Texture_SkyPrefilterMap");
+		}
+	}
+
 	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
 		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
+	}
+
+	GLuint SceneRenderTargets::getSkyPrefilterMapWithFallback() const {
+		return (skyPrefilteredMap != 0) ? skyPrefilteredMap : gEngine->getSystemTextureCubeBlack();
+	}
+
+	uint32 SceneRenderTargets::getSkyPrefilterMapMipCount() const {
+		return (skyPrefilteredMap != 0) ? skyPrefilterMapMipCount : 1;
 	}
 
 }
