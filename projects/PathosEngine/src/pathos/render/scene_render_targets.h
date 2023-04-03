@@ -6,7 +6,12 @@
 namespace pathos {
 
 	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
-	constexpr uint32 SKY_PREFTILER_MAX_MIP_COUNT = 5;
+
+	// For sky atmosphere and panorama sky.
+	// Skybox will use the size of its source cubemap.
+	constexpr uint32 SKY_PREFILTER_MAP_DEFAULT_SIZE = 512;
+	constexpr uint32 SKY_PREFILTER_MAP_MIN_SIZE = 128;
+	constexpr uint32 SKY_PREFILTER_MAP_MAX_NUM_MIPS = 5;
 	
 	// Textures for scene rendering
 	// #todo-renderer: render target pool for temporary textures

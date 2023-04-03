@@ -126,7 +126,7 @@ namespace pathos {
 	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
-		constexpr uint32 targetCubemapSize = 256; // #wip: How to determine
+		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);

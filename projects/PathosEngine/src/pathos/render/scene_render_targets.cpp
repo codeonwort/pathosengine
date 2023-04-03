@@ -7,6 +7,15 @@
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
 
+static uint32 calcCubemapNumMips(uint32 defaultSize, uint32 minSize) {
+	uint32 num = 1;
+	while (defaultSize >= minSize) {
+		defaultSize /= 2;
+		num += 1;
+	}
+	return num;
+}
+
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_resolutionScale("r.resolution_scale", 100, "Controls screen resolution percentage");
@@ -366,12 +375,14 @@ namespace pathos {
 	}
 
 	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
+		CHECKF(cubemapSize > 0, "cubemapSize is zero");
 		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {
 			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
 			skyPrefilteredMap = 0;
 		}
-		skyPrefilterMapMipCount = (uint32)(std::floor(std::log2(cubemapSize)) + 1);
-		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFTILER_MAX_MIP_COUNT);
+
+		skyPrefilterMapMipCount = calcCubemapNumMips(cubemapSize, SKY_PREFILTER_MAP_MIN_SIZE);
+		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFILTER_MAP_MAX_NUM_MIPS);
 		skyPrefilterMapSize = cubemapSize;
 		if (skyPrefilteredMap == 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyPrefilteredMap);

@@ -23,7 +23,7 @@ namespace pathos {
 	static const int32 LUT_WIDTH = 64;
 	static const int32 LUT_HEIGHT = 256;
 
-	static constexpr uint32 TO_CUBEMAP_SIZE = 256; // #wip
+	static constexpr uint32 TO_CUBEMAP_SIZE = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
 
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;

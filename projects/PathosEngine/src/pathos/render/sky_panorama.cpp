@@ -15,8 +15,6 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_panoramaSkyIntensity("r.panoramaSky.intensity", 1.0f, "Intensity boost for panorama sky");
 
-	static constexpr uint32 PANORAMA_TO_CUBEMAP_SIZE = 256; // #wip
-
 	struct UBO_PanoramaSky {
 		static constexpr uint32 BINDING_POINT = 1;
 
@@ -54,8 +52,9 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_PanoramaSky");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
+		const uint32 cubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
 		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTexture);
-		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, PANORAMA_TO_CUBEMAP_SIZE, PANORAMA_TO_CUBEMAP_SIZE);
+		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, cubemapSize, cubemapSize);
 
 		ubo.init<UBO_PanoramaSky>("UBO_PanoramaSky");
 	}
@@ -121,7 +120,7 @@ namespace pathos {
 			cmdList,
 			panoramaTexture,
 			cubemapTexture,
-			PANORAMA_TO_CUBEMAP_SIZE);
+			pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE);
 	}
 
 	void PanoramaSkyPass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -139,7 +138,7 @@ namespace pathos {
 	void PanoramaSkyPass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
-		constexpr uint32 targetCubemapSize = 256; // #wip: How to determine
+		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
