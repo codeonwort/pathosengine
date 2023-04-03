@@ -1,4 +1,4 @@
-// Simulates the Earth's atmosphere scattering
+// Simulates the Earth's atmospheric scattering.
 
 #pragma once
 
@@ -21,7 +21,13 @@ namespace pathos {
 		void renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
+		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
+		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
+
 		GLuint fbo = 0xffffffff;
+		GLuint cubemapTexture = 0;
 		UniformBuffer ubo;
 		GLuint vao;
 
