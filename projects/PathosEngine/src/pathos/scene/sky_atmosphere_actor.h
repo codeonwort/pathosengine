@@ -1,4 +1,5 @@
-// Simulates the Earth's atmosphere scattering
+// Simulates the Earth's atmospheric scattering.
+// Currently no controls, just adapt to current Sun light settings.
 
 #pragma once
 

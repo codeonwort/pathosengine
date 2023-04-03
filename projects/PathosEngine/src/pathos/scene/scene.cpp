@@ -134,6 +134,24 @@ namespace pathos {
 			}
 		});
 
+		// #todo: Dirty hack to find first directional component.
+		DirectionalLightComponent* sunComponent = nullptr;
+		for (auto& actor : world->actors) {
+			if (!actor->markedForDeath) {
+				for (ActorComponent* actorComponent : actor->components) {
+					auto component = dynamic_cast<DirectionalLightComponent*>(actorComponent);
+					if (component != nullptr) {
+						sunComponent = component;
+						proxy->internal_setSunComponent(sunComponent);
+						break;
+					}
+				}
+			}
+			if (sunComponent != nullptr) {
+				break;
+			}
+		}
+
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {
 				actor->updateTransformHierarchy();

@@ -49,6 +49,10 @@ namespace pathos {
 
 		void finalize_mainThread();
 
+		// DO NOT USE. Dirty hack :(
+		inline void internal_setSunComponent(class DirectionalLightComponent* dirLightComponent) { tempSunComponent = dirLightComponent; }
+		inline class DirectionalLightComponent* internal_getSunComponent() { return tempSunComponent; }
+
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
 		// This should be called for each view.
@@ -118,6 +122,9 @@ namespace pathos {
 		// Light probe based GI
 		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
+
+	private:
+		class DirectionalLightComponent*           tempSunComponent = nullptr;
 	};
 
 }

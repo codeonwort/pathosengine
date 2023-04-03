@@ -5,6 +5,7 @@
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
+#include "pathos/scene/sky_atmosphere_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/log.h"
@@ -133,7 +134,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SkyAtmosphere);
 
 		renderToScreen(cmdList, scene, camera);
-		if (scene->sceneProxySource == SceneProxySource::MainScene) {
+		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPrefilterMap(cmdList, scene);
