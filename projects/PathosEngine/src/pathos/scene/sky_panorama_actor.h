@@ -16,7 +16,7 @@ namespace pathos {
 		}
 
 		void initialize(GLuint textureID) {
-			component->initialize(textureID);
+			component->setTexture(textureID);
 		}
 
 		PanoramaSkyComponent* getSkyComponent() const { return component; }

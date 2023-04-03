@@ -134,9 +134,14 @@ namespace pathos {
 		}
 	}
 
-	void PanoramaSkyComponent::initialize(GLuint inTextureID) {
-		textureID = inTextureID;
-		sphere = new IcosahedronGeometry(0);
+	void PanoramaSkyComponent::setTexture(GLuint inTextureID) {
+		if (textureID != inTextureID) {
+			textureID = inTextureID;
+			bLightingDirty = true;
+		}
+		if (sphere == nullptr) {
+			sphere = new IcosahedronGeometry(0);
+		}
 	}
 
 	void PanoramaSkyComponent::createRenderProxy(SceneProxy* scene) {
@@ -145,9 +150,16 @@ namespace pathos {
 			return;
 		}
 
+		bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+
 		PanoramaSkyProxy* proxy = ALLOC_RENDER_PROXY<PanoramaSkyProxy>(scene);
 		proxy->sphere = sphere;
 		proxy->textureID = textureID;
+		proxy->bLightingDirty = bLightingDirty && bMainScene;
+
+		if (bMainScene) {
+			bLightingDirty = false;
+		}
 
 		scene->panoramaSky = proxy;
 	}
