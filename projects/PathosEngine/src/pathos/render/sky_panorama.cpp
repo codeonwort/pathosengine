@@ -65,7 +65,9 @@ namespace pathos {
 		gRenderDevice->deleteTextures(1, &cubemapTexture);
 	}
 
-	void PanoramaSkyPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
+	void PanoramaSkyPass::renderPanoramaSky(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(PanoramaSky);
+
 		renderToScreen(cmdList, scene);
 		if (scene->sceneProxySource == SceneProxySource::MainScene) {
 			renderToCubemap(cmdList, scene);

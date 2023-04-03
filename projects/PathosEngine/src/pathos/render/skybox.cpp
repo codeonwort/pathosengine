@@ -55,9 +55,11 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void SkyboxPass::render(RenderCommandList& cmdList, SceneProxy* scene) {
+	void SkyboxPass::renderSkybox(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(Skybox);
+
 		renderSkyboxToScreen(cmdList, scene);
-		if (scene->sceneProxySource == SceneProxySource::MainScene) {
+		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skybox->bLightingDirty) {
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPreftilerMap(cmdList, scene);
 		}

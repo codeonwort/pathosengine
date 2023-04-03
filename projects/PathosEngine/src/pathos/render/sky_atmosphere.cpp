@@ -130,6 +130,8 @@ namespace pathos {
 	}
 
 	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+		SCOPED_DRAW_EVENT(SkyAtmosphere);
+
 		renderToScreen(cmdList, scene, camera);
 		if (scene->sceneProxySource == SceneProxySource::MainScene) {
 			renderToCubemap(cmdList, scene);

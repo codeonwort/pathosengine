@@ -6,7 +6,7 @@ namespace pathos {
 	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
 	*/
 	void SkyboxActor::initialize(GLuint inTextureID) {
-		component->initialize(inTextureID);
+		component->setCubemap(inTextureID);
 	}
 
 	void SkyboxActor::setLOD(float inLOD) {

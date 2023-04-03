@@ -305,9 +305,9 @@ namespace pathos {
 				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 			}
 			if (scene->isSkyboxValid()) {
-				skyboxPass->render(cmdList, scene);
+				skyboxPass->renderSkybox(cmdList, scene);
 			} else if (scene->isPanoramaSkyValid()) {
-				panoramaSkyPass->render(cmdList, scene);
+				panoramaSkyPass->renderPanoramaSky(cmdList, scene);
 			} else if (scene->isSkyAtmosphereValid()) {
 				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
 			}

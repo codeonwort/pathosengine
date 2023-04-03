@@ -9,6 +9,7 @@ namespace pathos {
 		CubeGeometry* cube;
 		GLuint textureID;
 		float textureLod;
+		bool bLightingDirty;
 	};
 
 	class SkyboxComponent : public SceneComponent {
@@ -16,7 +17,7 @@ namespace pathos {
 	public:
 		~SkyboxComponent();
 
-		void initialize(GLuint inTextureID);
+		void setCubemap(GLuint inTextureID);
 		void setLOD(float inLOD);
 
 		inline bool hasValidResources() const { return cube != nullptr && textureID != 0; }
@@ -29,6 +30,7 @@ namespace pathos {
 		GLuint textureID = 0;
 		float lod = 0.0f;
 
+		bool bLightingDirty = false;
 	};
 
 }
