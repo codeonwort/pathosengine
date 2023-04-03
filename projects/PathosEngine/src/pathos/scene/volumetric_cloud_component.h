@@ -1,9 +1,9 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/volume_texture.h"
 #include "pathos/scene/scene_component.h"
 #include "pathos/render/scene_proxy.h"
-#include "pathos/rhi/volume_texture.h"
 
 namespace pathos {
 
@@ -31,8 +31,7 @@ namespace pathos {
 	protected:
 		virtual void createRenderProxy(SceneProxy* scene) override
 		{
-			if (!hasValidResources()) {
-				scene->cloud = nullptr;
+			if (!hasValidResources() || scene->cloud != nullptr) {
 				return;
 			}
 

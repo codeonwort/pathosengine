@@ -9,8 +9,8 @@ namespace pathos {
 	class VolumeTexture;
 	class VolumetricCloudComponent;
 
-	// Placeholder for world logic.
-	// NOTE: Should be assigned to the Scene::cloud member variable.
+	// Just spawn a VolumetricCloudActor then its attached component will create a scene proxy.
+	// CAUTION: If multiple cloud actors exist, only one is rendered.
 	class VolumetricCloudActor : public Actor {
 
 	public:

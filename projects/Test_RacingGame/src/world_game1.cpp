@@ -140,7 +140,6 @@ void World_Game1::reloadScene()
 
 	cloudscape = spawnActor<VolumetricCloudActor>();
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
-	scene.cloud = cloudscape;
 
 	treeActors.clear();
 	for (uint32 i = 0; i < NUM_TREES; ++i) {

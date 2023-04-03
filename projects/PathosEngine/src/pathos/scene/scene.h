@@ -59,10 +59,9 @@ namespace pathos {
 		GLuint getIrradianceProbeAtlasTexture() const;
 		GLuint getDepthProbeAtlasTexture() const;
 
-	// #wip: Cleanup this mess
+	// #todo-godray: Cleanup this mess
 	public:
 		StaticMeshComponent* godRaySource = nullptr;
-		VolumetricCloudActor* cloud = nullptr;
 
 	private:
 		World* owner = nullptr;

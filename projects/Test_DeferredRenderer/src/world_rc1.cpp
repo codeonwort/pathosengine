@@ -237,8 +237,8 @@ void World_RC1::setupSky()
 			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
 			cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
 		}
-		scene.cloud = spawnActor<VolumetricCloudActor>();
-		scene.cloud->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
+		VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
+		cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 	}
 }
 
