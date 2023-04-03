@@ -79,7 +79,6 @@ namespace pathos {
 		if (sceneDesc.skyAtmosphere.valid) {
 			SkyAtmosphereActor* actor = world->spawnActor<SkyAtmosphereActor>();
 
-			world->getScene().sky = actor;
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
 		}
@@ -95,10 +94,7 @@ namespace pathos {
 			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
 			actor->initialize(cubeTexture);
 
-			if (!skyBound) {
-				world->getScene().sky = actor;
-				skyBound = true;
-			}
+			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
 		if (sceneDesc.skyEquimap.valid) {
@@ -114,10 +110,7 @@ namespace pathos {
 			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
 			actor->initialize(texture);
 
-			if (!skyBound) {
-				world->getScene().sky = actor;
-				skyBound = true;
-			}
+			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
 		}
 		// directional lights

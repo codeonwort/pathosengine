@@ -215,29 +215,10 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(
-		starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
-
-	GLuint cubemapForIBL = ImageBasedLightingBaker::projectPanoramaToCubemap(
-		starfield, STARFIELD_CUBEMAP_SIZE, "Texture: starfield cube");
-
-	// Irradiance map
-	GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
-		cubemapForIBL, 32, false, "Texture: starfield irradiance map");
-
-	// Specular IBL
-	GLuint prefilteredEnvMap;
-	uint32 mipLevels;
-	ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
-		cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture: starfield specular IBL");
-
-	scene.skyIrradianceMap = irradianceMap;
-	scene.skyPrefilterEnvMap = prefilteredEnvMap;
-	scene.skyPrefilterEnvMapMipLevels = mipLevels;
+	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
 	panoramaSky->initialize(starfield);
-	scene.sky = panoramaSky;
 
 	// Volumetric cloud
 	{

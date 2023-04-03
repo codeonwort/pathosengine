@@ -136,31 +136,8 @@ void World_Sponza::setupScene() {
 	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
 		pathos::loadHDRImage(SKY_HDRI), true,
 		"Texture IBL: equirectangularMap");
-	GLuint cubemapForIBL = ImageBasedLightingBaker::projectPanoramaToCubemap(
-		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
-
-	// Sky irradiance map
-	{
-		GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
-			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-		scene.skyIrradianceMap = irradianceMap;
-	}
-
-	// Sky reflection probe
-	{
-		GLuint prefilteredEnvMap;
-		uint32 mipLevels;
-		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
-			cubemapForIBL, 128, prefilteredEnvMap, mipLevels,
-			"Texture IBL: specular IBL (prefiltered env map)");
-
-		scene.skyPrefilterEnvMap = prefilteredEnvMap;
-		scene.skyPrefilterEnvMapMipLevels = mipLevels;
-	}
 
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	GLuint panoramaTex = equirectangularMap;
-	panoramaSky->initialize(panoramaTex);
-	scene.sky = panoramaSky;
+	panoramaSky->initialize(equirectangularMap);
 #endif
 }

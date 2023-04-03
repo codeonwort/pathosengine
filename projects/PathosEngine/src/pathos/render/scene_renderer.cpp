@@ -285,9 +285,32 @@ namespace pathos {
 		}
 
 		{
-			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
 			SCOPED_GPU_COUNTER(DirectLighting);
-			renderDirectLighting(cmdList);
+			SCOPED_DRAW_EVENT(DirectLighting);
+
+			directLightingPass->bindFramebuffer(cmdList);
+			directLightingPass->renderDirectLighting(cmdList, scene, camera);
+		}
+
+		{
+			SCOPED_GPU_COUNTER(Sky);
+			SCOPED_DRAW_EVENT(Sky);
+
+			const bool bRenderSkybox = scene->isSkyboxValid();
+			const bool bRenderPanorama = scene->isPanoramaSkyValid();
+			const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
+			{
+				// #todo-sky: What to choose when multiple sky proxies are active?
+				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
+				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
+			}
+			if (scene->isSkyboxValid()) {
+				skyboxPass->render(cmdList, scene);
+			} else if (scene->isPanoramaSkyValid()) {
+				panoramaSkyPass->render(cmdList, scene);
+			} else if (scene->isSkyAtmosphereValid()) {
+				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
+			}
 		}
 
 		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
@@ -657,30 +680,6 @@ namespace pathos {
 		}
 
 		cmdList.depthMask(GL_TRUE);
-	}
-
-	void SceneRenderer::renderDirectLighting(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(DirectLighting);
-
-		directLightingPass->bindFramebuffer(cmdList);
-		directLightingPass->renderDirectLighting(cmdList, scene, camera);
-
-		// #note-lighting: After direct lighting, render sky at zFar.
-		const bool bRenderSkybox = scene->isSkyboxValid();
-		const bool bRenderPanorama = scene->isPanoramaSkyValid();
-		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
-		{
-			// #todo-sky: What to choose when multiple sky proxies are active?
-			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
-			//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
-		}
-		if (scene->isSkyboxValid()) {
-			skyboxPass->render(cmdList, scene);
-		} else if (scene->isPanoramaSkyValid()) {
-			panoramaSkyPass->render(cmdList, scene);
-		} else if (scene->isSkyAtmosphereValid()) {
-			skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
-		}
 	}
 
 	void SceneRenderer::copyTexture(

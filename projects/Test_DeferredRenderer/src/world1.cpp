@@ -111,29 +111,6 @@ void World1::setupInput()
 
 void World1::setupSky()
 {
-	{
-		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = ImageBasedLightingBaker::projectPanoramaToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
-
-		// diffuse irradiance
-		{
-			GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-			scene.skyIrradianceMap = irradianceMap;
-		}
-
-		// specular IBL
-		{
-			GLuint prefilteredEnvMap;
-			uint32 mipLevels;
-			ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
-
-			scene.skyPrefilterEnvMap = prefilteredEnvMap;
-			scene.skyPrefilterEnvMapMipLevels = mipLevels;
-		}
-	}
-
-	// --------------------------------------------------------
-	// Sky
 #if SKY_METHOD == 0
 #if DEBUG_SKYBOX
 	std::array<const char*, 6> cubeImgName = {
@@ -161,19 +138,16 @@ void World1::setupSky()
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->initialize(cubeTexture);
 	skybox->setLOD(1.0f);
-	scene.sky = skybox;
 #elif SKY_METHOD == 1
-	scene.sky = spawnActor<SkyAtmosphereActor>();
+	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
 	GLuint panoramaTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	panoramaSky->initialize(panoramaTex);
-	scene.sky = panoramaSky;
 #else
 	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->initialize(ImageBasedLightingBaker::projectPanoramaToCubemap(hdri_temp, 512));
-	scene.sky = skybox;
 #endif
 }
 

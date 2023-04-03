@@ -148,10 +148,6 @@ namespace pathos {
 			proxy->godRayLocation = godRaySource->getLocation();
 		}
 
-		proxy->skyIrradianceMap = skyIrradianceMap;
-		proxy->skyPrefilterEnvMap = skyPrefilterEnvMap;
-		proxy->skyPrefilterEnvMapMipLevels = skyPrefilterEnvMapMipLevels;
-
 		if (irradianceProbeAtlas != nullptr) {
 			proxy->irradianceAtlas = irradianceProbeAtlas->getGLName();
 			proxy->depthProbeAtlas = depthProbeAtlas->getGLName();

@@ -386,6 +386,7 @@ namespace pathos {
 	}
 
 	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
+		// #wip: Need to clear sky textures on world transition.
 		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
 	}
 

@@ -144,8 +144,6 @@ namespace pathos {
 
 		void renderBasePass(RenderCommandList& cmdList);
 
-		void renderDirectLighting(RenderCommandList& cmdList);
-
 		GLuint getFinalRenderTarget() const;
 
 	private:
