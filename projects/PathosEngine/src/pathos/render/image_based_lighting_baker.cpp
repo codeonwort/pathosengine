@@ -289,7 +289,6 @@ namespace pathos {
 	{
 		CHECK(isInRenderThread());
 		
-		// #wip: Optimize diffuse_irradiance.glsl (too many loops)
 		IrradianceMapBakeDesc bakeDesc;
 		bakeDesc.encoding     = EIrradianceMapEncoding::Cubemap;
 		bakeDesc.renderTarget = targetCubemap;

@@ -64,6 +64,8 @@ void main() {
     vec3 right = cross(up, dir);
     up         = cross(dir, right);
 
+    // #todo: Loop count ~= 15562
+    // Should optimize this.
     float sampleDelta = 0.025;
     float nrSamples = 0.0;
     for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta) {
