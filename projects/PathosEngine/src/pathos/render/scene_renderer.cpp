@@ -296,6 +296,14 @@ namespace pathos {
 			SCOPED_GPU_COUNTER(Sky);
 			SCOPED_DRAW_EVENT(Sky);
 
+			// Should just clear current textures, but I'm too lazy as hell to figure out
+			// how to clear fp16 textures with clearTexImage().
+			// Let's destroy and recreate the textures.
+			if (scene->bInvalidateSkyLighting) {
+				sceneRenderTargets->reallocSkyIrradianceMap(cmdList);
+				sceneRenderTargets->destroySkyPrefilterMap(cmdList);
+			}
+
 			const bool bRenderSkybox = scene->isSkyboxValid();
 			const bool bRenderPanorama = scene->isPanoramaSkyValid();
 			const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();

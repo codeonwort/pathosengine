@@ -115,6 +115,10 @@ namespace pathos {
 		return depthProbeAtlas->getGLName();
 	}
 
+	void Scene::invalidateSkyLighting() {
+		bInvalidateSkyLighting = true;
+	}
+
 	SceneProxy* Scene::createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera) {
 		char counterName[64];
 		sprintf_s(counterName, "CreateRenderProxy (%s)", pathos::getSceneProxySourceString(source));
@@ -151,6 +155,9 @@ namespace pathos {
 				break;
 			}
 		}
+
+		proxy->bInvalidateSkyLighting = bInvalidateSkyLighting;
+		bInvalidateSkyLighting = false;
 
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {

@@ -102,6 +102,7 @@ namespace pathos {
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		
+		bool                                       bInvalidateSkyLighting = false;
 		struct SkyboxProxy*                        skybox = nullptr;
 		struct PanoramaSkyProxy*                   panoramaSky = nullptr;
 		struct SkyAtmosphereProxy*                 skyAtmosphere = nullptr;

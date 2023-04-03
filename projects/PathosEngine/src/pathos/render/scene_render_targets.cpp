@@ -131,7 +131,7 @@ namespace pathos {
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
-			reallocTextureCube(skyIrradianceMap, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, 1, "SkyIrradianceMap");
+			reallocSkyIrradianceMap(cmdList);
 			// One of sky passes will invoke reallocSkyPrefilterMap()
 		}
 
@@ -374,6 +374,22 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, gbufferC, -1, "gbufferC");
 	}
 
+	void SceneRenderTargets::reallocSkyIrradianceMap(RenderCommandList& cmdList) {
+		if (skyIrradianceMap != 0) {
+			cmdList.deleteTextures(1, &skyIrradianceMap);
+		}
+		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyIrradianceMap);
+		cmdList.textureStorage2D(skyIrradianceMap, 1, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, SKY_IRRADIANCE_MAP_SIZE);
+		cmdList.objectLabel(GL_TEXTURE, skyIrradianceMap, -1, "SkyIrradianceMap");
+	}
+
+	void SceneRenderTargets::destroySkyPrefilterMap(RenderCommandList& cmdList) {
+		if (skyPrefilteredMap != 0) {
+			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
+			skyPrefilteredMap = 0;
+		}
+	}
+
 	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
 		CHECKF(cubemapSize > 0, "cubemapSize is zero");
 		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {
@@ -397,7 +413,6 @@ namespace pathos {
 	}
 
 	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
-		// #wip: Need to clear sky textures on world transition.
 		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
 	}
 

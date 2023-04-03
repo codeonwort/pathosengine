@@ -137,6 +137,8 @@ namespace pathos {
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
 
+		void reallocSkyIrradianceMap(RenderCommandList& cmdList);
+		void destroySkyPrefilterMap(RenderCommandList& cmdList);
 		void reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize);
 
 		GLuint getSkyIrradianceMapWithFallback() const;
