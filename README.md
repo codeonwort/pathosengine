@@ -4,12 +4,12 @@
 OpenGL rendering engine mainly to toy with real-time graphics programming.
 
 NOTE: Here my main focus is on implementing rendering techniques,
-so the engine architecture might bad and not that robust.
+so the engine architecture might be bad and not that robust.
 Also I give only little effort to non-rendering subsystems.
 
 ### Development Environment
 
-This project won't compile nor launch in other configurations.
+This project probably will compile in only this configuration:
 
 * GL version: OpenGL 4.6 Core Profile
 * Language: C++17
@@ -50,6 +50,7 @@ Yet another Sponza scene.
     * Cascaded shadow map
     * Screen-space ambient occlusion
     * Screen-space reflection
+	* Real-time illumination from sky light sources (skybox, panorama, or atmosphere)
     * Real-time indirect illumination from irradiance/radiance probes (WIP)
   * Volumetric clouds
   * Post processing
@@ -59,10 +60,10 @@ Yet another Sponza scene.
     * Anti-aliasing (FXAA, TAA)
     * Super resolution (AMD FSR1)
     * Depth of field
-  * Scene capture (rendering from separate views other than the main view)
 * Engine subsystems
   * Render thread
   * Asynchronous asset loaders (Wavefront OBJ, glTF)
+  * Scene capture (rendering from separate views other than the main view)
   * Runtime shader recompilation
   * Actor system (component-based development)
   * Material shader assembly system
