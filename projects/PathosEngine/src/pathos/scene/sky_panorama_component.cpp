@@ -1,4 +1,4 @@
-#include "sky_ansel_component.h"
+#include "sky_panorama_component.h"
 
 namespace pathos {
 
@@ -127,29 +127,41 @@ namespace pathos {
 
 namespace pathos {
 
-	AnselSkyComponent::~AnselSkyComponent() {
+	PanoramaSkyComponent::~PanoramaSkyComponent() {
 		if (sphere) {
 			delete sphere;
 			sphere = nullptr;
 		}
 	}
 
-	void AnselSkyComponent::initialize(GLuint inTextureID) {
-		textureID = inTextureID;
-		sphere = new IcosahedronGeometry(0);
+	void PanoramaSkyComponent::setTexture(GLuint inTextureID) {
+		if (textureID != inTextureID) {
+			textureID = inTextureID;
+			bLightingDirty = true;
+		}
+		if (sphere == nullptr) {
+			sphere = new IcosahedronGeometry(0);
+		}
 	}
 
-	void AnselSkyComponent::createRenderProxy(SceneProxy* scene) {
+	void PanoramaSkyComponent::createRenderProxy(SceneProxy* scene) {
 		if (!hasValidResources()) {
-			scene->anselSky = nullptr;
+			scene->panoramaSky = nullptr;
 			return;
 		}
 
-		AnselSkyProxy* proxy = ALLOC_RENDER_PROXY<AnselSkyProxy>(scene);
+		bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+
+		PanoramaSkyProxy* proxy = ALLOC_RENDER_PROXY<PanoramaSkyProxy>(scene);
 		proxy->sphere = sphere;
 		proxy->textureID = textureID;
+		proxy->bLightingDirty = bLightingDirty && bMainScene;
 
-		scene->anselSky = proxy;
+		if (bMainScene) {
+			bLightingDirty = false;
+		}
+
+		scene->panoramaSky = proxy;
 	}
 
 }

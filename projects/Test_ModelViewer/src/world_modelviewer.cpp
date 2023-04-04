@@ -92,7 +92,6 @@ void World_ModelViewer::onInitialize() {
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 
 	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
-	getScene().sky = skyAtmosphere;
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);

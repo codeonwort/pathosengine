@@ -164,21 +164,7 @@ void World2::setupScene()
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
 	sky->initialize(skyCubemapTexture);
 
-	scene.sky = sky;
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
-
-	{
-		scene.skyIrradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
-			skyCubemapTexture, 32, false, "Texture_SkyDiffuseIBL");
-
-		GLuint prefilteredEnvMap;
-		uint32 mipLevels;
-		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
-			skyCubemapTexture, 128, prefilteredEnvMap, mipLevels, "Texture_SkySpecularIBL");
-
-		scene.skyPrefilterEnvMap = prefilteredEnvMap;
-		scene.skyPrefilterEnvMapMipLevels = mipLevels;
-	}
 }
 
 void World2::loadDAE()

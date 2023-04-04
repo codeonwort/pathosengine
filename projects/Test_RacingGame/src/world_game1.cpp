@@ -7,7 +7,7 @@
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/loader/scene_loader.h"
@@ -140,7 +140,6 @@ void World_Game1::reloadScene()
 
 	cloudscape = spawnActor<VolumetricCloudActor>();
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
-	scene.cloud = cloudscape;
 
 	treeActors.clear();
 	for (uint32 i = 0; i < NUM_TREES; ++i) {

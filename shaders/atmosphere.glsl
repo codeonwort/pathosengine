@@ -13,8 +13,14 @@
 // Input
 
 layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
-    vec2 sunParams;
-    vec2 screenFlip;
+    vec3   sunIlluminance;
+    float  sunDiskSize;
+
+    vec2   screenFlip;
+    uint   renderToCubemap;
+    float  cubemapSize;
+
+    mat4x4 customViewInv;
 } ubo;
 
 layout (binding = 0) uniform sampler2D transmittanceLUT;
@@ -156,8 +162,8 @@ float phaseM(float t)
 // Radiance of sun before hitting the atmosphere
 vec3 sunImage(ray_t camera, vec3 sunDir)
 {
-	float sunSize = ubo.sunParams.x;
-	vec3 sunIntensity = vec3(ubo.sunParams.y);
+	float sunSize = ubo.sunDiskSize;
+	vec3 sunIntensity = vec3(ubo.sunIlluminance);
 
     float threshold = asin(SUN_RADIUS / SUN_DISTANCE);
     float angle = acos(dot(camera.direction, -sunDir));
@@ -168,7 +174,7 @@ vec3 sunImage(ray_t camera, vec3 sunDir)
     return vec3(0.0);
 }
 
-vec3 scene(ray_t camera, vec3 sunDir)
+vec3 traceScene(ray_t camera, vec3 sunDir)
 {
     hit_t hit = no_hit;
     intersect_sphere(camera, atmosphere, hit);
@@ -180,7 +186,7 @@ vec3 scene(ray_t camera, vec3 sunDir)
     const int inscatSteps = 8;
     
     float mu = dot(-sunDir, camera.direction);
-    vec3 Sun = vec3(ubo.sunParams.y);
+    vec3 Sun = vec3(ubo.sunIlluminance);
     vec3 opticalDepth = vec3(0.0);
     
     vec3 P0 = camera.origin;
@@ -193,7 +199,7 @@ vec3 scene(ray_t camera, vec3 sunDir)
     return getTransmittance(P0, Q);
 #endif
     
-    // from eye to the outer end of atmosphere
+    // From eye to the outer end of atmosphere.
     for (int i = 0; i < numSteps; i++)
     {
         float height = length(P) - EARTH_RADIUS;
@@ -285,29 +291,33 @@ vec3 scene(ray_t camera, vec3 sunDir)
     return AtmosphereScattering;
 }
 
-vec3 viewDirection() {
-	vec2 uv = gl_FragCoord.xy / uboPerFrame.screenResolution.xy;
-	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
+vec3 getViewDirectionWS(vec2 uv) {
+	vec3 P = vec3(2.0 * uv - 1.0, -1.0);
     P.xy *= ubo.screenFlip;
-    P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-    P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+    if (ubo.renderToCubemap == 0) {
+        P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
+        P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+    }
 	P = normalize(P);
 
-    mat3 camera_transform = mat3(uboPerFrame.inverseViewTransform);
-	vec3 ray_forward = camera_transform * P;
-
-    return ray_forward;
+    mat3 viewInv = (ubo.renderToCubemap == 0)
+        ? mat3(uboPerFrame.inverseViewTransform)
+        : mat3(ubo.customViewInv);
+	
+    return viewInv * P;
 }
 
 void main() {
-	ray_t eye_ray;
-	eye_ray.origin = vec3(0.0, EARTH_RADIUS + GROUND_EPSILON, 0.0);
-	eye_ray.direction = viewDirection();
+    vec2 uv = (ubo.renderToCubemap == 0)
+        ? (gl_FragCoord.xy / uboPerFrame.screenResolution.xy)
+        : (gl_FragCoord.xy / ubo.cubemapSize);
+
+	ray_t cameraRay;
+	cameraRay.origin = vec3(0.0, EARTH_RADIUS + GROUND_EPSILON, 0.0);
+	cameraRay.direction = getViewDirectionWS(uv);
 
 	vec3 sunDir = uboPerFrame.sunLight.wsDirection;
-    //sunDir = vec3(0, 0, -1);
-    //sunDir = vec3(0, -1, 0);
-    //sunDir = normalize(vec3(0, -1, -5));
+    vec3 skyRadiance = traceScene(cameraRay, sunDir);
 
-    outSceneColor = vec4(scene(eye_ray, sunDir), 0.0);
+    outSceneColor = vec4(skyRadiance, 0.0);
 }

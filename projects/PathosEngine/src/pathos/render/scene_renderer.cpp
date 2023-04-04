@@ -19,7 +19,7 @@
 #include "pathos/render/shadow_directional.h"
 #include "pathos/render/shadow_omni.h"
 #include "pathos/render/skybox.h"
-#include "pathos/render/sky_ansel.h"
+#include "pathos/render/sky_panorama.h"
 #include "pathos/render/sky_atmosphere.h"
 #include "pathos/render/volumetric_clouds.h"
 #include "pathos/render/god_ray.h"
@@ -285,9 +285,40 @@ namespace pathos {
 		}
 
 		{
-			// #todo-gpu-counter: Sky rendering cost should not be included here (or support nested counters)
 			SCOPED_GPU_COUNTER(DirectLighting);
-			renderDirectLighting(cmdList);
+			SCOPED_DRAW_EVENT(DirectLighting);
+
+			directLightingPass->bindFramebuffer(cmdList);
+			directLightingPass->renderDirectLighting(cmdList, scene, camera);
+		}
+
+		{
+			SCOPED_GPU_COUNTER(Sky);
+			SCOPED_DRAW_EVENT(Sky);
+
+			// Should just clear current textures, but I'm too lazy as hell to figure out
+			// how to clear fp16 textures with clearTexImage().
+			// Let's destroy and recreate the textures.
+			if (scene->bInvalidateSkyLighting) {
+				sceneRenderTargets->reallocSkyIrradianceMap(cmdList);
+				sceneRenderTargets->destroySkyPrefilterMap(cmdList);
+			}
+
+			const bool bRenderSkybox = scene->isSkyboxValid();
+			const bool bRenderPanorama = scene->isPanoramaSkyValid();
+			const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
+			{
+				// #todo-sky: What to choose when multiple sky proxies are active?
+				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
+				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
+			}
+			if (scene->isSkyboxValid()) {
+				skyboxPass->renderSkybox(cmdList, scene);
+			} else if (scene->isPanoramaSkyValid()) {
+				panoramaSkyPass->renderPanoramaSky(cmdList, scene);
+			} else if (scene->isSkyAtmosphereValid()) {
+				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
+			}
 		}
 
 		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
@@ -659,30 +690,6 @@ namespace pathos {
 		cmdList.depthMask(GL_TRUE);
 	}
 
-	void SceneRenderer::renderDirectLighting(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(DirectLighting);
-
-		directLightingPass->bindFramebuffer(cmdList);
-		directLightingPass->renderDirectLighting(cmdList, scene, camera);
-
-		// #note-lighting: After direct lighting, render sky at zFar.
-		const bool bRenderSkybox = scene->isSkyboxValid();
-		const bool bRenderAnsel = scene->isAnselSkyValid();
-		const bool bRenderAtmosphere = scene->isSkyAtmosphereValid();
-		{
-			// #todo-sky: What to choose when multiple sky proxies are active?
-			//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderAnsel + (int32)bRenderAtmosphere;
-			//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
-		}
-		if (scene->isSkyboxValid()) {
-			skyboxPass->render(cmdList, scene);
-		} else if (scene->isAnselSkyValid()) {
-			anselSkyPass->render(cmdList, scene);
-		} else if (scene->isSkyAtmosphereValid()) {
-			skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
-		}
-	}
-
 	void SceneRenderer::copyTexture(
 		RenderCommandList& cmdList, GLuint source,
 		GLuint target, uint32 targetWidth, uint32 targetHeight,
@@ -832,7 +839,7 @@ namespace pathos {
 	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
 
 	uniquePtr<SkyboxPass>                SceneRenderer::skyboxPass;
-	uniquePtr<AnselSkyPass>              SceneRenderer::anselSkyPass;
+	uniquePtr<PanoramaSkyPass>           SceneRenderer::panoramaSkyPass;
 	uniquePtr<SkyAtmospherePass>         SceneRenderer::skyAtmospherePass;
 	uniquePtr<VolumetricCloudPass>       SceneRenderer::volumetricCloud;
 
@@ -892,8 +899,8 @@ namespace pathos {
 			skyboxPass = makeUnique<SkyboxPass>();
 			skyboxPass->initializeResources(cmdList);
 
-			anselSkyPass = makeUnique<AnselSkyPass>();
-			anselSkyPass->initializeResources(cmdList);
+			panoramaSkyPass = makeUnique<PanoramaSkyPass>();
+			panoramaSkyPass->initializeResources(cmdList);
 
 			skyAtmospherePass = makeUnique<SkyAtmospherePass>();
 			skyAtmospherePass->initializeResources(cmdList);
@@ -958,7 +965,7 @@ namespace pathos {
 		RELEASEPASS(resolveUnlitPass);
 
 		RELEASEPASS(skyboxPass);
-		RELEASEPASS(anselSkyPass);
+		RELEASEPASS(panoramaSkyPass);
 		RELEASEPASS(skyAtmospherePass);
 		RELEASEPASS(volumetricCloud);
 

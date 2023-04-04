@@ -11,7 +11,7 @@
 #include "pathos/text/text_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 //#include "pathos/scene/rect_light_actor.h"
 
 #include "player_controller.h"
@@ -136,31 +136,8 @@ void World_Sponza::setupScene() {
 	GLuint equirectangularMap = pathos::createTextureFromHDRImage(
 		pathos::loadHDRImage(SKY_HDRI), true,
 		"Texture IBL: equirectangularMap");
-	GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(
-		equirectangularMap, 512, "Texture IBL: cubemapForIBL");
 
-	// Sky irradiance map
-	{
-		GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
-			cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-		scene.skyIrradianceMap = irradianceMap;
-	}
-
-	// Sky reflection probe
-	{
-		GLuint prefilteredEnvMap;
-		uint32 mipLevels;
-		ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
-			cubemapForIBL, 128, prefilteredEnvMap, mipLevels,
-			"Texture IBL: specular IBL (prefiltered env map)");
-
-		scene.skyPrefilterEnvMap = prefilteredEnvMap;
-		scene.skyPrefilterEnvMapMipLevels = mipLevels;
-	}
-
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	GLuint anselTex = equirectangularMap;
-	ansel->initialize(anselTex);
-	scene.sky = ansel;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	panoramaSky->initialize(equirectangularMap);
 #endif
 }

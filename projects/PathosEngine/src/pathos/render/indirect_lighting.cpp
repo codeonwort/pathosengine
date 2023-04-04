@@ -183,7 +183,7 @@ namespace pathos {
 		uboData.diffuseBoost = std::max(0.0f, cvar_gi_diffuseBoost.getFloat());
 		uboData.specularBoost = std::max(0.0f, cvar_gi_specularBoost.getFloat());
 
-		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(scene->skyPrefilterEnvMapMipLevels - 1));
+		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
 		uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
 		uboData.numReflectionProbes = (uint32)reflectionProbeInfoArray.size();
 		uboData.numIrradianceVolumes = (uint32)irradianceVolumeInfo.size();
@@ -224,8 +224,8 @@ namespace pathos {
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
-		cmdList.bindTextureUnit(4, scene->skyIrradianceMap);
-		cmdList.bindTextureUnit(5, scene->skyPrefilterEnvMap);
+		cmdList.bindTextureUnit(4, sceneContext.getSkyIrradianceMapWithFallback());
+		cmdList.bindTextureUnit(5, sceneContext.getSkyPrefilterMapWithFallback());
 		cmdList.bindTextureUnit(6, ImageBasedLightingBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);

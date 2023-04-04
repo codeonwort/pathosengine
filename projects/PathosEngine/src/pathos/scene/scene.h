@@ -30,7 +30,15 @@ namespace pathos {
 		Scene(const Scene&)            = delete;
 		Scene& operator=(const Scene&) = delete;
 
-		//////////////////////////////////////////////////////////////////////////
+		// Notify that sky lighting textures should be cleared. (e.g., due to world transition)
+		void invalidateSkyLighting();
+		
+		// Generate frame-invariant proxy data.
+		SceneProxy* createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera);
+
+		World* getWorld() const { return owner; }
+
+		// -----------------------------------------------------------------------
 		// Irradiance Atlas API
 
 		// Irradiance atlas filled by local light probes.
@@ -50,25 +58,15 @@ namespace pathos {
 
 		GLuint getIrradianceProbeAtlasTexture() const;
 		GLuint getDepthProbeAtlasTexture() const;
-		//////////////////////////////////////////////////////////////////////////
 
-		// Generate frame-invariant proxy data.
-		SceneProxy* createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera);
-
-		World* getWorld() const { return owner; }
-
+	// #todo-godray: Cleanup this mess
 	public:
-		SkyActor* sky = nullptr;
 		StaticMeshComponent* godRaySource = nullptr;
-		VolumetricCloudActor* cloud = nullptr;
-
-		// Sky IBL
-		GLuint skyIrradianceMap = 0;
-		GLuint skyPrefilterEnvMap = 0;
-		uint32 skyPrefilterEnvMapMipLevels = 0;
 
 	private:
 		World* owner = nullptr;
+
+		bool bInvalidateSkyLighting = false;
 
 		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
 		uniquePtr<RenderTarget2D> depthProbeAtlas;

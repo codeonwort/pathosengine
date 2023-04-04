@@ -141,7 +141,7 @@
     <ClCompile Include="src\pathos\render\skybox.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\sky_ansel.cpp">
+    <ClCompile Include="src\pathos\render\sky_panorama.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp">
@@ -369,7 +369,7 @@
     <ClCompile Include="src\pathos\scene\skybox_actor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp">
+    <ClCompile Include="src\pathos\scene\sky_panorama_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\reflection_probe_component.cpp">
@@ -503,7 +503,7 @@
     <ClInclude Include="src\pathos\render\skybox.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\sky_ansel.h">
+    <ClInclude Include="src\pathos\render\sky_panorama.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\renderdoc_integration.h">
@@ -818,10 +818,10 @@
     <ClInclude Include="src\pathos\scene\skybox_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\scene\sky_ansel_actor.h">
+    <ClInclude Include="src\pathos\scene\sky_panorama_actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\scene\sky_ansel_component.h">
+    <ClInclude Include="src\pathos\scene\sky_panorama_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h">

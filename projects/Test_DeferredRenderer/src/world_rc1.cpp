@@ -11,7 +11,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 
@@ -215,29 +215,10 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(
-		starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
-	GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(
-		starfield, STARFIELD_CUBEMAP_SIZE, "Texture: starfield cube");
-
-	// Irradiance map
-	GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(
-		cubemapForIBL, 32, false, "Texture: starfield irradiance map");
-
-	// Specular IBL
-	GLuint prefilteredEnvMap;
-	uint32 mipLevels;
-	ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(
-		cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture: starfield specular IBL");
-
-	scene.skyIrradianceMap = irradianceMap;
-	scene.skyPrefilterEnvMap = prefilteredEnvMap;
-	scene.skyPrefilterEnvMapMipLevels = mipLevels;
-
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	ansel->initialize(starfield);
-	scene.sky = ansel;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	panoramaSky->initialize(starfield);
 
 	// Volumetric cloud
 	{
@@ -256,8 +237,8 @@ void World_RC1::setupSky()
 			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
 			cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
 		}
-		scene.cloud = spawnActor<VolumetricCloudActor>();
-		scene.cloud->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
+		VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
+		cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 	}
 }
 

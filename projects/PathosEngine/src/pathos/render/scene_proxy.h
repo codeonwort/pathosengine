@@ -49,6 +49,10 @@ namespace pathos {
 
 		void finalize_mainThread();
 
+		// DO NOT USE. Dirty hack :(
+		inline void internal_setSunComponent(class DirectionalLightComponent* dirLightComponent) { tempSunComponent = dirLightComponent; }
+		inline class DirectionalLightComponent* internal_getSunComponent() { return tempSunComponent; }
+
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
 		// This should be called for each view.
@@ -68,7 +72,7 @@ namespace pathos {
 		//
 		inline bool isGodRayValid() const { return godRayMeshes.size() > 0; }
 		inline bool isSkyboxValid() const { return skybox != nullptr; }
-		inline bool isAnselSkyValid() const { return anselSky != nullptr; }
+		inline bool isPanoramaSkyValid() const { return panoramaSky != nullptr; }
 		inline bool isSkyAtmosphereValid() const { return skyAtmosphere != nullptr; }
 		inline bool isVolumetricCloudValid() const { return cloud != nullptr; }
 
@@ -98,8 +102,9 @@ namespace pathos {
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
 		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
 		
+		bool                                       bInvalidateSkyLighting = false;
 		struct SkyboxProxy*                        skybox = nullptr;
-		struct AnselSkyProxy*                      anselSky = nullptr;
+		struct PanoramaSkyProxy*                   panoramaSky = nullptr;
 		struct SkyAtmosphereProxy*                 skyAtmosphere = nullptr;
 		struct VolumetricCloudProxy*               cloud = nullptr;
 
@@ -107,11 +112,6 @@ namespace pathos {
 		//               These are filled by Scene::createRenderProxy() for now.
 		std::vector<StaticMeshProxy*>              godRayMeshes;
 		vector3                                    godRayLocation = vector3(0.0f);
-
-		// IBL
-		GLuint                                     skyIrradianceMap = 0;
-		GLuint                                     skyPrefilterEnvMap = 0;
-		uint32                                     skyPrefilterEnvMapMipLevels = 0;
 
 		GLuint                                     irradianceAtlas = 0;
 		GLuint                                     depthProbeAtlas = 0;
@@ -123,6 +123,9 @@ namespace pathos {
 		// Light probe based GI
 		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
+
+	private:
+		class DirectionalLightComponent*           tempSunComponent = nullptr;
 	};
 
 }

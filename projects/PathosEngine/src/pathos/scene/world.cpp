@@ -69,6 +69,8 @@ namespace pathos {
 		inputManager = gEngine->getInputSystem()->createInputManager();
 		inputManager->bindXInput(XInputUserIndex::USER0);
 
+		scene.invalidateSkyLighting();
+
 		onInitialize();
 	}
 

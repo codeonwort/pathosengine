@@ -11,7 +11,7 @@
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
@@ -25,8 +25,9 @@ static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
 
+// 0=skybox, 1=atmosphere, 2=panorama
 #define              SKY_METHOD           2
-static const char*   SKY_HDRI             = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
+static const char*   SKY_PANORAMA_HDRI    = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 static const uint32  NUM_BALLS            = 10;
 static const char*   SANDSTONE_ALBEDO     = "resources/textures/pbr_sandstone/sandstonecliff-albedo.png";
@@ -110,29 +111,6 @@ void World1::setupInput()
 
 void World1::setupSky()
 {
-	{
-		GLuint equirectangularMap = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI), true, "Texture IBL: equirectangularMap");
-		GLuint cubemapForIBL = ImageBasedLightingBaker::projectToCubemap(equirectangularMap, 512, "Texture IBL: cubemapForIBL");
-
-		// diffuse irradiance
-		{
-			GLuint irradianceMap = ImageBasedLightingBaker::bakeSkyIrradianceMap(cubemapForIBL, 32, false, "Texture IBL: diffuse irradiance");
-			scene.skyIrradianceMap = irradianceMap;
-		}
-
-		// specular IBL
-		{
-			GLuint prefilteredEnvMap;
-			uint32 mipLevels;
-			ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(cubemapForIBL, 128, prefilteredEnvMap, mipLevels, "Texture IBL: specular IBL (prefiltered env map)");
-
-			scene.skyPrefilterEnvMap = prefilteredEnvMap;
-			scene.skyPrefilterEnvMapMipLevels = mipLevels;
-		}
-	}
-
-	// --------------------------------------------------------
-	// Sky
 #if SKY_METHOD == 0
 #if DEBUG_SKYBOX
 	std::array<const char*, 6> cubeImgName = {
@@ -160,19 +138,12 @@ void World1::setupSky()
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->initialize(cubeTexture);
 	skybox->setLOD(1.0f);
-	scene.sky = skybox;
 #elif SKY_METHOD == 1
-	scene.sky = spawnActor<SkyAtmosphereActor>();
+	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
-	AnselSkyActor* ansel = spawnActor<AnselSkyActor>();
-	GLuint anselTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
-	ansel->initialize(anselTex);
-	scene.sky = ansel;
-#else
-	GLuint hdri_temp = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_HDRI));
-	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(ImageBasedLightingBaker::projectToCubemap(hdri_temp, 512));
-	scene.sky = skybox;
+	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
+	GLuint panoramaTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_PANORAMA_HDRI));
+	panoramaSky->initialize(panoramaTex);
 #endif
 }
 
@@ -198,12 +169,12 @@ void World1::setupScene()
 	{
 		constexpr bool genMipmap = true;
 		constexpr bool sRGB = true;
-		BitmapBlob* albedoBlob = loadImage(SANDSTONE_ALBEDO);
+		BitmapBlob* albedoBlob = pathos::loadImage(SANDSTONE_ALBEDO);
 		GLuint albedo = pathos::createTextureFromBitmap(albedoBlob, genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
+		GLuint normal = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
+		GLuint metallic = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
+		GLuint roughness = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
+		GLuint ao = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);

@@ -7,6 +7,15 @@
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
 
+static uint32 calcCubemapNumMips(uint32 defaultSize, uint32 minSize) {
+	uint32 num = 1;
+	while (defaultSize >= minSize) {
+		defaultSize /= 2;
+		num += 1;
+	}
+	return num;
+}
+
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_resolutionScale("r.resolution_scale", 100, "Controls screen resolution percentage");
@@ -88,6 +97,14 @@ namespace pathos {
 			cmdList.textureStorage3D(texture, 1, format, width, height, numLayers);
 			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
 		};
+		auto reallocTextureCube = [&cmdList](GLuint& texture, GLenum format, uint32 size, uint32 numMips, char* objectLabel) -> void {
+			if (texture != 0) {
+				cmdList.deleteTextures(1, &texture);
+			}
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &texture);
+			cmdList.textureStorage2D(texture, numMips, format, size, size);
+			cmdList.objectLabel(GL_TEXTURE, texture, -1, objectLabel);
+		};
 		auto reallocTextureCubeArray = [&cmdList](GLuint& texture, GLenum format, uint32 size, uint32 numCubemaps, uint32 numMips, char* objectLabel) -> void {
 			if (texture != 0) {
 				cmdList.deleteTextures(1, &texture);
@@ -114,6 +131,8 @@ namespace pathos {
 
 		if (sceneProxySource == SceneProxySource::MainScene) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
+			reallocSkyIrradianceMap(cmdList);
+			// One of sky passes will invoke reallocSkyPrefilterMap()
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -280,6 +299,8 @@ namespace pathos {
 		safe_release(cascadedShadowMap);
 		safe_release(omniShadowMaps);
 		safe_release(localSpecularIBLs);
+		safe_release(skyIrradianceMap);
+		safe_release(skyPrefilteredMap);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
 		safe_release(gbufferC);
@@ -351,6 +372,56 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, gbufferA, -1, "gbufferA");
 		cmdList.objectLabel(GL_TEXTURE, gbufferB, -1, "gbufferB");
 		cmdList.objectLabel(GL_TEXTURE, gbufferC, -1, "gbufferC");
+	}
+
+	void SceneRenderTargets::reallocSkyIrradianceMap(RenderCommandList& cmdList) {
+		if (skyIrradianceMap != 0) {
+			cmdList.deleteTextures(1, &skyIrradianceMap);
+		}
+		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyIrradianceMap);
+		cmdList.textureStorage2D(skyIrradianceMap, 1, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, SKY_IRRADIANCE_MAP_SIZE);
+		cmdList.objectLabel(GL_TEXTURE, skyIrradianceMap, -1, "SkyIrradianceMap");
+	}
+
+	void SceneRenderTargets::destroySkyPrefilterMap(RenderCommandList& cmdList) {
+		if (skyPrefilteredMap != 0) {
+			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
+			skyPrefilteredMap = 0;
+		}
+	}
+
+	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
+		CHECKF(cubemapSize > 0, "cubemapSize is zero");
+		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {
+			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
+			skyPrefilteredMap = 0;
+		}
+
+		skyPrefilterMapMipCount = calcCubemapNumMips(cubemapSize, SKY_PREFILTER_MAP_MIN_SIZE);
+		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFILTER_MAP_MAX_NUM_MIPS);
+		skyPrefilterMapSize = cubemapSize;
+		if (skyPrefilteredMap == 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyPrefilteredMap);
+			cmdList.textureStorage2D(
+				skyPrefilteredMap,
+				skyPrefilterMapMipCount,
+				GL_RGBA16F,
+				cubemapSize,
+				cubemapSize);
+			cmdList.objectLabel(GL_TEXTURE, skyPrefilteredMap, -1, "Texture_SkyPrefilterMap");
+		}
+	}
+
+	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
+		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
+	}
+
+	GLuint SceneRenderTargets::getSkyPrefilterMapWithFallback() const {
+		return (skyPrefilteredMap != 0) ? skyPrefilteredMap : gEngine->getSystemTextureCubeBlack();
+	}
+
+	uint32 SceneRenderTargets::getSkyPrefilterMapMipCount() const {
+		return (skyPrefilteredMap != 0) ? skyPrefilterMapMipCount : 1;
 	}
 
 }

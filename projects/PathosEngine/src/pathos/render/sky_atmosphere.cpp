@@ -1,15 +1,21 @@
 #include "sky_atmosphere.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
+#include "pathos/scene/directional_light_component.h"
+#include "pathos/scene/sky_atmosphere_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/log.h"
 #include "pathos/engine_policy.h"
+#include "pathos/console.h"
 
 // Precomputed Atmospheric Scattering
 namespace pathos {
+
+	static ConsoleVariable<float> cvar_sunDisk("r.atmosphere.sunDiskSize", 5.0f, "Sun disk size");
 
 	// #todo-atmosphere: better lifecycle management
 	GLuint gTransmittanceLUT = 0;
@@ -17,11 +23,19 @@ namespace pathos {
 	static const int32 LUT_WIDTH = 64;
 	static const int32 LUT_HEIGHT = 256;
 
+	static constexpr uint32 TO_CUBEMAP_SIZE = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
+
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;
 
-		vector2 sunParams;  // (sunSizeMultiplier, sunIntensity)
+		vector3 sunIlluminance;
+		float   sunDiskSize;
+
 		vector2 screenFlip; // (flipX, flipY)
+		uint32  renderToCubemap;
+		float   cubemapSize;
+
+		matrix4 customViewInv;
 	};
 
 	template<bool bCheckReverseZ>
@@ -103,17 +117,32 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_SkyAtmosphere");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
+		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTexture);
+		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, TO_CUBEMAP_SIZE, TO_CUBEMAP_SIZE);
+
 		ubo.init<UBO_Atmosphere>("UBO_SkyAtmosphere");
 		gRenderDevice->createVertexArrays(1, &vao);
 	}
 
 	void SkyAtmospherePass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
+		gRenderDevice->deleteTextures(1, &cubemapTexture);
 		gRenderDevice->deleteVertexArrays(1, &vao);
 	}
 
 	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
-		SCOPED_DRAW_EVENT(SkyAtmosphereActor);
+		SCOPED_DRAW_EVENT(SkyAtmosphere);
+
+		renderToScreen(cmdList, scene, camera);
+		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skyAtmosphere->bLightingDirty) {
+			renderToCubemap(cmdList, scene);
+			renderSkyIrradianceMap(cmdList, scene);
+			renderSkyPrefilterMap(cmdList, scene);
+		}
+	}
+
+	void SkyAtmospherePass::renderToScreen(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+		SCOPED_DRAW_EVENT(SkyAtmosphereToScreen);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
@@ -129,11 +158,17 @@ namespace pathos {
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.depthMask(GL_FALSE);
 
+		vector3 sunIlluminance = vector3(13.61839144264511f);
+		if (scene->proxyList_directionalLight.size() > 0) {
+			sunIlluminance = scene->proxyList_directionalLight[0]->illuminance;
+		}
+
 		UBO_Atmosphere uboData;
-		uboData.sunParams.x = 5.0f;
-		uboData.sunParams.y = 13.61839144264511f;
-		uboData.screenFlip.x = camera->getLens().isFlipX() ? -1.0f : 1.0f;
-		uboData.screenFlip.y = camera->getLens().isFlipY() ? -1.0f : 1.0f;
+		uboData.sunIlluminance  = sunIlluminance;
+		uboData.sunDiskSize     = cvar_sunDisk.getFloat();
+		uboData.screenFlip.x    = camera->getLens().isFlipX() ? -1.0f : 1.0f;
+		uboData.screenFlip.y    = camera->getLens().isFlipY() ? -1.0f : 1.0f;
+		uboData.renderToCubemap = 0;
 		ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, gTransmittanceLUT);
@@ -143,6 +178,92 @@ namespace pathos {
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		cmdList.bindVertexArray(0);
+	}
+
+	void SkyAtmospherePass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyAtmosphereToCubemap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		const vector3 lookAtOffsets[6] = {
+			vector3(+1.0f, 0.0f, 0.0f), // posX
+			vector3(-1.0f, 0.0f, 0.0f), // negX
+			vector3(0.0f, +1.0f, 0.0f), // posY
+			vector3(0.0f, -1.0f, 0.0f), // negY
+			vector3(0.0f, 0.0f, +1.0f), // posZ
+			vector3(0.0f, 0.0f, -1.0f), // negZ
+		};
+		const vector3 upVectors[6] = {
+			vector3(0.0f, -1.0f, 0.0f), // posX
+			vector3(0.0f, -1.0f, 0.0f), // negX
+			vector3(+1.0f, 0.0f, 0.0f), // posY
+			vector3(-1.0f, 0.0f, 0.0f), // negY
+			vector3(0.0f, -1.0f, 0.0f), // posZ
+			vector3(0.0f, -1.0f, 0.0f), // negZ
+		};
+
+		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, 1000.0f));
+
+		vector3 sunIlluminance = vector3(13.61839144264511f);
+		if (scene->proxyList_directionalLight.size() > 0) {
+			sunIlluminance = scene->proxyList_directionalLight[0]->illuminance;
+		}
+		float sunDiskSize = cvar_sunDisk.getFloat();
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.bindTextureUnit(0, gTransmittanceLUT);
+		cmdList.viewport(0, 0, TO_CUBEMAP_SIZE, TO_CUBEMAP_SIZE);
+		cmdList.bindVertexArray(vao);
+
+		for (int32 i = 0; i < 6; ++i) {
+			tempCamera.lookAt(vector3(0.0f), lookAtOffsets[i], upVectors[i]);
+			bool flipScreenXY = (i != 2 && i != 3);
+
+			UBO_Atmosphere uboData;
+			uboData.sunIlluminance  = sunIlluminance;
+			uboData.sunDiskSize     = sunDiskSize;
+			uboData.screenFlip.x    = flipScreenXY ? -1.0f : 1.0f;
+			uboData.screenFlip.y    = flipScreenXY ? -1.0f : 1.0f;
+			uboData.renderToCubemap = 1;
+			uboData.cubemapSize     = (float)TO_CUBEMAP_SIZE;
+			uboData.customViewInv   = glm::inverse(tempCamera.getViewMatrix());
+			ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
+
+			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTexture, 0, i);
+			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		}
+
+		cmdList.bindVertexArray(0);
+	}
+
+	void SkyAtmospherePass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyAtmosphereToIrradianceMap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+			cmdList,
+			cubemapTexture,
+			sceneContext.skyIrradianceMap,
+			pathos::SKY_IRRADIANCE_MAP_SIZE);
+	}
+
+	void SkyAtmospherePass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(SkyAtmosphereToPrefilterMap);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		sceneContext.reallocSkyPrefilterMap(cmdList, TO_CUBEMAP_SIZE);
+
+		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+			cmdList,
+			cubemapTexture,
+			TO_CUBEMAP_SIZE,
+			sceneContext.skyPrefilterMapMipCount,
+			sceneContext.skyPrefilteredMap);
 	}
 
 }

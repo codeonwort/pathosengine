@@ -10,14 +10,19 @@ namespace pathos {
 		}
 	}
 
-	void SkyboxComponent::initialize(GLuint inTextureID) {
-		textureID = inTextureID;
-		lod = 0.0f;
-		cube = new CubeGeometry(vector3(1.0f));
+	void SkyboxComponent::setCubemap(GLuint inTextureID) {
+		if (textureID != inTextureID) {
+			textureID = inTextureID;
+			bLightingDirty = true;
+		}
+		if (cube == nullptr) {
+			cube = new CubeGeometry(vector3(1.0f));
+		}
 	}
 
 	void SkyboxComponent::setLOD(float inLOD) {
 		lod = badger::max(0.0f, inLOD);
+		bLightingDirty = true;
 	}
 
 	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
@@ -26,10 +31,17 @@ namespace pathos {
 			return;
 		}
 
+		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+
 		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
 		proxy->cube = cube;
 		proxy->textureID = textureID;
 		proxy->textureLod = lod;
+		proxy->bLightingDirty = bLightingDirty && bMainScene;
+
+		if (bMainScene) {
+			bLightingDirty = false;
+		}
 
 		scene->skybox = proxy;
 	}

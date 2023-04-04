@@ -425,20 +425,24 @@ namespace pathos {
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
-		GLuint systemTextures[5];
-		renderDevice->createTextures(GL_TEXTURE_2D, 5, systemTextures);
+		GLuint systemTexture2Ds[5];
+		GLuint systemTextureCubes[1];
+		renderDevice->createTextures(GL_TEXTURE_2D, _countof(systemTexture2Ds), systemTexture2Ds);
+		renderDevice->createTextures(GL_TEXTURE_CUBE_MAP, _countof(systemTextureCubes), systemTextureCubes);
 
-		gEngine->texture2D_black = systemTextures[0];
-		gEngine->texture2D_white = systemTextures[1];
-		gEngine->texture2D_grey = systemTextures[2];
-		gEngine->texture2D_blue = systemTextures[3];
-		gEngine->texture2D_normalmap = systemTextures[4];
+		gEngine->texture2D_black     = systemTexture2Ds[0];
+		gEngine->texture2D_white     = systemTexture2Ds[1];
+		gEngine->texture2D_grey      = systemTexture2Ds[2];
+		gEngine->texture2D_blue      = systemTexture2Ds[3];
+		gEngine->texture2D_normalmap = systemTexture2Ds[4];
+		gEngine->textureCube_black   = systemTextureCubes[0];
 
 		cmdList.textureStorage2D(gEngine->texture2D_black, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_white, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_grey, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_blue, 1, GL_RGBA8, 1, 1);
 		cmdList.textureStorage2D(gEngine->texture2D_normalmap, 1, GL_RGBA8, 1, 1);
+		cmdList.textureStorage2D(gEngine->textureCube_black, 1, GL_RGBA8, 1, 1);
 
 		GLubyte black[4] = { 0, 0, 0, 0 };
 		GLubyte white[4] = { 0xff, 0xff, 0xff, 0xff };
@@ -451,12 +455,14 @@ namespace pathos {
 		cmdList.clearTexImage(gEngine->texture2D_grey, 0, GL_RGBA, GL_UNSIGNED_BYTE, grey);
 		cmdList.clearTexImage(gEngine->texture2D_blue, 0, GL_RGBA, GL_UNSIGNED_BYTE, blue);
 		cmdList.clearTexImage(gEngine->texture2D_normalmap, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalmap);
+		cmdList.clearTexImage(gEngine->textureCube_black, 0, GL_RGBA, GL_UNSIGNED_BYTE, black);
 
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_black, -1, "system texture 2D (black)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_white, -1, "system texture 2D (white)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_grey, -1, "system texture 2D (grey)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_blue, -1, "system texture 2D (blue)");
 		cmdList.objectLabel(GL_TEXTURE, gEngine->texture2D_normalmap, -1, "system texture 2D (normalmap)");
+		cmdList.objectLabel(GL_TEXTURE, gEngine->textureCube_black, -1, "system texture cube (black)");
 
 		cmdList.flushAllCommands();
 

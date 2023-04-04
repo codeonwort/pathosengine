@@ -34,17 +34,19 @@ namespace pathos {
 
 namespace pathos {
 
-	struct AnselSkyProxy : SceneComponentProxy {
+	struct PanoramaSkyProxy : SceneComponentProxy {
 		MeshGeometry* sphere;
 		GLuint textureID;
+		bool bLightingDirty;
 	};
 
-	class AnselSkyComponent : public SceneComponent {
+	class PanoramaSkyComponent : public SceneComponent {
 
 	public:
-		~AnselSkyComponent();
+		~PanoramaSkyComponent();
 
-		void initialize(GLuint textureID);
+		// Pass a panorama-style texture (i.e., equirectangular map).
+		void setTexture(GLuint textureID);
 
 		inline bool hasValidResources() const {
 			return textureID != 0 && sphere != nullptr;
@@ -57,6 +59,7 @@ namespace pathos {
 		GLuint textureID = 0;
 		MeshGeometry* sphere = nullptr;
 
+		bool bLightingDirty = false;
 	};
 
 }

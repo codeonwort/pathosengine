@@ -1,5 +1,3 @@
-// Simulates the Earth's atmospheric scattering.
-
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
@@ -10,18 +8,17 @@
 namespace pathos {
 
 	class SceneProxy;
-	class Camera;
 
-	class SkyAtmospherePass : public Noncopyable {
-
+	class PanoramaSkyPass : public Noncopyable {
+		
 	public:
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
+		void renderPanoramaSky(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
-		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
+		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
@@ -29,7 +26,6 @@ namespace pathos {
 		GLuint fbo = 0xffffffff;
 		GLuint cubemapTexture = 0;
 		UniformBuffer ubo;
-		GLuint vao;
 
 	};
 

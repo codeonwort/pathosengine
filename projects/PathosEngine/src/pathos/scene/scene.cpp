@@ -115,6 +115,10 @@ namespace pathos {
 		return depthProbeAtlas->getGLName();
 	}
 
+	void Scene::invalidateSkyLighting() {
+		bInvalidateSkyLighting = true;
+	}
+
 	SceneProxy* Scene::createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera) {
 		char counterName[64];
 		sprintf_s(counterName, "CreateRenderProxy (%s)", pathos::getSceneProxySourceString(source));
@@ -134,6 +138,27 @@ namespace pathos {
 			}
 		});
 
+		// #todo: Dirty hack to find first directional component.
+		DirectionalLightComponent* sunComponent = nullptr;
+		for (auto& actor : world->actors) {
+			if (!actor->markedForDeath) {
+				for (ActorComponent* actorComponent : actor->components) {
+					auto component = dynamic_cast<DirectionalLightComponent*>(actorComponent);
+					if (component != nullptr) {
+						sunComponent = component;
+						proxy->internal_setSunComponent(sunComponent);
+						break;
+					}
+				}
+			}
+			if (sunComponent != nullptr) {
+				break;
+			}
+		}
+
+		proxy->bInvalidateSkyLighting = bInvalidateSkyLighting;
+		bInvalidateSkyLighting = false;
+
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {
 				actor->updateTransformHierarchy();
@@ -147,10 +172,6 @@ namespace pathos {
 			godRaySource->createRenderProxy_internal(proxy, proxy->godRayMeshes);
 			proxy->godRayLocation = godRaySource->getLocation();
 		}
-
-		proxy->skyIrradianceMap = skyIrradianceMap;
-		proxy->skyPrefilterEnvMap = skyPrefilterEnvMap;
-		proxy->skyPrefilterEnvMapMipLevels = skyPrefilterEnvMapMipLevels;
 
 		if (irradianceProbeAtlas != nullptr) {
 			proxy->irradianceAtlas = irradianceProbeAtlas->getGLName();

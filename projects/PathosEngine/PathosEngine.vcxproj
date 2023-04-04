@@ -170,12 +170,12 @@
     <ClCompile Include="src\pathos\scene\scene.cpp" />
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp" />
     <ClCompile Include="src\pathos\render\skybox.cpp" />
-    <ClCompile Include="src\pathos\render\sky_ansel.cpp" />
+    <ClCompile Include="src\pathos\render\sky_panorama.cpp" />
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp" />
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp" />
     <ClCompile Include="src\pathos\scene\skybox_actor.cpp" />
     <ClCompile Include="src\pathos\scene\skybox_component.cpp" />
-    <ClCompile Include="src\pathos\scene\sky_ansel_component.cpp" />
+    <ClCompile Include="src\pathos\scene\sky_panorama_component.cpp" />
     <ClCompile Include="src\pathos\material\material_shader.cpp" />
     <ClCompile Include="src\pathos\material\material_shader_assembler.cpp" />
     <ClCompile Include="src\pathos\rhi\shader_program.cpp" />
@@ -302,8 +302,8 @@
     <ClInclude Include="src\pathos\scene\skybox_actor.h" />
     <ClInclude Include="src\pathos\scene\skybox_component.h" />
     <ClInclude Include="src\pathos\scene\sky_actor.h" />
-    <ClInclude Include="src\pathos\scene\sky_ansel_actor.h" />
-    <ClInclude Include="src\pathos\scene\sky_ansel_component.h" />
+    <ClInclude Include="src\pathos\scene\sky_panorama_actor.h" />
+    <ClInclude Include="src\pathos\scene\sky_panorama_component.h" />
     <ClInclude Include="src\pathos\scene\sky_atmosphere_actor.h" />
     <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h" />
     <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h" />
@@ -345,7 +345,7 @@
     <ClInclude Include="src\pathos\render\render_overlay.h" />
     <ClInclude Include="src\pathos\scene\scene.h" />
     <ClInclude Include="src\pathos\render\skybox.h" />
-    <ClInclude Include="src\pathos\render\sky_ansel.h" />
+    <ClInclude Include="src\pathos\render\sky_panorama.h" />
     <ClInclude Include="src\pathos\render\visualize_buffer.h" />
     <ClInclude Include="src\pathos\render_minimal.h" />
     <ClInclude Include="src\pathos\rhi\uniform_buffer.h" />

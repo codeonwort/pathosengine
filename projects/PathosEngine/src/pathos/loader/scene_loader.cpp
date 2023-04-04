@@ -6,7 +6,7 @@
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
-#include "pathos/scene/sky_ansel_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/static_mesh_actor.h"
 
@@ -79,7 +79,6 @@ namespace pathos {
 		if (sceneDesc.skyAtmosphere.valid) {
 			SkyAtmosphereActor* actor = world->spawnActor<SkyAtmosphereActor>();
 
-			world->getScene().sky = actor;
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
 		}
@@ -95,10 +94,7 @@ namespace pathos {
 			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
 			actor->initialize(cubeTexture);
 
-			if (!skyBound) {
-				world->getScene().sky = actor;
-				skyBound = true;
-			}
+			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
 		if (sceneDesc.skyEquimap.valid) {
@@ -111,13 +107,10 @@ namespace pathos {
 				texture = pathos::createTextureFromBitmap(metadata, false, true);
 			}
 
-			AnselSkyActor* actor = world->spawnActor<AnselSkyActor>();
+			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
 			actor->initialize(texture);
 
-			if (!skyBound) {
-				world->getScene().sky = actor;
-				skyBound = true;
-			}
+			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
 		}
 		// directional lights
