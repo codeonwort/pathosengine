@@ -2,6 +2,7 @@
 
 #include "badger/thread/cpu.h"
 #include "badger/math/minmax.h"
+#include "badger/types/half_float.h"
 #include "badger/assertion/assertion.h"
 
 #include "pathos/engine.h"
@@ -148,21 +149,6 @@ namespace pathos {
 					if (sceneProxy->bScreenshotReserved && sceneProxy->screenshotRawData.size() > 0) {
 						vector2i screenshotSize = sceneProxy->screenshotSize;
 
-						// https://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion
-						auto as_uint = [](const float x) -> uint32 { return *(uint32*)&x; };
-						auto as_float = [](const uint32 x) -> float { return *(float*)&x; };
-						auto half_to_float = [as_uint, as_float](const uint16 x) -> float { // IEEE-754 16-bit floating-point format (without infinity): 1-5-10, exp-15, +-131008.0, +-6.1035156E-5, +-5.9604645E-8, 3.311 digits
-							const uint32 e = (x & 0x7C00) >> 10; // exponent
-							const uint32 m = (x & 0x03FF) << 13; // mantissa
-							const uint32 v = as_uint((float)m) >> 23; // evil log2 bit hack to count leading zeros in denormalized format
-							return as_float((x & 0x8000) << 16 | (e != 0) * ((e + 112) << 23 | m) | ((e == 0) & (m != 0)) * ((v - 37) << 23 | ((m << (150 - v)) & 0x007FE000))); // sign : normalized : denormalized
-						};
-						auto float_to_half = [as_uint](const float x) -> uint16 { // IEEE-754 16-bit floating-point format (without infinity): 1-5-10, exp-15, +-131008.0, +-6.1035156E-5, +-5.9604645E-8, 3.311 digits
-							const uint32 b = as_uint(x) + 0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
-							const uint32 e = (b & 0x7F800000) >> 23; // exponent
-							const uint32 m = b & 0x007FFFFF; // mantissa; in line below: 0x007FF000 = 0x00800000-0x00001000 = decimal indicator flag - initial rounding
-							return (b & 0x80000000) >> 16 | (e > 112) * ((((e - 112) << 10) & 0x7C00) | m >> 13) | ((e < 113) & (e > 101)) * ((((0x007FF000 + m) >> (125 - e)) + 1) >> 1) | (e > 143) * 0x7FFF; // sign : normalized : denormalized : saturate
-						};
 						// Convert float16 to float32.
 						const int32 totalPixels = screenshotSize.x * screenshotSize.y;
 						const std::vector<uint16>& rawPixels = sceneProxy->screenshotRawData;

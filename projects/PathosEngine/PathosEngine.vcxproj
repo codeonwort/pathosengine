@@ -100,6 +100,7 @@
     </ClCompile>
     <ClCompile Include="src\init_tinygltf.cpp" />
     <ClCompile Include="src\init_tinyobjloader.cpp" />
+    <ClCompile Include="src\pathos\render\fullscreen_util.cpp" />
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\badger\memory\mem_alloc.h" />
     <ClInclude Include="src\badger\system\platform.h" />
     <ClInclude Include="src\badger\thread\cpu.h" />
+    <ClInclude Include="src\badger\types\half_float.h" />
     <ClInclude Include="src\badger\types\os.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\thread\thread_pool.h" />
@@ -225,6 +227,7 @@
     <ClInclude Include="src\badger\types\noncopyable.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
+    <ClInclude Include="src\pathos\render\fullscreen_util.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />

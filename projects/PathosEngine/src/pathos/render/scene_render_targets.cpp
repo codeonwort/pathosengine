@@ -383,13 +383,6 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, skyIrradianceMap, -1, "SkyIrradianceMap");
 	}
 
-	void SceneRenderTargets::destroySkyPrefilterMap(RenderCommandList& cmdList) {
-		if (skyPrefilteredMap != 0) {
-			gRenderDevice->deleteTextures(1, &skyPrefilteredMap);
-			skyPrefilteredMap = 0;
-		}
-	}
-
 	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
 		CHECKF(cubemapSize > 0, "cubemapSize is zero");
 		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {

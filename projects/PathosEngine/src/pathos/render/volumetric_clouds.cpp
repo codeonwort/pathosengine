@@ -1,11 +1,12 @@
 #include "volumetric_clouds.h"
 #include "pathos/rhi/render_device.h"
-#include "pathos/render/scene_proxy.h"
-#include "pathos/render/scene_render_targets.h"
-#include "pathos/scene/volumetric_cloud_component.h"
-#include "pathos/scene/directional_light_component.h"
 #include "pathos/rhi/volume_texture.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
+#include "pathos/scene/volumetric_cloud_component.h"
+#include "pathos/scene/directional_light_component.h"
 #include "pathos/console.h"
 // For NVidia STBN
 #include "pathos/util/resource_finder.h"
@@ -77,15 +78,6 @@ namespace pathos {
 		uint32 frameCounter;
 	};
 
-	// #todo-cloud: Use clearTexImage instead of dispatching a CS.
-	class VolumetricCloudClearCS : public ShaderStage {
-	public:
-		VolumetricCloudClearCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudClearCS") {
-			setFilepath("volumetric_clouds_clear.glsl");
-		}
-	};
-	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloudClear, VolumetricCloudClearCS);
-
 	class VolumetricCloudCS : public ShaderStage {
 	public:
 		VolumetricCloudCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudCS") {
@@ -145,20 +137,14 @@ namespace pathos {
 
 		const bool bRenderClouds = scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
 		if (!bRenderClouds) {
-#if 0
-			// #todo-cloud: How to do this correctly?
-			// (GL_RGBA, GL_HALF_FLOAT) for (PF_volumetricCloud = GL_RGBA16F)
-			GLhalf clearValues[] = { 0, 0, 0, 1 }; // ???
-			cmdList.clearTexImage(sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_RGBA, GL_HALF_FLOAT, clearValues);
-#else
-			ShaderProgram& clearProgram = FIND_SHADER_PROGRAM(Program_VolumetricCloudClear);
-			cmdList.useProgram(clearProgram.getGLName());
-			GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
-			GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
-			cmdList.bindImageTexture(0, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
-			cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
-			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-#endif
+			float clearValues[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			pathos::clearTexture2D(
+				cmdList,
+				sceneContext.getVolumetricCloud(scene->frameNumber),
+				(uint32)(resolutionScale * sceneWidth),
+				(uint32)(resolutionScale * sceneHeight),
+				EClearTextureFormat::RGBA16f,
+				clearValues);
 			return;
 		}
 

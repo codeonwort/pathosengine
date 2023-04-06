@@ -12,6 +12,7 @@
 #include "pathos/rhi/gl_debug_group.h"
 #include "pathos/rhi/volume_texture.h"
 #include "pathos/render/render_target.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/material/material_shader.h"
 
 // Render passes
@@ -296,12 +297,26 @@ namespace pathos {
 			SCOPED_GPU_COUNTER(Sky);
 			SCOPED_DRAW_EVENT(Sky);
 
-			// Should just clear current textures, but I'm too lazy as hell to figure out
-			// how to clear fp16 textures with clearTexImage().
-			// Let's destroy and recreate the textures.
+			// Sky lighting is invalidated, for instance due to world transition.
+			// Clear current sky lighting textures and let sky passes update them.
 			if (scene->bInvalidateSkyLighting) {
-				sceneRenderTargets->reallocSkyIrradianceMap(cmdList);
-				sceneRenderTargets->destroySkyPrefilterMap(cmdList);
+				float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				if (sceneRenderTargets->skyIrradianceMap != 0) {
+					pathos::clearTextureCube(
+						cmdList,
+						sceneRenderTargets->skyIrradianceMap,
+						pathos::SKY_IRRADIANCE_MAP_SIZE,
+						EClearTextureFormat::RGBA16f,
+						clearValues);
+				}
+				if (sceneRenderTargets->skyPrefilteredMap != 0) {
+					pathos::clearTextureCube(
+						cmdList,
+						sceneRenderTargets->skyPrefilteredMap,
+						sceneRenderTargets->skyPrefilterMapSize,
+						EClearTextureFormat::RGBA16f,
+						clearValues);
+				}
 			}
 
 			const bool bRenderSkybox = scene->isSkyboxValid();

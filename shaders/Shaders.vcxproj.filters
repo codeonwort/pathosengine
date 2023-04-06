@@ -49,7 +49,6 @@
     <None Include="common.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />
-    <None Include="volumetric_clouds_clear.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
@@ -74,5 +73,6 @@
     <None Include="temporal_anti_aliasing.glsl" />
     <None Include="geom_common.glsl" />
     <None Include="visualize_light_probe.glsl" />
+    <None Include="clear_texture.glsl" />
   </ItemGroup>
 </Project>
