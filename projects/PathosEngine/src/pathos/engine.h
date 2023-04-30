@@ -28,6 +28,7 @@ namespace pathos {
 	class InputSystem;
 	class OpenGLDevice;
 	class DebugOverlay;
+	class OverlaySceneProxy;
 	class ConsoleWindow;
 	class AssetStreamer;
 	class OverlayRenderer;
@@ -85,6 +86,7 @@ namespace pathos {
 
 		// #todo-renderthread: Ad-hoc communication to render thread. Needs clearer interface.
 		void pushSceneProxy(SceneProxy* newSceneProxy);
+		void pushOverlayProxy(OverlaySceneProxy* newOverlayProxy);
 		void updateMainWindow_renderThread();
 		void updateGPUQuery_renderThread(
 			float inElapsedRenderThread,
@@ -173,6 +175,7 @@ namespace pathos {
 		Stopwatch stopwatch_app;
 
 		std::vector<SceneProxy*> reservedSceneProxies;
+		std::vector<OverlaySceneProxy*> reservedOverlayProxies;
 		uniquePtr<Fence> frameFence;
 		uint32 frameNumber_mainThread = 0; // Set to 1 in initialize()
 		float elapsed_gameThread = 0.0f;

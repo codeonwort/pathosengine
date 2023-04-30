@@ -293,6 +293,10 @@ namespace pathos {
 		//renderThread->pushSceneProxy(newSceneProxy); // Deferr push to the end of main thread tick.
 	}
 
+	void Engine::pushOverlayProxy(OverlaySceneProxy* newOverlayProxy) {
+		reservedOverlayProxies.push_back(newOverlayProxy);
+	}
+
 	void Engine::updateMainWindow_renderThread() {
 		mainWindow->updateWindow_renderThread();
 	}
@@ -560,7 +564,9 @@ namespace pathos {
 			//
 			// UI tick
 			//
-			if (renderThread->isOverlayProxyQueueEmpty()) {
+			// #wip: Just create it
+			//if (renderThread->isOverlayProxyQueueEmpty())
+			{
 				SCOPED_CPU_COUNTER(CreateOverlayProxy);
 
 				DisplayObject2D* debugOverlayRoot = renderThread->getDebugOverlay()->internal_getRoot();
@@ -570,7 +576,7 @@ namespace pathos {
 				overlayProxy->appOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(appOverlayRoot.get(), overlayProxy);
 				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
 				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
-				renderThread->pushOverlayProxy(overlayProxy);
+				pushOverlayProxy(overlayProxy);
 			}
 
 			//
@@ -627,11 +633,19 @@ namespace pathos {
 
 		if (reservedSceneProxies.size() > 0) {
 			// #wip: LOG
-			//LOG(LogDebug, "[Main] Push reserved proxies %u", frameNumber_mainThread);
+			//LOG(LogDebug, "[Main] Push reserved scene proxies %u", frameNumber_mainThread);
 			for (SceneProxy* proxy : reservedSceneProxies) {
 				renderThread->pushSceneProxy(proxy);
 			}
 			reservedSceneProxies.clear();
+		}
+		if (reservedOverlayProxies.size() > 0) {
+			// #wip: LOG
+			//LOG(LogDebug, "[Main] Push reserved overlay proxies %u", frameNumber_mainThread);
+			for (OverlaySceneProxy* proxy : reservedOverlayProxies) {
+				renderThread->pushOverlayProxy(proxy);
+			}
+			reservedOverlayProxies.clear();
 		}
 
 		// Increase frame number.
