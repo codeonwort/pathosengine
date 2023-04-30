@@ -63,36 +63,13 @@ namespace pathos {
 		using ExecProc = std::function<void(const std::string&)>; // Parameter is the console input as is
 		using GlobalRenderRoutine = std::function<void(OpenGLDevice* renderDevice, RenderCommandList& cmdList)>;
 
-	// Static members
+	// Engine public API
 	public:
+		// Initialize an engine instance. Program entry point should call this prior to everything.
 		static bool init(int argc, char** argv, const EngineConfig& conf);
 
-		// [INTERNAL USE ONLY]
-		// Given routine is called right after the render device is initialized.
-		// Use for initialization of global resources.
-		class GlobalRenderRoutineContainer {
-		public:
-			std::mutex vector_mutex;
-			std::vector<GlobalRenderRoutine> initRoutines;
-			std::vector<GlobalRenderRoutine> destroyRoutines;
-		};
-		static GlobalRenderRoutineContainer& getGlobalRenderRoutineContainer();
-		static void internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine);
-
-	// Public API
-	public:
-		void start();
-		void stop();
-
-		// #todo-renderthread: Ad-hoc communication to render thread. Needs clearer interface.
-		void pushSceneProxy(SceneProxy* newSceneProxy);
-		void pushOverlayProxy(OverlaySceneProxy* newOverlayProxy);
-		void updateMainWindow_renderThread();
-		void updateGPUQuery_renderThread(
-			float inElapsedRenderThread,
-			float inElapsedGpu,
-			const std::vector<std::string>& inGpuCounterNames,
-			const std::vector<float>& inGpuCounterTimes);
+		void start(); // Start the engine main loop.
+		void stop();  // Stop and destroy the engine.
 
 		// proc = [](const std::string& command) { ... }
 		void registerExec(const char* command, ExecProc proc);
@@ -132,7 +109,29 @@ namespace pathos {
 		inline GLuint getSystemTexture2DNormalmap()  const { return texture2D_normalmap; }
 		inline GLuint getSystemTextureCubeBlack()    const { return textureCube_black;   }
 
-		inline const std::map<std::string, ExecProc>& getExecMap() const { return execMap; }
+	// Public but engine internal use only
+	public:
+		// Given routine is called right after the render device is initialized.
+		// Use for initialization of global resources.
+		class GlobalRenderRoutineContainer {
+		public:
+			std::mutex vector_mutex;
+			std::vector<GlobalRenderRoutine> initRoutines;
+			std::vector<GlobalRenderRoutine> destroyRoutines;
+		};
+		static GlobalRenderRoutineContainer& internal_getGlobalRenderRoutineContainer();
+		static void internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine);
+
+		void internal_pushSceneProxy(SceneProxy* newSceneProxy);
+		void internal_pushOverlayProxy(OverlaySceneProxy* newOverlayProxy);
+		void internal_updateMainWindow_renderThread();
+		void internal_updateGPUQuery_renderThread(
+			float inElapsedRenderThread,
+			float inElapsedGpu,
+			const std::vector<std::string>& inGpuCounterNames,
+			const std::vector<float>& inGpuCounterTimes);
+
+		inline const std::map<std::string, ExecProc>& internal_getExecMap() const { return execMap; }
 
 	private:
 		Engine() = default;
@@ -150,6 +149,8 @@ namespace pathos {
 
 		void readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines);
 
+		void tickMainThread();
+
 		// GUI event listeners
 		// - GLUT callbacks -> GUIWindow callbacks -> engine callbacks (here).
 		// - These callbacks are grouped by GUIWindowCreateParams and passed to GUIWindow.
@@ -164,9 +165,6 @@ namespace pathos {
 		static void onMouseDown(InputConstants mouseInput, int32 mouseX, int32 mouseY);
 		static void onMouseUp(InputConstants mouseInput, int32 mouseX, int32 mouseY);
 		static void onMouseDrag(int32 mouseX, int32 mouseY);
-
-	private:
-		void tickMainThread();
 
 	// Game thread
 	private:

@@ -61,7 +61,7 @@ namespace pathos {
 		OverlaySceneProxy* popOverlayProxy();
 		void pushOverlayProxy(OverlaySceneProxy* inOverlayProxy);
 
-	// #todo-renderthread: Called by the main thread due to initialization order.
+	// #note-renderthread: Called by the main thread due to initialization order.
 	private:
 		bool                       initializeOpenGL();
 		bool                       initializeOverlayRenderer();

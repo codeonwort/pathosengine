@@ -131,7 +131,6 @@ namespace pathos {
 		threadPool.AddWorkSafe(work);
 	}
 
-	// #todo-renderthread: To execute or not to execute this on the render thread?
 	void AssetStreamer::flushLoadedAssets()
 	{
 		CHECK(!isInRenderThread());

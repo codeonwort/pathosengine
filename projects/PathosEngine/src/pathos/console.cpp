@@ -200,7 +200,7 @@ namespace pathos {
 		std::vector<std::wstring> allCommands;
 		std::vector<HintCategory> hintCategories;
 
-		for (const auto& it : gEngine->getExecMap()) {
+		for (const auto& it : gEngine->internal_getExecMap()) {
 			std::wstring wcmd;
 			pathos::MBCS_TO_WCHAR(it.first, wcmd);
 			allCommands.push_back(wcmd);

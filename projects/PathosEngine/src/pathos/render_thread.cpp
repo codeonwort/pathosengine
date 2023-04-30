@@ -48,7 +48,7 @@ namespace pathos {
 			renderThread->initializeRenderer(cmdList);
 
 			// Invoke global init routines
-			auto& initRoutines = gEngine->getGlobalRenderRoutineContainer().initRoutines;
+			auto& initRoutines = gEngine->internal_getGlobalRenderRoutineContainer().initRoutines;
 			for (Engine::GlobalRenderRoutine routine : initRoutines) {
 				routine(gRenderDevice, cmdList);
 			}
@@ -251,7 +251,7 @@ namespace pathos {
 			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop();
 			if (bNewSceneRendered) {
-				gEngine->updateGPUQuery_renderThread(
+				gEngine->internal_updateGPUQuery_renderThread(
 					renderThread->elapsed_renderThread,
 					renderThread->elapsed_gpu,
 					renderThread->lastGpuCounterNames,
@@ -269,7 +269,7 @@ namespace pathos {
 			// Wait here and let GUI to take GL context and swap buffers.
 			if (bNewSceneRendered) {
 				SCOPED_CPU_COUNTER(Present);
-				gEngine->updateMainWindow_renderThread();
+				gEngine->internal_updateMainWindow_renderThread();
 			}
 
 			const size_t numFences = fencesToSignal.size();
@@ -286,7 +286,7 @@ namespace pathos {
 			// May generate render commands
 			renderThread->renderer->releaseResources(cmdList);
 
-			for (Engine::GlobalRenderRoutine routine : gEngine->getGlobalRenderRoutineContainer().destroyRoutines) {
+			for (Engine::GlobalRenderRoutine routine : gEngine->internal_getGlobalRenderRoutineContainer().destroyRoutines) {
 				routine(gRenderDevice, cmdList);
 			}
 			cmdList.flushAllCommands();

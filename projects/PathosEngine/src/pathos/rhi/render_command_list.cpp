@@ -29,7 +29,6 @@ namespace pathos {
 		glGetError();
 #endif
 
-		// #todo-renderthread: Allow or forbid this?
 		static constexpr bool bAllowAppendWhileExecuting = false;
 
 		uint32 p = 0;
@@ -43,7 +42,7 @@ namespace pathos {
 				break;
 			}
 			if (!bAllowAppendWhileExecuting) {
-				CHECK_NO_ENTRY();
+				CHECKF(false, "Render command list is expanded during excution which is forbidden");
 			}
 		}
 

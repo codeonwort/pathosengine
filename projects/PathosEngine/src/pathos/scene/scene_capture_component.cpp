@@ -37,7 +37,7 @@ namespace pathos {
 		SceneProxy* sceneProxy = scene.createRenderProxy(SceneProxySource::SceneCapture, sceneCaptureFrameNumber, tempCamera);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
-		gEngine->pushSceneProxy(sceneProxy);
+		gEngine->internal_pushSceneProxy(sceneProxy);
 
 		// #todo: Increment or always zero?
 		sceneCaptureFrameNumber++;

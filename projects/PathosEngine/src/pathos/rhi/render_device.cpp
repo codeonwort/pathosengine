@@ -106,7 +106,6 @@ namespace pathos {
 		std::unique_lock<std::mutex> cvLock(flushMutex);
 		std::atomic<bool> alreadyFlushed = false;
 
-		// #todo-renderthread: Is it safe to pass flushCondVar like this?
 		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](RenderCommandList& cmdList) -> void {
 			if (waitForGPU) {
 				glFinish();
@@ -128,7 +127,6 @@ namespace pathos {
 		std::unique_lock<std::mutex> cvLock(flushMutex);
 		std::atomic<bool> alreadyFlushed = false;
 
-		// #todo-renderthread: Is it safe to pass flushCondVar like this?
 		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](RenderCommandList& cmdList) -> void {
 			if (waitForGPU) {
 				glFinish();

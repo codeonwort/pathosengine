@@ -114,7 +114,6 @@ namespace pathos {
 		CHECKF(poolInitialized, "Pool was not initialized");
 		CHECK(isInRenderThread());
 
-		// #todo-renderthread: Sometimes 'numUsedQueryObjects' is zero therefore 'profile_gpu' prints nothing?
 		if (numUsedQueryObjects == 0) {
 			return 0;
 		}

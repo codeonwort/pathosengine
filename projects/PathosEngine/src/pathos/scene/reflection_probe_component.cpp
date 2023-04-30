@@ -89,7 +89,7 @@ namespace pathos {
 			tempCamera);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
-		gEngine->pushSceneProxy(sceneProxy);
+		gEngine->internal_pushSceneProxy(sceneProxy);
 	}
 
 	void ReflectionProbeComponent::bakeIBL() {

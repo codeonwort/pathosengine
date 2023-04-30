@@ -68,7 +68,7 @@ namespace pathos {
 		return initialized;
 	}
 
-	Engine::GlobalRenderRoutineContainer& Engine::getGlobalRenderRoutineContainer()
+	Engine::GlobalRenderRoutineContainer& Engine::internal_getGlobalRenderRoutineContainer()
 	{
 		static GlobalRenderRoutineContainer instance;
 		return instance;
@@ -80,7 +80,7 @@ namespace pathos {
 		CHECK(initRoutine != nullptr);
 
 		// Due to parallel initialization of static variables
-		GlobalRenderRoutineContainer& container = getGlobalRenderRoutineContainer();
+		GlobalRenderRoutineContainer& container = internal_getGlobalRenderRoutineContainer();
 		std::lock_guard<std::mutex> guard(container.vector_mutex);
 
 		container.initRoutines.push_back(initRoutine);
@@ -288,20 +288,19 @@ namespace pathos {
 	}
 
 	// For scene capture
-	void Engine::pushSceneProxy(SceneProxy* newSceneProxy) {
+	void Engine::internal_pushSceneProxy(SceneProxy* newSceneProxy) {
 		reservedSceneProxies.push_back(newSceneProxy);
-		//renderThread->pushSceneProxy(newSceneProxy); // Deferr push to the end of main thread tick.
 	}
 
-	void Engine::pushOverlayProxy(OverlaySceneProxy* newOverlayProxy) {
+	void Engine::internal_pushOverlayProxy(OverlaySceneProxy* newOverlayProxy) {
 		reservedOverlayProxies.push_back(newOverlayProxy);
 	}
 
-	void Engine::updateMainWindow_renderThread() {
+	void Engine::internal_updateMainWindow_renderThread() {
 		mainWindow->updateWindow_renderThread();
 	}
 
-	void Engine::updateGPUQuery_renderThread(
+	void Engine::internal_updateGPUQuery_renderThread(
 		float inElapsedRenderThread,
 		float inElapsedGpu,
 		const std::vector<std::string>& inGpuCounterNames,
@@ -558,7 +557,7 @@ namespace pathos {
 							frameFence.get(), frameNumber_mainThread);
 						CHECK(mainSceneProxy != nullptr);
 
-						pushSceneProxy(mainSceneProxy);
+						internal_pushSceneProxy(mainSceneProxy);
 						//renderThread->pushSceneProxy(mainSceneProxy);
 					}
 				}
@@ -577,7 +576,7 @@ namespace pathos {
 				overlayProxy->appOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(appOverlayRoot.get(), overlayProxy);
 				overlayProxy->debugOverlayRootProxy = DisplayObject2D::createRenderProxyHierarchy(debugOverlayRoot, overlayProxy);
 				overlayProxy->consoleWindowRootProxy = DisplayObject2D::createRenderProxyHierarchy(consoleWindowRoot, overlayProxy);
-				pushOverlayProxy(overlayProxy);
+				internal_pushOverlayProxy(overlayProxy);
 			}
 
 			//
