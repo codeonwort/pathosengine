@@ -436,9 +436,24 @@ namespace pathos {
 
 		CpuProfiler::getInstance().beginCheckpoint(frameNumber_mainThread);
 
-		// #wip: Crash on world change - GL resources are invalidated at bad timing.
-		// Change world if necessary
+		// Change world if necessary.
 		if (pendingNewWorld != nullptr) {
+			// As current world might destroy GL resources on its destruction,
+			// make sure no GPU work is in flight.
+			{
+				LOG(LogDebug, "Flush render thread before world transition");
+
+				uint64 renderFrameNumber = frameNumber_mainThread - 1;
+				if (frameFence->getValue() < renderFrameNumber) {
+					SCOPED_CPU_COUNTER(WaitForRenderThread);
+
+					SyncEvent syncEvent;
+					frameFence->setEventOnCompletion(renderFrameNumber, &syncEvent);
+					syncEvent.waitInfinite();
+					syncEvent.close();
+				}
+			}
+
 			if (currentWorld != nullptr) {
 				currentWorld->destroy();
 				delete currentWorld;
@@ -481,11 +496,6 @@ namespace pathos {
 
 				if (bShouldTickWorld) {
 					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
-
-					// #wip: Force delay the main tick.
-					using namespace std::chrono_literals;
-					//std::this_thread::sleep_for(5ms);
-
 					currentWorld->tick(deltaSeconds);
 				}
 
