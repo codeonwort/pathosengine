@@ -164,7 +164,7 @@ namespace pathos {
 							pixels[i * 3 + 2] = (uint8)badger::clamp(0u, (uint32)(R * 255.0f), 255u);
 						}
 						auto screenshot = std::make_pair(sceneProxy->screenshotSize, pixels);
-						gEngine->pushScreenshot(screenshot);
+						gEngine->internal_pushScreenshot(screenshot);
 					}
 				}
 			}

@@ -23,7 +23,7 @@ namespace pathos {
 		}
 		// Dirty but works anyway
 		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
-			gEngine->registerExec("recompile_shaders", [](const std::string& command) -> void {
+			gEngine->registerConsoleCommand("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {

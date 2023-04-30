@@ -319,7 +319,7 @@ void World_RC1::setupScene()
 
 void World_RC1::updateStarfield()
 {
-	gEngine->execute("recompile_shaders");
+	gEngine->executeConsoleCommand("recompile_shaders");
 	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 }
 

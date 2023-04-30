@@ -56,7 +56,7 @@ namespace pathos {
 
 		purge_milestone.store(0);
 
-		gEngine->registerExec("profile_cpu", [](const std::string& command) {
+		gEngine->registerConsoleCommand("profile_cpu", [](const std::string& command) {
 			int32 numFrames;
 			bool bText = false;
 

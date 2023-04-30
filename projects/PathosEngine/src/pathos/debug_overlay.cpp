@@ -228,7 +228,7 @@ namespace pathos {
 
 			std::vector<std::string> gpuCounterNames;
 			std::vector<float> gpuCounterTimes;
-			gEngine->getLastGPUCounters(gpuCounterNames, gpuCounterTimes);
+			gEngine->internal_getLastGPUCounters(gpuCounterNames, gpuCounterTimes);
 			gpuCounterList->updateGPUStat(gpuCounterNames, gpuCounterTimes);
 		}
 

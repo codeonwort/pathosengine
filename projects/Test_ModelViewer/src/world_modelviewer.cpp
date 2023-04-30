@@ -193,7 +193,7 @@ void World_ModelViewer::registerConsoleCommands() {
 	gConsole->addLine(L"> Enter each command without parameters to see help", false, true);
 	gConsole->addLine(L"======================================", false, true);
 
-	gEngine->registerExec("load_model",
+	gEngine->registerConsoleCommand("load_model",
 		[this](const std::string& command) {
 			auto it = command.find_first_of(' ');
 			if (it == std::string::npos) {
@@ -223,7 +223,7 @@ void World_ModelViewer::registerConsoleCommands() {
 		}
 	);
 
-	gEngine->registerExec("sun_illuminance",
+	gEngine->registerConsoleCommand("sun_illuminance",
 		[this](const std::string& command) {
 			float r, g, b;
 			int ret = sscanf_s(command.c_str(), "sun_illuminance %f %f %f", &r, &g, &b);
@@ -239,7 +239,7 @@ void World_ModelViewer::registerConsoleCommands() {
 		}
 	);
 
-	gEngine->registerExec("sun_direction",
+	gEngine->registerConsoleCommand("sun_direction",
 		[this](const std::string& command) {
 			float x, y, z;
 			int ret = sscanf_s(command.c_str(), "sun_direction %f %f %f", &x, &y, &z);

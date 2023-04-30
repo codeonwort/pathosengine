@@ -32,7 +32,7 @@ namespace pathos {
 			static bool first = true;
 			if (first) {
 				first = false;
-				gEngine->registerExec("find_renderdoc", [](const std::string& command) {
+				gEngine->registerConsoleCommand("find_renderdoc", [](const std::string& command) {
 					RenderDocIntegration::get().findInjectedDLL();
 				});
 			}
@@ -66,7 +66,7 @@ namespace pathos {
 			LOG(LogInfo, "RenderDoc: Actual API v%d.%d.%d", major, minor, patch);
 		}
 
-		gEngine->registerExec("capture_frame", [](const std::string& command) {
+		gEngine->registerConsoleCommand("capture_frame", [](const std::string& command) {
 			RenderDocIntegration::get().captureFrame();
 		});
 

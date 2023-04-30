@@ -72,35 +72,30 @@ namespace pathos {
 		void stop();  // Stop and destroy the engine.
 
 		// proc = [](const std::string& command) { ... }
-		void registerExec(const char* command, ExecProc proc);
-		bool execute(const std::string& command);
+		void registerConsoleCommand(const char* command, ExecProc proc);
+		// @return true if it's a registered command. Wether the command was executed successfully is not considered.
+		bool executeConsoleCommand(const std::string& command);
 
+		// Toggle debug overlay for frame stats.
 		void toggleFrameStat();
-		void dumpGPUProfile();
-		void getLastGPUCounters(
-			std::vector<std::string>& outGpuCounterNames,
-			std::vector<float>& outGpuCounterTimes);
 
+		// Dump GPU profile to a text file.
+		void dumpGPUProfile();
+
+		// Change current world.
 		void setWorld(World* inWorld);
 
-		const EngineConfig& getConfig() const { return conf; }
-		void updateScreenSize(int32 inScreenWidth, int32 inScreenHeight);
+		inline const EngineConfig& getConfig() const { return conf; }
 
-		// Called by render thread when a screenshot is taken.
-		void pushScreenshot(Screenshot screenshot);
+		inline float getWorldTime()           const { return 0.001f * stopwatch_app.stop(); } // Elapsed seconds since the application started.
+		inline float getGameThreadCPUTime()   const { return elapsed_gameThread;            }
+		inline float getRenderThreadCPUTime() const { return elapsed_renderThread;          }
+		inline float getGPUTime()             const { return elapsed_gpu;                   } // Estimated time of GPU work (in milliseconds)
 
-		inline float getWorldTime() { return 0.001f * stopwatch_app.stop(); } // Elapsed seconds since the application started.
-		inline float getGameThreadCPUTime() const { return elapsed_gameThread; }
-		inline float getRenderThreadCPUTime() const { return elapsed_renderThread; }
-		inline float getGPUTime() const { return elapsed_gpu; } // Estimated time of GPU work (in milliseconds)
-
-		inline InputSystem* getInputSystem() const { return inputSystem.get(); }
-
-		inline AssetStreamer* getAssetStreamer() const { return assetStreamer.get(); }
-
-		inline GUIWindow* getMainWindow() const { return mainWindow.get(); }
-
-		inline DisplayObject2D* getOverlayRoot() const { return appOverlayRoot.get(); }
+		inline InputSystem*     getInputSystem()   const { return inputSystem.get();    }
+		inline AssetStreamer*   getAssetStreamer() const { return assetStreamer.get();  }
+		inline GUIWindow*       getMainWindow()    const { return mainWindow.get();     }
+		inline DisplayObject2D* getOverlayRoot()   const { return appOverlayRoot.get(); }
 
 		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
@@ -122,14 +117,25 @@ namespace pathos {
 		static GlobalRenderRoutineContainer& internal_getGlobalRenderRoutineContainer();
 		static void internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine);
 
+		void internal_updateScreenSize(int32 inScreenWidth, int32 inScreenHeight);
+
 		void internal_pushSceneProxy(SceneProxy* newSceneProxy);
 		void internal_pushOverlayProxy(OverlaySceneProxy* newOverlayProxy);
+
 		void internal_updateMainWindow_renderThread();
+
 		void internal_updateGPUQuery_renderThread(
 			float inElapsedRenderThread,
 			float inElapsedGpu,
 			const std::vector<std::string>& inGpuCounterNames,
 			const std::vector<float>& inGpuCounterTimes);
+
+		void internal_getLastGPUCounters(
+			std::vector<std::string>& outGpuCounterNames,
+			std::vector<float>& outGpuCounterTimes);
+
+		// Called by render thread when a screenshot is taken.
+		void internal_pushScreenshot(Screenshot screenshot);
 
 		inline const std::map<std::string, ExecProc>& internal_getExecMap() const { return execMap; }
 

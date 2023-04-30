@@ -9,12 +9,12 @@ public:
 		startTime = std::chrono::system_clock::now();
 	}
 
-	void start() {
+	inline void start() {
 		startTime = std::chrono::system_clock::now();
 	}
 
 	// Elapsed milliseconds since start()
-	float stop() {
+	inline float stop() const {
 		auto diff = std::chrono::system_clock::now() - startTime;
 		std::chrono::microseconds elapsedMicro
 			= std::chrono::duration_cast<std::chrono::microseconds>(diff);

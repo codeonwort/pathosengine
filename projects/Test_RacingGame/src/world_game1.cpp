@@ -52,7 +52,7 @@ void World_Game1::onInitialize()
 	prepareAssets();
 	reloadScene();
 
-	gEngine->registerExec("reload_scene", [this](const std::string& command) {
+	gEngine->registerConsoleCommand("reload_scene", [this](const std::string& command) {
 		reloadScene();
 	});
 

@@ -263,7 +263,7 @@ namespace pathos {
 		std::string header = ix == std::string::npos ? command : command.substr(0, ix);
 
 		// If it's a console command, execute it.
-		if (gEngine->execute(command)) {
+		if (gEngine->executeConsoleCommand(command)) {
 			return;
 		}
 

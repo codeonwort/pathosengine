@@ -74,7 +74,6 @@ namespace pathos {
 		return instance;
 	}
 
-
 	void Engine::internal_registerGlobalRenderRoutine(GlobalRenderRoutine initRoutine, GlobalRenderRoutine destroyRoutine)
 	{
 		CHECK(initRoutine != nullptr);
@@ -141,13 +140,13 @@ namespace pathos {
 
 		// Register engine commands
 		{
-			registerExec("profile_gpu", [](const std::string& command) {
+			registerConsoleCommand("profile_gpu", [](const std::string& command) {
 				gEngine->dumpGPUProfile();
 			});
-			registerExec("stat", [](const std::string& command) {
+			registerConsoleCommand("stat", [](const std::string& command) {
 				gEngine->toggleFrameStat();
 			});
-			registerExec("set_window_size", [](const std::string& command) {
+			registerConsoleCommand("set_window_size", [](const std::string& command) {
 				char unused[16];
 				int w, h;
 				int ret = sscanf_s(command.c_str(), "%s %d %d", unused, (unsigned)_countof(unused), &w, &h);
@@ -157,10 +156,10 @@ namespace pathos {
 					gConsole->addLine(L"Usage: set_window_size <new_width> <new_height>");
 				}
 			});
-			registerExec("screenshot", [this](const std::string& command) {
+			registerConsoleCommand("screenshot", [this](const std::string& command) {
 				renderThread->takeScreenshot();
 			});
-			registerExec("memreport", [](const std::string& command) {
+			registerConsoleCommand("memreport", [](const std::string& command) {
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					int64 bufferMem, textureMem;
 					gRenderDevice->memreport(bufferMem, textureMem);
@@ -344,7 +343,7 @@ namespace pathos {
 		}
 	}
 
-	void Engine::registerExec(const char* command, ExecProc proc)
+	void Engine::registerConsoleCommand(const char* command, ExecProc proc)
 	{
 		if (execMap.find(command) != execMap.end()) {
 			LOG(LogError, "Exec already registered: %s", command);
@@ -353,7 +352,7 @@ namespace pathos {
 		execMap.insert(std::make_pair(command, proc));
 	}
 
-	bool Engine::execute(const std::string& command)
+	bool Engine::executeConsoleCommand(const std::string& command)
 	{
 		auto ix = command.find(' ');
 		std::string header = ix == std::string::npos ? command : command.substr(0, ix);
@@ -402,7 +401,7 @@ namespace pathos {
 		gConsole->addLine(filepath.c_str(), false);
 	}
 
-	void Engine::getLastGPUCounters(
+	void Engine::internal_getLastGPUCounters(
 		std::vector<std::string>& outGpuCounterNames,
 		std::vector<float>& outGpuCounterTimes)
 	{
@@ -415,12 +414,12 @@ namespace pathos {
 		pendingNewWorld = inWorld;
 	}
 
-	void Engine::updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
+	void Engine::internal_updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
 		conf.windowWidth = inScreenWidth;
 		conf.windowHeight = inScreenHeight;
 	}
 
-	void Engine::pushScreenshot(Screenshot screenshot) {
+	void Engine::internal_pushScreenshot(Screenshot screenshot) {
 		screenshotQueue.emplace_back(screenshot);
 	}
 
@@ -681,7 +680,7 @@ namespace pathos {
 	}
 
 	void Engine::onMainWindowReshape(int32 newWidth, int32 newHeight) {
-		gEngine->updateScreenSize(newWidth, newHeight);
+		gEngine->internal_updateScreenSize(newWidth, newHeight);
 	}
 
 	void Engine::onSpecialKeyDown(InputConstants specialKey) {
