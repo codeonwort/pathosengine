@@ -14,6 +14,7 @@ namespace pathos {
 	// Forward declaration
 	enum class SceneProxySource : uint8;
 	class SceneProxy;
+	class Fence;
 	class StaticMeshComponent;
 	class SkyActor;
 	class VolumetricCloudActor;
@@ -34,7 +35,12 @@ namespace pathos {
 		void invalidateSkyLighting();
 		
 		// Generate frame-invariant proxy data.
-		SceneProxy* createRenderProxy(SceneProxySource source, uint32 frameNumber, const Camera& camera);
+		SceneProxy* createRenderProxy(
+			SceneProxySource source,
+			uint32 frameNumber,
+			const Camera& camera,
+			Fence* fence = nullptr,
+			uint64 fenceValue = 0);
 
 		World* getWorld() const { return owner; }
 

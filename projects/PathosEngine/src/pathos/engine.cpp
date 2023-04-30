@@ -121,6 +121,9 @@ namespace pathos {
 
 		pathos::gMainThreadId = CPU::getCurrentThreadId();
 
+		frameFence = makeUnique<Fence>(0);
+		frameNumber_mainThread = 1;
+
 		renderThread = new RenderThread;
 
 		// Many pesky reasons for this order :/
@@ -286,7 +289,8 @@ namespace pathos {
 
 	// For scene capture
 	void Engine::pushSceneProxy(SceneProxy* newSceneProxy) {
-		renderThread->pushSceneProxy(newSceneProxy);
+		reservedSceneProxies.push_back(newSceneProxy);
+		//renderThread->pushSceneProxy(newSceneProxy); // Deferr push to the end of main thread tick.
 	}
 
 	void Engine::updateMainWindow_renderThread() {
@@ -417,13 +421,16 @@ namespace pathos {
 		screenshotQueue.emplace_back(screenshot);
 	}
 
-	void Engine::tick()
-	{
-		CpuProfiler::getInstance().beginCheckpoint(frameCounter_gameThread);
+	void Engine::tickMainThread() {
+		if (frameFence->getValue() + 2 < frameNumber_mainThread) {
+			return;
+		}
 
-		// Start render thread with prev frame's scene proxy
-		const uint32 frameNumber_renderThread = frameCounter_gameThread;
-		renderThread->beginFrame(frameNumber_renderThread);
+		char frameCounterMsg[256];
+		sprintf_s(frameCounterMsg, "Frame %u", frameNumber_mainThread);
+		SCOPED_CPU_COUNTER_STRING(frameCounterMsg);
+
+		CpuProfiler::getInstance().beginCheckpoint(frameNumber_mainThread);
 
 		// Change world if necessary
 		if (pendingNewWorld != nullptr) {
@@ -453,33 +460,42 @@ namespace pathos {
 				stopwatch_gameThread.start();
 			}
 
-			//
-			// Process input
-			//
-			inputSystem->tick();
+			{
+				SCOPED_CPU_COUNTER(InputTick);
+				inputSystem->tick();
+			}
 
 			{
 				SCOPED_CPU_COUNTER(FlushLoadedAssets);
-				gEngine->getAssetStreamer()->flushLoadedAssets();
+				getAssetStreamer()->flushLoadedAssets();
 			}
 
-			//
-			// World tick
-			//
 			if (currentWorld != nullptr) {
 				const float ar = (float)conf.windowWidth / conf.windowHeight;
 				currentWorld->getCamera().getLens().setAspectRatio(ar);
 
 				if (bShouldTickWorld) {
 					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
+
+					// #wip: Debug console flickers if force delayed here.
+					// It seems overlay proxy timing is somehow broken?
+					using namespace std::chrono_literals;
+					//std::this_thread::sleep_for(5ms);
+
 					currentWorld->tick(deltaSeconds);
 				}
 
 				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
 				// which makes you feel like there is input lag.
-				if (renderThread->mainSceneInSceneProxyQueue() == false) {
+				// #wip: Just create it
+				//if (renderThread->mainSceneInSceneProxyQueue() == false)
+				{
+					SCOPED_CPU_COUNTER(SceneProxies);
+
 					// Process probe lighting.
 					{
+						SCOPED_CPU_COUNTER(LightProbeSceneProxy);
+
 						// Gather probe lighting related actors.
 						std::vector<ReflectionProbeActor*> reflectionProbes;
 						std::vector<IrradianceVolumeActor*> irradianceVolumes;
@@ -523,13 +539,20 @@ namespace pathos {
 
 					// Render the main view.
 					{
+						SCOPED_CPU_COUNTER(MainSceneProxy);
+
 						SceneProxy* mainSceneProxy = currentWorld->getScene().createRenderProxy(
 							SceneProxySource::MainScene,
-							frameCounter_gameThread,
-							currentWorld->getCamera());
+							frameNumber_mainThread,
+							currentWorld->getCamera(),
+							frameFence.get(), frameNumber_mainThread);
 						CHECK(mainSceneProxy != nullptr);
 
-						renderThread->pushSceneProxy(mainSceneProxy);
+						// #wip: LOG
+						//LOG(LogDebug, "[Main] CreateProxy %u", frameNumber_mainThread);
+
+						pushSceneProxy(mainSceneProxy);
+						//renderThread->pushSceneProxy(mainSceneProxy);
 					}
 				}
 			}
@@ -585,14 +608,38 @@ namespace pathos {
 			stopwatch_gameThread.start();
 		}
 
-		if (frameCounter_gameThread == (uint32)(-1)) {
-			frameCounter_gameThread = 1;
+		// Wait for previous frame's rendering to finish.
+		uint64 renderFrameNumber = frameNumber_mainThread - 1;
+		if (frameFence->getValue() < renderFrameNumber) {
+			SCOPED_CPU_COUNTER(WaitForRenderThread);
+
+			// #wip: LOG
+			//LOG(LogDebug, "[Main] Wait fence for proxy %u (current fence=%u)", renderFrameNumber, frameFence->getValue());
+
+			SyncEvent syncEvent;
+			frameFence->setEventOnCompletion(renderFrameNumber, &syncEvent);
+			syncEvent.waitInfinite();
+			syncEvent.close();
 		} else {
-			frameCounter_gameThread += 1;
+			// #wip: LOG
+			//LOG(LogDebug, "[Main] Skip fence for proxy %u", renderFrameNumber);
 		}
 
-		// Wait for render thread to finish
-		renderThread->endFrame(frameNumber_renderThread);
+		if (reservedSceneProxies.size() > 0) {
+			// #wip: LOG
+			//LOG(LogDebug, "[Main] Push reserved proxies %u", frameNumber_mainThread);
+			for (SceneProxy* proxy : reservedSceneProxies) {
+				renderThread->pushSceneProxy(proxy);
+			}
+			reservedSceneProxies.clear();
+		}
+
+		// Increase frame number.
+		if (frameNumber_mainThread == (uint32)(-1)) {
+			frameNumber_mainThread = 1;
+		} else {
+			frameNumber_mainThread += 1;
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -606,14 +653,11 @@ namespace pathos {
 
 	void Engine::onIdle()
 	{
-		// #todo-renderthread: No engine loop work in idle callback.
-		//gEngine->tick();
+		gEngine->tickMainThread();
 	}
 
-	// #todo-renderthread: This might be not called when the window is minimized.
-	//                     How to tick the world, but no draw when minimized?
 	void Engine::onMainWindowDisplay() {
-		gEngine->tick();
+		//gEngine->tickMainThread();
 	}
 
 	void Engine::onKeyDown(uint8 ascii, int32 mouseX, int32 mouseY) {

@@ -32,8 +32,8 @@ namespace pathos {
 		// Launches the render thread.
 		void run();
 
-		void beginFrame(uint32 frameNumber);
-		void endFrame(uint32 frameNumber);
+		// Signal fence when GPU has completed commands.
+		void signalFence(uint64 value);
 
 		void takeScreenshot() { bScreenshotReserved = true; }
 
@@ -100,7 +100,6 @@ namespace pathos {
 		OverlayRenderer*           renderer2D = nullptr;
 		DebugOverlay*              debugOverlay = nullptr;
 
-		uint32                     currentFrame;
 		Stopwatch                  stopwatch; // for render thread
 		float                      elapsed_renderThread = 0.0f;
 

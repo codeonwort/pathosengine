@@ -4,6 +4,7 @@
 #include "pathos/rhi/render_command_list.h"
 #include "pathos/smart_pointer.h"
 #include "pathos/input/input_system.h"
+#include "pathos/util/sync_event.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
@@ -163,7 +164,7 @@ namespace pathos {
 		static void onMouseDrag(int32 mouseX, int32 mouseY);
 
 	private:
-		void tick();
+		void tickMainThread();
 
 	// Game thread
 	private:
@@ -171,7 +172,9 @@ namespace pathos {
 		Stopwatch stopwatch_gameThread;
 		Stopwatch stopwatch_app;
 
-		uint32 frameCounter_gameThread = 0;
+		std::vector<SceneProxy*> reservedSceneProxies;
+		uniquePtr<Fence> frameFence;
+		uint32 frameNumber_mainThread = 0; // Set to 1 in initialize()
 		float elapsed_gameThread = 0.0f;
 
 		World* currentWorld = nullptr;
