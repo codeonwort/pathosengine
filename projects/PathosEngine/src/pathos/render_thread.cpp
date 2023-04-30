@@ -61,13 +61,6 @@ namespace pathos {
 
 		// Main loop for render thread
 		while (renderThread->bPendingKill == false) {
-			char frameCounterMsg[64];
-			sprintf_s(frameCounterMsg, "Frame %u", renderThread->currentFrame);
-			SCOPED_CPU_COUNTER_STRING(frameCounterMsg);
-
-			//
-			// Start a frame!
-			//
 			OpenGLContextManager::takeContext();
 			bool bNewSceneRendered = false;
 
@@ -91,6 +84,12 @@ namespace pathos {
 				SceneProxy* sceneProxy = renderThread->popSceneProxy();
 				sceneProxiesToDelete.push_back(sceneProxy);
 
+				char frameCounterMsg[128];
+				sprintf_s(frameCounterMsg, "SceneProxy (source=%s frame=%u)",
+					pathos::getSceneProxySourceString(sceneProxy->sceneProxySource),
+					sceneProxy->frameNumber);
+				SCOPED_CPU_COUNTER_STRING(frameCounterMsg);
+
 				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
 				char drawEventMsg[64];
 				sprintf_s(drawEventMsg, "RenderSceneProxy (source=%s)", pathos::getSceneProxySourceString(sceneProxy->sceneProxySource));
@@ -112,7 +111,7 @@ namespace pathos {
 						SceneRenderSettings settings;
 						settings.sceneWidth = screenWidth;
 						settings.sceneHeight = screenHeight;
-						settings.frameCounter = renderThread->currentFrame;
+						settings.frameCounter = sceneProxy->frameNumber;
 						settings.enablePostProcess = true;
 						renderer->setSceneRenderSettings(settings);
 						renderer->setFinalRenderTargetToBackbuffer();
@@ -137,8 +136,11 @@ namespace pathos {
 					}
 					renderer->renderScene(immediateContext, sceneRTs, sceneProxy, &sceneProxy->camera);
 
-					immediateContext.flushAllCommands();
-					//deferredContext.flushAllCommands();
+					{
+						SCOPED_CPU_COUNTER(SubmitDeviceCalls);
+						immediateContext.flushAllCommands();
+						//deferredContext.flushAllCommands();
+					}
 
 					// Update backbuffer only if main scene was actually rendered
 					if (sceneProxy->sceneProxySource == SceneProxySource::MainScene) {
@@ -173,6 +175,8 @@ namespace pathos {
 			// Render app UI / debug overlay / console window.
 			OverlaySceneProxy* overlayProxy = renderThread->popOverlayProxy();
 			if (bNewSceneRendered && overlayProxy != nullptr) {
+				SCOPED_CPU_COUNTER(OverlayProxy);
+
 				if (overlayProxy->appOverlayRootProxy != nullptr) {
 					SCOPED_CPU_COUNTER(ExecuteApplicationUI);
 					renderThread->getRenderer2D()->renderOverlay(
@@ -195,13 +199,22 @@ namespace pathos {
 				}
 			}
 
-			immediateContext.endQuery(GL_TIME_ELAPSED);
-			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+			{
+				SCOPED_CPU_COUNTER(EndGPUTimerQueries);
+				immediateContext.endQuery(GL_TIME_ELAPSED);
+				immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+			}
 
 			{
-				SCOPED_CPU_COUNTER(ExecuteCommands);
-				immediateContext.flushAllCommands();
-				deferredContext.flushAllCommands();
+				SCOPED_CPU_COUNTER(ExecuteRemainingCommands);
+				{
+					SCOPED_CPU_COUNTER(ImmediateContext);
+					immediateContext.flushAllCommands();
+				}
+				{
+					SCOPED_CPU_COUNTER(DeferredContext);
+					deferredContext.flushAllCommands();
+				}
 			}
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
@@ -212,9 +225,15 @@ namespace pathos {
 				renderThread->lastGpuCounterTimes);
 
 			// Clear render resources for current frame.
+			std::vector<Fence*> fencesToSignal;
+			std::vector<uint64> fenceValuesToSignal;
 			{
 				SCOPED_CPU_COUNTER(DestroyRenderProxy);
 				for (SceneProxy* sceneProxy : sceneProxiesToDelete) {
+					if (sceneProxy->internal_getFence() != nullptr) {
+						fencesToSignal.push_back(sceneProxy->internal_getFence());
+						fenceValuesToSignal.push_back(sceneProxy->internal_getFenceValue());
+					}
 					delete sceneProxy;
 				}
 				if (overlayProxy != nullptr) {
@@ -224,7 +243,10 @@ namespace pathos {
 			}
 
 			// Let subsystems handle the end of rendering.
-			FontManager::get().onFrameEnd();
+			{
+				SCOPED_CPU_COUNTER(FontManagerFrameEnd);
+				FontManager::get().onFrameEnd();
+			}
 
 			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop();
@@ -241,13 +263,18 @@ namespace pathos {
 			//
 			{
 				SCOPED_CPU_COUNTER(WaitForGPU);
-				glFinish();
+				glFlush();
 			}
 			OpenGLContextManager::returnContext();
 			// Wait here and let GUI to take GL context and swap buffers.
 			if (bNewSceneRendered) {
 				SCOPED_CPU_COUNTER(Present);
 				gEngine->updateMainWindow_renderThread();
+			}
+
+			const size_t numFences = fencesToSignal.size();
+			for (size_t i = 0; i < numFences; ++i) {
+				fencesToSignal[i]->signalValue(fenceValuesToSignal[i]);
 			}
 		} // End of render thread loop
 
@@ -310,7 +337,6 @@ namespace pathos {
 		: nativeThread()
 		, threadID(0xffffffff)
 		, threadName("Render Thread")
-		, currentFrame(0)
 	{
 		// Thread id and name are set in the thread entry point (renderThreadMain()).
 	}
@@ -320,19 +346,6 @@ namespace pathos {
 
 	void RenderThread::run() {
 		nativeThread = std::thread(renderThreadMain, this);
-	}
-
-	// #todo-renderthread: Was used for frame sync, but does nothing now.
-	void RenderThread::beginFrame(uint32 frameNumber) {
-		currentFrame = frameNumber;
-	}
-
-	// #todo-renderthread: Was used for frame sync, but does nothing now.
-	void RenderThread::endFrame(uint32 frameNumber) {
-		CHECKF(currentFrame == frameNumber, "Frame number does not match!!!");
-		if (!bPendingKill) {
-			//
-		}
 	}
 
 	void RenderThread::terminate() {

@@ -148,16 +148,23 @@ namespace pathos {
 		}
 		ProfilePerThread& profile = profiles[threadID];
 		const int32 numItems = (int32)profile.items.size();
-		int32 rootIx = -1;
+		
+		// This function is called in render thread so main thread counters for the latest frame
+		// might not be perfectly closed yet. Search for the second latest frame's snapshot.
+		int32 rootIx = -1, prevRootIx = -1;
 		for (int32 i = numItems - 1; i >= 0; --i) {
 			if (profile.items[i].tab == 0) {
-				rootIx = i;
-				break;
+				if (rootIx == -1) {
+					rootIx = i;
+				} else if (prevRootIx == -1) {
+					prevRootIx = i;
+					break;
+				}
 			}
 		}
-		if (rootIx != -1) {
-			outSnapshot.reserve(profile.items.size() - rootIx);
-			for (int32 i = rootIx; i < numItems; ++i) {
+		if (prevRootIx != -1) {
+			outSnapshot.reserve(rootIx - prevRootIx + 1);
+			for (int32 i = prevRootIx; i < rootIx; ++i) {
 				outSnapshot.push_back(profile.items[i]);
 			}
 		}

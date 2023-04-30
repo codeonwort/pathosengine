@@ -14,10 +14,18 @@ namespace pathos {
 
 	static constexpr uint32 RENDER_PROXY_ALLOCATOR_BYTES = 32 * 1024 * 1024; // 32 MiB
 
-	SceneProxy::SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera)
+	SceneProxy::SceneProxy(
+		SceneProxySource inSource,
+		uint32 inFrameNumber,
+		const Camera& inCamera,
+		Fence* inFence,
+		uint64 inFenceValue
+	)
 		: sceneProxySource(inSource)
 		, frameNumber(inFrameNumber)
 		, camera(inCamera)
+		, fence(inFence)
+		, fenceValue(inFenceValue)
 		, bSceneRenderSettingsOverriden(false)
 		, renderProxyAllocator(RENDER_PROXY_ALLOCATOR_BYTES)
 	{

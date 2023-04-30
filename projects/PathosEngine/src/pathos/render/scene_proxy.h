@@ -18,6 +18,7 @@
 
 namespace pathos {
 
+	class Fence;
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 
 	enum class SceneProxySource : uint8 {
@@ -44,7 +45,12 @@ namespace pathos {
 	class SceneProxy final {
 		
 	public:
-		SceneProxy(SceneProxySource inSource, uint32 inFrameNumber, const Camera& inCamera);
+		SceneProxy(
+			SceneProxySource inSource,
+			uint32 inFrameNumber,
+			const Camera& inCamera,
+			Fence* fence,
+			uint64 fenceValue);
 		~SceneProxy();
 
 		void finalize_mainThread();
@@ -52,6 +58,8 @@ namespace pathos {
 		// DO NOT USE. Dirty hack :(
 		inline void internal_setSunComponent(class DirectionalLightComponent* dirLightComponent) { tempSunComponent = dirLightComponent; }
 		inline class DirectionalLightComponent* internal_getSunComponent() { return tempSunComponent; }
+		inline Fence* internal_getFence() const { return fence; }
+		inline uint64 internal_getFenceValue() const { return fenceValue; }
 
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
@@ -126,6 +134,9 @@ namespace pathos {
 
 	private:
 		class DirectionalLightComponent*           tempSunComponent = nullptr;
+
+		Fence*                                     fence;
+		uint64                                     fenceValue;
 	};
 
 }

@@ -198,6 +198,7 @@
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
     <ClCompile Include="src\pathos\util\string_conversion.cpp" />
+    <ClCompile Include="src\pathos\util\sync_event.cpp" />
     <ClCompile Include="src\pathos\util\transform_helper.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -359,6 +360,7 @@
     <ClInclude Include="src\pathos\util\log.h" />
     <ClInclude Include="src\pathos\util\resource_finder.h" />
     <ClInclude Include="src\pathos\util\string_conversion.h" />
+    <ClInclude Include="src\pathos\util\sync_event.h" />
     <ClInclude Include="src\pathos\util\transform_helper.h" />
     <ClInclude Include="src\pch.h" />
   </ItemGroup>
