@@ -436,6 +436,7 @@ namespace pathos {
 
 		CpuProfiler::getInstance().beginCheckpoint(frameNumber_mainThread);
 
+		// #wip: Crash on world change - GL resources are invalidated at bad timing.
 		// Change world if necessary
 		if (pendingNewWorld != nullptr) {
 			if (currentWorld != nullptr) {
@@ -481,20 +482,15 @@ namespace pathos {
 				if (bShouldTickWorld) {
 					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
 
-					// #wip: Debug console flickers if force delayed here.
-					// It seems overlay proxy timing is somehow broken?
+					// #wip: Force delay the main tick.
 					using namespace std::chrono_literals;
 					//std::this_thread::sleep_for(5ms);
 
 					currentWorld->tick(deltaSeconds);
 				}
 
-				// #todo-renderthread: Stupid condition (:p) to prevent scene proxies being queued too much,
-				// which makes you feel like there is input lag.
-				// #wip: Just create it
-				//if (renderThread->mainSceneInSceneProxyQueue() == false)
 				{
-					SCOPED_CPU_COUNTER(SceneProxies);
+					SCOPED_CPU_COUNTER(CreateSceneProxies);
 
 					// Process probe lighting.
 					{
@@ -552,9 +548,6 @@ namespace pathos {
 							frameFence.get(), frameNumber_mainThread);
 						CHECK(mainSceneProxy != nullptr);
 
-						// #wip: LOG
-						//LOG(LogDebug, "[Main] CreateProxy %u", frameNumber_mainThread);
-
 						pushSceneProxy(mainSceneProxy);
 						//renderThread->pushSceneProxy(mainSceneProxy);
 					}
@@ -564,8 +557,6 @@ namespace pathos {
 			//
 			// UI tick
 			//
-			// #wip: Just create it
-			//if (renderThread->isOverlayProxyQueueEmpty())
 			{
 				SCOPED_CPU_COUNTER(CreateOverlayProxy);
 
@@ -619,29 +610,19 @@ namespace pathos {
 		if (frameFence->getValue() < renderFrameNumber) {
 			SCOPED_CPU_COUNTER(WaitForRenderThread);
 
-			// #wip: LOG
-			//LOG(LogDebug, "[Main] Wait fence for proxy %u (current fence=%u)", renderFrameNumber, frameFence->getValue());
-
 			SyncEvent syncEvent;
 			frameFence->setEventOnCompletion(renderFrameNumber, &syncEvent);
 			syncEvent.waitInfinite();
 			syncEvent.close();
-		} else {
-			// #wip: LOG
-			//LOG(LogDebug, "[Main] Skip fence for proxy %u", renderFrameNumber);
 		}
 
 		if (reservedSceneProxies.size() > 0) {
-			// #wip: LOG
-			//LOG(LogDebug, "[Main] Push reserved scene proxies %u", frameNumber_mainThread);
 			for (SceneProxy* proxy : reservedSceneProxies) {
 				renderThread->pushSceneProxy(proxy);
 			}
 			reservedSceneProxies.clear();
 		}
 		if (reservedOverlayProxies.size() > 0) {
-			// #wip: LOG
-			//LOG(LogDebug, "[Main] Push reserved overlay proxies %u", frameNumber_mainThread);
 			for (OverlaySceneProxy* proxy : reservedOverlayProxies) {
 				renderThread->pushOverlayProxy(proxy);
 			}

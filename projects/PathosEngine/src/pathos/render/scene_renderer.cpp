@@ -251,6 +251,7 @@ namespace pathos {
 
 		// Volumetric clouds
 		if (bLightProbeRendering == false) {
+			SCOPED_CPU_COUNTER(VolumetricClouds);
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
@@ -259,21 +260,25 @@ namespace pathos {
 		// input: static meshes
 		// output: god ray texture
 		if (bLightProbeRendering == false) {
+			SCOPED_CPU_COUNTER(GodRay);
 			SCOPED_GPU_COUNTER(RenderGodRay);
 			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
 		}
 
 		{
+			SCOPED_CPU_COUNTER(BasePass);
 			SCOPED_GPU_COUNTER(BasePass);
 			renderBasePass(cmdList);
 		}
 
 		{
+			SCOPED_CPU_COUNTER(SSAO);
 			SCOPED_GPU_COUNTER(SSAO);
 			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
 		}
 
 		{
+			SCOPED_CPU_COUNTER(ClearSceneColor);
 			SCOPED_DRAW_EVENT(ClearSceneColor);
 			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
@@ -286,6 +291,7 @@ namespace pathos {
 		}
 
 		{
+			SCOPED_CPU_COUNTER(DirectLighting);
 			SCOPED_GPU_COUNTER(DirectLighting);
 			SCOPED_DRAW_EVENT(DirectLighting);
 
@@ -294,6 +300,7 @@ namespace pathos {
 		}
 
 		{
+			SCOPED_CPU_COUNTER(Sky);
 			SCOPED_GPU_COUNTER(Sky);
 			SCOPED_DRAW_EVENT(Sky);
 
@@ -337,6 +344,7 @@ namespace pathos {
 		}
 
 		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
+			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
@@ -346,12 +354,14 @@ namespace pathos {
 		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
 
 		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
+			SCOPED_CPU_COUNTER(ScreenSpaceReflection);
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
 		}
 
 		// Translucency pass
 		{
+			SCOPED_CPU_COUNTER(Translucency);
 			SCOPED_GPU_COUNTER(Translucency);
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
@@ -384,6 +394,7 @@ namespace pathos {
 		else
 		{
 			// #todo: Support nested gpu counters
+			SCOPED_CPU_COUNTER(PostProcessing);
 			SCOPED_GPU_COUNTER(PostProcessing);
 
 			const EAntiAliasingMethod antiAliasing = getAntiAliasingMethod();
@@ -426,6 +437,7 @@ namespace pathos {
 			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
 			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
+				SCOPED_CPU_COUNTER(SceneColorDownsample);
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
 				copyTexture(cmdList, sceneRenderTargets->sceneColor, sceneRenderTargets->sceneColorHalfRes,
 					sceneRenderTargets->sceneWidth / 2, sceneRenderTargets->sceneHeight / 2);
@@ -433,6 +445,8 @@ namespace pathos {
 
 			// Post Process: Bloom
 			if (isPPEnabled(EPostProcessOrder::Bloom)) {
+				SCOPED_CPU_COUNTER(Bloom);
+
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneColorHalfRes);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets->sceneBloomSetup);
 				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
@@ -443,6 +457,8 @@ namespace pathos {
 
 			// Post Process: Tone Mapping
 			{
+				SCOPED_CPU_COUNTER(ToneMapping);
+
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
 
 				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
@@ -467,6 +483,8 @@ namespace pathos {
 				}
 				case EAntiAliasingMethod::FXAA:
 				{
+					SCOPED_CPU_COUNTER(FXAA);
+
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
 
@@ -479,6 +497,8 @@ namespace pathos {
 				}
 				case EAntiAliasingMethod::TAA:
 				{
+					SCOPED_CPU_COUNTER(TAA);
+
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
 
@@ -510,6 +530,8 @@ namespace pathos {
 			// Super resolution
 			// NOTE: Should run after tone mapping and before any noise-introducing PPs.
 			if (isPPEnabled(EPostProcessOrder::SuperResolution)) {
+				SCOPED_CPU_COUNTER(SuperResolution);
+
 				switch (superResMethod) {
 				case ESuperResolutionMethod::FSR1:
 					{
@@ -543,6 +565,8 @@ namespace pathos {
 
 			// Post Process: Depth of Field
 			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
+				SCOPED_CPU_COUNTER(DepthOfField);
+
 				const GLuint dofInput = sceneRenderTargets->sceneColorDoFInput;
 				const GLuint dofRenderTarget = sceneRenderTargets->sceneFinal;
 
@@ -562,6 +586,7 @@ namespace pathos {
 
 		// Assumes rendering result is always written to sceneFinal and it's pixel format is rgba16f.
 		if (scene->bScreenshotReserved) {
+			SCOPED_CPU_COUNTER(ReadbackScreenshot);
 			SCOPED_DRAW_EVENT(ReadbackScreenshot);
 
 			CHECK(sceneAfterLastPP == sceneRenderTargets->sceneFinal);
@@ -580,6 +605,7 @@ namespace pathos {
 		}
 
 		if (sceneAfterLastPP != 0) {
+			SCOPED_CPU_COUNTER(BlitToFinalTarget);
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
 			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget(),
 				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);

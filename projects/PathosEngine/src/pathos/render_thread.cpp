@@ -136,8 +136,11 @@ namespace pathos {
 					}
 					renderer->renderScene(immediateContext, sceneRTs, sceneProxy, &sceneProxy->camera);
 
-					immediateContext.flushAllCommands();
-					//deferredContext.flushAllCommands();
+					{
+						SCOPED_CPU_COUNTER(SubmitDeviceCalls);
+						immediateContext.flushAllCommands();
+						//deferredContext.flushAllCommands();
+					}
 
 					// Update backbuffer only if main scene was actually rendered
 					if (sceneProxy->sceneProxySource == SceneProxySource::MainScene) {
@@ -172,6 +175,8 @@ namespace pathos {
 			// Render app UI / debug overlay / console window.
 			OverlaySceneProxy* overlayProxy = renderThread->popOverlayProxy();
 			if (bNewSceneRendered && overlayProxy != nullptr) {
+				SCOPED_CPU_COUNTER(OverlayProxy);
+
 				if (overlayProxy->appOverlayRootProxy != nullptr) {
 					SCOPED_CPU_COUNTER(ExecuteApplicationUI);
 					renderThread->getRenderer2D()->renderOverlay(
@@ -194,13 +199,22 @@ namespace pathos {
 				}
 			}
 
-			immediateContext.endQuery(GL_TIME_ELAPSED);
-			immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+			{
+				SCOPED_CPU_COUNTER(EndGPUTimerQueries);
+				immediateContext.endQuery(GL_TIME_ELAPSED);
+				immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+			}
 
 			{
-				SCOPED_CPU_COUNTER(ExecuteCommands);
-				immediateContext.flushAllCommands();
-				deferredContext.flushAllCommands();
+				SCOPED_CPU_COUNTER(ExecuteRemainingCommands);
+				{
+					SCOPED_CPU_COUNTER(ImmediateContext);
+					immediateContext.flushAllCommands();
+				}
+				{
+					SCOPED_CPU_COUNTER(DeferredContext);
+					deferredContext.flushAllCommands();
+				}
 			}
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
@@ -261,8 +275,6 @@ namespace pathos {
 			const size_t numFences = fencesToSignal.size();
 			for (size_t i = 0; i < numFences; ++i) {
 				fencesToSignal[i]->signalValue(fenceValuesToSignal[i]);
-				// #wip: LOG
-				//LOG(LogDebug, "[Render] Signal fence for %u", fenceValuesToSignal[i]);
 			}
 		} // End of render thread loop
 
