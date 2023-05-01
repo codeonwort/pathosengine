@@ -5,6 +5,7 @@
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include "badger/system/stopwatch.h"
+#include "badger/thread/thread_pool.h"
 
 #include <list>
 #include <mutex>
@@ -22,6 +23,9 @@ namespace pathos {
 	class OverlaySceneProxy;
 	struct SceneRenderTargets;
 
+	using SceneProxyQueue   = std::list<SceneProxy*>;
+	using OverlayProxyQueue = std::list<OverlaySceneProxy*>;
+
 	class RenderThread final : public Noncopyable {
 		static void renderThreadMain(RenderThread* renderThread);
 
@@ -31,9 +35,6 @@ namespace pathos {
 
 		// Launches the render thread.
 		void run();
-
-		// Signal fence when GPU has completed commands.
-		void signalFence(uint64 value);
 
 		void takeScreenshot() { bScreenshotReserved = true; }
 
@@ -69,7 +70,6 @@ namespace pathos {
 
 		bool                       destroyOpenGL();
 	public:
-		inline void                markMainLoopStarted() { mainLoopStarted = true; }
 		void                       waitForInitialization();
 
 	// Render thread
@@ -77,14 +77,12 @@ namespace pathos {
 		uint32                     threadID;
 		std::string                threadName;
 		std::thread                nativeThread;
-		std::mutex                 loopMutex;
-		std::condition_variable    loopCondVar;
+
+		ThreadPool                 workerThreadPool;
 
 		std::atomic<bool>          bPendingKill;
 		std::mutex                 terminateMutex;
 		std::condition_variable    terminateCondVar;
-
-		std::atomic<bool>          mainLoopStarted;
 
 		std::atomic<bool>          bInitialized;
 		std::mutex                 initMutex;
@@ -103,11 +101,11 @@ namespace pathos {
 		Stopwatch                  stopwatch; // for render thread
 		float                      elapsed_renderThread = 0.0f;
 
-		std::list<SceneProxy*>     sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
+		SceneProxyQueue            sceneProxyQueue; // CAUTION: No direct access!!! Use helper methods.
 		std::mutex                 sceneProxyQueueMutex;
 
-		std::list<OverlaySceneProxy*>     overlayProxyQueue; // CAUTION: No direct access!!! Use helper methods.
-		std::mutex                        overlayProxyQueueMutex;
+		OverlayProxyQueue          overlayProxyQueue; // CAUTION: No direct access!!! Use helper methods.
+		std::mutex                 overlayProxyQueueMutex;
 
 		bool                       bScreenshotReserved = false;
 

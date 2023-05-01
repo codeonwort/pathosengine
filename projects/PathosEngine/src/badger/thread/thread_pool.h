@@ -25,21 +25,20 @@ struct ThreadPoolWork
 struct PooledThreadParam
 {
 	PooledThreadParam()
-		: threadID(-1)
+		: workerIndex(-1)
 		, pool(nullptr)
-		, working(false)
 	{
 	}
 
-	int32             threadID;
+	int32             workerIndex;
 	ThreadPool*       pool;
-	bool              working;
+	std::string       poolName;
 };
 
 // Passed to the WorkItemRoutine as a sole parameter
 struct WorkItemParam
 {
-	int32 threadID;
+	int32 threadIndex;
 	void* arg;
 };
 
@@ -68,7 +67,7 @@ public:
 	ThreadPool& operator=(const ThreadPool&) = delete;
 
 	// Create worker threads.
-	void Start(uint32 numWorkerThreads);
+	void Start(const char* poolName, uint32 numWorkerThreads);
 
 	// Discard pending works and destroy this thread pool. Call WaitForAllWorks() first if you want to process all pending works.
 	void Stop();
@@ -78,11 +77,11 @@ public:
 	// #todo-thread-pool: Implement a mechanism to cancel active works.
 	//void CancelActiveWorks();
 
-	// [Blocking operation] Waits for active works to finish.
-	//void WaitForActiveWorks();
+	// [Blocking operation] Wait for all active works to be finished.
+	void WaitForActiveWorks();
 
-	// [Blocking operation] Waits for all works to finish.
-	void WaitForAllWorks();
+	// [Blocking operation] Signal all workers to terminate and wait.
+	void WaitForWorkersTermination();
 
 	// OK to call this before Start() to avoid redundant lock/unlock. Never use this after Start().
 	void AddWorkUnsafe(const ThreadPoolWork& workItem);
@@ -92,6 +91,8 @@ public:
 
 	// CAUTION: Do not call directly. This is public just for worker threads.
 	bool Internal_PopWork(ThreadPoolWork& work);
+
+	void Internal_SetWorkerHasWork(int32 workerIndex, bool bHasWork);
 
 	uint32 GetWorkerThreadId(uint32 workerThreadIndex);
 
@@ -104,6 +105,10 @@ public:
 
 	std::queue<ThreadPoolWork>               queue;
 	std::mutex                               queueLock;
+
+	std::mutex                               hasWorkMutex;
+	std::vector<bool>                        hasWorkFlags;
+	std::condition_variable                  noWorkCondVar;
 
 	ThreadPoolState                          state;
 };

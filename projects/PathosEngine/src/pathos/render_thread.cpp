@@ -21,6 +21,8 @@
 #include "pathos/rhi/gl_context_manager.h"
 #include "pathos/overlay/display_object_proxy.h"
 
+#define NUM_RENDER_WORKER_THREADS 2
+
 #define SAFE_RELEASE(x) { if (x) delete x; x = nullptr; }
 
 namespace pathos {
@@ -30,8 +32,15 @@ namespace pathos {
 		pathos::gRenderThreadId = renderThread->threadID;
 		CPU::setCurrentThreadName(L"Render Thread");
 
+		renderThread->workerThreadPool.Start("RenderThread", NUM_RENDER_WORKER_THREADS);
+
 		CpuProfiler& cpuProfiler = CpuProfiler::getInstance();
 		cpuProfiler.registerCurrentThread(renderThread->getThreadName().c_str());
+		for (uint32 i = 0; i < NUM_RENDER_WORKER_THREADS; ++i) {
+			char workerName[64];
+			sprintf_s(workerName, "Render worker %u", i);
+			cpuProfiler.registerThread(renderThread->workerThreadPool.GetWorkerThreadId(i), workerName);
+		}
 
 		// Initialize
 		{
@@ -78,6 +87,27 @@ namespace pathos {
 			immediateContext.beginQuery(GL_TIME_ELAPSED, renderThread->gpuTimerQuery);
 
 			std::vector<SceneProxy*> sceneProxiesToDelete;
+
+			// #wip: Test worker thread
+			if (renderThread->isSceneProxyQueueEmpty() == false)
+			{
+				SCOPED_CPU_COUNTER(PoolTest);
+
+				ThreadPool& workerPool = renderThread->workerThreadPool;
+
+				ThreadPoolWork workItem;
+				workItem.arg = 0;
+				workItem.routine = [](const WorkItemParam* param) {
+					SCOPED_CPU_COUNTER(TempRenderWork);
+					using namespace std::chrono_literals;
+					std::this_thread::sleep_for(2ms);
+				};
+				workerPool.AddWorkSafe(workItem);
+				workerPool.AddWorkSafe(workItem);
+				workerPool.AddWorkSafe(workItem);
+				workerPool.AddWorkSafe(workItem);
+				workerPool.WaitForActiveWorks();
+			}
 
 			// Render all scene proxies at once.
 			while (renderThread->isSceneProxyQueueEmpty() == false) {
@@ -303,6 +333,8 @@ namespace pathos {
 
 			cmdList.flushAllCommands();
 
+			renderThread->workerThreadPool.Stop();
+
 			bool bDestroyed = renderThread->destroyOpenGL();
 			CHECKF(bDestroyed, "OpenGL not destroyed properly");
 
@@ -348,7 +380,6 @@ namespace pathos {
 
 	void RenderThread::terminate() {
 		bPendingKill = true;
-		loopCondVar.notify_all();
 
 		std::unique_lock<std::mutex> cvLock(terminateMutex);
 		terminateCondVar.wait(cvLock);

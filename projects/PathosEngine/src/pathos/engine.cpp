@@ -265,7 +265,6 @@ namespace pathos {
 	void Engine::start() {
 		stopwatch_gameThread.start();
 		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
-		renderThread->markMainLoopStarted();
 		mainWindow->startMainLoop();
 	}
 

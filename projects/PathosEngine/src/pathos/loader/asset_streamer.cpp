@@ -74,7 +74,7 @@ namespace pathos {
 
 	void AssetStreamer::initialize(uint32 numWorkerThreads)
 	{
-		threadPool.Start(numWorkerThreads);
+		threadPool.Start("AssetStreamer", numWorkerThreads);
 		for (uint32 i = 0; i < numWorkerThreads; ++i) {
 			std::stringstream ss;
 			ss << "AssetStreamer_Worker " << i;
