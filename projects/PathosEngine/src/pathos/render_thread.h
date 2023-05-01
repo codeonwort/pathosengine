@@ -93,9 +93,9 @@ namespace pathos {
 		OpenGLDevice*              renderDevice = nullptr;
 
 		Renderer*                  renderer = nullptr;
-		SceneRenderTargets*        sceneRenderTargets_primary;         // SceneProxySource::MainScene, SceneCapture
-		SceneRenderTargets*        sceneRenderTargets_radianceProbe;   // SceneProxySource::RadianceCapture
-		SceneRenderTargets*        sceneRenderTargets_irradianceProbe; // SceneProxySource::IrradianceCapture
+		SceneRenderTargets*        sceneRenderTargets_primary = nullptr;         // SceneProxySource::MainScene, SceneCapture
+		SceneRenderTargets*        sceneRenderTargets_radianceProbe = nullptr;   // SceneProxySource::RadianceCapture
+		SceneRenderTargets*        sceneRenderTargets_irradianceProbe = nullptr; // SceneProxySource::IrradianceCapture
 
 		OverlayRenderer*           renderer2D = nullptr;
 		DebugOverlay*              debugOverlay = nullptr;

@@ -137,9 +137,11 @@ namespace pathos {
 					renderer->renderScene(immediateContext, sceneRTs, sceneProxy, &sceneProxy->camera);
 
 					{
-						SCOPED_CPU_COUNTER(SubmitDeviceCalls);
+						char counterMsg[64];
+						sprintf_s(counterMsg, "SubmitCommands (Count=%u)", immediateContext.getNumCommands());
+						SCOPED_CPU_COUNTER_STRING(counterMsg);
+
 						immediateContext.flushAllCommands();
-						//deferredContext.flushAllCommands();
 					}
 
 					// Update backbuffer only if main scene was actually rendered
@@ -167,7 +169,7 @@ namespace pathos {
 						gEngine->internal_pushScreenshot(screenshot);
 					}
 				}
-			}
+			} // End of scene proxies processing
 
 			// Restore sceneRenderTargets to the one for main scene.
 			immediateContext.sceneRenderTargets = renderThread->sceneRenderTargets_primary;
@@ -199,26 +201,31 @@ namespace pathos {
 				}
 			}
 
+			// Assume immediateContext is now empty here.
 			{
-				SCOPED_CPU_COUNTER(EndGPUTimerQueries);
-				immediateContext.endQuery(GL_TIME_ELAPSED);
-				immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+				SCOPED_CPU_COUNTER(ExecuteDeferredCommands);
+				deferredContext.flushAllCommands();
 			}
 
+			// Let subsystems handle the end of rendering.
 			{
-				SCOPED_CPU_COUNTER(ExecuteRemainingCommands);
-				{
-					SCOPED_CPU_COUNTER(ImmediateContext);
-					immediateContext.flushAllCommands();
-				}
-				{
-					SCOPED_CPU_COUNTER(DeferredContext);
-					deferredContext.flushAllCommands();
-				}
+				SCOPED_CPU_COUNTER(FontManagerFrameEnd);
+				FontManager::get().onFrameEnd();
+			}
+
+			// -------------------------------------------------------------------------
+			// Frame rendering is done. Time to do cleanup.
+
+			{
+				// It will flush GPU so 'WaitForGPU' counter below may appear short in the profiler.
+				SCOPED_CPU_COUNTER(FlushGPUAndQueryFrameTime);
+				immediateContext.endQuery(GL_TIME_ELAPSED);
+				immediateContext.getQueryObjectui64v(renderThread->gpuTimerQuery, GL_QUERY_RESULT, &gpu_elapsed_ns);
+				immediateContext.flushAllCommands();
 			}
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
-			// Get GPU profile
+			// Get GPU profile for current frame.
 			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(
 				&immediateContext,
 				renderThread->lastGpuCounterNames,
@@ -242,12 +249,6 @@ namespace pathos {
 				}
 			}
 
-			// Let subsystems handle the end of rendering.
-			{
-				SCOPED_CPU_COUNTER(FontManagerFrameEnd);
-				FontManager::get().onFrameEnd();
-			}
-
 			// Pass render stats to the game thread.
 			renderThread->elapsed_renderThread = renderThread->stopwatch.stop();
 			if (bNewSceneRendered) {
@@ -258,9 +259,6 @@ namespace pathos {
 					renderThread->lastGpuCounterTimes);
 			}
 
-			//
-			// End a frame
-			//
 			{
 				SCOPED_CPU_COUNTER(WaitForGPU);
 				glFlush();

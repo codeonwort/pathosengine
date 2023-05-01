@@ -71,6 +71,7 @@ namespace pathos {
 		// Free all memory that came from registerDeferredCleanup().
 		void performDeferredCleanup();
 
+		inline uint32 getNumCommands() const { return (uint32)commands.size(); }
 		inline bool isEmpty() const { return commands.size() == 0; }
 
 		// Debug only
