@@ -432,6 +432,13 @@ namespace pathos {
 		sprintf_s(frameCounterMsg, "Frame %u", frameNumber_mainThread);
 		SCOPED_CPU_COUNTER_STRING(frameCounterMsg);
 
+		float deltaSeconds = 0.001f * stopwatch_gameThread.stop();
+		if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
+			return;
+		} else {
+			stopwatch_gameThread.start();
+		}
+
 		CpuProfiler::getInstance().beginCheckpoint(frameNumber_mainThread);
 
 		// Change world if necessary.
@@ -465,18 +472,9 @@ namespace pathos {
 			assetStreamer->wakeThreadPool();
 		}
 
-		// Start world tick
-		bool bShouldTickWorld = true;
+		// Start world tick.
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
-
-			float deltaSeconds = 0.001f * stopwatch_gameThread.stop();
-
-			if (maxFPS.getValue() > 0 && deltaSeconds < 1.0f / maxFPS.getValue()) {
-				bShouldTickWorld = false;
-			} else {
-				stopwatch_gameThread.start();
-			}
 
 			{
 				SCOPED_CPU_COUNTER(InputTick);
@@ -492,7 +490,7 @@ namespace pathos {
 				const float ar = (float)conf.windowWidth / conf.windowHeight;
 				currentWorld->getCamera().getLens().setAspectRatio(ar);
 
-				if (bShouldTickWorld) {
+				{
 					SCOPED_CPU_COUNTER(UpdateCurrentWorld);
 					currentWorld->tick(deltaSeconds);
 				}
@@ -604,14 +602,12 @@ namespace pathos {
 				gConsole->addLine(L"Screenshot saved to log/screenshot/", false, true);
 				screenshotQueue.clear();
 			}
-		}
+		} // End of world tick
 
 		CpuProfiler::getInstance().finishCheckpoint();
 
-		if (bShouldTickWorld) {
-			elapsed_gameThread = stopwatch_gameThread.stop();
-			stopwatch_gameThread.start();
-		}
+		elapsed_gameThread = stopwatch_gameThread.stop();
+		stopwatch_gameThread.start();
 
 		// Wait for previous frame's rendering to finish.
 		uint64 renderFrameNumber = frameNumber_mainThread - 1;
