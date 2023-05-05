@@ -4,6 +4,7 @@
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
+
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/render_target.h"
 #include "pathos/loader/asset_streamer.h"
@@ -11,16 +12,11 @@
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
 #include "pathos/scene/scene_capture_component.h"
-#include "pathos/scene/sky_panorama_actor.h"
-#include "pathos/scene/sky_atmosphere_actor.h"
-#include "pathos/scene/reflection_probe_actor.h"
-#include "pathos/scene/irradiance_volume_actor.h"
-#include "pathos/material/material_shader.h"
 
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 2.0f);
+static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 10.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
@@ -36,30 +32,14 @@ static const char*   SANDSTONE_METALLIC   = "resources/textures/pbr_sandstone/sa
 static const char*   SANDSTONE_ROUGHNESS  = "resources/textures/pbr_sandstone/sandstonecliff-roughness.png";
 static const char*   SANDSTONE_LOCAL_AO   = "resources/textures/pbr_sandstone/sandstonecliff-ao.png";
 
-struct WavefrontModelDesc {
-	std::string filepath;
-	std::string dir;
-	vector3 location;
-	Rotator rotation;
-	vector3 scale;
-};
-
-std::vector<WavefrontModelDesc> wavefrontModels = {
-	{
-		"resources_external/fireplace_room/fireplace_room.obj",
-		"resources_external/fireplace_room/",
-		vector3(6.0f, 0.0f, 0.0f),
-		Rotator(-90.0f, 0.0f, 0.0f),
-		vector3(0.5f)
-	},
-	{
-		"resources_external/breakfast_room/breakfast_room.obj",
-		"resources_external/breakfast_room/",
-		vector3(-1.0f, 0.2f, 0.5f),
-		Rotator(90.0f, 0.0f, 0.0f),
-		vector3(0.3f)
-	},
-};
+static constexpr float  PILLAR_x0      = 2.5f;
+static constexpr float  PILLAR_y0      = 0.5f;
+static constexpr float  PILLAR_z0      = 0.6f;
+static constexpr float  PILLAR_spaceX  = 0.2f;  // +x
+static constexpr float  PILLAR_height  = 10.0f; // +y
+static constexpr float  PILLAR_spaceZ  = 0.2f;  // +z
+static constexpr uint32 PILLAR_columns = 16u;   // x-axis
+static constexpr uint32 PILLAR_rows    = 16u;   // z-axis
 
 // --------------------------------------------------------
 // World
@@ -68,14 +48,11 @@ void World1::onInitialize()
 {
 	SCOPED_CPU_COUNTER(World1_initialize);
 
-	for (auto i = 0u; i < wavefrontModels.size(); ++i) {
-		AssetReferenceWavefrontOBJ assetRef(
-			wavefrontModels[i].filepath.c_str(),
-			wavefrontModels[i].dir.c_str());
-		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(assetRef, this, &World1::onLoadOBJ, i);
-	}
-
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
+
+	gConsole->addLine(L"[world1]", false, true);
+	gConsole->addLine(L"F : draw CSM frustum", false, true);
+	gConsole->addLine(L"G : update scene capture", false, true);
 
 	setupInput();
 	setupSky();
@@ -200,6 +177,7 @@ void World1::setupScene()
 
 	// --------------------------------------------------------
 	// Lighting
+
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
 	dirLight->setIlluminance(SUN_ILLUMINANCE);
@@ -207,24 +185,22 @@ void World1::setupScene()
 	PointLightActor* pointLight0 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight2 = spawnActor<PointLightActor>();
-	PointLightActor* pointLight3 = spawnActor<PointLightActor>();
 
-	pointLight0->setActorLocation(vector3(-0.5f + 7.0f, 0.6f, 1.7f));
-	pointLight1->setActorLocation(vector3(00.0f + 7.0f, 0.3f, 1.5f));
-	pointLight2->setActorLocation(vector3(-0.2f + 7.0f, 0.5f, 0.5f));
-	pointLight3->setActorLocation(vector3(-0.2f + 7.0f, 0.5f, 1.5f));
+	const float PILLAR_x1 = PILLAR_x0 + PILLAR_spaceX * PILLAR_columns;
+	const float PILLAR_y1 = PILLAR_y0 - 0.01f;
+	const float PILLAR_z1 = PILLAR_z0 + PILLAR_spaceZ * PILLAR_rows;
+	pointLight0->setActorLocation(vector3(PILLAR_x0, PILLAR_y1, PILLAR_z0));
+	pointLight1->setActorLocation(vector3(PILLAR_x1, PILLAR_y1, PILLAR_z0));
+	pointLight2->setActorLocation(vector3(0.5f * (PILLAR_x0 + PILLAR_x1), PILLAR_y1, PILLAR_z1));
 
-	pointLight0->setIntensity(5.0f * vector3(0.2f, 2.0f, 1.0f));
-	pointLight0->setAttenuationRadius(1.0f);
+	pointLight0->setIntensity(50.0f * vector3(1.0f, 0.0f, 0.0f));
+	pointLight0->setAttenuationRadius(2.0f);
 
-	pointLight1->setIntensity(4.0f * vector3(0.1f, 0.1f, 1.0f));
-	pointLight1->setAttenuationRadius(1.0f);
+	pointLight1->setIntensity(50.0f * vector3(0.0f, 1.0f, 0.0f));
+	pointLight1->setAttenuationRadius(2.0f);
 
-	pointLight2->setIntensity(10.0f * vector3(1.0f, 0.0f, 0.0f));
-	pointLight2->setAttenuationRadius(1.5f);
-
-	pointLight3->setIntensity(3.0f * vector3(1.0f, 1.0f, 1.0f));
-	pointLight3->setAttenuationRadius(2.0f);
+	pointLight2->setIntensity(50.0f * vector3(0.0f, 0.0f, 1.0f));
+	pointLight2->setAttenuationRadius(2.0f);
 
 	godRaySource = spawnActor<StaticMeshActor>();
 	godRaySource->setStaticMesh(new Mesh(geom_sphere, material_color));
@@ -266,10 +242,6 @@ void World1::setupScene()
 		balls.push_back(ball);
 	}
 
-	constexpr float box_x0 = 2.5f;
-	constexpr float box_y0 = 0.6f;
-	constexpr float box_spaceX = 0.2f;
-	constexpr float box_spaceY = 0.2f;
 	float sinT = 0.0f;
 	Material* box_material = Material::createMaterialInstance("solid_color");
 
@@ -277,22 +249,18 @@ void World1::setupScene()
 	box_material->setConstantParameter("metallic", 0.0f);
 	box_material->setConstantParameter("roughness", 0.5f);
 	box_material->setConstantParameter("emissive", vector3(0.0f));
-	for (uint32 i = 0; i < 16; ++i)
+	for (uint32 i = 0; i < PILLAR_columns; ++i)
 	{
-		for (uint32 j = 0; j < 16; ++j)
+		for (uint32 j = 0; j < PILLAR_rows; ++j)
 		{
 			float wave = ::sinf(sinT += 0.0417f);
 
-			StaticMeshActor* box = spawnActor<StaticMeshActor>();
-			box->setStaticMesh(new Mesh(geom_cube, box_material));
-			box->setActorLocation(vector3(box_x0 + i * box_spaceX, 0.5f, box_y0 + j * box_spaceY));
-			box->setActorScale(vector3(1.0f, 10.0f * 0.5f * (1.0f + wave), 1.0f));
+			StaticMeshActor* pillar = spawnActor<StaticMeshActor>();
+			pillar->setStaticMesh(new Mesh(geom_cube, box_material));
+			pillar->setActorLocation(vector3(PILLAR_x0 + i * PILLAR_spaceX, PILLAR_y0, PILLAR_z0 + j * PILLAR_spaceZ));
+			pillar->setActorScale(vector3(1.0f, PILLAR_height * 0.5f * (1.0f + wave), 1.0f));
 
-			//if (i == 0 && j == 0) {
-			//	box->setActorLocation(0.0f, 20.0f, 180.0f);
-			//}
-
-			boxes.push_back(box);
+			pillars.push_back(pillar);
 		}
 	}
 
@@ -303,14 +271,13 @@ void World1::setupScene()
 		tempRenderTarget->respecTexture(1920, 1080, RenderTargetFormat::RGBA16F);
 		tempRenderTarget->immediateUpdateResource();
 	}
-
+	if (sceneCaptureComponent == nullptr) {
+		sceneCaptureComponent = new SceneCaptureComponent;
+		sceneCaptureComponent->renderTarget = tempRenderTarget;
+	}
 	if (sceneCaptureActor == nullptr) {
 		sceneCaptureActor = spawnActor<Actor>();
-		sceneCaptureComponent = new SceneCaptureComponent;
 		sceneCaptureActor->registerComponent(sceneCaptureComponent);
-
-		sceneCaptureComponent->renderTarget = tempRenderTarget;
-
 		sceneCaptureActor->setActorLocation(CAMERA_POSITION);
 	}
 	sceneCaptureComponent->captureScene();
@@ -320,8 +287,8 @@ void World1::setupScene()
 	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_sceneCapture, material_sceneCapture));
-	sceneCaptureViewer->setActorLocation(-5.0f, 3.0f, -3.0f);
-	sceneCaptureViewer->setActorScale(0.1f * vector3(16.0f, 9.0f, 1.0f));
+	sceneCaptureViewer->setActorLocation(-5.0f, 5.0f, -3.0f);
+	sceneCaptureViewer->setActorScale(0.5f * vector3(16.0f, 9.0f, 1.0f));
 
 	// --------------------------------------------------------
 	// Bloom test
@@ -331,50 +298,9 @@ void World1::setupScene()
 	material_tooBright->setConstantParameter("roughness", 1.0f);
 	material_tooBright->setConstantParameter("emissive", vector3(100.0f, 0.0f, 0.0f));
 	StaticMeshActor* bloomActor = spawnActor<StaticMeshActor>();
-	bloomActor->setActorLocation(2.0f, 0.8f, 6.0f);
+	bloomActor->setActorLocation(1.0f, 0.8f, -1.0f);
 	bloomActor->setActorScale(20.0f);
 	bloomActor->setStaticMesh(new Mesh(geom_sphere, material_tooBright));
-}
-
-void World1::onLoadOBJ(OBJLoader* loader, uint64 payload)
-{
-	const WavefrontModelDesc& desc = wavefrontModels[payload];
-
-	if (!loader->isValid()) {
-		LOG(LogError, "Failed to load a wavefront model: %s", desc.filepath.c_str());
-		return;
-	}
-
-	StaticMeshActor* objModel = spawnActor<StaticMeshActor>();
-	objModel->setStaticMesh(loader->craftMeshFromAllShapes());
-	objModel->setActorRotation(desc.rotation);
-	objModel->setActorScale(desc.scale);
-	objModel->setActorLocation(desc.location);
-
-	if (payload == 1) {
-		objModel->getStaticMeshComponent()->updateTransformHierarchy();
-		AABB worldBounds = objModel->getStaticMeshComponent()->getWorldBounds();
-		if (payload == 0) {
-			worldBounds.minBounds += vector3(0.4f, 0.2f, 0.2f);
-			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.4f);
-		} else {
-			worldBounds.minBounds += vector3(0.2f, 0.2f, 0.2f);
-			worldBounds.maxBounds -= vector3(0.2f, 0.2f, 0.2f);
-		}
-		const vector3ui GRID_SIZE(4, 4, 4);
-
-		IrradianceVolumeActor* volume = spawnActor<IrradianceVolumeActor>();
-		volume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, GRID_SIZE);
-
-		//LOG(LogDebug, "volume bounds: min(%.3f, %.3f, %.3f)", worldBounds.minBounds.x, worldBounds.minBounds.y, worldBounds.minBounds.z);
-		//LOG(LogDebug, "volume bounds: max(%.3f, %.3f, %.3f)", worldBounds.maxBounds.x, worldBounds.maxBounds.y, worldBounds.maxBounds.z);
-		//for (uint32 i = 0; i < volume->numProbes(); ++i) {
-		//	vector3 pos = volume->getProbeLocationByIndex(i);
-		//	LOG(LogDebug, "probe: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
-		//}
-	}
-
-	objModels.push_back(objModel);
 }
 
 void World1::setupCSMDebugger()
@@ -398,12 +324,12 @@ void World1::onTick(float deltaSeconds)
 
 	static float sinT = 0.0f;
 	sinT += 6.28f * 0.25f * deltaSeconds;
-	for (uint32 i = 0; i < 16; ++i)
+	for (uint32 i = 0; i < PILLAR_columns; ++i)
 	{
-		for (uint32 j = 0; j < 16; ++j)
+		for (uint32 j = 0; j < PILLAR_rows; ++j)
 		{
 			float wave = ::sinf(sinT + 13.2754f * (i * 16 + j) / 256.0f + (6.3f * j / 16.0f));
-			boxes[i * 16 + j]->setActorScale(vector3(0.5f, 10.0f * 0.5f * (1.0f + wave), 0.5f));
+			pillars[i * 16 + j]->setActorScale(vector3(0.5f, PILLAR_height * 0.5f * (1.0f + wave), 0.5f));
 		}
 	}
 

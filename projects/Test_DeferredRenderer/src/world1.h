@@ -37,15 +37,12 @@ public:
 	void setupSky();
 	void setupScene();
 	void setupCSMDebugger();
-	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	std::vector<StaticMeshActor*> objModels;
 	std::vector<StaticMeshActor*> balls;
-	std::vector<StaticMeshActor*> boxes;
+	std::vector<StaticMeshActor*> pillars;
 	StaticMeshActor* godRaySource = nullptr;
 	StaticMeshActor* ground = nullptr;
-	SceneCaptureComponent* sceneCaptureComponent = nullptr;
 #if VISUALIZE_CSM_FRUSTUM
 	CSMDebugger* csmDebugger = nullptr;
 #endif
@@ -55,4 +52,5 @@ private:
 	// For scene capture
 	RenderTarget2D* tempRenderTarget = nullptr;
 	Actor* sceneCaptureActor = nullptr;
+	SceneCaptureComponent* sceneCaptureComponent = nullptr;
 };
