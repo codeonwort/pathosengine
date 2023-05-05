@@ -28,7 +28,9 @@ namespace pathos {
 	void clearTextureCube(
 		RenderCommandList& cmdList,
 		GLuint texture,
-		uint32 textureSize,
+		uint32 startMipSize,
+		uint32 startMipLevel,
+		uint32 mipCount,
 		EClearTextureFormat format,
 		float* clearValues,
 		bool bMemoryBarrier = true);

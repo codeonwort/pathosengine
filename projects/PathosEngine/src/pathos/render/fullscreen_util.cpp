@@ -77,7 +77,7 @@ namespace pathos {
 		
 		constexpr GLuint slot = 0;
 		constexpr GLint mipLevel = 0;
-		constexpr GLboolean layered = GL_FALSE;
+		constexpr GLboolean layered = GL_TRUE;
 		constexpr GLint layer = 0;
 		cmdList.bindImageTexture(slot, texture, mipLevel, layered, layer, GL_WRITE_ONLY, clearDesc.format);
 
@@ -92,13 +92,16 @@ namespace pathos {
 	void clearTextureCube(
 		RenderCommandList& cmdList,
 		GLuint texture,
-		uint32 textureSize,
+		uint32 startMipSize,
+		uint32 startMipLevel,
+		uint32 mipCount,
 		EClearTextureFormat format,
 		float* clearValues,
 		bool bMemoryBarrier /*= true*/)
 	{
 		SCOPED_DRAW_EVENT(ClearTextureCube);
 
+		uint32 textureSize = startMipSize;
 		ClearTextureDesc clearDesc = toClearDesc(format);
 
 		GLuint program = 0;
@@ -115,14 +118,17 @@ namespace pathos {
 		}
 
 		constexpr GLuint slot = 0;
-		constexpr GLint mipLevel = 0;
 		constexpr GLboolean layered = GL_TRUE;
 		constexpr GLint layer = 0;
-		cmdList.bindImageTexture(slot, texture, mipLevel, layered, layer, GL_WRITE_ONLY, clearDesc.format);
+		for (uint32 mipLevel = startMipLevel; mipLevel < startMipLevel + mipCount; ++mipLevel) {
+			cmdList.bindImageTexture(slot, texture, mipLevel, layered, layer, GL_WRITE_ONLY, clearDesc.format);
 
-		GLuint numGroupsX = (textureSize + 7) / 8;
-		GLuint numGroupsY = (textureSize + 7) / 8;
-		cmdList.dispatchCompute(numGroupsX, numGroupsY, 1);
+			GLuint numGroupsX = (textureSize + 7) / 8;
+			GLuint numGroupsY = (textureSize + 7) / 8;
+			cmdList.dispatchCompute(numGroupsX, numGroupsY, 1);
+
+			textureSize /= 2;
+		}
 		if (bMemoryBarrier) {
 			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}

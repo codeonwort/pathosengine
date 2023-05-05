@@ -42,9 +42,6 @@
     <ClCompile Include="src\world_lightroom.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\world_sponza.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\csm_debugger.h">
@@ -69,9 +66,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\world_lightroom.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\world_sponza.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

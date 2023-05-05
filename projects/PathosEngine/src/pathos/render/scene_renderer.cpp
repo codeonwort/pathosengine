@@ -313,6 +313,8 @@ namespace pathos {
 						cmdList,
 						sceneRenderTargets->skyIrradianceMap,
 						pathos::SKY_IRRADIANCE_MAP_SIZE,
+						0, // start mip level
+						1, // mip count to clear
 						EClearTextureFormat::RGBA16f,
 						clearValues);
 				}
@@ -321,6 +323,8 @@ namespace pathos {
 						cmdList,
 						sceneRenderTargets->skyPrefilteredMap,
 						sceneRenderTargets->skyPrefilterMapSize,
+						0, // start mip level
+						pathos::SKY_PREFILTER_MAP_MAX_NUM_MIPS, // mip count to clear
 						EClearTextureFormat::RGBA16f,
 						clearValues);
 				}
