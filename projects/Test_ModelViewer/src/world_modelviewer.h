@@ -19,6 +19,7 @@ namespace pathos {
 	class ReflectionProbeActor;
 }
 class PlayerController;
+class RotationBoard;
 
 enum class EModelExt : uint8 { Unknown, Obj, GLTF };
 EModelExt findModelFileExtension(const std::string& filepath);
@@ -57,9 +58,10 @@ private:
 	vector3 sunIlluminance = vector3(10.0f);
 
 	// GUI
-	pathos::Button* btn_load = nullptr;
-	pathos::Label* label_notice = nullptr;
-	pathos::Button* btn_toggleSky = nullptr;
-	pathos::Rectangle* board_sunControl = nullptr;
+	pathos::Button* btn_load            = nullptr;
+	pathos::Label*  label_notice        = nullptr;
+	pathos::Button* btn_toggleSky       = nullptr;
+	RotationBoard*  board_sunControl    = nullptr;
+	RotationBoard*  board_modelControl  = nullptr;
 
 };

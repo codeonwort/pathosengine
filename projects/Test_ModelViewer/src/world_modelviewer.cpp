@@ -24,6 +24,50 @@
 
 static const char* SKY_PANORAMA_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
+class RotationBoard : public DisplayObject2D {
+
+public:
+	RotationBoard(float width, float height, float gizmoSize, const wchar_t* txt) {
+		board = new pathos::Rectangle(width, height);
+		board->setBrush(new SolidColorBrush(0.2f, 0.2f, 0.2f));
+
+		gizmo = new pathos::Rectangle(gizmoSize, gizmoSize);
+		gizmo->setBrush(new SolidColorBrush(0.8f, 0.8f, 0.8f));
+		gizmo->setX((width - gizmoSize) / 2.0f);
+		gizmo->setY((height - gizmoSize) / 2.0f);
+		gizmo->bReceivesMouseInput = false;
+
+		board->onMouseDrag = [this](int32 mouseX, int32 mouseY) {
+			float u = ((float)mouseX - board->getX()) / board->getWidth();
+			float v = ((float)mouseY - board->getY()) / board->getHeight();
+			u = badger::clamp(0.0f, u, 1.0f);
+			v = badger::clamp(0.0f, v, 1.0f);
+			gizmo->setX(mouseX - board->getX() - (gizmo->getWidth() / 2.0f));
+			gizmo->setY(mouseY - board->getY() - (gizmo->getHeight() / 2.0f));
+			if (onUpdateRotation) {
+				onUpdateRotation(u, v);
+			}
+		};
+
+		label = new pathos::Label(txt);
+		label->setX(width + 5.0f);
+		label->setColor(vector3(1.0f, 1.0f, 1.0f));
+
+		board->addChild(gizmo);
+		addChild(board);
+		addChild(label);
+	}
+
+	std::function<void(float u, float v)> onUpdateRotation;
+
+private:
+	pathos::Rectangle* board = nullptr;
+	pathos::Rectangle* gizmo = nullptr;
+	pathos::Label*     label = nullptr;
+
+};
+
+
 #if PLATFORM_WINDOWS
 // https://learn.microsoft.com/en-us/windows/win32/learnwin32/example--the-open-dialog-box
 #include <Windows.h>
@@ -162,31 +206,27 @@ void World_ModelViewer::onInitialize() {
 			this->toggleSkyActor();
 		};
 
-		board_sunControl = new pathos::Rectangle(100.0f, 100.0f);
+		board_sunControl = new RotationBoard(100.0f, 100.0f, 8.0f, L"Sun direction");
 		board_sunControl->setX(10.0f);
 		board_sunControl->setY(110.0f);
-		board_sunControl->setBrush(new SolidColorBrush(0.2f, 0.2f, 0.2f));
-
-		auto gizmo_sunControl = new pathos::Rectangle(8.0f, 8.0f);
-		gizmo_sunControl->setX(board_sunControl->getWidth() / 2.0f);
-		gizmo_sunControl->setY(board_sunControl->getHeight() / 2.0f);
-		gizmo_sunControl->setBrush(new SolidColorBrush(0.8f, 0.8f, 0.8f));
-		gizmo_sunControl->bReceivesMouseInput = false;
-		board_sunControl->addChild(gizmo_sunControl);
-
-		board_sunControl->onMouseDrag = [this, gizmo_sunControl](int32 mouseX, int32 mouseY) {
-			float u = ((float)mouseX - board_sunControl->getX()) / board_sunControl->getWidth();
-			float v = ((float)mouseY - board_sunControl->getY()) / board_sunControl->getHeight();
-			u = badger::clamp(0.0f, u, 1.0f);
-			v = badger::clamp(0.0f, v, 1.0f);
+		board_sunControl->onUpdateRotation = [this](float u, float v) {
 			u = 2.0f * badger::f_PI * u;
 			v = badger::f_PI_2 * (1.0f - v);
 			sunDirection.x = std::cos(u) * std::cos(v);
 			sunDirection.z = std::sin(u) * std::cos(v);
 			sunDirection.y = -std::sin(v);
 			sun->setDirection(sunDirection);
-			gizmo_sunControl->setX(mouseX - board_sunControl->getX() - (gizmo_sunControl->getWidth() / 2.0f));
-			gizmo_sunControl->setY(mouseY - board_sunControl->getY() - (gizmo_sunControl->getHeight() / 2.0f));
+		};
+
+		board_modelControl = new RotationBoard(100.0f, 100.0f, 8.0f, L"Model rotation");
+		board_modelControl->setX(10.0f);
+		board_modelControl->setY(220.0f);
+		board_modelControl->onUpdateRotation = [this](float u, float v) {
+			u = 180.0f * (u - 0.5f);
+			v = 360.0f * (v - 0.5f);
+			Actor* targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
+			targetActor->setActorRotation(Rotator(u, v, 0.0f));
+			LOG(LogDebug, "Rotation %f %f", u, v);
 		};
 
 		auto root = gEngine->getOverlayRoot();
@@ -194,6 +234,7 @@ void World_ModelViewer::onInitialize() {
 		root->addChild(label_notice);
 		root->addChild(btn_toggleSky);
 		root->addChild(board_sunControl);
+		root->addChild(board_modelControl);
 	}
 }
 

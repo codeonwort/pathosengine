@@ -95,8 +95,11 @@ namespace pathos {
 			}
 		}
 		if (!bHandled || !bStopInputPropagation) {
+			// #todo-input: Pass both local and global mouse positions
+			int32 localMouseX = mouseX - (int32)getX();
+			int32 localMouseY = mouseY - (int32)getY();
 			for (DisplayObject2D* child : children) {
-				child->handleMouseLeftClick(mouseX, mouseY);
+				child->handleMouseLeftClick(localMouseX, localMouseY);
 			}
 		}
 	}
@@ -110,8 +113,11 @@ namespace pathos {
 			}
 		}
 		if (!bHandled || !bStopInputPropagation) {
+			// #todo-input: Pass both local and global mouse positions
+			int32 localMouseX = mouseX - (int32)getX();
+			int32 localMouseY = mouseY - (int32)getY();
 			for (DisplayObject2D* child : children) {
-				child->handleMouseDrag(mouseX, mouseY);
+				child->handleMouseDrag(localMouseX, localMouseY);
 			}
 		}
 	}
