@@ -2,6 +2,7 @@
 
 #include "pathos/util/transform_helper.h"
 #include "badger/types/vector_types.h"
+#include "badger/types/int_types.h"
 
 namespace pathos {
 
@@ -18,8 +19,10 @@ namespace pathos {
 	class SolidColorBrush : public Brush {
 	public:
 		SolidColorBrush(float r, float g, float b);
-		SolidColorBrush(uint32_t rgb);
+		SolidColorBrush(uint32 rgb);
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
+		void setColor(float r, float g, float b);
+		void setColor(uint32 colorHex);
 	private:
 		vector4 color;
 	};
@@ -37,7 +40,7 @@ namespace pathos {
 
 	public:
 		TextBrush(float r, float g, float b);
-		TextBrush(uint32_t rgb);
+		TextBrush(uint32 rgb);
 
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 

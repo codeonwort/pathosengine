@@ -1,12 +1,16 @@
 #pragma once
 
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/scene/world.h"
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/label.h"
+#include "pathos/overlay/button.h"
 using namespace pathos;
 
 namespace pathos {
 	class Actor;
+	class SkyAtmosphereActor;
+	class PanoramaSkyActor;
 	class DirectionalLightActor;
 	class StaticMeshActor;
 	class OBJLoader;
@@ -23,6 +27,7 @@ class World_ModelViewer : public World {
 
 public:
 	void tryLoadModel(const char* filepath, EModelExt ext);
+	void toggleSkyActor();
 
 protected:
 	virtual void onInitialize() override;
@@ -36,6 +41,10 @@ private:
 	void replaceModelActor(Actor* newActor);
 
 private:
+	SkyAtmosphereActor* skyAtmosphere = nullptr;
+	PanoramaSkyActor* panoramaSky = nullptr;
+	GLuint panoramaTexture = 0;
+
 	DirectionalLightActor* sun = nullptr;
 	PlayerController* playerController = nullptr;
 	Actor* modelActor = nullptr;
@@ -48,8 +57,9 @@ private:
 	vector3 sunIlluminance = vector3(10.0f);
 
 	// GUI
-	pathos::Rectangle* btn_load = nullptr;
+	pathos::Button* btn_load = nullptr;
 	pathos::Label* label_notice = nullptr;
+	pathos::Button* btn_toggleSky = nullptr;
 	pathos::Rectangle* board_sunControl = nullptr;
 
 };

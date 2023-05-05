@@ -6,20 +6,23 @@
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/loader/asset_streamer.h"
+#include "pathos/loader/imageloader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
-#include "pathos/util/file_system.h"
-#include "pathos/console.h"
-
 #include "pathos/overlay/brush.h"
+#include "pathos/util/file_system.h"
 #include "pathos/util/log.h"
+#include "pathos/console.h"
 
 #include "badger/system/platform.h"
 #include "badger/math/constants.h"
 #include "badger/math/minmax.h"
+
+static const char* SKY_PANORAMA_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 #if PLATFORM_WINDOWS
 // https://learn.microsoft.com/en-us/windows/win32/learnwin32/example--the-open-dialog-box
@@ -36,7 +39,7 @@ std::string browseModelFile() {
 	if (FAILED(hr)) return "";
 
 	COMDLG_FILTERSPEC filters[] = {
-		{ L"Wavefront OBj", L"*.obj" }, { L"Khronos glTF", L"*.gltf" },
+		{ L"OBJ or glTF", L"*.obj;*.gltf" },
 	};
 	hr = pFileOpen->SetFileTypes(_countof(filters), filters);
 	if (FAILED(hr)) return "";
@@ -91,7 +94,9 @@ void World_ModelViewer::onInitialize() {
 
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 
-	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
+	HDRImageBlob* panoramaImage = pathos::loadHDRImage(SKY_PANORAMA_HDRI);
+	panoramaTexture = pathos::createTextureFromHDRImage(panoramaImage);
+	toggleSkyActor();
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);
@@ -104,6 +109,10 @@ void World_ModelViewer::onInitialize() {
 	{
 		auto G = new CubeGeometry(vector3(1.0f));
 		auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DWhite());
+		M->setConstantParameter("bOverrideMetallic", true);
+		M->setConstantParameter("bOverrideRoughness", true);
+		M->setConstantParameter("metallicOverride", 1.0f);
+		M->setConstantParameter("roughnessOverride", 0.2f);
 		dummyBox = spawnActor<StaticMeshActor>();
 		dummyBox->setStaticMesh(new Mesh(G, M));
 
@@ -118,19 +127,15 @@ void World_ModelViewer::onInitialize() {
 
 	// GUI
 	{
-		Label* label_load = new Label(L"Load model");
-		label_load->setX(5.0f);
-		label_load->setY(5.0f);
-
 		label_notice = new Label(L"> ");
 		label_notice->setX(130.0f);
 		label_notice->setY(15.0f);
 
-		btn_load = new pathos::Rectangle(100.0f, 40.0f);
+		btn_load = new pathos::Button(100.0f, 40.0f, 5.0f, 5.0f);
 		btn_load->setX(10.0f);
 		btn_load->setY(10.0f);
-		btn_load->setBrush(new SolidColorBrush(0.1f, 0.1f, 0.1f));
-		btn_load->addChild(label_load);
+		btn_load->setBackgroundColor(0.1f, 0.1f, 0.1f);
+		btn_load->setText(L"Load model");
 
 		auto pNotice = label_notice;
 		btn_load->onMouseClick = [pNotice, this](int32 mouseX, int32 mouseY) {
@@ -148,9 +153,18 @@ void World_ModelViewer::onInitialize() {
 			}
 		};
 
+		btn_toggleSky = new pathos::Button(150.0f, 40.0f, 5.0f, 5.0f);
+		btn_toggleSky->setX(10.0f);
+		btn_toggleSky->setY(60.0f);
+		btn_toggleSky->setBackgroundColor(0.3f, 0.6f, 0.9f);
+		btn_toggleSky->setText(L"Toggle sky model");
+		btn_toggleSky->onMouseClick = [this](int32 mouseX, int32 mouseY) {
+			this->toggleSkyActor();
+		};
+
 		board_sunControl = new pathos::Rectangle(100.0f, 100.0f);
 		board_sunControl->setX(10.0f);
-		board_sunControl->setY(60.0f);
+		board_sunControl->setY(110.0f);
 		board_sunControl->setBrush(new SolidColorBrush(0.2f, 0.2f, 0.2f));
 
 		auto gizmo_sunControl = new pathos::Rectangle(8.0f, 8.0f);
@@ -178,6 +192,7 @@ void World_ModelViewer::onInitialize() {
 		auto root = gEngine->getOverlayRoot();
 		root->addChild(btn_load);
 		root->addChild(label_notice);
+		root->addChild(btn_toggleSky);
 		root->addChild(board_sunControl);
 	}
 }
@@ -355,5 +370,24 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		ReflectionProbeActor* reflectionProbe0 = spawnActor<ReflectionProbeActor>();
 		reflectionProbe0->setActorLocation(worldBounds.getCenter());
 		reflectionProbes.push_back(reflectionProbe0);
+	}
+}
+
+void World_ModelViewer::toggleSkyActor() {
+	const bool bSpawnAtmosphere = (skyAtmosphere == nullptr);
+
+	if (bSpawnAtmosphere) {
+		if (panoramaSky != nullptr) {
+			panoramaSky->destroy();
+			panoramaSky = nullptr;
+		}
+		skyAtmosphere = spawnActor<SkyAtmosphereActor>();
+	} else {
+		if (skyAtmosphere != nullptr) {
+			skyAtmosphere->destroy();
+			skyAtmosphere = nullptr;
+		}
+		panoramaSky = spawnActor<PanoramaSkyActor>();
+		panoramaSky->initialize(panoramaTexture);
 	}
 }
