@@ -29,6 +29,7 @@ class World_ModelViewer : public World {
 public:
 	void tryLoadModel(const char* filepath, EModelExt ext);
 	void toggleSkyActor();
+	bool toggleProbeGI();
 
 protected:
 	virtual void onInitialize() override;
@@ -42,6 +43,8 @@ private:
 	void replaceModelActor(Actor* newActor);
 
 private:
+	bool bEnableProbeGI = true;
+
 	SkyAtmosphereActor* skyAtmosphere = nullptr;
 	PanoramaSkyActor* panoramaSky = nullptr;
 	GLuint panoramaTexture = 0;
@@ -60,7 +63,8 @@ private:
 	// GUI
 	pathos::Button* btn_load            = nullptr;
 	pathos::Label*  label_notice        = nullptr;
-	pathos::Button* btn_toggleSky       = nullptr;
+	pathos::Button* btn_toggleSkyActor  = nullptr;
+	pathos::Button* btn_toggleProbeGI   = nullptr;
 	RotationBoard*  board_sunControl    = nullptr;
 	RotationBoard*  board_modelControl  = nullptr;
 

@@ -140,7 +140,9 @@ void World_ModelViewer::onInitialize() {
 
 	HDRImageBlob* panoramaImage = pathos::loadHDRImage(SKY_PANORAMA_HDRI);
 	panoramaTexture = pathos::createTextureFromHDRImage(panoramaImage);
+
 	toggleSkyActor();
+	toggleProbeGI();
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);
@@ -197,18 +199,29 @@ void World_ModelViewer::onInitialize() {
 			}
 		};
 
-		btn_toggleSky = new pathos::Button(150.0f, 40.0f, 5.0f, 5.0f);
-		btn_toggleSky->setX(10.0f);
-		btn_toggleSky->setY(60.0f);
-		btn_toggleSky->setBackgroundColor(0.3f, 0.6f, 0.9f);
-		btn_toggleSky->setText(L"Toggle sky model");
-		btn_toggleSky->onMouseClick = [this](int32 mouseX, int32 mouseY) {
+		btn_toggleSkyActor = new pathos::Button(150.0f, 40.0f, 5.0f, 5.0f);
+		btn_toggleSkyActor->setX(10.0f);
+		btn_toggleSkyActor->setY(60.0f);
+		btn_toggleSkyActor->setBackgroundColor(0.3f, 0.6f, 0.9f);
+		btn_toggleSkyActor->setText(L"Toggle sky model");
+		btn_toggleSkyActor->onMouseClick = [this](int32 mouseX, int32 mouseY) {
 			this->toggleSkyActor();
+		};
+
+		btn_toggleProbeGI = new pathos::Button(200.0f, 40.0f, 5.0f, 5.0f);
+		btn_toggleProbeGI->setX(10.0f);
+		btn_toggleProbeGI->setY(110.0f);
+		btn_toggleProbeGI->setBackgroundColor(0.8f, 0.6f, 0.1f);
+		btn_toggleProbeGI->setText(L"Toggle probe GI");
+		btn_toggleProbeGI->setTextColor(0.1f, 0.1f, 0.1f);
+		btn_toggleProbeGI->onMouseClick = [this](int32 mouseX, int32 mouseY) {
+			bool bEnabled = this->toggleProbeGI();
+			btn_toggleProbeGI->setText(bEnabled ? L"Toggle probe GI (on)" : L"Toggle probe GI (off)");
 		};
 
 		board_sunControl = new RotationBoard(100.0f, 100.0f, 8.0f, L"Sun direction");
 		board_sunControl->setX(10.0f);
-		board_sunControl->setY(110.0f);
+		board_sunControl->setY(160.0f);
 		board_sunControl->onUpdateRotation = [this](float u, float v) {
 			u = 2.0f * badger::f_PI * u;
 			v = badger::f_PI_2 * (1.0f - v);
@@ -220,19 +233,19 @@ void World_ModelViewer::onInitialize() {
 
 		board_modelControl = new RotationBoard(100.0f, 100.0f, 8.0f, L"Model rotation");
 		board_modelControl->setX(10.0f);
-		board_modelControl->setY(220.0f);
+		board_modelControl->setY(270.0f);
 		board_modelControl->onUpdateRotation = [this](float u, float v) {
 			u = 180.0f * (u - 0.5f);
 			v = 360.0f * (v - 0.5f);
 			Actor* targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
 			targetActor->setActorRotation(Rotator(u, v, 0.0f));
-			LOG(LogDebug, "Rotation %f %f", u, v);
 		};
 
 		auto root = gEngine->getOverlayRoot();
 		root->addChild(btn_load);
 		root->addChild(label_notice);
-		root->addChild(btn_toggleSky);
+		root->addChild(btn_toggleSkyActor);
+		root->addChild(btn_toggleProbeGI);
 		root->addChild(board_sunControl);
 		root->addChild(board_modelControl);
 	}
@@ -431,4 +444,41 @@ void World_ModelViewer::toggleSkyActor() {
 		panoramaSky = spawnActor<PanoramaSkyActor>();
 		panoramaSky->initialize(panoramaTexture);
 	}
+}
+
+bool World_ModelViewer::toggleProbeGI() {
+	auto findCVar = [](const char* cvarName) -> ConsoleVariableBase* {
+		auto cvar = ConsoleVariableManager::get().find(cvarName);
+		if (cvar == nullptr) {
+			LOG(LogError, "Can't find cvar: %s", cvarName);
+		}
+		return cvar;
+	};
+	auto setCVarInt = [](ConsoleVariableBase* cvar, int32 value) {
+		if (cvar != nullptr) {
+			static_cast<ConsoleVariable<int32>*>(cvar)->setValue(value);
+		}
+	};
+	auto setCVarFloat = [](ConsoleVariableBase* cvar, float value) {
+		if (cvar != nullptr) {
+			static_cast<ConsoleVariable<float>*>(cvar)->setValue(value);
+		}
+	};
+	auto cvarUpdateIndirectDiffuse  = findCVar("r.indirectLighting.updateIrradianceProbesPerFrame");
+	auto cvarUpdateIndirectSpecular = findCVar("r.indirectLighting.updateReflectionProbesPerFrame");
+	auto cvarApplyIndirectDiffuse   = findCVar("r.indirectLighting.probeDiffuse");
+	auto cvarApplyIndirectSpecular  = findCVar("r.indirectLighting.probeSpecular");
+	if (bEnableProbeGI) {
+		setCVarInt(cvarUpdateIndirectDiffuse,  1);
+		setCVarInt(cvarUpdateIndirectSpecular, 1);
+		setCVarInt(cvarApplyIndirectDiffuse,   1);
+		setCVarInt(cvarApplyIndirectSpecular,  1);
+	} else {
+		setCVarInt(cvarUpdateIndirectDiffuse,  0);
+		setCVarInt(cvarUpdateIndirectSpecular, 0);
+		setCVarInt(cvarApplyIndirectDiffuse,   0);
+		setCVarInt(cvarApplyIndirectSpecular,  0);
+	}
+	bEnableProbeGI = !bEnableProbeGI;
+	return !bEnableProbeGI;
 }

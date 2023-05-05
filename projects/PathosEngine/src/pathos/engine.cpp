@@ -44,8 +44,8 @@ namespace pathos {
 	//        and the world will look like frozen.
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
 
-	static ConsoleVariable<int32> cvar_probegi_radiance_numUpdates("r.probegi.radiance.updatesPerFrame", 1, "Number of radiance probes to update per frame");
-	static ConsoleVariable<int32> cvar_probegi_irradiance_numUpdates("r.probegi.irradiance.updatesPerFrame", 1, "Number of irradiance probes to update per frame");
+	static ConsoleVariable<int32> cvar_numReflectionProbeUpdates("r.indirectLighting.updateReflectionProbesPerFrame", 1, "Number of reflection probes to update per frame");
+	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.indirectLighting.updateIrradianceProbesPerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -531,12 +531,12 @@ namespace pathos {
 						std::sort(reflectionProbes.begin(), reflectionProbes.end(), compareReflectionProbes);
 						std::sort(irradianceVolumes.begin(), irradianceVolumes.end(), compareIrradianceVolumes);
 
-						int32 numProbeUpdates = std::min(cvar_probegi_radiance_numUpdates.getInt(), (int32)reflectionProbes.size());
+						int32 numProbeUpdates = std::min(cvar_numReflectionProbeUpdates.getInt(), (int32)reflectionProbes.size());
 						for (int32 i = 0; i < numProbeUpdates; ++i) {
 							reflectionProbes[i]->captureScene();
 						}
 
-						numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_probegi_irradiance_numUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
+						numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_numIrradianceProbeUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
 						if (numProbeUpdates > 0) {
 							currentWorld->getScene().initializeIrradianceProbeAtlas();
 							irradianceVolumes[0]->updateProbes(numProbeUpdates);

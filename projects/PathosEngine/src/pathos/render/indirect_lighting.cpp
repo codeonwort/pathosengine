@@ -21,9 +21,12 @@
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_gi_skyLightBoost("r.probegi.skyLightBoost", 1.0f, "Indirect lighting boost (sky)");
-	static ConsoleVariable<float> cvar_gi_diffuseBoost("r.probegi.diffuseBoost", 1.0f, "Indirect lighting boost (diffuse)");
-	static ConsoleVariable<float> cvar_gi_specularBoost("r.probegi.specularBoost", 1.0f, "Indirect lighting boost (specular)");
+	static ConsoleVariable<int32> cvar_indirectLighting_probeDiffuse("r.indirectLighting.probeDiffuse", 1, "Toggle indirect diffuse by irradiance volume");
+	static ConsoleVariable<int32> cvar_indirectLighting_probeSpecular("r.indirectLighting.probeSpecular", 1, "Toggle indirect specular by reflection probe");
+
+	static ConsoleVariable<float> cvar_indirectLighting_skyBoost("r.indirectLighting.skyBoost", 1.0f, "Sky indirect diffuse/specular boost");
+	static ConsoleVariable<float> cvar_indirectLighting_diffuseBoost("r.indirectLighting.diffuseBoost", 1.0f, "IrradianceVolume indirect diffuse boost");
+	static ConsoleVariable<float> cvar_indirectLighting_specularBoost("r.indirectLighting.specularBoost", 1.0f, "ReflectionProbe indirect specular boost");
 
 	struct IrradianceVolumeInfo {
 		vector3 minBounds;
@@ -118,26 +121,30 @@ namespace pathos {
 		// Prepare for UBO & SSBO data
 
 		std::vector<IrradianceVolumeInfo> irradianceVolumeInfo;
-		for (const IrradianceVolumeProxy* volume : scene->proxyList_irradianceVolume) {
-			IrradianceVolumeInfo info;
-			info.minBounds = volume->minBounds;
-			info.firstTileID = volume->irradianceTileFirstID;
-			info.maxBounds = volume->maxBounds;
-			info.numProbes = volume->numProbes;
-			info.gridSize = volume->gridSize;
-			info.captureRadius = volume->captureRadius;
-			irradianceVolumeInfo.emplace_back(info);
+		if (cvar_indirectLighting_probeDiffuse.getInt() != 0) {
+			irradianceVolumeInfo.reserve(scene->proxyList_irradianceVolume.size());
+			for (const IrradianceVolumeProxy* volume : scene->proxyList_irradianceVolume) {
+				IrradianceVolumeInfo info;
+				info.minBounds = volume->minBounds;
+				info.firstTileID = volume->irradianceTileFirstID;
+				info.maxBounds = volume->maxBounds;
+				info.numProbes = volume->numProbes;
+				info.gridSize = volume->gridSize;
+				info.captureRadius = volume->captureRadius;
+				irradianceVolumeInfo.emplace_back(info);
+			}
 		}
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
 		std::vector<ReflectionProbeInfo> reflectionProbeInfoArray;
-		reflectionProbeInfoArray.reserve(scene->proxyList_reflectionProbe.size());
-		{
+		if (cvar_indirectLighting_probeSpecular.getInt() != 0) {
+			const size_t numReflectionProbes = scene->proxyList_reflectionProbe.size();
+			reflectionProbeInfoArray.reserve(numReflectionProbes);
 			GLuint cubemapArray = sceneContext.localSpecularIBLs;
-			int32 numReflectionProbes = (int32)scene->proxyList_reflectionProbe.size();
+
 			int32 cubemapIndex = 0;
-			for (int32 i = 0; i < numReflectionProbes; ++i)
+			for (size_t i = 0; i < numReflectionProbes; ++i)
 			{
 				ReflectionProbeProxy* proxy = scene->proxyList_reflectionProbe[i];
 				if (proxy->specularIBL == nullptr) {
@@ -179,9 +186,9 @@ namespace pathos {
 		}
 
 		UBO_IndirectLighting uboData{};
-		uboData.skyLightBoost = std::max(0.0f, cvar_gi_skyLightBoost.getFloat());
-		uboData.diffuseBoost = std::max(0.0f, cvar_gi_diffuseBoost.getFloat());
-		uboData.specularBoost = std::max(0.0f, cvar_gi_specularBoost.getFloat());
+		uboData.skyLightBoost = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
+		uboData.diffuseBoost = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
+		uboData.specularBoost = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
 
 		uboData.skyRadianceProbeMaxLOD = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
 		uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));

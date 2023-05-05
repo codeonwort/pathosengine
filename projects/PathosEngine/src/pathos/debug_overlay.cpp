@@ -21,7 +21,8 @@ namespace pathos {
 	constexpr float FRAME_STAT_WIDTH = 220.0f;
 	constexpr float FRAME_STAT_SPACE_Y = 20.0f;
 
-	constexpr int32 MAX_CYCLE_COUNTER_DISPLAY = 10;
+	constexpr int32 MAX_CPU_COUNTER_DISPLAY = 10;
+	constexpr int32 MAX_GPU_COUNTER_DISPLAY = 12;
 	constexpr float CYCLE_COUNTER_WIDTH = 400.0f;
 	constexpr float CYCLE_COUNTER_BASE_Y = 500.0f;
 	constexpr float CYCLE_COUNTER_LABEL_SPACE = 320.0f;
@@ -142,10 +143,10 @@ namespace pathos {
 		root->addChild(gpuTimeLabel = new Label(L"gpu: 0.0 ms"));
 		root->addChild(resolutionLabel = new Label(L"resolution: 1920x1080"));
 
-		cpuCounterList = new CounterList(CYCLE_COUNTER_WIDTH, MAX_CYCLE_COUNTER_DISPLAY, L"[main thread]");
+		cpuCounterList = new CounterList(CYCLE_COUNTER_WIDTH, MAX_CPU_COUNTER_DISPLAY, L"[main thread]");
 		root->addChild(cpuCounterList);
 
-		gpuCounterList = new CounterList(CYCLE_COUNTER_WIDTH, MAX_CYCLE_COUNTER_DISPLAY, L"[gpu]");
+		gpuCounterList = new CounterList(CYCLE_COUNTER_WIDTH, MAX_GPU_COUNTER_DISPLAY, L"[gpu]");
 		root->addChild(gpuCounterList);
 	}
 
@@ -219,7 +220,7 @@ namespace pathos {
 
 			gpuCounterList->setX(badger::max(0.0f, (float)screenWidth - CYCLE_COUNTER_WIDTH));
 			gpuCounterList->setY(badger::min(
-				CYCLE_COUNTER_BASE_Y + CYCLE_COUNTER_SPACE_Y * (2 + MAX_CYCLE_COUNTER_DISPLAY),
+				CYCLE_COUNTER_BASE_Y + CYCLE_COUNTER_SPACE_Y * (2 + MAX_GPU_COUNTER_DISPLAY),
 				(float)screenHeight));
 
 			std::vector<ProfileItem> profileSnapshot;

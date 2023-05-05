@@ -75,7 +75,7 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
-	static ConsoleVariable<int32> cvar_enable_probegi("r.probegi.enable", 1, "Toggle probe GI");
+	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "Toggle indirect lighting");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -343,7 +343,7 @@ namespace pathos {
 			}
 		}
 
-		if (bLightProbeRendering == false && cvar_enable_probegi.getInt() != 0) {
+		if (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0) {
 			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
