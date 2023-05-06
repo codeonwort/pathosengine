@@ -232,12 +232,13 @@ namespace pathos {
 
 		// #todo-light-probe: Don't need to render this per scene proxy,
 		// but scene proxies for light probes are processed prior to the scene proxy for the main view.
-		{
+		static auto cvarShadow = ConsoleVariableManager::get().find("r.shadow");
+		CHECKF(cvarShadow != nullptr, "CVar is missing: r.shadow");
+		if (cvarShadow->getInt() != 0) {
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 			// #todo-performance: This is incredibly slow in debug build
 			sunShadowMap->renderShadowMap(cmdList, scene, camera, cachedPerFrameUBOData);
-			revertHackedSceneUniformBuffer(cmdList);
 		}
 
 		// #todo-light-probe: Don't need to render this per scene proxy,
@@ -782,6 +783,7 @@ namespace pathos {
 	{
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bSunExists = (scene->proxyList_directionalLight.size() > 0);
 
 		UBO_PerFrame data;
 
@@ -847,8 +849,8 @@ namespace pathos {
 		data.ws_eyePosition = camera->getPosition();
 
 		// Regard first directional light as Sun.
-		data.sunExists = scene->proxyList_directionalLight.size() > 0;
-		data.sunLight = *(scene->proxyList_directionalLight[0]);
+		data.sunExists = bSunExists;
+		data.sunLight  = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();
 
 		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 
@@ -859,10 +861,6 @@ namespace pathos {
 		}
 
 		cachedPerFrameUBOData = std::move(data);
-	}
-
-	void SceneRenderer::revertHackedSceneUniformBuffer(RenderCommandList& cmdList) {
-		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &cachedPerFrameUBOData);
 	}
 
 }

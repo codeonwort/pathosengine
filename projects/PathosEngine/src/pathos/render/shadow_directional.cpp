@@ -151,6 +151,8 @@ namespace pathos {
 
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		cmdList.disable(GL_DEPTH_CLAMP);
+
+		uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, (void*)&cachedPerFrameUBOData);
 	}
 
 	float DirectionalShadowMap::getShadowMapZFar() const {

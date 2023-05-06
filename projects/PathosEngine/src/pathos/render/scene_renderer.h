@@ -139,9 +139,6 @@ namespace pathos {
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
-		// Some render passes alter uboPerFrame as a dirty hack.
-		void revertHackedSceneUniformBuffer(RenderCommandList& cmdList);
-
 		void renderBasePass(RenderCommandList& cmdList);
 
 		GLuint getFinalRenderTarget() const;
