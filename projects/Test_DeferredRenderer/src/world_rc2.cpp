@@ -18,7 +18,7 @@
 #define SQUARE_DIAMOND_CENTER  vector3(0.0f, 0.0f, 0.0f)
 #define SQUARE_DIAMOND_Z_DELTA 20.0f
 #define SQUARE_DIAMOND_R0      10.0f
-#define SQUARE_DIAMOND_D0      2.0f
+#define SQUARE_DIAMOND_D0      4.0f
 #define SQUARE_DIAMOND_SCALER  1.2f
 #define SQUARE_DIAMOND_ROLL    15.0f
 
@@ -69,9 +69,25 @@ void World_RC2::onTick(float deltaSeconds) {
 // -----------------------------------------------------------------------
 // SquareDiamondActor
 
+struct Subdiv {
+	vector3 center;
+	vector3 halfSize;
+};
+
 SquareDiamondActor::SquareDiamondActor() {}
 
 void SquareDiamondActor::buildMesh(const vector3& albedo, float R, float D) {
+	std::vector<Subdiv> queue;
+	queue.push_back(Subdiv{ vector3(-R + 0.5f * D, 0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, 0.5f * D) });
+	queue.push_back(Subdiv{ vector3(0.5f * D, R - 0.5f * D, 0.0f),   vector3(R - 0.5f * D, 0.5f * D, 0.5f * D) });
+	queue.push_back(Subdiv{ vector3(R - 0.5f * D, -0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, 0.5f * D) });
+	queue.push_back(Subdiv{ vector3(-0.5f * D, -R + 0.5f * D, 0.0f), vector3(R - 0.5f * D, 0.5f * D, 0.5f * D) });
+	
+	// #wip: Subdivision here
+	{
+		// ...
+	}
+
 	auto geometry = new CubeGeometry(vector3(1.0f));
 	geometries.push_back(geometry);
 
@@ -85,11 +101,16 @@ void SquareDiamondActor::buildMesh(const vector3& albedo, float R, float D) {
 	Mesh* staticMesh = new Mesh(geometry, material);
 	staticMeshAssets.push_back(staticMesh);
 
-	StaticMeshComponent* smc = new StaticMeshComponent;
-	smc->setStaticMesh(staticMesh);
-	smc->setScale(vector3(R, R, D));
-	staticMeshComponents.push_back(smc);
+	for (size_t i = 0; i < queue.size(); ++i) {
+		StaticMeshComponent* smc = new StaticMeshComponent;
 
-	registerComponent(smc);
-	smc->setTransformParent(getRootComponent());
+		smc->setStaticMesh(staticMesh);
+
+		smc->setLocation(queue[i].center);
+		smc->setScale(queue[i].halfSize);
+
+		registerComponent(smc);
+		smc->setTransformParent(getRootComponent());
+		staticMeshComponents.push_back(smc);
+	}
 }
