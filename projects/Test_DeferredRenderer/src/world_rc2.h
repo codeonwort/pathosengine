@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pathos/rhi/gl_handles.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/actor.h"
 using namespace pathos;
@@ -7,6 +8,7 @@ using namespace pathos;
 #include <vector>
 
 namespace pathos {
+	class PanoramaSkyActor;
 	class DirectionalLightActor;
 	class StaticMeshComponent;
 	class MeshGeometry;
@@ -23,7 +25,7 @@ class SquareDiamondActor : public Actor {
 public:
 	SquareDiamondActor();
 
-	void buildMesh(const vector3& albedo, float R, float D);
+	void buildMesh(float R, float D);
 
 private:
 	std::vector<MeshGeometry*> geometries;
@@ -46,4 +48,6 @@ private:
 	DirectionalLightActor* sunActor = nullptr;
 	std::vector<SquareDiamondActor*> squareDiamonds;
 
+	GLuint skyTexture = 0;
+	PanoramaSkyActor* skyActor = nullptr;
 };

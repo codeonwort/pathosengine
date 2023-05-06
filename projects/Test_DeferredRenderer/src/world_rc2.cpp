@@ -1,55 +1,70 @@
 #include "world_rc2.h"
 #include "player_controller.h"
+#include "galaxy_gen.h"
 
+#include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/material/material.h"
 
-#define CAMERA_POSITION    vector3(0.0f, 0.0f, 30.0f)
+#include "badger/math/random.h"
+
+#define CAMERA_POSITION    vector3(0.0f, 0.0f, 5.0f)
 #define CAMERA_LOOK_AT     vector3(0.0f, 0.0f, 0.0f)
 #define CAMERA_UP          vector3(0.0f, 1.0f, 0.0f)
 
 #define SUN_DIRECTION      glm::normalize(vector3(0.5f, -0.5f, -1.0f))
 #define SUN_ILLUMINANCE    (10.0f * vector3(1.0f, 1.0f, 1.0f))
 
-#define SQUARE_DIAMOND_COUNT   5
-#define SQUARE_DIAMOND_CENTER  vector3(0.0f, 0.0f, 0.0f)
-#define SQUARE_DIAMOND_Z_DELTA 20.0f
-#define SQUARE_DIAMOND_R0      10.0f
-#define SQUARE_DIAMOND_D0      4.0f
-#define SQUARE_DIAMOND_SCALER  1.2f
-#define SQUARE_DIAMOND_ROLL    15.0f
+#define STARFIELD_WIDTH          4096
+#define STARFIELD_HEIGHT         2048
+
+#define SQUARE_DIAMOND_COUNT     6
+#define SQUARE_DIAMOND_CENTER    vector3(0.0f, 0.0f, 0.0f)
+#define SQUARE_DIAMOND_Z_SIZE    0.2f
+#define SQUARE_DIAMOND_R0        4.0f
+#define SQUARE_DIAMOND_R_INC     1.0f
+#define SQUARE_DIAMOND_D_MIN     0.4f
+#define SQUARE_DIAMOND_D_MAX     0.8f
+#define SQUARE_DIAMOND_ROLL      1.0f
+#define SQUARE_DIAMOND_SUBDIV    7
+#define SQUARE_DIAMOND_MARGIN    0.01f
+#define SQUARE_DIAMOND_MIN_SIZE  0.05f
+#define SQUARE_DIAMOND_P_EMPTY   0.01f
+#define SQUARE_DIAMOND_P_NODIV   0.15f
 
 // -----------------------------------------------------------------------
 // World_RC2
 
 void World_RC2::onInitialize() {
+	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, CAMERA_UP);
+
 	playerController = spawnActor<PlayerController>();
 
 	sunActor = spawnActor<DirectionalLightActor>();
 	sunActor->setDirection(SUN_DIRECTION);
 	sunActor->setIlluminance(SUN_ILLUMINANCE);
 
-	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, CAMERA_UP);
+	// #wip: Borrow sky texture from RC1.
+	GalaxyGenerator::createStarField(skyTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	skyActor = spawnActor<PanoramaSkyActor>();
+	skyActor->initialize(skyTexture);
 
 	squareDiamonds.reserve(SQUARE_DIAMOND_COUNT);
-	vector3 diamondAlbedo(0.0f, 0.0f, 0.0f);
 	for (size_t i = 0; i < SQUARE_DIAMOND_COUNT; ++i) {
 		SquareDiamondActor* diamond = spawnActor<SquareDiamondActor>();
 
-		diamondAlbedo.r += 0.27f;
-		diamondAlbedo.g += 0.61f;
-		diamondAlbedo.b += 0.48f;
-		diamondAlbedo = glm::mod(diamondAlbedo, vector3(1.0f));
-		diamond->buildMesh(diamondAlbedo, SQUARE_DIAMOND_R0, SQUARE_DIAMOND_D0);
+		float R = SQUARE_DIAMOND_R0;
+		R += i * SQUARE_DIAMOND_R_INC;
+		float D = R * glm::mix(SQUARE_DIAMOND_D_MIN, SQUARE_DIAMOND_D_MAX, (float)i / (SQUARE_DIAMOND_COUNT - 1));
+		diamond->buildMesh(R, D);
 
 		vector3 location = SQUARE_DIAMOND_CENTER;
-		location.z -= SQUARE_DIAMOND_Z_DELTA * i;
+		location.z -= i * 2.5f * SQUARE_DIAMOND_Z_SIZE;
 		diamond->setActorLocation(location);
 
-		diamond->setActorScale(1.0f + i * SQUARE_DIAMOND_SCALER);
 		diamond->setActorRotation(Rotator(0.0f, 0.0f, i * SQUARE_DIAMOND_ROLL));
 
 		squareDiamonds.push_back(diamond);
@@ -61,7 +76,8 @@ void World_RC2::onTick(float deltaSeconds) {
 		Actor* diamond = squareDiamonds[i];
 
 		Rotator rotation = diamond->getActorRotation();
-		rotation.roll += deltaSeconds * 5.0f * ((i & 1) ? 1 : -1);
+		//rotation.roll += deltaSeconds * 5.0f * ((i & 1) ? 1 : -1);
+		rotation.roll += deltaSeconds * 5.0f * glm::pow(1.1f, (float)i);
 		diamond->setActorRotation(rotation);
 	}
 }
@@ -76,38 +92,118 @@ struct Subdiv {
 
 SquareDiamondActor::SquareDiamondActor() {}
 
-void SquareDiamondActor::buildMesh(const vector3& albedo, float R, float D) {
-	std::vector<Subdiv> queue;
-	queue.push_back(Subdiv{ vector3(-R + 0.5f * D, 0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, 0.5f * D) });
-	queue.push_back(Subdiv{ vector3(0.5f * D, R - 0.5f * D, 0.0f),   vector3(R - 0.5f * D, 0.5f * D, 0.5f * D) });
-	queue.push_back(Subdiv{ vector3(R - 0.5f * D, -0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, 0.5f * D) });
-	queue.push_back(Subdiv{ vector3(-0.5f * D, -R + 0.5f * D, 0.0f), vector3(R - 0.5f * D, 0.5f * D, 0.5f * D) });
+void SquareDiamondActor::buildMesh(float R, float D) {
+	std::vector<Subdiv> queue1, queue2;
+	queue1.push_back(Subdiv{ vector3(-R + 0.5f * D, 0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
+	queue1.push_back(Subdiv{ vector3(0.5f * D, R - 0.5f * D, 0.0f),   vector3(R - 0.5f * D, 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
+	queue1.push_back(Subdiv{ vector3(R - 0.5f * D, -0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
+	queue1.push_back(Subdiv{ vector3(-0.5f * D, -R + 0.5f * D, 0.0f), vector3(R - 0.5f * D, 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
 	
 	// #wip: Subdivision here
-	{
-		// ...
+	bool queue1_is_input = true;
+	for (int32 i = 0; i < SQUARE_DIAMOND_SUBDIV; ++i) {
+		const std::vector<Subdiv>& inputQueue = queue1_is_input ? queue1 : queue2;
+		std::vector<Subdiv>& outputQueue = queue1_is_input ? queue2 : queue1;
+
+		outputQueue.clear();
+		outputQueue.reserve(inputQueue.size() * 4);
+		for (const Subdiv& inputRegion : inputQueue) {
+			float e0 = Random();
+
+			vector3 miniSize = vector3(0.5f, 0.5f, 1.0f) * inputRegion.halfSize;
+			miniSize.x = miniSize.x - SQUARE_DIAMOND_MARGIN;
+			miniSize.y = miniSize.y - SQUARE_DIAMOND_MARGIN;
+
+			// #wip: Jitter Z
+			vector3 inputCenter = inputRegion.center;
+			inputCenter.z += 0.5f * (Random() - 0.5f) * miniSize.z;
+
+			bool bDivX = true, bDivY = true;
+			if (miniSize.x < SQUARE_DIAMOND_MIN_SIZE) {
+				miniSize.x = SQUARE_DIAMOND_MIN_SIZE;
+				bDivX = false;
+			}
+			if (miniSize.y < SQUARE_DIAMOND_MIN_SIZE) {
+				miniSize.y = SQUARE_DIAMOND_MIN_SIZE;
+				bDivY = false;
+			}
+
+			// #wip: Subdiv Z?
+			if (!bDivX && !bDivY) {
+				if (e0 < SQUARE_DIAMOND_P_EMPTY) {
+					// empty
+				} else {
+					// don't subdivide
+					outputQueue.push_back(inputRegion);
+				}
+			} else if (bDivX && bDivY) {
+				if (e0 < SQUARE_DIAMOND_P_EMPTY) {
+					// empty
+				} else if (e0 < SQUARE_DIAMOND_P_NODIV) {
+					outputQueue.push_back(inputRegion);
+				} else {
+					if (miniSize.x > miniSize.y || (miniSize.x == miniSize.y && e0 < 0.5f)) {
+						outputQueue.push_back(Subdiv{ inputCenter + vector3(-1, 0, 0) * 0.5f * inputRegion.halfSize, vector3(1, 2, 1) * miniSize });
+						outputQueue.push_back(Subdiv{ inputCenter + vector3(+1, 0, 0) * 0.5f * inputRegion.halfSize, vector3(1, 2, 1) * miniSize });
+					} else {
+						outputQueue.push_back(Subdiv{ inputCenter + vector3(0, -1, 0) * 0.5f * inputRegion.halfSize, vector3(2, 1, 1) * miniSize });
+						outputQueue.push_back(Subdiv{ inputCenter + vector3(0, +1, 0) * 0.5f * inputRegion.halfSize, vector3(2, 1, 1) * miniSize });
+					}
+				}
+			} else if (bDivX && !bDivY) {
+				if (e0 < SQUARE_DIAMOND_P_EMPTY) {
+					// empty
+				} else if (e0 < SQUARE_DIAMOND_P_NODIV) {
+					outputQueue.push_back(inputRegion);
+				} else {
+					outputQueue.push_back(Subdiv{ inputCenter + vector3(-1, 0, 0) * 0.5f * inputRegion.halfSize, vector3(1, 2, 1) * miniSize });
+					outputQueue.push_back(Subdiv{ inputCenter + vector3(+1, 0, 0) * 0.5f * inputRegion.halfSize, vector3(1, 2, 1) * miniSize });
+				}
+			} else {
+				if (e0 < SQUARE_DIAMOND_P_EMPTY) {
+					// empty
+				} else if (e0 < SQUARE_DIAMOND_P_NODIV) {
+					outputQueue.push_back(inputRegion);
+				} else {
+					outputQueue.push_back(Subdiv{ inputCenter + vector3(0, -1, 0) * 0.5f * inputRegion.halfSize, vector3(2, 1, 1) * miniSize });
+					outputQueue.push_back(Subdiv{ inputCenter + vector3(0, +1, 0) * 0.5f * inputRegion.halfSize, vector3(2, 1, 1) * miniSize });
+				}
+			}
+		}
+
+		queue1_is_input = !queue1_is_input;
 	}
+	std::vector<Subdiv>& finalQueue = queue1_is_input ? queue1 : queue2;
 
 	auto geometry = new CubeGeometry(vector3(1.0f));
 	geometries.push_back(geometry);
 
-	auto material = Material::createMaterialInstance("solid_color");
-	material->setConstantParameter("albedo", albedo);
-	material->setConstantParameter("metallic", 0.0f);
-	material->setConstantParameter("roughness", 1.0f);
-	material->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
-	materials.push_back(material);
-
-	Mesh* staticMesh = new Mesh(geometry, material);
-	staticMeshAssets.push_back(staticMesh);
-
-	for (size_t i = 0; i < queue.size(); ++i) {
+	for (size_t i = 0; i < finalQueue.size(); ++i) {
 		StaticMeshComponent* smc = new StaticMeshComponent;
+
+		float e0 = Random();
+		float e1 = Random();
+		float e2 = Random();
+		float e3 = Random();
+		vector3 albedo = glm::mix(vector3(0.2f, 0.7f, 1.0f), vector3(1.0f, 0.5f, 0.0f), e0);
+		vector3 emissive = (e1 <= 0.8f) ? vector3(0.0f) : (50.0f * e1 * albedo);
+		float metallic = e2 < 0.5f ? 0.0f : 1.0f;
+		float roughness = e3;
+
+		auto material = Material::createMaterialInstance("solid_color");
+		material->setConstantParameter("albedo", albedo);
+		material->setConstantParameter("metallic", metallic);
+		material->setConstantParameter("roughness", roughness);
+		material->setConstantParameter("emissive", emissive);
+		materials.push_back(material);
+
+		Mesh* staticMesh = new Mesh(geometry, material);
+		staticMeshAssets.push_back(staticMesh);
 
 		smc->setStaticMesh(staticMesh);
 
-		smc->setLocation(queue[i].center);
-		smc->setScale(queue[i].halfSize);
+		smc->setLocation(finalQueue[i].center);
+		smc->setScale(finalQueue[i].halfSize);
 
 		registerComponent(smc);
 		smc->setTransformParent(getRootComponent());
