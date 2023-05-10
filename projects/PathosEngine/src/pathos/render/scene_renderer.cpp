@@ -848,6 +848,8 @@ namespace pathos {
 
 		data.ws_eyePosition = camera->getPosition();
 
+		data.bReverseZ = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1 : 0;
+
 		// Regard first directional light as Sun.
 		data.sunExists = bSunExists;
 		data.sunLight  = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();

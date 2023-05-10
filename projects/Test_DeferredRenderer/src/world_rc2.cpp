@@ -1,8 +1,7 @@
 #include "world_rc2.h"
 #include "player_controller.h"
-#include "galaxy_gen.h"
 
-#include "pathos/scene/sky_panorama_actor.h"
+#include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -47,10 +46,9 @@ void World_RC2::onInitialize() {
 	sunActor->setDirection(SUN_DIRECTION);
 	sunActor->setIlluminance(SUN_ILLUMINANCE);
 
-	// #wip: Borrow sky texture from RC1.
-	GalaxyGenerator::createStarField(skyTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
-	skyActor = spawnActor<PanoramaSkyActor>();
-	skyActor->initialize(skyTexture);
+	skyMaterial = Material::createMaterialInstance("skybox_rc2");
+	skyActor = spawnActor<SkyboxActor>();
+	skyActor->setSkyboxMaterial(skyMaterial);
 
 	squareDiamonds.reserve(SQUARE_DIAMOND_COUNT);
 	for (size_t i = 0; i < SQUARE_DIAMOND_COUNT; ++i) {

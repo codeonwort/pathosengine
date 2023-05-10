@@ -113,8 +113,7 @@ void World1::setupSky()
 	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true, "skybox cubemap");
 
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
-	skybox->initialize(cubeTexture);
-	skybox->setLOD(1.0f);
+	skybox->setCubemapTexture(cubeTexture);
 #elif SKY_METHOD == 1
 	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2

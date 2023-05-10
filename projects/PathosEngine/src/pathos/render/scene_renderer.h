@@ -46,7 +46,7 @@ namespace pathos {
 		vector4               csmDepths;     // 4 cascades
 
 		vector3               eyeDirection;
-		float                 __pad0;
+		uint32                bReverseZ;
 
 		vector3               eyePosition;
 		float                 __pad1;

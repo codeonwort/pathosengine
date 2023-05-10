@@ -8,7 +8,7 @@ using namespace pathos;
 #include <vector>
 
 namespace pathos {
-	class PanoramaSkyActor;
+	class SkyboxActor;
 	class DirectionalLightActor;
 	class StaticMeshComponent;
 	class MeshGeometry;
@@ -48,6 +48,6 @@ private:
 	DirectionalLightActor* sunActor = nullptr;
 	std::vector<SquareDiamondActor*> squareDiamonds;
 
-	GLuint skyTexture = 0;
-	PanoramaSkyActor* skyActor = nullptr;
+	SkyboxActor* skyActor = nullptr;
+	Material* skyMaterial = nullptr;
 };

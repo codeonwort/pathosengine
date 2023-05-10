@@ -5,6 +5,10 @@
 
 namespace pathos {
 
+	class Material;
+
+	// Render sky with cubemap texture or sky material.
+	// If both are set, the one that is most recently set is used.
 	class SkyboxActor : public SkyActor {
 
 	public:
@@ -13,8 +17,9 @@ namespace pathos {
 			setAsRootComponent(component);
 		}
 
-		void initialize(GLuint textureID);
-		void setLOD(float inLOD);
+		void setCubemapTexture(GLuint textureID, float lod = 0.0f);
+
+		void setSkyboxMaterial(Material* material);
 
 		inline SkyboxComponent* getSkyboxComponent() const { return component; }
 

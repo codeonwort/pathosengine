@@ -5,11 +5,15 @@
 
 namespace pathos {
 
+	class Material;
+
 	struct SkyboxProxy : SceneComponentProxy {
-		CubeGeometry* cube;
-		GLuint textureID;
-		float textureLod;
-		bool bLightingDirty;
+		CubeGeometry*    cube;
+		GLuint           textureID;
+		float            textureLod;
+		Material*        skyboxMaterial;
+		bool             bUseCubemapTexture;
+		bool             bLightingDirty;
 	};
 
 	class SkyboxComponent : public SceneComponent {
@@ -17,18 +21,28 @@ namespace pathos {
 	public:
 		~SkyboxComponent();
 
-		void setCubemap(GLuint inTextureID);
-		void setLOD(float inLOD);
+		void setCubemapTexture(GLuint inTextureID);
+		void setCubemapLOD(float inLOD);
 
-		inline bool hasValidResources() const { return cube != nullptr && textureID != 0; }
+		void setSkyboxMaterial(Material* inMaterial);
+
+		inline bool hasValidResources() const {
+			bool bTexture = (bUseCubemapTexture && cubeGeometry != nullptr && cubemapTextureID != 0);
+			bool bMaterial = (!bUseCubemapTexture && cubeGeometry != nullptr && skyboxMaterial != nullptr);
+			return bTexture || bMaterial;
+		}
+
+		bool bUseCubemapTexture = true;
 
 	protected:
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
 	private:
-		CubeGeometry* cube = nullptr;
-		GLuint textureID = 0;
-		float lod = 0.0f;
+		CubeGeometry* cubeGeometry = nullptr;
+		GLuint cubemapTextureID = 0;
+		float cubemapLod = 0.0f;
+
+		Material* skyboxMaterial = nullptr;
 
 		bool bLightingDirty = false;
 	};

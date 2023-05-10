@@ -18,6 +18,7 @@
 #define NEED_SHADERSTAGE           "SHADERSTAGE"
 #define NEED_SHADINGMODEL          "SHADINGMODEL"
 #define NEED_OUTPUTWORLDNORMAL     "OUTPUTWORLDNORMAL"
+#define NEED_SKYBOXMATERIAL        "SKYBOXMATERIAL"
 #define NEED_UBO                   "UBO_Material"
 #define NEED_TEXTUREPARAMETERS     "TEXTURE_PARAMETERS"
 #define NEED_VPO                   "getVertexPositionOffset"
@@ -45,6 +46,8 @@ namespace pathos {
 					MT.lineIx_shadingmodel = lineIx;
 				} else if (header == NEED_OUTPUTWORLDNORMAL) {
 					MT.lineIx_outputworldnormal = lineIx;
+				} else if (header == NEED_SKYBOXMATERIAL) {
+					MT.lineIx_skyboxmaterial = lineIx;
 				} else if (header == NEED_UBO) {
 					MT.lineIx_ubo = lineIx;
 				} else if (header == NEED_TEXTUREPARAMETERS) {
@@ -288,6 +291,7 @@ namespace pathos {
 		int32 getSceneColorEndIx = -1; // inclusive
 		bool bTrivialDepthOnlyPass = true;
 		bool bOutputWorldNormal = false;
+		bool bSkyboxMaterial = false;
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
 			if (0 == line.find("#define SHADINGMODEL")) {
@@ -296,6 +300,8 @@ namespace pathos {
 				bTrivialDepthOnlyPass = false;
 			} else if (0 == line.find("#define OUTPUTWORLDNORMAL")) {
 				bOutputWorldNormal = true;
+			} else if (0 == line.find("#define SKYBOXMATERIAL")) {
+				bSkyboxMaterial = true;
 			} else if (0 == line.find("VPO_BEGIN")) {
 				materialVPOBeginIx = lineIx + 1;
 			} else if (0 == line.find("VPO_END")) {
@@ -327,6 +333,12 @@ namespace pathos {
 			MT.replaceOutputWorldNormal("#define OUTPUTWORLDNORMAL 1");
 		} else {
 			MT.replaceOutputWorldNormal("");
+		}
+
+		if (bSkyboxMaterial) {
+			MT.replaceSkyboxMaterial("#define SKYBOXMATERIAL 1");
+		} else {
+			MT.replaceSkyboxMaterial("");
 		}
 
 		// Construct material uniform buffer.

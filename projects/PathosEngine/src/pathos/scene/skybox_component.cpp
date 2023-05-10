@@ -4,25 +4,35 @@
 namespace pathos {
 
 	SkyboxComponent::~SkyboxComponent() {
-		if (cube) {
-			delete cube;
-			cube = nullptr;
+		if (cubeGeometry) {
+			delete cubeGeometry;
+			cubeGeometry = nullptr;
 		}
 	}
 
-	void SkyboxComponent::setCubemap(GLuint inTextureID) {
-		if (textureID != inTextureID) {
-			textureID = inTextureID;
+	void SkyboxComponent::setCubemapTexture(GLuint inTextureID) {
+		if (cubemapTextureID != inTextureID) {
+			cubemapTextureID = inTextureID;
 			bLightingDirty = true;
 		}
-		if (cube == nullptr) {
-			cube = new CubeGeometry(vector3(1.0f));
+		if (cubeGeometry == nullptr) {
+			cubeGeometry = new CubeGeometry(vector3(1.0f));
 		}
 	}
 
-	void SkyboxComponent::setLOD(float inLOD) {
-		lod = badger::max(0.0f, inLOD);
+	void SkyboxComponent::setCubemapLOD(float inLOD) {
+		cubemapLod = badger::max(0.0f, inLOD);
 		bLightingDirty = true;
+	}
+
+	void SkyboxComponent::setSkyboxMaterial(Material* inMaterial) {
+		if (skyboxMaterial != inMaterial) {
+			skyboxMaterial = inMaterial;
+			bLightingDirty = true;
+		}
+		if (cubeGeometry == nullptr) {
+			cubeGeometry = new CubeGeometry(vector3(1.0f));
+		}
 	}
 
 	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
@@ -34,10 +44,12 @@ namespace pathos {
 		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
 
 		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
-		proxy->cube = cube;
-		proxy->textureID = textureID;
-		proxy->textureLod = lod;
-		proxy->bLightingDirty = bLightingDirty && bMainScene;
+		proxy->cube               = cubeGeometry;
+		proxy->textureID          = cubemapTextureID;
+		proxy->textureLod         = cubemapLod;
+		proxy->skyboxMaterial     = skyboxMaterial;
+		proxy->bUseCubemapTexture = bUseCubemapTexture;
+		proxy->bLightingDirty     = bLightingDirty && bMainScene;
 
 		if (bMainScene) {
 			bLightingDirty = false;
