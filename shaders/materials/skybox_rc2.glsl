@@ -32,7 +32,7 @@ MaterialAttributes getMaterialAttributes() {
 		float ang = acos(dot(viewDir, coneDir));
 		float maxAngle = cones[i].w * PI / 180.0;
 		if (ang <= maxAngle) {
-			vec3 coneColor = 0.5 + 0.5 * coneDir;
+			vec3 coneColor = 0.5 + 0.5 * (-coneDir);
 			finalColor += 1.1 * (1.0 - ang / maxAngle) * coneColor;
 		}
 	}

@@ -97,7 +97,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 	queue1.push_back(Subdiv{ vector3(R - 0.5f * D, -0.5f * D, 0.0f),  vector3(0.5f * D, R - 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
 	queue1.push_back(Subdiv{ vector3(-0.5f * D, -R + 0.5f * D, 0.0f), vector3(R - 0.5f * D, 0.5f * D, SQUARE_DIAMOND_Z_SIZE) });
 	
-	// #wip: Subdivision here
+	// Subdivision
 	bool queue1_is_input = true;
 	for (int32 i = 0; i < SQUARE_DIAMOND_SUBDIV; ++i) {
 		const std::vector<Subdiv>& inputQueue = queue1_is_input ? queue1 : queue2;
@@ -112,7 +112,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 			miniSize.x = miniSize.x - SQUARE_DIAMOND_MARGIN;
 			miniSize.y = miniSize.y - SQUARE_DIAMOND_MARGIN;
 
-			// #wip: Jitter Z
+			// Jitter Z
 			vector3 inputCenter = inputRegion.center;
 			inputCenter.z += 0.5f * (Random() - 0.5f) * miniSize.z;
 
@@ -126,7 +126,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 				bDivY = false;
 			}
 
-			// #wip: Subdiv Z?
+			// Subdiv Z?
 			if (!bDivX && !bDivY) {
 				if (e0 < SQUARE_DIAMOND_P_EMPTY) {
 					// empty

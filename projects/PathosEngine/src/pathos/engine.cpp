@@ -607,7 +607,7 @@ namespace pathos {
 		CpuProfiler::getInstance().finishCheckpoint();
 
 		elapsed_gameThread = stopwatch_gameThread.stop();
-		stopwatch_gameThread.start();
+		//stopwatch_gameThread.start(); // Should not reset timer here?
 
 		// Wait for previous frame's rendering to finish.
 		uint64 renderFrameNumber = frameNumber_mainThread - 1;
