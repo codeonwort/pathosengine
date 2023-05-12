@@ -92,7 +92,7 @@ namespace pathos {
 			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps, sceneDesc.skybox.name.c_str());
 
 			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
-			actor->initialize(cubeTexture);
+			actor->setCubemapTexture(cubeTexture);
 
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));

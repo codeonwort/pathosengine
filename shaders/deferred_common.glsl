@@ -102,7 +102,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	vec4 csmDepths;
 	
 	vec3 eyeDirection;   // view space
-	float _padding0;
+	uint bReverseZ;
 
 	vec3 eyePosition;    // view space
 	float _padding1;

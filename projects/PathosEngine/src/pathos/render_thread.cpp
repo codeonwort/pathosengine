@@ -272,6 +272,7 @@ namespace pathos {
 
 			const size_t numFences = fencesToSignal.size();
 			for (size_t i = 0; i < numFences; ++i) {
+				// #todo-renderthread: Random crash due to vector being out of range in debug build?
 				fencesToSignal[i]->signalValue(fenceValuesToSignal[i]);
 			}
 		} // End of render thread loop

@@ -162,7 +162,7 @@ void World2::setupScene()
 	alertText2->setActorScale(8.0f);
 
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
-	sky->initialize(skyCubemapTexture);
+	sky->setCubemapTexture(skyCubemapTexture);
 
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
 }

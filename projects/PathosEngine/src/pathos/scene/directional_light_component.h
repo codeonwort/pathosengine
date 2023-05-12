@@ -11,6 +11,14 @@ namespace pathos {
 		float   padding1;
 		vector3 vsDirection;
 		float   padding2;
+
+		static DirectionalLightProxy createDummy() {
+			DirectionalLightProxy dummy;
+			dummy.wsDirection = vector3(0.0f, -1.0f, 0.0f);
+			dummy.illuminance = vector3(0.0f);
+			dummy.vsDirection = vector3(0.0f, -1.0f, 0.0f);
+			return dummy;
+		}
 	};
 
 	class DirectionalLightComponent : public SceneComponent {

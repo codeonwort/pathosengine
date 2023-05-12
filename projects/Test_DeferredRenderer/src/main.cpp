@@ -1,5 +1,6 @@
 #include "world1.h"
 #include "world_rc1.h"
+#include "world_rc2.h"
 #include "world_lightroom.h"
 
 #include "pathos/core_minimal.h"
@@ -13,7 +14,7 @@ const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
-	static const int32 numWorlds = 3;
+	static const int32 numWorlds = 4;
 	static int32 worldIndex = 0;
 
 	World* newWorld = nullptr;
@@ -23,12 +24,16 @@ void changeWorld() {
 		gEngine->getMainWindow()->setTitle("Rendering Challenge 1");
 		break;
 	case 1:
-		newWorld = new World1;
-		gEngine->getMainWindow()->setTitle("Some Random World");
+		newWorld = new World_RC2;
+		gEngine->getMainWindow()->setTitle("Rendering Challenge 2");
 		break;
 	case 2:
 		newWorld = new World_LightRoom;
 		gEngine->getMainWindow()->setTitle("Light Room");
+		break;
+	case 3:
+		newWorld = new World1;
+		gEngine->getMainWindow()->setTitle("Some Random World");
 		break;
 	default:
 		CHECK_NO_ENTRY();

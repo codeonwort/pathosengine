@@ -15,6 +15,7 @@ namespace pathos {
 			return lineIx_shaderstage != -1
 				&& lineIx_shadingmodel != -1
 				&& lineIx_outputworldnormal != -1 // Optional
+				&& lineIx_skyboxmaterial != -1 // Optional
 				&& lineIx_ubo != -1
 				&& lineIx_textureParams != -1
 				&& lineIx_getVPO != -1
@@ -45,6 +46,9 @@ namespace pathos {
 		void replaceOutputWorldNormal(const std::string& outputWorldNormal) {
 			sourceLines[lineIx_outputworldnormal] = outputWorldNormal;
 		}
+		void replaceSkyboxMaterial(const std::string& skyboxMaterial) {
+			sourceLines[lineIx_skyboxmaterial] = skyboxMaterial;
+		}
 		void replaceUBO(const std::string& defineUBO) {
 			sourceLines[lineIx_ubo] = defineUBO;
 		}
@@ -66,6 +70,7 @@ namespace pathos {
 		int32 lineIx_shaderstage = -1;
 		int32 lineIx_shadingmodel = -1;
 		int32 lineIx_outputworldnormal = -1;
+		int32 lineIx_skyboxmaterial = -1;
 		int32 lineIx_ubo = -1;
 		int32 lineIx_textureParams = -1;
 		int32 lineIx_getVPO = -1;

@@ -46,7 +46,7 @@ namespace pathos {
 		vector4               csmDepths;     // 4 cascades
 
 		vector3               eyeDirection;
-		float                 __pad0;
+		uint32                bReverseZ;
 
 		vector3               eyePosition;
 		float                 __pad1;
@@ -138,9 +138,6 @@ namespace pathos {
 			bool bEnableResolutionScaling);
 
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
-
-		// Some render passes alter uboPerFrame as a dirty hack.
-		void revertHackedSceneUniformBuffer(RenderCommandList& cmdList);
 
 		void renderBasePass(RenderCommandList& cmdList);
 

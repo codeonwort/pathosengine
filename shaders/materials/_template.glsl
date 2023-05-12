@@ -27,10 +27,13 @@ $NEED SHADINGMODEL
 // [OUTPUTWORLDNORMAL]
 // - getMaterialAttributes() returns world normal, not local normal.
 // - Normal mapping will be skipped.
+// [SKYBOXMATERIAL]
+// - This material is not for static meshes, but for skybox.
 
 $NEED OUTPUTWORLDNORMAL
+$NEED SKYBOXMATERIAL
 
-#define FORWARD_SHADING (SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
+#define FORWARD_SHADING (SKYBOXMATERIAL || SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
 // 128 bytes
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
@@ -41,7 +44,7 @@ layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
 $NEED UBO_Material
 
-#if FORWARD_SHADING
+#if (FORWARD_SHADING && !SKYBOXMATERIAL)
 #define MAX_DIRECTIONAL_LIGHTS     2
 #define MAX_POINT_LIGHTS           8
 layout (std140, binding = UBO_BINDING_LIGHTINFO) uniform UBO_LightInfo {
@@ -89,7 +92,7 @@ struct MaterialAttributes_Translucent {
 	vec3 transmittance;
 };
 
-#if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
+#if SKYBOXMATERIAL || (SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT)
 	#define MaterialAttributes MaterialAttributes_Unlit
 #elif SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
 	#define MaterialAttributes MaterialAttributes_DefaultLit
@@ -163,7 +166,7 @@ layout (location = 2) in vec3 inNormal;
 layout (location = 3) in vec3 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
-void main() {
+void main_staticMesh() {
 	mat4 model = uboPerObject.modelTransform;
 	mat4 view = uboPerFrame.viewTransform;
 	mat4 proj_view = uboPerFrame.viewProjTransform;
@@ -172,11 +175,12 @@ void main() {
 	vec4 prevPositionWS = uboPerObject.prevModelTransform * vec4(inPosition, 1.0);
 
 	VertexShaderInput vsi;
-	vsi.position = inPosition;
-	vsi.texcoord = inTexcoord;
-	vsi.normal = inNormal;
-	vsi.tangent = inTangent;
+	vsi.position  = inPosition;
+	vsi.texcoord  = inTexcoord;
+	vsi.normal    = inNormal;
+	vsi.tangent   = inTangent;
 	vsi.bitangent = inBitangent;
+
 	positionWS.xyz += getVertexPositionOffset(vsi);
 
 	vec4 positionVS = view * positionWS;
@@ -199,6 +203,24 @@ void main() {
 	gl_Position = positionCS;
 }
 
+void main_skybox() {
+	interpolants.normal = inPosition;
+	
+	gl_Position = uboPerObject.modelTransform * vec4(inPosition, 1.0);
+
+	if (uboPerFrame.bReverseZ == 1) {
+		gl_Position.z = 0.0;
+	}
+}
+
+void main() {
+#if SKYBOXMATERIAL
+	main_skybox();
+#else
+	main_staticMesh();
+#endif
+}
+
 #endif // VERTEX_SHADER
 
 // --------------------------------------------------------
@@ -206,7 +228,7 @@ void main() {
 
 #if FRAGMENT_SHADER
 
-#if !FORWARD_SHADING
+#if !FORWARD_SHADING && !SKYBOXMATERIAL
 #include "deferred_common_fs.glsl"
 #else
 // #todo: Wrap with forward_common.glsl?
@@ -229,7 +251,7 @@ void main() {
 	vec3 normalVS = (uboPerFrame.viewTransform * vec4(worldNormal, 0.0)).xyz;
 #endif
 
-#if SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
+#if !SKYBOXMATERIAL && (SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT)
 	packGBuffer(
 		attr.color, // Unlit color into albedo
 		vec3(0.0),
@@ -253,7 +275,9 @@ void main() {
 		attr.emissive);
 #endif
 
-#if SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT
+#if SKYBOXMATERIAL
+	outSceneColor = vec4(attr.color, 1.0);
+#elif SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT
 	outSceneColor = getSceneColor(attr);
 #endif
 
@@ -265,11 +289,11 @@ void main() {
 	}
 #endif
 
-#if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT
+#if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_UNLIT && !SKYBOXMATERIAL
 	packOutput2 = uvec4(0);
 #endif
 
-#if !FORWARD_SHADING
+#if !FORWARD_SHADING && !SKYBOXMATERIAL
 	vec2 v1 = (interpolants.clipPos.xy / interpolants.clipPos.w) * 0.5 + vec2(0.5, 0.5);
 	vec2 v0 = (interpolants.prevClipPos.xy / interpolants.prevClipPos.w) * 0.5 + vec2(0.5, 0.5);
 	outVelocityMap = v1 - v0;

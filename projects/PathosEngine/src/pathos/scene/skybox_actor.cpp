@@ -2,15 +2,15 @@
 
 namespace pathos {
 
-	/**
-	* @param	inTextureID		See ::loadCubemapTexture() in <pathos/loader/imageloader.h>
-	*/
-	void SkyboxActor::initialize(GLuint inTextureID) {
-		component->setCubemap(inTextureID);
+	void SkyboxActor::setCubemapTexture(GLuint inTextureID, float inLod) {
+		component->setCubemapTexture(inTextureID);
+		component->setCubemapLOD(inLod);
+		component->bUseCubemapTexture = true;
 	}
 
-	void SkyboxActor::setLOD(float inLOD) {
-		component->setLOD(inLOD);
+	void SkyboxActor::setSkyboxMaterial(Material* material) {
+		component->setSkyboxMaterial(material);
+		component->bUseCubemapTexture = false;
 	}
 
 }
