@@ -34,6 +34,9 @@ Asynchronous Wavefront OBJ asset loading, local lights with omnidirectional shad
 ![RenderChallenge1](https://user-images.githubusercontent.com/11644393/199586888-a70163b2-5b7e-4dbc-b050-c0da462ca27a.jpg)
 Procedural geometries and textures, volumetric clouds, and post process bloom.
 
+![RenderingChallenge2](https://user-images.githubusercontent.com/11644393/238012342-56108b01-5fc5-4f8a-8263-a1a538d95417.jpg)
+Procedural geometries and sky.
+
 ![GLTF-DamagedHelmet](https://user-images.githubusercontent.com/11644393/199479537-4e5abc6a-7f5a-4236-a84f-8a5ef1296f2f.jpg)
 Asynchronous glTF asset loading, Cook-Torrance BRDF for local illumination, and basic sky IBL for global illumination.
 
