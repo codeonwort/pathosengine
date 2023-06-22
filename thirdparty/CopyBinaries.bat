@@ -25,5 +25,6 @@ if "%SolutionConfig%" == "Release" set FreeGLUTFile=freeglut.dll
 
 xcopy /y /d "%SolutionDir%\thirdparty\freeglut\binary\%FreeGLUTFile%" "%SolutionDir%\bin\%SolutionConfig%\"
 xcopy /y /d "%SolutionDir%\thirdparty\freeimage-3.18.0\binary\freeimage.dll" "%SolutionDir%\bin\%SolutionConfig%\"
+xcopy /y /d "%SolutionDir%\thirdparty\bass\build\x64\bass.dll" "%SolutionDir%\bin\%SolutionConfig%\"
 
 endlocal

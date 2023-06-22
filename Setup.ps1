@@ -180,6 +180,14 @@ if ($should_download) {
 	Write-Host "Skip download due to -skipdownload" -ForegroundColor Green
 }
 
+#
+# Unzip libraries
+#
+if ($should_build) {
+	Write-Host "Unzip bass" -ForegroundColor Green
+	
+	Unzip "$thirdparty_dir/bass/bass24.zip" "$thirdparty_dir/bass/build"
+}
 
 <#
 $freeimage_url      = "http://downloads.sourceforge.net/freeimage/FreeImage3180.zip"

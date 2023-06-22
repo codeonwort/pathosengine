@@ -8,8 +8,6 @@ class World_RhythmGame : public World {
 protected:
 	virtual void onInitialize() override;
 	virtual void onTick(float deltaSeconds) override;
-
-private:
-	//
+	virtual void onDestroy() override;
 
 };

@@ -21,9 +21,15 @@
     <ClCompile Include="src\world_rhythm_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\bass_wrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\world_rhythm_game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bass_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
