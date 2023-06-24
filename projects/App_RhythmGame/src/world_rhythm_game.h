@@ -37,6 +37,9 @@ protected:
 	virtual void onTick(float deltaSeconds) override;
 
 private:
+	void initializeStage();
+
+private:
 	InputManager* inputManager = nullptr;
 	float initGameTime = 0.0f;
 	float currentGameTime = 0.0f;
