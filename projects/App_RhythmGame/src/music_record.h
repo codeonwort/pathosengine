@@ -20,3 +20,15 @@ struct PlayRecord {
 public:
 	std::vector<LaneKeyEvent> laneKeyEvents;
 };
+
+struct ScoreboardData {
+	void clearScore() {
+		nPerfect = 0;
+		nGood = 0;
+		nMiss = 0;
+	}
+
+	int32 nPerfect = 0;
+	int32 nGood = 0;
+	int32 nMiss = 0;
+};

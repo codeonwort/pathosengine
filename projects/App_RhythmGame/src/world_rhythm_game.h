@@ -10,6 +10,7 @@ using namespace pathos;
 
 namespace pathos {
 	class Brush;
+	class Label;
 	class DisplayObject2D;
 }
 class LaneNote;
@@ -34,6 +35,8 @@ private:
 	float initGameTime = -1.0f;
 	float currentGameTime = 0.0f;
 
+	ScoreboardData scoreboardData;
+
 	PlayRecord loadedRecord;
 	int32 lastSearchedEventIndex = 0;
 
@@ -48,4 +51,8 @@ private:
 	void returnNoteToPool(LaneNote* note);
 	std::vector<LaneNote*> noteObjectPool;
 	DisplayObject2D* noteParent;
+
+	Label* perfectLabel = nullptr;
+	Label* goodLabel = nullptr;
+	Label* missLabel = nullptr;
 };

@@ -39,8 +39,15 @@ static LaneDesc gLaneDesc[] = {
 #define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2)
 #define LANE_LABEL_OFFSET_Y         20
 
+#define SCOREBOARD_OFFSET_X         100
+#define SCORE_LABEL_Y0              100
+#define SCORE_LABEL_OFFSET_Y        40
+
 // Time of seconds between appearing at the top and reaching at the bottom of lane.
-#define KEY_DROP_PERIOD             1.5f
+#define KEY_DROP_PERIOD             1.0f
+#define CATCH_RATIO_PERFECT         0.05f
+#define CATCH_RATIO_GOOD            0.1f
+
 #define NOTE_WIDTH                  LANE_WIDTH
 #define NOTE_HEIGHT                 40
 #define NOTE_OBJECT_POOL_SIZE       100
@@ -62,8 +69,11 @@ public:
 	LaneNote() : Rectangle(NOTE_WIDTH, NOTE_HEIGHT) {}
 	void setEventIndex(int32 inEventIndex) { eventIndex = inEventIndex; }
 	int32 getEventIndex() const { return eventIndex; }
+	void setCatched(bool value) { bCatched = value; }
+	bool getCatched() const { return bCatched; }
 private:
 	int32 eventIndex = -1;
+	bool bCatched = false;
 };
 
 void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
@@ -95,6 +105,10 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 
 void World_RhythmGame::onInitialize() {
 	BassWrapper::initializeBASS();
+
+	if (gConsole->isVisible()) {
+		gConsole->toggle();
+	}
 
 	// Input
 	inputManager = gEngine->getInputSystem()->getDefaultInputManager();
@@ -188,13 +202,27 @@ void World_RhythmGame::initializeStage() {
 	for (size_t i = 0; i < NOTE_OBJECT_POOL_SIZE; ++i) {
 		noteObjectPool.push_back(new LaneNote());
 	}
+
+	perfectLabel = new pathos::Label(L"PERFECT : 0");
+	goodLabel    = new pathos::Label(L"GOOD    : 0");
+	missLabel    = new pathos::Label(L"MISS    : 0");
+	perfectLabel->setX(getLaneX(LANE_COUNT + 1) + SCOREBOARD_OFFSET_X);
+	goodLabel->setX(perfectLabel->getX());
+	missLabel->setX(perfectLabel->getX());
+	perfectLabel->setY(SCORE_LABEL_Y0);
+	goodLabel->setY(SCORE_LABEL_Y0 + 1 * SCORE_LABEL_OFFSET_Y);
+	missLabel->setY(SCORE_LABEL_Y0 + 2 * SCORE_LABEL_OFFSET_Y);
+	root->addChild(perfectLabel);
+	root->addChild(goodLabel);
+	root->addChild(missLabel);
 }
 
 void World_RhythmGame::startMusic() {
 	if (initGameTime < 0.0f) {
 		bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH);
 
-		
+		scoreboardData.clearScore();
+
 		lastSearchedEventIndex = 0;
 		initGameTime = gEngine->getWorldTime();
 	}
@@ -235,9 +263,14 @@ void World_RhythmGame::updateNotes(float currT) {
 			LaneNote* note = column[i];
 			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
 			float yRatio = (evt.time - currT) / KEY_DROP_PERIOD;
-			if (yRatio >= 0.0f) {
+			bool canCatch = yRatio >= -CATCH_RATIO_GOOD;
+			if (canCatch) {
 				note->setY(getNoteY(1.0f - yRatio));
-			} else {
+			}
+			if (canCatch == false || note->getCatched()) {
+				if (note->getCatched() == false) {
+					scoreboardData.nMiss += 1;
+				}
 				noteParent->removeChild(note);
 				column.erase(column.begin());
 				returnNoteToPool(note);
@@ -245,6 +278,15 @@ void World_RhythmGame::updateNotes(float currT) {
 			}
 		}
 	}
+
+	// Update score labels.
+	wchar_t scoreText[256];
+	swprintf_s(scoreText, L"PERFECT : %d", scoreboardData.nPerfect);
+	perfectLabel->setText(scoreText);
+	swprintf_s(scoreText, L"GOOD    : %d", scoreboardData.nGood);
+	goodLabel->setText(scoreText);
+	swprintf_s(scoreText, L"MISS    : %d", scoreboardData.nMiss);
+	missLabel->setText(scoreText);
 }
 
 LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* brush) {
@@ -258,6 +300,7 @@ LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* b
 		note = new LaneNote();
 	}
 
+	note->setCatched(false);
 	note->setEventIndex(eventIndex);
 	note->setBrush(brush);
 	return note;
@@ -269,4 +312,21 @@ void World_RhythmGame::returnNoteToPool(LaneNote* note) {
 
 void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 	recordToSave.addLaneKeyEvent(laneIndex, currentGameTime);
+	for (LaneNote* note : laneNoteColumns[laneIndex]) {
+		if (note->getCatched()) {
+			continue;
+		}
+		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+		float ratio = std::abs((evt.time - currentGameTime) / KEY_DROP_PERIOD);
+		if (ratio <= CATCH_RATIO_PERFECT) {
+			scoreboardData.nPerfect += 1;
+			note->setCatched(true);
+		} else if (ratio <= CATCH_RATIO_GOOD) {
+			scoreboardData.nGood += 1;
+			note->setCatched(true);
+		} else {
+			// Assumes notes are sorted by time.
+			break;
+		}
+	}
 }
