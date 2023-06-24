@@ -29,6 +29,7 @@ private:
 	void initializeStage();
 	void startMusic();
 	void updateNotes(float currentT);
+	void setJudge(float currentT, int32 judgeType);
 
 private:
 	InputManager* inputManager = nullptr;
@@ -55,4 +56,8 @@ private:
 	Label* perfectLabel = nullptr;
 	Label* goodLabel = nullptr;
 	Label* missLabel = nullptr;
+
+private:
+	Label* judgeLabel = nullptr;
+	float judgeTime = -1.0f;
 };

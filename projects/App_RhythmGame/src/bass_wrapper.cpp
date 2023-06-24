@@ -61,7 +61,7 @@ bool BassWrapper::destroy() {
 	return BASS_Free();
 }
 
-bool BassWrapper::playFromFile(const char* filepath) {
+bool BassWrapper::playFromFile(const char* filepath, float volume) {
 	DWORD flags = 0;
 	HSTREAM hstream = BASS_StreamCreateFile(
 		false,
@@ -79,11 +79,16 @@ bool BassWrapper::playFromFile(const char* filepath) {
 		return false;
 	}
 
+	//BASS_CHANNELINFO info;
+	//BASS_ChannelGetInfo(hstream, &info);
+
+	BASS_ChannelSetAttribute(hstream, BASS_ATTRIB_VOLDSP, volume);
+
 	return true;
 }
 
-bool BassWrapper::playFromFile(const wchar_t* wFilepath) {
+bool BassWrapper::playFromFile(const wchar_t* wFilepath, float volume) {
 	std::string filepath;
 	WCHAR_TO_MBCS(wFilepath, filepath);
-	return playFromFile(filepath.c_str());
+	return playFromFile(filepath.c_str(), volume);
 }

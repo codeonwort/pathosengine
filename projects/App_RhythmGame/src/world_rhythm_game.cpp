@@ -39,6 +39,15 @@ static LaneDesc gLaneDesc[] = {
 #define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2)
 #define LANE_LABEL_OFFSET_Y         20
 
+#define CROSSLINE_HEIGHT            10
+
+#define JUDGE_DISPLAY_PERIOD        0.5f
+#define JUDGE_TYPE_PERFECT          0
+#define JUDGE_TYPE_GOOD             1
+#define JUDGE_TYPE_MISS             2
+#define JUDGE_COLOR                 vector3(1.0f, 1.0f, 0.1f)
+#define JUDGE_COLOR_FADE            vector3(0.1f, 0.1f, 0.1f)
+
 #define SCOREBOARD_OFFSET_X         100
 #define SCORE_LABEL_Y0              100
 #define SCORE_LABEL_OFFSET_Y        40
@@ -56,6 +65,7 @@ static LaneDesc gLaneDesc[] = {
 #define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
 #define TEMP_MP3_PATH               "F:/testmusic.mp3"
+#define TEMP_VOLUME                 0.5f
 
 float getLaneX(int32 laneIndex) {
 	return (float)LANE_X0 + laneIndex * (LANE_SPACE_X + LANE_WIDTH);
@@ -177,6 +187,13 @@ void World_RhythmGame::initializeStage() {
 
 	laneNoteColumns.resize(LANE_COUNT);
 	noteBrushes.reserve(LANE_COUNT);
+
+	auto crosslineBrush = new pathos::SolidColorBrush(0.1f, 0.8f, 0.1f);
+	pathos::Rectangle* crossline = new pathos::Rectangle((LANE_WIDTH + LANE_SPACE_X) * LANE_COUNT - LANE_SPACE_X, CROSSLINE_HEIGHT);
+	crossline->setX(LANE_X0);
+	crossline->setY(LANE_Y0 + LANE_HEIGHT - CROSSLINE_HEIGHT / 2);
+	crossline->setBrush(crosslineBrush);
+	root->addChild(crossline);
 	
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
 		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
@@ -203,6 +220,13 @@ void World_RhythmGame::initializeStage() {
 		noteObjectPool.push_back(new LaneNote());
 	}
 
+	judgeLabel = new pathos::Label(L"PERFECT");
+	judgeLabel->setX(LANE_X0 - 90.0f + 0.5f * LANE_COUNT * (LANE_WIDTH + LANE_SPACE_X));
+	judgeLabel->setY(0.5f * (LANE_Y0 + LANE_HEIGHT));
+	judgeLabel->setColor(JUDGE_COLOR);
+	judgeLabel->setFont("defaultLarge");
+	root->addChild(judgeLabel);
+
 	perfectLabel = new pathos::Label(L"PERFECT : 0");
 	goodLabel    = new pathos::Label(L"GOOD    : 0");
 	missLabel    = new pathos::Label(L"MISS    : 0");
@@ -219,7 +243,7 @@ void World_RhythmGame::initializeStage() {
 
 void World_RhythmGame::startMusic() {
 	if (initGameTime < 0.0f) {
-		bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH);
+		bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH, TEMP_VOLUME);
 
 		scoreboardData.clearScore();
 
@@ -270,6 +294,7 @@ void World_RhythmGame::updateNotes(float currT) {
 			if (canCatch == false || note->getCatched()) {
 				if (note->getCatched() == false) {
 					scoreboardData.nMiss += 1;
+					setJudge(currentGameTime, JUDGE_TYPE_MISS);
 				}
 				noteParent->removeChild(note);
 				column.erase(column.begin());
@@ -279,6 +304,16 @@ void World_RhythmGame::updateNotes(float currT) {
 		}
 	}
 
+	// Update visibility of judge label.
+	bool bShowJudge = (currT - judgeTime <= JUDGE_DISPLAY_PERIOD);
+	judgeLabel->setVisible(bShowJudge);
+	// #todo-rhythm: Label scaling is bugged
+	//float judgeScale = glm::mix(1.0f, 1.2f, (currT - judgeTime) / JUDGE_DISPLAY_PERIOD);
+	//judgeLabel->setScaleX(judgeScale);
+	//judgeLabel->setScaleY(judgeScale);
+	vector3 judgeColor = glm::mix(JUDGE_COLOR, JUDGE_COLOR_FADE, (currT - judgeTime) / JUDGE_DISPLAY_PERIOD);
+	judgeLabel->setColor(judgeColor);
+
 	// Update score labels.
 	wchar_t scoreText[256];
 	swprintf_s(scoreText, L"PERFECT : %d", scoreboardData.nPerfect);
@@ -287,6 +322,17 @@ void World_RhythmGame::updateNotes(float currT) {
 	goodLabel->setText(scoreText);
 	swprintf_s(scoreText, L"MISS    : %d", scoreboardData.nMiss);
 	missLabel->setText(scoreText);
+}
+
+void World_RhythmGame::setJudge(float currentT, int32 judgeType) {
+	judgeTime = currentT;
+	if (judgeType == JUDGE_TYPE_PERFECT) {
+		judgeLabel->setText(L"PERFECT");
+	} else if (judgeType == JUDGE_TYPE_GOOD) {
+		judgeLabel->setText(L" GOOD ");
+	} else if (judgeType == JUDGE_TYPE_MISS){
+		judgeLabel->setText(L" MISS ");
+	}
 }
 
 LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* brush) {
@@ -321,9 +367,11 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 		if (ratio <= CATCH_RATIO_PERFECT) {
 			scoreboardData.nPerfect += 1;
 			note->setCatched(true);
+			setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
 		} else if (ratio <= CATCH_RATIO_GOOD) {
 			scoreboardData.nGood += 1;
 			note->setCatched(true);
+			setJudge(currentGameTime, JUDGE_TYPE_GOOD);
 		} else {
 			// Assumes notes are sorted by time.
 			break;

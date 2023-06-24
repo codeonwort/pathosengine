@@ -243,6 +243,7 @@ namespace pathos {
 			return false;
 		}
 		FontManager::get().registerFont(cmdList, "default", "resources/fonts/consola.ttf", 28);
+		FontManager::get().registerFont(cmdList, "defaultLarge", "resources/fonts/consola.ttf", 84);
 		FontManager::get().registerFont(cmdList, "hangul", "resources/fonts/BMJUA.ttf", 28);    // http://font.woowahan.com/jua/
 		LOG(LogInfo, "Initialize font subsystem");
 

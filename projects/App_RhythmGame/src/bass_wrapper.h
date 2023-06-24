@@ -11,8 +11,8 @@ private:
 	bool destroy();
 
 public:
-	bool playFromFile(const char* filepath);
-	bool playFromFile(const wchar_t* wFilepath);
+	bool playFromFile(const char* filepath, float volume = 1.0f);
+	bool playFromFile(const wchar_t* wFilepath, float volume = 1.0f);
 
 };
 
