@@ -10,19 +10,22 @@
 #include "pathos/util/log.h"
 #include "pathos/overlay/label.h"
 
+#include <sstream>
+
 struct LaneDesc {
 	std::wstring displayLabel;
 	std::string inputEventName;
 	ButtonBinding inputBinding;
+	vector3 noteColor;
 };
 
 static LaneDesc gLaneDesc[] = {
-	{ L"A", "lane0", ButtonBinding({InputConstants::KEYBOARD_A }) },
-	{ L"S", "lane1", ButtonBinding({InputConstants::KEYBOARD_S }) },
-	{ L"D", "lane2", ButtonBinding({InputConstants::KEYBOARD_D }) },
-	{ L"J", "lane3", ButtonBinding({InputConstants::KEYBOARD_J }) },
-	{ L"K", "lane4", ButtonBinding({InputConstants::KEYBOARD_K }) },
-	{ L"L", "lane5", ButtonBinding({InputConstants::KEYBOARD_L }) },
+	{ L"A", "lane0", ButtonBinding({InputConstants::KEYBOARD_A }), vector3(1.0f, 1.0f, 1.0f) },
+	{ L"S", "lane1", ButtonBinding({InputConstants::KEYBOARD_S }), vector3(1.0f, 1.0f, 0.2f) },
+	{ L"D", "lane2", ButtonBinding({InputConstants::KEYBOARD_D }), vector3(1.0f, 1.0f, 1.0f) },
+	{ L"J", "lane3", ButtonBinding({InputConstants::KEYBOARD_J }), vector3(1.0f, 1.0f, 1.0f) },
+	{ L"K", "lane4", ButtonBinding({InputConstants::KEYBOARD_K }), vector3(1.0f, 1.0f, 0.2f) },
+	{ L"L", "lane5", ButtonBinding({InputConstants::KEYBOARD_L }), vector3(1.0f, 1.0f, 1.0f) },
 };
 
 #define KEY_RECORDS_NUM_RESERVED    16384
@@ -36,11 +39,48 @@ static LaneDesc gLaneDesc[] = {
 #define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2)
 #define LANE_LABEL_OFFSET_Y         20
 
+// Time of seconds between appearing at the top and reaching at the bottom of lane.
+#define KEY_DROP_PERIOD             1.5f
+#define NOTE_WIDTH                  LANE_WIDTH
+#define NOTE_HEIGHT                 40
+#define NOTE_OBJECT_POOL_SIZE       100
+
 // #todo-rhythm: Temp files
-#define TEMP_RECORD_PATH            "rhythm_game_record.txt"
+#define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
+#define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
 #define TEMP_MP3_PATH               "F:/testmusic.mp3"
 
-void dumpPlayRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
+float getLaneX(int32 laneIndex) {
+	return (float)LANE_X0 + laneIndex * (LANE_SPACE_X + LANE_WIDTH);
+}
+float getNoteY(float ratio) {
+	return (LANE_Y0 - NOTE_HEIGHT / 2) + ratio * LANE_HEIGHT;
+}
+
+class LaneNote : public pathos::Rectangle {
+public:
+	LaneNote() : Rectangle(NOTE_WIDTH, NOTE_HEIGHT) {}
+	void setEventIndex(int32 inEventIndex) { eventIndex = inEventIndex; }
+	int32 getEventIndex() const { return eventIndex; }
+private:
+	int32 eventIndex = -1;
+};
+
+void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
+	int32 laneIndex = -1;
+	float time = -1.0f;
+
+	std::string line;
+	while (std::getline(archive, line)) {
+		std::stringstream ss(line);
+		ss >> laneIndex >> time;
+		outRecord.addLaneKeyEvent(laneIndex, time);
+	}
+
+	outRecord.finalizeLoad();
+}
+
+void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
 	// #todo-rhythm: Support binary format
 	CHECK(binaryFormat == false);
 
@@ -56,9 +96,6 @@ void dumpPlayRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord, 
 void World_RhythmGame::onInitialize() {
 	BassWrapper::initializeBASS();
 
-	// Music
-	bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH);
-
 	// Input
 	inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	for (size_t i = 0; i < LANE_COUNT; ++i) {
@@ -68,14 +105,33 @@ void World_RhythmGame::onInitialize() {
 			this->onPressLaneKey((int32)i);
 		});
 	}
+	inputManager->bindButtonPressed("startGame", ButtonBinding({ InputConstants::SPACE }), [this]() {
+		this->startMusic();
+	});
+	
+	// Record (load)
+	{
+		std::string recordPath;
+		std::wstring wExeDir;
+		pathos::getExecDir(wExeDir);
+		pathos::WCHAR_TO_MBCS(wExeDir, recordPath);
+		recordPath += TEMP_RECORD_LOAD_PATH;
+		std::fstream archive(recordPath, std::ios::in);
+		if (archive.is_open()) {
+			loadMusicRecord(archive, loadedRecord);
+			LOG(LogDebug, "Load record (%u): %s", loadedRecord.getTotalLaneKeyEvents(), recordPath.c_str());
+		} else {
+			LOG(LogError, "Failed to load record: %s", recordPath.c_str());
+		}
+	}
 
-	// Record
-	playRecordFileWriter.initialize(TEMP_RECORD_PATH);
-	playRecord.reserve(KEY_RECORDS_NUM_RESERVED);
+	// Record (save)
+	playRecordFileWriter.initialize(TEMP_RECORD_SAVE_PATH);
+	recordToSave.reserve(KEY_RECORDS_NUM_RESERVED);
 	gEngine->registerConsoleCommand("dump_play_record", [this](const std::string& command) {
 		auto& fileWriter = this->playRecordFileWriter;
-		auto& record = this->playRecord;
-		dumpPlayRecord(fileWriter, record, false);
+		auto& record = this->recordToSave;
+		saveMusicRecord(fileWriter, record, false);
 
 		wchar_t msg[256];
 		swprintf_s(msg, L"Dumped %u events to: %S",
@@ -86,9 +142,6 @@ void World_RhythmGame::onInitialize() {
 
 	// Graphics
 	initializeStage();
-
-	// Time
-	initGameTime = gEngine->getWorldTime();
 }
 
 void World_RhythmGame::onDestroy() {
@@ -97,16 +150,23 @@ void World_RhythmGame::onDestroy() {
 
 void World_RhythmGame::onTick(float deltaSeconds) {
 	currentGameTime = gEngine->getWorldTime() - initGameTime;
+	if (initGameTime >= 0.0f) {
+		updateNotes(currentGameTime);
+	}
 }
 
 void World_RhythmGame::initializeStage() {
 	DisplayObject2D* root = gEngine->getOverlayRoot();
+	noteParent = root;
 
 	auto laneBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.1f);
+
+	laneNoteColumns.resize(LANE_COUNT);
+	noteBrushes.reserve(LANE_COUNT);
 	
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
 		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
-		laneColumn->setX((float)LANE_X0 + laneIndex * (LANE_SPACE_X + LANE_WIDTH));
+		laneColumn->setX(getLaneX((int32)laneIndex));
 		laneColumn->setY((float)LANE_Y0);
 		laneColumn->setBrush(laneBrush);
 		root->addChild(laneColumn);
@@ -116,9 +176,97 @@ void World_RhythmGame::initializeStage() {
 		laneLabel->setX(laneColumn->getX() + LANE_LABEL_OFFSET_X);
 		laneLabel->setY(laneColumn->getY() + LANE_HEIGHT + LANE_LABEL_OFFSET_Y);
 		root->addChild(laneLabel);
+
+		pathos::SolidColorBrush* noteBrush = new pathos::SolidColorBrush(
+			gLaneDesc[laneIndex].noteColor.r,
+			gLaneDesc[laneIndex].noteColor.g,
+			gLaneDesc[laneIndex].noteColor.b);
+		noteBrushes.push_back(noteBrush);
+	}
+
+	noteObjectPool.reserve(NOTE_OBJECT_POOL_SIZE);
+	for (size_t i = 0; i < NOTE_OBJECT_POOL_SIZE; ++i) {
+		noteObjectPool.push_back(new LaneNote());
 	}
 }
 
+void World_RhythmGame::startMusic() {
+	if (initGameTime < 0.0f) {
+		bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH);
+
+		
+		lastSearchedEventIndex = 0;
+		initGameTime = gEngine->getWorldTime();
+	}
+}
+
+void World_RhythmGame::updateNotes(float currT) {
+	size_t totalEvent = loadedRecord.laneKeyEvents.size();
+	for (size_t eventIndex = lastSearchedEventIndex; eventIndex < totalEvent; ++eventIndex) {
+		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[eventIndex];
+		// Spawn new notes.
+		if (evt.time - KEY_DROP_PERIOD <= currT && currT <= evt.time) {
+			std::vector<LaneNote*>& column = laneNoteColumns[evt.laneIndex];
+			bool shouldSpawn = true;
+			for (LaneNote* note : column) {
+				if (note->getEventIndex() == eventIndex) {
+					shouldSpawn = false;
+					break;
+				}
+			}
+			if (shouldSpawn) {
+				LaneNote* newNote = allocNoteFromPool((int32)eventIndex, noteBrushes[evt.laneIndex]);
+				newNote->setX(getLaneX(evt.laneIndex));
+				column.push_back(newNote);
+				noteParent->addChild(newNote);
+			}
+		}
+
+		// Assumes events are sorted by time.
+		if (currT < evt.time - KEY_DROP_PERIOD) {
+			lastSearchedEventIndex = (int32)eventIndex;
+			break;
+		}
+	}
+
+	// Update note positions.
+	for (auto& column : laneNoteColumns) {
+		for (size_t i = 0; i < column.size(); ++i) {
+			LaneNote* note = column[i];
+			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+			float yRatio = (evt.time - currT) / KEY_DROP_PERIOD;
+			if (yRatio >= 0.0f) {
+				note->setY(getNoteY(1.0f - yRatio));
+			} else {
+				noteParent->removeChild(note);
+				column.erase(column.begin());
+				returnNoteToPool(note);
+				--i;
+			}
+		}
+	}
+}
+
+LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* brush) {
+	LaneNote* note = nullptr;
+
+	if (noteObjectPool.size() > 0) {
+		note = noteObjectPool[noteObjectPool.size() - 1];
+		noteObjectPool.pop_back();
+	} else {
+		LOG(LogWarning, "Note pool is empty; creating a new instance");
+		note = new LaneNote();
+	}
+
+	note->setEventIndex(eventIndex);
+	note->setBrush(brush);
+	return note;
+}
+
+void World_RhythmGame::returnNoteToPool(LaneNote* note) {
+	noteObjectPool.push_back(note);
+}
+
 void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
-	playRecord.addLaneKeyEvent(laneIndex, currentGameTime);
+	recordToSave.addLaneKeyEvent(laneIndex, currentGameTime);
 }

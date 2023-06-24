@@ -80,10 +80,12 @@
   <ItemGroup>
     <ClCompile Include="src\bass_wrapper.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\music_record.cpp" />
     <ClCompile Include="src\world_rhythm_game.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bass_wrapper.h" />
+    <ClInclude Include="src\music_record.h" />
     <ClInclude Include="src\world_rhythm_game.h" />
   </ItemGroup>
   <ItemGroup>

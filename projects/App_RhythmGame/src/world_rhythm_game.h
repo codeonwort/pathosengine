@@ -1,35 +1,23 @@
 #pragma once
 
+#include "music_record.h"
+
 #include "pathos/scene/world.h"
 #include "pathos/util/log.h"
 using namespace pathos;
 
-struct LaneKeyEvent {
-	int32 laneIndex;
-	float time;      // Elapsed seconds when key pressed
-};
+#include <vector>
 
-struct PlayRecord {
-	void reserve(size_t numKeyEvents) {
-		laneKeyEvents.reserve(numKeyEvents);
-	}
-
-	void addLaneKeyEvent(int32 laneIndex, float time) {
-		laneKeyEvents.push_back({ laneIndex, time });
-	}
-
-	uint32 getTotalLaneKeyEvents() const {
-		return (uint32)laneKeyEvents.size();
-	}
-
-	std::vector<LaneKeyEvent> laneKeyEvents;
-};
+namespace pathos {
+	class Brush;
+	class DisplayObject2D;
+}
+class LaneNote;
 
 class World_RhythmGame : public World {
 
 public:
 	void onPressLaneKey(int32 laneIndex);
-	const PlayRecord& getPlayRecord() const { return playRecord; }
 
 protected:
 	virtual void onInitialize() override;
@@ -38,12 +26,26 @@ protected:
 
 private:
 	void initializeStage();
+	void startMusic();
+	void updateNotes(float currentT);
 
 private:
 	InputManager* inputManager = nullptr;
-	float initGameTime = 0.0f;
+	float initGameTime = -1.0f;
 	float currentGameTime = 0.0f;
 
-	PlayRecord playRecord;
+	PlayRecord loadedRecord;
+	int32 lastSearchedEventIndex = 0;
+
+	PlayRecord recordToSave;
 	GlobalFileLogger playRecordFileWriter;
+
+	std::vector<std::vector<LaneNote*>> laneNoteColumns;
+	std::vector<pathos::Brush*> noteBrushes;
+
+private:
+	LaneNote* allocNoteFromPool(int32 eventIndex, pathos::Brush* brush);
+	void returnNoteToPool(LaneNote* note);
+	std::vector<LaneNote*> noteObjectPool;
+	DisplayObject2D* noteParent;
 };

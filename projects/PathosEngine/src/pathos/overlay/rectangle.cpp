@@ -6,6 +6,7 @@ namespace pathos {
 
 	Rectangle::Rectangle(float inWidth, float inHeight) {
 		setSize(inWidth, inHeight);
+		// #todo-rhythm: Share the same geometry for all Rectangle instances
 		geom = new PlaneGeometry(2.0f, 2.0f);
 	}
 
