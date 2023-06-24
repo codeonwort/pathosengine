@@ -32,31 +32,28 @@ namespace pathos {
 
 	struct GlobalFileLogger
 	{
+		GlobalFileLogger() {}
 		GlobalFileLogger(const char* filename) {
-			std::wstring w_exec_dir;
-			getExecDir(w_exec_dir);
-
-			std::string filepath;
-			WCHAR_TO_MBCS(w_exec_dir, filepath);
-			filepath += filename;
-
-			handle.open(filepath, std::ios::out | std::ios::trunc);
-			if (handle.is_open()) {
-				LOG(LogDebug, "Initialize GlobalFileLogger: %s", filepath.data());
-			} else {
-				LOG(LogError, "Failed to create GlobalFileLogger: %s", filepath.data());
-			}
+			initialize(filename);
 		}
 		~GlobalFileLogger() {
 			handle.close();
 		}
 
-		void write(const char* data)
-		{
+		void initialize(const char* filename);
+
+		void write(const char* data) {
 			handle << data << '\n';
 		}
 
+		void flush() {
+			handle.flush();
+		}
+
+		const std::string& getFilepath() const { return filepath; }
+
 	private:
+		std::string filepath;
 		std::fstream handle;
 
 	};
