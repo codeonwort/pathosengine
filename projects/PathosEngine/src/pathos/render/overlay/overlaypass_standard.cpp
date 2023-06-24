@@ -6,8 +6,6 @@
 
 namespace pathos {
 
-	static constexpr GLuint TEXTURE_UNIT = 0;
-
 	struct UBO_OverlayStandard {
 		matrix4 transform;
 		vector4 color;

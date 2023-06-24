@@ -10,6 +10,9 @@
 #include "pathos/util/log.h"
 #include "pathos/overlay/label.h"
 
+// #todo-rhythm: image widget test
+#include "pathos/loader/imageloader.h"
+
 #include <sstream>
 
 struct LaneDesc {
@@ -31,12 +34,12 @@ static LaneDesc gLaneDesc[] = {
 #define KEY_RECORDS_NUM_RESERVED    16384
 
 #define LANE_COUNT                  _countof(gLaneDesc)
-#define LANE_X0                     30
+#define LANE_X0                     120
 #define LANE_Y0                     100
 #define LANE_SPACE_X                10
 #define LANE_WIDTH                  90
 #define LANE_HEIGHT                 800
-#define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2)
+#define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2 - 10)
 #define LANE_LABEL_OFFSET_Y         20
 
 #define CROSSLINE_HEIGHT            10
@@ -48,9 +51,9 @@ static LaneDesc gLaneDesc[] = {
 #define JUDGE_COLOR                 vector3(1.0f, 1.0f, 0.1f)
 #define JUDGE_COLOR_FADE            vector3(0.1f, 0.1f, 0.1f)
 
-#define SCOREBOARD_OFFSET_X         100
+#define SCOREBOARD_OFFSET_X         80
 #define SCORE_LABEL_Y0              100
-#define SCORE_LABEL_OFFSET_Y        40
+#define SCORE_LABEL_SPACE_Y         60
 
 // Time of seconds between appearing at the top and reaching at the bottom of lane.
 #define KEY_DROP_PERIOD             1.0f
@@ -65,6 +68,7 @@ static LaneDesc gLaneDesc[] = {
 #define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
 #define TEMP_MP3_PATH               "F:/testmusic.mp3"
+#define TEMP_BACKGROUND_IMAGE       "textures/overlay_image_test.jpg"
 #define TEMP_VOLUME                 0.5f
 
 float getLaneX(int32 laneIndex) {
@@ -183,6 +187,21 @@ void World_RhythmGame::initializeStage() {
 	DisplayObject2D* root = gEngine->getOverlayRoot();
 	noteParent = root;
 
+	// #todo-rhythm: Background image test
+	auto imageBlob = pathos::loadImage(TEMP_BACKGROUND_IMAGE);
+	pathos::Brush* backgroundBrush = nullptr;
+	if (imageBlob != nullptr) {
+		GLuint imageTexture = pathos::createTextureFromBitmap(imageBlob, false, false, "overlay_image_test", true);
+		backgroundBrush = new pathos::ImageBrush(imageTexture);
+	} else {
+		backgroundBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.2f);
+	}
+	pathos::Rectangle* background = new pathos::Rectangle(
+		(float)gEngine->getConfig().windowWidth,
+		(float)gEngine->getConfig().windowHeight);
+	background->setBrush(backgroundBrush);
+	root->addChild(background);
+
 	auto laneBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.1f);
 
 	laneNoteColumns.resize(LANE_COUNT);
@@ -206,6 +225,7 @@ void World_RhythmGame::initializeStage() {
 		pathos::Label* laneLabel = new pathos::Label(labelText);
 		laneLabel->setX(laneColumn->getX() + LANE_LABEL_OFFSET_X);
 		laneLabel->setY(laneColumn->getY() + LANE_HEIGHT + LANE_LABEL_OFFSET_Y);
+		laneLabel->setFont("defaultLarge");
 		root->addChild(laneLabel);
 
 		pathos::SolidColorBrush* noteBrush = new pathos::SolidColorBrush(
@@ -234,8 +254,11 @@ void World_RhythmGame::initializeStage() {
 	goodLabel->setX(perfectLabel->getX());
 	missLabel->setX(perfectLabel->getX());
 	perfectLabel->setY(SCORE_LABEL_Y0);
-	goodLabel->setY(SCORE_LABEL_Y0 + 1 * SCORE_LABEL_OFFSET_Y);
-	missLabel->setY(SCORE_LABEL_Y0 + 2 * SCORE_LABEL_OFFSET_Y);
+	goodLabel->setY(SCORE_LABEL_Y0 + 1 * SCORE_LABEL_SPACE_Y);
+	missLabel->setY(SCORE_LABEL_Y0 + 2 * SCORE_LABEL_SPACE_Y);
+	perfectLabel->setFont("defaultLarge");
+	goodLabel->setFont("defaultLarge");
+	missLabel->setFont("defaultLarge");
 	root->addChild(perfectLabel);
 	root->addChild(goodLabel);
 	root->addChild(missLabel);

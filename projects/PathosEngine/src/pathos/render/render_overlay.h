@@ -9,6 +9,7 @@ namespace pathos {
 
 	class OverlayPass_Standard;
 	class OverlayPass_Text;
+	class OverlayPass_Image;
 	class DisplayObject2D;
 	class DisplayObject2DProxy;
 
@@ -25,6 +26,7 @@ namespace pathos {
 		// Brushes retrieve desired shader programs in the renderer, configure them, and draw the geometry.
 		inline OverlayPass_Standard* getStandardProgram() const { return renderpass_standard; }
 		inline OverlayPass_Text* getTextProgram() const { return renderpass_text; }
+		inline OverlayPass_Image* getImageProgram() const { return renderpass_image; }
 
 	protected:
 		void createShaders();
@@ -33,6 +35,7 @@ namespace pathos {
 		// Render passes
 		OverlayPass_Standard* renderpass_standard = nullptr;
 		OverlayPass_Text* renderpass_text = nullptr;
+		OverlayPass_Image* renderpass_image = nullptr;
 
 		// Temporary variables (nullified after rendering is done each frame)
 		DisplayObject2DProxy* root = nullptr;
