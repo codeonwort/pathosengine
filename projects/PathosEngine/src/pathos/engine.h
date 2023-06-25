@@ -34,6 +34,7 @@ namespace pathos {
 	class OverlayRenderer;
 	class RenderThread;
 	class DisplayObject2D;
+	class MeshGeometry;
 
 	using Screenshot = std::pair<vector2i, uint8*>;
 
@@ -96,6 +97,8 @@ namespace pathos {
 		inline AssetStreamer*   getAssetStreamer() const { return assetStreamer.get();  }
 		inline GUIWindow*       getMainWindow()    const { return mainWindow.get();     }
 		inline DisplayObject2D* getOverlayRoot()   const { return appOverlayRoot.get(); }
+
+		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
 
 		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
@@ -207,6 +210,9 @@ namespace pathos {
 		std::vector<std::string> lastGpuCounterNames;
 		std::vector<float> lastGpuCounterTimes;
 		std::mutex gpuQueryMutex;
+
+		// System geometry
+		MeshGeometry* geometry_unitPlane = nullptr;
 
 		// System textures
 		GLuint texture2D_black     = 0;

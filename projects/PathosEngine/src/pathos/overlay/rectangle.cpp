@@ -1,17 +1,14 @@
 #include "rectangle.h"
 #include "display_object_proxy.h"
+#include "pathos/engine.h"
+
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
 
 	Rectangle::Rectangle(float inWidth, float inHeight) {
 		setSize(inWidth, inHeight);
-		// #todo-rhythm: Share the same geometry for all Rectangle instances
-		geom = new PlaneGeometry(2.0f, 2.0f);
-	}
-
-	Rectangle::~Rectangle() {
-		delete geom;
+		geom = gEngine->getSystemGeometryUnitPlane();
 	}
 
 	DisplayObject2DProxy* Rectangle::createRenderProxy(OverlaySceneProxy* sceneProxy) {

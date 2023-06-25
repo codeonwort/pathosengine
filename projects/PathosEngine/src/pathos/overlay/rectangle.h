@@ -9,7 +9,6 @@ namespace pathos {
 
 	public:
 		Rectangle(float inWidth, float inHeight);
-		virtual ~Rectangle();
 
 		DisplayObject2DProxy* createRenderProxy(OverlaySceneProxy* sceneProxy) override;
 
@@ -28,7 +27,7 @@ namespace pathos {
 	protected:
 		float width;
 		float height;
-		PlaneGeometry *geom = nullptr;
+		MeshGeometry *geom = nullptr;
 
 		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) override;
 

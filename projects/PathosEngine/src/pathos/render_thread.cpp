@@ -8,18 +8,23 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/debug_overlay.h"
-#include "pathos/loader/asset_streamer.h"
-#include "pathos/text/font_mgr.h"
-#include "pathos/scene/scene_render_settings.h"
+
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/gl_context_manager.h"
+
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/renderer.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/render/scene_renderer.h"
+
+#include "pathos/loader/asset_streamer.h"
+#include "pathos/text/font_mgr.h"
+#include "pathos/scene/scene_render_settings.h"
+#include "pathos/mesh/geometry_primitive.h"
+#include "pathos/overlay/display_object_proxy.h"
+
 #include "pathos/util/log.h"
 #include "pathos/util/cpu_profiler.h"
-#include "pathos/rhi/gl_context_manager.h"
-#include "pathos/overlay/display_object_proxy.h"
 
 #define SAFE_RELEASE(x) { if (x) delete x; x = nullptr; }
 
@@ -423,6 +428,8 @@ namespace pathos {
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
+		gEngine->geometry_unitPlane = new PlaneGeometry(2.0f, 2.0f); // #todo: destroy at program termination
+
 		GLuint systemTexture2Ds[5];
 		GLuint systemTextureCubes[1];
 		renderDevice->createTextures(GL_TEXTURE_2D, _countof(systemTexture2Ds), systemTexture2Ds);
