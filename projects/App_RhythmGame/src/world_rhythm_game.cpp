@@ -56,6 +56,9 @@
 #define NOTE_COLOR_BLUE             0
 #define NOTE_COLOR_YELLOW           1
 
+#define PRESS_EFFECT_WIDTH          LANE_WIDTH
+#define PRESS_EFFECT_HEIGHT         120
+
 // #todo-rhythm: Temp files
 #define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
@@ -63,6 +66,7 @@
 #define TEMP_BACKGROUND_IMAGE       "rhythm_game/background.jpg"
 #define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
 #define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
+#define TEMP_PRESS_EFFECT_IMAGE     "rhythm_game/press_effect.png"
 #define TEMP_VOLUME                 0.5f
 
 struct LaneDesc {
@@ -220,7 +224,6 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 
 void World_RhythmGame::initializeStage() {
 	DisplayObject2D* root = gEngine->getOverlayRoot();
-	noteParent = root;
 
 	// #todo-rhythm: Background image test
 	auto imageBlob = pathos::loadImage(TEMP_BACKGROUND_IMAGE);
@@ -240,6 +243,7 @@ void World_RhythmGame::initializeStage() {
 	auto laneBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.1f);
 
 	laneNoteColumns.resize(LANE_COUNT);
+	lanePressEffects.reserve(LANE_COUNT);
 	noteBrushes.reserve(LANE_COUNT);
 
 	auto crosslineBrush = new pathos::SolidColorBrush(0.1f, 0.8f, 0.1f);
@@ -268,6 +272,17 @@ void World_RhythmGame::initializeStage() {
 			yellowNoteBrush = new pathos::SolidColorBrush(1.0f, 1.0f, 0.2f);
 		}
 	}
+
+	pathos::Brush* pressEffectBrush = nullptr;
+	{
+		auto effectBlob = pathos::loadImage(TEMP_PRESS_EFFECT_IMAGE);
+		if (effectBlob != nullptr) {
+			GLuint effectTexture = pathos::createTextureFromBitmap(effectBlob, false, false, "note_press_effect", true);
+			pressEffectBrush = new pathos::ImageBrush(effectTexture);
+		} else {
+			pressEffectBrush = new pathos::SolidColorBrush(0.1f, 0.9f, 0.1f);
+		}
+	}
 	
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
 		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
@@ -275,6 +290,14 @@ void World_RhythmGame::initializeStage() {
 		laneColumn->setY((float)LANE_Y0);
 		laneColumn->setBrush(laneBrush);
 		root->addChild(laneColumn);
+
+		pathos::Rectangle* pressEffect = new pathos::Rectangle(PRESS_EFFECT_WIDTH, PRESS_EFFECT_HEIGHT);
+		pressEffect->setX(laneColumn->getX());
+		pressEffect->setY(laneColumn->getY() + LANE_HEIGHT - PRESS_EFFECT_HEIGHT);
+		pressEffect->setBrush(pressEffectBrush);
+		pressEffect->setVisible(false);
+		root->addChild(pressEffect);
+		lanePressEffects.push_back(pressEffect);
 
 		const wchar_t* labelText = gLaneDesc[laneIndex].displayLabel.c_str();
 		pathos::Label* laneLabel = new pathos::Label(labelText);
@@ -294,6 +317,10 @@ void World_RhythmGame::initializeStage() {
 		noteObjectPool.push_back(new LaneNote());
 	}
 
+	noteParent = new DisplayObject2D;
+	root->addChild(noteParent);
+
+	// Place the judge label in front of notes.
 	judgeLabel = new pathos::Label(L"PERFECT");
 	judgeLabel->setX(LANE_X0 - 90.0f + 0.5f * LANE_COUNT * (LANE_WIDTH + LANE_SPACE_X));
 	judgeLabel->setY(0.5f * (LANE_Y0 + LANE_HEIGHT));
@@ -461,6 +488,9 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 	}
 	laneKeyPressTimes[laneIndex] = currentGameTime;
 
+	// Toggle effect
+	lanePressEffects[laneIndex]->setVisible(true);
+
 	// Process current play
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {
 		if (note->getCatched()) {
@@ -511,6 +541,9 @@ void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
 	}
 
 	laneKeyPressTimes[laneIndex] = -1.0f;
+
+	// Toggle effect
+	lanePressEffects[laneIndex]->setVisible(false);
 
 	// Process current play
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {

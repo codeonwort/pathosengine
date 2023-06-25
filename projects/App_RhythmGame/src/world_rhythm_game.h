@@ -11,6 +11,7 @@ using namespace pathos;
 namespace pathos {
 	class Brush;
 	class Label;
+	class Rectangle;
 	class DisplayObject2D;
 }
 class LaneNote;
@@ -48,6 +49,7 @@ private:
 
 	std::vector<std::vector<LaneNote*>> laneNoteColumns;
 	std::vector<pathos::Brush*> noteBrushes;
+	std::vector<pathos::Rectangle*> lanePressEffects;
 
 private:
 	LaneNote* allocNoteFromPool(int32 eventIndex, pathos::Brush* brush);
