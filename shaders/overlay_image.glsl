@@ -37,9 +37,7 @@ layout (binding = 0) uniform sampler2D imageTexture;
 out vec4 outColor;
 
 void main() {
-	vec3 texSample = texture(imageTexture, interpolants.uv).rgb;
-
-	outColor = vec4(texSample.rgb, 1.0);
+	outColor = texture(imageTexture, interpolants.uv);
 }
 
 #endif // FRAGMENT_SHADER

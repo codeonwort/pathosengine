@@ -7,29 +7,14 @@
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/brush.h"
-#include "pathos/util/log.h"
 #include "pathos/overlay/label.h"
+#include "pathos/util/resource_finder.h"
+#include "pathos/util/log.h"
 
 // #todo-rhythm: image widget test
 #include "pathos/loader/imageloader.h"
 
 #include <sstream>
-
-struct LaneDesc {
-	std::wstring displayLabel;
-	std::string inputEventName;
-	ButtonBinding inputBinding;
-	vector3 noteColor;
-};
-
-static LaneDesc gLaneDesc[] = {
-	{ L"A", "lane0", ButtonBinding({InputConstants::KEYBOARD_A }), vector3(1.0f, 1.0f, 1.0f) },
-	{ L"S", "lane1", ButtonBinding({InputConstants::KEYBOARD_S }), vector3(1.0f, 1.0f, 0.2f) },
-	{ L"D", "lane2", ButtonBinding({InputConstants::KEYBOARD_D }), vector3(1.0f, 1.0f, 1.0f) },
-	{ L"J", "lane3", ButtonBinding({InputConstants::KEYBOARD_J }), vector3(1.0f, 1.0f, 1.0f) },
-	{ L"K", "lane4", ButtonBinding({InputConstants::KEYBOARD_K }), vector3(1.0f, 1.0f, 0.2f) },
-	{ L"L", "lane5", ButtonBinding({InputConstants::KEYBOARD_L }), vector3(1.0f, 1.0f, 1.0f) },
-};
 
 #define KEY_RECORDS_NUM_RESERVED    16384
 
@@ -63,13 +48,33 @@ static LaneDesc gLaneDesc[] = {
 #define NOTE_WIDTH                  LANE_WIDTH
 #define NOTE_HEIGHT                 40
 #define NOTE_OBJECT_POOL_SIZE       100
+#define NOTE_COLOR_BLUE             0
+#define NOTE_COLOR_YELLOW           1
 
 // #todo-rhythm: Temp files
 #define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
-#define TEMP_MP3_PATH               "F:/testmusic.mp3"
-#define TEMP_BACKGROUND_IMAGE       "textures/overlay_image_test.jpg"
+#define TEMP_MP3_PATH               "rhythm_game/testmusic.mp3"
+#define TEMP_BACKGROUND_IMAGE       "rhythm_game/background.jpg"
+#define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
+#define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
 #define TEMP_VOLUME                 0.5f
+
+struct LaneDesc {
+	std::wstring displayLabel;
+	std::string inputEventName;
+	ButtonBinding inputBinding;
+	int32 noteColor;
+};
+
+static LaneDesc gLaneDesc[] = {
+	{ L"A", "lane0", ButtonBinding({InputConstants::KEYBOARD_A }), NOTE_COLOR_BLUE   },
+	{ L"S", "lane1", ButtonBinding({InputConstants::KEYBOARD_S }), NOTE_COLOR_YELLOW },
+	{ L"D", "lane2", ButtonBinding({InputConstants::KEYBOARD_D }), NOTE_COLOR_BLUE   },
+	{ L"J", "lane3", ButtonBinding({InputConstants::KEYBOARD_J }), NOTE_COLOR_BLUE   },
+	{ L"K", "lane4", ButtonBinding({InputConstants::KEYBOARD_K }), NOTE_COLOR_YELLOW },
+	{ L"L", "lane5", ButtonBinding({InputConstants::KEYBOARD_L }), NOTE_COLOR_BLUE   },
+};
 
 float getLaneX(int32 laneIndex) {
 	return (float)LANE_X0 + laneIndex * (LANE_SPACE_X + LANE_WIDTH);
@@ -213,6 +218,26 @@ void World_RhythmGame::initializeStage() {
 	crossline->setY(LANE_Y0 + LANE_HEIGHT - CROSSLINE_HEIGHT / 2);
 	crossline->setBrush(crosslineBrush);
 	root->addChild(crossline);
+
+	// note brushes
+	pathos::Brush* blueNoteBrush = nullptr;
+	pathos::Brush* yellowNoteBrush = nullptr;
+	{
+		auto blueBlob = pathos::loadImage(TEMP_BLUE_NOTE_IMAGE);
+		if (blueBlob != nullptr) {
+			GLuint blueNoteTexture = pathos::createTextureFromBitmap(blueBlob, false, false, "blue_note", true);
+			blueNoteBrush = new pathos::ImageBrush(blueNoteTexture);
+		} else {
+			blueNoteBrush = new pathos::SolidColorBrush(0.8f, 0.8f, 1.0f);
+		}
+		auto yellowBlob = pathos::loadImage(TEMP_YELLOW_NOTE_IMAGE);
+		if (yellowBlob != nullptr) {
+			GLuint yellowNoteTexture = pathos::createTextureFromBitmap(yellowBlob, false, false, "yellow_note", true);
+			yellowNoteBrush = new pathos::ImageBrush(yellowNoteTexture);
+		} else {
+			yellowNoteBrush = new pathos::SolidColorBrush(1.0f, 1.0f, 0.2f);
+		}
+	}
 	
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
 		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
@@ -228,10 +253,9 @@ void World_RhythmGame::initializeStage() {
 		laneLabel->setFont("defaultLarge");
 		root->addChild(laneLabel);
 
-		pathos::SolidColorBrush* noteBrush = new pathos::SolidColorBrush(
-			gLaneDesc[laneIndex].noteColor.r,
-			gLaneDesc[laneIndex].noteColor.g,
-			gLaneDesc[laneIndex].noteColor.b);
+		auto noteBrush = (gLaneDesc[laneIndex].noteColor == NOTE_COLOR_BLUE)
+			? blueNoteBrush
+			: yellowNoteBrush;
 		noteBrushes.push_back(noteBrush);
 	}
 
@@ -266,12 +290,17 @@ void World_RhythmGame::initializeStage() {
 
 void World_RhythmGame::startMusic() {
 	if (initGameTime < 0.0f) {
-		bool bSuccess = gBass->playFromFile(TEMP_MP3_PATH, TEMP_VOLUME);
+		std::string mp3Path = ResourceFinder::get().find(TEMP_MP3_PATH);
+		if (mp3Path.size() > 0) {
+			bool bSuccess = gBass->playFromFile(mp3Path.c_str(), TEMP_VOLUME);
 
-		scoreboardData.clearScore();
+			scoreboardData.clearScore();
 
-		lastSearchedEventIndex = 0;
-		initGameTime = gEngine->getWorldTime();
+			lastSearchedEventIndex = 0;
+			initGameTime = gEngine->getWorldTime();
+		} else {
+			LOG(LogError, "Failed to open mp3 file: %s", TEMP_MP3_PATH);
+		}
 	}
 }
 

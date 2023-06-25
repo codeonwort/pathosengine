@@ -50,6 +50,9 @@ namespace pathos {
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OverlayImage);
 		cmdList.useProgram(program.getGLName());
 
+		cmdList.enable(GL_BLEND);
+		cmdList.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
+
 		UBO_OverlayImage uboData;
 		uboData.transform = transformAccum.getMatrix();
 		ubo.update(cmdList, UBO_OverlayImage::BINDING_POINT, &uboData);
@@ -61,6 +64,9 @@ namespace pathos {
 		geom->drawPrimitive(cmdList);
 		geom->deactivate(cmdList);
 		geom->deactivateIndexBuffer(cmdList);
+
+		cmdList.disable(GL_BLEND);
+		cmdList.disable(GL_DEPTH_TEST);
 	}
 
 }
