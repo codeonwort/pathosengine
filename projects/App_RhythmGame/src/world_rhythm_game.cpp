@@ -421,7 +421,7 @@ void World_RhythmGame::updateNotes(float currT) {
 					setJudge(currentGameTime, JUDGE_TYPE_MISS);
 				}
 				noteParent->removeChild(note);
-				column.erase(column.begin());
+				column.erase(column.begin() + i);
 				returnNoteToPool(note);
 				--i;
 			}
