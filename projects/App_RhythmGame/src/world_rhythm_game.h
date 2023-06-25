@@ -19,6 +19,7 @@ class World_RhythmGame : public World {
 
 public:
 	void onPressLaneKey(int32 laneIndex);
+	void onReleaseLaneKey(int32 laneIndex);
 
 protected:
 	virtual void onInitialize() override;
@@ -43,6 +44,7 @@ private:
 
 	PlayRecord recordToSave;
 	GlobalFileLogger playRecordFileWriter;
+	std::vector<float> laneKeyPressTimes;
 
 	std::vector<std::vector<LaneNote*>> laneNoteColumns;
 	std::vector<pathos::Brush*> noteBrushes;

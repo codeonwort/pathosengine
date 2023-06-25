@@ -6,13 +6,15 @@
 
 struct LaneKeyEvent {
 	int32 laneIndex;
-	float time;      // Elapsed seconds since game start when key pressed
+	float pressTime;   // Elapsed seconds since game start when key pressed
+	float releaseTime; // Negative if short note
 };
 
 struct PlayRecord {
 	void reserve(size_t numKeyEvents);
 
-	void addLaneKeyEvent(int32 laneIndex, float time);
+	void addShortNoteEvent(int32 laneIndex, float time);
+	void addLongNoteEvent(int32 laneIndex, float startTime, float endTime);
 	void finalizeLoad();
 
 	uint32 getTotalLaneKeyEvents() const;

@@ -45,6 +45,10 @@
 #define CATCH_RATIO_PERFECT         0.05f
 #define CATCH_RATIO_GOOD            0.1f
 
+// Input is determined as short note
+// if the time diff between key press and release is less than this value.
+#define SHORT_NOTE_PERIOD           0.2f
+
 #define NOTE_WIDTH                  LANE_WIDTH
 #define NOTE_HEIGHT                 40
 #define NOTE_OBJECT_POOL_SIZE       100
@@ -97,13 +101,18 @@ private:
 
 void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 	int32 laneIndex = -1;
-	float time = -1.0f;
+	float pressTime = -1.0f;
+	float releaseTime = -1.0f;
 
 	std::string line;
 	while (std::getline(archive, line)) {
 		std::stringstream ss(line);
-		ss >> laneIndex >> time;
-		outRecord.addLaneKeyEvent(laneIndex, time);
+		ss >> laneIndex >> pressTime >> releaseTime;
+		if (releaseTime > 0.0f) {
+			outRecord.addLongNoteEvent(laneIndex, pressTime, releaseTime);
+		} else {
+			outRecord.addShortNoteEvent(laneIndex, pressTime);
+		}
 	}
 
 	outRecord.finalizeLoad();
@@ -115,7 +124,7 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 
 	char buf[1024];
 	for (const LaneKeyEvent& evt : playRecord.laneKeyEvents) {
-		sprintf_s(buf, "%d %f", evt.laneIndex, evt.time);
+		sprintf_s(buf, "%d %f %f", evt.laneIndex, evt.pressTime, evt.releaseTime);
 		fileWriter.write(buf);
 	}
 
@@ -135,7 +144,14 @@ void World_RhythmGame::onInitialize() {
 		const char* evtName = gLaneDesc[i].inputEventName.c_str();
 		ButtonBinding& btnBinding = gLaneDesc[i].inputBinding;
 		inputManager->bindButtonPressed(evtName, btnBinding, [i, this]() {
-			this->onPressLaneKey((int32)i);
+			if (!gConsole->isVisible()) {
+				this->onPressLaneKey((int32)i);
+			}
+		});
+		inputManager->bindButtonReleased(evtName, btnBinding, [i, this]() {
+			if (!gConsole->isVisible()) {
+				this->onReleaseLaneKey((int32)i);
+			}
 		});
 	}
 	inputManager->bindButtonPressed("startGame", ButtonBinding({ InputConstants::SPACE }), [this]() {
@@ -159,6 +175,7 @@ void World_RhythmGame::onInitialize() {
 	}
 
 	// Record (save)
+	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
 	playRecordFileWriter.initialize(TEMP_RECORD_SAVE_PATH);
 	recordToSave.reserve(KEY_RECORDS_NUM_RESERVED);
 	gEngine->registerConsoleCommand("dump_play_record", [this](const std::string& command) {
@@ -309,7 +326,7 @@ void World_RhythmGame::updateNotes(float currT) {
 	for (size_t eventIndex = lastSearchedEventIndex; eventIndex < totalEvent; ++eventIndex) {
 		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[eventIndex];
 		// Spawn new notes.
-		if (evt.time - KEY_DROP_PERIOD <= currT && currT <= evt.time) {
+		if (evt.pressTime - KEY_DROP_PERIOD <= currT && currT <= evt.pressTime) {
 			std::vector<LaneNote*>& column = laneNoteColumns[evt.laneIndex];
 			bool shouldSpawn = true;
 			for (LaneNote* note : column) {
@@ -327,7 +344,7 @@ void World_RhythmGame::updateNotes(float currT) {
 		}
 
 		// Assumes events are sorted by time.
-		if (currT < evt.time - KEY_DROP_PERIOD) {
+		if (currT < evt.pressTime - KEY_DROP_PERIOD) {
 			lastSearchedEventIndex = (int32)eventIndex;
 			break;
 		}
@@ -338,7 +355,7 @@ void World_RhythmGame::updateNotes(float currT) {
 		for (size_t i = 0; i < column.size(); ++i) {
 			LaneNote* note = column[i];
 			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
-			float yRatio = (evt.time - currT) / KEY_DROP_PERIOD;
+			float yRatio = (evt.pressTime - currT) / KEY_DROP_PERIOD;
 			bool canCatch = yRatio >= -CATCH_RATIO_GOOD;
 			if (canCatch) {
 				note->setY(getNoteY(1.0f - yRatio));
@@ -409,13 +426,19 @@ void World_RhythmGame::returnNoteToPool(LaneNote* note) {
 }
 
 void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
-	recordToSave.addLaneKeyEvent(laneIndex, currentGameTime);
+	// Record input
+	if (laneKeyPressTimes[laneIndex] >= 0.0f) {
+		LOG(LogError, "[OnPress] Previous key press was not handled (lane %d)", laneIndex);
+	}
+	laneKeyPressTimes[laneIndex] = currentGameTime;
+
+	// Process current play
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {
 		if (note->getCatched()) {
 			continue;
 		}
 		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
-		float ratio = std::abs((evt.time - currentGameTime) / KEY_DROP_PERIOD);
+		float ratio = std::abs((evt.pressTime - currentGameTime) / KEY_DROP_PERIOD);
 		if (ratio <= CATCH_RATIO_PERFECT) {
 			scoreboardData.nPerfect += 1;
 			note->setCatched(true);
@@ -429,4 +452,23 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 			break;
 		}
 	}
+}
+
+void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
+	// Record input
+	float noteStartTime = laneKeyPressTimes[laneIndex];
+	float noteEndTime = currentGameTime;
+	float timeDiff = noteEndTime - noteStartTime;
+
+	if (noteStartTime >= 0.0f && timeDiff > 0.0f) {
+		if (timeDiff <= SHORT_NOTE_PERIOD) {
+			recordToSave.addShortNoteEvent(laneIndex, noteStartTime);
+		} else {
+			recordToSave.addLongNoteEvent(laneIndex, noteStartTime, noteEndTime);
+		}
+	} else {
+		LOG(LogError, "[OnRelease] Key recording is bugged (lane %d)", laneIndex);
+	}
+
+	laneKeyPressTimes[laneIndex] = -1.0f;
 }
