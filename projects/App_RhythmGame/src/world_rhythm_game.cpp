@@ -14,6 +14,7 @@
 // #todo-rhythm: image widget test
 #include "pathos/loader/imageloader.h"
 
+#include "badger/math/minmax.h"
 #include <sstream>
 
 #define KEY_RECORDS_NUM_RESERVED    16384
@@ -83,8 +84,17 @@ static LaneDesc gLaneDesc[] = {
 float getLaneX(int32 laneIndex) {
 	return (float)LANE_X0 + laneIndex * (LANE_SPACE_X + LANE_WIDTH);
 }
-float getNoteY(float ratio) {
+float getShortNoteY(float ratio) {
 	return (LANE_Y0 - NOTE_HEIGHT / 2) + ratio * LANE_HEIGHT;
+}
+void getLongNoteTransform(
+	float currT, float pressT, float releaseT,
+	float* y, float* height)
+{
+	float kTop = 1.0f - badger::clamp(0.0f, (releaseT - currT) / KEY_DROP_PERIOD, 1.0f);
+	float kBottom = 1.0f - badger::clamp(0.0f, (pressT - currT) / KEY_DROP_PERIOD, 1.0f);
+	*y = LANE_Y0 + kTop * LANE_HEIGHT;
+	*height = (badger::max)(1.0f, (kBottom - kTop) * LANE_HEIGHT);
 }
 
 class LaneNote : public pathos::Rectangle {
@@ -106,6 +116,9 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 
 	std::string line;
 	while (std::getline(archive, line)) {
+		if (line.size() == 0) {
+			continue;
+		}
 		std::stringstream ss(line);
 		ss >> laneIndex >> pressTime >> releaseTime;
 		if (releaseTime > 0.0f) {
@@ -354,13 +367,28 @@ void World_RhythmGame::updateNotes(float currT) {
 	for (auto& column : laneNoteColumns) {
 		for (size_t i = 0; i < column.size(); ++i) {
 			LaneNote* note = column[i];
+
 			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
-			float yRatio = (evt.pressTime - currT) / KEY_DROP_PERIOD;
-			bool canCatch = yRatio >= -CATCH_RATIO_GOOD;
-			if (canCatch) {
-				note->setY(getNoteY(1.0f - yRatio));
+			bool isShortNote = evt.isShortNote();
+
+			float pressDistance = (evt.pressTime - currT) / KEY_DROP_PERIOD;
+			float releaseDistance = (evt.releaseTime - currT) / KEY_DROP_PERIOD;
+
+			bool canCatch = pressDistance >= -CATCH_RATIO_GOOD;
+			if (isShortNote) {
+				note->setY(getShortNoteY(1.0f - pressDistance));
+			} else {
+				float noteY, noteHeight;
+				getLongNoteTransform(
+					currT, evt.pressTime, evt.releaseTime,
+					&noteY, &noteHeight);
+				note->setY(noteY);
+				note->setSize(NOTE_WIDTH, noteHeight);
 			}
-			if (canCatch == false || note->getCatched()) {
+
+			bool deleteShortNote = isShortNote && (canCatch == false || note->getCatched());
+			bool deleteLongNote = !isShortNote && (releaseDistance < -CATCH_RATIO_GOOD);
+			if (deleteShortNote || deleteLongNote) {
 				if (note->getCatched() == false) {
 					scoreboardData.nMiss += 1;
 					setJudge(currentGameTime, JUDGE_TYPE_MISS);
@@ -418,6 +446,7 @@ LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* b
 	note->setCatched(false);
 	note->setEventIndex(eventIndex);
 	note->setBrush(brush);
+	note->setSize(NOTE_WIDTH, NOTE_HEIGHT);
 	return note;
 }
 
@@ -437,14 +466,25 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 		if (note->getCatched()) {
 			continue;
 		}
+
 		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+		bool isShortNote = evt.isShortNote();
+
 		float ratio = std::abs((evt.pressTime - currentGameTime) / KEY_DROP_PERIOD);
 		if (ratio <= CATCH_RATIO_PERFECT) {
-			scoreboardData.nPerfect += 1;
+			if (isShortNote) {
+				scoreboardData.nPerfect += 1;
+			} else {
+				// Long note score is processed in release event.
+			}
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
 		} else if (ratio <= CATCH_RATIO_GOOD) {
-			scoreboardData.nGood += 1;
+			if (isShortNote) {
+				scoreboardData.nGood += 1;
+			} else {
+				// Long note score is processed in release event.
+			}
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_GOOD);
 		} else {
@@ -471,4 +511,27 @@ void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
 	}
 
 	laneKeyPressTimes[laneIndex] = -1.0f;
+
+	// Process current play
+	for (LaneNote* note : laneNoteColumns[laneIndex]) {
+		if (note->getCatched()) {
+			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+			if (evt.isShortNote()) {
+				continue;
+			}
+
+			float ratio = std::abs((evt.releaseTime - currentGameTime) / KEY_DROP_PERIOD);
+			if (ratio <= CATCH_RATIO_PERFECT) {
+				scoreboardData.nPerfect += 1;
+				setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
+			} else if (ratio <= CATCH_RATIO_GOOD) {
+				scoreboardData.nGood += 1;
+				setJudge(currentGameTime, JUDGE_TYPE_GOOD);
+			} else {
+				note->setCatched(false);
+				// Assumes notes are sorted by time.
+				break;
+			}
+		}
+	}
 }

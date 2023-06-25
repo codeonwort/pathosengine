@@ -8,6 +8,8 @@ struct LaneKeyEvent {
 	int32 laneIndex;
 	float pressTime;   // Elapsed seconds since game start when key pressed
 	float releaseTime; // Negative if short note
+
+	inline bool isShortNote() const { return releaseTime < 0.0f; }
 };
 
 struct PlayRecord {
