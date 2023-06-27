@@ -27,6 +27,9 @@
     <ClCompile Include="src\music_record.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\music_database.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\world_rhythm_game.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\music_record.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\music_database.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -52,11 +52,18 @@ namespace pathos {
 	};
 
 	class ImageBrush : public Brush {
+
 	public:
 		ImageBrush(GLuint texture);
+
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
+
+		inline GLuint getTexture() const { return texture; }
+		inline void setTexture(GLuint inTexture) { texture = inTexture; }
+
 	private:
 		GLuint texture;
+
 	};
 
 }

@@ -37,9 +37,15 @@
 #define JUDGE_COLOR                 vector3(1.0f, 1.0f, 0.1f)
 #define JUDGE_COLOR_FADE            vector3(0.1f, 0.1f, 0.1f)
 
+#define SCOREBOARD_WIDTH            400
+#define SCOREBOARD_HEIGHT           200
+#define SCOREBOARD_MARGIN_X         20
 #define SCOREBOARD_OFFSET_X         80
 #define SCORE_LABEL_Y0              100
 #define SCORE_LABEL_SPACE_Y         60
+#define PERFECT_LABEL_COLOR         vector3(1.0f, 1.0f, 1.0f)
+#define GOOD_LABEL_COLOR            vector3(0.8f, 0.8f, 0.8f)
+#define MISS_LABEL_COLOR            vector3(1.0f, 0.5f, 0.5f)
 
 // Time of seconds between appearing at the top and reaching at the bottom of lane.
 #define KEY_DROP_PERIOD             1.0f
@@ -59,11 +65,18 @@
 #define PRESS_EFFECT_WIDTH          LANE_WIDTH
 #define PRESS_EFFECT_HEIGHT         120
 
+#define BROWSER_X0                  100
+#define BROWSER_Y0                  100
+#define BROWSER_ITEM_X0             20
+#define BROWSER_ITEM_Y0             60
+#define BROWSER_ITEM_SPACE_Y        40
+#define BROWSER_ITEM_DEFAULT_COLOR  vector3(1.0f, 1.0f, 1.0f)
+#define BROWSER_ITEM_SELECTED_COLOR vector3(1.0f, 0.7f, 0.2f)
+
 // #todo-rhythm: Temp files
-#define TEMP_RECORD_LOAD_PATH       "rhythm_game_record.txt"
+#define GAME_RESOURCE_DIR           "../../resources/rhythm_game/"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
-#define TEMP_MP3_PATH               "rhythm_game/testmusic.mp3"
-#define TEMP_BACKGROUND_IMAGE       "rhythm_game/background.jpg"
+#define TEMP_MUSIC_DATABASE         "rhythm_game/music_database.txt"
 #define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
 #define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
 #define TEMP_PRESS_EFFECT_IMAGE     "rhythm_game/press_effect.png"
@@ -113,6 +126,55 @@ private:
 	bool bCatched = false;
 };
 
+class MusicListItemWidget : public pathos::Label {};
+
+class MusicBrowserWidget : public DisplayObject2D {
+	
+public:
+	MusicBrowserWidget() {
+		pathos::Label* header = new pathos::Label;
+		header->setText(L"Select a music with arrow keys and space bar");
+		header->setColor(vector3(1.0f, 1.0f, 0.2f));
+		addChild(header);
+
+		selector = new pathos::Label(L">");
+		selector->setVisible(false);
+		selector->setColor(BROWSER_ITEM_SELECTED_COLOR);
+		addChild(selector);
+	}
+
+	void addItem(const std::string& title) {
+		MusicListItemWidget* item = new MusicListItemWidget;
+		
+		std::wstring wTitle;
+		MBCS_TO_WCHAR(title, wTitle);
+		item->setText(wTitle.c_str());
+		item->setX(BROWSER_ITEM_X0);
+		item->setY(BROWSER_ITEM_Y0 + (float)(items.size() * BROWSER_ITEM_SPACE_Y));
+
+		addChild(item);
+		items.push_back(item);
+	}
+
+	void selectItem(int32 targetIx) {
+		selectedIndex = badger::clamp(0, targetIx, (int32)items.size() - 1);
+		selector->setVisible(true);
+		selector->setX(0.0f);
+		selector->setY(BROWSER_ITEM_Y0 + (float)selectedIndex * BROWSER_ITEM_SPACE_Y);
+		for (size_t i = 0; i < items.size(); ++i) {
+			items[i]->setColor(selectedIndex == i ? BROWSER_ITEM_SELECTED_COLOR : BROWSER_ITEM_DEFAULT_COLOR);
+		}
+	}
+
+	int32 getSelectedIndex() const { return selectedIndex; }
+
+private:
+	int32 selectedIndex = -1;
+	pathos::Label* selector = nullptr;
+	std::vector<MusicListItemWidget*> items;
+
+};
+
 void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 	int32 laneIndex = -1;
 	float pressTime = -1.0f;
@@ -149,10 +211,15 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 }
 
 void World_RhythmGame::onInitialize() {
+	ResourceFinder::get().add(GAME_RESOURCE_DIR);
 	BassWrapper::initializeBASS();
 
 	if (gConsole->isVisible()) {
 		gConsole->toggle();
+	}
+
+	if (loadMusicDatabase(TEMP_MUSIC_DATABASE, musicDatabase)) {
+		LOG(LogDebug, "Load database: %u items", musicDatabase.numItems());
 	}
 
 	// Input
@@ -171,25 +238,15 @@ void World_RhythmGame::onInitialize() {
 			}
 		});
 	}
+	inputManager->bindButtonPressed("browsePrevMusic", ButtonBinding({ InputConstants::KEYBOARD_ARROW_UP }), [this]() {
+		this->browseMusicList(-1);
+	});
+	inputManager->bindButtonPressed("browseNextMusic", ButtonBinding({ InputConstants::KEYBOARD_ARROW_DOWN }), [this]() {
+		this->browseMusicList(1);
+	});
 	inputManager->bindButtonPressed("startGame", ButtonBinding({ InputConstants::SPACE }), [this]() {
 		this->startMusic();
 	});
-	
-	// Record (load)
-	{
-		std::string recordPath;
-		std::wstring wExeDir;
-		pathos::getExecDir(wExeDir);
-		pathos::WCHAR_TO_MBCS(wExeDir, recordPath);
-		recordPath += TEMP_RECORD_LOAD_PATH;
-		std::fstream archive(recordPath, std::ios::in);
-		if (archive.is_open()) {
-			loadMusicRecord(archive, loadedRecord);
-			LOG(LogDebug, "Load record (%u): %s", loadedRecord.getTotalLaneKeyEvents(), recordPath.c_str());
-		} else {
-			LOG(LogError, "Failed to load record: %s", recordPath.c_str());
-		}
-	}
 
 	// Record (save)
 	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
@@ -208,7 +265,10 @@ void World_RhythmGame::onInitialize() {
 	});
 
 	// Graphics
-	initializeStage();
+	initializePlayStage();
+	initializeBrowseStage();
+	browserWidget->setVisible(true);
+	playContainer->setVisible(false);
 }
 
 void World_RhythmGame::onDestroy() {
@@ -222,23 +282,32 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 	}
 }
 
-void World_RhythmGame::initializeStage() {
-	DisplayObject2D* root = gEngine->getOverlayRoot();
+void World_RhythmGame::initializeBrowseStage() {
+	browserWidget = new MusicBrowserWidget;
+	browserWidget->setX(BROWSER_X0);
+	browserWidget->setY(BROWSER_Y0);
+	gEngine->getOverlayRoot()->addChild(browserWidget);
 
-	// #todo-rhythm: Background image test
-	auto imageBlob = pathos::loadImage(TEMP_BACKGROUND_IMAGE);
-	pathos::Brush* backgroundBrush = nullptr;
-	if (imageBlob != nullptr) {
-		GLuint imageTexture = pathos::createTextureFromBitmap(imageBlob, false, false, "overlay_image_test", true);
-		backgroundBrush = new pathos::ImageBrush(imageTexture);
-	} else {
-		backgroundBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.2f);
+	const uint32 musicCount = musicDatabase.numItems();
+	for (uint32 i = 0; i < musicCount; ++i) {
+		browserWidget->addItem(musicDatabase.items[i].title);
 	}
-	pathos::Rectangle* background = new pathos::Rectangle(
+	if (musicCount > 0) {
+		browserWidget->selectItem(0);
+	}
+}
+
+void World_RhythmGame::initializePlayStage() {
+	playContainer = new DisplayObject2D;
+	gEngine->getOverlayRoot()->addChild(playContainer);
+
+	background = new pathos::Rectangle(
 		(float)gEngine->getConfig().windowWidth,
 		(float)gEngine->getConfig().windowHeight);
-	background->setBrush(backgroundBrush);
-	root->addChild(background);
+	backgroundFallbackBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.2f);
+	backgroundImageBrush = new pathos::ImageBrush(gEngine->getSystemTexture2DBlack());
+	background->setBrush(backgroundFallbackBrush);
+	playContainer->addChild(background);
 
 	auto laneBrush = new pathos::SolidColorBrush(0.1f, 0.1f, 0.1f);
 
@@ -246,12 +315,13 @@ void World_RhythmGame::initializeStage() {
 	lanePressEffects.reserve(LANE_COUNT);
 	noteBrushes.reserve(LANE_COUNT);
 
+	// #todo-rhythm: Adjust crossline layout
 	auto crosslineBrush = new pathos::SolidColorBrush(0.1f, 0.8f, 0.1f);
 	pathos::Rectangle* crossline = new pathos::Rectangle((LANE_WIDTH + LANE_SPACE_X) * LANE_COUNT - LANE_SPACE_X, CROSSLINE_HEIGHT);
 	crossline->setX(LANE_X0);
 	crossline->setY(LANE_Y0 + LANE_HEIGHT - CROSSLINE_HEIGHT / 2);
 	crossline->setBrush(crosslineBrush);
-	root->addChild(crossline);
+	playContainer->addChild(crossline);
 
 	// note brushes
 	pathos::Brush* blueNoteBrush = nullptr;
@@ -289,14 +359,14 @@ void World_RhythmGame::initializeStage() {
 		laneColumn->setX(getLaneX((int32)laneIndex));
 		laneColumn->setY((float)LANE_Y0);
 		laneColumn->setBrush(laneBrush);
-		root->addChild(laneColumn);
+		playContainer->addChild(laneColumn);
 
 		pathos::Rectangle* pressEffect = new pathos::Rectangle(PRESS_EFFECT_WIDTH, PRESS_EFFECT_HEIGHT);
 		pressEffect->setX(laneColumn->getX());
 		pressEffect->setY(laneColumn->getY() + LANE_HEIGHT - PRESS_EFFECT_HEIGHT);
 		pressEffect->setBrush(pressEffectBrush);
 		pressEffect->setVisible(false);
-		root->addChild(pressEffect);
+		playContainer->addChild(pressEffect);
 		lanePressEffects.push_back(pressEffect);
 
 		const wchar_t* labelText = gLaneDesc[laneIndex].displayLabel.c_str();
@@ -304,7 +374,7 @@ void World_RhythmGame::initializeStage() {
 		laneLabel->setX(laneColumn->getX() + LANE_LABEL_OFFSET_X);
 		laneLabel->setY(laneColumn->getY() + LANE_HEIGHT + LANE_LABEL_OFFSET_Y);
 		laneLabel->setFont("defaultLarge");
-		root->addChild(laneLabel);
+		playContainer->addChild(laneLabel);
 
 		auto noteBrush = (gLaneDesc[laneIndex].noteColor == NOTE_COLOR_BLUE)
 			? blueNoteBrush
@@ -317,8 +387,8 @@ void World_RhythmGame::initializeStage() {
 		noteObjectPool.push_back(new LaneNote());
 	}
 
-	noteParent = new DisplayObject2D;
-	root->addChild(noteParent);
+	noteContainer = new DisplayObject2D;
+	playContainer->addChild(noteContainer);
 
 	// Place the judge label in front of notes.
 	judgeLabel = new pathos::Label(L"PERFECT");
@@ -326,7 +396,13 @@ void World_RhythmGame::initializeStage() {
 	judgeLabel->setY(0.5f * (LANE_Y0 + LANE_HEIGHT));
 	judgeLabel->setColor(JUDGE_COLOR);
 	judgeLabel->setFont("defaultLarge");
-	root->addChild(judgeLabel);
+	playContainer->addChild(judgeLabel);
+
+	scoreboardRect = new pathos::Rectangle(SCOREBOARD_WIDTH + 2 * SCOREBOARD_MARGIN_X, SCOREBOARD_HEIGHT);
+	scoreboardRect->setX(getLaneX(LANE_COUNT + 1) + SCOREBOARD_OFFSET_X - SCOREBOARD_MARGIN_X);
+	scoreboardRect->setY(SCORE_LABEL_Y0);
+	scoreboardRect->setBrush(new SolidColorBrush(0.1f, 0.1f, 0.1f));
+	playContainer->addChild(scoreboardRect);
 
 	perfectLabel = new pathos::Label(L"PERFECT : 0");
 	goodLabel    = new pathos::Label(L"GOOD    : 0");
@@ -340,25 +416,83 @@ void World_RhythmGame::initializeStage() {
 	perfectLabel->setFont("defaultLarge");
 	goodLabel->setFont("defaultLarge");
 	missLabel->setFont("defaultLarge");
-	root->addChild(perfectLabel);
-	root->addChild(goodLabel);
-	root->addChild(missLabel);
+	perfectLabel->setColor(PERFECT_LABEL_COLOR);
+	goodLabel->setColor(GOOD_LABEL_COLOR);
+	missLabel->setColor(MISS_LABEL_COLOR);
+	playContainer->addChild(perfectLabel);
+	playContainer->addChild(goodLabel);
+	playContainer->addChild(missLabel);
 }
 
 void World_RhythmGame::startMusic() {
-	if (initGameTime < 0.0f) {
-		std::string mp3Path = ResourceFinder::get().find(TEMP_MP3_PATH);
-		if (mp3Path.size() > 0) {
-			bool bSuccess = gBass->playFromFile(mp3Path.c_str(), TEMP_VOLUME);
+	if (gameState != GameState::BrowseMusic || initGameTime >= 0.0f) {
+		return;
+	}
 
-			scoreboardData.clearScore();
+	int32 ix = browserWidget->getSelectedIndex();
+	if (ix == -1) {
+		return;
+	}
 
-			lastSearchedEventIndex = 0;
-			initGameTime = gEngine->getWorldTime();
+	MusicDatabaseItem& item = musicDatabase.items[ix];
+
+	std::string mp3Path = ResourceFinder::get().find(item.musicFile);
+	if (mp3Path.size() == 0) {
+		LOG(LogError, "Failed to open mp3 file: %s", item.musicFile.c_str());
+		return;
+	}
+
+	// Record (load)
+	std::string recordPath = ResourceFinder::get().find(item.recordFile);
+	if (recordPath.size() == 0) {
+		LOG(LogError, "Failed to open record file: %s", item.recordFile.c_str());
+		return;
+	}
+	std::fstream archive(recordPath, std::ios::in);
+	if (archive.is_open() == false) {
+		LOG(LogError, "Failed to load record: %s", recordPath.c_str());
+		return;
+	}
+	loadMusicRecord(archive, loadedRecord);
+	LOG(LogDebug, "Load record (%u): %s", loadedRecord.getTotalLaneKeyEvents(), recordPath.c_str());
+
+	// Load background image
+	std::string backgroundPath = ResourceFinder::get().find(item.backgroundFile);
+	if (backgroundPath.size() == 0) {
+		background->setBrush(backgroundFallbackBrush);
+		LOG(LogError, "Failed to find background: %s", item.backgroundFile.c_str());
+	} else {
+		auto imageBlob = pathos::loadImage(backgroundPath.c_str());
+		if (imageBlob == nullptr) {
+			background->setBrush(backgroundFallbackBrush);
+			LOG(LogError, "Failed to load background: %s", backgroundPath.c_str());
 		} else {
-			LOG(LogError, "Failed to open mp3 file: %s", TEMP_MP3_PATH);
+			GLuint oldTexture = backgroundImageBrush->getTexture();
+			if (oldTexture != 0) {
+				ENQUEUE_RENDER_COMMAND([oldTexture](RenderCommandList& cmdList) {
+					cmdList.deleteTextures(1, &oldTexture);
+				});
+			}
+
+			GLuint imageTexture = pathos::createTextureFromBitmap(imageBlob, false, false, "background_image", true);
+			backgroundImageBrush->setTexture(imageTexture);
+			background->setBrush(backgroundImageBrush);
 		}
 	}
+
+	bool bSuccess = gBass->playFromFile(mp3Path.c_str(), TEMP_VOLUME);
+	if (bSuccess == false) {
+		return;
+	}
+
+	browserWidget->setVisible(false);
+	playContainer->setVisible(true);
+
+	// Initialize play data
+	scoreboardData.clearScore();
+	lastSearchedEventIndex = 0;
+	initGameTime = gEngine->getWorldTime();
+	gameState = GameState::PlaySession;
 }
 
 void World_RhythmGame::updateNotes(float currT) {
@@ -379,7 +513,7 @@ void World_RhythmGame::updateNotes(float currT) {
 				LaneNote* newNote = allocNoteFromPool((int32)eventIndex, noteBrushes[evt.laneIndex]);
 				newNote->setX(getLaneX(evt.laneIndex));
 				column.push_back(newNote);
-				noteParent->addChild(newNote);
+				noteContainer->addChild(newNote);
 			}
 		}
 
@@ -420,7 +554,7 @@ void World_RhythmGame::updateNotes(float currT) {
 					scoreboardData.nMiss += 1;
 					setJudge(currentGameTime, JUDGE_TYPE_MISS);
 				}
-				noteParent->removeChild(note);
+				noteContainer->removeChild(note);
 				column.erase(column.begin() + i);
 				returnNoteToPool(note);
 				--i;
@@ -481,7 +615,18 @@ void World_RhythmGame::returnNoteToPool(LaneNote* note) {
 	noteObjectPool.push_back(note);
 }
 
+void World_RhythmGame::browseMusicList(int32 delta) {
+	if (gameState == GameState::BrowseMusic) {
+		int32 targetIx = browserWidget->getSelectedIndex() + delta;
+		browserWidget->selectItem(targetIx);
+	}
+}
+
 void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
+	if (gameState != GameState::PlaySession) {
+		return;
+	}
+
 	// Record input
 	if (laneKeyPressTimes[laneIndex] >= 0.0f) {
 		LOG(LogError, "[OnPress] Previous key press was not handled (lane %d)", laneIndex);
@@ -525,6 +670,10 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 }
 
 void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
+	if (gameState != GameState::PlaySession) {
+		return;
+	}
+
 	// Record input
 	float noteStartTime = laneKeyPressTimes[laneIndex];
 	float noteEndTime = currentGameTime;
