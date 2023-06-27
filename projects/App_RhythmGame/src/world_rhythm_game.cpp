@@ -1,5 +1,4 @@
 #include "world_rhythm_game.h"
-#include "bass_wrapper.h"
 
 #include "pathos/engine.h"
 #include "pathos/console.h"
@@ -47,8 +46,10 @@
 #define GOOD_LABEL_COLOR            vector3(0.8f, 0.8f, 0.8f)
 #define MISS_LABEL_COLOR            vector3(1.0f, 0.5f, 0.5f)
 
+// Delay in seconds before music starts when entering the play stage.
+#define PLAY_START_DELAY            3.0f
 // Time of seconds between appearing at the top and reaching at the bottom of lane.
-#define KEY_DROP_PERIOD             1.0f
+#define KEY_DROP_PERIOD             0.5f
 #define CATCH_RATIO_PERFECT         0.05f
 #define CATCH_RATIO_GOOD            0.1f
 
@@ -276,8 +277,21 @@ void World_RhythmGame::onDestroy() {
 }
 
 void World_RhythmGame::onTick(float deltaSeconds) {
-	currentGameTime = gEngine->getWorldTime() - initGameTime;
-	if (initGameTime >= 0.0f) {
+	if (gameState == GameState::PlaySession) {
+		currentGameTime = gEngine->getWorldTime() - initGameTime;
+		
+		// #todo-rhythm: More exact timing
+		if (currentGameTime >= 0.0f && bMusicStarted == false) {
+			musicStream->startPlay();
+			bMusicStarted = true;
+			countdownLabel->setVisible(false);
+		} else {
+			int32 countdown = (int32)(-currentGameTime) + 1;
+			wchar_t msg[32];
+			swprintf_s(msg, L"%d", countdown);
+			countdownLabel->setText(msg);
+		}
+
 		updateNotes(currentGameTime);
 	}
 }
@@ -396,7 +410,15 @@ void World_RhythmGame::initializePlayStage() {
 	judgeLabel->setY(0.5f * (LANE_Y0 + LANE_HEIGHT));
 	judgeLabel->setColor(JUDGE_COLOR);
 	judgeLabel->setFont("defaultLarge");
+	judgeLabel->setVisible(false);
 	playContainer->addChild(judgeLabel);
+
+	countdownLabel = new pathos::Label(L"0");
+	countdownLabel->setX(LANE_X0 - 90.0f + 0.5f * LANE_COUNT * (LANE_WIDTH + LANE_SPACE_X));
+	countdownLabel->setY(0.5f * (LANE_Y0 + LANE_HEIGHT));
+	countdownLabel->setColor(JUDGE_COLOR);
+	countdownLabel->setFont("defaultLarge");
+	playContainer->addChild(countdownLabel);
 
 	scoreboardRect = new pathos::Rectangle(SCOREBOARD_WIDTH + 2 * SCOREBOARD_MARGIN_X, SCOREBOARD_HEIGHT);
 	scoreboardRect->setX(getLaneX(LANE_COUNT + 1) + SCOREBOARD_OFFSET_X - SCOREBOARD_MARGIN_X);
@@ -425,7 +447,7 @@ void World_RhythmGame::initializePlayStage() {
 }
 
 void World_RhythmGame::startMusic() {
-	if (gameState != GameState::BrowseMusic || initGameTime >= 0.0f) {
+	if (gameState != GameState::BrowseMusic) {
 		return;
 	}
 
@@ -480,8 +502,8 @@ void World_RhythmGame::startMusic() {
 		}
 	}
 
-	bool bSuccess = gBass->playFromFile(mp3Path.c_str(), TEMP_VOLUME);
-	if (bSuccess == false) {
+	musicStream = gBass->createStreamFromFile(mp3Path.c_str(), TEMP_VOLUME);
+	if (musicStream == nullptr) {
 		return;
 	}
 
@@ -491,7 +513,7 @@ void World_RhythmGame::startMusic() {
 	// Initialize play data
 	scoreboardData.clearScore();
 	lastSearchedEventIndex = 0;
-	initGameTime = gEngine->getWorldTime();
+	initGameTime = gEngine->getWorldTime() + PLAY_START_DELAY;
 	gameState = GameState::PlaySession;
 }
 

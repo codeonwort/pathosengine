@@ -2,6 +2,7 @@
 
 #include "music_record.h"
 #include "music_database.h"
+#include "bass_wrapper.h"
 
 #include "pathos/scene/world.h"
 #include "pathos/util/log.h"
@@ -67,6 +68,9 @@ private:
 // Play stage
 private:
 	DisplayObject2D* playContainer = nullptr;
+	
+	BassStream* musicStream = nullptr;
+	bool bMusicStarted = false;
 
 	ScoreboardData scoreboardData;
 	int32 lastSearchedEventIndex = 0;
@@ -86,8 +90,10 @@ private:
 	Label* goodLabel = nullptr;
 	Label* missLabel = nullptr;
 
+	Label* countdownLabel = nullptr;
+
 	Label* judgeLabel = nullptr;
-	float judgeTime = -1.0f;
+	float judgeTime = -100.0f;
 
 	pathos::Rectangle* background = nullptr;
 	pathos::Brush* backgroundFallbackBrush = nullptr;

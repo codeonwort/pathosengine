@@ -8,6 +8,9 @@ using namespace pathos;
 
 #pragma comment(lib, "bass.lib")
 
+//////////////////////////////////////////////////////////////////////////
+// BassWrapper
+
 BassWrapper* gBass = nullptr;
 
 bool BassWrapper::initializeBASS() {
@@ -61,7 +64,7 @@ bool BassWrapper::destroy() {
 	return BASS_Free();
 }
 
-bool BassWrapper::playFromFile(const char* filepath, float volume) {
+BassStream* BassWrapper::createStreamFromFile(const char* filepath, float volume) {
 	DWORD flags = 0;
 	HSTREAM hstream = BASS_StreamCreateFile(
 		false,
@@ -72,11 +75,7 @@ bool BassWrapper::playFromFile(const char* filepath, float volume) {
 	);
 	if (hstream == 0) {
 		LOG(LogError, "[BASS] Failed to load: %s", filepath);
-		return false;
-	}
-	if (BASS_ChannelStart(hstream) == false) {
-		LOG(LogError, "[BASS] Failed to start: %s", filepath);
-		return false;
+		return nullptr;
 	}
 
 	//BASS_CHANNELINFO info;
@@ -84,11 +83,21 @@ bool BassWrapper::playFromFile(const char* filepath, float volume) {
 
 	BASS_ChannelSetAttribute(hstream, BASS_ATTRIB_VOLDSP, volume);
 
-	return true;
+	return new BassStream(hstream, filepath);
 }
 
-bool BassWrapper::playFromFile(const wchar_t* wFilepath, float volume) {
+BassStream* BassWrapper::createStreamFromFile(const wchar_t* wFilepath, float volume) {
 	std::string filepath;
 	WCHAR_TO_MBCS(wFilepath, filepath);
-	return playFromFile(filepath.c_str(), volume);
+	return createStreamFromFile(filepath.c_str(), volume);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// BassStream
+
+void BassStream::startPlay() {
+	DWORD hstream = (DWORD)handle;
+	if (BASS_ChannelStart(hstream) == false) {
+		LOG(LogError, "[BASS] Failed to start: %s", source.c_str());
+	}
 }

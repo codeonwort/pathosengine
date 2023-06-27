@@ -1,5 +1,24 @@
 #pragma once
 
+#include "badger/types/int_types.h"
+#include <string>
+
+class BassStream {
+
+public:
+	BassStream(uint64 inHandle, const char* inSource)
+		: handle(inHandle)
+		, source(inSource)
+	{
+	}
+
+	void startPlay();
+
+private:
+	uint64 handle = 0; // HSTREAM
+	std::string source;
+};
+
 class BassWrapper {
 
 public:
@@ -11,8 +30,8 @@ private:
 	bool destroy();
 
 public:
-	bool playFromFile(const char* filepath, float volume = 1.0f);
-	bool playFromFile(const wchar_t* wFilepath, float volume = 1.0f);
+	BassStream* createStreamFromFile(const char* filepath, float volume = 1.0f);
+	BassStream* createStreamFromFile(const wchar_t* wFilepath, float volume = 1.0f);
 
 };
 
