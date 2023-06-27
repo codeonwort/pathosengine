@@ -637,6 +637,7 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 	lanePressEffects[laneIndex]->setVisible(true);
 
 	// Process current play
+	bool bAnyCatched = false;
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {
 		if (note->getCatched()) {
 			continue;
@@ -652,6 +653,7 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 			} else {
 				// Long note score is processed in release event.
 			}
+			bAnyCatched = true;
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
 		} else if (ratio <= CATCH_RATIO_GOOD) {
@@ -660,10 +662,13 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 			} else {
 				// Long note score is processed in release event.
 			}
+			bAnyCatched = true;
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_GOOD);
-		} else {
-			// Assumes notes are sorted by time.
+		}
+
+		// Assumes notes are sorted by time.
+		if (bAnyCatched) {
 			break;
 		}
 	}
