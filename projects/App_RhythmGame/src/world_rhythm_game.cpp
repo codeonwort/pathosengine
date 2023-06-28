@@ -3,15 +3,13 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/loader/imageloader.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/brush.h"
 #include "pathos/overlay/label.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
-
-// #todo-rhythm: image widget test
-#include "pathos/loader/imageloader.h"
 
 #include "badger/math/minmax.h"
 #include <sstream>
@@ -24,10 +22,10 @@
 #define LANE_SPACE_X                10
 #define LANE_WIDTH                  90
 #define LANE_HEIGHT                 800
+// Additional height after crossline.
+#define LANE_HEIGHT_EXTRA           60
 #define LANE_LABEL_OFFSET_X         (LANE_WIDTH / 2 - 10)
 #define LANE_LABEL_OFFSET_Y         20
-
-#define CROSSLINE_HEIGHT            10
 
 #define JUDGE_DISPLAY_PERIOD        0.5f
 #define JUDGE_TYPE_PERFECT          0
@@ -63,11 +61,14 @@
 #define NOTE_COLOR_BLUE             0
 #define NOTE_COLOR_YELLOW           1
 
+#define CROSSLINE_HEIGHT            NOTE_HEIGHT
+#define CROSSLINE_COLOR             vector4(0.9f, 0.1f, 0.1f, 0.3f)
+
 #define PRESS_EFFECT_WIDTH          LANE_WIDTH
 #define PRESS_EFFECT_HEIGHT         120
 
-#define CATCH_EFFECT_WIDTH          LANE_WIDTH
-#define CATCH_EFFECT_HEIGHT         LANE_WIDTH
+#define CATCH_EFFECT_WIDTH          (1.5f * LANE_WIDTH)
+#define CATCH_EFFECT_HEIGHT         (1.5f * LANE_WIDTH)
 #define CATCH_EFFECT_PERIOD         0.25f
 
 #define BROWSER_X0                  100
@@ -333,6 +334,10 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 			countdownLabel->setText(msg);
 		}
 
+		// #todo-rhythm: Auto play mode
+		// Gather notes that should be pressed now and invoke onPressLaneKey().
+		// If anything misses, it means my catch logic has a bug.
+
 		updateNotes(currentGameTime);
 	}
 }
@@ -370,14 +375,6 @@ void World_RhythmGame::initializePlayStage() {
 	lanePressEffects.reserve(LANE_COUNT);
 	laneCatchffects.reserve(LANE_COUNT);
 	noteBrushes.reserve(LANE_COUNT);
-
-	// #todo-rhythm: Adjust crossline layout
-	auto crosslineBrush = new pathos::SolidColorBrush(0.1f, 0.8f, 0.1f);
-	pathos::Rectangle* crossline = new pathos::Rectangle((LANE_WIDTH + LANE_SPACE_X) * LANE_COUNT - LANE_SPACE_X, CROSSLINE_HEIGHT);
-	crossline->setX(LANE_X0);
-	crossline->setY(LANE_Y0 + LANE_HEIGHT - CROSSLINE_HEIGHT / 2);
-	crossline->setBrush(crosslineBrush);
-	playContainer->addChild(crossline);
 
 	// note brushes
 	pathos::Brush* blueNoteBrush = nullptr;
@@ -436,12 +433,27 @@ void World_RhythmGame::initializePlayStage() {
 		}
 	}
 	
+	// Lane columns
+	std::vector<pathos::Rectangle*> laneColumnRects;
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
-		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
+		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT + LANE_HEIGHT_EXTRA);
 		laneColumn->setX(getLaneX((int32)laneIndex));
 		laneColumn->setY((float)LANE_Y0);
 		laneColumn->setBrush(laneBrush);
 		playContainer->addChild(laneColumn);
+
+		laneColumnRects.push_back(laneColumn);
+	}
+
+	auto crosslineBrush = new pathos::SolidColorBrush(CROSSLINE_COLOR);
+	pathos::Rectangle* crossline = new pathos::Rectangle((LANE_WIDTH + LANE_SPACE_X) * LANE_COUNT - LANE_SPACE_X, CROSSLINE_HEIGHT);
+	crossline->setX(LANE_X0);
+	crossline->setY(LANE_Y0 + LANE_HEIGHT - CROSSLINE_HEIGHT / 2);
+	crossline->setBrush(crosslineBrush);
+	playContainer->addChild(crossline);
+
+	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
+		auto laneColumn = laneColumnRects[laneIndex];
 
 		pathos::Rectangle* pressEffect = new pathos::Rectangle(PRESS_EFFECT_WIDTH, PRESS_EFFECT_HEIGHT);
 		pressEffect->setX(laneColumn->getX());
@@ -453,7 +465,7 @@ void World_RhythmGame::initializePlayStage() {
 
 		if (bCatchEffectAllValid) {
 			CatchEffect* catchEffect = new CatchEffect(catchEffectTextures);
-			catchEffect->setX(laneColumn->getX());
+			catchEffect->setX(laneColumn->getX() + (LANE_WIDTH - CATCH_EFFECT_WIDTH) / 2);
 			catchEffect->setY(laneColumn->getY() + LANE_HEIGHT - CATCH_EFFECT_HEIGHT / 2);
 			catchEffect->setVisible(false);
 			playContainer->addChild(catchEffect);
@@ -463,7 +475,7 @@ void World_RhythmGame::initializePlayStage() {
 		const wchar_t* labelText = gLaneDesc[laneIndex].displayLabel.c_str();
 		pathos::Label* laneLabel = new pathos::Label(labelText);
 		laneLabel->setX(laneColumn->getX() + LANE_LABEL_OFFSET_X);
-		laneLabel->setY(laneColumn->getY() + LANE_HEIGHT + LANE_LABEL_OFFSET_Y);
+		laneLabel->setY(laneColumn->getY() + LANE_HEIGHT + LANE_HEIGHT_EXTRA + LANE_LABEL_OFFSET_Y);
 		laneLabel->setFont("defaultLarge");
 		playContainer->addChild(laneLabel);
 

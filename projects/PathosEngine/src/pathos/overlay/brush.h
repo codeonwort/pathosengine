@@ -18,10 +18,11 @@ namespace pathos {
 	// Fill the object with a solid color
 	class SolidColorBrush : public Brush {
 	public:
-		SolidColorBrush(float r, float g, float b);
-		SolidColorBrush(uint32 rgb);
+		SolidColorBrush(float r, float g, float b, float a = 1.0f);
+		SolidColorBrush(vector4 rgba);
+		SolidColorBrush(uint32 rgba);
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
-		void setColor(float r, float g, float b);
+		void setColor(float r, float g, float b, float a = 1.0f);
 		void setColor(uint32 colorHex);
 	private:
 		vector4 color;
