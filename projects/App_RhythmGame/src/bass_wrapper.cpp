@@ -101,3 +101,10 @@ void BassStream::startPlay() {
 		LOG(LogError, "[BASS] Failed to start: %s", source.c_str());
 	}
 }
+
+void BassStream::setVolume(float vol) {
+	if (handle != 0) {
+		DWORD hstream = (DWORD)handle;
+		BASS_ChannelSetAttribute(hstream, BASS_ATTRIB_VOLDSP, vol);
+	}
+}

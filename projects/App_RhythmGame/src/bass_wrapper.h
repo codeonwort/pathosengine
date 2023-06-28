@@ -13,6 +13,7 @@ public:
 	}
 
 	void startPlay();
+	void setVolume(float vol);
 
 private:
 	uint64 handle = 0; // HSTREAM

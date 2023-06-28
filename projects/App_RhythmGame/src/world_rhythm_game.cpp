@@ -14,6 +14,9 @@
 #include "badger/math/minmax.h"
 #include <sstream>
 
+// #todo-rhythm: Bugged
+#define DEBUG_AUTO_PLAY_MODE        0
+
 #define KEY_RECORDS_NUM_RESERVED    16384
 
 #define LANE_COUNT                  _countof(gLaneDesc)
@@ -79,6 +82,8 @@
 #define BROWSER_ITEM_DEFAULT_COLOR  vector3(1.0f, 1.0f, 1.0f)
 #define BROWSER_ITEM_SELECTED_COLOR vector3(1.0f, 0.7f, 0.2f)
 
+#define DEFAULT_MUSIC_VOLUME        0.5f
+
 // #todo-rhythm: Temp files
 #define GAME_RESOURCE_DIR           "../../resources/rhythm_game/"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
@@ -86,7 +91,7 @@
 #define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
 #define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
 #define TEMP_PRESS_EFFECT_IMAGE     "rhythm_game/press_effect.png"
-#define TEMP_VOLUME                 0.5f
+
 const char* TEMP_CATCH_EFFECT_IMAGES[] = {
 	"rhythm_game/catch_effect_0.png",
 	"rhythm_game/catch_effect_1.png",
@@ -265,6 +270,18 @@ void World_RhythmGame::onInitialize() {
 		LOG(LogDebug, "Load database: %u items", musicDatabase.numItems());
 	}
 
+	musicVolume = DEFAULT_MUSIC_VOLUME;
+	gEngine->registerConsoleCommand("music_volume", [this](const std::string& command) {
+		float vol;
+		int ret = sscanf_s(command.c_str(), "music_volume %f", &vol);
+		if (ret != 1) {
+			gConsole->addLine(L"Usage: music_volume vol", false, true);
+		} else {
+			this->setMusicVolume(vol);
+			musicVolume = vol;
+		}
+	});
+
 	// Input
 	inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	for (size_t i = 0; i < LANE_COUNT; ++i) {
@@ -334,11 +351,44 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 			countdownLabel->setText(msg);
 		}
 
-		// #todo-rhythm: Auto play mode
+#if DEBUG_AUTO_PLAY_MODE
 		// Gather notes that should be pressed now and invoke onPressLaneKey().
-		// If anything misses, it means my catch logic has a bug.
+		int32 totalEvent = (int32)loadedRecord.laneKeyEvents.size();
+		std::vector<int32> delayedReleaseLanes;
+		for (int32 eventIndex = autoPlaySearchStartIndex; eventIndex < totalEvent; ++eventIndex) {
+			bool catchAny = false;
+			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[eventIndex];
+			if (evt.pressTime - KEY_DROP_PERIOD <= currentGameTime && currentGameTime <= evt.pressTime) {
+				onPressLaneKey(evt.laneIndex);
+				catchAny = true;
+			}
+			if (evt.isShortNote()) {
+				if (catchAny) {
+					delayedReleaseLanes.push_back(evt.laneIndex);
+				}
+			} else {
+				if (evt.releaseTime - KEY_DROP_PERIOD <= currentGameTime && currentGameTime <= evt.releaseTime) {
+					onReleaseLaneKey(evt.laneIndex);
+					catchAny = true;
+				}
+			}
+			if (!catchAny) {
+				if (autoPlaySearchStartIndex != eventIndex) {
+					LOG(LogDebug, "Update start index: %d", autoPlaySearchStartIndex);
+				}
+				autoPlaySearchStartIndex = eventIndex;
+				break;
+			}
+		}
+#endif
 
 		updateNotes(currentGameTime);
+
+#if DEBUG_AUTO_PLAY_MODE
+		for (int32 delayedReleaseLane : delayedReleaseLanes) {
+			onReleaseLaneKey(delayedReleaseLane);
+		}
+#endif
 	}
 }
 
@@ -591,7 +641,7 @@ void World_RhythmGame::startMusic() {
 		}
 	}
 
-	musicStream = gBass->createStreamFromFile(mp3Path.c_str(), TEMP_VOLUME);
+	musicStream = gBass->createStreamFromFile(mp3Path.c_str(), musicVolume);
 	if (musicStream == nullptr) {
 		return;
 	}
@@ -602,6 +652,9 @@ void World_RhythmGame::startMusic() {
 	// Initialize play data
 	scoreboardData.clearScore();
 	lastSearchedEventIndex = 0;
+#if DEBUG_AUTO_PLAY_MODE
+	autoPlaySearchStartIndex = 0;
+#endif
 	initGameTime = gEngine->getWorldTime() + PLAY_START_DELAY;
 	gameState = GameState::PlaySession;
 }
@@ -731,6 +784,12 @@ LaneNote* World_RhythmGame::allocNoteFromPool(int32 eventIndex, pathos::Brush* b
 
 void World_RhythmGame::returnNoteToPool(LaneNote* note) {
 	noteObjectPool.push_back(note);
+}
+
+void World_RhythmGame::setMusicVolume(float value) {
+	if (musicStream != nullptr) {
+		musicStream->setVolume(value);
+	}
 }
 
 void World_RhythmGame::browseMusicList(int32 delta) {

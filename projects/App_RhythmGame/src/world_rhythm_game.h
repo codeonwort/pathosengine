@@ -29,6 +29,7 @@ enum class GameState {
 class World_RhythmGame : public World {
 
 public:
+	void setMusicVolume(float value);
 	void browseMusicList(int32 delta);
 	void onPressLaneKey(int32 laneIndex);
 	void onReleaseLaneKey(int32 laneIndex);
@@ -71,6 +72,7 @@ private:
 	DisplayObject2D* playContainer = nullptr;
 	
 	BassStream* musicStream = nullptr;
+	float musicVolume = 1.0f;
 	bool bMusicStarted = false;
 
 	ScoreboardData scoreboardData;
@@ -82,6 +84,8 @@ private:
 
 	std::vector<CatchEffect*> laneCatchffects;
 	bool bCatchEffectAllValid = false;
+
+	int32 autoPlaySearchStartIndex = 0;
 
 private:
 	LaneNote* allocNoteFromPool(int32 eventIndex, pathos::Brush* brush);
