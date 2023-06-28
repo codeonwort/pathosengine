@@ -18,6 +18,7 @@ namespace pathos {
 	class DisplayObject2D;
 }
 class LaneNote;
+class CatchEffect;
 class MusicBrowserWidget;
 
 enum class GameState {
@@ -78,6 +79,9 @@ private:
 	std::vector<std::vector<LaneNote*>> laneNoteColumns;
 	std::vector<pathos::Brush*> noteBrushes;
 	std::vector<pathos::Rectangle*> lanePressEffects;
+
+	std::vector<CatchEffect*> laneCatchffects;
+	bool bCatchEffectAllValid = false;
 
 private:
 	LaneNote* allocNoteFromPool(int32 eventIndex, pathos::Brush* brush);

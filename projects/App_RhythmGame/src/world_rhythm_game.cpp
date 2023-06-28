@@ -49,7 +49,7 @@
 // Delay in seconds before music starts when entering the play stage.
 #define PLAY_START_DELAY            3.0f
 // Time of seconds between appearing at the top and reaching at the bottom of lane.
-#define KEY_DROP_PERIOD             0.5f
+#define KEY_DROP_PERIOD             0.8f
 #define CATCH_RATIO_PERFECT         0.05f
 #define CATCH_RATIO_GOOD            0.1f
 
@@ -65,6 +65,10 @@
 
 #define PRESS_EFFECT_WIDTH          LANE_WIDTH
 #define PRESS_EFFECT_HEIGHT         120
+
+#define CATCH_EFFECT_WIDTH          LANE_WIDTH
+#define CATCH_EFFECT_HEIGHT         LANE_WIDTH
+#define CATCH_EFFECT_PERIOD         0.25f
 
 #define BROWSER_X0                  100
 #define BROWSER_Y0                  100
@@ -82,6 +86,13 @@
 #define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
 #define TEMP_PRESS_EFFECT_IMAGE     "rhythm_game/press_effect.png"
 #define TEMP_VOLUME                 0.5f
+const char* TEMP_CATCH_EFFECT_IMAGES[] = {
+	"rhythm_game/catch_effect_0.png",
+	"rhythm_game/catch_effect_1.png",
+	"rhythm_game/catch_effect_2.png",
+	"rhythm_game/catch_effect_3.png",
+	"rhythm_game/catch_effect_4.png",
+};
 
 struct LaneDesc {
 	std::wstring displayLabel;
@@ -125,6 +136,36 @@ public:
 private:
 	int32 eventIndex = -1;
 	bool bCatched = false;
+};
+
+class CatchEffect : public pathos::Rectangle {
+public:
+	CatchEffect(const std::vector<GLuint>& inEffectTextures)
+		: Rectangle(CATCH_EFFECT_WIDTH, CATCH_EFFECT_HEIGHT)
+		, effectTextures(inEffectTextures)
+	{
+		effectBrush = new ImageBrush(effectTextures[0]);
+		setBrush(effectBrush);
+	}
+	void playEffect(float currentTime) {
+		startTime = currentTime;
+	}
+	void updateEffect(float currentTime) {
+		if (currentTime - startTime <= CATCH_EFFECT_PERIOD) {
+			float k = (currentTime - startTime) / CATCH_EFFECT_PERIOD;
+			uint32 numTextures = (uint32)effectTextures.size();
+			uint32 ix = (uint32)(k * (float)numTextures);
+			ix = badger::clamp(0u, ix, numTextures - 1);
+			effectBrush->setTexture(effectTextures[ix]);
+			setVisible(true);
+		} else {
+			setVisible(false);
+		}
+	}
+private:
+	ImageBrush* effectBrush = nullptr;
+	std::vector<GLuint> effectTextures;
+	float startTime = -1000.0f;
 };
 
 class MusicListItemWidget : public pathos::Label {};
@@ -327,6 +368,7 @@ void World_RhythmGame::initializePlayStage() {
 
 	laneNoteColumns.resize(LANE_COUNT);
 	lanePressEffects.reserve(LANE_COUNT);
+	laneCatchffects.reserve(LANE_COUNT);
 	noteBrushes.reserve(LANE_COUNT);
 
 	// #todo-rhythm: Adjust crossline layout
@@ -367,6 +409,32 @@ void World_RhythmGame::initializePlayStage() {
 			pressEffectBrush = new pathos::SolidColorBrush(0.1f, 0.9f, 0.1f);
 		}
 	}
+
+	bCatchEffectAllValid = true;
+	std::vector<pathos::BitmapBlob*> catchEffectBlobs;
+	std::vector<GLuint> catchEffectTextures;
+	for (size_t i = 0; i < _countof(TEMP_CATCH_EFFECT_IMAGES); ++i) {
+		auto catchEffectBlob = pathos::loadImage(TEMP_CATCH_EFFECT_IMAGES[i]);
+		if (catchEffectBlob != nullptr) {
+			catchEffectBlobs.push_back(catchEffectBlob);
+		} else {
+			bCatchEffectAllValid = false;
+			break;
+		}
+	}
+	if (bCatchEffectAllValid == false) {
+		for (pathos::BitmapBlob* blob : catchEffectBlobs) {
+			delete blob;
+		}
+	} else {
+		int32 i = 0;
+		for (pathos::BitmapBlob* blob : catchEffectBlobs) {
+			char msg[64];
+			sprintf_s(msg, "catch_effect_%d", i++);
+			GLuint effectTexture = pathos::createTextureFromBitmap(blob, false, false, msg, true);
+			catchEffectTextures.push_back(effectTexture);
+		}
+	}
 	
 	for (uint32 laneIndex = 0; laneIndex < LANE_COUNT; ++laneIndex) {
 		pathos::Rectangle* laneColumn = new pathos::Rectangle(LANE_WIDTH, LANE_HEIGHT);
@@ -382,6 +450,15 @@ void World_RhythmGame::initializePlayStage() {
 		pressEffect->setVisible(false);
 		playContainer->addChild(pressEffect);
 		lanePressEffects.push_back(pressEffect);
+
+		if (bCatchEffectAllValid) {
+			CatchEffect* catchEffect = new CatchEffect(catchEffectTextures);
+			catchEffect->setX(laneColumn->getX());
+			catchEffect->setY(laneColumn->getY() + LANE_HEIGHT - CATCH_EFFECT_HEIGHT / 2);
+			catchEffect->setVisible(false);
+			playContainer->addChild(catchEffect);
+			laneCatchffects.push_back(catchEffect);
+		}
 
 		const wchar_t* labelText = gLaneDesc[laneIndex].displayLabel.c_str();
 		pathos::Label* laneLabel = new pathos::Label(labelText);
@@ -584,6 +661,13 @@ void World_RhythmGame::updateNotes(float currT) {
 		}
 	}
 
+	// Update catch effects.
+	if (bCatchEffectAllValid) {
+		for (CatchEffect* catchEffect : laneCatchffects) {
+			catchEffect->updateEffect(currT);
+		}
+	}
+
 	// Update visibility of judge label.
 	bool bShowJudge = (currT - judgeTime <= JUDGE_DISPLAY_PERIOD);
 	judgeLabel->setVisible(bShowJudge);
@@ -678,6 +762,9 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 			bAnyCatched = true;
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
+			if (bCatchEffectAllValid) {
+				laneCatchffects[laneIndex]->playEffect(currentGameTime);
+			}
 		} else if (ratio <= CATCH_RATIO_GOOD) {
 			if (isShortNote) {
 				scoreboardData.nGood += 1;
@@ -687,6 +774,9 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 			bAnyCatched = true;
 			note->setCatched(true);
 			setJudge(currentGameTime, JUDGE_TYPE_GOOD);
+			if (bCatchEffectAllValid) {
+				laneCatchffects[laneIndex]->playEffect(currentGameTime);
+			}
 		}
 
 		// Assumes notes are sorted by time.
@@ -733,9 +823,15 @@ void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
 			if (ratio <= CATCH_RATIO_PERFECT) {
 				scoreboardData.nPerfect += 1;
 				setJudge(currentGameTime, JUDGE_TYPE_PERFECT);
+				if (bCatchEffectAllValid) {
+					laneCatchffects[laneIndex]->playEffect(currentGameTime);
+				}
 			} else if (ratio <= CATCH_RATIO_GOOD) {
 				scoreboardData.nGood += 1;
 				setJudge(currentGameTime, JUDGE_TYPE_GOOD);
+				if (bCatchEffectAllValid) {
+					laneCatchffects[laneIndex]->playEffect(currentGameTime);
+				}
 			} else {
 				note->setCatched(false);
 				// Assumes notes are sorted by time.
