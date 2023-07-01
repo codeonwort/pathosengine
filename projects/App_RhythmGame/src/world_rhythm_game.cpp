@@ -140,7 +140,7 @@ public:
 	void setCatched(bool value) { bCatched = value; }
 	bool getCatched() const { return bCatched; }
 private:
-	int32 eventIndex = -1;
+	int32 eventIndex = -1; // local index in lane
 	bool bCatched = false;
 };
 
@@ -232,7 +232,7 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 	float pressTime = -1.0f;
 	float releaseTime = -1.0f;
 
-	outRecord.clearRecord(KEY_RECORDS_NUM_RESERVED);
+	outRecord.clearRecord(LANE_COUNT, KEY_RECORDS_NUM_RESERVED);
 
 	std::string line;
 	while (std::getline(archive, line)) {
@@ -256,9 +256,11 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 	CHECK(binaryFormat == false);
 
 	char buf[1024];
-	for (const LaneKeyEvent& evt : playRecord.laneKeyEvents) {
-		sprintf_s(buf, "%d %f %f", evt.laneIndex, evt.pressTime, evt.releaseTime);
-		fileWriter.write(buf);
+	for (uint32 laneIx = 0; laneIx < LANE_COUNT; ++laneIx) {
+		for (const LaneKeyEvent& evt : playRecord.getLaneEvents(laneIx)) {
+			sprintf_s(buf, "%d %f %f", evt.laneIndex, evt.pressTime, evt.releaseTime);
+			fileWriter.write(buf);
+		}
 	}
 
 	fileWriter.flush();
@@ -320,7 +322,7 @@ void World_RhythmGame::onInitialize() {
 	// Record (save)
 	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
 	playRecordFileWriter.initialize(TEMP_RECORD_SAVE_PATH);
-	recordToSave.clearRecord(KEY_RECORDS_NUM_RESERVED);
+	recordToSave.clearRecord(LANE_COUNT, KEY_RECORDS_NUM_RESERVED);
 	gEngine->registerConsoleCommand("dump_play_record", [this](const std::string& command) {
 		auto& fileWriter = this->playRecordFileWriter;
 		auto& record = this->recordToSave;
@@ -628,7 +630,8 @@ void World_RhythmGame::startPlaySession() {
 	LOG(LogDebug, "Load record (%u): %s", loadedRecord.getTotalLaneKeyEvents(), recordPath.c_str());
 
 	// Record (save)
-	recordToSave.clearRecord(KEY_RECORDS_NUM_RESERVED);
+	recordToSave.clearRecord(LANE_COUNT, KEY_RECORDS_NUM_RESERVED);
+	laneKeyPressTimes.clear();
 	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
 
 	// Load background image
@@ -665,7 +668,8 @@ void World_RhythmGame::startPlaySession() {
 
 	// Initialize play data
 	scoreboardData.clearScore();
-	lastSearchedEventIndex = 0;
+	lastSearchedEventIndex.clear();
+	lastSearchedEventIndex.resize(LANE_COUNT, 0);
 #if DEBUG_AUTO_PLAY_MODE
 	autoPlaySearchStartIndex = 0;
 #endif
@@ -711,40 +715,45 @@ void World_RhythmGame::exitPlaySession() {
 }
 
 void World_RhythmGame::updateNotes(float currT) {
-	size_t totalEvent = loadedRecord.laneKeyEvents.size();
-	for (size_t eventIndex = lastSearchedEventIndex; eventIndex < totalEvent; ++eventIndex) {
-		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[eventIndex];
-		// Spawn new notes.
-		if (evt.pressTime - KEY_DROP_PERIOD <= currT && currT <= evt.pressTime) {
-			std::vector<LaneNote*>& column = laneNoteColumns[evt.laneIndex];
-			bool shouldSpawn = true;
-			for (LaneNote* note : column) {
-				if (note->getEventIndex() == eventIndex) {
-					shouldSpawn = false;
-					break;
+	for (uint32 laneIx = 0; laneIx < LANE_COUNT; ++laneIx) {
+		const std::vector<LaneKeyEvent>& laneEvents = loadedRecord.getLaneEvents(laneIx);
+		for (size_t eventIndex = lastSearchedEventIndex[laneIx]; eventIndex < laneEvents.size(); ++eventIndex) {
+			const LaneKeyEvent& evt = laneEvents[eventIndex];
+			// Spawn new notes.
+			if (evt.pressTime - KEY_DROP_PERIOD <= currT && currT <= evt.pressTime) {
+				std::vector<LaneNote*>& column = laneNoteColumns[evt.laneIndex];
+				bool shouldSpawn = true;
+				for (LaneNote* note : column) {
+					if (note->getEventIndex() == eventIndex) {
+						shouldSpawn = false;
+						break;
+					}
+				}
+				if (shouldSpawn) {
+					LaneNote* newNote = allocNoteFromPool((int32)eventIndex, noteBrushes[evt.laneIndex]);
+					newNote->setX(getLaneX(evt.laneIndex));
+					column.push_back(newNote);
+					noteContainer->addChild(newNote);
 				}
 			}
-			if (shouldSpawn) {
-				LaneNote* newNote = allocNoteFromPool((int32)eventIndex, noteBrushes[evt.laneIndex]);
-				newNote->setX(getLaneX(evt.laneIndex));
-				column.push_back(newNote);
-				noteContainer->addChild(newNote);
-			}
-		}
 
-		// Assumes events are sorted by time.
-		if (currT < evt.pressTime - KEY_DROP_PERIOD) {
-			lastSearchedEventIndex = (int32)eventIndex;
-			break;
+			// Assumes events are sorted by time.
+			if (currT < evt.pressTime - KEY_DROP_PERIOD) {
+				lastSearchedEventIndex[laneIx] = (int32)eventIndex;
+				break;
+			}
 		}
 	}
 
 	// Update note positions.
-	for (auto& column : laneNoteColumns) {
+	for (uint32 laneIx = 0; laneIx < LANE_COUNT; ++laneIx) {
+		auto& column = laneNoteColumns[laneIx];
+		const auto& laneEvents = loadedRecord.getLaneEvents(laneIx);
+
 		for (size_t i = 0; i < column.size(); ++i) {
 			LaneNote* note = column[i];
 
-			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+			const LaneKeyEvent& evt = laneEvents[note->getEventIndex()];
 			bool isShortNote = evt.isShortNote();
 
 			float pressDistance = (evt.pressTime - currT) / KEY_DROP_PERIOD;
@@ -865,13 +874,15 @@ void World_RhythmGame::onPressLaneKey(int32 laneIndex) {
 	lanePressEffects[laneIndex]->setVisible(true);
 
 	// Process current play
+	const auto& laneEvents = loadedRecord.getLaneEvents(laneIndex);
 	bool bAnyCatched = false;
+
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {
 		if (note->getCatched()) {
 			continue;
 		}
 
-		const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+		const LaneKeyEvent& evt = laneEvents[note->getEventIndex()];
 		bool isShortNote = evt.isShortNote();
 
 		float ratio = std::abs((evt.pressTime - currentGameTime) / KEY_DROP_PERIOD);
@@ -934,9 +945,10 @@ void World_RhythmGame::onReleaseLaneKey(int32 laneIndex) {
 	lanePressEffects[laneIndex]->setVisible(false);
 
 	// Process current play
+	const auto& laneEvents = loadedRecord.getLaneEvents(laneIndex);
 	for (LaneNote* note : laneNoteColumns[laneIndex]) {
 		if (note->getCatched()) {
-			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[note->getEventIndex()];
+			const LaneKeyEvent& evt = laneEvents[note->getEventIndex()];
 			if (evt.isShortNote()) {
 				continue;
 			}

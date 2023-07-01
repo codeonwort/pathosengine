@@ -13,16 +13,29 @@ struct LaneKeyEvent {
 };
 
 struct PlayRecord {
-	void clearRecord(size_t numReserved);
+	void clearRecord(uint32 numLanes, size_t numReserved);
 
 	void addShortNoteEvent(int32 laneIndex, float time);
 	void addLongNoteEvent(int32 laneIndex, float startTime, float endTime);
+
+	// Invoke after adding all note events.
 	void finalizeLoad();
 
-	uint32 getTotalLaneKeyEvents() const;
+	inline const std::vector<LaneKeyEvent>& getLaneEvents(uint32 laneIx) const {
+		return laneKeyEvents[laneIx];
+	}
 
-public:
-	std::vector<LaneKeyEvent> laneKeyEvents;
+	inline uint32 getTotalLaneKeyEvents() const {
+		return (uint32)flattenedEvents.size();
+	}
+
+private:
+	uint32 laneCount = 0;
+	std::vector<std::vector<LaneKeyEvent>> laneKeyEvents;
+
+	// Temp storage
+	std::vector<LaneKeyEvent> flattenedEvents;
+	std::vector<uint32> numEventsPerLane;
 };
 
 struct ScoreboardData {

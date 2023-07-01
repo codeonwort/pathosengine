@@ -78,7 +78,7 @@ private:
 	bool bMusicStarted = false;
 
 	ScoreboardData scoreboardData;
-	int32 lastSearchedEventIndex = 0;
+	std::vector<int32> lastSearchedEventIndex;
 
 	std::vector<std::vector<LaneNote*>> laneNoteColumns;
 	std::vector<pathos::Brush*> noteBrushes;
