@@ -23,4 +23,4 @@ struct MusicDatabase {
 };
 
 // Returns false if failed to read the database.
-bool loadMusicDatabase(const char* filepath, MusicDatabase& outDB);
+bool loadMusicDatabase(const char* filepath, const char* overridePath, MusicDatabase& outDB);

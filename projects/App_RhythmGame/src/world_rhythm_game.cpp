@@ -14,7 +14,14 @@
 #include "badger/math/minmax.h"
 #include <sstream>
 
+// -----------------------------------------------------------------------
+// Debug configuration
+
 #define DEBUG_AUTO_PLAY_MODE        0
+#define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
+
+// -----------------------------------------------------------------------
+// Game constants
 
 #define KEY_RECORDS_NUM_RESERVED    16384
 
@@ -85,22 +92,24 @@
 
 #define DEFAULT_MUSIC_VOLUME        0.5f
 
-// #todo-rhythm: Temp files
+// Game resource files
 #define GAME_RESOURCE_DIR           "../../resources/rhythm_game/"
 #define GAME_EXTERNAL_RESOURCE_DIR  "../../resources_external/rhythm_game/"
-#define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
-#define TEMP_MUSIC_DATABASE         "rhythm_game/music_database.txt"
-#define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
-#define TEMP_YELLOW_NOTE_IMAGE      "rhythm_game/note_yellow.png"
-#define TEMP_PRESS_EFFECT_IMAGE     "rhythm_game/press_effect.png"
-
-const char* TEMP_CATCH_EFFECT_IMAGES[] = {
+#define MUSIC_DATABASE              "rhythm_game/music_database.txt"
+#define MUSIC_DATABASE_OVERRIDE     "rhythm_game/music_database_override.txt"
+#define BLUE_NOTE_IMAGE             "rhythm_game/note_blue.png"
+#define YELLOW_NOTE_IMAGE           "rhythm_game/note_yellow.png"
+#define PRESS_EFFECT_IMAGE          "rhythm_game/press_effect.png"
+const char* CATCH_EFFECT_IMAGES[] = {
 	"rhythm_game/catch_effect_0.png",
 	"rhythm_game/catch_effect_1.png",
 	"rhythm_game/catch_effect_2.png",
 	"rhythm_game/catch_effect_3.png",
 	"rhythm_game/catch_effect_4.png",
 };
+
+// -----------------------------------------------------------------------
+// Gameplay
 
 struct LaneDesc {
 	std::wstring displayLabel;
@@ -202,7 +211,7 @@ public:
 
 		wchar_t msg[256];
 		if (noticeCode == NOTICE_NO_DATABASE) {
-			swprintf_s(msg, L"ERROR: Can't open resources/%S", TEMP_MUSIC_DATABASE);
+			swprintf_s(msg, L"ERROR: Can't open resources/%S", MUSIC_DATABASE);
 			headerLabel->setText(msg);
 		}
 	}
@@ -280,6 +289,9 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 	fileWriter.flush();
 }
 
+// -----------------------------------------------------------------------
+// World_RhythmGame
+
 void World_RhythmGame::onInitialize() {
 	ResourceFinder::get().add(GAME_RESOURCE_DIR);
 	ResourceFinder::get().add(GAME_EXTERNAL_RESOURCE_DIR);
@@ -289,7 +301,7 @@ void World_RhythmGame::onInitialize() {
 		gConsole->toggle();
 	}
 
-	bool bValidMusicDatabase = loadMusicDatabase(TEMP_MUSIC_DATABASE, musicDatabase);
+	bool bValidMusicDatabase = loadMusicDatabase(MUSIC_DATABASE, MUSIC_DATABASE_OVERRIDE, musicDatabase);
 	if (bValidMusicDatabase) {
 		LOG(LogDebug, "Load database: %u items", musicDatabase.numItems());
 	}
@@ -474,14 +486,14 @@ void World_RhythmGame::initializePlayStage() {
 	pathos::Brush* blueNoteBrush = nullptr;
 	pathos::Brush* yellowNoteBrush = nullptr;
 	{
-		auto blueBlob = pathos::loadImage(TEMP_BLUE_NOTE_IMAGE);
+		auto blueBlob = pathos::loadImage(BLUE_NOTE_IMAGE);
 		if (blueBlob != nullptr) {
 			GLuint blueNoteTexture = pathos::createTextureFromBitmap(blueBlob, false, false, "blue_note", true);
 			blueNoteBrush = new pathos::ImageBrush(blueNoteTexture);
 		} else {
 			blueNoteBrush = new pathos::SolidColorBrush(0.8f, 0.8f, 1.0f);
 		}
-		auto yellowBlob = pathos::loadImage(TEMP_YELLOW_NOTE_IMAGE);
+		auto yellowBlob = pathos::loadImage(YELLOW_NOTE_IMAGE);
 		if (yellowBlob != nullptr) {
 			GLuint yellowNoteTexture = pathos::createTextureFromBitmap(yellowBlob, false, false, "yellow_note", true);
 			yellowNoteBrush = new pathos::ImageBrush(yellowNoteTexture);
@@ -492,7 +504,7 @@ void World_RhythmGame::initializePlayStage() {
 
 	pathos::Brush* pressEffectBrush = nullptr;
 	{
-		auto effectBlob = pathos::loadImage(TEMP_PRESS_EFFECT_IMAGE);
+		auto effectBlob = pathos::loadImage(PRESS_EFFECT_IMAGE);
 		if (effectBlob != nullptr) {
 			GLuint effectTexture = pathos::createTextureFromBitmap(effectBlob, false, false, "note_press_effect", true);
 			pressEffectBrush = new pathos::ImageBrush(effectTexture);
@@ -504,8 +516,8 @@ void World_RhythmGame::initializePlayStage() {
 	bCatchEffectAllValid = true;
 	std::vector<pathos::BitmapBlob*> catchEffectBlobs;
 	std::vector<GLuint> catchEffectTextures;
-	for (size_t i = 0; i < _countof(TEMP_CATCH_EFFECT_IMAGES); ++i) {
-		auto catchEffectBlob = pathos::loadImage(TEMP_CATCH_EFFECT_IMAGES[i]);
+	for (size_t i = 0; i < _countof(CATCH_EFFECT_IMAGES); ++i) {
+		auto catchEffectBlob = pathos::loadImage(CATCH_EFFECT_IMAGES[i]);
 		if (catchEffectBlob != nullptr) {
 			catchEffectBlobs.push_back(catchEffectBlob);
 		} else {

@@ -4,9 +4,18 @@
 #include "pathos/util/log.h"
 using namespace pathos;
 
-bool loadMusicDatabase(const char* filepath, MusicDatabase& outDB)
-{
-	std::string dbPath = ResourceFinder::get().find(filepath);
+bool loadMusicDatabase(const char* filepath, const char* overridePath, MusicDatabase& outDB) {
+	std::string dbPath;
+	if (overridePath != nullptr) {
+		dbPath = ResourceFinder::get().find(overridePath);
+		if (dbPath.size() == 0) {
+			LOG(LogWarning, "Failed to find override path: %s", overridePath);
+		}
+	}
+	if (dbPath.size() == 0) {
+		dbPath = ResourceFinder::get().find(filepath);
+	}
+
 	if (dbPath.size() == 0) {
 		LOG(LogError, "Failed to find: %s", filepath);
 		return false;
