@@ -42,8 +42,10 @@ namespace pathos {
 		KEYBOARD_7,
 		KEYBOARD_8,
 		KEYBOARD_9,
+
 		BACKTICK,   // ascii = 0x60
 		SPACE,      // ascii = 0x20 = 32
+		ESC,        // ascii = 0x1b = 27
 
 		SHIFT,
 		CTRL,
@@ -112,7 +114,7 @@ namespace pathos {
 		InputConstants::UNDEFINED, // 24
 		InputConstants::UNDEFINED, // 25
 		InputConstants::UNDEFINED, // 26
-		InputConstants::UNDEFINED, // 27
+		InputConstants::ESC,       // 27
 		InputConstants::UNDEFINED, // 28
 		InputConstants::UNDEFINED, // 29
 		InputConstants::UNDEFINED, // 30

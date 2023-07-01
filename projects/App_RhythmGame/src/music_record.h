@@ -13,7 +13,7 @@ struct LaneKeyEvent {
 };
 
 struct PlayRecord {
-	void reserve(size_t numKeyEvents);
+	void clearRecord(size_t numReserved);
 
 	void addShortNoteEvent(int32 laneIndex, float time);
 	void addLongNoteEvent(int32 laneIndex, float startTime, float endTime);

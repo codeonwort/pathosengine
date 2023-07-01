@@ -168,6 +168,10 @@ public:
 			setVisible(false);
 		}
 	}
+	void stopEffect() {
+		startTime = -1000.0f;
+		setVisible(false);
+	}
 private:
 	ImageBrush* effectBrush = nullptr;
 	std::vector<GLuint> effectTextures;
@@ -227,6 +231,8 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 	int32 laneIndex = -1;
 	float pressTime = -1.0f;
 	float releaseTime = -1.0f;
+
+	outRecord.clearRecord(KEY_RECORDS_NUM_RESERVED);
 
 	std::string line;
 	while (std::getline(archive, line)) {
@@ -304,14 +310,17 @@ void World_RhythmGame::onInitialize() {
 	inputManager->bindButtonPressed("browseNextMusic", ButtonBinding({ InputConstants::KEYBOARD_ARROW_DOWN }), [this]() {
 		this->browseMusicList(1);
 	});
-	inputManager->bindButtonPressed("startGame", ButtonBinding({ InputConstants::SPACE }), [this]() {
-		this->startMusic();
+	inputManager->bindButtonPressed("startMusic", ButtonBinding({ InputConstants::SPACE }), [this]() {
+		this->startPlaySession();
+	});
+	inputManager->bindButtonPressed("exitMusic", ButtonBinding({ InputConstants::ESC }), [this]() {
+		this->exitPlaySession();
 	});
 
 	// Record (save)
 	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
 	playRecordFileWriter.initialize(TEMP_RECORD_SAVE_PATH);
-	recordToSave.reserve(KEY_RECORDS_NUM_RESERVED);
+	recordToSave.clearRecord(KEY_RECORDS_NUM_RESERVED);
 	gEngine->registerConsoleCommand("dump_play_record", [this](const std::string& command) {
 		auto& fileWriter = this->playRecordFileWriter;
 		auto& record = this->recordToSave;
@@ -349,6 +358,7 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 			wchar_t msg[32];
 			swprintf_s(msg, L"%d", countdown);
 			countdownLabel->setText(msg);
+			countdownLabel->setVisible(!bMusicStarted);
 		}
 
 #if DEBUG_AUTO_PLAY_MODE
@@ -585,7 +595,7 @@ void World_RhythmGame::initializePlayStage() {
 	playContainer->addChild(missLabel);
 }
 
-void World_RhythmGame::startMusic() {
+void World_RhythmGame::startPlaySession() {
 	if (gameState != GameState::BrowseMusic) {
 		return;
 	}
@@ -616,6 +626,10 @@ void World_RhythmGame::startMusic() {
 	}
 	loadMusicRecord(archive, loadedRecord);
 	LOG(LogDebug, "Load record (%u): %s", loadedRecord.getTotalLaneKeyEvents(), recordPath.c_str());
+
+	// Record (save)
+	recordToSave.clearRecord(KEY_RECORDS_NUM_RESERVED);
+	laneKeyPressTimes.resize(LANE_COUNT, -1.0f);
 
 	// Load background image
 	std::string backgroundPath = ResourceFinder::get().find(item.backgroundFile);
@@ -657,6 +671,43 @@ void World_RhythmGame::startMusic() {
 #endif
 	initGameTime = gEngine->getWorldTime() + PLAY_START_DELAY;
 	gameState = GameState::PlaySession;
+}
+
+void World_RhythmGame::exitPlaySession() {
+	if (gameState != GameState::PlaySession) {
+		return;
+	}
+
+	if (musicStream != nullptr) {
+		delete musicStream;
+		musicStream = nullptr;
+	}
+
+	for (auto& column : laneNoteColumns) {
+		for (size_t i = 0; i < column.size(); ++i) {
+			LaneNote* note = column[i];
+
+			returnNoteToPool(note);
+			noteContainer->removeChild(note);
+		}
+		column.clear();
+	}
+
+	setJudge(-100.0f, JUDGE_TYPE_PERFECT);
+
+	for (auto effect : lanePressEffects) {
+		effect->setVisible(false);
+	}
+	for (auto effect : laneCatchffects) {
+		effect->stopEffect();
+	}
+
+	browserWidget->setVisible(true);
+	playContainer->setVisible(false);
+
+	bMusicStarted = false;
+
+	gameState = GameState::BrowseMusic;
 }
 
 void World_RhythmGame::updateNotes(float currT) {

@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-void PlayRecord::reserve(size_t numKeyEvents) {
-	laneKeyEvents.reserve(numKeyEvents);
+void PlayRecord::clearRecord(size_t numReserved) {
+	laneKeyEvents.clear();
+	laneKeyEvents.reserve(numReserved);
 }
 
 void PlayRecord::addShortNoteEvent(int32 laneIndex, float time) {

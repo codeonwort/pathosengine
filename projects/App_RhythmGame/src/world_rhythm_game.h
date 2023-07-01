@@ -43,7 +43,9 @@ private:
 	void initializeBrowseStage();
 	void initializePlayStage();
 
-	void startMusic();
+	void startPlaySession();
+	void exitPlaySession();
+
 	void updateNotes(float currentT);
 	void setJudge(float currentT, int32 judgeType);
 

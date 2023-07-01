@@ -95,10 +95,31 @@ BassStream* BassWrapper::createStreamFromFile(const wchar_t* wFilepath, float vo
 //////////////////////////////////////////////////////////////////////////
 // BassStream
 
+BassStream::~BassStream() {
+	if (handle != 0) {
+		stop();
+		BASS_ChannelFree((DWORD)handle);
+	}
+}
+
 void BassStream::startPlay() {
 	DWORD hstream = (DWORD)handle;
-	if (BASS_ChannelStart(hstream) == false) {
+	const BOOL bRestart = true;
+	if (BASS_ChannelPlay(hstream, bRestart) == false) {
 		LOG(LogError, "[BASS] Failed to start: %s", source.c_str());
+	}
+}
+
+void BassStream::stop() {
+	DWORD hstream = (DWORD)handle;
+	bool bSuccess = BASS_ChannelPause(hstream);
+	if (!bSuccess) {
+		// Handle error cases if needed
+		switch (BASS_ErrorGetCode()) {
+			case BASS_ERROR_HANDLE: break; // handle is not a valid channel
+			case BASS_ERROR_DECODE: break; // handle is a decoding channel, so cnanot be played or paused
+			case BASS_ERROR_NOPLAY: break; // The channel is not playing
+		}
 	}
 }
 

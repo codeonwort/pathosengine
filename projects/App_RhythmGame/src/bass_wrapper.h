@@ -11,8 +11,12 @@ public:
 		, source(inSource)
 	{
 	}
+	~BassStream();
 
 	void startPlay();
+
+	void stop();
+
 	void setVolume(float vol);
 
 private:
