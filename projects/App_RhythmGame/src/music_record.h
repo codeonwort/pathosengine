@@ -19,7 +19,7 @@ struct PlayRecord {
 	void addLongNoteEvent(int32 laneIndex, float startTime, float endTime);
 
 	// Invoke after adding all note events.
-	void finalizeLoad();
+	void finalizeEvents();
 
 	inline const std::vector<LaneKeyEvent>& getLaneEvents(uint32 laneIx) const {
 		return laneKeyEvents[laneIx];

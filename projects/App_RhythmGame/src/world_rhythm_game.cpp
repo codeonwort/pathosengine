@@ -87,6 +87,7 @@
 
 // #todo-rhythm: Temp files
 #define GAME_RESOURCE_DIR           "../../resources/rhythm_game/"
+#define GAME_EXTERNAL_RESOURCE_DIR  "../../resources_external/rhythm_game/"
 #define TEMP_RECORD_SAVE_PATH       "rhythm_game_record_saved.txt"
 #define TEMP_MUSIC_DATABASE         "rhythm_game/music_database.txt"
 #define TEMP_BLUE_NOTE_IMAGE        "rhythm_game/note_blue.png"
@@ -261,7 +262,7 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 		}
 	}
 
-	outRecord.finalizeLoad();
+	outRecord.finalizeEvents();
 }
 
 void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
@@ -281,6 +282,7 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 
 void World_RhythmGame::onInitialize() {
 	ResourceFinder::get().add(GAME_RESOURCE_DIR);
+	ResourceFinder::get().add(GAME_EXTERNAL_RESOURCE_DIR);
 	BassWrapper::initializeBASS();
 
 	if (gConsole->isVisible()) {
@@ -340,6 +342,8 @@ void World_RhythmGame::onInitialize() {
 	gEngine->registerConsoleCommand("dump_play_record", [this](const std::string& command) {
 		auto& fileWriter = this->playRecordFileWriter;
 		auto& record = this->recordToSave;
+
+		record.finalizeEvents();
 		saveMusicRecord(fileWriter, record, false);
 
 		wchar_t msg[256];

@@ -37,7 +37,7 @@ void PlayRecord::addLongNoteEvent(int32 laneIndex, float startTime, float endTim
 	}
 }
 
-void PlayRecord::finalizeLoad() {
+void PlayRecord::finalizeEvents() {
 	for (uint32 laneIx = 0; laneIx < laneCount; ++laneIx) {
 		laneKeyEvents[laneIx].reserve(numEventsPerLane[laneIx]);
 	}
