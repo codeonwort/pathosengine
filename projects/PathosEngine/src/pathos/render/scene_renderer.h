@@ -72,9 +72,10 @@ namespace pathos {
 
 		// G-buffer rendering
 		static uniquePtr<class DepthPrepass>            depthPrepass;
+		static uniquePtr<class GBufferPass>             gbufferPass;
 		static uniquePtr<ResolveUnlitPass>              resolveUnlitPass;
 
-		// View-independent rendering
+		// Shadowmap rendering
 		static uniquePtr<class DirectionalShadowMap>    sunShadowMap;
 		static uniquePtr<class OmniShadowPass>          omniShadowPass;
 
@@ -132,24 +133,13 @@ namespace pathos {
 			ECopyTextureMode copyMode = ECopyTextureMode::CopyColor);
 
 	private:
-		void reallocateSceneRenderTargets(
-			RenderCommandList& cmdList,
-			SceneProxySource sceneProxySource,
-			bool bEnableResolutionScaling);
-
 		void updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
-
-		void renderBasePass(RenderCommandList& cmdList);
 
 		GLuint getFinalRenderTarget() const;
 
 	private:
 		bool destroyed = false;
 		uint32 frameCounter = 0;
-
-		// #todo-renderer: Move to base_pass.cpp
-		GLuint gbufferFBO = 0;
-		UniformBuffer uboPerObject;
 
 		SceneRenderSettings sceneRenderSettings;
 		RenderTargetView* finalRenderTarget = nullptr;

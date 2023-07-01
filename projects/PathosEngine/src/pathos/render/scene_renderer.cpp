@@ -17,6 +17,7 @@
 
 // Render passes
 #include "pathos/render/depth_prepass.h"
+#include "pathos/render/gbuffer_pass.h"
 #include "pathos/render/shadow_directional.h"
 #include "pathos/render/shadow_omni.h"
 #include "pathos/render/skybox.h"
@@ -101,13 +102,11 @@ namespace pathos {
 	}
 
 	void SceneRenderer::initializeResources(RenderCommandList& cmdList) {
-		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_BasePass");
 		gRenderDevice->createFramebuffers(1, &fboScreenshot);
 	}
 
 	void SceneRenderer::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			gRenderDevice->deleteFramebuffers(1, &gbufferFBO);
 			gRenderDevice->deleteFramebuffers(1, &fboScreenshot);
 		}
 		destroyed = true;
@@ -134,42 +133,6 @@ namespace pathos {
 		finalRenderTarget = 0;
 	}
 
-	void SceneRenderer::reallocateSceneRenderTargets(
-		RenderCommandList& cmdList,
-		SceneProxySource sceneProxySource,
-		bool bEnableResolutionScaling)
-	{
-		sceneRenderTargets->reallocSceneTextures(
-			cmdList,
-			sceneProxySource,
-			sceneRenderSettings.sceneWidth,
-			sceneRenderSettings.sceneHeight,
-			bEnableResolutionScaling);
-
-		if (gbufferFBO == 0) {
-			gRenderDevice->createFramebuffers(1, &gbufferFBO);
-			cmdList.objectLabel(GL_FRAMEBUFFER, gbufferFBO, -1, "FBO_gbuffer");
-		}
-		// Do this everytime as reallocSceneTextures() might recreate GL textures.
-		{
-			GLenum gbuffer_draw_buffers[] = {
-				GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1,
-				GL_COLOR_ATTACHMENT2,
-				GL_COLOR_ATTACHMENT3,
-			};
-			
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT0, sceneRenderTargets->gbufferA, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT1, sceneRenderTargets->gbufferB, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT2, sceneRenderTargets->gbufferC, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_COLOR_ATTACHMENT3, sceneRenderTargets->velocityMap, 0);
-			cmdList.namedFramebufferTexture(gbufferFBO, GL_DEPTH_ATTACHMENT, sceneRenderTargets->sceneDepth, 0);
-			cmdList.namedFramebufferDrawBuffers(gbufferFBO, _countof(gbuffer_draw_buffers), gbuffer_draw_buffers);
-
-			pathos::checkFramebufferStatus(cmdList, gbufferFBO, "gbuffer setup is invalid");
-		}
-	}
-
 	void SceneRenderer::renderScene(
 		RenderCommandList& cmdList,
 		SceneRenderTargets* inSceneRenderTargets,
@@ -187,7 +150,12 @@ namespace pathos {
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
-		reallocateSceneRenderTargets(cmdList, scene->sceneProxySource, bEnableResolutionScaling);
+		sceneRenderTargets->reallocSceneTextures(
+			cmdList,
+			scene->sceneProxySource,
+			sceneRenderSettings.sceneWidth,
+			sceneRenderSettings.sceneHeight,
+			bEnableResolutionScaling);
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
@@ -198,7 +166,7 @@ namespace pathos {
 			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
 		}
 
-		// #todo-multivew
+		// #todo-multiview
 		{
 			SCOPED_CPU_COUNTER(UpdateUniformBuffer);
 
@@ -269,7 +237,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(BasePass);
 			SCOPED_GPU_COUNTER(BasePass);
-			renderBasePass(cmdList);
+			gbufferPass->renderGBuffers(cmdList, scene, camera);
 		}
 
 		{
@@ -626,116 +594,6 @@ namespace pathos {
 		camera = nullptr;
 	}
 
-	void SceneRenderer::renderBasePass(RenderCommandList& cmdList) {
-		SCOPED_DRAW_EVENT(BasePass);
-
-		// #todo: Dynamically toggle depth prepass.
-		constexpr bool bUseDepthPrepass = true;
-		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
-
-		static const GLuint color_zero_ui[] = { 0, 0, 0, 0 };
-		static const GLfloat color_zero[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		GLfloat* sceneDepthClearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat));
-		*sceneDepthClearValue = pathos::getDeviceFarDepth();
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.clearNamedFramebufferuiv(gbufferFBO, GL_COLOR, 0, color_zero_ui);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 1, color_zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 2, color_zero);
-		cmdList.clearNamedFramebufferfv(gbufferFBO, GL_COLOR, 3, color_zero);
-		if (!bUseDepthPrepass) {
-			cmdList.clearNamedFramebufferfv(gbufferFBO, GL_DEPTH, 0, sceneDepthClearValue);
-		}
-
-		// Set render state
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, gbufferFBO);
-		cmdList.viewport(0, 0, sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
-
-		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
-		// Switch to EQUAL when doing full-depth prepass.
-		if (bUseDepthPrepass) {
-			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
-			cmdList.enable(GL_DEPTH_TEST);
-			cmdList.depthMask(GL_FALSE);
-		} else {
-			cmdList.depthFunc(bReverseZ ? GL_GREATER : GL_LESS);
-			cmdList.enable(GL_DEPTH_TEST);
-			cmdList.depthMask(GL_TRUE);
-		}
-
-		bool bEnableFrustumCulling = cvar_frustum_culling.getInt() != 0;
-
-		{
-			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
-			const size_t numProxies = proxyList.size();
-			uint32 currentProgramHash = 0;
-			uint32 currentMIID = 0xffffffff;
-
-			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
-				StaticMeshProxy* proxy = proxyList[proxyIx];
-				Material* material = proxy->material;
-				MaterialShader* materialShader = material->internal_getMaterialShader();
-
-				// Early out
-				if (bEnableFrustumCulling && !proxy->bInFrustum) {
-					continue;
-				}
-
-				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
-				bool bUseWireframeMode = material->bWireframe;
-				currentProgramHash = materialShader->programHash;
-				currentMIID = material->internal_getMaterialInstanceID();
-
-				if (bShouldBindProgram) {
-					SCOPED_DRAW_EVENT(BindMaterialProgram);
-
-					uint32 programName = materialShader->program->getGLName();
-					CHECK(programName != 0 && programName != 0xffffffff);
-					cmdList.useProgram(programName);
-				}
-
-				// Update UBO (per object)
-				{
-					Material::UBO_PerObject uboData;
-					uboData.modelTransform = proxy->modelMatrix;
-					uboData.prevModelTransform = proxy->prevModelMatrix;
-					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
-				}
-
-				// Update UBO (material)
-				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
-					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					material->internal_fillUniformBuffer(uboMemory);
-					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
-				}
-
-				// Bind texture units
-				if (bShouldUpdateMaterialParameters) {
-					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
-						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
-					}
-				}
-
-				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
-				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
-				proxy->geometry->activateIndexBuffer(cmdList);
-				proxy->geometry->drawPrimitive(cmdList);
-
-				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
-				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			}
-		}
-
-		cmdList.depthMask(GL_TRUE);
-	}
-
 	void SceneRenderer::copyTexture(
 		RenderCommandList& cmdList, GLuint source,
 		GLuint target, uint32 targetWidth, uint32 targetHeight,
@@ -874,26 +732,35 @@ namespace pathos {
 	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	
 	uniquePtr<UniformBuffer>             SceneRenderer::ubo_perFrame;
+
+	// G-buffer rendering
+	uniquePtr<DepthPrepass>              SceneRenderer::depthPrepass;
+	uniquePtr<GBufferPass>               SceneRenderer::gbufferPass;
+	uniquePtr<ResolveUnlitPass>          SceneRenderer::resolveUnlitPass;
+
+	// Shadowmap rendering
+	uniquePtr<DirectionalShadowMap>      SceneRenderer::sunShadowMap;
+	uniquePtr<OmniShadowPass>            SceneRenderer::omniShadowPass;
 	
+	// Local & global illumination
 	uniquePtr<DirectLightingPass>        SceneRenderer::directLightingPass;
 	uniquePtr<IndirectLightingPass>      SceneRenderer::indirectLightingPass;
 	uniquePtr<ScreenSpaceReflectionPass> SceneRenderer::screenSpaceReflectionPass;
 
-	uniquePtr<ResolveUnlitPass>          SceneRenderer::resolveUnlitPass;
-
-	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
-
+	// Sky & atmosphere
 	uniquePtr<SkyboxPass>                SceneRenderer::skyboxPass;
 	uniquePtr<PanoramaSkyPass>           SceneRenderer::panoramaSkyPass;
 	uniquePtr<SkyAtmospherePass>         SceneRenderer::skyAtmospherePass;
 	uniquePtr<VolumetricCloudPass>       SceneRenderer::volumetricCloud;
 
-	uniquePtr<DepthPrepass>              SceneRenderer::depthPrepass;
-	uniquePtr<DirectionalShadowMap>      SceneRenderer::sunShadowMap;
-	uniquePtr<OmniShadowPass>            SceneRenderer::omniShadowPass;
+	// Translucency
+	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
+
+	// Debug rendering
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
 
+	// Post-processing
 	uniquePtr<GodRay>                    SceneRenderer::godRay;
 	uniquePtr<SSAO>                      SceneRenderer::ssao;
 	uniquePtr<BloomSetup>                SceneRenderer::bloomSetup;
@@ -936,6 +803,9 @@ namespace pathos {
 		{
 			depthPrepass = makeUnique<DepthPrepass>();
 			depthPrepass->initializeResources(cmdList);
+
+			gbufferPass = makeUnique<GBufferPass>();
+			gbufferPass->initializeResources(cmdList);
 
 			resolveUnlitPass = makeUnique<ResolveUnlitPass>();
 			resolveUnlitPass->initializeResources(cmdList);
@@ -1002,21 +872,23 @@ namespace pathos {
 
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
 
+		RELEASEPASS(depthPrepass);
+		RELEASEPASS(gbufferPass);
+		RELEASEPASS(resolveUnlitPass);
+
+		RELEASEPASS(sunShadowMap);
+		RELEASEPASS(omniShadowPass);
+
 		RELEASEPASS(directLightingPass);
 		RELEASEPASS(indirectLightingPass);
 		RELEASEPASS(screenSpaceReflectionPass);
-		RELEASEPASS(translucency_pass);
-
-		RELEASEPASS(resolveUnlitPass);
 
 		RELEASEPASS(skyboxPass);
 		RELEASEPASS(panoramaSkyPass);
 		RELEASEPASS(skyAtmospherePass);
 		RELEASEPASS(volumetricCloud);
 
-		RELEASEPASS(depthPrepass);
-		RELEASEPASS(sunShadowMap);
-		RELEASEPASS(omniShadowPass);
+		RELEASEPASS(translucency_pass);
 
 		RELEASEPASS(visualizeBuffer);
 		RELEASEPASS(visualizeLightProbe);
