@@ -87,7 +87,7 @@ private:
 	std::vector<CatchEffect*> laneCatchffects;
 	bool bCatchEffectAllValid = false;
 
-	int32 autoPlaySearchStartIndex = 0;
+	std::vector<int32> autoPlaySearchStartIndex;
 
 private:
 	LaneNote* allocNoteFromPool(int32 eventIndex, pathos::Brush* brush);

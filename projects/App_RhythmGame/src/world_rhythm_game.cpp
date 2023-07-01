@@ -14,7 +14,6 @@
 #include "badger/math/minmax.h"
 #include <sstream>
 
-// #todo-rhythm: Bugged
 #define DEBUG_AUTO_PLAY_MODE        0
 
 #define KEY_RECORDS_NUM_RESERVED    16384
@@ -365,31 +364,41 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 
 #if DEBUG_AUTO_PLAY_MODE
 		// Gather notes that should be pressed now and invoke onPressLaneKey().
-		int32 totalEvent = (int32)loadedRecord.laneKeyEvents.size();
 		std::vector<int32> delayedReleaseLanes;
-		for (int32 eventIndex = autoPlaySearchStartIndex; eventIndex < totalEvent; ++eventIndex) {
-			bool catchAny = false;
-			const LaneKeyEvent& evt = loadedRecord.laneKeyEvents[eventIndex];
-			if (evt.pressTime - KEY_DROP_PERIOD <= currentGameTime && currentGameTime <= evt.pressTime) {
-				onPressLaneKey(evt.laneIndex);
-				catchAny = true;
-			}
-			if (evt.isShortNote()) {
-				if (catchAny) {
-					delayedReleaseLanes.push_back(evt.laneIndex);
-				}
-			} else {
-				if (evt.releaseTime - KEY_DROP_PERIOD <= currentGameTime && currentGameTime <= evt.releaseTime) {
-					onReleaseLaneKey(evt.laneIndex);
+		for (uint32 laneIx = 0; laneIx < LANE_COUNT; ++laneIx) {
+			const auto& laneEvents = loadedRecord.getLaneEvents(laneIx);
+			int32 searchStartIndex = autoPlaySearchStartIndex[laneIx];
+			int32 searchEndIndex = (int32)laneEvents.size();
+			for (int32 eventIndex = searchStartIndex; eventIndex < searchEndIndex; ++eventIndex) {
+				bool catchAny = false;
+				const LaneKeyEvent& evt = laneEvents[eventIndex];
+
+				float ratio = std::abs((evt.pressTime - currentGameTime) / KEY_DROP_PERIOD);
+				bool bPerfect = (ratio <= CATCH_RATIO_PERFECT);
+
+				if (bPerfect) {
+					onPressLaneKey(evt.laneIndex);
 					catchAny = true;
 				}
-			}
-			if (!catchAny) {
-				if (autoPlaySearchStartIndex != eventIndex) {
-					LOG(LogDebug, "Update start index: %d", autoPlaySearchStartIndex);
+				if (evt.isShortNote()) {
+					if (catchAny) {
+						delayedReleaseLanes.push_back(evt.laneIndex);
+					}
+				} else {
+					float ratio = std::abs((evt.releaseTime - currentGameTime) / KEY_DROP_PERIOD);
+					bool bPerfect = (ratio <= CATCH_RATIO_PERFECT);
+					if (bPerfect) {
+						onReleaseLaneKey(evt.laneIndex);
+						catchAny = true;
+					}
 				}
-				autoPlaySearchStartIndex = eventIndex;
-				break;
+				if (catchAny) {
+					if (searchStartIndex != eventIndex) {
+						LOG(LogDebug, "Update start index: %d", autoPlaySearchStartIndex);
+					}
+					autoPlaySearchStartIndex[laneIx] = eventIndex;
+					break;
+				}
 			}
 		}
 #endif
@@ -671,7 +680,8 @@ void World_RhythmGame::startPlaySession() {
 	lastSearchedEventIndex.clear();
 	lastSearchedEventIndex.resize(LANE_COUNT, 0);
 #if DEBUG_AUTO_PLAY_MODE
-	autoPlaySearchStartIndex = 0;
+	autoPlaySearchStartIndex.clear();
+	autoPlaySearchStartIndex.resize(LANE_COUNT, 0);
 #endif
 	initGameTime = gEngine->getWorldTime() + PLAY_START_DELAY;
 	gameState = GameState::PlaySession;
