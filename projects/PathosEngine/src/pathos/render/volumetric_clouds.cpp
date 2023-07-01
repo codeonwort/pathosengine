@@ -8,9 +8,11 @@
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/console.h"
+
 // For NVidia STBN
-#include "pathos/util/resource_finder.h"
 #include "pathos/loader/imageloader.h"
+#include "pathos/util/resource_finder.h"
+#include "pathos/util/log.h"
 
 #include "badger/math/minmax.h"
 
@@ -97,6 +99,8 @@ namespace pathos {
 		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
 		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "NVidiaSTBN");
 		cmdList.textureStorage3D(texSTBN, 1, GL_RGBA8, 128, 128, 64);
+
+		bHasValidResources = true;
 		for (uint32 i = 0; i < 64; ++i) {
 			char buf[256];
 			sprintf_s(buf,
@@ -104,10 +108,22 @@ namespace pathos {
 				"stbn_scalar_2Dx1Dx1D_128x128x64x1",
 				i);
 			std::string filepath = ResourceFinder::get().find(buf);
-			CHECKF(filepath.size() > 0, "Run Setup.ps1 to download NVidia STBN");
+
+			if (filepath.size() == 0) {
+				LOG(LogError, "Run Setup.ps1 to download NVidia STBN");
+				bHasValidResources = false;
+				break;
+			}
 			
 			BitmapBlob* blob = pathos::loadImage(filepath.c_str());
-			CHECK(blob->width == 128 && blob->height == 128 && blob->bpp == 32);
+			
+			bool bValidSize = (blob->width == 128 && blob->height == 128 && blob->bpp == 32);
+			if (bValidSize == false) {
+				LOG(LogError, "STBN image [%u] has invalid size (not 128x128 rgb)", i);
+				bHasValidResources = false;
+				break;
+			}
+
 			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
 				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->getRawBytes());
 
@@ -135,7 +151,7 @@ namespace pathos {
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
 		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
 
-		const bool bRenderClouds = scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
+		const bool bRenderClouds = bHasValidResources && scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
 		if (!bRenderClouds) {
 			float clearValues[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			pathos::clearTexture2D(
