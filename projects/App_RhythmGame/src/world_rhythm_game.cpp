@@ -81,6 +81,8 @@
 #define BROWSER_ITEM_DEFAULT_COLOR  vector3(1.0f, 1.0f, 1.0f)
 #define BROWSER_ITEM_SELECTED_COLOR vector3(1.0f, 0.7f, 0.2f)
 
+#define NOTICE_NO_DATABASE          0
+
 #define DEFAULT_MUSIC_VOLUME        0.5f
 
 // #todo-rhythm: Temp files
@@ -183,15 +185,25 @@ class MusicBrowserWidget : public DisplayObject2D {
 	
 public:
 	MusicBrowserWidget() {
-		pathos::Label* header = new pathos::Label;
-		header->setText(L"Select a music with arrow keys and space bar");
-		header->setColor(vector3(1.0f, 1.0f, 0.2f));
-		addChild(header);
+		headerLabel = new pathos::Label;
+		headerLabel->setText(L"Select a music with arrow keys and space bar");
+		headerLabel->setColor(vector3(1.0f, 1.0f, 0.2f));
+		addChild(headerLabel);
 
 		selector = new pathos::Label(L">");
 		selector->setVisible(false);
 		selector->setColor(BROWSER_ITEM_SELECTED_COLOR);
 		addChild(selector);
+	}
+
+	void showNotice(int32 noticeCode) {
+		headerLabel->setColor(vector3(1.0f, 0.1f, 0.1f));
+
+		wchar_t msg[256];
+		if (noticeCode == NOTICE_NO_DATABASE) {
+			swprintf_s(msg, L"ERROR: Can't open resources/%S", TEMP_MUSIC_DATABASE);
+			headerLabel->setText(msg);
+		}
 	}
 
 	void addItem(const std::string& title) {
@@ -220,6 +232,8 @@ public:
 	int32 getSelectedIndex() const { return selectedIndex; }
 
 private:
+	pathos::Label* headerLabel = nullptr;
+
 	int32 selectedIndex = -1;
 	pathos::Label* selector = nullptr;
 	std::vector<MusicListItemWidget*> items;
@@ -273,7 +287,8 @@ void World_RhythmGame::onInitialize() {
 		gConsole->toggle();
 	}
 
-	if (loadMusicDatabase(TEMP_MUSIC_DATABASE, musicDatabase)) {
+	bool bValidMusicDatabase = loadMusicDatabase(TEMP_MUSIC_DATABASE, musicDatabase);
+	if (bValidMusicDatabase) {
 		LOG(LogDebug, "Load database: %u items", musicDatabase.numItems());
 	}
 
@@ -339,6 +354,10 @@ void World_RhythmGame::onInitialize() {
 	initializeBrowseStage();
 	browserWidget->setVisible(true);
 	playContainer->setVisible(false);
+
+	if (!bValidMusicDatabase) {
+		browserWidget->showNotice(NOTICE_NO_DATABASE);
+	}
 }
 
 void World_RhythmGame::onDestroy() {
