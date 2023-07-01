@@ -82,7 +82,10 @@ namespace pathos {
 
 	BitmapBlob* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {
 		std::string path = ResourceFinder::get().find(inFilename);
-		CHECK(path.size() != 0);
+		if (path.size() == 0) {
+			LOG(LogError, "[loadImage] Can't find: %s", inFilename);
+			return nullptr;
+		}
 
 		//LOG(LogDebug, "load image: %s", path.c_str());
 
@@ -90,7 +93,7 @@ namespace pathos {
 		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
 
 		if (!dib) {
-			LOG(LogError, "Error while loading: %s", path.c_str());
+			LOG(LogError, "[loadImage] Error while loading: %s", path.c_str());
 			return nullptr;
 		}
 

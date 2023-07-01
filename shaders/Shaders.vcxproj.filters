@@ -74,5 +74,6 @@
     <None Include="geom_common.glsl" />
     <None Include="visualize_light_probe.glsl" />
     <None Include="clear_texture.glsl" />
+    <None Include="overlay_image.glsl" />
   </ItemGroup>
 </Project>

@@ -26,7 +26,9 @@ $thirdparty_dir = "$pwd/thirdparty"
 $content_dir    = "$pwd/resources_external"
 
 $contents_list  = @(
-	# Format: (url, zip_name, unzip_name)
+	# Format: (url, target_name, unzip_name)
+	# - base directory is content_dir.
+	# - unzip_name is ignored if the content is not a .zip file.
 	@(
 		'https://github.com/NVIDIAGameWorks/SpatiotemporalBlueNoiseSDK/raw/main/STBN.zip',
 		'STBN.zip',
@@ -96,6 +98,16 @@ $contents_list  = @(
 		'https://casual-effects.com/g3d/data10/research/model/scrubPine/pine.zip',
 		'ScrubPineTree.zip',
 		'ScrubPineTree'
+	),
+	@(
+		'https://www2.cs.uic.edu/~i101/SoundFiles/ImperialMarch60.wav',
+		'rhythm_game/music_imperial_march.wav',
+		''
+	),
+	@(
+		'https://www2.cs.uic.edu/~i101/SoundFiles/StarWars60.wav',
+		'rhythm_game/music_star_wars.wav',
+		''
 	)
 )
 
@@ -180,6 +192,14 @@ if ($should_download) {
 	Write-Host "Skip download due to -skipdownload" -ForegroundColor Green
 }
 
+#
+# Unzip libraries
+#
+if ($should_build) {
+	Write-Host "Unzip bass" -ForegroundColor Green
+	
+	Unzip "$thirdparty_dir/bass/bass24.zip" "$thirdparty_dir/bass/build"
+}
 
 <#
 $freeimage_url      = "http://downloads.sourceforge.net/freeimage/FreeImage3180.zip"

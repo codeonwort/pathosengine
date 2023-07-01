@@ -102,6 +102,7 @@
     <ClCompile Include="src\init_tinyobjloader.cpp" />
     <ClCompile Include="src\pathos\overlay\button.cpp" />
     <ClCompile Include="src\pathos\render\fullscreen_util.cpp" />
+    <ClCompile Include="src\pathos\render\overlay\overlaypass_image.cpp" />
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="src\badger\types\vector_types.h" />
     <ClInclude Include="src\pathos\overlay\button.h" />
     <ClInclude Include="src\pathos\render\fullscreen_util.h" />
+    <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />

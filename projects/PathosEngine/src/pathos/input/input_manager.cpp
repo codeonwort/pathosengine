@@ -16,7 +16,7 @@ namespace pathos {
 	void InputManager::bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler)
 	{
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
-		CHECK(buttonPressedMapping.find(hash) == buttonPressedMapping.end());
+		CHECKF(buttonPressedMapping.find(hash) == buttonPressedMapping.end(), eventName);
 
 		ButtonBinding ib = binding;
 		ib.event_name_hash = hash;
@@ -28,7 +28,7 @@ namespace pathos {
 	void InputManager::bindButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler)
 	{
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
-		CHECK(buttonReleasedMapping.find(hash) == buttonReleasedMapping.end());
+		CHECKF(buttonReleasedMapping.find(hash) == buttonReleasedMapping.end(), eventName);
 
 		ButtonBinding ib = binding;
 		ib.event_name_hash = hash;

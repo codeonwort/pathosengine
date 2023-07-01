@@ -20,11 +20,13 @@ namespace pathos {
 	void OverlayRenderer::createShaders() {
 		renderpass_standard = new OverlayPass_Standard;
 		renderpass_text = new OverlayPass_Text;
+		renderpass_image = new OverlayPass_Image;
 	}
 	void OverlayRenderer::destroyShaders() {
 #define release(x) if(x) delete x
 		release(renderpass_standard);
 		release(renderpass_text);
+		release(renderpass_image);
 #undef release
 	}
 

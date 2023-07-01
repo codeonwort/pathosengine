@@ -10,12 +10,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\freeimage-3.18.0\source;$(SolutionDir)thirdparty\freetype-2.9.1\source;$(SolutionDir)thirdparty\assimp\source;$(SolutionDir)thirdparty\nlohmann-json-3.11.2\single_include;$(SolutionDir)thirdparty\tinygltf-2.6.3</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)projects\PathosEngine\src;$(SolutionDir)thirdparty\opengl;$(SolutionDir)thirdparty\stbimage;$(SolutionDir)thirdparty\tinyobjloader;$(SolutionDir)thirdparty\glm\source;$(SolutionDir)thirdparty\freeimage-3.18.0\source;$(SolutionDir)thirdparty\freetype-2.9.1\source;$(SolutionDir)thirdparty\assimp\source;$(SolutionDir)thirdparty\nlohmann-json-3.11.2\single_include;$(SolutionDir)thirdparty\tinygltf-2.6.3;$(SolutionDir)thirdparty\bass\build\c</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\thirdparty\assimp\binary;$(SolutionDir)\thirdparty\freeimage-3.18.0\binary;$(SolutionDir)\thirdparty\freetype-2.9.1\binary;$(SolutionDir)\thirdparty\freeglut\binary</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\thirdparty\assimp\binary;$(SolutionDir)\thirdparty\freeimage-3.18.0\binary;$(SolutionDir)\thirdparty\freetype-2.9.1\binary;$(SolutionDir)\thirdparty\freeglut\binary;$(SolutionDir)\thirdparty\bass\build\c\x64</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
     </Link>

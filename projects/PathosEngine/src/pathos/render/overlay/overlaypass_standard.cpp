@@ -6,8 +6,6 @@
 
 namespace pathos {
 
-	static constexpr GLuint TEXTURE_UNIT = 0;
-
 	struct UBO_OverlayStandard {
 		matrix4 transform;
 		vector4 color;
@@ -37,6 +35,7 @@ namespace pathos {
 
 	OverlayPass_Standard::OverlayPass_Standard() {
 		ubo.init<UBO_OverlayStandard>();
+		rgba = vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	void OverlayPass_Standard::renderOverlay(
@@ -49,6 +48,12 @@ namespace pathos {
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OverlayStandard);
 		cmdList.useProgram(program.getGLName());
 
+		bool bUseAlpha = rgba.a < 1.0f;
+		if (bUseAlpha) {
+			cmdList.enable(GL_BLEND);
+			cmdList.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
+		}
+
 		UBO_OverlayStandard uboData;
 		uboData.transform = transformAccum.getMatrix();
 		uboData.color = rgba;
@@ -59,6 +64,11 @@ namespace pathos {
 		geom->drawPrimitive(cmdList);
 		geom->deactivate(cmdList);
 		geom->deactivateIndexBuffer(cmdList);
+
+		if (bUseAlpha) {
+			cmdList.disable(GL_BLEND);
+			cmdList.disable(GL_DEPTH_TEST);
+		}
 	}
 
 }
