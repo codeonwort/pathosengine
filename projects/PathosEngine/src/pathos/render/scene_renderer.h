@@ -64,8 +64,8 @@ namespace pathos {
 		static void internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
 	private:
+		static class MeshGeometry* fullscreenQuad;
 		static uniquePtr<class Material> fallbackMaterial;
-		static uniquePtr<class PlaneGeometry> fullscreenQuad;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
 		static uniquePtr<UniformBuffer> ubo_perFrame;

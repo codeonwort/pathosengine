@@ -61,7 +61,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void BloomPass::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
+	void BloomPass::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
 	{
 		SCOPED_DRAW_EVENT(BloomPass);
 

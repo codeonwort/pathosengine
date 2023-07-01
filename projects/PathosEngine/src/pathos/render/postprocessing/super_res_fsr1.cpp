@@ -82,7 +82,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void FSR1::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
+	void FSR1::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(FSR1);
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // Previous sceneColor

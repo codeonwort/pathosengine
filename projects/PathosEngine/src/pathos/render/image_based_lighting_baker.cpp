@@ -92,8 +92,8 @@ namespace pathos {
 	GLuint ImageBasedLightingBaker::dummyVAO = 0;
 	GLuint ImageBasedLightingBaker::dummyFBO = 0;
 	GLuint ImageBasedLightingBaker::dummyFBO_2color = 0;
-	PlaneGeometry* ImageBasedLightingBaker::fullscreenQuad = nullptr;
-	CubeGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
+	MeshGeometry* ImageBasedLightingBaker::fullscreenQuad = nullptr;
+	MeshGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
 	matrix4 ImageBasedLightingBaker::cubeTransforms[6];
 
 	GLuint ImageBasedLightingBaker::projectPanoramaToCubemap(
@@ -137,7 +137,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(PanoramaToCubemap);
 
 		GLuint fbo = ImageBasedLightingBaker::dummyFBO;
-		CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
+		MeshGeometry* cube = ImageBasedLightingBaker::dummyCube;
 
 		cmdList.viewport(0, 0, outputTextureSize, outputTextureSize);
 		cmdList.disable(GL_DEPTH_TEST);
@@ -180,7 +180,7 @@ namespace pathos {
 
 		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
 		GLuint fbo = bBakeCubemap ? ImageBasedLightingBaker::dummyFBO : ImageBasedLightingBaker::dummyFBO_2color;
-		CubeGeometry* cubeGeom = ImageBasedLightingBaker::dummyCube;
+		MeshGeometry* cubeGeom = ImageBasedLightingBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
 
 		cmdList.textureParameteri(inputRadianceCubemap, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -308,7 +308,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
 
 		GLuint fbo = ImageBasedLightingBaker::dummyFBO;
-		CubeGeometry* cube = ImageBasedLightingBaker::dummyCube;
+		MeshGeometry* cube = ImageBasedLightingBaker::dummyCube;
 		constexpr GLint uniform_transform = 0;
 		constexpr GLint uniform_roughness = 1;
 
@@ -416,8 +416,8 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffers(ImageBasedLightingBaker::dummyFBO_2color, _countof(drawBuffers_color2), drawBuffers_color2);
 
 		// Dummy meshes
-		ImageBasedLightingBaker::fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
-		ImageBasedLightingBaker::dummyCube = new CubeGeometry(glm::vec3(1.0f));
+		ImageBasedLightingBaker::fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		ImageBasedLightingBaker::dummyCube = gEngine->getSystemGeometryUnitCube();
 
 		matrix4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		matrix4 captureViews[] =
@@ -443,9 +443,6 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO);
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO_2color);
 		gRenderDevice->deleteTextures(1, &ImageBasedLightingBaker::internal_BRDFIntegrationMap);
-
-		delete ImageBasedLightingBaker::fullscreenQuad;
-		delete ImageBasedLightingBaker::dummyCube;
 	}
 
 	DEFINE_GLOBAL_RENDER_ROUTINE(ImageBasedLightingBaker, ImageBasedLightingBaker::internal_createIrradianceBakerResources, ImageBasedLightingBaker::internal_destroyIrradianceBakerResources);

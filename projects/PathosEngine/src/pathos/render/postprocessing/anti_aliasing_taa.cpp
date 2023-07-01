@@ -49,7 +49,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void TAA::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
+	void TAA::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(TAA);
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColorToneMapped

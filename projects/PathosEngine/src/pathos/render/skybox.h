@@ -9,7 +9,7 @@
 namespace pathos {
 
 	class SceneProxy;
-	class CubeGeometry;
+	class MeshGeometry;
 
 	class SkyboxPass : public Noncopyable {
 
@@ -28,7 +28,7 @@ namespace pathos {
 		GLuint fbo = 0xffffffff;
 		GLuint fboCube = 0xffffffff;
 
-		CubeGeometry* cubeGeometry = nullptr;
+		MeshGeometry* cubeGeometry = nullptr;
 		matrix4 cubeTransforms[6];
 
 		GLuint scratchCubemapTexture = 0;

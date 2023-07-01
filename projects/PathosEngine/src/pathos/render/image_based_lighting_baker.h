@@ -113,8 +113,8 @@ namespace pathos {
 		static GLuint dummyVAO;
 		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
 		static GLuint dummyFBO_2color; // Dummy FBO for two color attachments
-		static class PlaneGeometry* fullscreenQuad;
-		static class CubeGeometry* dummyCube;
+		static class MeshGeometry* fullscreenQuad;
+		static class MeshGeometry* dummyCube;
 		static matrix4 cubeTransforms[6];
 
 		static GLuint internal_BRDFIntegrationMap;

@@ -13,7 +13,7 @@ namespace pathos {
 
 		virtual void initializeResources(RenderCommandList& cmdList) override;
 		virtual void releaseResources(RenderCommandList& cmdList) override;
-		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) override;
+		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) override;
 
 		bool isAvailable() const;
 

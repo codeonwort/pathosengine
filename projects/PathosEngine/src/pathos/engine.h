@@ -99,6 +99,7 @@ namespace pathos {
 		inline DisplayObject2D* getOverlayRoot()   const { return appOverlayRoot.get(); }
 
 		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
+		inline MeshGeometry* getSystemGeometryUnitCube() const { return geometry_unitCube; }
 
 		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
@@ -212,7 +213,8 @@ namespace pathos {
 		std::mutex gpuQueryMutex;
 
 		// System geometry
-		MeshGeometry* geometry_unitPlane = nullptr;
+		MeshGeometry* geometry_unitPlane = nullptr; // width = height = 2
+		MeshGeometry* geometry_unitCube = nullptr;  // half size = (1, 1, 1)
 
 		// System textures
 		GLuint texture2D_black     = 0;

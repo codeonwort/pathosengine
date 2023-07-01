@@ -91,7 +91,7 @@ namespace pathos {
 
 		virtual void initializeResources(RenderCommandList& cmdList) = 0;
 		virtual void releaseResources(RenderCommandList& cmdList) = 0;
-		virtual void renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) = 0;
+		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) = 0;
 
 		__forceinline void setInput(EPostProcessInput binding, GLuint textureSRV) {
 			CHECKF((uint8)binding <= (uint8)EPostProcessInput::PPI_MAX, "binding is invalid");

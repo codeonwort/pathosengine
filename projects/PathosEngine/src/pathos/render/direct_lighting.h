@@ -32,7 +32,7 @@ namespace pathos {
 		UniformBuffer uboPointLight;
 		UniformBuffer uboRectLight;
 
-		PlaneGeometry* quad = nullptr;
+		MeshGeometry* fullscreenQuad = nullptr;
 
 		bool destroyed = false;
 

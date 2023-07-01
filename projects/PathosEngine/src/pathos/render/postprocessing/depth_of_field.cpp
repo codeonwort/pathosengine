@@ -76,7 +76,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void DepthOfField::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
+	void DepthOfField::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(DepthOfField);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;

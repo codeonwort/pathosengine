@@ -101,7 +101,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void SSAO::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
+	void SSAO::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
 	{
 		SCOPED_DRAW_EVENT(SSAO);
 

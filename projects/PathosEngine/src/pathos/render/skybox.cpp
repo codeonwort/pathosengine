@@ -49,6 +49,8 @@ namespace pathos {
 namespace pathos {
 
 	void SkyboxPass::initializeResources(RenderCommandList& cmdList) {
+		cubeGeometry = gEngine->getSystemGeometryUnitCube();
+
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_Skybox");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
@@ -61,7 +63,6 @@ namespace pathos {
 		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &scratchCubemapTexture);
 		cmdList.textureStorage2D(scratchCubemapTexture, 1, GL_RGBA16F, scratchCubemapSize, scratchCubemapSize);
 
-		cubeGeometry = new CubeGeometry(vector3(1.0f));
 		matrix4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		matrix4 captureViews[] =
 		{
@@ -84,7 +85,6 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		gRenderDevice->deleteFramebuffers(1, &fboCube);
 		gRenderDevice->deleteTextures(1, &scratchCubemapTexture);
-		delete cubeGeometry;
 	}
 
 	void SkyboxPass::renderSkybox(RenderCommandList& cmdList, SceneProxy* scene) {

@@ -82,7 +82,7 @@ namespace pathos {
 
 	void DirectLightingPass::initializeResources(RenderCommandList& cmdList) {
 		// fullscreen quad
-		quad = new PlaneGeometry(2.0f, 2.0f);
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 		
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
@@ -95,8 +95,6 @@ namespace pathos {
 	void DirectLightingPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
-			quad->dispose();
-			delete quad;
 		}
 		destroyed = true;
 	}
@@ -164,9 +162,9 @@ namespace pathos {
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
 
-				quad->activate_position_uv(cmdList);
-				quad->activateIndexBuffer(cmdList);
-				quad->drawPrimitive(cmdList);
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
 
@@ -195,9 +193,9 @@ namespace pathos {
 
 				// #todo-light: Local lights usually do not cover the entire viewport.
 				// Need to adjust raster region in vertex shader.
-				quad->activate_position_uv(cmdList);
-				quad->activateIndexBuffer(cmdList);
-				quad->drawPrimitive(cmdList);
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
 
@@ -224,9 +222,9 @@ namespace pathos {
 
 				// #todo-light: Local lights usually do not cover the entire viewport.
 				// Need to adjust raster region in vertex shader.
-				quad->activate_position_uv(cmdList);
-				quad->activateIndexBuffer(cmdList);
-				quad->drawPrimitive(cmdList);
+				fullscreenQuad->activate_position_uv(cmdList);
+				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
 

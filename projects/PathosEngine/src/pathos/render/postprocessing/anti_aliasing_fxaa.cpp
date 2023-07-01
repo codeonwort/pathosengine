@@ -60,7 +60,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void FXAA::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad) {
+	void FXAA::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(FXAA);
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColorToneMapped

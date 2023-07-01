@@ -429,6 +429,7 @@ namespace pathos {
 
 		// Create engine resources
 		gEngine->geometry_unitPlane = new PlaneGeometry(2.0f, 2.0f); // #todo: destroy at program termination
+		gEngine->geometry_unitCube = new CubeGeometry(vector3(1.0f));
 
 		GLuint systemTexture2Ds[5];
 		GLuint systemTextureCubes[1];
@@ -509,6 +510,10 @@ namespace pathos {
 
 	bool RenderThread::destroyOpenGL() {
 		ScopedGpuCounter::destroyQueryObjectPool();
+		
+		delete gEngine->geometry_unitPlane;
+		delete gEngine->geometry_unitCube;
+
 		return true;
 	}
 

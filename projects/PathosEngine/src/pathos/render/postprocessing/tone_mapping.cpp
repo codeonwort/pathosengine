@@ -60,7 +60,7 @@ namespace pathos {
 		markDestroyed();
 	}
 
-	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, PlaneGeometry* fullscreenQuad)
+	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
 	{
 		SCOPED_DRAW_EVENT(ToneMapping);
 

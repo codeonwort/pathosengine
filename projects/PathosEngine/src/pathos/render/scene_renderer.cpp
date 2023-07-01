@@ -263,7 +263,7 @@ namespace pathos {
 		if (bLightProbeRendering == false) {
 			SCOPED_CPU_COUNTER(GodRay);
 			SCOPED_GPU_COUNTER(RenderGodRay);
-			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad.get(), this);
+			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad, this);
 		}
 
 		{
@@ -275,7 +275,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(SSAO);
 			SCOPED_GPU_COUNTER(SSAO);
-			ssao->renderPostProcess(cmdList, fullscreenQuad.get());
+			ssao->renderPostProcess(cmdList, fullscreenQuad);
 		}
 
 		{
@@ -352,16 +352,16 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
-			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad.get());
+			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad);
 		}
 
 		// Add unlit and emissive
-		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad.get());
+		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
 
 		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
 			SCOPED_CPU_COUNTER(ScreenSpaceReflection);
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
-			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad.get());
+			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad);
 		}
 
 		// Translucency pass
@@ -454,10 +454,10 @@ namespace pathos {
 
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneColorHalfRes);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets->sceneBloomSetup);
-				bloomSetup->renderPostProcess(cmdList, fullscreenQuad.get());
+				bloomSetup->renderPostProcess(cmdList, fullscreenQuad);
 
 				bloomPass->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneBloomSetup);
-				bloomPass->renderPostProcess(cmdList, fullscreenQuad.get());
+				bloomPass->renderPostProcess(cmdList, fullscreenQuad);
 			}
 
 			// Post Process: Tone Mapping
@@ -474,7 +474,7 @@ namespace pathos {
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
 				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->getVolumetricCloud(frameCounter));
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
-				toneMapping->renderPostProcess(cmdList, fullscreenQuad.get());
+				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 
 				sceneAfterLastPP = toneMappingRenderTarget;
 			}
@@ -495,7 +495,7 @@ namespace pathos {
 
 					fxaa->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 					fxaa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
-					fxaa->renderPostProcess(cmdList, fullscreenQuad.get());
+					fxaa->renderPostProcess(cmdList, fullscreenQuad);
 
 					sceneAfterLastPP = aaRenderTarget;
 					break;
@@ -513,7 +513,7 @@ namespace pathos {
 					taa->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->velocityMap);
 					taa->setInput(EPostProcessInput::PPI_4, sceneRenderTargets->gbufferA);
 					taa->setOutput(EPostProcessOutput::PPO_0, aaRenderTarget);
-					taa->renderPostProcess(cmdList, fullscreenQuad.get());
+					taa->renderPostProcess(cmdList, fullscreenQuad);
 
 					{
 						SCOPED_DRAW_EVENT(SaveSceneColorHistory);
@@ -546,7 +546,7 @@ namespace pathos {
 
 						fsr1->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 						fsr1->setOutput(EPostProcessOutput::PPO_0, renderTarget);
-						fsr1->renderPostProcess(cmdList, fullscreenQuad.get());
+						fsr1->renderPostProcess(cmdList, fullscreenQuad);
 
 						sceneAfterLastPP = renderTarget;
 
@@ -582,7 +582,7 @@ namespace pathos {
 
 				depthOfField->setInput(EPostProcessInput::PPI_0, dofInput);
 				depthOfField->setOutput(EPostProcessOutput::PPO_0, dofRenderTarget);
-				depthOfField->renderPostProcess(cmdList, fullscreenQuad.get());
+				depthOfField->renderPostProcess(cmdList, fullscreenQuad);
 
 				sceneAfterLastPP = dofRenderTarget;
 			}
@@ -870,7 +870,7 @@ namespace pathos {
 namespace pathos {
 	
 	uniquePtr<Material>                  SceneRenderer::fallbackMaterial;
-	uniquePtr<PlaneGeometry>             SceneRenderer::fullscreenQuad;
+	MeshGeometry*                        SceneRenderer::fullscreenQuad;
 	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	
 	uniquePtr<UniformBuffer>             SceneRenderer::ubo_perFrame;
@@ -905,7 +905,8 @@ namespace pathos {
 	uniquePtr<DepthOfField>              SceneRenderer::depthOfField;
 
 	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fullscreenQuad = makeUnique<PlaneGeometry>(2.0f, 2.0f);
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);
 
@@ -995,7 +996,6 @@ namespace pathos {
 
 	void SceneRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial.release();
-		fullscreenQuad->dispose();
 		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
 
 		ubo_perFrame.release();
