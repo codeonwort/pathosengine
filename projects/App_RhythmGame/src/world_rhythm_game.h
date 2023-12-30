@@ -62,7 +62,7 @@ private:
 
 	// Save
 	PlayRecord recordToSave;
-	GlobalFileLogger playRecordFileWriter;
+	LogFileWriter playRecordFileWriter;
 	std::vector<float> laneKeyPressTimes;
 
 // Browse stage

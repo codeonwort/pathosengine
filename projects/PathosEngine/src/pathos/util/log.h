@@ -3,22 +3,12 @@
 #include "file_system.h"
 #include "string_conversion.h"
 
-#include <iostream>
 #include <fstream>
-#include <stdio.h>
 #include <stdarg.h>
 
 #define ENABLE_LOGGER 1
 
 namespace pathos {
-
-	static const char* severity_strings[] = {
-		"[DEBUG] ",
-		"[INFO] ",
-		"[WARNING] ",
-		"[ERROR] ",
-		"[FATAL] "
-	};
 
 	enum LogSeverity {
 		LogDebug   = 0,
@@ -28,37 +18,43 @@ namespace pathos {
 		LogFatal   = 4
 	};
 
+	// #todo-log: Log category, log window
+	// Wrtie a log in the console window and the global log file.
 	void LOG(LogSeverity severity, const char* format...);
 
-	struct GlobalFileLogger
+	// Write logs to a file. Not thread-safe.
+	struct LogFileWriter
 	{
-		GlobalFileLogger() {}
-		GlobalFileLogger(const char* filename) {
-			initialize(filename);
-		}
-		~GlobalFileLogger() {
-			handle.close();
-		}
+		LogFileWriter();
+		~LogFileWriter();
 
-		void initialize(const char* filename);
+		/// <summary>
+		/// Create a log file in the '[solution_dir]/log/' folder.
+		/// </summary>
+		/// <param name="filename">Filename with an extension.</param>
+		/// <param name="renameOldFileToKeep">If true and given filename already exists, then rename the old file so that it's not overwritten.
+		/// For example, given "asd.txt", the old file is renamed to "asd.old.N.txt" where N is the smallest positive integer
+		/// that does not make the new name conflicts with other filenames in the same folder.
+		/// If false, then the file will be overwritten.</param>
+		void initialize(const char* filename, bool renameOldFileToKeep = true);
 
-		void write(const char* data) {
-			handle << data << '\n';
-		}
+		// Wrtie a line to the file. Automatically appends a newline character.
+		void writeLine(const char* line);
 
-		void flush() {
-			handle.flush();
-		}
+		// Writing to file could be pending until flushed.
+		void flush();
+
+		// Same as consecutive calls of write() and flush().
+		void writeLineAndFlush(const char* line);
 
 		const std::string& getFilepath() const { return filepath; }
 
 	private:
 		std::string filepath;
-		std::fstream handle;
+		std::fstream fileHandle;
 
 	};
-
-	extern GlobalFileLogger CommonLogFile;
-	extern GlobalFileLogger ShaderLogFile;
+	
+	extern LogFileWriter gGlobalLogFile;
 
 }

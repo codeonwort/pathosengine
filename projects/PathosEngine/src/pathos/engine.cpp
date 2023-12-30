@@ -108,6 +108,8 @@ namespace pathos {
 		ResourceFinder::get().add("../../resources/");
 		ResourceFinder::get().add("../../resources_external/");
 
+		gGlobalLogFile.initialize("program_log.txt");
+
 		std::vector<std::string> configLines;
 		readConfigFile(ENGINE_CONFIG_FILE, configLines);
 		readConfigFile(ENGINE_CONFIG_EXTRA_FILE, configLines);

@@ -274,7 +274,7 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 	outRecord.finalizeEvents();
 }
 
-void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
+void saveMusicRecord(LogFileWriter& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
 	// #todo-rhythm: Support binary format
 	CHECK(binaryFormat == false);
 
@@ -282,7 +282,7 @@ void saveMusicRecord(GlobalFileLogger& fileWriter, const PlayRecord& playRecord,
 	for (uint32 laneIx = 0; laneIx < LANE_COUNT; ++laneIx) {
 		for (const LaneKeyEvent& evt : playRecord.getLaneEvents(laneIx)) {
 			sprintf_s(buf, "%d %f %f", evt.laneIndex, evt.pressTime, evt.releaseTime);
-			fileWriter.write(buf);
+			fileWriter.writeLine(buf);
 		}
 	}
 
