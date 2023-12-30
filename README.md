@@ -3,17 +3,15 @@
 
 OpenGL rendering engine mainly to toy with real-time graphics programming.
 
-NOTE: Here my main focus is on implementing rendering techniques,
-so the engine architecture might be bad and not that robust.
-Also I give only little effort to non-rendering subsystems.
+It's architecture follows game engine patterns but it's not meant to be a game engine.
 
 ### Development Environment
 
-This project probably will compile in only this configuration:
+I'm developing in the following environment and won't consider backward compatibility or other OS.
 
 * GL version: OpenGL 4.6 Core Profile
 * Language: C++17
-* OS: Windows 10 or 11
+* OS: Windows 11
 * IDE: Visual Studio 2022
 
 ### How to Build
@@ -23,7 +21,7 @@ This project probably will compile in only this configuration:
 3. Build all projects in `PathosEngine.sln`.
 4. Execute one of test projects.
 
-### Sample Images
+## Sample Images
 
 ![AreaLightTest](https://user-images.githubusercontent.com/11644393/191719865-a5db07fa-336b-4d3c-96cf-5b0da60812c5.jpg)
 Area light sources (sphere light and rect light).
@@ -69,7 +67,7 @@ Yet another Sponza scene.
   * Scene capture (rendering from separate views other than the main view)
   * Runtime shader recompilation
   * Actor system (component-based development)
-  * Material shader assembly system
+  * Material shader assembly system (generate material shaders from templates so that they can run in frame rendering pipeline)
   * RenderDoc integration
   * Console variables and console window
 
