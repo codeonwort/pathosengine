@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pathos/rhi/gl_live_objects.h"
+
 #include "badger/types/int_types.h"
 #include <GL/gl3w.h>
 

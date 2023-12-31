@@ -105,6 +105,7 @@
     <ClCompile Include="src\pathos\render\gbuffer_pass.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_image.cpp" />
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
+    <ClCompile Include="src\pathos\rhi\gl_live_objects.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
     <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
+    <ClInclude Include="src\pathos\rhi\gl_live_objects.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />

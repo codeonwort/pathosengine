@@ -764,6 +764,10 @@ struct RenderCommand_deleteTextures : public RenderCommandBase {
 			params->n,
 			params->textures
 		);
+		gGLLiveObjects->deleteTextures(
+			params->n,
+			params->textures
+		);
 	}
 };
 struct RenderCommand_genTextures : public RenderCommandBase {
@@ -772,6 +776,10 @@ struct RenderCommand_genTextures : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_genTextures* __restrict params) {
 		glGenTextures(
+			params->n,
+			params->textures
+		);
+		gGLLiveObjects->genTextures(
 			params->n,
 			params->textures
 		);
@@ -1187,6 +1195,10 @@ struct RenderCommand_genQueries : public RenderCommandBase {
 			params->n,
 			params->ids
 		);
+		gGLLiveObjects->genQueries(
+			params->n,
+			params->ids
+		);
 	}
 };
 struct RenderCommand_deleteQueries : public RenderCommandBase {
@@ -1195,6 +1207,10 @@ struct RenderCommand_deleteQueries : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteQueries* __restrict params) {
 		glDeleteQueries(
+			params->n,
+			params->ids
+		);
+		gGLLiveObjects->deleteQueries(
 			params->n,
 			params->ids
 		);
@@ -1285,6 +1301,10 @@ struct RenderCommand_deleteBuffers : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteBuffers* __restrict params) {
 		glDeleteBuffers(
+			params->n,
+			params->buffers
+		);
+		gGLLiveObjects->deleteBuffers(
 			params->n,
 			params->buffers
 		);
@@ -3421,6 +3441,10 @@ struct RenderCommand_deleteRenderbuffers : public RenderCommandBase {
 			params->n,
 			params->renderbuffers
 		);
+		gGLLiveObjects->deleteRenderbuffers(
+			params->n,
+			params->renderbuffers
+		);
 	}
 };
 struct RenderCommand_genRenderbuffers : public RenderCommandBase {
@@ -3488,6 +3512,10 @@ struct RenderCommand_deleteFramebuffers : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteFramebuffers* __restrict params) {
 		glDeleteFramebuffers(
+			params->n,
+			params->framebuffers
+		);
+		gGLLiveObjects->deleteFramebuffers(
 			params->n,
 			params->framebuffers
 		);
@@ -3709,6 +3737,10 @@ struct RenderCommand_deleteVertexArrays : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteVertexArrays* __restrict params) {
 		glDeleteVertexArrays(
+			params->n,
+			params->arrays
+		);
+		gGLLiveObjects->deleteVertexArrays(
 			params->n,
 			params->arrays
 		);
@@ -4226,6 +4258,10 @@ struct RenderCommand_deleteSamplers : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteSamplers* __restrict params) {
 		glDeleteSamplers(
+			params->count,
+			params->samplers
+		);
+		gGLLiveObjects->deleteSamplers(
 			params->count,
 			params->samplers
 		);
@@ -5056,6 +5092,10 @@ struct RenderCommand_deleteTransformFeedbacks : public RenderCommandBase {
 			params->n,
 			params->ids
 		);
+		gGLLiveObjects->deleteTransformFeedbacks(
+			params->n,
+			params->ids
+		);
 	}
 };
 struct RenderCommand_genTransformFeedbacks : public RenderCommandBase {
@@ -5311,6 +5351,10 @@ struct RenderCommand_deleteProgramPipelines : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_deleteProgramPipelines* __restrict params) {
 		glDeleteProgramPipelines(
+			params->n,
+			params->pipelines
+		);
+		gGLLiveObjects->deleteProgramPipelines(
 			params->n,
 			params->pipelines
 		);
@@ -7497,6 +7541,10 @@ struct RenderCommand_createTransformFeedbacks : public RenderCommandBase {
 			params->n,
 			params->ids
 		);
+		gGLLiveObjects->createTransformFeedbacks(
+			params->n,
+			params->ids
+		);
 	}
 };
 struct RenderCommand_transformFeedbackBufferBase : public RenderCommandBase {
@@ -7578,6 +7626,10 @@ struct RenderCommand_createBuffers : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_createBuffers* __restrict params) {
 		glCreateBuffers(
+			params->n,
+			params->buffers
+		);
+		gGLLiveObjects->createBuffers(
 			params->n,
 			params->buffers
 		);
@@ -7791,6 +7843,10 @@ struct RenderCommand_createFramebuffers : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_createFramebuffers* __restrict params) {
 		glCreateFramebuffers(
+			params->n,
+			params->framebuffers
+		);
+		gGLLiveObjects->createFramebuffers(
 			params->n,
 			params->framebuffers
 		);
@@ -8068,6 +8124,10 @@ struct RenderCommand_createRenderbuffers : public RenderCommandBase {
 			params->n,
 			params->renderbuffers
 		);
+		gGLLiveObjects->createRenderbuffers(
+			params->n,
+			params->renderbuffers
+		);
 	}
 };
 struct RenderCommand_namedRenderbufferStorage : public RenderCommandBase {
@@ -8122,6 +8182,11 @@ struct RenderCommand_createTextures : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_createTextures* __restrict params) {
 		glCreateTextures(
+			params->target,
+			params->n,
+			params->textures
+		);
+		gGLLiveObjects->createTextures(
 			params->target,
 			params->n,
 			params->textures
@@ -8689,6 +8754,10 @@ struct RenderCommand_createVertexArrays : public RenderCommandBase {
 			params->n,
 			params->arrays
 		);
+		gGLLiveObjects->createVertexArrays(
+			params->n,
+			params->arrays
+		);
 	}
 };
 struct RenderCommand_disableVertexArrayAttrib : public RenderCommandBase {
@@ -8891,6 +8960,10 @@ struct RenderCommand_createSamplers : public RenderCommandBase {
 			params->n,
 			params->samplers
 		);
+		gGLLiveObjects->createSamplers(
+			params->n,
+			params->samplers
+		);
 	}
 };
 struct RenderCommand_createProgramPipelines : public RenderCommandBase {
@@ -8899,6 +8972,10 @@ struct RenderCommand_createProgramPipelines : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_createProgramPipelines* __restrict params) {
 		glCreateProgramPipelines(
+			params->n,
+			params->pipelines
+		);
+		gGLLiveObjects->createProgramPipelines(
 			params->n,
 			params->pipelines
 		);
@@ -8911,6 +8988,11 @@ struct RenderCommand_createQueries : public RenderCommandBase {
 
 	static void APIENTRY execute(const RenderCommand_createQueries* __restrict params) {
 		glCreateQueries(
+			params->target,
+			params->n,
+			params->ids
+		);
+		gGLLiveObjects->createQueries(
 			params->target,
 			params->n,
 			params->ids

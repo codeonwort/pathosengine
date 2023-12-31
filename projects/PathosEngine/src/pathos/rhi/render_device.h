@@ -10,8 +10,6 @@
 #include <memory>
 #include <set>
 
-// Device API wrapper
-
 #define REQUIRED_GL_MAJOR_VERSION 4
 #define REQUIRED_GL_MINOR_VERSION 6
 
@@ -54,6 +52,7 @@ namespace pathos {
 		int32 dedicatedVideoMemoryAvailableMiB = 0;
 	};
 
+	// Device API wrapper
 	class OpenGLDevice final : public Noncopyable {
 
 	public:
@@ -92,13 +91,15 @@ namespace pathos {
 		void createRenderbuffers(GLsizei n, GLuint* renderbuffers);
 		void createProgramPipelines(GLsizei n, GLuint* pipelines);
 
-		void deleteTextures(GLsizei n, const GLuint* textures);
 		void deleteVertexArrays(GLsizei n, const GLuint* arrays);
+		void deleteTextures(GLsizei n, const GLuint* textures);
 		void deleteFramebuffers(GLsizei n, const GLuint* framebuffers);
 		void deleteSamplers(GLsizei n, const GLuint* samplers);
 		void deleteQueries(GLsizei n, const GLuint* ids);
+		void deleteTransformFeedbacks(GLsizei n, const GLuint* ids);
 		void deleteBuffers(GLsizei n, const GLuint* buffers);
-		void deleteProgramPipelines(GLsizei n, GLuint* pipelines);
+		void deleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
+		void deleteProgramPipelines(GLsizei n, const GLuint* pipelines);
 
 		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
@@ -112,17 +113,6 @@ namespace pathos {
 		uniquePtr<RenderCommandList> immediate_command_list; // For render thread itself
 		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> hook_command_list;
-
-		// Track alive GPU resources
-		std::set<GLuint> aliveGLVertexArrays;
-		std::set<GLuint> aliveGLTextures;
-		std::set<GLuint> aliveGLFramebuffers;
-		std::set<GLuint> aliveGLSamplers;
-		std::set<GLuint> aliveGLQueries;
-		std::set<GLuint> aliveGLTransformFeedbacks;
-		std::set<GLuint> aliveGLBuffers;
-		std::set<GLuint> aliveGLRenderBuffers;
-		std::set<GLuint> aliveGLProgramPipelines;
 	};
 
 	extern OpenGLDevice* gRenderDevice;

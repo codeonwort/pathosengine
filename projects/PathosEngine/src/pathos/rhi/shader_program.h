@@ -39,6 +39,8 @@ namespace pathos {
 				handler(item.second);
 			}
 		}
+
+		size_t numPrograms() const { return programMap.size(); }
 		
 	private:
 		std::map<uint32, ShaderProgram*> programMap;
