@@ -187,8 +187,7 @@ namespace pathos {
 			LOG(LogInfo, "[RenderDevice] VRAM: %d MiB (available: %d MiB)",
 				capabilities.dedicatedVideoMemoryMiB, capabilities.dedicatedVideoMemoryAvailableMiB);
 		} else {
-			// #todo: Support AMD driver
-			LOG(LogInfo, "[RenderDevice] VRAM: unknown ('NVX_gpu_memory_info' extension is missing)");
+			LOG(LogInfo, "[RenderDevice] VRAM: unknown (Both 'NVX_gpu_memory_info' and 'ATI_meminfo' extensions are missing)");
 		}
 
 		return true;
@@ -270,8 +269,8 @@ namespace pathos {
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, capabilities.glMaxComputeWorkGroupSize + 1);
 		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, capabilities.glMaxComputeWorkGroupSize + 2);
 
-		// https://registry.khronos.org/OpenGL/extensions/NVX/NVX_gpu_memory_info.txt
 		if (extensionSupport.NVX_gpu_memory_info != 0) {
+			// https://registry.khronos.org/OpenGL/extensions/NVX/NVX_gpu_memory_info.txt
 			capabilities.bMemoryInfoAvailable = true;
 
 			const GLenum GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX          = 0x9047;
@@ -283,6 +282,28 @@ namespace pathos {
 			glGetIntegerv(GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &capabilities.dedicatedVideoMemoryKiB);
 			glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &capabilities.dedicatedVideoMemoryAvailableKiB);
 			capabilities.dedicatedVideoMemoryMiB = capabilities.dedicatedVideoMemoryKiB >> 10;
+			capabilities.dedicatedVideoMemoryAvailableMiB = capabilities.dedicatedVideoMemoryAvailableKiB >> 10;
+		} else if (extensionSupport.ATI_meminfo != 0) {
+			// https://registry.khronos.org/OpenGL/extensions/ATI/ATI_meminfo.txt
+			capabilities.bMemoryInfoAvailable = true;
+
+			const GLenum VBO_FREE_MEMORY_ATI                           = 0x87FB;
+			const GLenum TEXTURE_FREE_MEMORY_ATI                       = 0x87FC;
+			const GLenum RENDERBUFFER_FREE_MEMORY_ATI                  = 0x87FD;
+
+			// All values are in KiB
+			// param[0] - total memory free in the pool
+			// param[1] - largest available free block in the pool
+			// param[2] - total auxiliary memory free
+			// param[3] - largest auxiliary free block
+			GLint vboParams[4], texParams[4], rbParams[4];
+			glGetIntegerv(VBO_FREE_MEMORY_ATI, vboParams);
+			glGetIntegerv(TEXTURE_FREE_MEMORY_ATI, texParams);
+			glGetIntegerv(RENDERBUFFER_FREE_MEMORY_ATI, rbParams);
+
+			capabilities.dedicatedVideoMemoryKiB = std::max(vboParams[0], std::max(texParams[0], rbParams[0]));
+			capabilities.dedicatedVideoMemoryMiB = capabilities.dedicatedVideoMemoryKiB >> 10;
+			capabilities.dedicatedVideoMemoryAvailableKiB = std::max(vboParams[1], std::max(texParams[1], rbParams[1]));
 			capabilities.dedicatedVideoMemoryAvailableMiB = capabilities.dedicatedVideoMemoryAvailableKiB >> 10;
 		}
 	}
@@ -325,17 +346,18 @@ namespace pathos {
 		};
 
 		// #todo-gl-extension: Utilize available extensions
-		extensionSupport.NV_ray_tracing                  = findExt("GL_NV_ray_tracing");
-		extensionSupport.NV_mesh_shader                  = findExt("GL_NV_mesh_shader");
-		extensionSupport.NV_shading_rate_image           = findExt("GL_NV_shading_rate_image");
-		extensionSupport.NV_shader_texture_footprint     = findExt("GL_NV_shader_texture_footprint");
-		extensionSupport.NV_representative_fragment_test = findExt("GL_NV_representative_fragment_test");
-		extensionSupport.NV_fragment_shader_barycentric  = findExt("GL_NV_fragment_shader_barycentric");
-		extensionSupport.NV_compute_shader_derivatives   = findExt("GL_NV_compute_shader_derivatives");
-		extensionSupport.NV_scissor_exclusive            = findExt("GL_NV_scissor_exclusive");
-		extensionSupport.NVX_gpu_memory_info             = findExt("GL_NVX_gpu_memory_info");
-		extensionSupport.NV_gpu_shader5                  = findExt("GL_NV_gpu_shader5");
-		extensionSupport.EXT_shader_16bit_storage        = findExt("GL_EXT_shader_16bit_storage");
+		extensionSupport.ATI_meminfo                          = findExt("GL_ATI_meminfo");
+		extensionSupport.NV_ray_tracing                       = findExt("GL_NV_ray_tracing");
+		extensionSupport.NV_mesh_shader                       = findExt("GL_NV_mesh_shader");
+		extensionSupport.NV_shading_rate_image                = findExt("GL_NV_shading_rate_image");
+		extensionSupport.NV_shader_texture_footprint          = findExt("GL_NV_shader_texture_footprint");
+		extensionSupport.NV_representative_fragment_test      = findExt("GL_NV_representative_fragment_test");
+		extensionSupport.NV_fragment_shader_barycentric       = findExt("GL_NV_fragment_shader_barycentric");
+		extensionSupport.NV_compute_shader_derivatives        = findExt("GL_NV_compute_shader_derivatives");
+		extensionSupport.NV_scissor_exclusive                 = findExt("GL_NV_scissor_exclusive");
+		extensionSupport.NVX_gpu_memory_info                  = findExt("GL_NVX_gpu_memory_info");
+		extensionSupport.NV_gpu_shader5                       = findExt("GL_NV_gpu_shader5");
+		extensionSupport.EXT_shader_16bit_storage             = findExt("GL_EXT_shader_16bit_storage");
 		extensionSupport.EXT_shader_explicit_arithmetic_types = findExt("GL_EXT_shader_explicit_arithmetic_types");
 	}
 

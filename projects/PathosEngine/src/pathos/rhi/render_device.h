@@ -19,6 +19,7 @@ namespace pathos {
 
 	// https://developer.nvidia.com/vulkan-turing
 	struct OpenGLExtensionSupport {
+		uint32 ATI_meminfo : 1;
 		uint32 NV_ray_tracing : 1;
 		uint32 NV_mesh_shader : 1;
 		uint32 NV_shading_rate_image : 1;
