@@ -1,7 +1,9 @@
 #pragma once
 
-#include "badger/system/stopwatch.h"
 #include "badger/types/int_types.h"
+#include "badger/system/stopwatch.h"
+#include "badger/system/cpu.h"
+
 #include <vector>
 #include <string>
 #include <atomic>
@@ -14,7 +16,7 @@ namespace pathos {
 		ScopedCpuCounter(const char* inName);
 		~ScopedCpuCounter();
 
-		uint32 threadId;
+		PlatformThreadId threadId;
 		// #todo-stat: Skip string allocation if string literal is given.
 		std::string name;
 		uint32 itemHandle;
@@ -41,13 +43,13 @@ namespace pathos {
 
 	// It turned out that per-core profile is a bad idea. Let's go for per-thread profile.
 	struct ProfilePerThread {
-		ProfilePerThread(uint32 inThreadId, const char* inDebugName)
+		ProfilePerThread(PlatformThreadId inThreadId, const char* inDebugName)
 			: threadId(inThreadId)
 			, threadName(inDebugName)
 			, currentTab(0)
 		{
 		}
-		ProfilePerThread(uint32 inThreadId, std::string&& inDebugName)
+		ProfilePerThread(PlatformThreadId inThreadId, std::string&& inDebugName)
 			: threadId(inThreadId)
 			, threadName(inDebugName)
 			, currentTab(0)
@@ -62,7 +64,7 @@ namespace pathos {
 			return items.size() == 0;
 		}
 
-		uint32 threadId;
+		PlatformThreadId threadId;
 		std::string threadName;
 
 		std::vector<ProfileItem> items;
@@ -91,15 +93,15 @@ namespace pathos {
 
 		void initialize();
 		void registerCurrentThread(const char* inDebugName);
-		void registerThread(uint32 threadId, const char* inDebugName);
+		void registerThread(PlatformThreadId threadId, const char* inDebugName);
 
 		void beginCheckpoint(uint32 frameCounter);
 		void finishCheckpoint();
 
-		uint32 beginItem(uint32 threadId, const char* counterName);
-		void finishItem(uint32 frameHandle, uint32 threadId);
+		uint32 beginItem(PlatformThreadId threadId, const char* counterName);
+		void finishItem(uint32 frameHandle, PlatformThreadId threadId);
 
-		void getLastFrameSnapshot(uint32 threadID, std::vector<ProfileItem>& outSnapshot);
+		void getLastFrameSnapshot(PlatformThreadId threadID, std::vector<ProfileItem>& outSnapshot);
 
 		// #todo-cpu: Temp
 		std::atomic<uint32> purge_milestone;
@@ -116,7 +118,7 @@ namespace pathos {
 
 		float getGlobalClockTime();
 
-		std::unordered_map<uint32, ProfilePerThread> profiles; // Map thread id to profile
+		std::unordered_map<PlatformThreadId, ProfilePerThread> profiles; // Map thread id to profile
 		std::mutex profilesMutex;
 
 		std::vector<ProfileCheckpoint> checkpoints; // #todo-cpu: Switch to typed ring buffers

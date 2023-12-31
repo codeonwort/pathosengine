@@ -1,4 +1,10 @@
-// Custom memory allocators.
+// ----------------------------------------------------------------------------
+// Custom memory allocators
+// 
+// - StackAllocator
+// - PoolAllocator
+// - CircularAllocator
+// ----------------------------------------------------------------------------
 
 #pragma once
 

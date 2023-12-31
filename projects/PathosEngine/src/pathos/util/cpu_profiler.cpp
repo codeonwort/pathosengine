@@ -4,7 +4,7 @@
 #include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
-#include "badger/thread/cpu.h"
+#include "badger/system/cpu.h"
 
 #include <fstream>
 #include <sstream>
@@ -72,14 +72,14 @@ namespace pathos {
 	}
 
 	void CpuProfiler::registerCurrentThread(const char* inDebugName) {
-		const uint32 threadId = CPU::getCurrentThreadId();
+		PlatformThreadId threadId = CPU::getCurrentThreadId();
 		registerThread(threadId, inDebugName);
 	}
-	void CpuProfiler::registerThread(uint32 threadId, const char* inDebugName) {
+	void CpuProfiler::registerThread(PlatformThreadId threadId, const char* inDebugName) {
 		std::lock_guard<std::mutex> profileLock(profilesMutex);
 
 		CHECKF(profiles.find(threadId) == profiles.end(), "Current thread is already registered");
-		profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, inDebugName)));
+		profiles.insert(std::make_pair(threadId, ProfilePerThread(threadId, inDebugName)));
 	}
 
 	void CpuProfiler::beginCheckpoint(uint32 frameCounter) {
@@ -98,7 +98,7 @@ namespace pathos {
 		}
 	}
 
-	uint32 CpuProfiler::beginItem(uint32 threadId, const char* counterName) {
+	uint32 CpuProfiler::beginItem(PlatformThreadId threadId, const char* counterName) {
 		std::lock_guard<std::mutex> profileLock(profilesMutex);
 
 #if 0	// Create anonymous profile rather than assert
@@ -107,7 +107,7 @@ namespace pathos {
 		if (profiles.find(threadId) == profiles.end()) {
 			std::stringstream ss;
 			ss << "Thread " << threadId;
-			profiles.insert(std::pair<uint32, ProfilePerThread>(threadId, ProfilePerThread(threadId, ss.str())));
+			profiles.insert(std::make_pair(threadId, ProfilePerThread(threadId, ss.str())));
 			LOG(LogDebug, "[%s] Anonymous thread has been detected: %s", __FUNCTION__, ss.str());
 		}
 #endif
@@ -120,7 +120,7 @@ namespace pathos {
 		return itemHandle;
 	}
 
-	void CpuProfiler::finishItem(uint32 itemHandle, uint32 threadId) {
+	void CpuProfiler::finishItem(uint32 itemHandle, PlatformThreadId threadId) {
 		std::lock_guard<std::mutex> profileLock(profilesMutex);
 
 		ProfilePerThread& currentProfile = profiles[threadId];
@@ -139,7 +139,7 @@ namespace pathos {
 		currentProfile.currentTab -= 1;
 	}
 
-	void CpuProfiler::getLastFrameSnapshot(uint32 threadID, std::vector<ProfileItem>& outSnapshot) {
+	void CpuProfiler::getLastFrameSnapshot(PlatformThreadId threadID, std::vector<ProfileItem>& outSnapshot) {
 		std::lock_guard<std::mutex> profileLock(profilesMutex);
 
 		outSnapshot.clear();
@@ -232,7 +232,7 @@ namespace pathos {
 			}
 			int32 checkpointIxStart = numFramesToDump <= 0 ? 0 : std::max(0, checkpointIxEnd - numFramesToDump);
 
-			// #todo-cpu: Naive double loop, but not critically slow for few frames.
+			// #todo-cpu: Naive double loop, but not critically slow for a few frames.
 			// Can be optimized from O(MN) to O(M + N) if needed.
 			if (bChromeTracingFormat) {
 				char eventMsg[1024];
@@ -245,23 +245,23 @@ namespace pathos {
 				fs << "[" << '\n';
 				// Metadata events
 				for (auto it_p = profiles.begin(); it_p != profiles.end(); ++it_p) {
-					const uint32 tid = it_p->first;
+					const PlatformThreadId tid = it_p->first;
 					const std::string tname = it_p->second.threadName;
 					sprintf_s(eventMsg, "{\"name\":\"thread_name\", \"ph\":\"M\", \"pid\":%u, \"tid\":%u, \"args\":{\"name\":\"%s\"}}",
-						pid, tid, tname.c_str());
+						pid, (uint32)tid, tname.c_str());
 					fs << eventMsg;
 					fs << ",\n";
 				}
 				// Events
 				for (auto it_p = profiles.begin(); it_p != profiles.end(); ++it_p) {
-					const uint32 tid = it_p->first;
+					const PlatformThreadId tid = it_p->first;
 					const ProfilePerThread& profile = it_p->second;
 					size_t numItems = profile.items.size();
 					for (size_t i = 0; i < numItems; ++i) {
 						const ProfileItem& item = profile.items[i];
 						if (dumpStartTime <= item.startTime && item.startTime <= dumpEndTime && item.elapsedMS > 0.0f) {
 							sprintf_s(eventMsg, "{\"name\":\"%s\", \"cat\":\"CPU\", \"ph\":\"X\", \"ts\":%u, \"dur\":%u, \"pid\":%u, \"tid\":%u}",
-								item.name.c_str(), (uint32)(item.startTime * 1000), (uint32)(item.elapsedMS * 1000), pid, tid);
+								item.name.c_str(), (uint32)(item.startTime * 1000), (uint32)(item.elapsedMS * 1000), pid, (uint32)tid);
 							events.push_back(eventMsg);
 						}
 					}

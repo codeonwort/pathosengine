@@ -3,8 +3,8 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-#include "badger/memory/mem_alloc.h"
-#include "badger/thread/thread_pool.h"
+#include "badger/system/mem_alloc.h"
+#include "badger/system/thread_pool.h"
 
 #include <list>
 #include <mutex>

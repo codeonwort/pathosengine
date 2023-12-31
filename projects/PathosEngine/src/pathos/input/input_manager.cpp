@@ -1,6 +1,6 @@
 #include "input_manager.h"
 
-#include "badger/types/os.h"
+#include "badger/system/platform.h"
 #include "badger/types/string_hash.h"
 #include "badger/assertion/assertion.h"
 

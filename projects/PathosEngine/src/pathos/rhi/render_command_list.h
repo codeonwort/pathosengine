@@ -2,7 +2,7 @@
 
 #include "render_commands.h"
 
-#include "badger/memory/mem_alloc.h"
+#include "badger/system/mem_alloc.h"
 #include "badger/assertion/assertion.h"
 
 #include <vector>

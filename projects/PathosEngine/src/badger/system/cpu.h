@@ -1,6 +1,13 @@
 #pragma once
 
 #include "badger/types/int_types.h"
+#include "badger/system/platform.h"
+
+#if PLATFORM_WINDOWS
+	using PlatformThreadId = uint32;
+#else
+	#error "PlatformThreadId is undefined for the target platform."
+#endif
 
 class CPU final {
 
@@ -10,11 +17,7 @@ public:
 	// #note-cpu: It can change within a single function. Usually it's good to use thread id instead.
 	static uint32 getCurrentLogicalCoreIndex();
 
-	// #todo-cpu: If needed, search for GetLogicalProcessorInformation()
-	//static bool supportsSimultaneousMultithreading() const;
-
-	// #todo-cpu: Maybe uint64 for crossplatform?
-	static uint32 getCurrentThreadId();
+	static PlatformThreadId getCurrentThreadId();
 
 	static void setCurrentThreadName(const wchar_t* name);
 

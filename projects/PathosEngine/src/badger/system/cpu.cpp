@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include "badger/system/platform.h"
 
 #if PLATFORM_WINDOWS
 #include <Windows.h>
@@ -8,7 +7,7 @@
 uint32 CPU::getTotalLogicalCoreCount() {
 #if PLATFORM_WINDOWS
 	SYSTEM_INFO info;
-	GetSystemInfo(&info);
+	::GetSystemInfo(&info);
 	return (uint32)info.dwNumberOfProcessors;
 #else
 	#error "Not implemented"
@@ -18,7 +17,7 @@ uint32 CPU::getTotalLogicalCoreCount() {
 uint32 CPU::getCurrentLogicalCoreIndex() {
 #if PLATFORM_WINDOWS
 	PROCESSOR_NUMBER info;
-	GetCurrentProcessorNumberEx(&info);
+	::GetCurrentProcessorNumberEx(&info);
 	uint32 index = (uint32)info.Number + ((uint32)info.Group * 64);
 	return index;
 #else
@@ -26,11 +25,11 @@ uint32 CPU::getCurrentLogicalCoreIndex() {
 #endif
 }
 
-uint32 CPU::getCurrentThreadId()
+PlatformThreadId CPU::getCurrentThreadId()
 {
 #if PLATFORM_WINDOWS
-	static_assert(sizeof(DWORD) == sizeof(uint32), "Should match");
-	return (uint32)GetCurrentThreadId();
+	static_assert(sizeof(DWORD) == sizeof(PlatformThreadId), "Should match");
+	return (PlatformThreadId)::GetCurrentThreadId();
 #else
 	#error "Not implemented"
 #endif
@@ -38,7 +37,7 @@ uint32 CPU::getCurrentThreadId()
 
 void CPU::setCurrentThreadName(const wchar_t* name) {
 #if PLATFORM_WINDOWS
-	::SetThreadDescription(GetCurrentThread(), name);
+	::SetThreadDescription(::GetCurrentThread(), name);
 #else
 	#error "Not implemented"
 #endif

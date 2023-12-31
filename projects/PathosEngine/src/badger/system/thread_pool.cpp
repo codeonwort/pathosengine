@@ -1,5 +1,5 @@
 #include "thread_pool.h"
-#include "badger/thread/cpu.h"
+#include "badger/system/cpu.h"
 #include "badger/system/platform.h"
 #include "badger/assertion/assertion.h"
 

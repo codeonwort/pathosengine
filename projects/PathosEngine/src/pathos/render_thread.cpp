@@ -1,6 +1,6 @@
 #include "render_thread.h"
 
-#include "badger/thread/cpu.h"
+#include "badger/system/cpu.h"
 #include "badger/math/minmax.h"
 #include "badger/types/half_float.h"
 #include "badger/assertion/assertion.h"

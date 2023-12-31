@@ -1,7 +1,7 @@
 #pragma once
 
 #include "badger/types/int_types.h"
-#include "badger/types/os.h"
+#include "badger/system/platform.h"
 #include "pathos/input/input_constants.h"
 
 #include <vector>

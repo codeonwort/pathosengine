@@ -12,7 +12,7 @@
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
-#include "badger/memory/mem_alloc.h"
+#include "badger/system/mem_alloc.h"
 #include <list>
 #include <map>
 #include <utility> // std::pair

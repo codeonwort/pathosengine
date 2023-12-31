@@ -9,7 +9,7 @@
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
-#include "badger/memory/mem_alloc.h"
+#include "badger/system/mem_alloc.h"
 #include "badger/system/stopwatch.h"
 
 #include <map>

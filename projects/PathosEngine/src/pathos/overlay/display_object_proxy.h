@@ -3,7 +3,7 @@
 #include "pathos/util/transform_helper.h"
 #include "pathos/text/font_mgr.h"
 
-#include "badger/memory/mem_alloc.h"
+#include "badger/system/mem_alloc.h"
 #include <vector>
 
 namespace pathos {
