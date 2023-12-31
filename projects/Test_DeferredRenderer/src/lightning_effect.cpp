@@ -54,7 +54,10 @@ void LightningActor::onSpawn()
 
 void LightningActor::onDestroy()
 {
-	// #todo: Destroy maskTexture and warpTexture
+	std::vector<GLuint> textures = { maskTexture, warpTexture };
+	ENQUEUE_RENDER_COMMAND([textures](RenderCommandList& cmdList) {
+		cmdList.deleteTextures((GLsizei)textures.size(), textures.data());
+	});
 }
 
 // ------------------------------------------------------------

@@ -364,7 +364,8 @@ namespace pathos {
 }
 
 // API for GPU resource creation and deletion. (not queued in command list)
-// 
+// #todo: Creating or deleting resources via RenderCommandList can't be tracked,
+//        but accessing gRenderDevice in render_commands.generated.h makes circular dependency.
 namespace pathos {
 
 	// CREATE -----------------------------------------------------------------
