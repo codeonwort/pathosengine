@@ -692,9 +692,6 @@
     <ClInclude Include="src\badger\math\minmax.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\badger\types\os.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\scene\world.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>

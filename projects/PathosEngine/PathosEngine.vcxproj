@@ -223,7 +223,6 @@
     <ClInclude Include="src\badger\system\platform.h" />
     <ClInclude Include="src\badger\system\cpu.h" />
     <ClInclude Include="src\badger\types\half_float.h" />
-    <ClInclude Include="src\badger\types\os.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\system\thread_pool.h" />
     <ClInclude Include="src\badger\types\int_types.h" />
