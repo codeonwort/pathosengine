@@ -68,16 +68,18 @@ void PlayerController::setupInput()
 	rmb.addInput(InputConstants::MOUSE_RIGHT_BUTTON);
 
 	InputManager* inputManager = getWorld()->getInputManager();
-	inputManager->bindUniqueAxis("moveForward", moveForward);
-	inputManager->bindUniqueAxis("moveRight", moveRight);
-	inputManager->bindUniqueAxis("moveUp", moveUp);
-	inputManager->bindUniqueAxis("moveFast", moveFast);
-	inputManager->bindUniqueAxis("rotateYaw", rotateYaw);
-	inputManager->bindUniqueAxis("rotatePitch", rotatePitch);
-	// #todo-game: Need to unbind previous mapping.
-	// 'reload_scene' command respawns the player controller but this binding is not being renewed.
-	inputManager->bindUniqueButtonPressed("RMB", rmb, [this]() { rotateByMouse = true; });
-	inputManager->bindUniqueButtonReleased("RMB", rmb, [this]() { rotateByMouse = false; });
+	inputManager->bindAxis("moveForward", moveForward);
+	inputManager->bindAxis("moveRight", moveRight);
+	inputManager->bindAxis("moveUp", moveUp);
+	inputManager->bindAxis("moveFast", moveFast);
+	inputManager->bindAxis("rotateYaw", rotateYaw);
+	inputManager->bindAxis("rotatePitch", rotatePitch);
+	// 'reload_scene' command respawns the player controller, so unbind previous bindings by previous player.
+	// Axis bindings are OK to fail to renew, as they are invariant.
+	inputManager->unbindButtonPressed("RMB");
+	inputManager->unbindButtonReleased("RMB");
+	inputManager->bindButtonPressed("RMB", rmb, [this]() { rotateByMouse = true; });
+	inputManager->bindButtonReleased("RMB", rmb, [this]() { rotateByMouse = false; });
 }
 
 void PlayerController::tickGameplay(float deltaSeconds)

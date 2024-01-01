@@ -63,30 +63,47 @@ namespace pathos {
 
 	};
 
+	// - Handles buttonPressed, buttonReleased, and axis input types.
+	// - Each event name in an input type can have at most one binding and one handler.
+	// - Event names for each input type use different namespaces,
+	//   so the same event name can be used for e.g., a buttonPressed and a buttonReleased events.
 	class InputManager {
 		friend class InputSystem;
 		friend class XInputManager;
 
 	public:
+		// Returns true if a buttonPressed binding already exists for the given eventName, false otherwise.
 		bool hasButtonPressed(const char* eventName) const;
+		// Returns true if a buttonReleased binding already exists for the given eventName, false otherwise.
 		bool hasButtonReleased(const char* eventName) const;
+		// Returns true if an axis binding already exists for the given eventName, false otherwise.
 		bool hasAxis(const char* eventName) const;
 
-		void bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
-		void bindButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
-		void bindAxis(const char* eventName, const AxisBinding& binding);
+		// Register a buttonPressed binding with the given 'eventName'. Returns true if successful, false if a binding for 'eventName' already exists.
+		bool bindButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
+		// Register a buttonReleased binding with the given 'eventName'. Returns true if successful, false if a binding for 'eventName' already exists.
+		bool bindButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
+		// Register an axis binding with the given 'eventName'. Returns true if successful, false if a binding for 'eventName' already exists.
+		bool bindAxis(const char* eventName, const AxisBinding& binding);
 
-		void bindUniqueButtonPressed(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
-		void bindUniqueButtonReleased(const char* eventName, const ButtonBinding& binding, std::function<void()> handler);
-		void bindUniqueAxis(const char* eventName, const AxisBinding& binding);
+		// Unbind an existing buttonPressed binding for 'eventName'. Returns true if there was a binding.
+		bool unbindButtonPressed(const char* eventName);
+		// Unbind an existing buttonReleased binding for 'eventName'. Returns true if there was a binding.
+		bool unbindButtonReleased(const char* eventName);
+		// Unbind an existing axis binding for 'eventName'. Returns true if there was a binding.
+		bool unbindAxis(const char* eventName);
 
 		void tick();
 		void updateAxisValue();
+
 		float getAxis(const char* eventName) const;
 
 		inline int32 getMouseX() const { return mouseX; }
 		inline int32 getMouseY() const { return mouseY; }
 
+		// - Delegate all input from a xinput device to this input manager.
+		// - Multiple input managers might be connected to the same xinput device.
+		// - To disconnect, pass XInputUserIndex::MAX_USERS as an argument.
 		void bindXInput(XInputUserIndex userIndex);
 
 	private:
