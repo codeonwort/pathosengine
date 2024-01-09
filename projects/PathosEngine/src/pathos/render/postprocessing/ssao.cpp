@@ -1,9 +1,11 @@
 #include "ssao.h"
-#include "pathos/console.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/console.h"
 
 #include "badger/math/random.h"
 #include "badger/math/minmax.h"
@@ -49,13 +51,6 @@ namespace pathos {
 		}
 	};
 
-	class SSAO_BlurVS : public ShaderStage {
-	public:
-		SSAO_BlurVS() : ShaderStage(GL_VERTEX_SHADER, "SSAO_BlurVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class SSAO_BlurHorizontalFS : public ShaderStage {
 	public:
 		SSAO_BlurHorizontalFS() : ShaderStage(GL_FRAGMENT_SHADER, "SSAO_BlurHorizontalFS") {
@@ -74,8 +69,8 @@ namespace pathos {
 
 	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Downscale, SSAO_Downscale);
 	DEFINE_COMPUTE_PROGRAM(Program_SSAO_Compute, SSAO_Compute);
-	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurHorizontal, SSAO_BlurVS, SSAO_BlurHorizontalFS);
-	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurVertical, SSAO_BlurVS, SSAO_BlurVerticalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurHorizontal, FullscreenVS, SSAO_BlurHorizontalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSAO_BlurVertical, FullscreenVS, SSAO_BlurVerticalFS);
 
 }
 

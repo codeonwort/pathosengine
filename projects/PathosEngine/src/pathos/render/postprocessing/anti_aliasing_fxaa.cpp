@@ -1,7 +1,9 @@
 #include "anti_aliasing_fxaa.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/util/engine_util.h"
 
 namespace pathos {
@@ -22,13 +24,6 @@ namespace pathos {
 		float fxaaConsoleEdgeThresholdMin;
 	};
 
-	class FXAAPassVS : public ShaderStage {
-	public:
-		FXAAPassVS() : ShaderStage(GL_VERTEX_SHADER, "FXAAPassVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class FXAAPassFS : public ShaderStage {
 	public:
 		FXAAPassFS() : ShaderStage(GL_FRAGMENT_SHADER, "FXAAPassFS") {
@@ -40,7 +35,7 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_FXAA, FXAAPassVS, FXAAPassFS);
+	DEFINE_SHADER_PROGRAM2(Program_FXAA, FullscreenVS, FXAAPassFS);
 
 }
 

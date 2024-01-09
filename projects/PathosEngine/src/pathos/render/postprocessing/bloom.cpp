@@ -1,7 +1,9 @@
 #include "bloom.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/console.h"
 #include "pathos/engine.h"
 #include "pathos/util/engine_util.h"
@@ -9,14 +11,6 @@
 #include "badger/math/minmax.h"
 
 namespace pathos {
-
-	class BloomVS : public ShaderStage {
-	public:
-		BloomVS() : ShaderStage(GL_VERTEX_SHADER, "BloomVS")
-		{
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 
 	class BloomDownsampleFS : public ShaderStage {
 	public:
@@ -38,8 +32,8 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_BloomDownsample, BloomVS, BloomDownsampleFS);
-	DEFINE_SHADER_PROGRAM2(Program_BloomUpsample, BloomVS, BloomUpsampleFS);
+	DEFINE_SHADER_PROGRAM2(Program_BloomDownsample, FullscreenVS, BloomDownsampleFS);
+	DEFINE_SHADER_PROGRAM2(Program_BloomUpsample, FullscreenVS, BloomUpsampleFS);
 
 }
 

@@ -52,13 +52,6 @@
 
 namespace pathos {
 
-	class CopyTextureVS : public ShaderStage {
-	public:
-		CopyTextureVS() : ShaderStage(GL_VERTEX_SHADER, "CopyTextureVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	template<SceneRenderer::ECopyTextureMode copyMode>
 	class CopyTextureFS : public ShaderStage {
 	public:
@@ -68,8 +61,8 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_Color, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::CopyColor>);
-	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_LightProbeDepth, CopyTextureVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::LightProbeDepth>);
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_Color, FullscreenVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::CopyColor>);
+	DEFINE_SHADER_PROGRAM2(Program_CopyTexture_LightProbeDepth, FullscreenVS, CopyTextureFS<SceneRenderer::ECopyTextureMode::LightProbeDepth>);
 
 }
 

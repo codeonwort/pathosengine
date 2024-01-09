@@ -1,9 +1,12 @@
 #include "anti_aliasing_taa.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/console.h"
+
 #include "badger/math/minmax.h"
 
 namespace pathos {
@@ -16,13 +19,6 @@ namespace pathos {
 		float historyWeight;
 	};
 
-	class TemporalAntiAliasingVS : public ShaderStage {
-	public:
-		TemporalAntiAliasingVS() : ShaderStage(GL_VERTEX_SHADER, "TemporalAntiAliasingVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class TemporalAntiAliasingFS : public ShaderStage {
 	public:
 		TemporalAntiAliasingFS() : ShaderStage(GL_FRAGMENT_SHADER, "TemporalAntiAliasingFS") {
@@ -30,7 +26,7 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_TAA, TemporalAntiAliasingVS, TemporalAntiAliasingFS);
+	DEFINE_SHADER_PROGRAM2(Program_TAA, FullscreenVS, TemporalAntiAliasingFS);
 
 }
 

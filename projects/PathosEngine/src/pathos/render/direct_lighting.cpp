@@ -1,11 +1,10 @@
 #include "direct_lighting.h"
 
-#include "pathos/engine.h"
-#include "pathos/console.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/render_device.h"
-#include "pathos/render/scene_proxy.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
@@ -13,6 +12,8 @@
 #include "pathos/scene/rect_light_component.h"
 #include "pathos/util/log.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/engine.h"
+#include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
@@ -46,14 +47,6 @@ namespace pathos {
 		LightProxy lightParameters;
 	};
 
-	class DirectLightingVS : public ShaderStage {
-	public:
-		DirectLightingVS() : ShaderStage(GL_VERTEX_SHADER, "DirectLightingVS")
-		{
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	template<ELightSourceType LightSourceType>
 	class DirectLightingFS : public ShaderStage {
 	public:
@@ -63,9 +56,9 @@ namespace pathos {
 			setFilepath("direct_lighting.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Directional, DirectLightingVS, DirectLightingFS<ELightSourceType::Directional>);
-	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Point, DirectLightingVS, DirectLightingFS<ELightSourceType::Point>);
-	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Rect, DirectLightingVS, DirectLightingFS<ELightSourceType::Rect>);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Directional, FullscreenVS, DirectLightingFS<ELightSourceType::Directional>);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Point, FullscreenVS, DirectLightingFS<ELightSourceType::Point>);
+	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Rect, FullscreenVS, DirectLightingFS<ELightSourceType::Rect>);
 
 }
 

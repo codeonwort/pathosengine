@@ -5,9 +5,10 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_target.h"
+#include "pathos/render/fullscreen_util.h"
+#include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
@@ -63,19 +64,13 @@ namespace pathos {
 		uint32 irradianceTileSize;
 	};
 
-	class IndirectLightingVS : public ShaderStage {
-	public:
-		IndirectLightingVS() : ShaderStage(GL_VERTEX_SHADER, "IndirectLightingVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 	class IndirectLightingFS : public ShaderStage {
 	public:
 		IndirectLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "IndirectLightingFS") {
 			setFilepath("indirect_lighting.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_IndirectLighting, IndirectLightingVS, IndirectLightingFS);
+	DEFINE_SHADER_PROGRAM2(Program_IndirectLighting, FullscreenVS, IndirectLightingFS);
 
 }
 

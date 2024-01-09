@@ -1,6 +1,7 @@
 #include "screen_space_reflection.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
@@ -14,14 +15,6 @@ namespace pathos {
 }
 
 namespace pathos {
-
-	// #todo-refactoring: Unify every fullscreen vertex shaders
-	class SSRFullscreenVS : public ShaderStage {
-	public:
-		SSRFullscreenVS() : ShaderStage(GL_VERTEX_SHADER, "SSRFullscreenVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 
 	struct UBO_HiZ {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -52,8 +45,8 @@ namespace pathos {
 			setFilepath("hierarchical_z_buffer.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_HiZ_Init, SSRFullscreenVS, HiZBufferInitFS);
-	DEFINE_SHADER_PROGRAM2(Program_HiZ_Downsample, SSRFullscreenVS, HiZBufferDownsampleFS);
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Init, FullscreenVS, HiZBufferInitFS);
+	DEFINE_SHADER_PROGRAM2(Program_HiZ_Downsample, FullscreenVS, HiZBufferDownsampleFS);
 
 	// Calculates the scene visibility input
 	// for the cone-tracing pass in a hierarchical fashion.
@@ -66,7 +59,7 @@ namespace pathos {
 			setFilepath("ssr_preintegration.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, SSRFullscreenVS, PreintegrationFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSR_Preintegration, FullscreenVS, PreintegrationFS);
 
 	class SSRPreconvolutionInitFS : public ShaderStage {
 	public:
@@ -91,9 +84,9 @@ namespace pathos {
 			setFilepath("ssr_preconvolution.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Init, SSRFullscreenVS, SSRPreconvolutionInitFS);
-	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Horizontal, SSRFullscreenVS, SSRPreconvolutionHorizontalFS);
-	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Vertical, SSRFullscreenVS, SSRPreconvolutionVerticalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Init, FullscreenVS, SSRPreconvolutionInitFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Horizontal, FullscreenVS, SSRPreconvolutionHorizontalFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSRPreconvolution_Vertical, FullscreenVS, SSRPreconvolutionVerticalFS);
 
 	// Performs Hi-Z tracing and cone tracing.
 	struct UBO_ScreenSpaceRayTracing {
@@ -113,7 +106,7 @@ namespace pathos {
 			setFilepath("ssr_raytracing.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, SSRFullscreenVS, ScreenSpaceRayTracingFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSR_RayTracing, FullscreenVS, ScreenSpaceRayTracingFS);
 
 	class SSRCompositeFS : public ShaderStage {
 	public:
@@ -121,7 +114,7 @@ namespace pathos {
 			setFilepath("ssr_composite.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_SSR_Composite, SSRFullscreenVS, SSRCompositeFS);
+	DEFINE_SHADER_PROGRAM2(Program_SSR_Composite, FullscreenVS, SSRCompositeFS);
 }
 
 namespace pathos {

@@ -5,6 +5,7 @@
 #include "pathos/render/scene_renderer.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/mesh.h"
@@ -49,25 +50,11 @@ namespace pathos {
 		float density;
 	};
 
-	class GodRayLightScatteringVS : public ShaderStage {
-	public:
-		GodRayLightScatteringVS() : ShaderStage(GL_VERTEX_SHADER, "GodRayLightScatteringVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class GodRayLightScatteringFS : public ShaderStage {
 	public:
 		GodRayLightScatteringFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayLightScatteringFS") {
 			setFilepath("god_ray_fs.glsl");
 		};
-	};
-
-	class GodRayBilateralSamplingVS : public ShaderStage {
-	public:
-		GodRayBilateralSamplingVS() : ShaderStage(GL_VERTEX_SHADER, "GodRayBilateralSamplingVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
 	};
 
 	template<bool horizontal>
@@ -84,9 +71,9 @@ namespace pathos {
 	};
 
 	DEFINE_SHADER_PROGRAM2(Program_GodRaySilhouette, GodRaySilhouetteVS, GodRaySilhouetteFS);
-	DEFINE_SHADER_PROGRAM2(Program_GodRayLightScattering, GodRayLightScatteringVS, GodRayLightScatteringFS);
-	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingH, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<true>);
-	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingV, GodRayBilateralSamplingVS, GodRayBilateralSamplingFS<false>);
+	DEFINE_SHADER_PROGRAM2(Program_GodRayLightScattering, FullscreenVS, GodRayLightScatteringFS);
+	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingH, FullscreenVS, GodRayBilateralSamplingFS<true>);
+	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingV, FullscreenVS, GodRayBilateralSamplingFS<false>);
 
 }
 

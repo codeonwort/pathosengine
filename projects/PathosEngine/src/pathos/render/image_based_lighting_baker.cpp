@@ -1,10 +1,12 @@
 #include "image_based_lighting_baker.h"
-#include "pathos/engine.h"
+
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/engine_thread.h"
+#include "pathos/engine.h"
 
 namespace pathos {
 	
@@ -68,12 +70,6 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_PrefilterEnvMap, PrefilterEnvMapVS, PrefilterEnvMapFS);
 
-	class BRDFIntegrationMapVS : public ShaderStage {
-	public:
-		BRDFIntegrationMapVS() : ShaderStage(GL_VERTEX_SHADER, "BRDFIntegrationMapVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 	class BRDFIntegrationMapFS : public ShaderStage {
 	public:
 		BRDFIntegrationMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "BRDFIntegrationMapFS") {
@@ -82,7 +78,7 @@ namespace pathos {
 			setFilepath("specular_ibl.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, BRDFIntegrationMapVS, BRDFIntegrationMapFS);
+	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, FullscreenVS, BRDFIntegrationMapFS);
 
 }
 

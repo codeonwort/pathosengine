@@ -4,18 +4,11 @@
 
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
-#include "pathos/util/engine_thread.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/util/engine_thread.h"
 #include "pathos/util/engine_util.h"
 using namespace pathos;
-
-class StarfieldVS : public ShaderStage {
-public:
-	StarfieldVS() : ShaderStage(GL_VERTEX_SHADER, "StarfieldVS")
-	{
-		setFilepath("fullscreen_quad.glsl");
-	}
-};
 
 class StarfieldFS : public ShaderStage {
 public:
@@ -25,10 +18,9 @@ public:
 	}
 };
 
-DEFINE_SHADER_PROGRAM2(Program_Starfield, StarfieldVS, StarfieldFS);
+DEFINE_SHADER_PROGRAM2(Program_Starfield, FullscreenVS, StarfieldFS);
 
 //////////////////////////////////////////////////////////////////////////
-
 
 GLuint GalaxyGenerator::dummyFBO = 0;
 PlaneGeometry* GalaxyGenerator::fullscreenQuad = nullptr;

@@ -1,6 +1,8 @@
 #include "visualize_buffer.h"
-#include "scene_render_targets.h"
-#include "scene_proxy.h"
+
+#include "pathos/render/scene_render_targets.h"
+#include "pathos/render/scene_proxy.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/camera.h"
@@ -11,14 +13,6 @@ namespace pathos {
 		int32 viewmode;
 	};
 
-	class VisualizeBufferVS : public ShaderStage {
-	public:
-		VisualizeBufferVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeBufferVS")
-		{
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class VisualizeBufferFS : public ShaderStage {
 	public:
 		VisualizeBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeBufferFS")
@@ -27,7 +21,7 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_VisualizeBuffer, VisualizeBufferVS, VisualizeBufferFS);
+	DEFINE_SHADER_PROGRAM2(Program_VisualizeBuffer, FullscreenVS, VisualizeBufferFS);
 
 }
 

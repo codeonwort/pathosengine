@@ -1,9 +1,11 @@
 #include "depth_of_field.h"
+
 #include "pathos/rhi/render_device.h"
-#include "pathos/render/scene_render_targets.h"
-#include "pathos/console.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/console.h"
 
 namespace pathos {
 
@@ -29,12 +31,6 @@ namespace pathos {
 		float maxRadius;
 	};
 
-	class DOF_BlurVS : public ShaderStage {
-	public:
-		DOF_BlurVS() : ShaderStage(GL_VERTEX_SHADER, "DOF_BlurVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 	class DOF_BlurFS : public ShaderStage {
 	public:
 		DOF_BlurFS() : ShaderStage(GL_FRAGMENT_SHADER, "DOF_BlurFS") {
@@ -43,7 +39,7 @@ namespace pathos {
 	};
 
 	DEFINE_COMPUTE_PROGRAM(Program_DOF_PrefixSum, DOF_PrefixSum);
-	DEFINE_SHADER_PROGRAM2(Program_DOF_Blur, DOF_BlurVS, DOF_BlurFS);
+	DEFINE_SHADER_PROGRAM2(Program_DOF_Blur, FullscreenVS, DOF_BlurFS);
 
 }
 

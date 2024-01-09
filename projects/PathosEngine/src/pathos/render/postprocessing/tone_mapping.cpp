@@ -1,9 +1,12 @@
 #include "tone_mapping.h"
-#include "pathos/console.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/console.h"
+
 #include "badger/math/minmax.h"
 
 namespace pathos {
@@ -11,13 +14,6 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
 	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
 	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
-
-	class ToneMappingVS : public ShaderStage {
-	public:
-		ToneMappingVS() : ShaderStage(GL_VERTEX_SHADER, "ToneMappingVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 
 	template<int32 ToneMapper>
 	class ToneMappingFS : public ShaderStage {
@@ -28,8 +24,8 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_Reinhard, ToneMappingVS, ToneMappingFS<0>);
-	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_ACES, ToneMappingVS, ToneMappingFS<1>);
+	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_Reinhard, FullscreenVS, ToneMappingFS<0>);
+	DEFINE_SHADER_PROGRAM2(Program_ToneMapping_ACES, FullscreenVS, ToneMappingFS<1>);
 
 	ShaderProgram& getToneMapingProgram() {
 		int32 op = badger::clamp(0, cvar_tonemapping_operator.getInt(), 1);

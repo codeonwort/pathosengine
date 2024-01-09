@@ -1,7 +1,9 @@
 #include "bloom_setup.h"
+
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/console.h"
 
 namespace pathos {
@@ -19,14 +21,6 @@ namespace pathos {
 		float exposure;
 	};
 
-	class BloomSetupVS : public ShaderStage {
-	public:
-		BloomSetupVS() : ShaderStage(GL_VERTEX_SHADER, "BloomSetupVS")
-		{
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
-
 	class BloomSetupFS : public ShaderStage {
 	public:
 		BloomSetupFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomSetupFS")
@@ -35,7 +29,7 @@ namespace pathos {
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_BloomSetup, BloomSetupVS, BloomSetupFS);
+	DEFINE_SHADER_PROGRAM2(Program_BloomSetup, FullscreenVS, BloomSetupFS);
 
 }
 

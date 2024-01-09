@@ -1,29 +1,24 @@
 #include "resolve_unlit.h"
 
-#include "pathos/engine.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/engine_util.h"
+#include "pathos/engine.h"
 
 #include "badger/assertion/assertion.h"
 
 namespace pathos {
 
-	class ResolveUnlitVS : public ShaderStage {
-	public:
-		ResolveUnlitVS() : ShaderStage(GL_VERTEX_SHADER, "ResolveUnlitVS") {
-			setFilepath("fullscreen_quad.glsl");
-		}
-	};
 	class ResolveUnlitFS : public ShaderStage {
 	public:
 		ResolveUnlitFS() : ShaderStage(GL_FRAGMENT_SHADER, "ResolveUnlitFS") {
 			setFilepath("resolve_unlit.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_ResolveUnlit, ResolveUnlitVS, ResolveUnlitFS);
+	DEFINE_SHADER_PROGRAM2(Program_ResolveUnlit, FullscreenVS, ResolveUnlitFS);
 
 }
 
