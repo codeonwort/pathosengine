@@ -1,21 +1,30 @@
 #pragma once
 
+#include "pathos/rhi/gl_handles.h"
 #include <array>
 
-// #todo-image-loader: Wanna get rid of GLuint from this header.
-typedef unsigned int GLuint;
+namespace pathos {
+
+	// Called at engine startup.
+	void initializeImageLibrary();
+
+	// Called at engine termination.
+	void destroyImageLibrary();
+
+}
+
+// #wip: Cleanup image loading API
+// - Unify SDR and HDR blob types?
+// - Unify SDR and HDR loading API?
+// - loadImage() forces 24 or 32 bpp and may cause a problem.
 
 namespace pathos {
 
 	class VolumeTexture;
 
-	void initializeImageLibrary();
-	void destroyImageLibrary();
-
-	// Initial data for GL textures.
-	// - Wrapper for FreeImage's FIBITMAP.
-	// - If its data is uploaded to GPU and not accessed from CPU anymore, it should be freed.
-	//   It can be achieved by trasnfering memory ownership of a BitmapBlob to cmdList.
+	/// <summary>
+	/// SDR image raw data that was loaded from image files or generated procedurally.
+	/// </summary>
 	struct BitmapBlob {
 		BitmapBlob(void* inFIBITMAP, bool inHasOpacity = false);
 		BitmapBlob(uint8* inRawBytes, uint32 inWidth, uint32 inHeight, uint32 inBpp, bool inHasOpacity);
@@ -33,7 +42,9 @@ namespace pathos {
 		bool hasOpacity = false;
 	};
 
-	// Wrapper for stbi_image
+	/// <summary>
+	/// HDR image raw data that was loaded from image files or generated procedurally.
+	/// </summary>
 	struct HDRImageBlob {
 		~HDRImageBlob();
 
@@ -42,24 +53,80 @@ namespace pathos {
 		uint32 height;
 	};
 
+	/// <summary>
+	/// Specify which shader language's convention the cubemap image files follow.
+	/// </summary>
 	enum class ECubemapImagePreference : uint8 {
-		HLSL, // Images are optimal for HLSL. Need to rearrange and flip the images.
-		GLSL, // It's OK to load the images as is.
+		HLSL, // Image files are optimal for HLSL. Image loading API will rearrange and flip the images.
+		GLSL, // Image files are optimal for GLSL. It's OK to load the images as is.
 	};
 
-	// #todo-image-loader: This forces 24 or 32 bpp and may causes a problem.
-	// Load bitmap images by FreeImage
+	// #wip: Move image API functions into this class.
+	class ImageLoader {
+
+		//
+
+	};
+
+	/// <summary>
+	/// Load SDR image data from an image file.
+	/// </summary>
+	/// <param name="inFilename">Absolute path, or relative path recognized by ResourceFinder.</param>
+	/// <param name="flipHorizontal">Flip the image data horizontally. Might be needed if the image does not follow GLSL convention.</param>
+	/// <param name="flipVertical">Flip the image data vertically. Might be needed if the image does not follow GLSL convention.</param>
+	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
 	BitmapBlob* loadImage(
 		const char* inFilename,
 		bool flipHorizontal = false,
 		bool flipVertical = false);
 
-	// Load bitmap images for cubemap. Return value is the number of faces successfully loaded.
+	/// <summary>
+	/// Load cubemap image data from 6 image files.
+	/// </summary>
+	/// <param name="inFilenames">Absolute paths, or relative paths recognized by ResourceFinder.</param>
+	/// <param name="preference">Hint for convention of image orders and orientations.</param>
+	/// <param name="outImages">Image data for each cubemap face. An element is null if the corresponding file was unable to load.</param>
+	/// <returns>The number of successfully loaded files. Should be 6.</returns>
 	int32 loadCubemapImages(
 		const std::array<const char*,6>& inFilenames,
 		ECubemapImagePreference preference,
 		std::array<BitmapBlob*,6>& outImages);
 
+	/// <summary>
+	/// Load HDR image data from an image file.
+	/// </summary>
+	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
+	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
+	HDRImageBlob* loadHDRImage(const char* inFilename);
+	
+	/// <summary>
+	/// Load image data for volume texture from a .tga file.
+	/// NOTE: You should call VolumeTexture::initGLResource() manually.
+	/// </summary>
+	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
+	/// <param name="inDebugName">Debug name of the GL texture that will be created.</param>
+	/// <returns>A wrapper for image data and GL texture.</returns>
+	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
+
+	/// <summary>
+	/// Write SDR image data to an image file.
+	/// </summary>
+	/// <param name="width">Image width.</param>
+	/// <param name="height">Image height.</param>
+	/// <param name="blob">RGB data, each channel is assumed 8-bit.</param>
+	/// <param name="filename">Absolute path to write an image file.</param>
+	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename);
+
+	/// <summary>
+	/// Create a 2D texture from SDR image data.
+	/// NOTE: It will flush the render thread.
+	/// </summary>
+	/// <param name="dib">Image raw data</param>
+	/// <param name="generateMipmap">Auto-generate mipmaps for the texture.</param>
+	/// <param name="sRGB">Image data is for sRGB format.</param>
+	/// <param name="debugName">Debug name of the GL texture that will be created.</param>
+	/// <param name="autoDestroyBlob">Deallocate the image data after it's uploaded to GPU.</param>
+	/// <returns>GL texture name.</returns>
 	GLuint createTextureFromBitmap(
 		BitmapBlob* dib,
 		bool generateMipmap,
@@ -67,19 +134,30 @@ namespace pathos {
 		const char* debugName = nullptr,
 		bool autoDestroyBlob = true);
 
+	/// <summary>
+	/// Create a cubemap texture from cubemap image data array. Image order is [+X, -X, +Y, -Y, +Z, -Z].
+	/// All images must have the same width, height, and bpp.
+	/// NOTE: It will flush the render thread.
+	/// </summary>
+	/// <param name="dib">Image data for cubemap faces. The length is assumed to be 6.</param>
+	/// <param name="generateMipmap">Auto-generate mipmaps for the texture.</param>
+	/// <param name="debugName">Debug name of the GL texture that will be created.</param>
+	/// <param name="autoDestroyBlob">Deallocate the image data after it's uploaded to GPU.</param>
+	/// <returns>GL texture name.</returns>
 	GLuint createCubemapTextureFromBitmap(
-		BitmapBlob* dib[], // Assumes length of 6
+		BitmapBlob* dib[],
 		bool generateMipmap = true,
 		const char* debugName = nullptr,
 		bool autoDestroyBlob = true);
 
-	// Load HDR image by stb_image
-	HDRImageBlob* loadHDRImage(const char* inFilename);
+	/// <summary>
+	/// Create a 2D texture from HDR image data.
+	/// NOTE: It will flush the render thread.
+	/// </summary>
+	/// <param name="blob">Image raw data</param>
+	/// <param name="deleteBlobData">Deallocate the image data after it's uploaded to GPU</param>
+	/// <param name="debugName">Debug name of the GL texture that will be created</param>
+	/// <returns>GL texture name.</returns>
 	GLuint createTextureFromHDRImage(HDRImageBlob* blob, bool deleteBlobData = true, const char* debugName = nullptr);
-
-	// NOTE: You should call VolumeTexture::initGLResource() manually.
-	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
-
-	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename);
 
 }

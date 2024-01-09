@@ -1,18 +1,29 @@
 #include "pathos/loader/imageloader.h"
+
 #include "pathos/rhi/volume_texture.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
-#include "stb_image.h"
 
+#include "stb_image.h"
 #include <FreeImage.h>
 
 #pragma comment(lib, "FreeImage.lib")
 
-// #todo-image-loader: Cleanup image loading API
-
 namespace pathos {
+
+	void initializeImageLibrary() {
+		FreeImage_Initialise();
+		LOG(LogInfo, "[ThirdParty] FreeImage %d.%d", FREEIMAGE_MAJOR_VERSION, FREEIMAGE_MINOR_VERSION);
+
+		stbi_set_flip_vertically_on_load(true);
+	}
+
+	void destroyImageLibrary() {
+		FreeImage_DeInitialise();
+		LOG(LogInfo, "[ThirdParty] Destroy image libraries");
+	}
 
 	FIBITMAP* FreeImage_UnwrapBitmapBlob(const BitmapBlob* blob) {
 		return reinterpret_cast<FIBITMAP*>(blob->fiHandle);
@@ -65,20 +76,6 @@ namespace pathos {
 }
 
 namespace pathos {
-
-	void initializeImageLibrary()
-	{
-		FreeImage_Initialise();
-		LOG(LogInfo, "[ThirdParty] FreeImage %d.%d", FREEIMAGE_MAJOR_VERSION, FREEIMAGE_MINOR_VERSION);
-
-		stbi_set_flip_vertically_on_load(true);
-	}
-
-	void destroyImageLibrary()
-	{
-		FreeImage_DeInitialise();
-		LOG(LogInfo, "[ThirdParty] Destroy image libraries");
-	}
 
 	BitmapBlob* loadImage(const char* inFilename, bool flipHorizontal, bool flipVertical) {
 		std::string path = ResourceFinder::get().find(inFilename);
@@ -154,6 +151,61 @@ namespace pathos {
 		return ret;
 	}
 
+	HDRImageBlob* loadHDRImage(const char* inFilename) {
+		std::string path = ResourceFinder::get().find(inFilename);
+		CHECK(path.size() != 0);
+
+		int width, height, nrComponents;
+		float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
+
+#if DEBUG_IMAGE_LOADER
+		LOG(LogDebug, "loadHDRImage: %s (%dx%d)", path.c_str(), width, height);
+#endif
+
+		HDRImageBlob* blob = new HDRImageBlob;
+		blob->rawData = data;
+		blob->width = width;
+		blob->height = height;
+
+		return blob;
+	}
+
+	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName) {
+		// 1. Load data
+		std::string path = ResourceFinder::get().find(inFilename);
+		CHECK(path.size() != 0);
+
+		LOG(LogDebug, "Load volume texture data: %s", path.c_str());
+
+		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
+		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
+
+		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
+
+		if (!dib) {
+			LOG(LogError, "Error while loading: %s", path.c_str());
+			return nullptr;
+		}
+
+		// 2. Create a volume texture
+		VolumeTexture* vt = new VolumeTexture;
+		vt->setImageData(new BitmapBlob(dib));
+		vt->setDebugName(inDebugName);
+
+		return vt;
+	}
+
+	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {
+		FIBITMAP* dib = FreeImage_ConvertFromRawBits(
+			blob, width, height, 3 * width, 24,
+			0xff0000, // Red mask
+			0x00ff00, // Green mask
+			0x0000ff, // Blue mask
+			false);
+		FreeImage_Save(FIF_PNG, dib, filename, 0);
+		FreeImage_Unload(dib);
+	}
+
 	GLuint createTextureFromBitmap(
 		BitmapBlob* bitmapBlob,
 		bool generateMipmap,
@@ -212,13 +264,6 @@ namespace pathos {
 		return texture;
 	}
 
-	/**
-	* Generates cubemap texture from six faces.
-	* 
-	* Requirements
-	* - Image order: +X, -X, +Y, -Y, +Z, -Z
-	* - All images must have same width/height/bpp.
-	*/
 	GLuint createCubemapTextureFromBitmap(
 		BitmapBlob* blobs[],
 		bool generateMipmap /*= true*/,
@@ -289,26 +334,6 @@ namespace pathos {
 		return tex_id;
 	}
 
-	HDRImageBlob* loadHDRImage(const char* inFilename)
-	{
-		std::string path = ResourceFinder::get().find(inFilename);
-		CHECK(path.size() != 0);
-
-		int width, height, nrComponents;
-		float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
-
-#if DEBUG_IMAGE_LOADER
-		LOG(LogDebug, "loadHDRImage: %s (%dx%d)", path.c_str(), width, height);
-#endif
-
-		HDRImageBlob* blob = new HDRImageBlob;
-		blob->rawData = data;
-		blob->width = width;
-		blob->height = height;
-
-		return blob;
-	}
-
 	GLuint createTextureFromHDRImage(
 		HDRImageBlob* blob,
 		bool deleteBlobData /*= true*/,
@@ -348,43 +373,6 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return texture;
-	}
-
-	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName)
-	{
-		// 1. Load data
-		std::string path = ResourceFinder::get().find(inFilename);
-		CHECK(path.size() != 0);
-
-		LOG(LogDebug, "Load volume texture data: %s", path.c_str());
-
-		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
-		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
-
-		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
-
-		if (!dib) {
-			LOG(LogError, "Error while loading: %s", path.c_str());
-			return nullptr;
-		}
-
-		// 2. Create a volume texture
-		VolumeTexture* vt = new VolumeTexture;
-		vt->setImageData(new BitmapBlob(dib));
-		vt->setDebugName(inDebugName);
-
-		return vt;
-	}
-
-	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {
-		FIBITMAP* dib = FreeImage_ConvertFromRawBits(
-			blob, width, height, 3 * width, 24,
-			0xff0000, // Red mask
-			0x00ff00, // Green mask
-			0x0000ff, // Blue mask
-			false);
-		FreeImage_Save(FIF_PNG, dib, filename, 0);
-		FreeImage_Unload(dib);
 	}
 
 }
