@@ -131,7 +131,7 @@
     <ClCompile Include="src\pathos\scene\static_mesh_component.cpp" />
     <ClCompile Include="src\pathos\engine.cpp" />
     <ClCompile Include="src\pathos\render\shadow_directional.cpp" />
-    <ClCompile Include="src\pathos\loader\imageloader.cpp" />
+    <ClCompile Include="src\pathos\loader\image_loader.cpp" />
     <ClCompile Include="src\pathos\loader\objloader.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry.cpp" />
     <ClCompile Include="src\pathos\material\material.cpp" />
@@ -274,7 +274,7 @@
     <ClInclude Include="src\pathos\core_minimal.h" />
     <ClInclude Include="src\pathos\engine.h" />
     <ClInclude Include="src\pathos\render\shadow_directional.h" />
-    <ClInclude Include="src\pathos\loader\imageloader.h" />
+    <ClInclude Include="src\pathos\loader\image_loader.h" />
     <ClInclude Include="src\pathos\loader\objloader.h" />
     <ClInclude Include="src\pathos\overlay\brush.h" />
     <ClInclude Include="src\pathos\overlay\display_object.h" />

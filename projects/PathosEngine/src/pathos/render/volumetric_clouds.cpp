@@ -10,7 +10,7 @@
 #include "pathos/console.h"
 
 // For NVidia STBN
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 

@@ -23,7 +23,7 @@
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
-#include "pathos/loader/imageloader.h"    // subsystem: image loader
+#include "pathos/loader/image_loader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input

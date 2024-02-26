@@ -1,5 +1,5 @@
 #include "volume_texture.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 
 namespace pathos {
 

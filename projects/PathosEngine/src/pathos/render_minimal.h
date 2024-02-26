@@ -20,5 +20,5 @@
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/loader/objloader.h"

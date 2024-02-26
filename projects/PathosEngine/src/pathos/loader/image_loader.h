@@ -99,6 +99,7 @@ namespace pathos {
 	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
 	HDRImageBlob* loadHDRImage(const char* inFilename);
 	
+	// #wip: Don't return VolumeTexture
 	/// <summary>
 	/// Load image data for volume texture from a .tga file.
 	/// NOTE: You should call VolumeTexture::initGLResource() manually.

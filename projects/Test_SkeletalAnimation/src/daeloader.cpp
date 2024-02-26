@@ -4,7 +4,7 @@
 #include "pathos/engine.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/util/resource_finder.h"
 
 #include <functional>

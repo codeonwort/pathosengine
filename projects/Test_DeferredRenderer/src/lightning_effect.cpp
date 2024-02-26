@@ -4,7 +4,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/static_mesh_component.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 
 #include "badger/math/vector_math.h"
 #include "badger/math/random.h"

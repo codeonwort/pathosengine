@@ -1,5 +1,5 @@
 #include "gltf_loader.h"
-#include "imageloader.h"
+#include "image_loader.h"
 #include "pathos/engine.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/mesh.h"

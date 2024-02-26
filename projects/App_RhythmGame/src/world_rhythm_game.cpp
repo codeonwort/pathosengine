@@ -3,7 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/input/input_manager.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/brush.h"

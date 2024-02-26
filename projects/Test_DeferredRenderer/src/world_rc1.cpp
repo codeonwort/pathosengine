@@ -15,7 +15,7 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/spline_loader.h"
 #include "pathos/loader/asset_streamer.h"

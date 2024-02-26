@@ -1,4 +1,4 @@
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 
 #include "pathos/rhi/volume_texture.h"
 #include "pathos/util/resource_finder.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "tiny_obj_loader.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/mesh/mesh.h"
 
 #include <vector>

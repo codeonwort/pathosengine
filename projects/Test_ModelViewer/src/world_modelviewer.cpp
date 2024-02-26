@@ -10,7 +10,7 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/loader/asset_streamer.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/overlay/brush.h"
