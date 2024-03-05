@@ -486,6 +486,7 @@ void World_RhythmGame::initializePlayStage() {
 	pathos::Brush* blueNoteBrush = nullptr;
 	pathos::Brush* yellowNoteBrush = nullptr;
 	{
+		// #wip: Test new API here
 		auto blueBlob = pathos::loadImage(BLUE_NOTE_IMAGE);
 		if (blueBlob != nullptr) {
 			GLuint blueNoteTexture = pathos::createTextureFromBitmap(blueBlob, false, false, "blue_note", true);

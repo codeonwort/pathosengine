@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/util/image_data.h"
 #include <array>
 
 namespace pathos {
@@ -14,10 +15,53 @@ namespace pathos {
 }
 
 // #wip: Cleanup image loading API
-// - Unify SDR and HDR blob types?
-// - Unify SDR and HDR loading API?
+// - Unify SDR and HDR blob types.
+// - Unify SDR and HDR loading API.
 // - loadImage() forces 24 or 32 bpp and may cause a problem.
 
+namespace pathos {
+
+	/// <summary>
+	/// Specify which shader language's convention the cubemap image files follow.
+	/// </summary>
+	enum class ECubemapImagePreference : uint8 {
+		HLSL, // Image files are optimal for HLSL. Image loading API will rearrange and flip the images.
+		GLSL, // Image files are optimal for GLSL. It's OK to load the images as is.
+	};
+
+	// #wip: Move image API functions into this class.
+	class ImageUtils {
+
+		/// <summary>
+		/// Load image data from an image file.
+		/// </summary>
+		/// <param name="inFilename">Absolute path, or relative path recognized by ResourceFinder.</param>
+		/// <param name="flipHorizontal">Flip the image data horizontally. Might be needed if the image does not follow GLSL convention.</param>
+		/// <param name="flipVertical">Flip the image data vertically. Might be needed if the image does not follow GLSL convention.</param>
+		/// <returns>A wrapper struct for the image data. Null if loading has failed.</returns>
+		static ImageBlob* loadImage(const char* inFilename, bool flipHorizontal = false, bool flipVertical = false);
+
+		/// <summary>
+		/// Create a 2D texture from an image blob.
+		/// NOTE: It will flush the render thread.
+		/// </summary>
+		/// <param name="imageBlob">Image data.</param>
+		/// <param name="generateMipmaps">Auto-generate mipmaps for the texture.</param>
+		/// <param name="sRGB">Image data is considered to be in sRGB color space.</param>
+		/// <param name="autoDestroyBlob">Automatically deallocate `imageBlob` after it's uploaded to GPU. If false, you should free it manually.</param>
+		/// <param name="debugName">Debug name of the GL texture that will be returned.</param>
+		/// <returns>GL texture name.</returns>
+		GLuint createTextureFromImage(
+			ImageBlob* imageBlob,
+			bool generateMipmaps,
+			bool sRGB,
+			bool autoDestroyImageBlob = true,
+			const char* debugName = nullptr);
+
+	};
+}
+
+// #wip: Old image API
 namespace pathos {
 
 	class VolumeTexture;
@@ -51,21 +95,6 @@ namespace pathos {
 		float* rawData;
 		uint32 width;
 		uint32 height;
-	};
-
-	/// <summary>
-	/// Specify which shader language's convention the cubemap image files follow.
-	/// </summary>
-	enum class ECubemapImagePreference : uint8 {
-		HLSL, // Image files are optimal for HLSL. Image loading API will rearrange and flip the images.
-		GLSL, // Image files are optimal for GLSL. It's OK to load the images as is.
-	};
-
-	// #wip: Move image API functions into this class.
-	class ImageLoader {
-
-		//
-
 	};
 
 	/// <summary>

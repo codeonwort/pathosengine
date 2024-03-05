@@ -29,6 +29,163 @@ namespace pathos {
 		return reinterpret_cast<FIBITMAP*>(blob->fiHandle);
 	}
 
+	void FreeImage_GetGLFormats(
+		FREE_IMAGE_FORMAT freeImageFormat, uint32 bpp,
+		GLenum& outStorageFormat, GLenum& outPixelFormat, GLenum& outDataType)
+	{
+		switch (freeImageFormat) {
+			case FIF_BMP:
+			case FIF_JPEG:
+			case FIF_PNG:
+				outStorageFormat = (bpp == 32) ? GL_RGBA8 : (bpp == 24) ? GL_RGB8 : GL_NONE;
+				outPixelFormat = (bpp == 32) ? GL_BGRA : (bpp == 24) ? GL_BGR : GL_NONE;
+				outDataType = GL_UNSIGNED_BYTE;
+				break;
+			case FIF_HDR:
+			case FIF_EXR:
+				// #wip: What if HDR format only contains RGB data?
+				outStorageFormat = (bpp == 128) ? GL_RGBA32F : (bpp == 64) ? GL_RGBA16F : GL_NONE;
+				outPixelFormat = (bpp == 128 || bpp == 64) ? GL_RGBA : GL_NONE;
+				outDataType = GL_FLOAT;
+				break;
+			case FIF_UNKNOWN:
+			case FIF_ICO:
+			case FIF_JNG:
+			case FIF_KOALA:
+			case FIF_LBM: // = FIF_IFF
+			case FIF_MNG:
+			case FIF_PBM:
+			case FIF_PBMRAW:
+			case FIF_PCD:
+			case FIF_PCX:
+			case FIF_PGM:
+			case FIF_PGMRAW:
+			case FIF_PPM:
+			case FIF_PPMRAW:
+			case FIF_RAS:
+			case FIF_TARGA:
+			case FIF_TIFF:
+			case FIF_WBMP:
+			case FIF_PSD:
+			case FIF_CUT:
+			case FIF_XBM:
+			case FIF_XPM:
+			case FIF_DDS:
+			case FIF_GIF:
+			case FIF_FAXG3:
+			case FIF_SGI:
+			case FIF_J2K:
+			case FIF_JP2:
+			case FIF_PFM:
+			case FIF_PICT:
+			case FIF_RAW:
+			case FIF_WEBP:
+			case FIF_JXR:
+			default:
+				CHECK_NO_ENTRY();
+				break;
+		} // switch
+		if (outStorageFormat == GL_NONE || outPixelFormat == GL_NONE || outDataType == GL_NONE) {
+			LOG(LogError, "[FreeImage_GetGLPixelFormat] Can't derive GL formats from FIF=%d, bpp=%u", freeImageFormat, bpp);
+		}
+	}
+
+}
+
+namespace pathos {
+
+	ImageBlob* ImageUtils::loadImage(const char* inFilename, bool flipHorizontal /*= false*/, bool flipVertical /*= false*/) {
+		std::string path = ResourceFinder::get().find(inFilename);
+		if (path.size() == 0) {
+			LOG(LogError, "[ImageUtils::loadImage] Can't find file: %s", inFilename);
+			return nullptr;
+		}
+
+		FREE_IMAGE_FORMAT freeImageFormat = FreeImage_GetFIFFromFilename(path.c_str());
+		FIBITMAP* dib = FreeImage_Load(freeImageFormat, path.c_str(), 0);
+
+		if (!dib) {
+			LOG(LogError, "[ImageUtils::loadImage] Error while loading: %s", path.c_str());
+			return nullptr;
+		}
+
+		if (flipHorizontal) FreeImage_FlipHorizontal(dib);
+		if (flipVertical) FreeImage_FlipVertical(dib);
+
+		BYTE* rawData = FreeImage_GetBits(dib);
+		unsigned int width = FreeImage_GetWidth(dib);
+		unsigned int height = FreeImage_GetHeight(dib);
+		unsigned int bpp = FreeImage_GetBPP(dib);
+
+		GLenum glStorageFormat, glPixelFormat, glDataType;
+		FreeImage_GetGLFormats(freeImageFormat, bpp, glStorageFormat, glPixelFormat, glDataType);
+
+		ImageBlob* blob = new ImageBlob;
+		blob->copyRawBytes(rawData, width, height, bpp);
+		blob->glStorageFormat = glStorageFormat;
+		blob->glPixelFormat = glPixelFormat;
+		blob->glDataType = glDataType;
+
+		FreeImage_Unload(dib);
+
+		return blob;
+	}
+
+	GLuint ImageUtils::createTextureFromImage(
+		ImageBlob* imageBlob,
+		bool generateMipmaps,
+		bool sRGB,
+		bool autoDestroyImageBlob /*= true*/,
+		const char* debugName /*= nullptr*/)
+	{
+		GLuint texture = 0;
+
+		ENQUEUE_RENDER_COMMAND(
+			[imageBlob,
+			texturePtr = &texture, generateMipmaps, sRGB,
+			debugName, autoDestroyImageBlob](RenderCommandList& cmdList)
+			{
+				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
+				if (debugName != nullptr) {
+					gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
+				}
+
+				uint32 width = imageBlob->width;
+				uint32 height = imageBlob->height;
+				uint32 bpp = imageBlob->bpp;
+				uint8* rawBytes = imageBlob->rawBytes;
+
+				GLenum storageFormat = imageBlob->glStorageFormat;
+				GLenum pixelFormat = imageBlob->glPixelFormat;
+				GLenum dataType = imageBlob->glDataType;
+				if (sRGB) {
+					if (storageFormat == GL_RGBA8) storageFormat = GL_SRGB8_ALPHA8;
+					else if (storageFormat == GL_RGB8) storageFormat = GL_SRGB8;
+				}
+
+				uint32 numLODs = generateMipmaps ? static_cast<uint32>(floor(log2(std::max(width, height))) + 1) : 1;
+
+				cmdList.textureStorage2D(*texturePtr, numLODs, storageFormat, width, height);
+				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, width, height, pixelFormat, dataType, rawBytes);
+
+				if (generateMipmaps) {
+					cmdList.generateTextureMipmap(*texturePtr);
+				}
+				if (autoDestroyImageBlob) {
+					cmdList.registerDeferredCleanup(imageBlob);
+				}
+			});
+
+		// #todo-image-loader: There is no wrapper for 'texture', so we should flush to finalize it.
+		TEMP_FLUSH_RENDER_COMMAND(true);
+
+		return texture;
+	}
+
+}
+
+namespace pathos {
+
 	BitmapBlob::BitmapBlob(void* inFIBITMAP, bool inHasOpacity) {
 		fiHandle = inFIBITMAP;
 		hasOpacity = inHasOpacity;
