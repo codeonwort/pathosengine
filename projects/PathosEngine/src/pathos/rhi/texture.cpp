@@ -1,4 +1,4 @@
-#include "volume_texture.h"
+#include "texture.h"
 #include "pathos/loader/image_loader.h"
 
 namespace pathos {

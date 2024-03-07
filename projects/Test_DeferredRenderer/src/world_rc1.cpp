@@ -3,13 +3,13 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
+#include "pathos/rhi/texture.h"
 #include "pathos/render/image_based_lighting_baker.h"
-#include "pathos/rhi/volume_texture.h"
 
-#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/directional_light_actor.h"
