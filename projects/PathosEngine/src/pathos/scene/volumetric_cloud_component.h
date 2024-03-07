@@ -8,15 +8,15 @@
 namespace pathos {
 
 	struct VolumetricCloudProxy : public SceneComponentProxy {
-		GLuint         weatherTexture;
-		VolumeTexture* shapeNoise;
-		VolumeTexture* erosionNoise;
+		GLuint   weatherTexture;
+		Texture* shapeNoise;
+		Texture* erosionNoise;
 	};
 
 	class VolumetricCloudComponent : public SceneComponent {
 
 	public:
-		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
+		void setTextures(GLuint inWeatherTexture, Texture* inShapeNoise, Texture* inErosionNoise) {
 			weatherTexture = inWeatherTexture;
 			shapeNoise = inShapeNoise;
 			erosionNoise = inErosionNoise;
@@ -46,8 +46,8 @@ namespace pathos {
 
 	private:
 		GLuint weatherTexture = 0;
-		VolumeTexture* shapeNoise = nullptr;
-		VolumeTexture* erosionNoise = nullptr;
+		Texture* shapeNoise = nullptr;
+		Texture* erosionNoise = nullptr;
 
 	};
 

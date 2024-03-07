@@ -13,7 +13,7 @@ namespace pathos {
 	class PointLightActor;
 	class StaticMeshActor;
 	class Mesh;
-	class VolumeTexture;
+	class Texture;
 	class OBJLoader;
 }
 class PlayerController;
@@ -35,8 +35,8 @@ private:
 
 private:
 	GLuint weatherTexture = 0;
-	VolumeTexture* cloudShapeNoise = nullptr;
-	VolumeTexture* cloudErosionNoise = nullptr;
+	Texture* cloudShapeNoise = nullptr;
+	Texture* cloudErosionNoise = nullptr;
 	VolumetricCloudActor* cloudscape = nullptr;
 
 	SkyAtmosphereActor* skyAtmosphere = nullptr;

@@ -64,7 +64,7 @@ namespace pathos {
 // #wip: Old image API
 namespace pathos {
 
-	class VolumeTexture;
+	class Texture;
 
 	/// <summary>
 	/// SDR image raw data that was loaded from image files or generated procedurally.
@@ -136,7 +136,7 @@ namespace pathos {
 	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
 	/// <param name="inDebugName">Debug name of the GL texture that will be created.</param>
 	/// <returns>A wrapper for image data and GL texture.</returns>
-	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
+	Texture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
 
 	/// <summary>
 	/// Write SDR image data to an image file.

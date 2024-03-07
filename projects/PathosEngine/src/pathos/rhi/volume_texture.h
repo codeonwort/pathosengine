@@ -9,10 +9,11 @@ namespace pathos {
 
 	struct BitmapBlob;
 
-	class VolumeTexture final : public Noncopyable {
+	// #wip: Turn this into a generalized Texture class. Use ImageBlob instead of BitmapBlob.
+	class Texture final : public Noncopyable {
 
 	public:
-		VolumeTexture()
+		Texture()
 			: texture(0)
 			, debugName(nullptr)
 			, bitmapInfo(nullptr)
@@ -22,7 +23,7 @@ namespace pathos {
 		{
 		}
 
-		~VolumeTexture();
+		~Texture();
 
 		void setImageData(BitmapBlob* inData);
 		void setDebugName(const char* inDebugName);

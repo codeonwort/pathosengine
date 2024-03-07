@@ -3,7 +3,7 @@
 
 namespace pathos {
 
-	VolumeTexture::~VolumeTexture()
+	Texture::~Texture()
 	{
 		// #todo-texture: What if the texture is contained in a command list which is not finalized yet?
 		if (texture != 0) {
@@ -11,7 +11,7 @@ namespace pathos {
 		}
 	}
 
-	void VolumeTexture::setImageData(BitmapBlob* inData)
+	void Texture::setImageData(BitmapBlob* inData)
 	{
 		bitmapInfo = inData;
 
@@ -20,7 +20,7 @@ namespace pathos {
 		bpp = bitmapInfo->bpp;
 	}
 
-	void VolumeTexture::setDebugName(const char* inDebugName)
+	void Texture::setDebugName(const char* inDebugName)
 	{
 		debugName = inDebugName;
 
@@ -29,7 +29,7 @@ namespace pathos {
 		}
 	}
 
-	void VolumeTexture::initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth)
+	void Texture::initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth)
 	{
 		constexpr bool generateMipmaps = true;
 

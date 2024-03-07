@@ -327,7 +327,7 @@ namespace pathos {
 		return blob;
 	}
 
-	VolumeTexture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName) {
+	Texture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName) {
 		// 1. Load data
 		std::string path = ResourceFinder::get().find(inFilename);
 		CHECK(path.size() != 0);
@@ -345,7 +345,7 @@ namespace pathos {
 		}
 
 		// 2. Create a volume texture
-		VolumeTexture* vt = new VolumeTexture;
+		Texture* vt = new Texture;
 		vt->setImageData(new BitmapBlob(dib));
 		vt->setDebugName(inDebugName);
 

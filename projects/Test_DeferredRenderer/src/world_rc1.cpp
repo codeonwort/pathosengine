@@ -223,14 +223,14 @@ void World_RC1::setupSky()
 	// Volumetric cloud
 	{
 		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false, "Texture: WeatherMap");
-		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
+		Texture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
 		{
 			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
 			uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
 			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
 			cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
 		}
-		VolumeTexture* cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
+		Texture* cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
 		{
 			uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
 			uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
