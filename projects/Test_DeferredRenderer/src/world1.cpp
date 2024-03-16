@@ -149,7 +149,7 @@ void World1::setupScene()
 		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_METALLIC), mipLevels, !sRGB);
 		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ROUGHNESS), mipLevels, !sRGB);
 		Texture* ao = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_LOCAL_AO), mipLevels, !sRGB);
-		FLUSH_RENDER_COMMAND(true); // #wip
+		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);

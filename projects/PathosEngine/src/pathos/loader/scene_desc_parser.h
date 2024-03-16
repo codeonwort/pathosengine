@@ -25,7 +25,6 @@ namespace pathos {
 		struct SkyEquirectangularMap {
 			std::string name;
 			std::string texture;
-			bool hdr;
 			bool valid = false;
 		};
 		struct DirLight {

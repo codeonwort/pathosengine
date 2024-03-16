@@ -486,7 +486,6 @@ void World_RhythmGame::initializePlayStage() {
 	pathos::Brush* blueNoteBrush = nullptr;
 	pathos::Brush* yellowNoteBrush = nullptr;
 	{
-		// #wip: Test new API here
 		auto blueBlob = pathos::ImageUtils::loadImage(BLUE_NOTE_IMAGE);
 		if (blueBlob != nullptr) {
 			Texture* blueNoteTexture = pathos::ImageUtils::createTexture2DFromImage(blueBlob, 1, false, true, "Texture_BlueNote");

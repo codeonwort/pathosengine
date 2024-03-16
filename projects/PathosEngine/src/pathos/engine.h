@@ -101,6 +101,7 @@ namespace pathos {
 		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
 		inline MeshGeometry* getSystemGeometryUnitCube() const { return geometry_unitCube; }
 
+		// #wip: system texure GLuint -> Texture*
 		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
 		inline GLuint getSystemTexture2DGrey()       const { return texture2D_grey;      }

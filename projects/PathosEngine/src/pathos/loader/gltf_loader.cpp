@@ -124,7 +124,7 @@ namespace pathos {
 			pending.glTexture = ImageUtils::createTexture2DFromImage(
 				pending.blob, mipLevels, pending.sRGB, autoDestroy, pending.debugName.c_str());
 		}
-		FLUSH_RENDER_COMMAND(true); // #wip
+		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 		for (GLTFPendingTextureParameter& param : pendingTextureParameters) {
 			param.material->setTextureParameter(param.parameterName.c_str(),
 				(param.index != -1) ? pendingTextures[param.index].glTexture->internal_getGLName() : param.fallbackTexture);

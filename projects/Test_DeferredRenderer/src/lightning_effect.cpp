@@ -49,7 +49,7 @@ void LightningActor::onSpawn()
 {
 	maskTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_MASK_TEXTURE), 1, false, true, "Texture_Lightning_Mask");
 	warpTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_WARP_TEXTURE), 1, false, true, "Texture_Lightning_Warp");
-	FLUSH_RENDER_COMMAND(true); // #wip
+	FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 }
 
 void LightningActor::onDestroy()

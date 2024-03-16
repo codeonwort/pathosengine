@@ -72,7 +72,7 @@ namespace pathos {
 	}
 
 	void DAELoader::loadMaterials() {
-		auto getMaterialTextures = [&](const aiMaterial* M, aiTextureType texType) -> void {
+		auto createMaterialTextures = [&](const aiMaterial* M, aiTextureType texType) -> void {
 			auto numTex = M->GetTextureCount(texType);
 			for (auto i = 0u; i < numTex; ++i) {
 				aiString texPath;
@@ -93,10 +93,10 @@ namespace pathos {
 		};
 		for (auto i = 0u; i < scene->mNumMaterials; ++i) {
 			const aiMaterial* M = scene->mMaterials[i];
-			getMaterialTextures(M, aiTextureType_DIFFUSE);
-			getMaterialTextures(M, aiTextureType_NORMALS);
+			createMaterialTextures(M, aiTextureType_DIFFUSE);
+			createMaterialTextures(M, aiTextureType_NORMALS);
 		}
-		FLUSH_RENDER_COMMAND(true); // #wip
+		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 	}
 	
 	void DAELoader::loadMeshes(bool invertWinding) {

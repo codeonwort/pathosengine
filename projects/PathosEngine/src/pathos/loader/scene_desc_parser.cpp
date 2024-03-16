@@ -86,9 +86,8 @@ namespace pathos {
 			if (checkMembers(sky, { "name", "texture", "hdr" })) {
 				std::string name(parseName(sky));
 				std::string texture = sky["texture"];
-				const bool hdr = sky["hdr"];
 
-				SceneDescription::SkyEquirectangularMap desc{ name, texture, hdr, true };
+				SceneDescription::SkyEquirectangularMap desc{ name, texture, true };
 				outDesc.skyEquimap = std::move(desc);
 			}
 		}

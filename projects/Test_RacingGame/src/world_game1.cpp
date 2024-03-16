@@ -91,7 +91,7 @@ void World_Game1::prepareAssets()
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
 	Texture* landscapeAlbedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 1, true, true, "Texture_Landscape");
-	FLUSH_RENDER_COMMAND(true); // #wip
+	FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo->internal_getGLName());
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);

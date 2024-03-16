@@ -26,7 +26,6 @@ namespace pathos {
 		GLSL, // Image files are optimal for GLSL. It's OK to load the images as is.
 	};
 
-	// #wip: Move image API functions into this class.
 	class ImageUtils {
 
 	public:
@@ -105,5 +104,6 @@ namespace pathos {
 		/// <param name="blob">RGB data, each channel is assumed 8-bit.</param>
 		/// <param name="filepath">Absolute path to write an image file.</param>
 		static void saveRGB8ImageAsPNG(int32 width, int32 height, uint8* blob, const char* filepath);
+
 	};
 }
