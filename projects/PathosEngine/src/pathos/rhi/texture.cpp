@@ -15,6 +15,7 @@ namespace pathos {
 			LOG(LogWarning, "Texture %s was already created", createParams.debugName.size() > 0 ? createParams.debugName : "<noname>");
 			return;
 		}
+		created = true;
 
 		uint32 actualMipLevels = 1;
 		if (createParams.mipLevels != 1) {
@@ -92,73 +93,6 @@ namespace pathos {
 			});
 			glTexture = 0;
 		}
-	}
-
-	void Texture::setBitmapData(BitmapBlob* inData) {
-		bitmapInfo = inData;
-	}
-
-	void Texture::initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth) {
-		constexpr bool generateMipmaps = true;
-
-		if (bitmapInfo == nullptr) {
-			return;
-		}
-
-		uint8* rawBytes = bitmapInfo->getRawBytes();
-		uint32 bpp = 8;
-
-		GLenum internalFormat = GL_RGBA8;
-		GLenum pixelFormat = GL_RGBA;
-		switch (bpp) {
-			case 8:  internalFormat = GL_R8;    pixelFormat = GL_RED;  break;
-			case 16: internalFormat = GL_RG8;   pixelFormat = GL_RG;   break;
-			case 24: internalFormat = GL_RGB8;  pixelFormat = GL_RGB;  break;
-			case 32: internalFormat = GL_RGBA8; pixelFormat = GL_RGBA; break;
-			default: CHECK_NO_ENTRY();
-		}
-
-		uint32 numLODs = 1;
-		if (generateMipmaps) {
-			numLODs = static_cast<uint32>(floor(log2(std::max(std::max(textureWidth, textureHeight), textureDepth))) + 1);
-		}
-
-		auto This = this;
-		ENQUEUE_RENDER_COMMAND(
-			[This, generateMipmaps, numLODs, internalFormat, textureWidth, textureHeight, textureDepth, pixelFormat, rawBytes](RenderCommandList& cmdList) {
-				if (This->glTexture != 0) {
-					gRenderDevice->deleteTextures(1, &This->glTexture);
-					This->glTexture = 0;
-				}
-				gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &This->glTexture);
-
-				const GLuint texture = This->glTexture;
-				const std::string& debugName = This->getCreateParams().debugName;
-
-				cmdList.textureStorage3D(texture, numLODs, internalFormat, textureWidth, textureHeight, textureDepth);
-				cmdList.textureSubImage3D(
-					texture,
-					0,                                         // LOD
-					0, 0, 0,                                   // offset
-					textureWidth, textureHeight, textureDepth, // size
-					pixelFormat, GL_UNSIGNED_BYTE, rawBytes);  // pixels
-
-				if (generateMipmaps) {
-					cmdList.generateTextureMipmap(texture);
-				}
-
-				cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_R, GL_REPEAT);
-
-				if (debugName.size() > 0) {
-					cmdList.objectLabel(GL_TEXTURE, texture, -1, debugName.c_str());
-				}
-			}
-		);
-		TEMP_FLUSH_RENDER_COMMAND();
 	}
 
 }

@@ -7,7 +7,6 @@
 namespace pathos {
 
 	struct ImageBlob;
-	struct BitmapBlob;
 
 	struct TextureCreateParams {
 		uint32 width              = 1;
@@ -34,8 +33,7 @@ namespace pathos {
 		}
 	};
 
-	// A wrapper for GPU texture resource.
-	// #wip: Turn this into a generalized Texture class. Use ImageBlob instead of BitmapBlob.
+	// Wrapper for GPU texture resource.
 	class Texture final : public Noncopyable {
 
 	public:
@@ -50,22 +48,12 @@ namespace pathos {
 
 		inline const TextureCreateParams& getCreateParams() const { return createParams; }
 		inline GLuint internal_getGLName() const { return glTexture; }
-
-		//~ BEGIN old API
-		void setBitmapData(BitmapBlob* inData);
-		void initGLResource(uint32 textureWidth, uint32 textureHeight, uint32 textureDepth);
-		
 		inline bool isValid() const { return glTexture != 0; }
-		inline uint32 getWidth() const { return createParams.width; }
-		inline uint32 getHeight() const { return createParams.height; }
-		//~ END old API
 
 	private:
 		const TextureCreateParams createParams;
 		GLuint glTexture = 0;
 		bool created = false;
-
-		BitmapBlob* bitmapInfo = nullptr;
 
 	};
 

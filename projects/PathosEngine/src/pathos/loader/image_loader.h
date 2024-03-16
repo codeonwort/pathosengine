@@ -14,11 +14,6 @@ namespace pathos {
 
 }
 
-// #wip: Cleanup image loading API
-// - Unify SDR and HDR blob types.
-// - Unify SDR and HDR loading API.
-// - loadImage() forces 24 or 32 bpp and may cause a problem.
-
 namespace pathos {
 
 	class Texture;
