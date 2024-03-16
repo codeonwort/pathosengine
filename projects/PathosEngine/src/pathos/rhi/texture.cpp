@@ -45,13 +45,13 @@ namespace pathos {
 						texture, actualMipLevels, createParams.glStorageFormat,
 						createParams.width, createParams.height);
 					if (createParams.imageBlobs.size() > 0) {
+						auto blob = createParams.imageBlobs[0];
 						cmdList.textureSubImage2D(
 							texture,
 							0, // LOD
 							0, 0, // offset
 							createParams.width, createParams.height, // size
-							createParams.glPixelFormat, createParams.glDataType, // pixel format
-							createParams.imageBlobs[0]->rawBytes); // pixel data
+							blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
 					}
 				} else if (createParams.glDimension == GL_TEXTURE_CUBE_MAP) {
 					cmdList.textureStorage2D(
@@ -59,13 +59,13 @@ namespace pathos {
 						createParams.width, createParams.height);
 					if (createParams.imageBlobs.size() >= 6) {
 						for (int32 face = 0; face < 6; ++face) {
+							auto blob = createParams.imageBlobs[face];
 							cmdList.textureSubImage3D(
 								texture,
 								0, // LOD
 								0, 0, face, // offset
 								createParams.width, createParams.height, 1, // size
-								createParams.glPixelFormat, createParams.glDataType, // pixel format
-								createParams.imageBlobs[face]->rawBytes);
+								blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
 						}
 					}
 					// #wip: sampler parameters for cubemap
@@ -78,13 +78,13 @@ namespace pathos {
 						texture, actualMipLevels, createParams.glStorageFormat,
 						createParams.width, createParams.height, createParams.depth);
 					if (createParams.imageBlobs.size() > 0) {
+						auto blob = createParams.imageBlobs[0];
 						cmdList.textureSubImage3D(
 							texture,
 							0, // LOD
 							0, 0, 0, // offset
 							createParams.width, createParams.height, createParams.depth, // size
-							createParams.glPixelFormat, createParams.glDataType, // pixel format
-							createParams.imageBlobs[0]->rawBytes); // pixel data
+							blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
 					}
 				} else {
 					CHECKF(0, "WIP: Unhandled glDimension");

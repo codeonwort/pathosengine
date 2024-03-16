@@ -433,12 +433,12 @@ namespace pathos {
 		gEngine->geometry_unitCube = new CubeGeometry(vector3(1.0f));
 
 		TextureCreateParams textureCreateParams[6] = {
-			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_Black1x1" },
-			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_White1x1" },
-			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_Grey1x1" },
-			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_Blue1x1" },
-			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_Normalmap1x1" },
-			{ 1, 1, 1, 1, GL_TEXTURE_CUBE_MAP, GL_RGBA8, GL_NONE, GL_NONE, false, {}, "Texture_BlackCube1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_Black1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_White1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_Grey1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_Blue1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_Normalmap1x1" },
+			{ 1, 1, 1, 1, GL_TEXTURE_CUBE_MAP, GL_RGBA8, false, {}, "Texture_BlackCube1x1" },
 		};
 		constexpr size_t numSystemTextures = _countof(textureCreateParams);
 		Texture* systemTextures[numSystemTextures];

@@ -194,18 +194,10 @@ namespace pathos {
 		createParams.depth                = 1;
 		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_2D;
-		createParams.glStorageFormat      = imageBlob->glStorageFormat;
-		createParams.glPixelFormat        = imageBlob->glPixelFormat;
-		createParams.glDataType           = imageBlob->glDataType;
+		createParams.glStorageFormat      = sRGB ? convertStorageFormatToSRGB(imageBlob->glStorageFormat) : imageBlob->glStorageFormat;
 		createParams.imageBlobs           = { imageBlob };
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
-
-		if (debugName != nullptr) {
-			createParams.debugName = debugName;
-		}
-		if (sRGB) {
-			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
-		}
+		if (debugName != nullptr) createParams.debugName = debugName;
 
 		Texture* texture = new Texture(createParams);
 		texture->createGPUResource();
@@ -232,14 +224,9 @@ namespace pathos {
 		createParams.mipLevels            = mipLevels ? 0 : 1;
 		createParams.glDimension          = GL_TEXTURE_CUBE_MAP;
 		createParams.glStorageFormat      = blobs[0]->glStorageFormat;
-		createParams.glPixelFormat        = blobs[0]->glPixelFormat;
-		createParams.glDataType           = blobs[0]->glDataType;
 		createParams.imageBlobs           = blobs;
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
-
-		if (debugName != nullptr) {
-			createParams.debugName = debugName;
-		}
+		if (debugName != nullptr) createParams.debugName = debugName;
 
 		Texture* texture = new Texture(createParams);
 		texture->createGPUResource();
@@ -260,16 +247,10 @@ namespace pathos {
 		createParams.depth                = textureSize.z;
 		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_3D;
-		createParams.glStorageFormat      = imageBlob->glStorageFormat;
-		createParams.glPixelFormat        = imageBlob->glPixelFormat;
-		createParams.glDataType           = imageBlob->glDataType;
+		createParams.glStorageFormat      = sRGB ? convertStorageFormatToSRGB(imageBlob->glStorageFormat) : imageBlob->glStorageFormat;
 		createParams.imageBlobs           = { imageBlob };
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
-		createParams.debugName            = debugName;
-
-		if (sRGB) {
-			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
-		}
+		if (debugName != nullptr) createParams.debugName = debugName;
 
 		Texture* texture = new Texture(createParams);
 		texture->createGPUResource();

@@ -16,20 +16,14 @@ namespace pathos {
 		GLenum glDimension        = 0; // ex) GL_TEXTURE_2D
 		GLenum glStorageFormat    = 0; // ex) GL_RGBA8
 
-		// #wip: pixel format and data type are meaningful only if imageBlob exists.
-		GLenum glPixelFormat      = 0; // ex) GL_RGBA
-		GLenum glDataType         = 0; // ex) GL_FLOAT
 		bool autoDestroyImageBlob = true;
 		std::vector<ImageBlob*> imageBlobs;
 
 		std::string debugName;
 
-		inline bool isValid() const {
-			bool valid = width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0;
-			if (imageBlobs.size() > 0) {
-				valid = valid && glPixelFormat != 0 && glDataType != 0;
-			}
-			return valid;
+		// NOTE: Does not check if image blob is valid.
+		inline bool isStorageValid() const {
+			return width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0;
 		}
 	};
 
