@@ -12,31 +12,33 @@
 
 namespace pathos {
 
+	class Texture;
 	class Material;
 
 	struct PendingTextures {
 		PendingTextures() = default;
-		PendingTextures(BitmapBlob* inAlbedo, BitmapBlob* inNormal, BitmapBlob* inRoughness, BitmapBlob* inMetallic)
-			: albedo(inAlbedo)
-			, normal(inNormal)
-			, roughness(inRoughness)
-			, metallic(inMetallic)
+		PendingTextures(ImageBlob* inAlbedo, ImageBlob* inNormal, ImageBlob* inRoughness, ImageBlob* inMetallic)
+			: albedoBlob(inAlbedo)
+			, normalBlob(inNormal)
+			, roughnessBlob(inRoughness)
+			, metallicBlob(inMetallic)
 		{
 		}
-		BitmapBlob* albedo = nullptr;
-		BitmapBlob* normal = nullptr;
-		BitmapBlob* roughness = nullptr;
-		BitmapBlob* metallic = nullptr;
+
+		ImageBlob* albedoBlob = nullptr;
+		ImageBlob* normalBlob = nullptr;
+		ImageBlob* roughnessBlob = nullptr;
+		ImageBlob* metallicBlob = nullptr;
 
 		std::string albedoFilename;
 		std::string normalFilename;
 		std::string roughnessFilename;
 		std::string metallicFilename;
 
-		GLuint glAlbedo = 0;
-		GLuint glNormal = 0;
-		GLuint glRoughness = 0;
-		GLuint glMetallic = 0;
+		Texture* albedoTexture = nullptr;
+		Texture* normalTexture = nullptr;
+		Texture* roughnessTexture = nullptr;
+		Texture* metallicTexture = nullptr;
 	};
 
 	struct PendingShape {
@@ -115,11 +117,11 @@ namespace pathos {
 		// Fallback material if there's no matching material for that within .mtl
 		Material* defaultMaterial = nullptr;
 
-		std::map<std::string, BitmapBlob*> cachedBitmapDB;
+		std::map<std::string, ImageBlob*> cachedImageDB;
 		std::map<int32, PendingTextures> pendingTextureData; // key: material index
 
 		// Can be queried to get source images.
-		std::map<std::string, GLuint> glTextureMap;
+		std::map<std::string, Texture*> glTextureMap;
 
 	};
 
