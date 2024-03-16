@@ -96,48 +96,59 @@ namespace pathos {
 		ubo.init<UBO_VolumetricCloud>();
 
 		// #todo: Make STBN a system texture if needed.
-		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
-		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "Texture_NVidiaSTBN");
-		cmdList.textureStorage3D(texSTBN, 1, GL_R8, 128, 128, 64);
+		{
+			gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
+			gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "Texture_NVidiaSTBN");
+			cmdList.textureStorage3D(texSTBN, 1, GL_R8, 128, 128, 64);
 
-		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
 
-		bHasValidResources = true;
-		for (uint32 i = 0; i < 64; ++i) {
-			char buf[256];
-			sprintf_s(buf,
-				"resources_external/NVidiaSpatioTemporalBlueNoise/STBN/%s_%u.png",
-				"stbn_scalar_2Dx1Dx1D_128x128x64x1",
-				i);
-			std::string filepath = ResourceFinder::get().find(buf);
+			bHasValidResources = true;
+			for (uint32 i = 0; i < 64; ++i) {
+				char buf[256];
+				sprintf_s(buf,
+					"resources_external/NVidiaSpatioTemporalBlueNoise/STBN/%s_%u.png",
+					"stbn_scalar_2Dx1Dx1D_128x128x64x1",
+					i);
+				std::string filepath = ResourceFinder::get().find(buf);
 
-			if (filepath.size() == 0) {
-				LOG(LogError, "Run Setup.ps1 to download NVidia STBN");
-				bHasValidResources = false;
-				break;
+				if (filepath.size() == 0) {
+					LOG(LogError, "Run Setup.ps1 to download NVidia STBN");
+					bHasValidResources = false;
+					break;
+				}
+
+				ImageBlob* blob = ImageUtils::loadImage(filepath.c_str());
+
+				bool bValidSize = (blob->width == 128 && blob->height == 128 && blob->bpp == 8);
+				if (bValidSize == false) {
+					LOG(LogError, "STBN image [%u] has invalid size (not 128x128 grayscale) : width = %u, height = %u, bpp = %u", i, blob->width, blob->height, blob->bpp);
+					bHasValidResources = false;
+					delete blob;
+					break;
+				}
+
+				cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i, 128, 128, 1, GL_RED, GL_UNSIGNED_BYTE, blob->rawBytes);
+				cmdList.registerDeferredCleanup(blob);
 			}
-			
-			ImageBlob* blob = ImageUtils::loadImage(filepath.c_str());
-			
-			bool bValidSize = (blob->width == 128 && blob->height == 128 && blob->bpp == 8);
-			if (bValidSize == false) {
-				LOG(LogError, "STBN image [%u] has invalid size (not 128x128 grayscale) : width = %u, height = %u, bpp = %u", i, blob->width, blob->height, blob->bpp);
-				bHasValidResources = false;
-				delete blob;
-				break;
-			}
-
-			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i, 128, 128, 1, GL_RED, GL_UNSIGNED_BYTE, blob->rawBytes);
-			cmdList.registerDeferredCleanup(blob);
 		}
+
+		gRenderDevice->createSamplers(1, &cloudNoiseSampler);
+		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		cmdList.objectLabel(GL_SAMPLER, cloudNoiseSampler, -1, "Sampler_CloudNoise");
 	}
 
 	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteTextures(1, &texSTBN);
+		gRenderDevice->deleteSamplers(1, &cloudNoiseSampler);
 	}
 
 	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -206,7 +217,6 @@ namespace pathos {
 		}
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
 
-		// #wip: sampler object for noise textures
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture->internal_getGLName());
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->internal_getGLName());
@@ -215,11 +225,16 @@ namespace pathos {
 		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
 		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 
+		cmdList.bindSampler(2, cloudNoiseSampler);
+		cmdList.bindSampler(3, cloudNoiseSampler);
+
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		cmdList.bindSampler(2, 0);
+		cmdList.bindSampler(3, 0);
 	}
 
 	void VolumetricCloudPass::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)

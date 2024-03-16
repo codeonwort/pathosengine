@@ -68,11 +68,6 @@ namespace pathos {
 								blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
 						}
 					}
-					// #wip: sampler parameters for cubemap
-					cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 				} else if (createParams.glDimension == GL_TEXTURE_3D) {
 					cmdList.textureStorage3D(
 						texture, actualMipLevels, createParams.glStorageFormat,

@@ -14,11 +14,9 @@ namespace pathos {
 		uint32 depth              = 1;
 		uint32 mipLevels          = 1; // 1 = only lod0, 0 = generate all possible mipmaps, N = generate up to N mipmaps.
 		GLenum glDimension        = 0; // ex) GL_TEXTURE_2D
-		GLenum glStorageFormat    = 0; // ex) GL_RGBA8
-
+		GLenum glStorageFormat    = 0; // ex) GL_RGBA16F
 		bool autoDestroyImageBlob = true;
 		std::vector<ImageBlob*> imageBlobs;
-
 		std::string debugName;
 
 		// NOTE: Does not check if image blob is valid.
