@@ -1,6 +1,7 @@
 #include "gltf_loader.h"
 #include "image_loader.h"
 #include "pathos/engine.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
@@ -115,17 +116,18 @@ namespace pathos {
 
 	void GLTFLoader::finalizeGPUUpload() {
 		for (GLTFPendingTexture& pending : pendingTextures) {
-			constexpr bool genMips = true;
+			constexpr uint32 mipLevels = 0;
 			constexpr bool autoDestroy = false;
 
 			//LOG(LogDebug, "tex w=%u h=%u bpp=%u BGR=%d", pending.blob->width, pending.blob->height, pending.blob->bpp, pending.blob->bIsBGR);
 
-			pending.glTexture = pathos::createTextureFromBitmap(
-				pending.blob, genMips, pending.sRGB, pending.debugName.c_str(), autoDestroy);
+			pending.glTexture = ImageUtils::createTexture2DFromImage(
+				pending.blob, mipLevels, pending.sRGB, autoDestroy, pending.debugName.c_str());
 		}
+		FLUSH_RENDER_COMMAND(true); // #wip
 		for (GLTFPendingTextureParameter& param : pendingTextureParameters) {
 			param.material->setTextureParameter(param.parameterName.c_str(),
-				(param.index != -1) ? pendingTextures[param.index].glTexture : param.fallbackTexture);
+				(param.index != -1) ? pendingTextures[param.index].glTexture->internal_getGLName() : param.fallbackTexture);
 		}
 		for (GLTFPendingGeometry& pending : pendingGeometries) {
 			MeshGeometry* geometry = pending.geometry;
@@ -227,9 +229,17 @@ namespace pathos {
 			CHECK(bpp == 24 || bpp == 32);
 			CHECKF(tinyImg.image.size() == (tinyImg.width * tinyImg.height * tinyImg.component), "Image blob size is invalid");
 
-			constexpr bool hasOpacity = false;
-			BitmapBlob* blob = new BitmapBlob(
-				(uint8*)(tinyImg.image.data()), tinyImg.width, tinyImg.height, bpp, hasOpacity);
+			ImageBlob* blob = new ImageBlob;
+			blob->copyRawBytes(tinyImg.image.data(), tinyImg.width, tinyImg.height, bpp);
+			if (bpp == 24) {
+				blob->glStorageFormat = GL_RGB8;
+				blob->glPixelFormat = GL_RGB;
+				blob->glDataType = GL_UNSIGNED_BYTE;
+			} else if (bpp == 32) {
+				blob->glStorageFormat = GL_RGBA8;
+				blob->glPixelFormat = GL_RGBA;
+				blob->glDataType = GL_UNSIGNED_BYTE;
+			}
 
 			GLTFPendingTexture pending;
 			pending.blob = blob;

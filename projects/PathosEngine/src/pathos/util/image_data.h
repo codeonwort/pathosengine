@@ -11,15 +11,6 @@ namespace pathos {
 	/// Struct to abstract raw image data.
 	/// </summary>
 	struct ImageBlob {
-		ImageBlob()
-			: rawBytes(nullptr)
-			, width(0)
-			, height(0)
-			, bpp(0)
-			, glPixelFormat(GL_NONE)
-		{
-		}
-
 		~ImageBlob() {
 			if (rawBytes != nullptr) {
 				delete[] rawBytes;

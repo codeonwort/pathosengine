@@ -103,38 +103,6 @@ namespace pathos {
 namespace pathos {
 
 	/// <summary>
-	/// SDR image raw data that was loaded from image files or generated procedurally.
-	/// </summary>
-	struct BitmapBlob {
-		BitmapBlob(void* inFIBITMAP, bool inHasOpacity = false);
-		BitmapBlob(uint8* inRawBytes, uint32 inWidth, uint32 inHeight, uint32 inBpp, bool inHasOpacity);
-		~BitmapBlob();
-
-		uint8* getRawBytes() const;
-
-		void* fiHandle = nullptr; // FIBITMAP
-		uint8* externalRawBytes = nullptr;
-		bool bIsBGR = false; // FreeImage thing
-
-		uint32 width = 0;
-		uint32 height = 0;
-		uint32 bpp = 0;
-		bool hasOpacity = false;
-	};
-
-	/// <summary>
-	/// Load SDR image data from an image file.
-	/// </summary>
-	/// <param name="inFilename">Absolute path, or relative path recognized by ResourceFinder.</param>
-	/// <param name="flipHorizontal">Flip the image data horizontally. Might be needed if the image does not follow GLSL convention.</param>
-	/// <param name="flipVertical">Flip the image data vertically. Might be needed if the image does not follow GLSL convention.</param>
-	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
-	BitmapBlob* loadImage(
-		const char* inFilename,
-		bool flipHorizontal = false,
-		bool flipVertical = false);
-
-	/// <summary>
 	/// Write SDR image data to an image file.
 	/// </summary>
 	/// <param name="width">Image width.</param>
@@ -142,22 +110,5 @@ namespace pathos {
 	/// <param name="blob">RGB data, each channel is assumed 8-bit.</param>
 	/// <param name="filename">Absolute path to write an image file.</param>
 	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename);
-
-	/// <summary>
-	/// Create a 2D texture from SDR image data.
-	/// NOTE: It will flush the render thread.
-	/// </summary>
-	/// <param name="dib">Image raw data</param>
-	/// <param name="generateMipmap">Auto-generate mipmaps for the texture.</param>
-	/// <param name="sRGB">Image data is for sRGB format.</param>
-	/// <param name="debugName">Debug name of the GL texture that will be created.</param>
-	/// <param name="autoDestroyBlob">Deallocate the image data after it's uploaded to GPU.</param>
-	/// <returns>GL texture name.</returns>
-	GLuint createTextureFromBitmap(
-		BitmapBlob* dib,
-		bool generateMipmap,
-		bool sRGB,
-		const char* debugName = nullptr,
-		bool autoDestroyBlob = true);
 
 }

@@ -17,7 +17,7 @@ namespace pathos {
 	class Mesh;
 	class MeshGeometry;
 	class Actor;
-	struct BitmapBlob;
+	struct ImageBlob;
 
 	struct GLTFModelDesc {
 		Mesh* mesh = nullptr;
@@ -28,11 +28,10 @@ namespace pathos {
 	};
 
 	struct GLTFPendingTexture {
-		BitmapBlob* blob;
-		bool sRGB;
+		ImageBlob* blob = nullptr;
+		bool sRGB = false;
 		std::string debugName;
-
-		GLuint glTexture = 0;
+		Texture* glTexture = nullptr;
 	};
 
 	struct GLTFPendingTextureParameter {
