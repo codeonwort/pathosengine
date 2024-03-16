@@ -215,10 +215,22 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	{
+		TextureCreateParams createParams;
+		createParams.width           = STARFIELD_WIDTH;
+		createParams.height          = STARFIELD_HEIGHT;
+		createParams.depth           = 1;
+		createParams.mipLevels       = 1;
+		createParams.glDimension     = GL_TEXTURE_2D;
+		createParams.glStorageFormat = GL_RGBA16F;
+		createParams.debugName       = "Texture_Starfield";
+		starfieldTexture = new Texture(createParams);
+		starfieldTexture->createGPUResource();
+	}
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	panoramaSky->initialize(starfield);
+	panoramaSky->initialize(starfieldTexture);
 
 	// Volumetric cloud
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
@@ -315,7 +327,7 @@ void World_RC1::setupScene()
 void World_RC1::updateStarfield()
 {
 	gEngine->executeConsoleCommand("recompile_shaders");
-	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 }
 
 void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)

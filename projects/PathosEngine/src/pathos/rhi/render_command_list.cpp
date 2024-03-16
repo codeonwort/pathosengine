@@ -1,8 +1,11 @@
 #include "render_command_list.h"
 #include "render_commands.h"
+#include "render_device.h"
+#include "texture.h"
 #include "pathos/util/engine_thread.h"
 
 #include "badger/assertion/assertion.h"
+
 
 #define ASSERT_GL_NO_ERROR 0
 
@@ -84,14 +87,20 @@ namespace pathos {
 
 	void RenderCommandList::registerDeferredCleanup(void* dynamicMemory) {
 		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
-		deferredCleanups.push_back(dynamicMemory);
+		deferredMemoryCleanups.push_back(dynamicMemory);
 	}
+
+	void RenderCommandList::registerDeferredTextureCleanup(GLuint texture) {
+		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
+		deferredTextureCleanups.push_back(texture);
+	}
+
 	void RenderCommandList::performDeferredCleanup() {
 		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
-		for (void* memory : deferredCleanups) {
-			delete memory;
-		}
-		deferredCleanups.clear();
+		for (void* memory : deferredMemoryCleanups) delete memory;
+		deferredMemoryCleanups.clear();
+		gRenderDevice->deleteTextures((GLsizei)deferredTextureCleanups.size(), deferredTextureCleanups.data());
+		deferredTextureCleanups.clear();
 	}
 
 	RenderCommandBase* RenderCommandList::getNextPacket()

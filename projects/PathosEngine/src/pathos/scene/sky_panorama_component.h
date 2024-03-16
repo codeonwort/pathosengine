@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/scene_component.h"
 
@@ -36,7 +37,7 @@ namespace pathos {
 
 	struct PanoramaSkyProxy : SceneComponentProxy {
 		MeshGeometry* sphere;
-		GLuint textureID;
+		Texture* texture;
 		bool bLightingDirty;
 	};
 
@@ -46,17 +47,17 @@ namespace pathos {
 		~PanoramaSkyComponent();
 
 		// Pass a panorama-style texture (i.e., equirectangular map).
-		void setTexture(GLuint textureID);
+		void setTexture(Texture* texture);
 
 		inline bool hasValidResources() const {
-			return textureID != 0 && sphere != nullptr;
+			return texture->isValid() && sphere != nullptr;
 		}
 
 	protected:
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
 	private:
-		GLuint textureID = 0;
+		Texture* texture = nullptr;
 		MeshGeometry* sphere = nullptr;
 
 		bool bLightingDirty = false;

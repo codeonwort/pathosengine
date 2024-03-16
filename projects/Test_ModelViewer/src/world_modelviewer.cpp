@@ -138,8 +138,8 @@ void World_ModelViewer::onInitialize() {
 
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 
-	HDRImageBlob* panoramaImage = pathos::loadHDRImage(SKY_PANORAMA_HDRI);
-	panoramaTexture = pathos::createTextureFromHDRImage(panoramaImage);
+	ImageBlob* panoramaImage = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
+	panoramaTexture = ImageUtils::createTexture2DFromImage(panoramaImage, 1, false, true, "Texture_Panorama");
 
 	toggleSkyActor();
 	toggleProbeGI();

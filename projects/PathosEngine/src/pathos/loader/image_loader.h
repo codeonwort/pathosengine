@@ -104,17 +104,6 @@ namespace pathos {
 	};
 
 	/// <summary>
-	/// HDR image raw data that was loaded from image files or generated procedurally.
-	/// </summary>
-	struct HDRImageBlob {
-		~HDRImageBlob();
-
-		float* rawData;
-		uint32 width;
-		uint32 height;
-	};
-
-	/// <summary>
 	/// Load SDR image data from an image file.
 	/// </summary>
 	/// <param name="inFilename">Absolute path, or relative path recognized by ResourceFinder.</param>
@@ -137,13 +126,6 @@ namespace pathos {
 		const std::array<const char*,6>& inFilenames,
 		ECubemapImagePreference preference,
 		std::array<BitmapBlob*,6>& outImages);
-
-	/// <summary>
-	/// Load HDR image data from an image file.
-	/// </summary>
-	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
-	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
-	HDRImageBlob* loadHDRImage(const char* inFilename);
 
 	/// <summary>
 	/// Write SDR image data to an image file.
@@ -186,15 +168,5 @@ namespace pathos {
 		bool generateMipmap = true,
 		const char* debugName = nullptr,
 		bool autoDestroyBlob = true);
-
-	/// <summary>
-	/// Create a 2D texture from HDR image data.
-	/// NOTE: It will flush the render thread.
-	/// </summary>
-	/// <param name="blob">Image raw data</param>
-	/// <param name="deleteBlobData">Deallocate the image data after it's uploaded to GPU</param>
-	/// <param name="debugName">Debug name of the GL texture that will be created</param>
-	/// <returns>GL texture name.</returns>
-	GLuint createTextureFromHDRImage(HDRImageBlob* blob, bool deleteBlobData = true, const char* debugName = nullptr);
 
 }

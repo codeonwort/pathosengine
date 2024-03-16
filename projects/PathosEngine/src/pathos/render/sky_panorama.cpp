@@ -103,7 +103,7 @@ namespace pathos {
 		uboData.intensity = std::max(0.0f, cvar_panoramaSkyIntensity.getFloat());
 		ubo.update(cmdList, UBO_PanoramaSky::BINDING_POINT, &uboData);
 
-		cmdList.bindTextureUnit(0, skyProxy->textureID);
+		cmdList.bindTextureUnit(0, skyProxy->texture->internal_getGLName());
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
@@ -115,7 +115,7 @@ namespace pathos {
 	void PanoramaSkyPass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(PanoramaToSkybox);
 
-		GLuint panoramaTexture = scene->panoramaSky->textureID;
+		GLuint panoramaTexture = scene->panoramaSky->texture->internal_getGLName();
 		ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
 			cmdList,
 			panoramaTexture,

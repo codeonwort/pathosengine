@@ -98,13 +98,15 @@ namespace pathos {
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
 		if (sceneDesc.skyEquimap.valid) {
-			GLuint texture = 0;
+			Texture* texture = nullptr;
 			if (sceneDesc.skyEquimap.hdr) {
-				auto metadata = pathos::loadHDRImage(sceneDesc.skyEquimap.texture.c_str());
-				texture = pathos::createTextureFromHDRImage(metadata);
+				auto filename = sceneDesc.skyEquimap.texture.c_str();
+				ImageBlob* blob = ImageUtils::loadImage(filename);
+				texture = ImageUtils::createTexture2DFromImage(blob, 1, false, true, "Texture_Sky");
 			} else {
-				auto metadata = pathos::loadImage(sceneDesc.skyEquimap.texture.c_str());
-				texture = pathos::createTextureFromBitmap(metadata, false, true);
+				// #wip: Replace with new API
+				//auto metadata = pathos::loadImage(sceneDesc.skyEquimap.texture.c_str());
+				//texture = pathos::createTextureFromBitmap(metadata, false, true);
 			}
 
 			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();

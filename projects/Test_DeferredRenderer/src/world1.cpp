@@ -118,7 +118,8 @@ void World1::setupSky()
 	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	GLuint panoramaTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_PANORAMA_HDRI));
+	ImageBlob* panoramaBlob = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
+	Texture* panoramaTex = ImageUtils::createTexture2DFromImage(panoramaBlob, 1, false, true, "Texture_Panorama");
 	panoramaSky->initialize(panoramaTex);
 #endif
 }

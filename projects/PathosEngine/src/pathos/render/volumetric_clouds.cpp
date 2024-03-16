@@ -205,6 +205,7 @@ namespace pathos {
 		}
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
 
+		// #wip: sampler object for noise textures
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture->internal_getGLName());
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->internal_getGLName());

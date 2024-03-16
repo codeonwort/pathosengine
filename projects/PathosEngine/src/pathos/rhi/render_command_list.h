@@ -11,6 +11,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	class RenderCommandList {
 
 		static const uint32 RENDER_COMMAND_LIST_MAX_MEMORY;
@@ -67,6 +69,7 @@ namespace pathos {
 		// Frees the memory after all commands are executed.
 		// CAUTION: The parameter should point a dynamically allocated memory and not free'd in other places.
 		void registerDeferredCleanup(void* dynamicMemory);
+		void registerDeferredTextureCleanup(GLuint texture);
 
 		// Free all memory that came from registerDeferredCleanup().
 		void performDeferredCleanup();
@@ -106,7 +109,8 @@ namespace pathos {
 		RenderCommandList* hookCommandList;
 
 		std::mutex deferredCleanupLock;
-		std::vector<void*> deferredCleanups;
+		std::vector<void*> deferredMemoryCleanups;
+		std::vector<GLuint> deferredTextureCleanups;
 
 	public:
 		#include "render_command_list.generated.h"

@@ -40,10 +40,10 @@ namespace pathos {
 			case FIF_PNG:
 				{
 					switch (bpp) {
-						case 64: outStorageFormat = GL_RGBA16;  outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_SHORT; break;
-						case 48: outStorageFormat = GL_RGB16;   outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_SHORT; break;
-						case 32: outStorageFormat = GL_RGBA8;   outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_BYTE;  break;
 						case 24: outStorageFormat = GL_RGB8;    outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_BYTE;  break;
+						case 32: outStorageFormat = GL_RGBA8;   outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_BYTE;  break;
+						case 48: outStorageFormat = GL_RGB16;   outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_SHORT; break;
+						case 64: outStorageFormat = GL_RGBA16;  outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_SHORT; break;
 					}
 				}
 				break;
@@ -61,9 +61,11 @@ namespace pathos {
 			case FIF_HDR:
 			case FIF_EXR:
 				{
-					// #wip: What if HDR format only contains RGB data?
-					outStorageFormat = (bpp == 128) ? GL_RGBA32F : (bpp == 64) ? GL_RGBA16F : GL_NONE;
-					outPixelFormat = (bpp == 128 || bpp == 64) ? GL_RGBA : GL_NONE;
+					// #wip: Is 64 bpp rg32f or rgba16f? Can I discern them?
+					switch (bpp) {
+						case 128: outStorageFormat = GL_RGBA32F; outPixelFormat = GL_RGBA; break;
+						case 96:  outStorageFormat = GL_RGB32F;  outPixelFormat = GL_RGB;  break;
+					}
 					outDataType = GL_FLOAT;
 				}
 				break;
@@ -270,13 +272,6 @@ namespace pathos {
 		return externalRawBytes;
 	}
 
-	HDRImageBlob::~HDRImageBlob() {
-		if (rawData) {
-			stbi_image_free(rawData);
-			rawData = nullptr;
-		}
-	}
-
 }
 
 namespace pathos {
@@ -353,25 +348,6 @@ namespace pathos {
 		}
 
 		return ret;
-	}
-
-	HDRImageBlob* loadHDRImage(const char* inFilename) {
-		std::string path = ResourceFinder::get().find(inFilename);
-		CHECK(path.size() != 0);
-
-		int width, height, nrComponents;
-		float* data = stbi_loadf(path.c_str(), &width, &height, &nrComponents, 0);
-
-#if DEBUG_IMAGE_LOADER
-		LOG(LogDebug, "loadHDRImage: %s (%dx%d)", path.c_str(), width, height);
-#endif
-
-		HDRImageBlob* blob = new HDRImageBlob;
-		blob->rawData = data;
-		blob->width = width;
-		blob->height = height;
-
-		return blob;
 	}
 
 	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {
@@ -511,47 +487,6 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return tex_id;
-	}
-
-	GLuint createTextureFromHDRImage(
-		HDRImageBlob* blob,
-		bool deleteBlobData /*= true*/,
-		const char* debugName /*= nullptr*/)
-	{
-		static int32 debugNameAutoCounter = 0;
-
-		GLuint texture = 0;
-
-		ENQUEUE_RENDER_COMMAND([texturePtr = &texture, blob, debugName, deleteBlobData](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
-
-			if (debugName == nullptr) {
-				char debugNameAuto[256];
-				sprintf_s(debugNameAuto, "Texture HDR %d", debugNameAutoCounter);
-				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugNameAuto);
-				debugNameAutoCounter += 1;
-			} else {
-				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
-			}
-
-			cmdList.textureStorage2D(*texturePtr, 1, GL_RGB16F, blob->width, blob->height);
-			cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, blob->width, blob->height, GL_RGB, GL_FLOAT, blob->rawData);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			//cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			if (deleteBlobData) {
-				cmdList.registerDeferredCleanup(blob);
-			}
-		});
-
-		// #todo-image-loader: There is no wrapper for 'texture', so we should flush to finalize it.
-		TEMP_FLUSH_RENDER_COMMAND(true);
-
-		return texture;
 	}
 
 }

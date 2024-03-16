@@ -16,14 +16,21 @@ namespace pathos {
 		uint32 mipLevels          = 1; // 1 = only lod0, 0 = generate all possible mipmaps, N = generate up to N mipmaps.
 		GLenum glDimension        = 0; // ex) GL_TEXTURE_2D
 		GLenum glStorageFormat    = 0; // ex) GL_RGBA8
+
+		// #wip: pixel format and data type are meaningful only if imageBlob exists.
 		GLenum glPixelFormat      = 0; // ex) GL_RGBA
 		GLenum glDataType         = 0; // ex) GL_FLOAT
 		ImageBlob* imageBlob      = nullptr;
 		bool autoDestroyImageBlob = true;
+
 		std::string debugName;
 
 		inline bool isValid() const {
-			return width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0 && glPixelFormat != 0 && glDataType != 0;
+			bool valid = width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0;
+			if (imageBlob != nullptr) {
+				valid = valid && glPixelFormat != 0 && glDataType != 0;
+			}
+			return valid;
 		}
 	};
 
@@ -39,6 +46,7 @@ namespace pathos {
 		~Texture();
 
 		void createGPUResource(bool flushGPU = false);
+		void releaseGPUResource();
 
 		inline const TextureCreateParams& getCreateParams() const { return createParams; }
 		inline GLuint internal_getGLName() const { return glTexture; }

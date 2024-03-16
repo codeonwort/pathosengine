@@ -7,12 +7,7 @@
 namespace pathos {
 
 	Texture::~Texture() {
-		if (glTexture != 0) {
-			GLuint tex = glTexture;
-			ENQUEUE_RENDER_COMMAND([tex](RenderCommandList& cmdList) {
-				gRenderDevice->deleteTextures(1, &tex);
-			});
-		}
+		releaseGPUResource();
 	}
 
 	void Texture::createGPUResource(bool flushGPU /*= false*/) {
@@ -87,6 +82,15 @@ namespace pathos {
 		); // ENQUEUE_RENDER_COMMAND
 		if (flushGPU) {
 			FLUSH_RENDER_COMMAND(true);
+		}
+	}
+
+	void Texture::releaseGPUResource() {
+		if (glTexture != 0) {
+			ENQUEUE_RENDER_COMMAND([tex = glTexture](RenderCommandList& cmdList) {
+				cmdList.registerDeferredTextureCleanup(tex);
+			});
+			glTexture = 0;
 		}
 	}
 
