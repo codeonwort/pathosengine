@@ -147,7 +147,7 @@ namespace pathos {
 	}
 
 	bool RenderTarget2D::isTextureValid() const {
-		return (texture != nullptr && texture->isValid() && width != 0 && height != 0);
+		return (texture != nullptr && texture->isCreated() && width != 0 && height != 0);
 	}
 
 	bool RenderTarget2D::isColorFormat() const {

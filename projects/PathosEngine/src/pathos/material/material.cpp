@@ -97,7 +97,7 @@ namespace pathos {
 namespace pathos {
 
 	Material* createPBRMaterial(Texture* albedoTex, Texture* normalTex /*= nullptr*/) {
-		CHECK(albedoTex != nullptr && albedoTex->isValid()); // At least albedo must be there.
+		CHECK(albedoTex != nullptr && albedoTex->isCreated()); // At least albedo must be there.
 		Material* M = Material::createMaterialInstance("pbr_texture");
 
 		M->setConstantParameter("bOverrideAlbedo", false);

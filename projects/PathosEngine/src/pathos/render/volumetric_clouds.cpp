@@ -97,8 +97,8 @@ namespace pathos {
 
 		// #todo: Make STBN a system texture if needed.
 		gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
-		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "NVidiaSTBN");
-		cmdList.textureStorage3D(texSTBN, 1, GL_RGBA8, 128, 128, 64);
+		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "Texture_NVidiaSTBN");
+		cmdList.textureStorage3D(texSTBN, 1, GL_R8, 128, 128, 64);
 
 		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -123,16 +123,15 @@ namespace pathos {
 			
 			ImageBlob* blob = ImageUtils::loadImage(filepath.c_str());
 			
-			bool bValidSize = (blob->width == 128 && blob->height == 128);
+			bool bValidSize = (blob->width == 128 && blob->height == 128 && blob->bpp == 8);
 			if (bValidSize == false) {
-				LOG(LogError, "STBN image [%u] has invalid size (not 128x128 rgb)", i);
+				LOG(LogError, "STBN image [%u] has invalid size (not 128x128 grayscale) : width = %u, height = %u, bpp = %u", i, blob->width, blob->height, blob->bpp);
 				bHasValidResources = false;
+				delete blob;
 				break;
 			}
 
-			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
-				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->rawBytes);
-
+			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i, 128, 128, 1, GL_RED, GL_UNSIGNED_BYTE, blob->rawBytes);
 			cmdList.registerDeferredCleanup(blob);
 		}
 	}

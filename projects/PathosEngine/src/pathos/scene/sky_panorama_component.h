@@ -50,7 +50,7 @@ namespace pathos {
 		void setTexture(Texture* texture);
 
 		inline bool hasValidResources() const {
-			return texture->isValid() && sphere != nullptr;
+			return texture->isCreated() && sphere != nullptr;
 		}
 
 	protected:

@@ -24,8 +24,8 @@ namespace pathos {
 
 		bool hasValidResources() const {
 			return weatherTexture != 0
-				&& shapeNoise != nullptr && shapeNoise->isValid()
-				&& erosionNoise != nullptr && erosionNoise->isValid();
+				&& shapeNoise != nullptr && shapeNoise->isCreated()
+				&& erosionNoise != nullptr && erosionNoise->isCreated();
 		}
 
 	protected:

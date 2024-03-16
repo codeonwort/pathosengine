@@ -38,7 +38,7 @@ namespace pathos {
 	}
 
 	bool SkyboxComponent::hasValidResources() const {
-		bool bTexture = (bUseCubemapTexture && cubeGeometry != nullptr && cubemapTexture != nullptr && cubemapTexture->isValid());
+		bool bTexture = (bUseCubemapTexture && cubeGeometry != nullptr && cubemapTexture != nullptr && cubemapTexture->isCreated());
 		bool bMaterial = (!bUseCubemapTexture && cubeGeometry != nullptr && skyboxMaterial != nullptr);
 		return bTexture || bMaterial;
 	}

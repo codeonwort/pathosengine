@@ -49,7 +49,9 @@ namespace pathos {
 
 		inline const TextureCreateParams& getCreateParams() const { return createParams; }
 		inline GLuint internal_getGLName() const { return glTexture; }
-		inline bool isValid() const { return glTexture != 0; }
+
+		// Game logic can assume that this texture have a valid GL texture.
+		inline bool isCreated() const { return created; }
 
 	private:
 		const TextureCreateParams createParams;

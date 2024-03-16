@@ -513,19 +513,19 @@ namespace pathos {
 			constexpr bool sRGB = true;
 			constexpr bool autoDestroy = false;
 			PendingTextures& pendingTextures = pendingTextureData[index];
-			if (pendingTextures.albedoTexture == 0 && pendingTextures.albedoBlob != nullptr) {
+			if (pendingTextures.albedoTexture == nullptr && pendingTextures.albedoBlob != nullptr) {
 				pendingTextures.albedoTexture = pathos::ImageUtils::createTexture2DFromImage(pendingTextures.albedoBlob, mipLevels, sRGB, autoDestroy, pendingTextures.albedoFilename.c_str());
 				glTextureMap[pendingTextures.albedoFilename] = pendingTextures.albedoTexture;
 			}
-			if (pendingTextures.normalTexture == 0 && pendingTextures.normalBlob != nullptr) {
+			if (pendingTextures.normalTexture == nullptr && pendingTextures.normalBlob != nullptr) {
 				pendingTextures.normalTexture = pathos::ImageUtils::createTexture2DFromImage(pendingTextures.normalBlob, mipLevels, !sRGB, autoDestroy, pendingTextures.normalFilename.c_str());
 				glTextureMap[pendingTextures.normalFilename] = pendingTextures.normalTexture;
 			}
-			if (pendingTextures.roughnessTexture == 0 && pendingTextures.roughnessBlob != nullptr) {
+			if (pendingTextures.roughnessTexture == nullptr && pendingTextures.roughnessBlob != nullptr) {
 				pendingTextures.roughnessTexture = pathos::ImageUtils::createTexture2DFromImage(pendingTextures.roughnessBlob, mipLevels, !sRGB, autoDestroy, pendingTextures.roughnessFilename.c_str());
 				glTextureMap[pendingTextures.roughnessFilename] = pendingTextures.roughnessTexture;
 			}
-			if (pendingTextures.metallicTexture == 0 && pendingTextures.metallicBlob != nullptr) {
+			if (pendingTextures.metallicTexture == nullptr && pendingTextures.metallicBlob != nullptr) {
 				pendingTextures.metallicTexture = pathos::ImageUtils::createTexture2DFromImage(pendingTextures.metallicBlob, mipLevels, !sRGB, autoDestroy, pendingTextures.metallicFilename.c_str());
 				glTextureMap[pendingTextures.metallicFilename] = pendingTextures.metallicTexture;
 			}
@@ -533,12 +533,13 @@ namespace pathos {
 			if (M->getMaterialName() == "pbr_texture") {
 				PendingTextures& pendingTextures = pendingTextureData[index];
 				if (pendingTextures.albedoBlob != nullptr) {
-					M->setConstantParameter("bHasOpacity", pendingTextures.albedoBlob->glPixelFormat == GL_RGBA);
+					GLenum fmt = pendingTextures.albedoBlob->glPixelFormat;
+					M->setConstantParameter("bHasOpacity", fmt == GL_RGBA || fmt == GL_BGRA);
 				}
-				if (pendingTextures.albedoTexture != 0) M->setTextureParameter("albedo", pendingTextures.albedoTexture);
-				if (pendingTextures.normalTexture != 0) M->setTextureParameter("normal", pendingTextures.normalTexture);
-				if (pendingTextures.roughnessTexture != 0) (M)->setTextureParameter("roughness", pendingTextures.roughnessTexture);
-				if (pendingTextures.metallicTexture != 0) M->setTextureParameter("metallic", pendingTextures.metallicTexture);
+				if (pendingTextures.albedoTexture != nullptr) M->setTextureParameter("albedo", pendingTextures.albedoTexture);
+				if (pendingTextures.normalTexture != nullptr) M->setTextureParameter("normal", pendingTextures.normalTexture);
+				if (pendingTextures.roughnessTexture != nullptr) (M)->setTextureParameter("roughness", pendingTextures.roughnessTexture);
+				if (pendingTextures.metallicTexture != nullptr) M->setTextureParameter("metallic", pendingTextures.metallicTexture);
 			}
 		}
 
