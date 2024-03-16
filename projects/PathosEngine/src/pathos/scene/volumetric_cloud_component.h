@@ -1,22 +1,22 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/rhi/volume_texture.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/scene/scene_component.h"
 #include "pathos/render/scene_proxy.h"
 
 namespace pathos {
 
 	struct VolumetricCloudProxy : public SceneComponentProxy {
-		GLuint         weatherTexture;
-		VolumeTexture* shapeNoise;
-		VolumeTexture* erosionNoise;
+		Texture* weatherTexture;
+		Texture* shapeNoise;
+		Texture* erosionNoise;
 	};
 
 	class VolumetricCloudComponent : public SceneComponent {
 
 	public:
-		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
+		void setTextures(Texture* inWeatherTexture, Texture* inShapeNoise, Texture* inErosionNoise) {
 			weatherTexture = inWeatherTexture;
 			shapeNoise = inShapeNoise;
 			erosionNoise = inErosionNoise;
@@ -24,8 +24,8 @@ namespace pathos {
 
 		bool hasValidResources() const {
 			return weatherTexture != 0
-				&& shapeNoise != nullptr && shapeNoise->isValid()
-				&& erosionNoise != nullptr && erosionNoise->isValid();
+				&& shapeNoise != nullptr && shapeNoise->isCreated()
+				&& erosionNoise != nullptr && erosionNoise->isCreated();
 		}
 
 	protected:
@@ -45,9 +45,9 @@ namespace pathos {
 		}
 
 	private:
-		GLuint weatherTexture = 0;
-		VolumeTexture* shapeNoise = nullptr;
-		VolumeTexture* erosionNoise = nullptr;
+		Texture* weatherTexture = nullptr;
+		Texture* shapeNoise = nullptr;
+		Texture* erosionNoise = nullptr;
 
 	};
 

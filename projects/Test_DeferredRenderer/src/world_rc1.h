@@ -10,6 +10,7 @@ using namespace pathos;
 
 namespace pathos {
 	class ProceduralGeometry;
+	class Texture;
 	class Material;
 	class OBJLoader;
 	class TextMeshActor;
@@ -67,6 +68,6 @@ private:
 
 	Material* M_tower = nullptr;
 	
-	GLuint starfield = 0;
+	Texture* starfieldTexture = nullptr;
 
 };

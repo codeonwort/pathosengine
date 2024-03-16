@@ -17,6 +17,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	class DAELoader {
 		
 	public:
@@ -53,7 +55,7 @@ namespace pathos {
 		Node* root = nullptr;
 
 		std::string materialDir;
-		std::map<std::string, GLuint> textureMapping;
+		std::map<std::string, Texture*> textureMapping;
 
 	};
 

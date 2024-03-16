@@ -12,6 +12,7 @@ namespace pathos {
 
 	struct MaterialTemplate;
 	class ShaderProgram;
+	class Texture;
 
 	enum class EMaterialParameterDataType : uint32 {
 		Float,
@@ -35,7 +36,7 @@ namespace pathos {
 	struct MaterialTextureParameter {
 		std::string name;
 		uint32 binding;
-		GLuint glTexture = 0;
+		Texture* texture = nullptr;
 	};
 
 	class MaterialShader {

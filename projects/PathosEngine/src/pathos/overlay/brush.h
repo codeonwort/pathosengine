@@ -8,6 +8,7 @@ namespace pathos {
 
 	class OverlayRenderer;
 	class OverlayPass;
+	class Texture;
 
 	// Base class
 	class Brush {
@@ -28,14 +29,6 @@ namespace pathos {
 		vector4 color;
 	};
 
-	/*
-	// TODO: use texture as brush
-	class ImageBrush : public Brush {
-	public:
-		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
-	};
-	*/
-
 	// Brush for Label
 	class TextBrush : public Brush {
 
@@ -55,15 +48,18 @@ namespace pathos {
 	class ImageBrush : public Brush {
 
 	public:
-		ImageBrush(GLuint texture);
+		ImageBrush(Texture* inTexture)
+			: texture(inTexture)
+		{
+		}
 
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 
-		inline GLuint getTexture() const { return texture; }
-		inline void setTexture(GLuint inTexture) { texture = inTexture; }
+		inline Texture* getTexture() const { return texture; }
+		inline void setTexture(Texture* inTexture) { texture = inTexture; }
 
 	private:
-		GLuint texture;
+		Texture* texture;
 
 	};
 

@@ -23,7 +23,7 @@
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
-#include "pathos/loader/imageloader.h"    // subsystem: image loader
+#include "pathos/loader/image_loader.h"    // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
 #include "pathos/input/input_system.h"    // subsystem: input
@@ -599,7 +599,7 @@ namespace pathos {
 					screenshotPath += "_shot" + std::to_string(i) + ".png";
 					const vector2i& size = screenshotQueue[i].first;
 					uint8* pixels = screenshotQueue[i].second;
-					pathos::savePNG_RGB(size.x, size.y, pixels, screenshotPath.c_str());
+					ImageUtils::saveRGB8ImageAsPNG(size.x, size.y, pixels, screenshotPath.c_str());
 					delete[] pixels;
 				}
 				gConsole->addLine(L"Screenshot saved to log/screenshot/", false, true);

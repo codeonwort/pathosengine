@@ -10,7 +10,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/gl_debug_group.h"
-#include "pathos/rhi/volume_texture.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/material/material_shader.h"

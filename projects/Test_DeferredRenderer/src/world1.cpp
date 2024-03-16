@@ -108,17 +108,16 @@ void World1::setupSky()
 		"resources/skybox/cubemap1/neg_z.jpg"
 	};
 #endif
-	std::array<BitmapBlob*, 6> cubeImg;
-	pathos::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, cubeImg);
-	GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(cubeImg.data(), true, "skybox cubemap");
-
+	auto cubeImages = ImageUtils::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL);
+	Texture* cubeTexture = ImageUtils::createTextureCubeFromImages(cubeImages, 0, true, "Texture_SkyCubemap");
 	SkyboxActor* skybox = spawnActor<SkyboxActor>();
 	skybox->setCubemapTexture(cubeTexture);
 #elif SKY_METHOD == 1
 	SkyAtmosphereActor* skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #elif SKY_METHOD == 2
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	GLuint panoramaTex = pathos::createTextureFromHDRImage(pathos::loadHDRImage(SKY_PANORAMA_HDRI));
+	ImageBlob* panoramaBlob = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
+	Texture* panoramaTex = ImageUtils::createTexture2DFromImage(panoramaBlob, 1, false, true, "Texture_Panorama");
 	panoramaSky->initialize(panoramaTex);
 #endif
 }
@@ -143,14 +142,13 @@ void World1::setupScene()
 	// PBR material
 	Material* material_pbr = Material::createMaterialInstance("pbr_texture");
 	{
-		constexpr bool genMipmap = true;
+		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
-		BitmapBlob* albedoBlob = pathos::loadImage(SANDSTONE_ALBEDO);
-		GLuint albedo = pathos::createTextureFromBitmap(albedoBlob, genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
+		Texture* albedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ALBEDO), mipLevels, sRGB);
+		Texture* normal = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_NORMAL), mipLevels, !sRGB);
+		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_METALLIC), mipLevels, !sRGB);
+		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ROUGHNESS), mipLevels, !sRGB);
+		Texture* ao = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_LOCAL_AO), mipLevels, !sRGB);
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
@@ -282,7 +280,7 @@ void World1::setupScene()
 	sceneCaptureComponent->captureScene();
 
 	Material* material_sceneCapture = Material::createMaterialInstance("texture_viewer");
-	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getGLName());
+	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getInternalTexture());
 	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_sceneCapture, material_sceneCapture));

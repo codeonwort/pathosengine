@@ -3,19 +3,19 @@
 #include "player_controller.h"
 #include "lightning_effect.h"
 
+#include "pathos/rhi/texture.h"
 #include "pathos/render/image_based_lighting_baker.h"
-#include "pathos/rhi/volume_texture.h"
 
-#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/spline_loader.h"
 #include "pathos/loader/asset_streamer.h"
@@ -215,31 +215,38 @@ void World_RC1::onTick(float deltaSeconds)
 
 void World_RC1::setupSky()
 {
-	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	{
+		TextureCreateParams createParams;
+		createParams.width           = STARFIELD_WIDTH;
+		createParams.height          = STARFIELD_HEIGHT;
+		createParams.depth           = 1;
+		createParams.mipLevels       = 1;
+		createParams.glDimension     = GL_TEXTURE_2D;
+		createParams.glStorageFormat = GL_RGBA16F;
+		createParams.debugName       = "Texture_Starfield";
+		starfieldTexture = new Texture(createParams);
+		starfieldTexture->createGPUResource();
+	}
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	panoramaSky->initialize(starfield);
+	panoramaSky->initialize(starfieldTexture);
 
 	// Volumetric cloud
-	{
-		GLuint weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false, "Texture: WeatherMap");
-		VolumeTexture* cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
-		{
-			uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
-			uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
-			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
-			cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
-		}
-		VolumeTexture* cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
-		{
-			uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
-			uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
-			CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
-			cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
-		}
-		VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
-		cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
-	}
+	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
+		uint32 vtWidth = imageBlob->width;
+		uint32 vtHeight = imageBlob->height;
+		CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
+		return vector3ui(vtHeight, vtHeight, vtWidth / vtHeight);
+	};
+	ImageBlob* weatherMapBlob = ImageUtils::loadImage(CLOUD_WEATHER_MAP_FILE);
+	ImageBlob* cloudShapeNoiseBlob = ImageUtils::loadImage(CLOUD_SHAPE_NOISE_FILE);
+	ImageBlob* cloudErosionNoiseBlob = ImageUtils::loadImage(CLOUD_EROSION_NOISE_FILE);
+	Texture* weatherTexture = ImageUtils::createTexture2DFromImage(weatherMapBlob, 1, false, true, "Texture_WeatherMap");
+	Texture* cloudShapeNoise = ImageUtils::createTexture3DFromImage(cloudShapeNoiseBlob, calcVolumeSize(cloudShapeNoiseBlob), 0, false, true, "Texture_CloudShapeNoise");
+	Texture* cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
+	VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
+	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 }
 
 void World_RC1::setupScene()
@@ -261,13 +268,13 @@ void World_RC1::setupScene()
 
 	Material* material_ring = Material::createMaterialInstance("pbr_texture");
 	{
-		constexpr bool genMips = true;
+		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage(RING_ALBEDO), genMips, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage(RING_NORMAL), genMips, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage(RING_METALLIC), genMips, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage(RING_ROUGHNESS), genMips, !sRGB);
-		GLuint localAO = pathos::createTextureFromBitmap(loadImage(RING_LOCAL_AO), genMips, !sRGB);
+		Texture* albedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_ALBEDO), mipLevels, sRGB);
+		Texture* normal = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_NORMAL), mipLevels, !sRGB);
+		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_METALLIC), mipLevels, !sRGB);
+		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_ROUGHNESS), mipLevels, !sRGB);
+		Texture* localAO = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_LOCAL_AO), mipLevels, !sRGB);
 		material_ring->setTextureParameter("albedo", albedo);
 		material_ring->setTextureParameter("normal", normal);
 		material_ring->setTextureParameter("metallic", metallic);
@@ -320,7 +327,7 @@ void World_RC1::setupScene()
 void World_RC1::updateStarfield()
 {
 	gEngine->executeConsoleCommand("recompile_shaders");
-	GalaxyGenerator::createStarField(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 }
 
 void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
@@ -332,10 +339,10 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	guardTower->setActorScale(RC1_SCALE * 10.0f);
 	guardTower->setActorLocation(RC1_SCALE * vector3(0.0f, (Y_OFFSET / RC1_SCALE) - 47.0f, 0.0f));
 
-	M_tower->setTextureParameter("albedo", loader->findGLTexture("T_Tower.png"));
-	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));
-	M_tower->setTextureParameter("roughness", loader->findGLTexture("R_Tower.png"));
-	M_tower->setTextureParameter("metallic", loader->findGLTexture("M_Tower.png"));
+	M_tower->setTextureParameter("albedo", loader->findTexture("T_Tower.png"));
+	M_tower->setTextureParameter("normal", loader->findTexture("N_Tower.png"));
+	M_tower->setTextureParameter("roughness", loader->findTexture("R_Tower.png"));
+	M_tower->setTextureParameter("metallic", loader->findTexture("M_Tower.png"));
 }
 
 //////////////////////////////////////////////////////////////////////////

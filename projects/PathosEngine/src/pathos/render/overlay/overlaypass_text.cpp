@@ -2,6 +2,7 @@
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/texture.h"
 
 namespace pathos {
 
@@ -59,7 +60,7 @@ namespace pathos {
 		ubo.update(cmdList, UBO_OverlayText::BINDING_POINT, &uboData);
 
 		// shader resources
-		cmdList.bindTextureUnit(FONT_TEXTURE_UNIT, label->fontDesc.cacheTexture->getTexture());
+		cmdList.bindTextureUnit(FONT_TEXTURE_UNIT, label->fontDesc.cacheTexture->getTexture()->internal_getGLName());
 
 		cmdList.enable(GL_BLEND);
 		cmdList.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

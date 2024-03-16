@@ -1,6 +1,7 @@
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/material/material_shader_assembler.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/engine.h"
 
 #include "badger/math/minmax.h"
@@ -33,10 +34,10 @@ namespace pathos {
 		return nullptr;
 	}
 
-	void Material::setTextureParameter(const char* name, GLuint glTexture) {
+	void Material::setTextureParameter(const char* name, Texture* texture) {
 		MaterialTextureParameter* mtp = findTextureParameter(name);
 		CHECKF(mtp != nullptr, "Can't find material texture parameter");
-		mtp->glTexture = glTexture;
+		mtp->texture = texture;
 	}
 
 	MaterialTextureParameter* Material::findTextureParameter(const char* name) {
@@ -95,8 +96,8 @@ namespace pathos {
 
 namespace pathos {
 
-	Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex /*= 0*/) {
-		CHECK(albedoTex != 0); // At least albedo must be there.
+	Material* createPBRMaterial(Texture* albedoTex, Texture* normalTex /*= nullptr*/) {
+		CHECK(albedoTex != nullptr && albedoTex->isCreated()); // At least albedo must be there.
 		Material* M = Material::createMaterialInstance("pbr_texture");
 
 		M->setConstantParameter("bOverrideAlbedo", false);

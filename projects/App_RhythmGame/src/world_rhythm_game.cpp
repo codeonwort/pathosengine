@@ -2,8 +2,9 @@
 
 #include "pathos/engine.h"
 #include "pathos/console.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/input/input_manager.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/overlay/display_object.h"
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/brush.h"
@@ -157,7 +158,7 @@ private:
 
 class CatchEffect : public pathos::Rectangle {
 public:
-	CatchEffect(const std::vector<GLuint>& inEffectTextures)
+	CatchEffect(const std::vector<Texture*>& inEffectTextures)
 		: Rectangle(CATCH_EFFECT_WIDTH, CATCH_EFFECT_HEIGHT)
 		, effectTextures(inEffectTextures)
 	{
@@ -185,7 +186,7 @@ public:
 	}
 private:
 	ImageBrush* effectBrush = nullptr;
-	std::vector<GLuint> effectTextures;
+	std::vector<Texture*> effectTextures;
 	float startTime = -1000.0f;
 };
 
@@ -486,16 +487,16 @@ void World_RhythmGame::initializePlayStage() {
 	pathos::Brush* blueNoteBrush = nullptr;
 	pathos::Brush* yellowNoteBrush = nullptr;
 	{
-		auto blueBlob = pathos::loadImage(BLUE_NOTE_IMAGE);
+		auto blueBlob = pathos::ImageUtils::loadImage(BLUE_NOTE_IMAGE);
 		if (blueBlob != nullptr) {
-			GLuint blueNoteTexture = pathos::createTextureFromBitmap(blueBlob, false, false, "blue_note", true);
+			Texture* blueNoteTexture = pathos::ImageUtils::createTexture2DFromImage(blueBlob, 1, false, true, "Texture_BlueNote");
 			blueNoteBrush = new pathos::ImageBrush(blueNoteTexture);
 		} else {
 			blueNoteBrush = new pathos::SolidColorBrush(0.8f, 0.8f, 1.0f);
 		}
-		auto yellowBlob = pathos::loadImage(YELLOW_NOTE_IMAGE);
+		auto yellowBlob = pathos::ImageUtils::loadImage(YELLOW_NOTE_IMAGE);
 		if (yellowBlob != nullptr) {
-			GLuint yellowNoteTexture = pathos::createTextureFromBitmap(yellowBlob, false, false, "yellow_note", true);
+			Texture* yellowNoteTexture = pathos::ImageUtils::createTexture2DFromImage(yellowBlob, 1, false, true, "Texture_YellowNote");
 			yellowNoteBrush = new pathos::ImageBrush(yellowNoteTexture);
 		} else {
 			yellowNoteBrush = new pathos::SolidColorBrush(1.0f, 1.0f, 0.2f);
@@ -504,9 +505,9 @@ void World_RhythmGame::initializePlayStage() {
 
 	pathos::Brush* pressEffectBrush = nullptr;
 	{
-		auto effectBlob = pathos::loadImage(PRESS_EFFECT_IMAGE);
+		auto effectBlob = pathos::ImageUtils::loadImage(PRESS_EFFECT_IMAGE);
 		if (effectBlob != nullptr) {
-			GLuint effectTexture = pathos::createTextureFromBitmap(effectBlob, false, false, "note_press_effect", true);
+			Texture* effectTexture = pathos::ImageUtils::createTexture2DFromImage(effectBlob, 1, false, true, "note_press_effect");
 			pressEffectBrush = new pathos::ImageBrush(effectTexture);
 		} else {
 			pressEffectBrush = new pathos::SolidColorBrush(0.1f, 0.9f, 0.1f);
@@ -514,10 +515,10 @@ void World_RhythmGame::initializePlayStage() {
 	}
 
 	bCatchEffectAllValid = true;
-	std::vector<pathos::BitmapBlob*> catchEffectBlobs;
-	std::vector<GLuint> catchEffectTextures;
+	std::vector<pathos::ImageBlob*> catchEffectBlobs;
+	std::vector<pathos::Texture*> catchEffectTextures;
 	for (size_t i = 0; i < _countof(CATCH_EFFECT_IMAGES); ++i) {
-		auto catchEffectBlob = pathos::loadImage(CATCH_EFFECT_IMAGES[i]);
+		auto catchEffectBlob = pathos::ImageUtils::loadImage(CATCH_EFFECT_IMAGES[i]);
 		if (catchEffectBlob != nullptr) {
 			catchEffectBlobs.push_back(catchEffectBlob);
 		} else {
@@ -526,15 +527,13 @@ void World_RhythmGame::initializePlayStage() {
 		}
 	}
 	if (bCatchEffectAllValid == false) {
-		for (pathos::BitmapBlob* blob : catchEffectBlobs) {
-			delete blob;
-		}
+		for (auto blob : catchEffectBlobs) delete blob;
 	} else {
 		int32 i = 0;
-		for (pathos::BitmapBlob* blob : catchEffectBlobs) {
+		for (auto blob : catchEffectBlobs) {
 			char msg[64];
-			sprintf_s(msg, "catch_effect_%d", i++);
-			GLuint effectTexture = pathos::createTextureFromBitmap(blob, false, false, msg, true);
+			sprintf_s(msg, "Texture_CatchEffect_%d", i++);
+			Texture* effectTexture = pathos::ImageUtils::createTexture2DFromImage(blob, 1, false, true, msg);
 			catchEffectTextures.push_back(effectTexture);
 		}
 	}
@@ -684,19 +683,15 @@ void World_RhythmGame::startPlaySession() {
 		background->setBrush(backgroundFallbackBrush);
 		LOG(LogError, "Failed to find background: %s", item.backgroundFile.c_str());
 	} else {
-		auto imageBlob = pathos::loadImage(backgroundPath.c_str());
+		auto imageBlob = pathos::ImageUtils::loadImage(backgroundPath.c_str());
 		if (imageBlob == nullptr) {
 			background->setBrush(backgroundFallbackBrush);
 			LOG(LogError, "Failed to load background: %s", backgroundPath.c_str());
 		} else {
-			GLuint oldTexture = backgroundImageBrush->getTexture();
-			if (oldTexture != 0) {
-				ENQUEUE_RENDER_COMMAND([oldTexture](RenderCommandList& cmdList) {
-					cmdList.deleteTextures(1, &oldTexture);
-				});
-			}
+			Texture* oldTexture = backgroundImageBrush->getTexture();
+			if (oldTexture != nullptr) delete oldTexture;
 
-			GLuint imageTexture = pathos::createTextureFromBitmap(imageBlob, false, false, "background_image", true);
+			Texture* imageTexture = pathos::ImageUtils::createTexture2DFromImage(imageBlob, 1, false, true, "Texture_Background");
 			backgroundImageBrush->setTexture(imageTexture);
 			background->setBrush(backgroundImageBrush);
 		}

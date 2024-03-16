@@ -1,4 +1,5 @@
 #include "brush.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/render/overlay/overlaypass.h"
 #include "pathos/util/color_conversion.h"
@@ -30,7 +31,7 @@ namespace pathos {
 
 	void SolidColorBrush::setColor(uint32 colorHex) {
 		float rgba[4];
-		to_float4(colorHex, rgba);
+		pathos::to_float4(colorHex, rgba);
 		setColor(rgba[0], rgba[1], rgba[2], rgba[3]);
 	}
 
@@ -45,7 +46,7 @@ namespace pathos {
 
 	TextBrush::TextBrush(uint32 colorHex) {
 		float rgb[3];
-		to_float3(colorHex, rgb);
+		pathos::to_float3(colorHex, rgb);
 		color = vector4(rgb[0], rgb[1], rgb[2], 1.0f);
 	}
 
@@ -60,13 +61,9 @@ namespace pathos {
 // ImageBrush
 namespace pathos {
 
-	ImageBrush::ImageBrush(GLuint inTexture) {
-		texture = inTexture;
-	}
-
 	OverlayPass* ImageBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
 		OverlayPass_Image* program = renderer->getImageProgram();
-		program->setImageTexture(texture);
+		program->setImageTexture(getTexture()->internal_getGLName());
 		return program;
 	}
 

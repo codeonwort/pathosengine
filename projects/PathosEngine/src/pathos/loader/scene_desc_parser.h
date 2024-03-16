@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 
 #include "badger/types/vector_types.h"
 #include "badger/math/rotator.h"
@@ -25,7 +25,6 @@ namespace pathos {
 		struct SkyEquirectangularMap {
 			std::string name;
 			std::string texture;
-			bool hdr;
 			bool valid = false;
 		};
 		struct DirLight {

@@ -1,4 +1,6 @@
 #include "skybox_component.h"
+#include "pathos/rhi/texture.h"
+
 #include "badger/math/minmax.h"
 
 namespace pathos {
@@ -10,9 +12,9 @@ namespace pathos {
 		}
 	}
 
-	void SkyboxComponent::setCubemapTexture(GLuint inTextureID) {
-		if (cubemapTextureID != inTextureID) {
-			cubemapTextureID = inTextureID;
+	void SkyboxComponent::setCubemapTexture(Texture* inTexture) {
+		if (cubemapTexture != inTexture) {
+			cubemapTexture = inTexture;
 			bLightingDirty = true;
 		}
 		if (cubeGeometry == nullptr) {
@@ -35,6 +37,12 @@ namespace pathos {
 		}
 	}
 
+	bool SkyboxComponent::hasValidResources() const {
+		bool bTexture = (bUseCubemapTexture && cubeGeometry != nullptr && cubemapTexture != nullptr && cubemapTexture->isCreated());
+		bool bMaterial = (!bUseCubemapTexture && cubeGeometry != nullptr && skyboxMaterial != nullptr);
+		return bTexture || bMaterial;
+	}
+
 	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
 		if (!hasValidResources()) {
 			scene->skybox = nullptr;
@@ -45,7 +53,7 @@ namespace pathos {
 
 		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
 		proxy->cube               = cubeGeometry;
-		proxy->textureID          = cubemapTextureID;
+		proxy->texture            = cubemapTexture;
 		proxy->textureLod         = cubemapLod;
 		proxy->skyboxMaterial     = skyboxMaterial;
 		proxy->bUseCubemapTexture = bUseCubemapTexture;

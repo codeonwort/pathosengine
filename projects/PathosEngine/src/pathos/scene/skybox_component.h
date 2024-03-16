@@ -5,11 +5,12 @@
 
 namespace pathos {
 
+	class Texture;
 	class Material;
 
 	struct SkyboxProxy : SceneComponentProxy {
 		CubeGeometry*    cube;
-		GLuint           textureID;
+		Texture*         texture;
 		float            textureLod;
 		Material*        skyboxMaterial;
 		bool             bUseCubemapTexture;
@@ -21,16 +22,12 @@ namespace pathos {
 	public:
 		~SkyboxComponent();
 
-		void setCubemapTexture(GLuint inTextureID);
+		void setCubemapTexture(Texture* inTexture);
 		void setCubemapLOD(float inLOD);
 
 		void setSkyboxMaterial(Material* inMaterial);
 
-		inline bool hasValidResources() const {
-			bool bTexture = (bUseCubemapTexture && cubeGeometry != nullptr && cubemapTextureID != 0);
-			bool bMaterial = (!bUseCubemapTexture && cubeGeometry != nullptr && skyboxMaterial != nullptr);
-			return bTexture || bMaterial;
-		}
+		bool hasValidResources() const;
 
 		bool bUseCubemapTexture = true;
 
@@ -39,7 +36,7 @@ namespace pathos {
 
 	private:
 		CubeGeometry* cubeGeometry = nullptr;
-		GLuint cubemapTextureID = 0;
+		Texture* cubemapTexture = nullptr;
 		float cubemapLod = 0.0f;
 
 		Material* skyboxMaterial = nullptr;

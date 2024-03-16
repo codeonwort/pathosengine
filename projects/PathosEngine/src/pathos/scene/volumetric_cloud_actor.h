@@ -6,7 +6,7 @@
 
 namespace pathos {
 
-	class VolumeTexture;
+	class Texture;
 	class VolumetricCloudComponent;
 
 	// Just spawn a VolumetricCloudActor then its attached component will create a scene proxy.
@@ -21,7 +21,7 @@ namespace pathos {
 
 		~VolumetricCloudActor() = default;
 
-		void setTextures(GLuint inWeatherTexture, VolumeTexture* inShapeNoise, VolumeTexture* inErosionNoise) {
+		void setTextures(Texture* inWeatherTexture, Texture* inShapeNoise, Texture* inErosionNoise) {
 			cloudComponent->setTextures(inWeatherTexture, inShapeNoise, inErosionNoise);
 		}
 

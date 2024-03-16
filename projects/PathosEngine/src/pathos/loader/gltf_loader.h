@@ -13,11 +13,12 @@ namespace tinygltf { class TinyGLTF; class Model; }
 
 namespace pathos {
 
+	class Texture;
 	class Material;
 	class Mesh;
 	class MeshGeometry;
 	class Actor;
-	struct BitmapBlob;
+	struct ImageBlob;
 
 	struct GLTFModelDesc {
 		Mesh* mesh = nullptr;
@@ -28,16 +29,15 @@ namespace pathos {
 	};
 
 	struct GLTFPendingTexture {
-		BitmapBlob* blob;
-		bool sRGB;
+		ImageBlob* blob = nullptr;
+		bool sRGB = false;
 		std::string debugName;
-
-		GLuint glTexture = 0;
+		Texture* glTexture = nullptr;
 	};
 
 	struct GLTFPendingTextureParameter {
 		GLTFPendingTextureParameter(
-			Material* inMaterial, const std::string& inParam, uint32 inIndex, GLuint inFallback)
+			Material* inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
 			: material(inMaterial)
 			, parameterName(inParam)
 			, index(inIndex)
@@ -46,7 +46,7 @@ namespace pathos {
 		Material* material;
 		std::string parameterName;
 		uint32 index;
-		GLuint fallbackTexture;
+		Texture* fallbackTexture;
 	};
 	struct GLTFPendingGeometry {
 		MeshGeometry* geometry;

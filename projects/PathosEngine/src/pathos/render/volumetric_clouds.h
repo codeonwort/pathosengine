@@ -28,6 +28,8 @@ namespace pathos {
 		uint32 renderTargetHeight = 0;
 		UniformBuffer ubo;
 
+		GLuint cloudNoiseSampler = 0;
+
 		// https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
 		GLuint texSTBN = 0;
 		bool bHasValidResources = false;

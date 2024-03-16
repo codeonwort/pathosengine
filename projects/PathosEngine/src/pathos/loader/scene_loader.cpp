@@ -87,9 +87,9 @@ namespace pathos {
 			for (size_t i = 0; i < 6; ++i) {
 				texturePathes[i] = sceneDesc.skybox.textures[i].c_str();
 			}
-			std::array<BitmapBlob*, 6> textureDataArray;
-			pathos::loadCubemapImages(texturePathes, sceneDesc.skybox.preference, textureDataArray);
-			GLuint cubeTexture = pathos::createCubemapTextureFromBitmap(textureDataArray.data(), sceneDesc.skybox.generateMipmaps, sceneDesc.skybox.name.c_str());
+			auto imageBlobs = ImageUtils::loadCubemapImages(texturePathes, sceneDesc.skybox.preference);
+			uint32 mipLevels = sceneDesc.skybox.generateMipmaps ? 0 : 1;
+			Texture* cubeTexture = ImageUtils::createTextureCubeFromImages(imageBlobs, mipLevels, sceneDesc.skybox.name.c_str());
 
 			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
 			actor->setCubemapTexture(cubeTexture);
@@ -98,14 +98,8 @@ namespace pathos {
 			outActorMap.insert(std::make_pair(sceneDesc.skybox.name, actor));
 		}
 		if (sceneDesc.skyEquimap.valid) {
-			GLuint texture = 0;
-			if (sceneDesc.skyEquimap.hdr) {
-				auto metadata = pathos::loadHDRImage(sceneDesc.skyEquimap.texture.c_str());
-				texture = pathos::createTextureFromHDRImage(metadata);
-			} else {
-				auto metadata = pathos::loadImage(sceneDesc.skyEquimap.texture.c_str());
-				texture = pathos::createTextureFromBitmap(metadata, false, true);
-			}
+			ImageBlob* blob = ImageUtils::loadImage(sceneDesc.skyEquimap.texture.c_str());
+			Texture* texture = ImageUtils::createTexture2DFromImage(blob, 1, false, true, "Texture_Sky");
 
 			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
 			actor->initialize(texture);

@@ -10,7 +10,7 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/loader/asset_streamer.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
 #include "pathos/overlay/brush.h"
@@ -138,8 +138,8 @@ void World_ModelViewer::onInitialize() {
 
 	getCamera().lookAt(vector3(2.0f, 2.0f, 5.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 
-	HDRImageBlob* panoramaImage = pathos::loadHDRImage(SKY_PANORAMA_HDRI);
-	panoramaTexture = pathos::createTextureFromHDRImage(panoramaImage);
+	ImageBlob* panoramaImage = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
+	panoramaTexture = ImageUtils::createTexture2DFromImage(panoramaImage, 1, false, true, "Texture_Panorama");
 
 	toggleSkyActor();
 	toggleProbeGI();

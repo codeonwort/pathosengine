@@ -6,6 +6,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	// Use panorama (i.e., equirectangular map) texture as sky.
 	class PanoramaSkyActor : public SkyActor {
 
@@ -15,8 +17,8 @@ namespace pathos {
 			setAsRootComponent(component);
 		}
 
-		void initialize(GLuint textureID) {
-			component->setTexture(textureID);
+		void initialize(Texture* texture) {
+			component->setTexture(texture);
 		}
 
 		PanoramaSkyComponent* getSkyComponent() const { return component; }

@@ -1,9 +1,10 @@
 #include "skybox.h"
 #include "pathos/engine_policy.h"
+#include "pathos/rhi/texture.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/image_based_lighting_baker.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -92,7 +93,8 @@ namespace pathos {
 
 		renderSkyboxToScreen(cmdList, scene);
 		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skybox->bLightingDirty) {
-			GLuint inputCubemap = scene->skybox->textureID;
+			Texture* skyboxTexture = scene->skybox->texture;
+			GLuint inputCubemap = skyboxTexture ? skyboxTexture->internal_getGLName() : 0;
 			if (scene->skybox->bUseCubemapTexture == false) {
 				renderSkyMaterialToCubemap(cmdList, scene);
 				inputCubemap = scratchCubemapTexture;
@@ -147,7 +149,7 @@ namespace pathos {
 		cmdList.cullFace(GL_FRONT);
 
 		if (skybox->bUseCubemapTexture) {
-			cmdList.bindTextureUnit(0, skybox->textureID);
+			cmdList.bindTextureUnit(0, skybox->texture->internal_getGLName());
 		} else {
 			if (skyMaterialShader->uboTotalBytes > 0) {
 				uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(skyMaterialShader->uboTotalBytes));
@@ -155,7 +157,7 @@ namespace pathos {
 				skyMaterialShader->uboMaterial.update(cmdList, skyMaterialShader->uboBindingPoint, uboMemory);
 			}
 			for (const MaterialTextureParameter& mtp : skyMaterial->internal_getTextureParameters()) {
-				cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+				cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 			}
 		}
 

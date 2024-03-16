@@ -5,6 +5,7 @@
 using namespace pathos;
 
 namespace pathos {
+	class Texture;
 	class StaticMeshComponent;
 	class SphereGeometry;
 	class ProceduralGeometry;
@@ -14,7 +15,7 @@ class LightningParticleComponent : public StaticMeshComponent {
 public:
 	LightningParticleComponent();
 
-	void setParameters(GLuint maskTexture, GLuint warpTexture, float rc1Scale);
+	void setParameters(Texture* maskTexture, Texture* warpTexture, float rc1Scale);
 	void generateParticle(const vector3& p0, const vector3& p1);
 
 private:
@@ -36,6 +37,6 @@ public:
 private:
 	StaticMeshComponent* sphereComponent = nullptr;
 	std::vector<LightningParticleComponent*> particleComponents;
-	GLuint maskTexture = 0;
-	GLuint warpTexture = 0;
+	Texture* maskTexture = nullptr;
+	Texture* warpTexture = nullptr;
 };

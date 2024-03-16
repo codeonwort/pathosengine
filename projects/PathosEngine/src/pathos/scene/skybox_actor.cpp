@@ -2,8 +2,8 @@
 
 namespace pathos {
 
-	void SkyboxActor::setCubemapTexture(GLuint inTextureID, float inLod) {
-		component->setCubemapTexture(inTextureID);
+	void SkyboxActor::setCubemapTexture(Texture* inTexture, float inLod) {
+		component->setCubemapTexture(inTexture);
 		component->setCubemapLOD(inLod);
 		component->bUseCubemapTexture = true;
 	}

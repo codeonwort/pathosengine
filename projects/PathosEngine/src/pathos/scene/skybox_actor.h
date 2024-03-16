@@ -5,6 +5,7 @@
 
 namespace pathos {
 
+	class Texture;
 	class Material;
 
 	// Render sky with cubemap texture or sky material.
@@ -17,7 +18,7 @@ namespace pathos {
 			setAsRootComponent(component);
 		}
 
-		void setCubemapTexture(GLuint textureID, float lod = 0.0f);
+		void setCubemapTexture(Texture* texture, float lod = 0.0f);
 
 		void setSkyboxMaterial(Material* material);
 

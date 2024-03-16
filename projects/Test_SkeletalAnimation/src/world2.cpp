@@ -112,9 +112,8 @@ void World2::setupScene()
 		"skybox/cubemap1/pos_y.jpg", "skybox/cubemap1/neg_y.jpg",
 		"skybox/cubemap1/pos_z.jpg", "skybox/cubemap1/neg_z.jpg"
 	};
-	std::array<BitmapBlob*, 6> cubeImageBlobs;
-	pathos::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL, cubeImageBlobs);
-	GLuint skyCubemapTexture = pathos::createCubemapTextureFromBitmap(cubeImageBlobs.data(), true, "Texture_Skybox");
+	auto cubeImageBlobs = ImageUtils::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL);
+	Texture* skyCubemapTexture = ImageUtils::createTextureCubeFromImages(cubeImageBlobs, 0, true, "Texture_Skybox");
 
 	Material* material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));

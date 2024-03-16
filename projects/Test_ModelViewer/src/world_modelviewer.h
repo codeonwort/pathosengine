@@ -8,6 +8,7 @@
 using namespace pathos;
 
 namespace pathos {
+	class Texture;
 	class Actor;
 	class SkyAtmosphereActor;
 	class PanoramaSkyActor;
@@ -47,7 +48,7 @@ private:
 
 	SkyAtmosphereActor* skyAtmosphere = nullptr;
 	PanoramaSkyActor* panoramaSky = nullptr;
-	GLuint panoramaTexture = 0;
+	Texture* panoramaTexture = nullptr;
 
 	DirectionalLightActor* sun = nullptr;
 	PlayerController* playerController = nullptr;

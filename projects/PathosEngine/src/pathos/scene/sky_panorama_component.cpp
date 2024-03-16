@@ -134,9 +134,9 @@ namespace pathos {
 		}
 	}
 
-	void PanoramaSkyComponent::setTexture(GLuint inTextureID) {
-		if (textureID != inTextureID) {
-			textureID = inTextureID;
+	void PanoramaSkyComponent::setTexture(Texture* inTexture) {
+		if (texture != inTexture) {
+			texture = inTexture;
 			bLightingDirty = true;
 		}
 		if (sphere == nullptr) {
@@ -154,7 +154,7 @@ namespace pathos {
 
 		PanoramaSkyProxy* proxy = ALLOC_RENDER_PROXY<PanoramaSkyProxy>(scene);
 		proxy->sphere = sphere;
-		proxy->textureID = textureID;
+		proxy->texture = texture;
 		proxy->bLightingDirty = bLightingDirty && bMainScene;
 
 		if (bMainScene) {

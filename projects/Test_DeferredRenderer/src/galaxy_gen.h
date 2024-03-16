@@ -7,12 +7,13 @@ using namespace pathos;
 namespace pathos {
 	class OpenGLDevice;
 	class PlaneGeometry;
+	class Texture;
 }
 
 class GalaxyGenerator {
 
 public:
-	static void createStarField(GLuint& targetTexture, uint32 width, uint32 height);
+	static void renderStarField(Texture* texture, uint32 width, uint32 height);
 
 	static void internal_createResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 	static void internal_destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);

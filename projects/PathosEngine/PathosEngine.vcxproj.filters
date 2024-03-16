@@ -72,7 +72,7 @@
     <ClCompile Include="src\pathos\scene\camera.cpp">
       <Filter>소스 파일\pathos\camera</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\loader\imageloader.cpp">
+    <ClCompile Include="src\pathos\loader\image_loader.cpp">
       <Filter>소스 파일\pathos\loader</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\objloader.cpp">
@@ -264,7 +264,7 @@
     <ClCompile Include="src\pathos\render\shadow_omni.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\rhi\volume_texture.cpp">
+    <ClCompile Include="src\pathos\rhi\texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\depth_prepass.cpp">
@@ -422,7 +422,7 @@
     <ClInclude Include="src\pathos\scene\camera.h">
       <Filter>헤더 파일\pathos\camera</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\loader\imageloader.h">
+    <ClInclude Include="src\pathos\loader\image_loader.h">
       <Filter>헤더 파일\pathos\loader</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\objloader.h">
@@ -707,7 +707,7 @@
     <ClInclude Include="src\pathos\render\shadow_omni.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\rhi\volume_texture.h">
+    <ClInclude Include="src\pathos\rhi\texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\depth_prepass.h">
@@ -885,6 +885,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\gl_live_objects.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\util\image_data.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

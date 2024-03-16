@@ -2,9 +2,10 @@
 #include "skinned_mesh.h"
 
 #include "pathos/engine.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
-#include "pathos/loader/imageloader.h"
+#include "pathos/loader/image_loader.h"
 #include "pathos/util/resource_finder.h"
 
 #include <functional>
@@ -71,7 +72,7 @@ namespace pathos {
 	}
 
 	void DAELoader::loadMaterials() {
-		auto getMaterialTextures = [&](const aiMaterial* M, aiTextureType texType) -> void {
+		auto createMaterialTextures = [&](const aiMaterial* M, aiTextureType texType) -> void {
 			auto numTex = M->GetTextureCount(texType);
 			for (auto i = 0u; i < numTex; ++i) {
 				aiString texPath;
@@ -83,17 +84,17 @@ namespace pathos {
 				std::string path = materialDir + texPath.C_Str();
 				path = ResourceFinder::get().find(path);
 
-				bool isSRGB = texType == aiTextureType_DIFFUSE;
+				bool sRGB = texType == aiTextureType_DIFFUSE;
 
-				GLuint texture = pathos::createTextureFromBitmap(pathos::loadImage(path.c_str()), true, isSRGB);
+				Texture* texture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(path.c_str()), 0, sRGB);
 				auto it = std::make_pair(texPath.C_Str(), texture);
 				textureMapping.insert(it);
 			}
 		};
 		for (auto i = 0u; i < scene->mNumMaterials; ++i) {
 			const aiMaterial* M = scene->mMaterials[i];
-			getMaterialTextures(M, aiTextureType_DIFFUSE);
-			getMaterialTextures(M, aiTextureType_NORMALS);
+			createMaterialTextures(M, aiTextureType_DIFFUSE);
+			createMaterialTextures(M, aiTextureType_NORMALS);
 		}
 	}
 	
@@ -172,13 +173,13 @@ namespace pathos {
 				aiString diffusePath, normalPath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
 				ai_material->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
-				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
-				GLuint normalTex = textureMapping.find(normalPath.C_Str())->second;
+				Texture* diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
+				Texture* normalTex = textureMapping.find(normalPath.C_Str())->second;
 				M = pathos::createPBRMaterial(diffuseTex, normalTex);
 			} else if (hasDiffuseTexture) {
 				aiString diffusePath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
-				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
+				Texture* diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
 				M = pathos::createPBRMaterial(diffuseTex);
 			} else {
 				M = Material::createMaterialInstance("solid_color");

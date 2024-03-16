@@ -19,6 +19,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	// A cache consists of cells of uniform size.
 	struct GlyphInTexture {
 		wchar_t ch;              // Character
@@ -64,7 +66,7 @@ namespace pathos {
 		const GlyphInTexture getGlyph(RenderCommandList& cmdList, wchar_t x);
 		void endGetGlyph(RenderCommandList& cmdList);
 
-		inline GLuint getTexture() { return texture; }
+		inline Texture* getTexture() const { return texture; }
 		inline float getCellWidth() const { return static_cast<float>(maxWidth) / TEXTURE_WIDTH; }
 		inline float getCellHeight() const { return static_cast<float>(maxHeight) / TEXTURE_HEIGHT; }
 
@@ -90,7 +92,7 @@ namespace pathos {
 		uint32 cols = 0;
 		uint32 rows = 0;
 
-		GLuint texture = 0;
+		Texture* texture = nullptr;
 		CacheState cacheState;
 		StackAllocator glyphBufferAllocator;
 
