@@ -1,4 +1,5 @@
 #include "brush.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/render_overlay.h"
 #include "pathos/render/overlay/overlaypass.h"
 #include "pathos/util/color_conversion.h"
@@ -60,14 +61,14 @@ namespace pathos {
 // ImageBrush
 namespace pathos {
 
-	ImageBrush::ImageBrush(GLuint inTexture) {
-		texture = inTexture;
-	}
-
 	OverlayPass* ImageBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
 		OverlayPass_Image* program = renderer->getImageProgram();
-		program->setImageTexture(texture);
+		program->setImageTexture(getTexture());
 		return program;
+	}
+
+	GLuint ImageBrush::getTexture() const {
+		return textureName != 0 ? textureName : textureWrapper->internal_getGLName();
 	}
 
 }

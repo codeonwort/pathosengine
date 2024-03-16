@@ -8,6 +8,7 @@ namespace pathos {
 
 	class OverlayRenderer;
 	class OverlayPass;
+	class Texture;
 
 	// Base class
 	class Brush {
@@ -52,18 +53,29 @@ namespace pathos {
 
 	};
 
+	// #wip: Remove old API that don't use Texture class
 	class ImageBrush : public Brush {
 
 	public:
-		ImageBrush(GLuint texture);
+		ImageBrush(GLuint inTextureName)
+			: textureName(inTextureName)
+			, textureWrapper(nullptr)
+		{
+		}
+		ImageBrush(Texture* inTexture)
+			: textureName(0)
+			, textureWrapper(inTexture)
+		{
+		}
 
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 
-		inline GLuint getTexture() const { return texture; }
-		inline void setTexture(GLuint inTexture) { texture = inTexture; }
+		GLuint getTexture() const;
+		inline void setTexture(Texture* inTexture) { textureWrapper = inTexture; }
 
 	private:
-		GLuint texture;
+		GLuint textureName;
+		Texture* textureWrapper;
 
 	};
 

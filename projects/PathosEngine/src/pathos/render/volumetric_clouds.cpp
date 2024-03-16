@@ -115,9 +115,9 @@ namespace pathos {
 				break;
 			}
 			
-			BitmapBlob* blob = pathos::loadImage(filepath.c_str());
+			ImageBlob* blob = ImageUtils::loadImage(filepath.c_str());
 			
-			bool bValidSize = (blob->width == 128 && blob->height == 128 && blob->bpp == 32);
+			bool bValidSize = (blob->width == 128 && blob->height == 128);
 			if (bValidSize == false) {
 				LOG(LogError, "STBN image [%u] has invalid size (not 128x128 rgb)", i);
 				bHasValidResources = false;
@@ -125,13 +125,15 @@ namespace pathos {
 			}
 
 			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
-				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->getRawBytes());
+				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->rawBytes);
 
 			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+			cmdList.registerDeferredCleanup(blob);
 		}
 	}
 
