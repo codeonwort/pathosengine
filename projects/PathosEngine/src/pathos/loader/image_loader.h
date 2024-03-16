@@ -40,6 +40,14 @@ namespace pathos {
 		static ImageBlob* loadImage(const char* inFilename, bool flipHorizontal = false, bool flipVertical = false);
 
 		/// <summary>
+		/// Load cubemap image data from 6 image files.
+		/// </summary>
+		/// <param name="inFilenames">Absolute paths or relative paths recognized by ResourceFinder.</param>
+		/// <param name="preference">Hint for convention of image orders and orientations.</param>
+		/// <returns>Image data array for cubemap faces. An element is null if the corresponding face has failed to load.</returns>
+		static std::vector<ImageBlob*> loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference);
+
+		/// <summary>
 		/// Create a 2D texture from an image blob.
 		/// </summary>
 		/// <param name="imageBlob">Image data.</param>
@@ -52,6 +60,22 @@ namespace pathos {
 			ImageBlob* imageBlob,
 			uint32 mipLevels,
 			bool sRGB,
+			bool autoDestroyImageBlob = true,
+			const char* debugName = nullptr);
+
+		/// <summary>
+		/// Create a cubemap texture from cubemap image data array. Image order is [+X, -X, +Y, -Y, +Z, -Z].
+		/// All images must have the same width, height, and bpp.
+		/// NOTE: It will flush the render thread.
+		/// </summary>
+		/// <param name="imageBlobs">Image data for cubemap faces. The length is assumed to be 6.</param>
+		/// <param name="mipLevels">The number of mip levels.</param>
+		/// <param name="autoDestroyBlob">Deallocate the image data after it's uploaded to GPU.</param>
+		/// <param name="debugName">Debug name of the GL texture that will be created.</param>
+		/// <returns>Texture object.</returns>
+		static Texture* createTextureCubeFromImages(
+			std::vector<ImageBlob*> imageBlobs,
+			uint32 mipLevels,
 			bool autoDestroyImageBlob = true,
 			const char* debugName = nullptr);
 
@@ -111,18 +135,6 @@ namespace pathos {
 		bool flipVertical = false);
 
 	/// <summary>
-	/// Load cubemap image data from 6 image files.
-	/// </summary>
-	/// <param name="inFilenames">Absolute paths, or relative paths recognized by ResourceFinder.</param>
-	/// <param name="preference">Hint for convention of image orders and orientations.</param>
-	/// <param name="outImages">Image data for each cubemap face. An element is null if the corresponding file was unable to load.</param>
-	/// <returns>The number of successfully loaded files. Should be 6.</returns>
-	int32 loadCubemapImages(
-		const std::array<const char*,6>& inFilenames,
-		ECubemapImagePreference preference,
-		std::array<BitmapBlob*,6>& outImages);
-
-	/// <summary>
 	/// Write SDR image data to an image file.
 	/// </summary>
 	/// <param name="width">Image width.</param>
@@ -145,22 +157,6 @@ namespace pathos {
 		BitmapBlob* dib,
 		bool generateMipmap,
 		bool sRGB,
-		const char* debugName = nullptr,
-		bool autoDestroyBlob = true);
-
-	/// <summary>
-	/// Create a cubemap texture from cubemap image data array. Image order is [+X, -X, +Y, -Y, +Z, -Z].
-	/// All images must have the same width, height, and bpp.
-	/// NOTE: It will flush the render thread.
-	/// </summary>
-	/// <param name="dib">Image data for cubemap faces. The length is assumed to be 6.</param>
-	/// <param name="generateMipmap">Auto-generate mipmaps for the texture.</param>
-	/// <param name="debugName">Debug name of the GL texture that will be created.</param>
-	/// <param name="autoDestroyBlob">Deallocate the image data after it's uploaded to GPU.</param>
-	/// <returns>GL texture name.</returns>
-	GLuint createCubemapTextureFromBitmap(
-		BitmapBlob* dib[],
-		bool generateMipmap = true,
 		const char* debugName = nullptr,
 		bool autoDestroyBlob = true);
 

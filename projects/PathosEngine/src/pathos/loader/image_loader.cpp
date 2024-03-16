@@ -173,6 +173,18 @@ namespace pathos {
 		return blob;
 	}
 
+	std::vector<ImageBlob*> ImageUtils::loadCubemapImages(const std::array<const char*, 6>& inFilenames, ECubemapImagePreference preference) {
+		std::vector<ImageBlob*> images(6, nullptr);
+		const int32 glslOrder[6] = { 0, 1, 2, 3, 5, 4 };
+		for (int32 i = 0; i < 6; ++i) {
+			bool flipH = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
+			bool flipV = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
+			int32 j = preference == ECubemapImagePreference::HLSL ? glslOrder[i] : i;
+			images[i] = ImageUtils::loadImage(inFilenames[j], flipH, flipV);
+		}
+		return images;
+	}
+
 	Texture* ImageUtils::createTexture2DFromImage(
 		ImageBlob* imageBlob,
 		uint32 mipLevels,
@@ -184,12 +196,12 @@ namespace pathos {
 		createParams.width                = imageBlob->width;
 		createParams.height               = imageBlob->height;
 		createParams.depth                = 1;
-		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_2D;
 		createParams.glStorageFormat      = imageBlob->glStorageFormat;
 		createParams.glPixelFormat        = imageBlob->glPixelFormat;
 		createParams.glDataType           = imageBlob->glDataType;
-		createParams.imageBlob            = imageBlob;
+		createParams.imageBlobs           = { imageBlob };
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
 
 		if (debugName != nullptr) {
@@ -197,6 +209,40 @@ namespace pathos {
 		}
 		if (sRGB) {
 			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
+		}
+
+		Texture* texture = new Texture(createParams);
+		texture->createGPUResource();
+		return texture;
+	}
+
+	pathos::Texture* ImageUtils::createTextureCubeFromImages(
+		std::vector<ImageBlob*> blobs,
+		uint32 mipLevels,
+		bool autoDestroyImageBlob /*= true*/,
+		const char* debugName /*= nullptr*/)
+	{
+		for (int32 i = 0; i < 6; ++i) {
+			if (blobs[i]->width != blobs[0]->width || blobs[i]->height != blobs[0]->width) {
+				LOG(LogError, "%s: All cubemap faces must have same width and height", __FUNCTION__);
+				return nullptr;
+			}
+		}
+
+		TextureCreateParams createParams;
+		createParams.width                = blobs[0]->width;
+		createParams.height               = blobs[0]->height;
+		createParams.depth                = 1;
+		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.glDimension          = GL_TEXTURE_CUBE_MAP;
+		createParams.glStorageFormat      = blobs[0]->glStorageFormat;
+		createParams.glPixelFormat        = blobs[0]->glPixelFormat;
+		createParams.glDataType           = blobs[0]->glDataType;
+		createParams.imageBlobs           = blobs;
+		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
+
+		if (debugName != nullptr) {
+			createParams.debugName = debugName;
 		}
 
 		Texture* texture = new Texture(createParams);
@@ -216,12 +262,12 @@ namespace pathos {
 		createParams.width                = textureSize.x;
 		createParams.height               = textureSize.y;
 		createParams.depth                = textureSize.z;
-		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_3D;
 		createParams.glStorageFormat      = imageBlob->glStorageFormat;
 		createParams.glPixelFormat        = imageBlob->glPixelFormat;
 		createParams.glDataType           = imageBlob->glDataType;
-		createParams.imageBlob            = imageBlob;
+		createParams.imageBlobs           = { imageBlob };
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
 		createParams.debugName            = debugName;
 
@@ -331,28 +377,6 @@ namespace pathos {
 		return blob;
 	}
 
-	int32 loadCubemapImages(
-		const std::array<const char*, 6>& inFilenames,
-		ECubemapImagePreference preference,
-		std::array<BitmapBlob*, 6>& outImages)
-	{
-		int32 ret = 0;
-		const int32 glslOrder[6] = { 0, 1, 2, 3, 5, 4 };
-
-		for (int32 i = 0; i < 6; ++i) {
-			bool flipH = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
-			bool flipV = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
-			int32 j = preference == ECubemapImagePreference::HLSL ? glslOrder[i] : i;
-			outImages[i] = loadImage(inFilenames[j], flipH, flipV);
-
-			if(outImages[i] != nullptr) {
-				ret += 1;
-			}
-		}
-
-		return ret;
-	}
-
 	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {
 		FIBITMAP* dib = FreeImage_ConvertFromRawBits(
 			blob, width, height, 3 * width, 24,
@@ -420,76 +444,6 @@ namespace pathos {
 		TEMP_FLUSH_RENDER_COMMAND(true);
 
 		return texture;
-	}
-
-	GLuint createCubemapTextureFromBitmap(
-		BitmapBlob* blobs[],
-		bool generateMipmap /*= true*/,
-		const char* debugName /*= nullptr*/,
-		bool autoDestroyBlob /*= true*/)
-	{
-		for (int32 i = 0; i < 6; ++i) {
-			if (blobs[i]->width != blobs[0]->width || blobs[i]->height != blobs[0]->width) {
-				LOG(LogError, "%s: All cubemap faces must have same width and height", __FUNCTION__);
-				return 0;
-			}
-		}
-
-		GLuint tex_id = 0;
-
-		std::array<BitmapBlob*, 6> blobArray;
-		for (size_t i = 0u; i < 6; ++i) blobArray[i] = blobs[i];
-
-		ENQUEUE_RENDER_COMMAND([blobArray, generateMipmap, texturePtr = &tex_id, debugName, autoDestroyBlob](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
-			if (debugName != nullptr) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
-			}
-
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*texturePtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-			uint32 w = blobArray[0]->width;
-			uint32 h = blobArray[0]->height;
-			uint32 bpp = blobArray[0]->bpp;
-
-			if (bpp == 32 || bpp == 24) {
-				uint32 numLODs = 1;
-				if (generateMipmap) {
-					numLODs = static_cast<uint32>(floor(log2(std::max(w, h))) + 1);
-				}
-				cmdList.textureStorage2D(*texturePtr, numLODs, GL_RGBA8, w, h);
-			} else {
-				LOG(LogError, "%s: Unexpected BPP = %d", __FUNCTION__, bpp);
-			}
-
-			for (int32 i = 0; i < 6; i++) {
-				uint8* data = blobArray[i]->getRawBytes();
-				GLenum format = blobArray[i]->bIsBGR
-					? ((bpp == 32) ? GL_BGRA : GL_BGR)
-					: ((bpp == 32) ? GL_RGBA : GL_RGB);
-				cmdList.textureSubImage3D(*texturePtr, 0,
-					0, 0, i,
-					w, h, 1,
-					format, GL_UNSIGNED_BYTE, data);
-			}
-
-			if (generateMipmap) {
-				cmdList.generateTextureMipmap(*texturePtr);
-			}
-			if (autoDestroyBlob) {
-				for (int32 i = 0; i < 6; ++i) {
-					cmdList.registerDeferredCleanup(blobArray[i]);
-				}
-			}
-		});
-
-		// #todo-image-loader: There is no wrapper for 'texture', so we should flush to finalize it.
-		TEMP_FLUSH_RENDER_COMMAND(true);
-
-		return tex_id;
 	}
 
 }

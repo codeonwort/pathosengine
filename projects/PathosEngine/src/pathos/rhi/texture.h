@@ -19,14 +19,14 @@ namespace pathos {
 		// #wip: pixel format and data type are meaningful only if imageBlob exists.
 		GLenum glPixelFormat      = 0; // ex) GL_RGBA
 		GLenum glDataType         = 0; // ex) GL_FLOAT
-		ImageBlob* imageBlob      = nullptr;
 		bool autoDestroyImageBlob = true;
+		std::vector<ImageBlob*> imageBlobs;
 
 		std::string debugName;
 
 		inline bool isValid() const {
 			bool valid = width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0;
-			if (imageBlob != nullptr) {
+			if (imageBlobs.size() > 0) {
 				valid = valid && glPixelFormat != 0 && glDataType != 0;
 			}
 			return valid;

@@ -44,27 +44,47 @@ namespace pathos {
 					cmdList.textureStorage2D(
 						texture, actualMipLevels, createParams.glStorageFormat,
 						createParams.width, createParams.height);
-					if (createParams.imageBlob != nullptr) {
+					if (createParams.imageBlobs.size() > 0) {
 						cmdList.textureSubImage2D(
 							texture,
 							0, // LOD
 							0, 0, // offset
 							createParams.width, createParams.height, // size
 							createParams.glPixelFormat, createParams.glDataType, // pixel format
-							createParams.imageBlob->rawBytes); // pixel data
+							createParams.imageBlobs[0]->rawBytes); // pixel data
 					}
+				} else if (createParams.glDimension == GL_TEXTURE_CUBE_MAP) {
+					cmdList.textureStorage2D(
+						texture, actualMipLevels, createParams.glStorageFormat,
+						createParams.width, createParams.height);
+					if (createParams.imageBlobs.size() >= 6) {
+						for (int32 face = 0; face < 6; ++face) {
+							cmdList.textureSubImage3D(
+								texture,
+								0, // LOD
+								0, 0, face, // offset
+								createParams.width, createParams.height, 1, // size
+								createParams.glPixelFormat, createParams.glDataType, // pixel format
+								createParams.imageBlobs[face]->rawBytes);
+						}
+					}
+					// #wip: sampler parameters for cubemap
+					cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 				} else if (createParams.glDimension == GL_TEXTURE_3D) {
 					cmdList.textureStorage3D(
 						texture, actualMipLevels, createParams.glStorageFormat,
 						createParams.width, createParams.height, createParams.depth);
-					if (createParams.imageBlob != nullptr) {
+					if (createParams.imageBlobs.size() > 0) {
 						cmdList.textureSubImage3D(
 							texture,
 							0, // LOD
 							0, 0, 0, // offset
 							createParams.width, createParams.height, createParams.depth, // size
 							createParams.glPixelFormat, createParams.glDataType, // pixel format
-							createParams.imageBlob->rawBytes); // pixel data
+							createParams.imageBlobs[0]->rawBytes); // pixel data
 					}
 				} else {
 					CHECKF(0, "WIP: Unhandled glDimension");
@@ -76,8 +96,10 @@ namespace pathos {
 				if (createParams.debugName.size() > 0) {
 					cmdList.objectLabel(GL_TEXTURE, texture, -1, createParams.debugName.c_str());
 				}
-				if (createParams.autoDestroyImageBlob && createParams.imageBlob != nullptr) {
-					cmdList.registerDeferredCleanup(createParams.imageBlob);
+				if (createParams.autoDestroyImageBlob) {
+					for (ImageBlob* blob : createParams.imageBlobs) {
+						cmdList.registerDeferredCleanup(blob);
+					}
 				}
 			}
 		); // ENQUEUE_RENDER_COMMAND
