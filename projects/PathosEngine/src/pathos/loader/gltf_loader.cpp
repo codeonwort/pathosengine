@@ -119,15 +119,11 @@ namespace pathos {
 			constexpr uint32 mipLevels = 0;
 			constexpr bool autoDestroy = false;
 
-			//LOG(LogDebug, "tex w=%u h=%u bpp=%u BGR=%d", pending.blob->width, pending.blob->height, pending.blob->bpp, pending.blob->bIsBGR);
-
-			pending.glTexture = ImageUtils::createTexture2DFromImage(
-				pending.blob, mipLevels, pending.sRGB, autoDestroy, pending.debugName.c_str());
+			pending.glTexture = ImageUtils::createTexture2DFromImage(pending.blob, mipLevels, pending.sRGB, autoDestroy, pending.debugName.c_str());
 		}
-		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 		for (GLTFPendingTextureParameter& param : pendingTextureParameters) {
 			param.material->setTextureParameter(param.parameterName.c_str(),
-				(param.index != -1) ? pendingTextures[param.index].glTexture->internal_getGLName() : param.fallbackTexture);
+				(param.index != -1) ? pendingTextures[param.index].glTexture : param.fallbackTexture);
 		}
 		for (GLTFPendingGeometry& pending : pendingGeometries) {
 			MeshGeometry* geometry = pending.geometry;
@@ -141,7 +137,6 @@ namespace pathos {
 				delete[] pending.indexBlob;
 			}
 
-			//LOG(LogDebug, "[GLTF] Position temp=%d len=%u blob=%x", pending.bShouldFreePosition, pending.positionLength, pending.positionBlob);
 			geometry->updatePositionData((float*)pending.positionBlob, pending.positionLength);
 			if (pending.bShouldFreePosition) {
 				delete[] pending.positionBlob;
@@ -285,8 +280,8 @@ namespace pathos {
 				float metallicFactor = (float)tinyMat.pbrMetallicRoughness.metallicFactor;
 				float roughnessFactor = (float)tinyMat.pbrMetallicRoughness.roughnessFactor;
 
-				const GLuint NORM = gEngine->getSystemTexture2DNormalmap();
-				const GLuint WHITE = gEngine->getSystemTexture2DWhite();
+				Texture* NORM = gEngine->getSystemTexture2DNormalmap();
+				Texture* WHITE = gEngine->getSystemTexture2DWhite();
 
 				material = Material::createMaterialInstance("gltf_opaque");
 				material->setConstantParameter("baseColorFactor", baseColorFactor);

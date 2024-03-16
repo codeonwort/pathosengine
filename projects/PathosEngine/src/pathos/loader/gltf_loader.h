@@ -13,6 +13,7 @@ namespace tinygltf { class TinyGLTF; class Model; }
 
 namespace pathos {
 
+	class Texture;
 	class Material;
 	class Mesh;
 	class MeshGeometry;
@@ -36,7 +37,7 @@ namespace pathos {
 
 	struct GLTFPendingTextureParameter {
 		GLTFPendingTextureParameter(
-			Material* inMaterial, const std::string& inParam, uint32 inIndex, GLuint inFallback)
+			Material* inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
 			: material(inMaterial)
 			, parameterName(inParam)
 			, index(inIndex)
@@ -45,7 +46,7 @@ namespace pathos {
 		Material* material;
 		std::string parameterName;
 		uint32 index;
-		GLuint fallbackTexture;
+		Texture* fallbackTexture;
 	};
 	struct GLTFPendingGeometry {
 		MeshGeometry* geometry;

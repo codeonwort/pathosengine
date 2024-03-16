@@ -37,6 +37,7 @@ namespace pathos {
 	class Texture final : public Noncopyable {
 
 	public:
+		// Call createGPUResource() to actually allocate a GL texture in VRAM.
 		Texture(const TextureCreateParams& inCreateParams)
 			: createParams(inCreateParams)
 		{}

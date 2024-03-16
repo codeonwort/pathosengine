@@ -96,7 +96,6 @@ namespace pathos {
 			createMaterialTextures(M, aiTextureType_DIFFUSE);
 			createMaterialTextures(M, aiTextureType_NORMALS);
 		}
-		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 	}
 	
 	void DAELoader::loadMeshes(bool invertWinding) {
@@ -174,13 +173,13 @@ namespace pathos {
 				aiString diffusePath, normalPath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
 				ai_material->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
-				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second->internal_getGLName();
-				GLuint normalTex = textureMapping.find(normalPath.C_Str())->second->internal_getGLName();
+				Texture* diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
+				Texture* normalTex = textureMapping.find(normalPath.C_Str())->second;
 				M = pathos::createPBRMaterial(diffuseTex, normalTex);
 			} else if (hasDiffuseTexture) {
 				aiString diffusePath;
 				ai_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
-				GLuint diffuseTex = textureMapping.find(diffusePath.C_Str())->second->internal_getGLName();
+				Texture* diffuseTex = textureMapping.find(diffusePath.C_Str())->second;
 				M = pathos::createPBRMaterial(diffuseTex);
 			} else {
 				M = Material::createMaterialInstance("solid_color");

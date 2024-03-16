@@ -100,6 +100,12 @@ namespace pathos {
 		gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "NVidiaSTBN");
 		cmdList.textureStorage3D(texSTBN, 1, GL_RGBA8, 128, 128, 64);
 
+		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
 		bHasValidResources = true;
 		for (uint32 i = 0; i < 64; ++i) {
 			char buf[256];
@@ -126,12 +132,6 @@ namespace pathos {
 
 			cmdList.textureSubImage3D(texSTBN, 0, 0, 0, i,
 				128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, blob->rawBytes);
-
-			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			cmdList.textureParameteri(texSTBN, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			cmdList.textureParameteri(texSTBN, GL_TEXTURE_WRAP_R, GL_REPEAT);
 
 			cmdList.registerDeferredCleanup(blob);
 		}

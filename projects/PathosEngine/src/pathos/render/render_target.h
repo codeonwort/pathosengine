@@ -5,6 +5,7 @@
 
 namespace pathos {
 
+	class Texture;
 	class RenderTarget2D;
 	class RenderTargetCube;
 
@@ -49,6 +50,7 @@ namespace pathos {
 
 	};
 
+	// #wip: Is this class needed when we now have Texture?
 	// Wrapper for a 2D texture which can be used as a render target.
 	class RenderTarget2D final {
 
@@ -72,14 +74,14 @@ namespace pathos {
 		inline uint32 getWidth() const { return width; }
 		inline uint32 getHeight() const { return height; }
 
-		inline GLuint getGLName() const { return glTextureObject; }
+		inline Texture* getInternalTexture() const { return texture; }
 
 		bool isTextureValid() const;
 		bool isColorFormat() const;
 		bool isDepthFormat() const;
 
 	private:
-		GLuint glTextureObject = 0;
+		Texture* texture = nullptr;
 		uint32 width = 0;
 		uint32 height = 0;
 		RenderTargetFormat format = RenderTargetFormat::RGBA16F;

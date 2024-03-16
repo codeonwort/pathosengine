@@ -70,7 +70,7 @@ namespace pathos {
 
 		// Should be called before load()
 		void setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides);
-		GLuint findGLTexture(const std::string& textureName) const;
+		Texture* findTexture(const std::string& textureName) const;
 
 		// Load Wavefront OBJ file and prepare for GPU upload.
 		// Can be called from worker threads.

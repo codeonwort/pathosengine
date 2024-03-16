@@ -49,7 +49,6 @@ void LightningActor::onSpawn()
 {
 	maskTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_MASK_TEXTURE), 1, false, true, "Texture_Lightning_Mask");
 	warpTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_WARP_TEXTURE), 1, false, true, "Texture_Lightning_Warp");
-	FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 }
 
 void LightningActor::onDestroy()
@@ -76,8 +75,8 @@ LightningParticleComponent::LightningParticleComponent()
 
 void LightningParticleComponent::setParameters(Texture* maskTexture, Texture* warpTexture, float rc1Scale)
 {
-	M->setTextureParameter("maskTexture", maskTexture->internal_getGLName());
-	M->setTextureParameter("warpTexture", warpTexture->internal_getGLName());
+	M->setTextureParameter("maskTexture", maskTexture);
+	M->setTextureParameter("warpTexture", warpTexture);
 	M->setConstantParameter("billboardWidth", rc1Scale * LIGHTNING_PARTICLE_THICKNESS);
 }
 

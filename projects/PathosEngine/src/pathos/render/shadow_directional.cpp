@@ -1,6 +1,7 @@
 #include "shadow_directional.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/static_mesh_component.h"
@@ -124,7 +125,7 @@ namespace pathos {
 				// - The pixel shader uses discard
 				if (bShouldUpdateMaterialParameters) {
 					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
-						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+						cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 					}
 				}
 

@@ -1,5 +1,6 @@
 #include "font_texture_cache.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/util/log.h"
 
 #define DRAW_GLYPH_BORDER 0 // Debug
@@ -52,17 +53,25 @@ namespace pathos {
 		}
 
 		// Prepare the cache texture
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &texture);
-
 		char textureObjectLabel[256];
 		sprintf_s(textureObjectLabel, "FontTextureCache%d", g_fontTextureCacheNumber++);
-		gRenderDevice->objectLabel(GL_TEXTURE, texture, -1, textureObjectLabel);
+		
+		TextureCreateParams createParams;
+		createParams.width = TEXTURE_WIDTH;
+		createParams.height = TEXTURE_HEIGHT;
+		createParams.depth = 1;
+		createParams.mipLevels = 1;
+		createParams.glDimension = GL_TEXTURE_2D;
+		createParams.glStorageFormat = GL_R8;
+		createParams.debugName = textureObjectLabel;
+		
+		texture = new Texture(createParams);
+		texture->createGPUResource();
 
-		cmdList.textureStorage2D(texture, 1, GL_R8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-		cmdList.textureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(texture->internal_getGLName(), GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(texture->internal_getGLName(), GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(texture->internal_getGLName(), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(texture->internal_getGLName(), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		FontManager::get().registerCache(this);
 
@@ -71,7 +80,7 @@ namespace pathos {
 
 	void FontTextureCache::term() {
 		FT_Done_Face(face);
-		gRenderDevice->deleteTextures(1, &texture);
+		texture->releaseGPUResource();
 		FontManager::get().unregisterCache(this);
 		cacheState.used.clear();
 		cacheState.unused.clear();
@@ -177,13 +186,13 @@ namespace pathos {
 
 		if (glyphBufferSize != 0) {
 			cmdList.textureSubImage2D(
-				texture,                          // texture
-				0,                                // level
-				(GLint)(g.x * TEXTURE_WIDTH),     // xoffset
-				(GLint)(g.y * TEXTURE_HEIGHT),    // yoffset
-				bmp.width, bmp.rows,              // width, heigth
-				GL_RED, GL_UNSIGNED_BYTE,         // format, type
-				glyphBuffer);                     // pixels
+				texture->internal_getGLName(), // texture
+				0,                             // level
+				(GLint)(g.x * TEXTURE_WIDTH),  // xoffset
+				(GLint)(g.y * TEXTURE_HEIGHT), // yoffset
+				bmp.width, bmp.rows,           // width, heigth
+				GL_RED, GL_UNSIGNED_BYTE,      // format, type
+				glyphBuffer);                  // pixels
 		}
 
 		return true;

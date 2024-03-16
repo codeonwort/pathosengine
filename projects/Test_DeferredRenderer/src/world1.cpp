@@ -149,7 +149,6 @@ void World1::setupScene()
 		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_METALLIC), mipLevels, !sRGB);
 		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ROUGHNESS), mipLevels, !sRGB);
 		Texture* ao = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_LOCAL_AO), mipLevels, !sRGB);
-		FLUSH_RENDER_COMMAND(true); // #wip: temp flush
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
@@ -157,11 +156,11 @@ void World1::setupScene()
 		material_pbr->setConstantParameter("bOverrideRoughness", false);
 		material_pbr->setConstantParameter("bOverrideLocalAO", false);
 		material_pbr->setConstantParameter("emissiveConstant", vector3(0.0f));
-		material_pbr->setTextureParameter("albedo", albedo->internal_getGLName());
-		material_pbr->setTextureParameter("normal", normal->internal_getGLName());
-		material_pbr->setTextureParameter("metallic", metallic->internal_getGLName());
-		material_pbr->setTextureParameter("roughness", roughness->internal_getGLName());
-		material_pbr->setTextureParameter("localAO", ao->internal_getGLName());
+		material_pbr->setTextureParameter("albedo", albedo);
+		material_pbr->setTextureParameter("normal", normal);
+		material_pbr->setTextureParameter("metallic", metallic);
+		material_pbr->setTextureParameter("roughness", roughness);
+		material_pbr->setTextureParameter("localAO", ao);
 	}
 
 	// --------------------------------------------------------
@@ -281,7 +280,7 @@ void World1::setupScene()
 	sceneCaptureComponent->captureScene();
 
 	Material* material_sceneCapture = Material::createMaterialInstance("texture_viewer");
-	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getGLName());
+	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getInternalTexture());
 	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
 	sceneCaptureViewer->setStaticMesh(new Mesh(geom_sceneCapture, material_sceneCapture));

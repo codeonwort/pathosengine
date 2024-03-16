@@ -9,6 +9,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	// a MaterialShader relates to a unique material shader program.
 	// a Material is (material shader + own parameters).
 	// Multiple materials might share a same material shader, but they can have their own parameters.
@@ -64,7 +66,7 @@ namespace pathos {
 
 		MaterialConstantParameter* findConstantParameter(const char* name);
 
-		void setTextureParameter(const char* name, GLuint glTexture);
+		void setTextureParameter(const char* name, Texture* texture);
 
 		MaterialTextureParameter* findTextureParameter(const char* name);
 
@@ -92,6 +94,6 @@ namespace pathos {
 	};
 
 	// Temp util to easily create 'pbr_texture' material.
-	class Material* createPBRMaterial(GLuint albedoTex, GLuint normalTex = 0);
+	class Material* createPBRMaterial(Texture* albedoTex, Texture* normalTex = nullptr);
 
 }

@@ -157,7 +157,7 @@ namespace pathos {
 				skyMaterialShader->uboMaterial.update(cmdList, skyMaterialShader->uboBindingPoint, uboMemory);
 			}
 			for (const MaterialTextureParameter& mtp : skyMaterial->internal_getTextureParameters()) {
-				cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+				cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 			}
 		}
 

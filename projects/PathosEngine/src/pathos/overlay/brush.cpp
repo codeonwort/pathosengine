@@ -63,12 +63,8 @@ namespace pathos {
 
 	OverlayPass* ImageBrush::configure(OverlayRenderer* renderer, const Transform& transformAccum) {
 		OverlayPass_Image* program = renderer->getImageProgram();
-		program->setImageTexture(getTexture());
+		program->setImageTexture(getTexture()->internal_getGLName());
 		return program;
-	}
-
-	GLuint ImageBrush::getTexture() const {
-		return textureName != 0 ? textureName : textureWrapper->internal_getGLName();
 	}
 
 }

@@ -59,10 +59,10 @@ namespace pathos {
 		materialOverrides = overrides;
 	}
 
-	GLuint OBJLoader::findGLTexture(const std::string& textureName) const {
+	Texture* OBJLoader::findTexture(const std::string& textureName) const {
 		auto it = glTextureMap.find(textureName);
 		CHECK(it != glTextureMap.end());
-		return it->second->internal_getGLName();
+		return it->second;
 	}
 
 	bool OBJLoader::load(const char* inObjFile, const char* inMtlDir) {
@@ -530,18 +530,15 @@ namespace pathos {
 				glTextureMap[pendingTextures.metallicFilename] = pendingTextures.metallicTexture;
 			}
 			
-			// #wip: unless Material takes Texture*, not GLuint
-			FLUSH_RENDER_COMMAND(true);
-
 			if (M->getMaterialName() == "pbr_texture") {
 				PendingTextures& pendingTextures = pendingTextureData[index];
 				if (pendingTextures.albedoBlob != nullptr) {
 					M->setConstantParameter("bHasOpacity", pendingTextures.albedoBlob->glPixelFormat == GL_RGBA);
 				}
-				if (pendingTextures.albedoTexture != 0) M->setTextureParameter("albedo", pendingTextures.albedoTexture->internal_getGLName());
-				if (pendingTextures.normalTexture != 0) M->setTextureParameter("normal", pendingTextures.normalTexture->internal_getGLName());
-				if (pendingTextures.roughnessTexture != 0) (M)->setTextureParameter("roughness", pendingTextures.roughnessTexture->internal_getGLName());
-				if (pendingTextures.metallicTexture != 0) M->setTextureParameter("metallic", pendingTextures.metallicTexture->internal_getGLName());
+				if (pendingTextures.albedoTexture != 0) M->setTextureParameter("albedo", pendingTextures.albedoTexture);
+				if (pendingTextures.normalTexture != 0) M->setTextureParameter("normal", pendingTextures.normalTexture);
+				if (pendingTextures.roughnessTexture != 0) (M)->setTextureParameter("roughness", pendingTextures.roughnessTexture);
+				if (pendingTextures.metallicTexture != 0) M->setTextureParameter("metallic", pendingTextures.metallicTexture);
 			}
 		}
 

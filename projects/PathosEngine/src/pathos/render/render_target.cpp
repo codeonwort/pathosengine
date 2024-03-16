@@ -1,5 +1,6 @@
 #include "render_target.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
 
 namespace pathos {
 
@@ -71,7 +72,7 @@ namespace pathos {
 
 	GLuint RenderTargetView::getGLName() const {
 		if (renderTarget2D != nullptr) {
-			return renderTarget2D->getGLName();
+			return renderTarget2D->getInternalTexture()->internal_getGLName();
 		} else {
 			return renderTargetCube->getGLTextureView(layer);
 		}
@@ -117,21 +118,17 @@ namespace pathos {
 		height = inHeight;
 		format = inFormat;
 
-		const GLenum glFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
+		TextureCreateParams createParams;
+		createParams.width = inWidth;
+		createParams.height = inHeight;
+		createParams.depth = 1;
+		createParams.mipLevels = 1;
+		createParams.glDimension = GL_TEXTURE_2D;
+		createParams.glStorageFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
+		if (inDebugName != nullptr) createParams.debugName = inDebugName;
 
-		GLuint* texturePtr = &glTextureObject;
-		std::string debugName = inDebugName ? inDebugName : std::string();
-		ENQUEUE_RENDER_COMMAND(
-			[texturePtr, glFormat, inWidth, inHeight, debugName](RenderCommandList& cmdList) {
-				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
-				cmdList.textureStorage2D(*texturePtr, 1, glFormat, inWidth, inHeight);
-				if (debugName.size() > 0) {
-					cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, debugName.c_str());
-				} else {
-					cmdList.objectLabel(GL_TEXTURE, *texturePtr, -1, "RenderTarget2D_noname");
-				}
-			}
-		);
+		texture = new Texture(createParams);
+		texture->createGPUResource();
 	}
 
 	void RenderTarget2D::immediateUpdateResource() {
@@ -139,14 +136,9 @@ namespace pathos {
 	}
 
 	void RenderTarget2D::destroyResource() {
-		if (glTextureObject != 0) {
-			GLuint texturePtr = glTextureObject;
-			ENQUEUE_RENDER_COMMAND(
-				[texturePtr](RenderCommandList& cmdList) {
-					gRenderDevice->deleteTextures(1, &texturePtr);
-				}
-			);
-			glTextureObject = 0;
+		if (texture != nullptr) {
+			delete texture;
+			texture = nullptr;
 		}
 	}
 
@@ -155,7 +147,7 @@ namespace pathos {
 	}
 
 	bool RenderTarget2D::isTextureValid() const {
-		return (glTextureObject != 0 && width != 0 && height != 0);
+		return (texture != nullptr && texture->isValid() && width != 0 && height != 0);
 	}
 
 	bool RenderTarget2D::isColorFormat() const {

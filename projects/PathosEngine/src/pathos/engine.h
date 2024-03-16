@@ -22,19 +22,20 @@
 
 namespace pathos {
 
-	class World;
-	class Renderer;
-	class GUIWindow;
-	class InputSystem;
 	class OpenGLDevice;
+	class RenderThread;
+	class GUIWindow;
+	class ConsoleWindow;
+	class World;
+	class InputSystem;
+	class AssetStreamer;
+	class Renderer;
+	class MeshGeometry;
+	class Texture;
+	class DisplayObject2D;
 	class DebugOverlay;
 	class OverlaySceneProxy;
-	class ConsoleWindow;
-	class AssetStreamer;
 	class OverlayRenderer;
-	class RenderThread;
-	class DisplayObject2D;
-	class MeshGeometry;
 
 	using Screenshot = std::pair<vector2i, uint8*>; // Assumes rgb8 format
 
@@ -101,13 +102,12 @@ namespace pathos {
 		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
 		inline MeshGeometry* getSystemGeometryUnitCube() const { return geometry_unitCube; }
 
-		// #wip: system texure GLuint -> Texture*
-		inline GLuint getSystemTexture2DBlack()      const { return texture2D_black;     }
-		inline GLuint getSystemTexture2DWhite()      const { return texture2D_white;     }
-		inline GLuint getSystemTexture2DGrey()       const { return texture2D_grey;      }
-		inline GLuint getSystemTexture2DBlue()       const { return texture2D_blue;      }
-		inline GLuint getSystemTexture2DNormalmap()  const { return texture2D_normalmap; }
-		inline GLuint getSystemTextureCubeBlack()    const { return textureCube_black;   }
+		inline Texture* getSystemTexture2DBlack()      const { return texture2D_black;     }
+		inline Texture* getSystemTexture2DWhite()      const { return texture2D_white;     }
+		inline Texture* getSystemTexture2DGrey()       const { return texture2D_grey;      }
+		inline Texture* getSystemTexture2DBlue()       const { return texture2D_blue;      }
+		inline Texture* getSystemTexture2DNormalmap()  const { return texture2D_normalmap; }
+		inline Texture* getSystemTextureCubeBlack()    const { return textureCube_black;   }
 
 	// Public but engine internal use only
 	public:
@@ -218,12 +218,12 @@ namespace pathos {
 		MeshGeometry* geometry_unitCube = nullptr;  // half size = (1, 1, 1)
 
 		// System textures
-		GLuint texture2D_black     = 0;
-		GLuint texture2D_white     = 0;
-		GLuint texture2D_grey      = 0;
-		GLuint texture2D_blue      = 0;
-		GLuint texture2D_normalmap = 0;
-		GLuint textureCube_black   = 0;
+		Texture* texture2D_black     = nullptr;
+		Texture* texture2D_white     = nullptr;
+		Texture* texture2D_grey      = nullptr;
+		Texture* texture2D_blue      = nullptr;
+		Texture* texture2D_normalmap = nullptr;
+		Texture* textureCube_black   = nullptr;
 
 		std::vector<Screenshot> screenshotQueue;
 

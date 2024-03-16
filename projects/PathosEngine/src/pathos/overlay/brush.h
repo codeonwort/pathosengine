@@ -29,14 +29,6 @@ namespace pathos {
 		vector4 color;
 	};
 
-	/*
-	// TODO: use texture as brush
-	class ImageBrush : public Brush {
-	public:
-		virtual class OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
-	};
-	*/
-
 	// Brush for Label
 	class TextBrush : public Brush {
 
@@ -53,29 +45,21 @@ namespace pathos {
 
 	};
 
-	// #wip: Remove old API that don't use Texture class
 	class ImageBrush : public Brush {
 
 	public:
-		ImageBrush(GLuint inTextureName)
-			: textureName(inTextureName)
-			, textureWrapper(nullptr)
-		{
-		}
 		ImageBrush(Texture* inTexture)
-			: textureName(0)
-			, textureWrapper(inTexture)
+			: texture(inTexture)
 		{
 		}
 
 		virtual OverlayPass* configure(OverlayRenderer* renderer, const Transform& transformAccum) override;
 
-		GLuint getTexture() const;
-		inline void setTexture(Texture* inTexture) { textureWrapper = inTexture; }
+		inline Texture* getTexture() const { return texture; }
+		inline void setTexture(Texture* inTexture) { texture = inTexture; }
 
 	private:
-		GLuint textureName;
-		Texture* textureWrapper;
+		Texture* texture;
 
 	};
 

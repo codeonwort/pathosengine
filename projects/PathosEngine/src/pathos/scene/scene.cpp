@@ -10,6 +10,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_target.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/log.h"
 
@@ -109,10 +110,10 @@ namespace pathos {
 	}
 
 	GLuint Scene::getIrradianceProbeAtlasTexture() const {
-		return irradianceProbeAtlas->getGLName();
+		return irradianceProbeAtlas->getInternalTexture()->internal_getGLName();
 	}
 	GLuint Scene::getDepthProbeAtlasTexture() const {
-		return depthProbeAtlas->getGLName();
+		return depthProbeAtlas->getInternalTexture()->internal_getGLName();
 	}
 
 	void Scene::invalidateSkyLighting() {
@@ -180,8 +181,8 @@ namespace pathos {
 		}
 
 		if (irradianceProbeAtlas != nullptr) {
-			proxy->irradianceAtlas = irradianceProbeAtlas->getGLName();
-			proxy->depthProbeAtlas = depthProbeAtlas->getGLName();
+			proxy->irradianceAtlas = irradianceProbeAtlas->getInternalTexture()->internal_getGLName();
+			proxy->depthProbeAtlas = depthProbeAtlas->getInternalTexture()->internal_getGLName();
 			proxy->irradianceAtlasWidth = (float)irradianceProbeAtlas->getWidth();
 			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
 			proxy->irradianceTileCountX = irradianceTileCountX;

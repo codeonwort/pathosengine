@@ -275,12 +275,11 @@ void World_RC1::setupScene()
 		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_METALLIC), mipLevels, !sRGB);
 		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_ROUGHNESS), mipLevels, !sRGB);
 		Texture* localAO = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_LOCAL_AO), mipLevels, !sRGB);
-		FLUSH_RENDER_COMMAND(true); // #wip: unless Material takes Texture*, not GLuint
-		material_ring->setTextureParameter("albedo", albedo->internal_getGLName());
-		material_ring->setTextureParameter("normal", normal->internal_getGLName());
-		material_ring->setTextureParameter("metallic", metallic->internal_getGLName());
-		material_ring->setTextureParameter("roughness", roughness->internal_getGLName());
-		material_ring->setTextureParameter("localAO", localAO->internal_getGLName());
+		material_ring->setTextureParameter("albedo", albedo);
+		material_ring->setTextureParameter("normal", normal);
+		material_ring->setTextureParameter("metallic", metallic);
+		material_ring->setTextureParameter("roughness", roughness);
+		material_ring->setTextureParameter("localAO", localAO);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -340,10 +339,10 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	guardTower->setActorScale(RC1_SCALE * 10.0f);
 	guardTower->setActorLocation(RC1_SCALE * vector3(0.0f, (Y_OFFSET / RC1_SCALE) - 47.0f, 0.0f));
 
-	M_tower->setTextureParameter("albedo", loader->findGLTexture("T_Tower.png"));
-	M_tower->setTextureParameter("normal", loader->findGLTexture("N_Tower.png"));
-	M_tower->setTextureParameter("roughness", loader->findGLTexture("R_Tower.png"));
-	M_tower->setTextureParameter("metallic", loader->findGLTexture("M_Tower.png"));
+	M_tower->setTextureParameter("albedo", loader->findTexture("T_Tower.png"));
+	M_tower->setTextureParameter("normal", loader->findTexture("N_Tower.png"));
+	M_tower->setTextureParameter("roughness", loader->findTexture("R_Tower.png"));
+	M_tower->setTextureParameter("metallic", loader->findTexture("M_Tower.png"));
 }
 
 //////////////////////////////////////////////////////////////////////////

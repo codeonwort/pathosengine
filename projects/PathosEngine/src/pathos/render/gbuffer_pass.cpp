@@ -1,6 +1,7 @@
 #include "gbuffer_pass.h"
 #include "scene_render_targets.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
@@ -135,7 +136,7 @@ namespace pathos {
 				// Bind texture units
 				if (bShouldUpdateMaterialParameters) {
 					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
-						cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
+						cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 					}
 				}
 

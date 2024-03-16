@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/console.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/loader/image_loader.h"
 #include "pathos/overlay/display_object.h"
@@ -687,12 +688,8 @@ void World_RhythmGame::startPlaySession() {
 			background->setBrush(backgroundFallbackBrush);
 			LOG(LogError, "Failed to load background: %s", backgroundPath.c_str());
 		} else {
-			GLuint oldTexture = backgroundImageBrush->getTexture();
-			if (oldTexture != 0) {
-				ENQUEUE_RENDER_COMMAND([oldTexture](RenderCommandList& cmdList) {
-					cmdList.deleteTextures(1, &oldTexture);
-				});
-			}
+			Texture* oldTexture = backgroundImageBrush->getTexture();
+			if (oldTexture != nullptr) delete oldTexture;
 
 			Texture* imageTexture = pathos::ImageUtils::createTexture2DFromImage(imageBlob, 1, false, true, "Texture_Background");
 			backgroundImageBrush->setTexture(imageTexture);

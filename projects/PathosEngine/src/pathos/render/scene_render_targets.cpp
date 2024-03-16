@@ -1,5 +1,6 @@
 #include "scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/console.h"
@@ -406,11 +407,11 @@ namespace pathos {
 	}
 
 	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
-		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack();
+		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack()->internal_getGLName();
 	}
 
 	GLuint SceneRenderTargets::getSkyPrefilterMapWithFallback() const {
-		return (skyPrefilteredMap != 0) ? skyPrefilteredMap : gEngine->getSystemTextureCubeBlack();
+		return (skyPrefilteredMap != 0) ? skyPrefilteredMap : gEngine->getSystemTextureCubeBlack()->internal_getGLName();
 	}
 
 	uint32 SceneRenderTargets::getSkyPrefilterMapMipCount() const {

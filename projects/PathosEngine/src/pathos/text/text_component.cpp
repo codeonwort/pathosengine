@@ -61,8 +61,8 @@ namespace pathos {
 			validDesc = FontManager::get().getFontDesc(DEFAULT_FONT_TAG, fontDesc);
 		}
 		CHECK(validDesc);
-		GLuint fontCache = fontDesc.cacheTexture->getTexture();
 
+		Texture* fontCache = fontDesc.cacheTexture->getTexture();
 		material->setTextureParameter("fontCache", fontCache);
 	}
 
