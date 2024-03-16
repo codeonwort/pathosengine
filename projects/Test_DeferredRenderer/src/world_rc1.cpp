@@ -268,18 +268,19 @@ void World_RC1::setupScene()
 
 	Material* material_ring = Material::createMaterialInstance("pbr_texture");
 	{
-		constexpr bool genMips = true;
+		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
-		GLuint albedo = pathos::createTextureFromBitmap(loadImage(RING_ALBEDO), genMips, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(loadImage(RING_NORMAL), genMips, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(loadImage(RING_METALLIC), genMips, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(loadImage(RING_ROUGHNESS), genMips, !sRGB);
-		GLuint localAO = pathos::createTextureFromBitmap(loadImage(RING_LOCAL_AO), genMips, !sRGB);
-		material_ring->setTextureParameter("albedo", albedo);
-		material_ring->setTextureParameter("normal", normal);
-		material_ring->setTextureParameter("metallic", metallic);
-		material_ring->setTextureParameter("roughness", roughness);
-		material_ring->setTextureParameter("localAO", localAO);
+		Texture* albedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_ALBEDO), mipLevels, sRGB);
+		Texture* normal = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_NORMAL), mipLevels, !sRGB);
+		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_METALLIC), mipLevels, !sRGB);
+		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_ROUGHNESS), mipLevels, !sRGB);
+		Texture* localAO = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(RING_LOCAL_AO), mipLevels, !sRGB);
+		FLUSH_RENDER_COMMAND(true); // #wip: unless Material takes Texture*, not GLuint
+		material_ring->setTextureParameter("albedo", albedo->internal_getGLName());
+		material_ring->setTextureParameter("normal", normal->internal_getGLName());
+		material_ring->setTextureParameter("metallic", metallic->internal_getGLName());
+		material_ring->setTextureParameter("roughness", roughness->internal_getGLName());
+		material_ring->setTextureParameter("localAO", localAO->internal_getGLName());
 	}
 
 	//////////////////////////////////////////////////////////////////////////

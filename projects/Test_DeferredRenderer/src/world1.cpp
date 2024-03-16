@@ -144,14 +144,14 @@ void World1::setupScene()
 	// PBR material
 	Material* material_pbr = Material::createMaterialInstance("pbr_texture");
 	{
-		constexpr bool genMipmap = true;
+		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
-		BitmapBlob* albedoBlob = pathos::loadImage(SANDSTONE_ALBEDO);
-		GLuint albedo = pathos::createTextureFromBitmap(albedoBlob, genMipmap, sRGB);
-		GLuint normal = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_NORMAL), genMipmap, !sRGB);
-		GLuint metallic = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_METALLIC), genMipmap, !sRGB);
-		GLuint roughness = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_ROUGHNESS), genMipmap, !sRGB);
-		GLuint ao = pathos::createTextureFromBitmap(pathos::loadImage(SANDSTONE_LOCAL_AO), genMipmap, !sRGB);
+		Texture* albedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ALBEDO), mipLevels, sRGB);
+		Texture* normal = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_NORMAL), mipLevels, !sRGB);
+		Texture* metallic = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_METALLIC), mipLevels, !sRGB);
+		Texture* roughness = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_ROUGHNESS), mipLevels, !sRGB);
+		Texture* ao = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(SANDSTONE_LOCAL_AO), mipLevels, !sRGB);
+		FLUSH_RENDER_COMMAND(true); // #wip
 
 		material_pbr->setConstantParameter("bOverrideAlbedo", false);
 		material_pbr->setConstantParameter("bOverrideNormal", false);
@@ -159,11 +159,11 @@ void World1::setupScene()
 		material_pbr->setConstantParameter("bOverrideRoughness", false);
 		material_pbr->setConstantParameter("bOverrideLocalAO", false);
 		material_pbr->setConstantParameter("emissiveConstant", vector3(0.0f));
-		material_pbr->setTextureParameter("albedo", albedo);
-		material_pbr->setTextureParameter("normal", normal);
-		material_pbr->setTextureParameter("metallic", metallic);
-		material_pbr->setTextureParameter("roughness", roughness);
-		material_pbr->setTextureParameter("localAO", ao);
+		material_pbr->setTextureParameter("albedo", albedo->internal_getGLName());
+		material_pbr->setTextureParameter("normal", normal->internal_getGLName());
+		material_pbr->setTextureParameter("metallic", metallic->internal_getGLName());
+		material_pbr->setTextureParameter("roughness", roughness->internal_getGLName());
+		material_pbr->setTextureParameter("localAO", ao->internal_getGLName());
 	}
 
 	// --------------------------------------------------------

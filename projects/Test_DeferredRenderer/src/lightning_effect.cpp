@@ -1,5 +1,6 @@
 #include "lightning_effect.h"
 
+#include "pathos/rhi/texture.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
@@ -46,18 +47,15 @@ void LightningActor::generateParticle(const vector3& p0, const vector3& p1, floa
 
 void LightningActor::onSpawn()
 {
-	maskTexture = pathos::createTextureFromBitmap(
-		pathos::loadImage(LIGHTNING_MASK_TEXTURE), false, false, "Tex_Lightning_Mask");
-	warpTexture = pathos::createTextureFromBitmap(
-		pathos::loadImage(LIGHTNING_WARP_TEXTURE), false, false, "Tex_Lightning_Mask");
+	maskTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_MASK_TEXTURE), 1, false, true, "Texture_Lightning_Mask");
+	warpTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LIGHTNING_WARP_TEXTURE), 1, false, true, "Texture_Lightning_Warp");
+	FLUSH_RENDER_COMMAND(true); // #wip
 }
 
 void LightningActor::onDestroy()
 {
-	std::vector<GLuint> textures = { maskTexture, warpTexture };
-	ENQUEUE_RENDER_COMMAND([textures](RenderCommandList& cmdList) {
-		cmdList.deleteTextures((GLsizei)textures.size(), textures.data());
-	});
+	delete maskTexture;
+	delete warpTexture;
 }
 
 // ------------------------------------------------------------
@@ -76,10 +74,10 @@ LightningParticleComponent::LightningParticleComponent()
 	getStaticMesh()->doubleSided = true;
 }
 
-void LightningParticleComponent::setParameters(GLuint maskTexture, GLuint warpTexture, float rc1Scale)
+void LightningParticleComponent::setParameters(Texture* maskTexture, Texture* warpTexture, float rc1Scale)
 {
-	M->setTextureParameter("maskTexture", maskTexture);
-	M->setTextureParameter("warpTexture", warpTexture);
+	M->setTextureParameter("maskTexture", maskTexture->internal_getGLName());
+	M->setTextureParameter("warpTexture", warpTexture->internal_getGLName());
 	M->setConstantParameter("billboardWidth", rc1Scale * LIGHTNING_PARTICLE_THICKNESS);
 }
 

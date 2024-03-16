@@ -191,8 +191,10 @@ namespace pathos {
 		createParams.glDataType           = imageBlob->glDataType;
 		createParams.imageBlob            = imageBlob;
 		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
-		createParams.debugName            = debugName;
 
+		if (debugName != nullptr) {
+			createParams.debugName = debugName;
+		}
 		if (sRGB) {
 			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
 		}

@@ -90,8 +90,9 @@ void World_Game1::prepareAssets()
 	M_color->setConstantParameter("roughness", 0.2f);
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
-	GLuint landscapeAlbedo = pathos::createTextureFromBitmap(pathos::loadImage(LANDSCAPE_ALBEDO_MAP), true, true);
-	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
+	Texture* landscapeAlbedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 1, true, true, "Texture_Landscape");
+	FLUSH_RENDER_COMMAND(true); // #wip
+	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo->internal_getGLName());
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);
