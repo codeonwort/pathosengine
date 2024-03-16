@@ -50,7 +50,7 @@ namespace pathos {
 
 	};
 
-	// #wip: Is this class needed when we now have Texture?
+	// #todo-rhi: RenderTargetXX seems redundant as we now have Texture?
 	// Wrapper for a 2D texture which can be used as a render target.
 	class RenderTarget2D final {
 

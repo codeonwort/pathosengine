@@ -58,10 +58,10 @@ namespace pathos {
 			case FIF_HDR:
 			case FIF_EXR:
 				{
-					// #wip: Is 64 bpp rg32f or rgba16f? Can I discern them?
 					switch (bpp) {
 						case 128: outStorageFormat = GL_RGBA32F; outPixelFormat = GL_RGBA; break;
 						case 96:  outStorageFormat = GL_RGB32F;  outPixelFormat = GL_RGB;  break;
+						default: CHECK_NO_ENTRY(); // #todo-loader: Is 64 bpp rg32f or rgba16f? Can I discern them?
 					}
 					outDataType = GL_FLOAT;
 				}
@@ -135,7 +135,7 @@ namespace pathos {
 		if (flipVertical) FreeImage_FlipVertical(dib);
 
 		unsigned int bpp = FreeImage_GetBPP(dib);
-		// #wip: Weather map for volumetric clouds is broken if the file is 64-bit PNG?
+		// #todo-cloud: Weather map for volumetric clouds is broken if the file is 64-bit PNG?
 		{
 			FIBITMAP* oldDib = nullptr;
 			if (freeImageFormat == FIF_PNG && bpp == 64) {
