@@ -276,18 +276,14 @@ namespace pathos {
 		return texture;
 	}
 
-}
-
-namespace pathos {
-
-	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {
+	void ImageUtils::saveRGB8ImageAsPNG(int32 width, int32 height, uint8* blob, const char* filepath) {
 		FIBITMAP* dib = FreeImage_ConvertFromRawBits(
 			blob, width, height, 3 * width, 24,
 			0xff0000, // Red mask
 			0x00ff00, // Green mask
 			0x0000ff, // Blue mask
 			false);
-		FreeImage_Save(FIF_PNG, dib, filename, 0);
+		FreeImage_Save(FIF_PNG, dib, filepath, 0);
 		FreeImage_Unload(dib);
 	}
 

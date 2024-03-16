@@ -96,19 +96,14 @@ namespace pathos {
 			bool sRGB,
 			bool autoDestroyImageBlob = true,
 			const char* debugName = nullptr);
+
+		/// <summary>
+		/// Write 8-bit RGB image to an image file.
+		/// </summary>
+		/// <param name="width">Image width.</param>
+		/// <param name="height">Image height.</param>
+		/// <param name="blob">RGB data, each channel is assumed 8-bit.</param>
+		/// <param name="filepath">Absolute path to write an image file.</param>
+		static void saveRGB8ImageAsPNG(int32 width, int32 height, uint8* blob, const char* filepath);
 	};
-}
-
-// #wip: Old image API
-namespace pathos {
-
-	/// <summary>
-	/// Write SDR image data to an image file.
-	/// </summary>
-	/// <param name="width">Image width.</param>
-	/// <param name="height">Image height.</param>
-	/// <param name="blob">RGB data, each channel is assumed 8-bit.</param>
-	/// <param name="filename">Absolute path to write an image file.</param>
-	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename);
-
 }

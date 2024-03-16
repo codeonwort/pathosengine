@@ -36,7 +36,7 @@ namespace pathos {
 	class DisplayObject2D;
 	class MeshGeometry;
 
-	using Screenshot = std::pair<vector2i, uint8*>;
+	using Screenshot = std::pair<vector2i, uint8*>; // Assumes rgb8 format
 
 	// @see Engine::init
 	struct EngineConfig {

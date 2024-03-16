@@ -599,7 +599,7 @@ namespace pathos {
 					screenshotPath += "_shot" + std::to_string(i) + ".png";
 					const vector2i& size = screenshotQueue[i].first;
 					uint8* pixels = screenshotQueue[i].second;
-					pathos::savePNG_RGB(size.x, size.y, pixels, screenshotPath.c_str());
+					ImageUtils::saveRGB8ImageAsPNG(size.x, size.y, pixels, screenshotPath.c_str());
 					delete[] pixels;
 				}
 				gConsole->addLine(L"Screenshot saved to log/screenshot/", false, true);
