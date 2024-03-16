@@ -1,6 +1,7 @@
 #include "pathos/loader/image_loader.h"
 
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
@@ -37,16 +38,34 @@ namespace pathos {
 			case FIF_BMP:
 			case FIF_JPEG:
 			case FIF_PNG:
-				outStorageFormat = (bpp == 32) ? GL_RGBA8 : (bpp == 24) ? GL_RGB8 : GL_NONE;
-				outPixelFormat = (bpp == 32) ? GL_BGRA : (bpp == 24) ? GL_BGR : GL_NONE;
-				outDataType = GL_UNSIGNED_BYTE;
+				{
+					switch (bpp) {
+						case 64: outStorageFormat = GL_RGBA16;  outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_SHORT; break;
+						case 48: outStorageFormat = GL_RGB16;   outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_SHORT; break;
+						case 32: outStorageFormat = GL_RGBA8;   outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_BYTE;  break;
+						case 24: outStorageFormat = GL_RGB8;    outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_BYTE;  break;
+					}
+				}
+				break;
+			case FIF_TARGA:
+				{
+					switch (bpp) {
+						case 8:  outStorageFormat = GL_R8;    outPixelFormat = GL_RED;  break;
+						case 16: outStorageFormat = GL_RG8;   outPixelFormat = GL_RG;   break;
+						case 24: outStorageFormat = GL_RGB8;  outPixelFormat = GL_RGB;  break;
+						case 32: outStorageFormat = GL_RGBA8; outPixelFormat = GL_RGBA; break;
+					}
+					outDataType = GL_UNSIGNED_BYTE;
+				}
 				break;
 			case FIF_HDR:
 			case FIF_EXR:
-				// #wip: What if HDR format only contains RGB data?
-				outStorageFormat = (bpp == 128) ? GL_RGBA32F : (bpp == 64) ? GL_RGBA16F : GL_NONE;
-				outPixelFormat = (bpp == 128 || bpp == 64) ? GL_RGBA : GL_NONE;
-				outDataType = GL_FLOAT;
+				{
+					// #wip: What if HDR format only contains RGB data?
+					outStorageFormat = (bpp == 128) ? GL_RGBA32F : (bpp == 64) ? GL_RGBA16F : GL_NONE;
+					outPixelFormat = (bpp == 128 || bpp == 64) ? GL_RGBA : GL_NONE;
+					outDataType = GL_FLOAT;
+				}
 				break;
 			case FIF_UNKNOWN:
 			case FIF_ICO:
@@ -63,7 +82,6 @@ namespace pathos {
 			case FIF_PPM:
 			case FIF_PPMRAW:
 			case FIF_RAS:
-			case FIF_TARGA:
 			case FIF_TIFF:
 			case FIF_WBMP:
 			case FIF_PSD:
@@ -90,6 +108,11 @@ namespace pathos {
 		}
 	}
 
+	GLenum convertStorageFormatToSRGB(GLenum storageFormat) {
+		if (storageFormat == GL_RGBA8) storageFormat = GL_SRGB8_ALPHA8;
+		else if (storageFormat == GL_RGB8) storageFormat = GL_SRGB8;
+		return storageFormat;
+	}
 }
 
 namespace pathos {
@@ -112,10 +135,26 @@ namespace pathos {
 		if (flipHorizontal) FreeImage_FlipHorizontal(dib);
 		if (flipVertical) FreeImage_FlipVertical(dib);
 
-		BYTE* rawData = FreeImage_GetBits(dib);
-		unsigned int width = FreeImage_GetWidth(dib);
-		unsigned int height = FreeImage_GetHeight(dib);
 		unsigned int bpp = FreeImage_GetBPP(dib);
+		// #wip: Weather map for volumetric clouds is broken if the file is 64-bit PNG?
+		{
+			FIBITMAP* oldDib = nullptr;
+			if (freeImageFormat == FIF_PNG && bpp == 64) {
+				oldDib = dib;
+				dib = FreeImage_ConvertTo32Bits(dib);
+				bpp = 32;
+			} else if (freeImageFormat == FIF_PNG && bpp == 48) {
+				oldDib = dib;
+				dib = FreeImage_ConvertTo24Bits(dib);
+				bpp = 24;
+			}
+			if (oldDib != nullptr) {
+				FreeImage_Unload(oldDib);
+			}
+		}
+		const BYTE* rawData = FreeImage_GetBits(dib);
+		const unsigned int width = FreeImage_GetWidth(dib);
+		const unsigned int height = FreeImage_GetHeight(dib);
 
 		GLenum glStorageFormat, glPixelFormat, glDataType;
 		FreeImage_GetGLFormats(freeImageFormat, bpp, glStorageFormat, glPixelFormat, glDataType);
@@ -131,54 +170,62 @@ namespace pathos {
 		return blob;
 	}
 
-	GLuint ImageUtils::createTextureFromImage(
+	Texture* ImageUtils::createTexture2DFromImage(
 		ImageBlob* imageBlob,
-		bool generateMipmaps,
+		uint32 mipLevels,
 		bool sRGB,
 		bool autoDestroyImageBlob /*= true*/,
 		const char* debugName /*= nullptr*/)
 	{
-		GLuint texture = 0;
+		TextureCreateParams createParams;
+		createParams.width                = imageBlob->width;
+		createParams.height               = imageBlob->height;
+		createParams.depth                = 1;
+		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.glDimension          = GL_TEXTURE_2D;
+		createParams.glStorageFormat      = imageBlob->glStorageFormat;
+		createParams.glPixelFormat        = imageBlob->glPixelFormat;
+		createParams.glDataType           = imageBlob->glDataType;
+		createParams.imageBlob            = imageBlob;
+		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
+		createParams.debugName            = debugName;
 
-		ENQUEUE_RENDER_COMMAND(
-			[imageBlob,
-			texturePtr = &texture, generateMipmaps, sRGB,
-			debugName, autoDestroyImageBlob](RenderCommandList& cmdList)
-			{
-				gRenderDevice->createTextures(GL_TEXTURE_2D, 1, texturePtr);
-				if (debugName != nullptr) {
-					gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName);
-				}
+		if (sRGB) {
+			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
+		}
 
-				uint32 width = imageBlob->width;
-				uint32 height = imageBlob->height;
-				uint32 bpp = imageBlob->bpp;
-				uint8* rawBytes = imageBlob->rawBytes;
+		Texture* texture = new Texture(createParams);
+		texture->createGPUResource();
+		return texture;
+	}
 
-				GLenum storageFormat = imageBlob->glStorageFormat;
-				GLenum pixelFormat = imageBlob->glPixelFormat;
-				GLenum dataType = imageBlob->glDataType;
-				if (sRGB) {
-					if (storageFormat == GL_RGBA8) storageFormat = GL_SRGB8_ALPHA8;
-					else if (storageFormat == GL_RGB8) storageFormat = GL_SRGB8;
-				}
+	Texture* ImageUtils::createTexture3DFromImage(
+		ImageBlob* imageBlob,
+		const vector3ui& textureSize,
+		uint32 mipLevels,
+		bool sRGB,
+		bool autoDestroyImageBlob /*= true*/,
+		const char* debugName /*= nullptr*/)
+	{
+		TextureCreateParams createParams;
+		createParams.width                = textureSize.x;
+		createParams.height               = textureSize.y;
+		createParams.depth                = textureSize.z;
+		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.glDimension          = GL_TEXTURE_3D;
+		createParams.glStorageFormat      = imageBlob->glStorageFormat;
+		createParams.glPixelFormat        = imageBlob->glPixelFormat;
+		createParams.glDataType           = imageBlob->glDataType;
+		createParams.imageBlob            = imageBlob;
+		createParams.autoDestroyImageBlob = autoDestroyImageBlob;
+		createParams.debugName            = debugName;
 
-				uint32 numLODs = generateMipmaps ? static_cast<uint32>(floor(log2(std::max(width, height))) + 1) : 1;
+		if (sRGB) {
+			createParams.glStorageFormat = convertStorageFormatToSRGB(createParams.glStorageFormat);
+		}
 
-				cmdList.textureStorage2D(*texturePtr, numLODs, storageFormat, width, height);
-				cmdList.textureSubImage2D(*texturePtr, 0, 0, 0, width, height, pixelFormat, dataType, rawBytes);
-
-				if (generateMipmaps) {
-					cmdList.generateTextureMipmap(*texturePtr);
-				}
-				if (autoDestroyImageBlob) {
-					cmdList.registerDeferredCleanup(imageBlob);
-				}
-			});
-
-		// #todo-image-loader: There is no wrapper for 'texture', so we should flush to finalize it.
-		TEMP_FLUSH_RENDER_COMMAND(true);
-
+		Texture* texture = new Texture(createParams);
+		texture->createGPUResource();
 		return texture;
 	}
 
@@ -325,31 +372,6 @@ namespace pathos {
 		blob->height = height;
 
 		return blob;
-	}
-
-	Texture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName) {
-		// 1. Load data
-		std::string path = ResourceFinder::get().find(inFilename);
-		CHECK(path.size() != 0);
-
-		LOG(LogDebug, "Load volume texture data: %s", path.c_str());
-
-		FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(path.c_str());
-		CHECKF(fif == FIF_TARGA, "Invalid Truevision Targa formats");
-
-		FIBITMAP* dib = FreeImage_Load(fif, path.c_str(), 0);
-
-		if (!dib) {
-			LOG(LogError, "Error while loading: %s", path.c_str());
-			return nullptr;
-		}
-
-		// 2. Create a volume texture
-		Texture* vt = new Texture;
-		vt->setImageData(new BitmapBlob(dib));
-		vt->setDebugName(inDebugName);
-
-		return vt;
 	}
 
 	void savePNG_RGB(int32 width, int32 height, uint8* blob, const char* filename) {

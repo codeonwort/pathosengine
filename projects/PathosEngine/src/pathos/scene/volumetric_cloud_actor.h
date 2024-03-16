@@ -21,7 +21,7 @@ namespace pathos {
 
 		~VolumetricCloudActor() = default;
 
-		void setTextures(GLuint inWeatherTexture, Texture* inShapeNoise, Texture* inErosionNoise) {
+		void setTextures(Texture* inWeatherTexture, Texture* inShapeNoise, Texture* inErosionNoise) {
 			cloudComponent->setTextures(inWeatherTexture, inShapeNoise, inErosionNoise);
 		}
 

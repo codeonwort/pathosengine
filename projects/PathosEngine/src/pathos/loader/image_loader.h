@@ -21,6 +21,8 @@ namespace pathos {
 
 namespace pathos {
 
+	class Texture;
+
 	/// <summary>
 	/// Specify which shader language's convention the cubemap image files follow.
 	/// </summary>
@@ -32,6 +34,7 @@ namespace pathos {
 	// #wip: Move image API functions into this class.
 	class ImageUtils {
 
+	public:
 		/// <summary>
 		/// Load image data from an image file.
 		/// </summary>
@@ -43,28 +46,42 @@ namespace pathos {
 
 		/// <summary>
 		/// Create a 2D texture from an image blob.
-		/// NOTE: It will flush the render thread.
 		/// </summary>
 		/// <param name="imageBlob">Image data.</param>
-		/// <param name="generateMipmaps">Auto-generate mipmaps for the texture.</param>
+		/// <param name="mipLevels">The number of mip levels.</param>
 		/// <param name="sRGB">Image data is considered to be in sRGB color space.</param>
 		/// <param name="autoDestroyBlob">Automatically deallocate `imageBlob` after it's uploaded to GPU. If false, you should free it manually.</param>
-		/// <param name="debugName">Debug name of the GL texture that will be returned.</param>
-		/// <returns>GL texture name.</returns>
-		GLuint createTextureFromImage(
+		/// <param name="debugName">Debug name of the GL texture that will be created.</param>
+		/// <returns>Texture object.</returns>
+		static Texture* createTexture2DFromImage(
 			ImageBlob* imageBlob,
-			bool generateMipmaps,
+			uint32 mipLevels,
 			bool sRGB,
 			bool autoDestroyImageBlob = true,
 			const char* debugName = nullptr);
 
+		/// <summary>
+		/// Create a 3D texture from an image blob.
+		/// </summary>
+		/// <param name="imageBlob">Image data.</param>
+		/// <param name="textureSize">3D size of the texture that will be created.</param>
+		/// <param name="mipLevels">The number of mip levels.</param>
+		/// <param name="sRGB">Image data is considered to be in sRGB color space.</param>
+		/// <param name="autoDestroyBlob">Automatically deallocate `imageBlob` after it's uploaded to GPU. If false, you should free it manually.</param>
+		/// <param name="debugName">Debug name of the GL texture that will be created.</param>
+		/// <returns>Texture object.</returns>
+		static Texture* createTexture3DFromImage(
+			ImageBlob* imageBlob,
+			const vector3ui& textureSize,
+			uint32 mipLevels,
+			bool sRGB,
+			bool autoDestroyImageBlob = true,
+			const char* debugName = nullptr);
 	};
 }
 
 // #wip: Old image API
 namespace pathos {
-
-	class Texture;
 
 	/// <summary>
 	/// SDR image raw data that was loaded from image files or generated procedurally.
@@ -127,16 +144,6 @@ namespace pathos {
 	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
 	/// <returns>A wrapper struct for the image data. Null if loading failed.</returns>
 	HDRImageBlob* loadHDRImage(const char* inFilename);
-	
-	// #wip: Don't return VolumeTexture
-	/// <summary>
-	/// Load image data for volume texture from a .tga file.
-	/// NOTE: You should call VolumeTexture::initGLResource() manually.
-	/// </summary>
-	/// <param name="inFilename">Absolute paths, or relative paths recognized by ResourceFinder.</param>
-	/// <param name="inDebugName">Debug name of the GL texture that will be created.</param>
-	/// <returns>A wrapper for image data and GL texture.</returns>
-	Texture* loadVolumeTextureFromTGA(const char* inFilename, const char* inDebugName = nullptr);
 
 	/// <summary>
 	/// Write SDR image data to an image file.

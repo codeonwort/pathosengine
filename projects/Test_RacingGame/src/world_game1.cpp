@@ -99,21 +99,18 @@ void World_Game1::prepareAssets()
 	carDummyMesh = new Mesh(G_sphere, M_color);
 	landscapeMesh = new Mesh(G_plane, M_landscape);
 
-	weatherTexture = pathos::createTextureFromBitmap(pathos::loadImage(CLOUD_WEATHER_MAP_FILE), true, false, "Texture: WeatherMap");
-	cloudShapeNoise = pathos::loadVolumeTextureFromTGA(CLOUD_SHAPE_NOISE_FILE, "Texture_CloudShapeNoise");
-	{
-		uint32 vtWidth = cloudShapeNoise->getSourceImageWidth();
-		uint32 vtHeight = cloudShapeNoise->getSourceImageHeight();
+	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
+		uint32 vtWidth = imageBlob->width;
+		uint32 vtHeight = imageBlob->height;
 		CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
-		cloudShapeNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
-	}
-	cloudErosionNoise = pathos::loadVolumeTextureFromTGA(CLOUD_EROSION_NOISE_FILE, "Texture_CloudErosionNoise");
-	{
-		uint32 vtWidth = cloudErosionNoise->getSourceImageWidth();
-		uint32 vtHeight = cloudErosionNoise->getSourceImageHeight();
-		CHECK((vtWidth % vtHeight == 0) && (vtWidth / vtHeight == vtHeight));
-		cloudErosionNoise->initGLResource(vtHeight, vtHeight, vtWidth / vtHeight);
-	}
+		return vector3ui(vtHeight, vtHeight, vtWidth / vtHeight);
+	};
+	ImageBlob* weatherMapBlob = ImageUtils::loadImage(CLOUD_WEATHER_MAP_FILE);
+	ImageBlob* cloudShapeNoiseBlob = ImageUtils::loadImage(CLOUD_SHAPE_NOISE_FILE);
+	ImageBlob* cloudErosionNoiseBlob = ImageUtils::loadImage(CLOUD_EROSION_NOISE_FILE);
+	weatherTexture = ImageUtils::createTexture2DFromImage(weatherMapBlob, 1, false, true, "Texture_WeatherMap");
+	cloudShapeNoise = ImageUtils::createTexture3DFromImage(cloudShapeNoiseBlob, calcVolumeSize(cloudShapeNoiseBlob), 0, false, true, "Texture_CloudShapeNoise");
+	cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
 }
 
 void World_Game1::reloadScene()

@@ -34,7 +34,7 @@ private:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	GLuint weatherTexture = 0;
+	Texture* weatherTexture = nullptr;
 	Texture* cloudShapeNoise = nullptr;
 	Texture* cloudErosionNoise = nullptr;
 	VolumetricCloudActor* cloudscape = nullptr;

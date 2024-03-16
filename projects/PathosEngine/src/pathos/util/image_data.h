@@ -26,7 +26,7 @@ namespace pathos {
 			}
 		}
 
-		void copyRawBytes(void* src, uint32 srcWidth, uint32 srcHeight, uint32 srcBpp) {
+		void copyRawBytes(const void* src, uint32 srcWidth, uint32 srcHeight, uint32 srcBpp) {
 			width = srcWidth;
 			height = srcHeight;
 			bpp = srcBpp;

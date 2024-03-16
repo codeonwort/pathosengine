@@ -206,9 +206,9 @@ namespace pathos {
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
 
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
-		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture);
-		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->getGLName());
-		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->getGLName());
+		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture->internal_getGLName());
+		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->internal_getGLName());
+		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->internal_getGLName());
 		cmdList.bindTextureUnit(4, texSTBN);
 		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
 		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
