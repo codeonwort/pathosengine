@@ -305,7 +305,7 @@ namespace pathos {
 			} else if (scene->isPanoramaSkyValid()) {
 				panoramaSkyPass->renderPanoramaSky(cmdList, scene);
 			} else if (scene->isSkyAtmosphereValid()) {
-				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera);
+				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera, fullscreenQuad);
 			}
 		}
 

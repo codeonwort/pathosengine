@@ -3,6 +3,7 @@
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/sky_atmosphere_component.h"
@@ -17,12 +18,8 @@ namespace pathos {
 
 	static ConsoleVariable<float> cvar_sunDisk("r.atmosphere.sunDiskSize", 5.0f, "Sun disk size");
 
-	// #todo-atmosphere: better lifecycle management
-	GLuint gTransmittanceLUT = 0;
-
-	static const int32 LUT_WIDTH = 64;
-	static const int32 LUT_HEIGHT = 256;
-
+	static constexpr uint32 LUT_WIDTH = 64;
+	static constexpr uint32 LUT_HEIGHT = 256;
 	static constexpr uint32 TO_CUBEMAP_SIZE = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
 
 	struct UBO_Atmosphere {
@@ -68,46 +65,6 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_PASTransmittance, PASFullscreenVS<false>, PASTransmittanceFS);
 	DEFINE_SHADER_PROGRAM2(Program_AtmosphericScattering, PASFullscreenVS<true>, AtmosphericScatteringFS);
 
-	void init_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
-		GLuint& lut = gTransmittanceLUT;
-		GLuint fbo;
-
-		device->createTextures(GL_TEXTURE_2D, 1, &lut);
-		device->objectLabel(GL_TEXTURE, lut, -1, "LUT_Transmittance");
-		device->createFramebuffers(1, &fbo);
-		device->objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_LUT_Transmittance");
-
-		PlaneGeometry* fullscreenQuad = new PlaneGeometry(1.0, 1.0);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
-		// This does matter; transmittance is 1 outside of atmosphere.
-		static const GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-		cmdList.textureStorage2D(lut, 1, GL_RGBA32F, LUT_WIDTH, LUT_HEIGHT);
-		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-		cmdList.useProgram(program.getGLName());
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
-
-		cmdList.viewport(0, 0, LUT_WIDTH, LUT_HEIGHT);
-
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
-		fullscreenQuad->drawPrimitive(cmdList);
-
-		LOG(LogDebug, "Generate transmittance LUT (%s)", "LUT_Transmittance");
-	}
-	void destroy_precomputeTransmittance(OpenGLDevice* device, RenderCommandList& cmdList) {
-		gRenderDevice->deleteTextures(1, &gTransmittanceLUT);
-		gTransmittanceLUT = 0;
-	}
-
-	DEFINE_GLOBAL_RENDER_ROUTINE(PAS, init_precomputeTransmittance, destroy_precomputeTransmittance);
-
 }
 
 namespace pathos {
@@ -128,11 +85,13 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		gRenderDevice->deleteTextures(1, &cubemapTexture);
 		gRenderDevice->deleteVertexArrays(1, &vao);
+		if (transmittanceLUT) delete transmittanceLUT;
 	}
 
-	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(SkyAtmosphere);
 
+		renderTransmittanceLUT(cmdList, fullscreenQuad);
 		renderToScreen(cmdList, scene, camera);
 		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
@@ -145,18 +104,6 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SkyAtmosphereToScreen);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
-		cmdList.useProgram(program.getGLName());
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
-
-		// Write to only far plane.
-		cmdList.depthFunc(GL_EQUAL);
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.depthMask(GL_FALSE);
 
 		vector3 sunIlluminance = vector3(13.61839144264511f);
 		if (scene->proxyList_directionalLight.size() > 0) {
@@ -171,12 +118,23 @@ namespace pathos {
 		uboData.renderToCubemap = 0;
 		ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
-		cmdList.bindTextureUnit(0, gTransmittanceLUT);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
+		cmdList.useProgram(program.getGLName());
 
+		// Write to only far plane.
+		cmdList.depthFunc(GL_EQUAL);
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.depthMask(GL_FALSE);
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
+		cmdList.bindTextureUnit(0, transmittanceLUT->internal_getGLName());
 		cmdList.bindVertexArray(vao);
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 		cmdList.bindVertexArray(0);
 	}
 
@@ -215,8 +173,9 @@ namespace pathos {
 
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.bindTextureUnit(0, gTransmittanceLUT);
 		cmdList.viewport(0, 0, TO_CUBEMAP_SIZE, TO_CUBEMAP_SIZE);
+
+		cmdList.bindTextureUnit(0, transmittanceLUT->internal_getGLName());
 		cmdList.bindVertexArray(vao);
 
 		for (int32 i = 0; i < 6; ++i) {
@@ -264,6 +223,49 @@ namespace pathos {
 			TO_CUBEMAP_SIZE,
 			sceneContext.skyPrefilterMapMipCount,
 			sceneContext.skyPrefilteredMap);
+	}
+
+	void SkyAtmospherePass::renderTransmittanceLUT(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
+		if (transmittanceLUT != nullptr) {
+			return;
+		}
+
+		// Create LUT texture
+
+		TextureCreateParams createParams;
+		createParams.width           = LUT_WIDTH;
+		createParams.height          = LUT_HEIGHT;
+		createParams.depth           = 1;
+		createParams.mipLevels       = 1;
+		createParams.glDimension     = GL_TEXTURE_2D;
+		createParams.glStorageFormat = GL_RGBA32F;
+		createParams.debugName       = "Texture_TransmittanceLUT";
+
+		transmittanceLUT = new Texture(createParams);
+		transmittanceLUT->createGPUResource();
+
+		const GLuint lut = transmittanceLUT->internal_getGLName();
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_PASTransmittance);
+		// This does matter; transmittance is 1 outside of atmosphere.
+		static const GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		cmdList.textureParameteri(lut, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		cmdList.textureParameterfv(lut, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+		// Render LUT
+
+		cmdList.useProgram(program.getGLName());
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
+		cmdList.viewport(0, 0, LUT_WIDTH, LUT_HEIGHT);
+
+		fullscreenQuad->activate_position_uv(cmdList);
+		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+
+		LOG(LogDebug, "[SkyAtmosphere] Generate transmittance LUT");
 	}
 
 }
