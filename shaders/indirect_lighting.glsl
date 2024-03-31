@@ -45,11 +45,11 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	uint irradianceTileSize;
 } ubo;
 
-layout (std140, binding = 2) buffer SSBO_0_IndirectLighting {
+layout (std140, binding = 2) readonly buffer SSBO_0_IndirectLighting {
 	IrradianceVolume irradianceVolumeInfo[];
 } ssbo0;
 
-layout (std140, binding = 3) buffer SSBO_1_IndirectLighting {
+layout (std140, binding = 3) readonly buffer SSBO_1_IndirectLighting {
 	ReflectionProbe reflectionProbeInfo[];
 } ssbo1;
 

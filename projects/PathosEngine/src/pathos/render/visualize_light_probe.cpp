@@ -1,6 +1,7 @@
 #include "visualize_light_probe.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/scene/camera.h"
@@ -10,16 +11,9 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_visLightProbe(
-		"r.visualizeLightProbe",
-		0,
-		"0 = disable, 1 = enable");
-	static ConsoleVariable<float> cvar_visIrradianceProbeRadius(
-		"r.visualizeLightProbe.irradianceProbeRadius", 0.05f,
-		"Radius of visualized probes in irradiance volumes (meters)");
-	static ConsoleVariable<float> cvar_visReflectionProbeRadius(
-		"r.visualizeLightProbe.reflectionProbeRadius", 1.0f,
-		"Radius of visualized reflection probes (meters)");
+	static ConsoleVariable<int32> cvar_visLightProbe("r.visualizeLightProbe", 0, "0 = disable, 1 = enable");
+	static ConsoleVariable<float> cvar_visIrradianceProbeRadius("r.visualizeLightProbe.irradianceProbeRadius", 0.05f, "Radius of visualized probes in irradiance volumes (meters)");
+	static ConsoleVariable<float> cvar_visReflectionProbeRadius("r.visualizeLightProbe.reflectionProbeRadius", 1.0f, "Radius of visualized reflection probes (meters)");
 
 	class VisualizeLightProbeVS : public ShaderStage {
 	public:
@@ -84,19 +78,21 @@ namespace pathos {
 
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
 
-		const uint32 maxIrradianceProbes = pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY;
-		ssbo0.init(sizeof(IrradianceVolumeInfo) * maxIrradianceProbes, "SSBO_0_VisualizeLightProbe");
+		const uint32 ssbo0Size = sizeof(IrradianceVolumeInfo) * (pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
+		ssbo0 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo0Size, nullptr, "SSBO_0_IndirectLighting" });
+		ssbo0->createGPUResource();
 
-		const uint32 maxReflectionProbes = pathos::reflectionProbeMaxCount;
-		ssbo1.init(sizeof(ReflectionProbeInfo) * maxReflectionProbes, "SSBO_1_VisualizeLightProbe");
+		uint32 ssbo1Size = pathos::reflectionProbeMaxCount * sizeof(ReflectionProbeInfo);
+		ssbo1 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo1Size, nullptr, "SSBO_1_IndirectLighting" });
+		ssbo1->createGPUResource();
 	}
 
 	void VisualizeLightProbePass::releaseResources(RenderCommandList& cmdList) {
 		delete sphereGeom;
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		ubo.safeDestroy();
-		ssbo0.safeDestroy();
-		ssbo1.safeDestroy();
+		delete ssbo0;
+		delete ssbo1;
 	}
 
 	void VisualizeLightProbePass::render(
@@ -172,11 +168,13 @@ namespace pathos {
 		ubo.update(cmdList, UBO_BINDING_SLOT, &uboData);
 		if (uboData.numIrradianceVolumes > 0) {
 			GLsizeiptr bytes = ssbo0Data.size() * sizeof(IrradianceVolumeInfo);
-			ssbo0.update(cmdList, SSBO_0_BINDING_SLOT, ssbo0Data.data(), bytes);
+			ssbo0->writeToGPU_renderThread(cmdList, 0, bytes, ssbo0Data.data());
+			ssbo0->bindAsSSBO(cmdList, SSBO_0_BINDING_SLOT);
 		}
 		if (uboData.numReflectionProbes > 0) {
 			GLsizeiptr bytes = ssbo1Data.size() * sizeof(ReflectionProbeInfo);
-			ssbo1.update(cmdList, SSBO_1_BINDING_SLOT, ssbo1Data.data(), bytes);
+			ssbo1->writeToGPU_renderThread(cmdList, 0, bytes, ssbo1Data.data());
+			ssbo1->bindAsSSBO(cmdList, SSBO_1_BINDING_SLOT);
 		}
 
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -186,8 +184,6 @@ namespace pathos {
 		cmdList.bindTextureUnit(1, sceneContext.localSpecularIBLs);
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-		
-
 
 		uint32 instanceCount = totalIrradianceProbes + uboData.numReflectionProbes;
 		sphereGeom->activate_position_normal(cmdList);

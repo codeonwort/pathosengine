@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pathos/rhi/uniform_buffer.h"
-#include "pathos/rhi/shader_storage_buffer.h"
 #include "pathos/rhi/render_command_list.h"
 
 // - Calculate indirect lighting (global illumination) and write to sceneColor.
@@ -13,6 +12,7 @@ namespace pathos {
 	class Camera;
 	class SceneProxy;
 	class MeshGeometry;
+	class Buffer;
 
 	class IndirectLightingPass {
 
@@ -32,8 +32,8 @@ namespace pathos {
 	private:
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
-		ShaderStorageBuffer ssbo0;
-		ShaderStorageBuffer ssbo1;
+		Buffer* ssbo0 = nullptr; // For irradiance volume
+		Buffer* ssbo1 = nullptr; // For reflection probe
 
 		bool destroyed = false;
 

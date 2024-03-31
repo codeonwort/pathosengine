@@ -90,6 +90,11 @@ namespace pathos {
 		deferredMemoryCleanups.push_back(dynamicMemory);
 	}
 
+	void RenderCommandList::registerDeferredBufferCleanup(GLuint buffer) {
+		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
+		deferredBufferCleanups.push_back(buffer);
+	}
+
 	void RenderCommandList::registerDeferredTextureCleanup(GLuint texture) {
 		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
 		deferredTextureCleanups.push_back(texture);
@@ -99,6 +104,8 @@ namespace pathos {
 		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
 		for (void* memory : deferredMemoryCleanups) delete memory;
 		deferredMemoryCleanups.clear();
+		gRenderDevice->deleteBuffers((GLsizei)deferredBufferCleanups.size(), deferredBufferCleanups.data());
+		deferredBufferCleanups.clear();
 		gRenderDevice->deleteTextures((GLsizei)deferredTextureCleanups.size(), deferredTextureCleanups.data());
 		deferredTextureCleanups.clear();
 	}
