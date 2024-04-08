@@ -1,7 +1,5 @@
 #pragma once
 
-// https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object
-
 #include "pathos/rhi/gl_handles.h"
 
 #include "badger/types/noncopyable.h"
@@ -24,7 +22,11 @@ namespace pathos {
 		std::string debugName;
 	};
 
-	// #wip: Generic buffer class. Replace UniformBuffer, ShaderStorageBuffer, vertex/index buffers with this?
+	/// <summary>
+	/// Wrapper for GPU buffer resource.
+	/// A Buffer instance maps to an individual VBO, so consider using BufferPool instead
+	/// #wip: Replace UniformBuffer and vertex/index buffers with this?
+	/// </summary>
 	class Buffer final : public Noncopyable {
 
 	public:
@@ -50,6 +52,14 @@ namespace pathos {
 		const BufferCreateParams createParams;
 		GLuint glBuffer = 0;
 		bool created = false;
+	};
+
+	/// <summary>
+	/// Create a single large buffer and suballocate it.
+	/// #wip-bufferpool
+	/// </summary>
+	class BufferPool final : public Noncopyable {
+		//
 	};
 
 }

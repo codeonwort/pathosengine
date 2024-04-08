@@ -346,7 +346,6 @@ namespace pathos {
 		gRenderDevice->createVertexArrays(1, vao);
 		gRenderDevice->objectLabel(GL_VERTEX_ARRAY, *vao, -1, debugLabel);
 
-#if 1
 		// attribindex and bindingindex are so confusing...
 		for (const VAOElement& desc : descs) {
 			CHECKF(desc.buffer != 0, "Null buffer is not allowed");
@@ -376,16 +375,6 @@ namespace pathos {
 			
 			cmdList.vertexArrayAttribBinding(*vao, desc.index, desc.index); // vao, attribindex, bindingindex
 		}
-#else
-		glBindVertexArray(*vao);
-		for (const VAOElement& desc : descs) {
-			CHECKF(desc.buffer != 0, "Null buffer is not allowed");
-			glBindBuffer(GL_ARRAY_BUFFER, desc.buffer);
-			glVertexAttribPointer(desc.index, desc.size, desc.type, desc.normalized, 0, (void*)0);
-			glEnableVertexArrayAttrib(*vao, desc.index);
-		}
-		glBindVertexArray(0);
-#endif
 	}
 
 	void MeshGeometry::createVAO_position(RenderCommandList& cmdList) {

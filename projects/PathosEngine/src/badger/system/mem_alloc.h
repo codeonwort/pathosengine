@@ -1,6 +1,5 @@
 // ----------------------------------------------------------------------------
 // Custom memory allocators
-// 
 // - StackAllocator
 // - PoolAllocator
 // - CircularAllocator
@@ -12,18 +11,27 @@
 #include "badger/assertion/assertion.h"
 #include <stdlib.h>
 
-// Fixed total bytes, suballocate only incrementally.
-// Allocating more than max capacity is prohibited.
+/// <summary>
+/// Initializes a fixed memory block and returns addresses within the block whenever suballocation happens.
+/// Total size is fixed and suballocation happens only incrementally.
+/// Partial deallocation is not possible and only total reset is allowed.
+/// 
+/// NOTE: DO NOT free() or delete a suballocated memory.
+/// </summary>
 class StackAllocator
 {
 public:
 	explicit StackAllocator(uint32 bytes);
 	~StackAllocator();
 
+	/// Suballocate the internal memory block. Returns null if the request exceeds the remaining memory.
 	void* alloc(uint32 bytes);
+
+	/// Reset all allocations. Next allocation happens at the base address.
 	void clear();
 
-	bool isClear() const;
+	inline uint32 getTotalBytes() const { return totalBytes; }
+	inline uint32 getUsedBytes() const { return usedBytes; }
 
 private:
 	void* memblock;
@@ -32,8 +40,13 @@ private:
 	uint32 usedBytes;
 };
 
-// Fixed max item count and all items have the same size.
-// Can deallocate items for new allocations.
+/// <summary>
+/// Initializes a fixed memory block partitioned by N elements of the same type.
+/// Suballocation is possible up to N times. Unlike StackAllocator, deallocating an item is possible.
+/// 
+/// NOTE: DO NOT free() or delete a suballocated item.
+/// </summary>
+/// <typeparam name="T">Element type.</typeparam>
 template<typename T>
 class PoolAllocator
 {
@@ -87,11 +100,12 @@ private:
 	FreeNode* freeList;
 };
 
-// Fixed max item count, suballocate only incrementally.
-// Allocating more than max capacity will erase old items.
-// 
-// @param T : datatype of items
-// @param bCallCtorAndDtor : If true, call constructor and destructor for each item.
+/// <summary>
+/// Initializes a fixed memory block partitioned by N elements of the same type.
+/// Allocating more than max capacity will erase old items.
+/// </summary>
+/// <typeparam name="T">Element type.</typeparam>
+/// <typeparam name="bCallCtorAndDtor">If true, call constructor and destructor for each item.</typeparam>
 template<typename T, bool bCallCtorAndDtor>
 class CircularAllocator
 {
