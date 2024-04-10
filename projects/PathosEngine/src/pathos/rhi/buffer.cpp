@@ -82,3 +82,50 @@ namespace pathos {
 	}
 
 }
+
+namespace pathos {
+
+	BufferPool::~BufferPool() {
+		releaseGPUResource();
+	}
+
+	void BufferPool::createGPUResource(uint64 totalBytes, const char* debugName, bool flushGPU /*= false*/) {
+		CHECK(internalBuffer == nullptr);
+		if (internalBuffer == nullptr) {
+			CHECKF(totalBytes <= 0xffffffff, "totalBytes can't exceed uint32 max yet... need to refactor Buffer class");
+			BufferCreateParams createParams{ EBufferUsage::CpuWrite, (uint32)totalBytes, nullptr, debugName };
+			internalBuffer = new Buffer(createParams);
+			internalBuffer->createGPUResource(flushGPU);
+			mallocEmulator.initialize(totalBytes);
+		}
+	}
+
+	void BufferPool::releaseGPUResource() {
+		if (internalBuffer != nullptr) {
+			internalBuffer->releaseGPUResource();
+			delete internalBuffer;
+			mallocEmulator.cleanup();
+		}
+	}
+
+	void BufferPool::writeToGPU(int64 offset, int64 size, void* data) {
+		internalBuffer->writeToGPU(offset, size, data);
+	}
+
+	void BufferPool::writeToGPU_renderThread(RenderCommandList& cmdList, int64 offset, int64 size, void* data) {
+		internalBuffer->writeToGPU_renderThread(cmdList, offset, size, data);
+	}
+
+	uint64 BufferPool::suballocate(uint64 bytes) {
+		return mallocEmulator.allocate(bytes);
+	}
+
+	void BufferPool::deallocate(uint64 offset) {
+		mallocEmulator.deallocate(offset);
+	}
+
+	GLuint BufferPool::internal_getGLName() const {
+		return internalBuffer->internal_getGLName();
+	}
+
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/util/malloc_emulator.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/enum.h"
@@ -59,7 +60,32 @@ namespace pathos {
 	/// #wip-bufferpool
 	/// </summary>
 	class BufferPool final : public Noncopyable {
-		//
+		
+	public:
+		// Let suballocate() return a BufferView?
+		//struct BufferView { uint64 offset, bytes; };
+		static constexpr uint64 INVALID_OFFSET = MallocEmulator::INVALID_OFFSET;
+
+		~BufferPool();
+
+		void createGPUResource(uint64 totalBytes, const char* debugName, bool flushGPU = false);
+		void releaseGPUResource();
+
+		void writeToGPU(int64 offset, int64 size, void* data);
+		void writeToGPU_renderThread(RenderCommandList& cmdList, int64 offset, int64 size, void* data);
+
+		/// Returns offset. If failed, returns BufferPool::INVALID_OFFSET.
+		uint64 suballocate(uint64 bytes);
+
+		/// offset should be a value that was returned from suballocate().
+		void deallocate(uint64 offset);
+
+		GLuint internal_getGLName() const;
+
+	private:
+		Buffer* internalBuffer = nullptr;
+		MallocEmulator mallocEmulator;
+
 	};
 
 }
