@@ -1,6 +1,6 @@
 #include "pathos/mesh/geometry.h"
-#include "pathos/util/log.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
 #include <vector>
@@ -15,9 +15,7 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
-	MeshGeometry::MeshGeometry()
-		: drawArraysMode(false)
-	{
+	MeshGeometry::MeshGeometry() {
 	}
 
 	MeshGeometry::~MeshGeometry() {
@@ -31,13 +29,15 @@ namespace pathos {
 			if (drawArraysMode) {
 				cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
 			} else {
-				cmdList.drawElements(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0);
+				const uintptr_t indexOffsetBytes = (uintptr_t)indexBufferOffset;
+				cmdList.drawElements(GL_TRIANGLES, (GLsizei)getIndexCount(), GL_UNSIGNED_INT, (void*)indexOffsetBytes);
 			}
 		} else {
 			if (drawArraysMode) {
 				cmdList.drawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)positionData.size(), instanceCount);
 			} else {
-				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0, instanceCount);
+				const uintptr_t indexOffsetBytes = (uintptr_t)indexBufferOffset;
+				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)getIndexCount(), GL_UNSIGNED_INT, (void*)indexOffsetBytes, instanceCount);
 			}
 		}
 	}
@@ -160,25 +160,31 @@ namespace pathos {
 		}
 		enqueueBufferUpload(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data());
 	}
+
 	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
 		indexData.assign(data, data + length);
-		if (!indexBuffer) {
-			indexBuffer = createBufferHelper("Buffer_index");
+
+		BufferPool* indexBufferPool = gRenderDevice->getIndexBufferPool();
+		const uint64 requestedBytes = length * sizeof(GLuint);
+
+		if (indexBufferOffset != BufferPool::INVALID_OFFSET && indexBufferBytes != requestedBytes) {
+			indexBufferPool->deallocate(indexBufferOffset);
 		}
-		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
+		indexBufferOffset = indexBufferPool->suballocate(requestedBytes);
+		indexBufferBytes = requestedBytes;
+		CHECKF(indexBufferOffset != BufferPool::INVALID_OFFSET, "Failed to suballocate from index buffer pool");
+
+		indexBufferPool->writeToGPU((int64)indexBufferOffset, (int64)indexBufferBytes, (void*)data);
 	}
+
 	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
-		indexData.resize(length);
-		for (uint32 i = 0; i < length; ++i) {
-			indexData[i] = (GLuint)data[i];
-		}
-		if (!indexBuffer) {
-			indexBuffer = createBufferHelper("Buffer_index");
-		}
-		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
+		std::vector<GLuint> tempData(length);
+		for (uint32 i = 0; i < length; ++i) tempData[i] = (GLuint)data[i]; // #todo-geometry: Support 16-bit index buffer
+		updateIndexData(tempData.data(), length);
 	}
 
 	void MeshGeometry::activateIndexBuffer(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 	}
 	void MeshGeometry::deactivateIndexBuffer(RenderCommandList& cmdList) {
@@ -312,7 +318,6 @@ namespace pathos {
 		if (normalBuffer != 0)    VBO.push_back(normalBuffer);
 		if (tangentBuffer != 0)   VBO.push_back(tangentBuffer);
 		if (bitangentBuffer != 0) VBO.push_back(bitangentBuffer);
-		if (indexBuffer != 0)     VBO.push_back(indexBuffer);
 		// #todo-lifecycle: Should manage lifecycle of GL resources
 		//gRenderDevice->deleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
 
@@ -324,6 +329,11 @@ namespace pathos {
 		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
 		// #todo-lifecycle: Should manage lifecycle of GL resources
 		//gRenderDevice->deleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
+
+		if (indexBufferOffset != BufferPool::INVALID_OFFSET) {
+			gRenderDevice->getIndexBufferPool()->deallocate(indexBufferOffset);
+			indexBufferOffset = BufferPool::INVALID_OFFSET;
+		}
 	}
 
 	struct VAOElement {
@@ -378,12 +388,14 @@ namespace pathos {
 	}
 
 	void MeshGeometry::createVAO_position(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		createVAO(cmdList, indexBuffer, &vao_position, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
 		}, "VAO_position");
 	}
 
 	void MeshGeometry::createVAO_position_uv(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		createVAO(cmdList, indexBuffer, &vao_position_uv, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
 			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) }
@@ -391,6 +403,7 @@ namespace pathos {
 	}
 
 	void MeshGeometry::createVAO_position_normal(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		createVAO(cmdList, indexBuffer, &vao_position_normal, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
 			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
@@ -398,6 +411,7 @@ namespace pathos {
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		createVAO(cmdList, indexBuffer, &vao_position_uv_normal, {
 			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
 			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) },
@@ -406,6 +420,7 @@ namespace pathos {
 	}
 
 	void MeshGeometry::createVAO_position_uv_normal_tangent_bitangent(RenderCommandList& cmdList) {
+		GLuint indexBuffer = gRenderDevice->getIndexBufferPool()->internal_getGLName(); // #wip-index
 		createVAO(cmdList, indexBuffer, &vao_position_uv_normal_tangent_bitangent, {
 			{ positionBuffer,  positionLocation,  3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
 			{ uvBuffer,        uvLocation,        2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) },

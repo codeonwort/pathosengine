@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/rhi/render_command_list.h"
 
 #include "badger/types/vector_types.h"
@@ -31,12 +32,13 @@ namespace pathos {
 		// - GL uses GLsizeiptr(int64), but I'm restricting to uint32.
 		// - 'length' can be confusing. It means the number of elements, not total bytes.
 		void updatePositionData(const GLfloat* data, uint32 length);
-		void updateIndexData(const GLuint* data, uint32 length);
-		void updateIndex16Data(const uint16* data, uint32 length);
 		void updateUVData(const GLfloat* data, uint32 length, bool bFlipY = false);
 		void updateNormalData(const GLfloat* data, uint32 length);
 		void updateTangentData(const GLfloat* data, uint32 length);
 		void updateBitangentData(const GLfloat* data, uint32 length);
+
+		void updateIndexData(const GLuint* data, uint32 length);
+		void updateIndex16Data(const uint16* data, uint32 length);
 
 		void calculateNormals();
 		void calculateTangentBasis();
@@ -77,18 +79,21 @@ namespace pathos {
 		std::vector<vector3> tangentData;
 		std::vector<vector3> bitangentData;
 
-		// #todo-vao: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
+		// #todo-geometry: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
 		std::vector<GLuint>  indexData;
 
 		AABB localBounds;
 
-		// VBOs
+		// Vertex buffer
 		GLuint positionBuffer  = 0;
 		GLuint uvBuffer        = 0;
 		GLuint normalBuffer    = 0;
 		GLuint tangentBuffer   = 0;
 		GLuint bitangentBuffer = 0;
-		GLuint indexBuffer     = 0;
+		
+		// Index buffer (suballocated from global index buffer pool)
+		uint64 indexBufferOffset = BufferPool::INVALID_OFFSET;
+		uint64 indexBufferBytes = 0;
 
 		// VAOs
 		GLuint vao_position                             = 0;
@@ -97,7 +102,7 @@ namespace pathos {
 		GLuint vao_position_uv_normal                   = 0;
 		GLuint vao_position_uv_normal_tangent_bitangent = 0;
 
-		bool drawArraysMode; // use glDrawArrays() if true. use glDrawElements() if false. (default: false)
+		bool drawArraysMode = false; // If true, use glDrawArrays(). Otherwise, use glDrawElements().
 	};
 
 }
