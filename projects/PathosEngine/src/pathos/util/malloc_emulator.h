@@ -44,6 +44,7 @@ namespace pathos {
 
 	private:
 		Range* merge(Range* node);
+		void debugTopology();
 
 		Range* root = nullptr;
 		uint64 remainingBytes = 0;
