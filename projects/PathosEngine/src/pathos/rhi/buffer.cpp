@@ -46,7 +46,7 @@ namespace pathos {
 
 	void Buffer::releaseGPUResource() {
 		if (glBuffer != 0) {
-			ENQUEUE_RENDER_COMMAND([buf = glBuffer](RenderCommandList& cmdList) {
+			ENQUEUE_DEFERRED_RENDER_COMMAND([buf = glBuffer](RenderCommandList& cmdList) {
 				cmdList.registerDeferredBufferCleanup(buf);
 			});
 			glBuffer = 0;
@@ -67,7 +67,7 @@ namespace pathos {
 
 	void Buffer::writeToGPU_renderThread(RenderCommandList& cmdList, int64 offset, int64 size, void* data) {
 		CHECK(isInRenderThread());
-		CHECK(size + offset < createParams.bufferSize);
+		CHECK(size + offset <= createParams.bufferSize);
 		CHECK(glBuffer != 0);
 		CHECK(ENUM_HAS_FLAG(createParams.usage, EBufferUsage::CpuWrite));
 		cmdList.namedBufferSubData(glBuffer, offset, size, data);
@@ -117,10 +117,12 @@ namespace pathos {
 	}
 
 	uint64 BufferPool::suballocate(uint64 bytes) {
+		std::lock_guard<std::mutex> guard(allocMutex);
 		return mallocEmulator.allocate(bytes);
 	}
 
 	void BufferPool::deallocate(uint64 offset) {
+		std::lock_guard<std::mutex> guard(allocMutex);
 		mallocEmulator.deallocate(offset);
 	}
 

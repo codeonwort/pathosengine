@@ -62,7 +62,15 @@ namespace pathos {
 
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
 		//CHECK(isInMainThread());
+		if (isInRenderThread()) {
+			lambda(gRenderDevice->getImmediateCommandList());
+		} else {
+			gRenderDevice->getEarlyCommandList().registerHook(lambda);
+		}
+	}
 
+	void ENQUEUE_DEFERRED_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
+		//CHECK(isInMainThread());
 		if (isInRenderThread()) {
 			lambda(gRenderDevice->getImmediateCommandList());
 		} else {
@@ -141,11 +149,13 @@ namespace pathos {
 		checkExtensions();
 		queryCapabilities();
 
-		// #todo-renderthread: Wanna get rid of deferred_command_list :/
+		// #todo-renderthread: Wanna unify command lists
 		// Create command lists
+		early_command_list = makeUnique<RenderCommandList>("early");
 		immediate_command_list = makeUnique<RenderCommandList>("immediate");
 		deferred_command_list = makeUnique<RenderCommandList>("deferred");
 		hook_command_list = makeUnique<RenderCommandList>("hook");
+		early_command_list->setHookCommandList(hook_command_list.get());
 		immediate_command_list->setHookCommandList(hook_command_list.get());
 		deferred_command_list->setHookCommandList(hook_command_list.get());
 

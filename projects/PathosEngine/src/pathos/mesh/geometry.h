@@ -69,6 +69,9 @@ namespace pathos {
 		void calculateNormals_array();
 		void calculateNormals_indexed();
 
+		void bufferUploadHelper(Buffer*& targetBuffer, const char* debugName, GLsizeiptr size, void* data);
+		void disposeVAO();
+
 	public:
 		bool bCalculateLocalBounds = true;
 
@@ -88,13 +91,15 @@ namespace pathos {
 	// For GPU
 	private:
 		// Position buffer (suballocated from global position buffer pool)
-		GLuint positionBuffer  = 0;
+		// #wip: Temp use Buffer. Gotta replace with buffer pool.
+		Buffer* positionBuffer = nullptr;
 
 		// Varying buffer (suballocated from global varying buffer pool)
-		GLuint uvBuffer        = 0;
-		GLuint normalBuffer    = 0;
-		GLuint tangentBuffer   = 0;
-		GLuint bitangentBuffer = 0;
+		// #wip: Temp use Buffer. Gotta replace with buffer pool.
+		Buffer* uvBuffer        = nullptr;
+		Buffer* normalBuffer    = nullptr;
+		Buffer* tangentBuffer   = nullptr;
+		Buffer* bitangentBuffer = nullptr;
 		
 		// Index buffer (suballocated from global index buffer pool)
 		uint64 indexBufferOffset = BufferPool::INVALID_OFFSET;

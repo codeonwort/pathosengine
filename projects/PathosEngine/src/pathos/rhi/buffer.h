@@ -8,6 +8,7 @@
 #include "badger/types/enum.h"
 #include "badger/assertion/assertion.h"
 #include <string>
+#include <mutex>
 
 namespace pathos {
 
@@ -56,10 +57,7 @@ namespace pathos {
 		bool created = false;
 	};
 
-	/// <summary>
 	/// Create a single large buffer and suballocate it.
-	/// #wip-bufferpool
-	/// </summary>
 	class BufferPool final : public Noncopyable {
 		
 	public:
@@ -86,6 +84,7 @@ namespace pathos {
 	private:
 		Buffer* internalBuffer = nullptr;
 		MallocEmulator mallocEmulator;
+		std::mutex allocMutex; // #wip-bufferpool: Do I need this?
 
 	};
 

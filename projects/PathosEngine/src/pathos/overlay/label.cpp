@@ -29,7 +29,10 @@ namespace pathos {
 	}
 
 	Label::~Label() {
-		delete geometry;
+		ENQUEUE_DEFERRED_RENDER_COMMAND([geometry = this->geometry](RenderCommandList& cmdList) {
+			// Should be called after UI rendering.
+			cmdList.registerDeferredCleanup(geometry);
+		});
 	}
 
 	DisplayObject2DProxy* Label::createRenderProxy(OverlaySceneProxy* sceneProxy) {

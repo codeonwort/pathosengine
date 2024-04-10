@@ -21,7 +21,6 @@ namespace pathos {
 
 	uint64 MallocEmulator::allocate(uint64 bytes) {
 		CHECK(root != nullptr && bytes > 0);
-
 		std::vector<Range*> Q{ root };
 		Range* node = nullptr;
 		while (!Q.empty()) {
@@ -52,7 +51,6 @@ namespace pathos {
 			node->markResident();
 			finalOffset = node->offset;
 		}
-		debugTopology();
 		return finalOffset;
 	}
 
@@ -67,7 +65,7 @@ namespace pathos {
 					node = node->left;
 				}
 			} else if (node->offset < offset) {
-				node = node->right;
+				node = (node->right->offset <= offset) ? node->right : node->left;
 			} else {
 				CHECK_NO_ENTRY();
 				return;
@@ -97,6 +95,9 @@ namespace pathos {
 			if (node->isResident()) CHECKF(node->hasChild() == false, "resident can't have children");
 			if (node->hasChild()) {
 				CHECKF(node->isResident() == false, "parent can't be resident");
+				CHECK(node->offset == node->left->offset);
+				CHECK(node->left->parent == node);
+				CHECK(node->right->parent == node);
 				Q.push_back(Temp{ node->left, node->offset, node->left->bytes });
 				Q.push_back(Temp{ node->right, node->offset + node->left->bytes, node->bytes - node->left->bytes });
 			}
@@ -145,7 +146,6 @@ namespace pathos {
 					// Both parent->right and parent->left->right are not resident. Merge them.
 					Range* node2 = parent->left;
 					reparent(parent, node2->left, node2->right);
-					CHECK(parent->right->offset == parent->left->offset + parent->left->bytes);
 					parent->right->bytes = parent->bytes - parent->left->bytes;
 					delete node;
 					delete node2;
@@ -166,7 +166,6 @@ namespace pathos {
 				return nullptr;
 			}
 		}
-		debugTopology();
 	}
 
 	void MallocEmulator::cleanup() {

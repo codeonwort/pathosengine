@@ -110,7 +110,7 @@ namespace pathos {
 			if (it.second.roughnessBlob != nullptr) blobsToDestroy.insert(it.second.roughnessBlob);
 			if (it.second.metallicBlob != nullptr) blobsToDestroy.insert(it.second.metallicBlob);
 		}
-		ENQUEUE_RENDER_COMMAND([blobsToDestroy](RenderCommandList& cmdList) {
+		ENQUEUE_DEFERRED_RENDER_COMMAND([blobsToDestroy](RenderCommandList& cmdList) {
 			for (ImageBlob* blob : blobsToDestroy) {
 				cmdList.registerDeferredCleanup(blob);
 			}

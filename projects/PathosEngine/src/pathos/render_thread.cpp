@@ -74,11 +74,17 @@ namespace pathos {
 
 			Renderer* renderer = renderThread->renderer;
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
+			RenderCommandList& earlyContext = gRenderDevice->getEarlyCommandList();
 			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 
 			const EngineConfig engineConfig(gEngine->getConfig());
 			const int32 screenWidth = engineConfig.windowWidth;
 			const int32 screenHeight = engineConfig.windowHeight;
+
+			{
+				SCOPED_CPU_COUNTER(ExecuteEarlyCommands);
+				earlyContext.flushAllCommands();
+			}
 
 			GLuint64 gpu_elapsed_ns;
 			immediateContext.beginQuery(GL_TIME_ELAPSED, renderThread->gpuTimerQuery);
@@ -123,8 +129,6 @@ namespace pathos {
 						renderer->setFinalRenderTargetToBackbuffer();
 					}
 				}
-
-				deferredContext.flushAllCommands();
 
 				// Renderer will add more immediate commands
 				if (renderer && sceneProxy) {
@@ -320,8 +324,10 @@ namespace pathos {
 		// Cleanup thread main
 		{
 			RenderCommandList& immediateContext = gRenderDevice->getImmediateCommandList();
+			RenderCommandList& earlyContext = gRenderDevice->getEarlyCommandList();
 			RenderCommandList& deferredContext = gRenderDevice->getDeferredCommandList();
 			CHECKF(immediateContext.isEmpty(), "Immediate command list is not empty");
+			CHECKF(earlyContext.isEmpty(), "Early command list is not empty");
 			CHECKF(deferredContext.isEmpty(), "Deferred command list is not empty");
 		}
 

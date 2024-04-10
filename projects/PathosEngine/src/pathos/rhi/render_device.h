@@ -72,6 +72,7 @@ namespace pathos {
 		// #todo-renderthread: I messed it up :/ Can I unify them?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		// Used for queueing commands from non-render threads.
+		__forceinline RenderCommandList& getEarlyCommandList() const { return *early_command_list.get(); }
 		__forceinline RenderCommandList& getDeferredCommandList() const { return *deferred_command_list.get(); }
 		// Due to hooks appending commands at the rear of immediate list and messing up command order,
 		// we pass a dedicated list to the current hook and immediately flush it. Dirty but at least does not fuck up the order.
@@ -116,6 +117,7 @@ namespace pathos {
 		OpenGLDriverCapabilities capabilities;
 		OpenGLExtensionSupport extensionSupport;
 
+		uniquePtr<RenderCommandList> early_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> immediate_command_list; // For render thread itself
 		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> hook_command_list;
@@ -131,8 +133,11 @@ namespace pathos {
 
 namespace pathos {
 
-	// Reserve a render command from the game thread.
+	// Reserve a render command from the game thread. The command is executed BEFORE frame rendering.
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda);
+
+	// Reserve a render command from the game thread. The command is executed AFTER frame rendering.
+	void ENQUEUE_DEFERRED_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda);
 
 	// Block the game thread until all render commands so far are finished.
 	// CAUTION: Use only if must. Never use inside of game tick.
