@@ -146,8 +146,10 @@ namespace pathos {
 		while (!Q.empty()) {
 			auto node = Q[Q.size() - 1];
 			Q.pop_back();
-			if (node->left != nullptr) Q.push_back(node->left);
-			if (node->right != nullptr) Q.push_back(node->right);
+			if (node->hasChild()) {
+				Q.push_back(node->left);
+				Q.push_back(node->right);
+			}
 			delete node;
 		}
 		root = nullptr;
