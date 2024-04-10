@@ -1,7 +1,8 @@
 #include "render_device.h"
 #include "pathos/rhi/gl_context_manager.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/gl_live_objects.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/util/log.h"
 #include "pathos/console.h"
 
@@ -55,6 +56,8 @@ namespace pathos {
 
 	// NOTE: Should be set in EngineConfig.ini to be effective.
 	static ConsoleVariable<int32> cvarDumpGLDevice("r.dumpGLDevice", 0, "(read only) Dump GL device info to log/device_dump");
+	static ConsoleVariable<int32> cvarVertexBufferPoolSize("r.vertexBufferPoolSize", 64 * 1024 * 1024, "(read only) Size of global vertex buffer pool in bytes");
+	static ConsoleVariable<int32> cvarIndexBufferPoolSize("r.indexBufferPoolSize", 32 * 1024 * 1024, "(read only) Size of global vertex buffer pool in bytes");
 
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
 		//CHECK(isInMainThread());
@@ -117,6 +120,8 @@ namespace pathos {
 	}
 
 	OpenGLDevice::~OpenGLDevice() {
+		vertexBufferPool->releaseGPUResource();
+		indexBufferPool->releaseGPUResource();
 		delete gGLLiveObjects;
 	}
 
@@ -159,6 +164,11 @@ namespace pathos {
 		} else {
 			LOG(LogInfo, "[RenderDevice] VRAM: unknown (Both 'NVX_gpu_memory_info' and 'ATI_meminfo' extensions are missing)");
 		}
+
+		vertexBufferPool = new BufferPool;
+		vertexBufferPool->createGPUResource(cvarVertexBufferPoolSize.getInt(), "GVertexBufferPool");
+		indexBufferPool = new BufferPool;
+		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), "GIndexBufferPool");
 
 		return true;
 	}

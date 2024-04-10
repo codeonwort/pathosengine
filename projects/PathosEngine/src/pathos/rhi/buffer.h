@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/render_command_list.h"
 #include "pathos/util/malloc_emulator.h"
 
 #include "badger/types/noncopyable.h"

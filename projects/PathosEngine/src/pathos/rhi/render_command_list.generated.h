@@ -491,7 +491,7 @@ void drawElements(
 	packet->mode = mode;
 	packet->count = count;
 	packet->type = type;
-	packet->indices = indices;
+	packet->indices = (indices == nullptr) ? nullptr : storeParameter(sizeof(GLuint), indices);
 }
 void getPointerv(
 	GLenum pname,
