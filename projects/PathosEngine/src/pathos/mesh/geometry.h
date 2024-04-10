@@ -72,20 +72,25 @@ namespace pathos {
 	public:
 		bool bCalculateLocalBounds = true;
 
+	// For CPU
 	private:
 		std::vector<vector3> positionData;
 		std::vector<vector2> uvData;
 		std::vector<vector3> normalData;
 		std::vector<vector3> tangentData;
 		std::vector<vector3> bitangentData;
-
 		// #todo-geometry: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
 		std::vector<GLuint>  indexData;
 
 		AABB localBounds;
+		bool drawArraysMode = false; // If true, use glDrawArrays(). Otherwise, use glDrawElements().
 
-		// Vertex buffer
+	// For GPU
+	private:
+		// Position buffer (suballocated from global position buffer pool)
 		GLuint positionBuffer  = 0;
+
+		// Varying buffer (suballocated from global varying buffer pool)
 		GLuint uvBuffer        = 0;
 		GLuint normalBuffer    = 0;
 		GLuint tangentBuffer   = 0;
@@ -101,8 +106,6 @@ namespace pathos {
 		GLuint vao_position_normal                      = 0;
 		GLuint vao_position_uv_normal                   = 0;
 		GLuint vao_position_uv_normal_tangent_bitangent = 0;
-
-		bool drawArraysMode = false; // If true, use glDrawArrays(). Otherwise, use glDrawElements().
 	};
 
 }

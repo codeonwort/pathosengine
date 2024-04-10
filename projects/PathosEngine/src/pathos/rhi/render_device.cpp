@@ -56,7 +56,8 @@ namespace pathos {
 
 	// NOTE: Should be set in EngineConfig.ini to be effective.
 	static ConsoleVariable<int32> cvarDumpGLDevice("r.dumpGLDevice", 0, "(read only) Dump GL device info to log/device_dump");
-	static ConsoleVariable<int32> cvarVertexBufferPoolSize("r.vertexBufferPoolSize", 64 * 1024 * 1024, "(read only) Size of global vertex buffer pool in bytes");
+	static ConsoleVariable<int32> cvarPositionBufferPoolSize("r.positionBufferPoolSize", 32 * 1024 * 1024, "(read only) Size of global position buffer pool in bytes");
+	static ConsoleVariable<int32> cvarVaryingBufferPoolSize("r.varyingBufferPoolSize", 64 * 1024 * 1024, "(read only) Size of global varying buffer pool in bytes");
 	static ConsoleVariable<int32> cvarIndexBufferPoolSize("r.indexBufferPoolSize", 32 * 1024 * 1024, "(read only) Size of global vertex buffer pool in bytes");
 
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
@@ -120,7 +121,8 @@ namespace pathos {
 	}
 
 	OpenGLDevice::~OpenGLDevice() {
-		vertexBufferPool->releaseGPUResource();
+		positionBufferPool->releaseGPUResource();
+		varyingBufferPool->releaseGPUResource();
 		indexBufferPool->releaseGPUResource();
 		delete gGLLiveObjects;
 	}
@@ -165,8 +167,10 @@ namespace pathos {
 			LOG(LogInfo, "[RenderDevice] VRAM: unknown (Both 'NVX_gpu_memory_info' and 'ATI_meminfo' extensions are missing)");
 		}
 
-		vertexBufferPool = new BufferPool;
-		vertexBufferPool->createGPUResource(cvarVertexBufferPoolSize.getInt(), "GVertexBufferPool");
+		positionBufferPool = new BufferPool;
+		positionBufferPool->createGPUResource(cvarPositionBufferPoolSize.getInt(), "GPositionBufferPool");
+		varyingBufferPool = new BufferPool;
+		varyingBufferPool->createGPUResource(cvarVaryingBufferPoolSize.getInt(), "GVaryingBufferPool");
 		indexBufferPool = new BufferPool;
 		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), "GIndexBufferPool");
 

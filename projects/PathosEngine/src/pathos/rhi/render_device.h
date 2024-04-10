@@ -105,7 +105,8 @@ namespace pathos {
 
 		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
-		inline BufferPool* getVertexBufferPool() const { return vertexBufferPool; }
+		inline BufferPool* getPositionBufferPool() const { return positionBufferPool; }
+		inline BufferPool* getVaryingBufferPool() const { return varyingBufferPool; }
 		inline BufferPool* getIndexBufferPool() const { return indexBufferPool; }
 
 	private:
@@ -119,7 +120,8 @@ namespace pathos {
 		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> hook_command_list;
 
-		BufferPool* vertexBufferPool = nullptr; // Global vertex buffer pool
+		BufferPool* positionBufferPool = nullptr; // Global position-only vertex buffer pool
+		BufferPool* varyingBufferPool = nullptr; // Global non-position vertex buffer pool (normal, texcoord, ...)
 		BufferPool* indexBufferPool = nullptr; // Global index buffer pool
 	};
 
