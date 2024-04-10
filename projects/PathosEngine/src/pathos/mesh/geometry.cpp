@@ -166,13 +166,16 @@ namespace pathos {
 
 		BufferPool* indexBufferPool = gRenderDevice->getIndexBufferPool();
 		const uint64 requestedBytes = length * sizeof(GLuint);
+		CHECK(requestedBytes != 0);
 
-		if (indexBufferOffset != BufferPool::INVALID_OFFSET && indexBufferBytes != requestedBytes) {
-			indexBufferPool->deallocate(indexBufferOffset);
+		if (indexBufferOffset == BufferPool::INVALID_OFFSET || indexBufferBytes != requestedBytes) {
+			if (indexBufferOffset != BufferPool::INVALID_OFFSET) {
+				indexBufferPool->deallocate(indexBufferOffset);
+			}
+			indexBufferOffset = indexBufferPool->suballocate(requestedBytes);
+			indexBufferBytes = requestedBytes;
+			CHECKF(indexBufferOffset != BufferPool::INVALID_OFFSET, "Failed to suballocate from index buffer pool");
 		}
-		indexBufferOffset = indexBufferPool->suballocate(requestedBytes);
-		indexBufferBytes = requestedBytes;
-		CHECKF(indexBufferOffset != BufferPool::INVALID_OFFSET, "Failed to suballocate from index buffer pool");
 
 		indexBufferPool->writeToGPU((int64)indexBufferOffset, (int64)indexBufferBytes, (void*)data);
 	}
