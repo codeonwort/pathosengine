@@ -28,6 +28,8 @@ namespace pathos {
 
 		void initialize(uint64 totalBytes);
 
+		void cleanup();
+
 		/// Returns offset.
 		uint64 allocate(uint64 bytes);
 
@@ -42,10 +44,8 @@ namespace pathos {
 
 	private:
 		Range* merge(Range* node);
-		void cleanup();
 
 		Range* root = nullptr;
-
 		uint64 remainingBytes = 0;
 		uint64 numAllocations = 0;
 

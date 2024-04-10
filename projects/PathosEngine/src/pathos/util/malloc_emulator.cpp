@@ -5,7 +5,9 @@
 namespace pathos {
 
 	MallocEmulator::~MallocEmulator() {
-		cleanup();
+		if (root != nullptr) {
+			cleanup();
+		}
 	}
 
 	void MallocEmulator::initialize(uint64 totalBytes) {
@@ -32,13 +34,18 @@ namespace pathos {
 		if (node->bytes < bytes) {
 			return INVALID_OFFSET;
 		}
-		node->left = new Range{ node->offset, bytes, nullptr, nullptr, node };
-		node->left->markResident();
-		node->right = new Range{ node->offset + bytes, node->bytes - bytes, nullptr, nullptr, node };
 
-		numAllocations += 2;
-
-		return node->left->offset;
+		// If node is bigger than requested then split.
+		if (node->bytes > bytes) {
+			node->left = new Range{ node->offset, bytes, nullptr, nullptr, node };
+			node->left->markResident();
+			node->right = new Range{ node->offset + bytes, node->bytes - bytes, nullptr, nullptr, node };
+			numAllocations += 2;
+			return node->left->offset;
+		}
+		// If exact-fit then use the node.
+		node->markResident();
+		return node->offset;
 	}
 
 	void MallocEmulator::deallocate(uint64 offset) {
