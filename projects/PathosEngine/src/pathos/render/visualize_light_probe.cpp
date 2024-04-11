@@ -72,7 +72,8 @@ namespace pathos {
 	VisualizeLightProbePass::~VisualizeLightProbePass() {}
 
 	void VisualizeLightProbePass::initializeResources(RenderCommandList& cmdList) {
-		sphereGeom = new SphereGeometry(1.0f, 20);
+		auto attribs = EPrimitiveInitOptions::CalculatePosition | EPrimitiveInitOptions::CalculateUV | EPrimitiveInitOptions::CalculateNormal;
+		sphereGeom = new SphereGeometry(1.0f, 20, attribs);
 
 		gRenderDevice->createFramebuffers(1, &fbo);
 
@@ -186,8 +187,7 @@ namespace pathos {
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		uint32 instanceCount = totalIrradianceProbes + uboData.numReflectionProbes;
-		sphereGeom->activate_position_normal(cmdList);
-		sphereGeom->activateIndexBuffer(cmdList);
+		sphereGeom->bindFullAttributesVAO(cmdList);
 		sphereGeom->drawPrimitive(cmdList, instanceCount);
 
 		cmdList.disable(GL_DEPTH_TEST);

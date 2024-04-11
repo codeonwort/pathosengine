@@ -261,8 +261,7 @@ namespace pathos {
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, lut, 0);
 		cmdList.viewport(0, 0, LUT_WIDTH, LUT_HEIGHT);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		LOG(LogDebug, "[SkyAtmosphere] Generate transmittance LUT");

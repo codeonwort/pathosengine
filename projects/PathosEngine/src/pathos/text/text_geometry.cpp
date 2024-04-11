@@ -11,6 +11,12 @@
 
 namespace pathos {
 
+	TextGeometry::TextGeometry() {
+		// #wip-performance: Maybe pos + uv are enough for TextGeometry?
+		//initializeVertexLayout(EVertexAttributes::Position | EVertexAttributes::Uv);
+		initializeVertexLayout(EVertexAttributes::All);
+	}
+
 	void TextGeometry::configure(
 		RenderCommandList& cmdList,
 		FontTextureCache& cache,

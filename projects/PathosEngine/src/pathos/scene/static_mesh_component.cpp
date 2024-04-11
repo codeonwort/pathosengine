@@ -5,7 +5,7 @@
 
 namespace pathos {
 
-	AABB calculateWorldBounds(const AABB& localBounds, const matrix4& localToWorld) {
+	static AABB calculateWorldBounds(const AABB& localBounds, const matrix4& localToWorld) {
 		vector3 minB = localBounds.minBounds;
 		vector3 maxB = localBounds.maxBounds;
 		vector3 vs[8];

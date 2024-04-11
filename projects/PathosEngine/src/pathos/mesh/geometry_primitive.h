@@ -3,16 +3,21 @@
 #include "geometry.h"
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
+#include "badger/types/enum.h"
 
 namespace pathos {
 
-	enum EPrimitiveInitOptions : uint32 {
+	enum class EPrimitiveInitOptions : uint32 {
 		None                     = 0,
-		CalculateTangentBasis    = 1 << 0,
+		CalculatePosition        = 1 << 0,
+		CalculateUV              = 1 << 1,
+		CalculateNormal          = 1 << 2,
+		CalculateTangentBasis    = 1 << 3,
 
-		Default                  = CalculateTangentBasis,
+		Default                  = CalculatePosition | CalculateUV | CalculateNormal | CalculateTangentBasis,
 		All                      = 0xffffffff
 	};
+	ENUM_CLASS_FLAGS(EPrimitiveInitOptions);
 
 	class PlaneGeometry : public MeshGeometry {
 	public:

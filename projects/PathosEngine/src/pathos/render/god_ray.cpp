@@ -227,8 +227,7 @@ namespace pathos {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
 			cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.useProgram(program_vertical.getGLName());
@@ -257,11 +256,9 @@ namespace pathos {
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
-		meshProxy->geometry->activate_position(cmdList);
-		meshProxy->geometry->activateIndexBuffer(cmdList);
+		meshProxy->geometry->bindPositionOnlyVAO(cmdList);
 		meshProxy->geometry->drawPrimitive(cmdList);
-		meshProxy->geometry->deactivate(cmdList);
-		meshProxy->geometry->deactivateIndexBuffer(cmdList);
+		meshProxy->geometry->unbindVAO(cmdList);
 
 		if (wireframe) {
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);

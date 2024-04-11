@@ -28,7 +28,7 @@ namespace pathos {
 				const BufferCreateParams& createParams = This->getCreateParams();
 				const GLuint glBuffer = This->glBuffer;
 
-				// #wip: Persistent mapping instead of GL_DYNAMIC_STORAGE_BIT
+				// #wip-performance: Persistent mapping instead of GL_DYNAMIC_STORAGE_BIT
 				// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferStorage.xhtml
 				GLenum usage = 0;
 				if (ENUM_HAS_FLAG(createParams.usage, EBufferUsage::CpuWrite)) usage |= GL_DYNAMIC_STORAGE_BIT;
@@ -54,7 +54,7 @@ namespace pathos {
 	}
 
 	void Buffer::writeToGPU(int64 offset, int64 size, void* data) {
-		// #wip: unnecessary copy
+		// #wip-performance: unnecessary copy
 		auto This = this;
 		void* data2 = std::malloc(size);
 		CHECK(data2 != 0);

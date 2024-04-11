@@ -150,8 +150,7 @@ namespace pathos {
 					uboData.model = batch->modelMatrix;
 					ubo.update(cmdList, UBO_OmniShadow::BINDING_POINT, &uboData);
 					
-					batch->geometry->activate_position(cmdList);
-					batch->geometry->activateIndexBuffer(cmdList);
+					batch->geometry->bindPositionOnlyVAO(cmdList);
 					batch->geometry->drawPrimitive(cmdList);
 				}
 			}

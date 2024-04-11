@@ -163,8 +163,7 @@ namespace pathos {
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
-		skybox->cube->activate_position(cmdList);
-		skybox->cube->activateIndexBuffer(cmdList);
+		skybox->cube->bindPositionOnlyVAO(cmdList);
 		skybox->cube->drawPrimitive(cmdList);
 
 		cmdList.cullFace(GL_BACK);
@@ -182,8 +181,7 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_FRONT);
 
-		cubeGeometry->activate_position(cmdList);
-		cubeGeometry->activateIndexBuffer(cmdList);
+		cubeGeometry->bindPositionOnlyVAO(cmdList);
 
 		for (int32 i = 0; i < 6; ++i) {
 			cmdList.namedFramebufferTextureLayer(fboCube, GL_COLOR_ATTACHMENT0, scratchCubemapTexture, 0, i);

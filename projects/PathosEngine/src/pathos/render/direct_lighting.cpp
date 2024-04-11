@@ -155,8 +155,7 @@ namespace pathos {
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
@@ -186,8 +185,7 @@ namespace pathos {
 
 				// #todo-light: Local lights usually do not cover the entire viewport.
 				// Need to adjust raster region in vertex shader.
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
@@ -215,8 +213,7 @@ namespace pathos {
 
 				// #todo-light: Local lights usually do not cover the entire viewport.
 				// Need to adjust raster region in vertex shader.
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}

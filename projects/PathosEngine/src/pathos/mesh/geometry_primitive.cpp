@@ -4,6 +4,28 @@
 
 namespace pathos {
 
+	static MeshGeometry::EVertexAttributes toVertexAttributes(EPrimitiveInitOptions initOptions) {
+		MeshGeometry::EVertexAttributes attributes = MeshGeometry::EVertexAttributes::None;
+		if (ENUM_HAS_FLAG(initOptions, EPrimitiveInitOptions::CalculatePosition)) {
+			attributes |= MeshGeometry::EVertexAttributes::Position;
+		}
+		if (ENUM_HAS_FLAG(initOptions, EPrimitiveInitOptions::CalculateUV)) {
+			attributes |= MeshGeometry::EVertexAttributes::Uv;
+		}
+		if (ENUM_HAS_FLAG(initOptions, EPrimitiveInitOptions::CalculateNormal)) {
+			attributes |= MeshGeometry::EVertexAttributes::Normal;
+		}
+		if (ENUM_HAS_FLAG(initOptions, EPrimitiveInitOptions::CalculateTangentBasis)) {
+			attributes |= MeshGeometry::EVertexAttributes::Tangent;
+			attributes |= MeshGeometry::EVertexAttributes::Bitangent;
+		}
+		return attributes;
+	}
+
+}
+
+namespace pathos {
+
 	/////////////////////////////////////////////////////////////////////////////////////
 	// PlaneGeometry
 	PlaneGeometry::PlaneGeometry(
@@ -16,8 +38,9 @@ namespace pathos {
 		, gridX(inGridX)
 		, gridY(inGridY)
 	{
+		initializeVertexLayout(toVertexAttributes(options));
 		buildGeometry(direction);
-		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
 			calculateTangentBasis();
 		}
 	}
@@ -93,8 +116,9 @@ namespace pathos {
 		EPrimitiveInitOptions options)
 		: halfSize(inHalfSize)
 	{
+		initializeVertexLayout(toVertexAttributes(options));
 		buildGeometry(smoothing);
-		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
 			calculateTangentBasis();
 		}
 	}
@@ -221,8 +245,9 @@ namespace pathos {
 		: radius(inRadius)
 		, division(inDivision)
 	{
+		initializeVertexLayout(toVertexAttributes(options));
 		buildGeometry();
-		if (options & EPrimitiveInitOptions::CalculateTangentBasis) {
+		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
 			calculateTangentBasis();
 		}
 	}

@@ -84,8 +84,7 @@ namespace pathos {
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, dstTexture, 0);
 				cmdList.bindTextureUnit(0, srcTexture);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 
 				viewportWidth /= 2;
@@ -118,8 +117,7 @@ namespace pathos {
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, dstTexture, 0);
 				cmdList.bindTextureUnit(0, srcTexture);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
 

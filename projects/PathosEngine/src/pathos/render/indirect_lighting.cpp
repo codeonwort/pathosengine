@@ -232,8 +232,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		// Fix a strange bug that IBL maps are randomly persistent across worlds.

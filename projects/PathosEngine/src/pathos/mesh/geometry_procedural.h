@@ -9,7 +9,9 @@ namespace pathos {
 	class ProceduralGeometry : public MeshGeometry {
 		
 	public:
-		ProceduralGeometry() {}
+		ProceduralGeometry() {
+			initializeVertexLayout(EVertexAttributes::All);
+		}
 		~ProceduralGeometry() {}
 
 		void clear() {

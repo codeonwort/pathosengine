@@ -145,8 +145,7 @@ namespace pathos {
 				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
 				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				
-				proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
-				proxy->geometry->activateIndexBuffer(cmdList);
+				proxy->geometry->bindFullAttributesVAO(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
 
 				// #todo-renderer: Batching by same state

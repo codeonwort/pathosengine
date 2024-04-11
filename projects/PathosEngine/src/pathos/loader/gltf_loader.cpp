@@ -338,7 +338,9 @@ namespace pathos {
 			// For each mesh section
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {
 				const tinygltf::Primitive& tinyPrim = tinyMesh.primitives[primIx];
+
 				MeshGeometry* geometry = new MeshGeometry;
+				geometry->initializeVertexLayout(MeshGeometry::EVertexAttributes::All, true);
 				Material* material = fallbackMaterial;
 
 				// #todo-gltf: Temp ignore mesh sections with unsupported materials.

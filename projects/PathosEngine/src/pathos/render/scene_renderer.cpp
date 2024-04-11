@@ -397,8 +397,7 @@ namespace pathos {
 
 			sceneAfterLastPP = sceneRenderTargets->sceneColor;
 
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 
 			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
 			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
@@ -613,11 +612,9 @@ namespace pathos {
 		}
 		cmdList.viewport(0, 0, targetWidth, targetHeight);
 		cmdList.bindTextureUnit(0, source);
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
-		fullscreenQuad->deactivate(cmdList);
-		fullscreenQuad->deactivateIndexBuffer(cmdList);
+		fullscreenQuad->unbindVAO(cmdList);
 	}
 
 	GLuint SceneRenderer::getFinalRenderTarget() const {

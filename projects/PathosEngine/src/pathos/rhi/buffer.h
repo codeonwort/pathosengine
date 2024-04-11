@@ -27,8 +27,7 @@ namespace pathos {
 
 	/// <summary>
 	/// Wrapper for GPU buffer resource.
-	/// A Buffer instance maps to an individual VBO, so consider using BufferPool instead
-	/// #wip: Replace UniformBuffer and vertex/index buffers with this?
+	/// A Buffer instance maps to an individual VBO, so consider using BufferPool instead.
 	/// </summary>
 	class Buffer final : public Noncopyable {
 
@@ -84,7 +83,7 @@ namespace pathos {
 	private:
 		Buffer* internalBuffer = nullptr;
 		MallocEmulator mallocEmulator;
-		std::mutex allocMutex; // #wip-bufferpool: Do I need this?
+		std::mutex allocMutex; // #wip-performance: Do I need this?
 
 	};
 
