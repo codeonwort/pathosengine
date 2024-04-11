@@ -41,13 +41,12 @@ namespace pathos {
 	}
 
 	void MeshGeometry::dispose() {
-		if (uvBuffer != nullptr) delete uvBuffer;
-		if (normalBuffer != nullptr) delete normalBuffer;
-		if (tangentBuffer != nullptr) delete tangentBuffer;
-		if (bitangentBuffer != nullptr) delete bitangentBuffer;
-
 		disposeVAO();
 		releaseBuffer(positionBuffer);
+		releaseBuffer(uvBuffer);
+		releaseBuffer(normalBuffer);
+		releaseBuffer(tangentBuffer);
+		releaseBuffer(bitangentBuffer);
 		releaseBuffer(indexBuffer);
 	}
 
@@ -61,12 +60,7 @@ namespace pathos {
 		positionData.resize(length / 3);
 		positionData.assign(data2, data2 + length / 3);
 
-		BufferPool* positionBufferPool = gRenderDevice->getPositionBufferPool();
-		const uint64 requestedBytes = length * sizeof(GLfloat);
-		CHECK(requestedBytes != 0);
-
-		reallocateBufferIfNeeded(positionBuffer, requestedBytes, positionBufferPool);
-		positionBufferPool->writeToGPU((int64)positionBuffer.offset, (int64)positionBuffer.bytes, positionData.data());
+		bufferUploadHelper(positionBuffer, length * sizeof(GLfloat), positionData.data(), gRenderDevice->getPositionBufferPool());
 
 		if (bCalculateLocalBounds) {
 			calculateLocalBounds();
@@ -81,12 +75,10 @@ namespace pathos {
 		uvData.resize(length / 2);
 		uvData.assign(data2, data2 + length / 2);
 		if (bFlipY) {
-			for (vector2& uv : uvData) {
-				uv.y = 1.0f - uv.y;
-			}
+			for (vector2& uv : uvData) uv.y = 1.0f - uv.y;
 		}
 
-		bufferUploadHelper(uvBuffer, "Buffer_uv", length * sizeof(GLfloat), uvData.data());
+		bufferUploadHelper(uvBuffer, length * sizeof(GLfloat), uvData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 
 	void MeshGeometry::updateNormalData(const GLfloat* data, uint32 length) {
@@ -96,7 +88,8 @@ namespace pathos {
 
 		normalData.resize(length / 3);
 		normalData.assign(data2, data2 + length / 3);
-		bufferUploadHelper(normalBuffer, "Buffer_normal", length * sizeof(GLfloat), normalData.data());
+
+		bufferUploadHelper(normalBuffer, length * sizeof(GLfloat), normalData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 	void MeshGeometry::updateNormalData(const std::vector<vector3>& inNormals)
 	{
@@ -112,7 +105,8 @@ namespace pathos {
 
 		tangentData.resize(length / 3);
 		tangentData.assign(data2, data2 + length / 3);
-		bufferUploadHelper(tangentBuffer, "Buffer_tangent", length * sizeof(GLfloat), tangentData.data());
+
+		bufferUploadHelper(tangentBuffer, length * sizeof(GLfloat), tangentData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 	void MeshGeometry::updateBitangentData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Bitangent));
@@ -121,7 +115,8 @@ namespace pathos {
 		
 		bitangentData.resize(length / 3);
 		bitangentData.assign(data2, data2 + length / 3);
-		bufferUploadHelper(bitangentBuffer, "Buffer_bitangent", length * sizeof(GLfloat), bitangentData.data());
+
+		bufferUploadHelper(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 
 	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
@@ -300,18 +295,10 @@ namespace pathos {
 		}
 	}
 
-	void MeshGeometry::bufferUploadHelper(Buffer*& targetBuffer, const char* debugName, GLsizeiptr size, void* data) {
-		CHECK(debugName != nullptr);
-		if (targetBuffer == nullptr || targetBuffer->getCreateParams().bufferSize != size) {
-			if (targetBuffer != nullptr) {
-				delete targetBuffer;
-				disposeVAO();
-			}
-			BufferCreateParams createParams{ EBufferUsage::CpuWrite, (uint32)size, nullptr, debugName };
-			targetBuffer = new Buffer(createParams);
-			targetBuffer->createGPUResource();
-		}
-		targetBuffer->writeToGPU(0, size, data);
+	void MeshGeometry::bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool) {
+		CHECK(requestedBytes != 0);
+		reallocateBufferIfNeeded(bufferView, requestedBytes, bufferPool);
+		bufferPool->writeToGPU((int64)bufferView.offset, (int64)bufferView.bytes, data);
 	}
 
 	void MeshGeometry::reallocateBufferIfNeeded(BufferView& bufferView, uint64 requestedBytes, BufferPool* bufferPool) {
@@ -385,8 +372,8 @@ namespace pathos {
 
 		std::vector<VAOElement> descs;
 
-		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                      }
-		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset };
+		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                       }
+		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset  };
 
 		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position)) {
 			descs.push_back(posDesc);
@@ -397,19 +384,19 @@ namespace pathos {
 	void MeshGeometry::createFullVAO(RenderCommandList& cmdList) {
 		const GLuint indexBufferName     = bUseIndexBuffer ? indexBuffer.bufferPool->internal_getGLName() : 0;
 		const GLuint positionBufferName  = positionBuffer.bufferPool->internal_getGLName();
-		const GLuint uvBufferName        = uvBuffer->internal_getGLName();
-		const GLuint normalBufferName    = normalBuffer->internal_getGLName();
-		const GLuint tangentBufferName   = tangentBuffer->internal_getGLName();
-		const GLuint bitangentBufferName = bitangentBuffer->internal_getGLName();
+		const GLuint uvBufferName        = uvBuffer.bufferPool->internal_getGLName();
+		const GLuint normalBufferName    = normalBuffer.bufferPool->internal_getGLName();
+		const GLuint tangentBufferName   = tangentBuffer.bufferPool->internal_getGLName();
+		const GLuint bitangentBufferName = bitangentBuffer.bufferPool->internal_getGLName();
 
 		std::vector<VAOElement> descs;
 
-		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                      }
-		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset };
-		const VAOElement uvDesc       { uvBufferName,        UV_LOCATION,        2,           GL_FLOAT,    GL_FALSE,   2 * sizeof(GL_FLOAT), 0                                 };
-		const VAOElement normalDesc   { normalBufferName,    NORMAL_LOCATION,    3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), 0                                 };
-		const VAOElement tangentDesc  { tangentBufferName,   TANGENT_LOCATION,   3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), 0                                 };
-		const VAOElement bitangentDesc{ bitangentBufferName, BITANGENT_LOCATION, 3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), 0                                 };
+		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                       }
+		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset  };
+		const VAOElement uvDesc       { uvBufferName,        UV_LOCATION,        2,           GL_FLOAT,    GL_FALSE,   2 * sizeof(GL_FLOAT), (GLsizeiptr)uvBuffer.offset        };
+		const VAOElement normalDesc   { normalBufferName,    NORMAL_LOCATION,    3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)normalBuffer.offset    };
+		const VAOElement tangentDesc  { tangentBufferName,   TANGENT_LOCATION,   3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)tangentBuffer.offset   };
+		const VAOElement bitangentDesc{ bitangentBufferName, BITANGENT_LOCATION, 3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)bitangentBuffer.offset };
 
 		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position)) { descs.push_back(posDesc); }
 		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv)) { descs.push_back(uvDesc); }

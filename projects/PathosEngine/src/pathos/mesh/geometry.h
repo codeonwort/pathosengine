@@ -81,7 +81,7 @@ namespace pathos {
 
 		void reallocateBufferIfNeeded(BufferView& bufferView, uint64 requestedBytes, BufferPool* bufferPool);
 		void releaseBuffer(BufferView& bufferView);
-		void bufferUploadHelper(Buffer*& targetBuffer, const char* debugName, GLsizeiptr size, void* data); // #wip-deprecated
+		void bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool); // #wip-deprecated
 	
 	// For CPU
 	private:
@@ -90,7 +90,7 @@ namespace pathos {
 		std::vector<vector3> normalData;
 		std::vector<vector3> tangentData;
 		std::vector<vector3> bitangentData;
-		// #todo-geometry: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
+		// #wip-index: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
 		std::vector<GLuint>  indexData;
 
 		AABB localBounds;
@@ -103,16 +103,13 @@ namespace pathos {
 		GLuint vaoPositionOnly = 0;
 		GLuint vaoFullAttributes = 0;
 
-		// Position buffer (suballocated from global position buffer pool)
+		// Vertex buffer, position only (suballocated from global position buffer pool)
 		BufferView positionBuffer;
-
-		// Varying buffer (suballocated from global varying buffer pool)
-		// #wip: Temp use Buffer. Gotta replace with buffer pool.
-		Buffer* uvBuffer        = nullptr;
-		Buffer* normalBuffer    = nullptr;
-		Buffer* tangentBuffer   = nullptr;
-		Buffer* bitangentBuffer = nullptr; // #wip: Remove and derive within shader
-		
+		// Vertex buffer, non-position (suballocated from global varying buffer pool)
+		BufferView uvBuffer;
+		BufferView normalBuffer;
+		BufferView tangentBuffer;
+		BufferView bitangentBuffer; // #wip: Remove and derive within shader
 		// Index buffer (suballocated from global index buffer pool)
 		BufferView indexBuffer;
 	};
