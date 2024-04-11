@@ -7,9 +7,7 @@
 namespace pathos {
 
 	MallocEmulator::~MallocEmulator() {
-		if (root != nullptr) {
-			cleanup();
-		}
+		cleanup();
 	}
 
 	void MallocEmulator::initialize(uint64 totalBytes) {
@@ -23,6 +21,7 @@ namespace pathos {
 		CHECK(root != nullptr && bytes > 0);
 		std::vector<Range*> Q{ root };
 		Range* node = nullptr;
+		// #todo-performance: Can't decide one branch and forget another unless I track 'maximum allocatable bytes' for every node.
 		while (!Q.empty()) {
 			Range* cand = Q[Q.size() - 1];
 			Q.pop_back();
@@ -36,7 +35,7 @@ namespace pathos {
 				}
 			}
 		}
-		CHECKF(node != nullptr, "Can't find node to allocate");
+		CHECKF(node != nullptr, "Can't find node to allocate"); // Out of memory, fragmentation, or bug.
 
 		// If node is bigger than requested then split.
 		uint64 finalOffset;
@@ -67,19 +66,18 @@ namespace pathos {
 			} else if (node->offset < offset) {
 				node = (node->right->offset <= offset) ? node->right : node->left;
 			} else {
-				CHECK_NO_ENTRY();
+				CHECK_NO_ENTRY(); // Nothing was allocated at the given offset
 				return;
 			}
 		}
-
 		CHECK(node != nullptr && node->parent != nullptr);
 
+		// Evict the node and merge empty nodes as much as possible.
 		node->evict();
-
-		auto parent = node;
-		while (parent != nullptr && parent->isResident() == false && parent->hasChild() == false && parent->parent != nullptr) {
-			parent = merge(parent);
+		while (node != nullptr && node->isResident() == false && node->hasChild() == false && node->parent != nullptr) {
+			node = merge(node);
 		}
+
 		debugTopology();
 	}
 

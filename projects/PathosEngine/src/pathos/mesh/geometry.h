@@ -11,6 +11,12 @@ namespace pathos {
 
 	class MeshGeometry {
 
+		struct BufferView {
+			uint64 offset = BufferPool::INVALID_OFFSET;
+			uint64 bytes = 0;
+			BufferPool* bufferPool = nullptr;
+		};
+
 	public:
 		MeshGeometry();
 		virtual ~MeshGeometry();
@@ -72,6 +78,9 @@ namespace pathos {
 		void bufferUploadHelper(Buffer*& targetBuffer, const char* debugName, GLsizeiptr size, void* data);
 		void disposeVAO();
 
+		void reallocateBufferIfNeeded(BufferView& bufferView, uint64 requestedBytes, BufferPool* bufferPool);
+		void releaseBuffer(BufferView& bufferView);
+
 	public:
 		bool bCalculateLocalBounds = true;
 
@@ -91,8 +100,7 @@ namespace pathos {
 	// For GPU
 	private:
 		// Position buffer (suballocated from global position buffer pool)
-		// #wip: Temp use Buffer. Gotta replace with buffer pool.
-		Buffer* positionBuffer = nullptr;
+		BufferView positionBuffer;
 
 		// Varying buffer (suballocated from global varying buffer pool)
 		// #wip: Temp use Buffer. Gotta replace with buffer pool.
@@ -102,8 +110,7 @@ namespace pathos {
 		Buffer* bitangentBuffer = nullptr;
 		
 		// Index buffer (suballocated from global index buffer pool)
-		uint64 indexBufferOffset = BufferPool::INVALID_OFFSET;
-		uint64 indexBufferBytes = 0;
+		BufferView indexBuffer;
 
 		// VAOs
 		GLuint vao_position                             = 0;
