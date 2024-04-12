@@ -60,6 +60,7 @@ namespace pathos {
 
 		inline vector3 getPosition(uint32 index) const { return positionData[index]; }
 		uint32 getIndexCount() const;
+		bool isIndex16Bit() const;
 		inline const AABB& getLocalBounds() const { return localBounds; }
 
 		bool bCalculateLocalBounds = true;
@@ -89,8 +90,9 @@ namespace pathos {
 		std::vector<vector3> normalData;
 		std::vector<vector3> tangentData;
 		std::vector<vector3> bitangentData;
-		// #wip-index: Support both GL_UNSIGNED_SHORT (16bit) and GL_UNSIGNED_INT (32bit)
+		
 		std::vector<GLuint>  indexData;
+		GLenum indexDatatype; // GL_UNSIGNED_SHORT (16bit) or GL_UNSIGNED_INT (32bit)
 
 		AABB localBounds;
 

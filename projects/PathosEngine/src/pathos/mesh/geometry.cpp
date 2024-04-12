@@ -28,6 +28,7 @@ namespace pathos {
 
 	MeshGeometry::MeshGeometry() {
 		localBounds = AABB{ vector3(0.0f), vector3(0.0f) };
+		indexDatatype = GL_UNSIGNED_INT;
 	}
 
 	MeshGeometry::~MeshGeometry() {
@@ -52,6 +53,8 @@ namespace pathos {
 
 	uint32 MeshGeometry::getIndexCount() const { return (uint32)indexData.size(); }
 	
+	bool MeshGeometry::isIndex16Bit() const { return indexDatatype == GL_UNSIGNED_SHORT; }
+
 	void MeshGeometry::updatePositionData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position));
 		CHECKF(length % 3 == 0, "Invalid length");
@@ -119,12 +122,18 @@ namespace pathos {
 		indexData.assign(data, data + length);
 
 		bufferUploadHelper(indexBuffer, length * sizeof(GLuint), indexData.data(), gRenderDevice->getIndexBufferPool());
+		indexDatatype = GL_UNSIGNED_INT;
 	}
 
 	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
-		std::vector<GLuint> tempData(length);
-		for (uint32 i = 0; i < length; ++i) tempData[i] = (GLuint)data[i]; // #todo-geometry: Support 16-bit index buffer
-		updateIndexData(tempData.data(), length);
+		CHECK(bUseIndexBuffer);
+		// Keep shadow copy as 32-bit data
+		indexData.resize(length);
+		for (uint32 i = 0; i < length; ++i) indexData[i] = (GLuint)data[i];
+
+		// Send 16-bit data to GPU
+		bufferUploadHelper(indexBuffer, length * sizeof(uint16), (void*)data, gRenderDevice->getIndexBufferPool());
+		indexDatatype = GL_UNSIGNED_SHORT;
 	}
 
 	// requirements: positionData and indexData should be available.
@@ -266,18 +275,17 @@ namespace pathos {
 	}
 
 	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList, int32 instanceCount) {
-		const GLenum indexType = GL_UNSIGNED_INT; // #wip-index: Support ushort
 		if (instanceCount == 1) {
 			if (bUseIndexBuffer) {
 				const uintptr_t indexOffsetBytes = (uintptr_t)indexBuffer.offset;
-				cmdList.drawElements(GL_TRIANGLES, (GLsizei)getIndexCount(), indexType, (void*)indexOffsetBytes);
+				cmdList.drawElements(GL_TRIANGLES, (GLsizei)getIndexCount(), indexDatatype, (void*)indexOffsetBytes);
 			} else {
 				cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
 			}
 		} else {
 			if (bUseIndexBuffer) {
 				const uintptr_t indexOffsetBytes = (uintptr_t)indexBuffer.offset;
-				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)getIndexCount(), indexType, (void*)indexOffsetBytes, instanceCount);
+				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)getIndexCount(), indexDatatype, (void*)indexOffsetBytes, instanceCount);
 			} else {
 				cmdList.drawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)positionData.size(), instanceCount);
 			}
@@ -286,9 +294,11 @@ namespace pathos {
 
 	void MeshGeometry::bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool) {
 		CHECK(requestedBytes != 0);
+		if (bufferView.bufferPool != nullptr) CHECK(bufferView.bufferPool == bufferPool);
 		if (bufferView.offset == BufferPool::INVALID_OFFSET || bufferView.bytes != requestedBytes) {
 			if (bufferView.offset != BufferPool::INVALID_OFFSET) {
 				bufferPool->deallocate(bufferView.offset);
+				disposeVAO(); // #todo-performance: Some cases don't need recreation of VAO
 			}
 			bufferView.offset = bufferPool->suballocate(requestedBytes);
 			bufferView.bytes = requestedBytes;
