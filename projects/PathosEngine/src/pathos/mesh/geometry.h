@@ -79,9 +79,8 @@ namespace pathos {
 		void createFullVAO(RenderCommandList& cmdList);
 		void disposeVAO();
 
-		void reallocateBufferIfNeeded(BufferView& bufferView, uint64 requestedBytes, BufferPool* bufferPool);
+		void bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool);
 		void releaseBuffer(BufferView& bufferView);
-		void bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool); // #wip-deprecated
 	
 	// For CPU
 	private:

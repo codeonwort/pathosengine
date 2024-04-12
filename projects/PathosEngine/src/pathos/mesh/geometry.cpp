@@ -70,13 +70,11 @@ namespace pathos {
 	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length, bool bFlipY /*= false */) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv));
 		CHECKF(length % 2 == 0, "Invalid length");
-		const vector2* data2 = reinterpret_cast<const vector2*>(data);
 
+		const vector2* data2 = reinterpret_cast<const vector2*>(data);
 		uvData.resize(length / 2);
 		uvData.assign(data2, data2 + length / 2);
-		if (bFlipY) {
-			for (vector2& uv : uvData) uv.y = 1.0f - uv.y;
-		}
+		if (bFlipY) { for (vector2& uv : uvData) { uv.y = 1.0f - uv.y; } }
 
 		bufferUploadHelper(uvBuffer, length * sizeof(GLfloat), uvData.data(), gRenderDevice->getVaryingBufferPool());
 	}
@@ -84,9 +82,8 @@ namespace pathos {
 	void MeshGeometry::updateNormalData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Normal));
 		CHECKF(length % 3 == 0, "Invalid length");
-		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 
-		normalData.resize(length / 3);
+		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 		normalData.assign(data2, data2 + length / 3);
 
 		bufferUploadHelper(normalBuffer, length * sizeof(GLfloat), normalData.data(), gRenderDevice->getVaryingBufferPool());
@@ -101,9 +98,8 @@ namespace pathos {
 	void MeshGeometry::updateTangentData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent));
 		CHECKF(length % 3 == 0, "Invalid length");
-		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 
-		tangentData.resize(length / 3);
+		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 		tangentData.assign(data2, data2 + length / 3);
 
 		bufferUploadHelper(tangentBuffer, length * sizeof(GLfloat), tangentData.data(), gRenderDevice->getVaryingBufferPool());
@@ -111,9 +107,8 @@ namespace pathos {
 	void MeshGeometry::updateBitangentData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Bitangent));
 		CHECKF(length % 3 == 0, "Invalid length");
+
 		const vector3* data2 = reinterpret_cast<const vector3*>(data);
-		
-		bitangentData.resize(length / 3);
 		bitangentData.assign(data2, data2 + length / 3);
 
 		bufferUploadHelper(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data(), gRenderDevice->getVaryingBufferPool());
@@ -121,15 +116,9 @@ namespace pathos {
 
 	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
 		CHECK(bUseIndexBuffer);
-		indexData.resize(length);
 		indexData.assign(data, data + length);
 
-		BufferPool* indexBufferPool = gRenderDevice->getIndexBufferPool();
-		const uint64 requestedBytes = length * sizeof(GLuint);
-		CHECK(requestedBytes != 0);
-
-		reallocateBufferIfNeeded(indexBuffer, requestedBytes, indexBufferPool);
-		indexBufferPool->writeToGPU((int64)indexBuffer.offset, (int64)indexBuffer.bytes, (void*)data);
+		bufferUploadHelper(indexBuffer, length * sizeof(GLuint), indexData.data(), gRenderDevice->getIndexBufferPool());
 	}
 
 	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
@@ -297,11 +286,6 @@ namespace pathos {
 
 	void MeshGeometry::bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool) {
 		CHECK(requestedBytes != 0);
-		reallocateBufferIfNeeded(bufferView, requestedBytes, bufferPool);
-		bufferPool->writeToGPU((int64)bufferView.offset, (int64)bufferView.bytes, data);
-	}
-
-	void MeshGeometry::reallocateBufferIfNeeded(BufferView& bufferView, uint64 requestedBytes, BufferPool* bufferPool) {
 		if (bufferView.offset == BufferPool::INVALID_OFFSET || bufferView.bytes != requestedBytes) {
 			if (bufferView.offset != BufferPool::INVALID_OFFSET) {
 				bufferPool->deallocate(bufferView.offset);
@@ -311,6 +295,7 @@ namespace pathos {
 			bufferView.bufferPool = bufferPool;
 			CHECKF(bufferView.offset != BufferPool::INVALID_OFFSET, "Failed to suballocate from buffer pool");
 		}
+		bufferPool->writeToGPU((int64)bufferView.offset, (int64)bufferView.bytes, data);
 	}
 
 	void MeshGeometry::releaseBuffer(BufferView& bufferView) {
