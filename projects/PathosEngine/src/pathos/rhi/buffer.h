@@ -83,7 +83,7 @@ namespace pathos {
 	private:
 		Buffer* internalBuffer = nullptr;
 		MallocEmulator mallocEmulator;
-		std::mutex allocMutex; // #wip-performance: Do I need this?
+		std::mutex allocMutex; // #todo-performance: Do I need this?
 
 	};
 

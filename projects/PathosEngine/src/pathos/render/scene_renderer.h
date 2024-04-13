@@ -125,7 +125,7 @@ namespace pathos {
 			SceneProxy* scene,
 			Camera* camera) override;
 
-		// #todo: Make as a utility function, not a method of renderer.
+		// #todo-renderer: Make as a utility function, not a method of renderer.
 		enum class ECopyTextureMode { CopyColor = 0, LightProbeDepth = 1 };
 		void copyTexture(
 			RenderCommandList& cmdList, GLuint source,

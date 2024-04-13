@@ -95,7 +95,7 @@ namespace pathos {
 	void VolumetricCloudPass::initializeResources(RenderCommandList& cmdList) {
 		ubo.init<UBO_VolumetricCloud>();
 
-		// #todo: Make STBN a system texture if needed.
+		// #todo-cloud: Make STBN a system texture if needed.
 		{
 			gRenderDevice->createTextures(GL_TEXTURE_3D, 1, &texSTBN);
 			gRenderDevice->objectLabel(GL_TEXTURE, texSTBN, -1, "Texture_NVidiaSTBN");

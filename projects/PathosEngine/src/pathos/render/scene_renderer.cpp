@@ -78,7 +78,7 @@ namespace pathos {
 		: scene(nullptr)
 		, camera(nullptr)
 	{
-		// #todo-forward-shading: Restore forward shading pipeline.
+		// #todo-renderer: Restore forward shading pipeline.
 		// ...
 
 		// [GDC2016] INSIDE uses 16 samples from Halton(2,3).
@@ -109,7 +109,7 @@ namespace pathos {
 		CHECK(settings.isValid());
 
 		sceneRenderSettings = settings;
-		frameCounter = sceneRenderSettings.frameCounter; // #todo: Duplicate with SceneProxy::frameNumber
+		frameCounter = sceneRenderSettings.frameCounter; // #todo-renderer: Duplicate with SceneProxy::frameNumber
 		
 		if (settings.finalRenderTarget != nullptr) {
 			setFinalRenderTarget(settings.finalRenderTarget);
@@ -359,7 +359,7 @@ namespace pathos {
 		}
 		else
 		{
-			// #todo: Support nested gpu counters
+			// #todo-rhi: Support nested gpu counters
 			SCOPED_CPU_COUNTER(PostProcessing);
 			SCOPED_GPU_COUNTER(PostProcessing);
 
@@ -536,7 +536,7 @@ namespace pathos {
 				const GLuint dofRenderTarget = sceneRenderTargets->sceneFinal;
 
 				// Force rgba32f input.
-				// #todo-dof: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
+				// #todo-postprocess: Don't copy and use sceneAfterLastPP directly if it's rgba32f.
 				copyTexture(cmdList, sceneAfterLastPP, dofInput,
 					sceneRenderTargets->sceneWidthSuperRes, sceneRenderTargets->sceneHeightSuperRes);
 

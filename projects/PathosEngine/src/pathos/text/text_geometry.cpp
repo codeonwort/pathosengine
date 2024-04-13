@@ -12,7 +12,7 @@
 namespace pathos {
 
 	TextGeometry::TextGeometry() {
-		// #wip-performance: Maybe pos + uv are enough for TextGeometry?
+		// #todo-geometry: Maybe pos + uv are enough for TextGeometry?
 		//initializeVertexLayout(EVertexAttributes::Position | EVertexAttributes::Uv);
 		initializeVertexLayout(EVertexAttributes::All);
 	}

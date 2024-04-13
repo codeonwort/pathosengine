@@ -145,7 +145,7 @@ namespace pathos {
 			}
 		});
 
-		// #todo: Dirty hack to find first directional component.
+		// #todo-scene-proxy: Dirty hack to find first directional component.
 		DirectionalLightComponent* sunComponent = nullptr;
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {

@@ -7,7 +7,7 @@
 
 namespace pathos {
 
-	// #wip: Remove UniformBuffer
+	// #todo-rhi: Replace with Buffer
 	class UniformBuffer {
 
 	public:

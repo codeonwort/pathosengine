@@ -156,7 +156,7 @@ namespace pathos {
 			vector3 rot = parseVec3(SM["rotation"]);
 			vector3 scale = parseVec3(SM["scale"]);
 
-			// #todo-scene-loader: How to support actual assets here?
+			// #todo-loader: How to support actual assets here?
 
 			SceneDescription::StaticMesh desc{
 				name, loc, Rotator(rot.x, rot.y, rot.z), scale

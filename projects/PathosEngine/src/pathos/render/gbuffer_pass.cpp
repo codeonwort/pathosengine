@@ -46,7 +46,7 @@ namespace pathos {
 	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		SCOPED_DRAW_EVENT(GBufferPass);
 
-		// #todo: Dynamically toggle depth prepass.
+		// #todo-renderer: Dynamically toggle depth prepass.
 		constexpr bool bUseDepthPrepass = true;
 		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
 
@@ -74,7 +74,7 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.viewport(0, 0, sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
 
-		// #todo-depthprepass: GEQUAL or LEQUAL as I'm not doing full-depth prepass.
+		// #todo-depthprepass: Currently using GEQUAL or LEQUAL as I'm not doing full-depth prepass.
 		// Switch to EQUAL when doing full-depth prepass.
 		if (bUseDepthPrepass) {
 			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);

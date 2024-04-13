@@ -110,7 +110,7 @@ namespace pathos {
 		BufferView uvBuffer;
 		BufferView normalBuffer;
 		BufferView tangentBuffer;
-		BufferView bitangentBuffer; // #wip: Remove and derive within shader
+		BufferView bitangentBuffer; // #todo-geometry: Remove and derive within shader
 		// Index buffer (suballocated from global index buffer pool)
 		BufferView indexBuffer;
 	};

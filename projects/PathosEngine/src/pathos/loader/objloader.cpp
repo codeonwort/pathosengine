@@ -213,7 +213,7 @@ namespace pathos {
 			}
 
 			if (overrideIx != -1) {
-				// #todo: Would be best not to create it at first...
+				// #todo-loader: Would be best not to create it at first...
 				if (M != nullptr) {
 					delete M;
 				}

@@ -276,7 +276,7 @@ void loadMusicRecord(std::istream& archive, PlayRecord& outRecord) {
 }
 
 void saveMusicRecord(LogFileWriter& fileWriter, const PlayRecord& playRecord, bool binaryFormat) {
-	// #todo-rhythm: Support binary format
+	// #todo-game-rhythm: Support binary format
 	CHECK(binaryFormat == false);
 
 	char buf[1024];
@@ -385,7 +385,7 @@ void World_RhythmGame::onTick(float deltaSeconds) {
 	if (gameState == GameState::PlaySession) {
 		currentGameTime = gEngine->getWorldTime() - initGameTime;
 		
-		// #todo-rhythm: More exact timing
+		// #todo-game-rhythm: More exact timing
 		if (currentGameTime >= 0.0f && bMusicStarted == false) {
 			musicStream->startPlay();
 			bMusicStarted = true;
@@ -836,7 +836,7 @@ void World_RhythmGame::updateNotes(float currT) {
 	// Update visibility of judge label.
 	bool bShowJudge = (currT - judgeTime <= JUDGE_DISPLAY_PERIOD);
 	judgeLabel->setVisible(bShowJudge);
-	// #todo-rhythm: Label scaling is bugged
+	// #todo-game-rhythm: Label scaling is bugged
 	//float judgeScale = glm::mix(1.0f, 1.2f, (currT - judgeTime) / JUDGE_DISPLAY_PERIOD);
 	//judgeLabel->setScaleX(judgeScale);
 	//judgeLabel->setScaleY(judgeScale);
