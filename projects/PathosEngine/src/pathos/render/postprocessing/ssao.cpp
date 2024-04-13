@@ -10,8 +10,7 @@
 #include "badger/math/random.h"
 #include "badger/math/minmax.h"
 
-// Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4"
-// (Wojciech Sterna, GPU Zen)
+// Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4" (Wojciech Sterna, GPU Zen)
 
 // #todo-ssao: Upsample the blurred SSAO with a bilateral filter.
 // But... looks not bad with mere bilinear filtering
@@ -19,17 +18,16 @@
 
 namespace pathos {
 
-	static constexpr GLuint UBO_SSAO_BINDING_POINT = 1;
-	static constexpr GLuint UBO_SSAO_RANDOM_BINDING_POINT = 2;
-
 	static ConsoleVariable<int32> cvar_ssao_enable("r.ssao.enable", 1, "Enable SSAO");
 	static ConsoleVariable<int32> cvar_ssao_spp("r.ssao.samplesPerPixel", 32, "Determines SPP(Samples Per Pixel)");
-	static ConsoleVariable<float> cvar_ssao_worldRadius("r.ssao.worldRadius", 5.0f, "World radius of sample space");
+	static ConsoleVariable<float> cvar_ssao_worldRadius("r.ssao.worldRadius", 0.5f, "World radius of sample space");
 	static ConsoleVariable<float> cvar_ssao_maxScreenRadius("r.ssao.maxScreenRadius", 0.2f, "Screen space max radius");
 	static ConsoleVariable<float> cvar_ssao_contrast("r.ssao.contrast", 1.0f, "Contrast of AO effect");
 
 	// For SSAO_Compute
 	struct UBO_SSAO {
+		static constexpr GLuint BINDING_INDEX = 1;
+
 		uint32 spp;
 		float worldRadius;
 		float maxScreenRadius;
@@ -46,7 +44,7 @@ namespace pathos {
 	class SSAO_Compute : public ShaderStage {
 	public:
 		SSAO_Compute() : ShaderStage(GL_COMPUTE_SHADER, "SSAO_Compute") {
-			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO_NUM_ROTATION_NOISE);
+			addDefine("SSAO_NUM_ROTATION_NOISE", SSAO::NUM_ROTATION_NOISE);
 			setFilepath("ssao_ao.glsl");
 		}
 	};
@@ -137,20 +135,20 @@ namespace pathos {
 			cmdList.useProgram(program_computeAO.getGLName());
 
 			UBO_SSAO uboData;
-			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), SSAO_MAX_SAMPLE_POINTS);
+			uboData.spp             = badger::clamp(1u, (uint32)cvar_ssao_spp.getInt(), MAX_SAMPLE_POINTS);
 			uboData.worldRadius     = cvar_ssao_worldRadius.getFloat();
 			uboData.maxScreenRadius = cvar_ssao_maxScreenRadius.getFloat();
 			uboData.contrast        = cvar_ssao_contrast.getFloat();
-			ubo.update(cmdList, UBO_SSAO_BINDING_POINT, &uboData);
+			ubo.update(cmdList, UBO_SSAO::BINDING_INDEX, &uboData);
 
 			if (bRandomDataValid == false) {
-				for (uint32 i = 0; i < SSAO_NUM_ROTATION_NOISE; ++i) {
+				for (uint32 i = 0; i < NUM_ROTATION_NOISE; ++i) {
 					vector4 v(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, 0.0f, 0.0f);
 					randomData.randomRotations[i] = v;
 				}
 				bRandomDataValid = true;
 			}
-			uboRandom.update(cmdList, UBO_SSAO_RANDOM_BINDING_POINT, &randomData);
+			uboRandom.update(cmdList, UBO_SSAO_Random::BINDING_INDEX, &randomData);
 
 			cmdList.bindImageTexture(0, sceneContext.ssaoHalfNormalAndDepth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
 			cmdList.bindImageTexture(1, sceneContext.ssaoMap, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);

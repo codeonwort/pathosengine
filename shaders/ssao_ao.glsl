@@ -16,7 +16,7 @@
 	#define SSAO_NUM_ROTATION_NOISE 16
 #endif
 
-// Enable if LDS is cheaper than imageLoad. (heard that some GPUs can't benefit from it)
+// Enable if LDS is cheaper than imageLoad.
 #define USE_SHARED_SAMPLES 1
 
 // -------------------------------------------------------

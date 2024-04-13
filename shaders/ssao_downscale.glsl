@@ -2,10 +2,16 @@
 
 #include "deferred_common.glsl"
 
+// -------------------------------------------------------
+// Defines
+
 #define AVERAGE_SAMPLES 0
 
 // 0: viewPosZ, 1: sceneDepth
 #define OUTPUT_SCENE_DEPTH 1
+
+// -------------------------------------------------------
+// Shader Resources
 
 layout (local_size_x = 64) in;
 
@@ -13,6 +19,8 @@ layout (binding = 0) uniform sampler2D sceneDepth;
 layout (binding = 1, rgba32ui) readonly uniform uimage2D gbufferA;
 layout (binding = 2, rgba32f) readonly uniform image2D gbufferB;
 layout (binding = 3, rgba16f) writeonly uniform image2D outHalfNormalAndDepth;
+
+// -------------------------------------------------------
 
 // Output normalVS and viewPosZ in half resolution.
 void main() {

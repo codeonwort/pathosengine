@@ -5,16 +5,20 @@
 
 #include "badger/types/vector_types.h"
 
-#define SSAO_MAX_SAMPLE_POINTS  64u
-#define SSAO_NUM_ROTATION_NOISE 16u
-
 namespace pathos {
 
+	// Screen Space Ambient Occlusion pass.
 	class SSAO : public PostProcess {
 
+	public:
+		static constexpr uint32 MAX_SAMPLE_POINTS = 64;
+		static constexpr uint32 NUM_ROTATION_NOISE = 16;
+
 		struct UBO_SSAO_Random {
+			static constexpr GLuint BINDING_INDEX = 2;
+
 			// For Vogel disk. w component is not used.
-			vector4 randomRotations[SSAO_NUM_ROTATION_NOISE];
+			vector4 randomRotations[NUM_ROTATION_NOISE];
 		};
 
 	public:
