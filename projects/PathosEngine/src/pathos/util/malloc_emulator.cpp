@@ -115,20 +115,40 @@ namespace pathos {
 		if (parent->left == node) {
 			if (parent->right->hasChild()) {
 				if (parent->right->left->isResident() == false) {
-					// Both parent->left and parent->right->left are not resident. Merge them.
-					Range* node2 = parent->right;
-					reparent(parent, node2->left, node2->right);
-					parent->left->offset = parent->offset;
-					parent->left->bytes = parent->bytes - parent->right->bytes;
-					delete node;
-					delete node2;
-					numAllocations -= 2;
-					return parent;
+					// Both parent->left and parent->right->left are not resident.
+					// But if any left descendants of parent->right->left is resident,
+					// we can't merge parent->left and parent->right->left.
+					Range* leftist = parent->right->left;
+					bool canMerge = true;
+					while (leftist != nullptr) {
+						leftist = leftist->left;
+						if (leftist != nullptr && leftist->isResident()) {
+							canMerge = false;
+							break;
+						}
+					}
+					// #todo-performance: Is there a case that nodes can be merged but I missed it?
+					if (canMerge) {
+						Range* node2 = parent->right;
+						reparent(parent, node2->left, node2->right);
+						leftist = parent->left;
+						while (leftist != nullptr) {
+							leftist->offset = leftist->parent->offset;
+							leftist->bytes = leftist->parent->bytes - leftist->parent->right->bytes;
+							leftist = leftist->left;
+						}
+						delete node;
+						delete node2;
+						numAllocations -= 2;
+						return parent;
+					}
+					return nullptr;
 				}
 				return nullptr;
 			} else {
 				if (parent->right->isResident() == false) {
-					// Both parent->left and parent->right are not resident. Merge them.
+					// Both parent->left and parent->right are not resident and they have no children.
+					// Safe to merge them.
 					Range* node2 = parent->right;
 					reparent(parent, node2->left, node2->right);
 					delete node;
@@ -141,19 +161,39 @@ namespace pathos {
 		} else {
 			if (parent->left->hasChild()) {
 				if (parent->left->right->isResident() == false) {
-					// Both parent->right and parent->left->right are not resident. Merge them.
-					Range* node2 = parent->left;
-					reparent(parent, node2->left, node2->right);
-					parent->right->bytes = parent->bytes - parent->left->bytes;
-					delete node;
-					delete node2;
-					numAllocations -= 2;
-					return parent;
+					// Both parent->right and parent->left->right are not resident.
+					// But if any right descendants of parent->left->right is resident,
+					// we can't merge parent->right and parent->left->right.
+					Range* rightest = parent->left->right;
+					bool canMerge = true;
+					while (rightest != nullptr) {
+						rightest = rightest->right;
+						if (rightest != nullptr && rightest->isResident()) {
+							canMerge = false;
+							break;
+						}
+					}
+					// #todo-performance: Is there a case that nodes can be merged but I missed it?
+					if (canMerge) {
+						Range* node2 = parent->left;
+						reparent(parent, node2->left, node2->right);
+						rightest = parent->right;
+						while (rightest != nullptr) {
+							rightest->bytes = rightest->parent->bytes - rightest->parent->left->bytes;
+							rightest = rightest->right;
+						}
+						delete node;
+						delete node2;
+						numAllocations -= 2;
+						return parent;
+					}
+					return nullptr;
 				}
 				return nullptr;
 			} else {
 				if (parent->left->isResident() == false) {
-					// Both children of parent are not resident. Merge them.
+					// Both children of parent are not resident and they have no children.
+					// Safe to merge them.
 					Range* node2 = parent->left;
 					reparent(parent, node2->left, node2->right);
 					delete node;
