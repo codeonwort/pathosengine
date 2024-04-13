@@ -212,8 +212,7 @@ namespace pathos {
 				cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 				cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, 0);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 
 				cmdList.bindTextureUnit(0, 0);
@@ -247,8 +246,7 @@ namespace pathos {
 					cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZ, currentMip);
 					//cmdList.namedFramebufferTexture(fbo_HiZ, GL_COLOR_ATTACHMENT0, sceneContext.sceneDepthHiZViews[currentMip], 0);
 
-					fullscreenQuad->activate_position_uv(cmdList);
-					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->bindFullAttributesVAO(cmdList);
 					fullscreenQuad->drawPrimitive(cmdList);
 
 					prevWidth = currentWidth;
@@ -293,8 +291,7 @@ namespace pathos {
 				cmdList.bindSamplers(0, 3, samplers);
 				cmdList.namedFramebufferTexture(fbo_preintegration, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreintegration, currentMip);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 
 				prevWidth = currentWidth;
@@ -329,8 +326,7 @@ namespace pathos {
 				cmdList.bindTextureUnit(0, sceneContext.sceneColor);
 				cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolution, 0);
 
-				fullscreenQuad->activate_position_uv(cmdList);
-				fullscreenQuad->activateIndexBuffer(cmdList);
+				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 
 				cmdList.bindTextureUnit(0, 0);
@@ -352,15 +348,13 @@ namespace pathos {
 					cmdList.useProgram(programH.getGLName());
 					cmdList.bindTextureUnit(0, sceneContext.ssrPreconvolutionViews[currentMip - 1]);
 					cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolutionTemp, currentMip);
-					fullscreenQuad->activate_position_uv(cmdList);
-					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->bindFullAttributesVAO(cmdList);
 					fullscreenQuad->drawPrimitive(cmdList);
 
 					cmdList.useProgram(programV.getGLName());
 					cmdList.bindTextureUnit(0, sceneContext.ssrPreconvolutionTempViews[currentMip]);
 					cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.ssrPreconvolution, currentMip);
-					fullscreenQuad->activate_position_uv(cmdList);
-					fullscreenQuad->activateIndexBuffer(cmdList);
+					fullscreenQuad->bindFullAttributesVAO(cmdList);
 					fullscreenQuad->drawPrimitive(cmdList);
 
 					prevWidth = currentWidth;
@@ -403,8 +397,7 @@ namespace pathos {
 			samplers[NUM_SAMPLERS - 1] = linearSampler;
 			cmdList.bindSamplers(0, NUM_SAMPLERS, samplers);
 
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.bindSamplers(0, NUM_SAMPLERS, nullptr);
@@ -433,9 +426,9 @@ namespace pathos {
 			cmdList.bindTextureUnit(0, sceneContext.ssrRayTracing);
 			cmdList.bindSampler(0, linearSampler);
 
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
+			fullscreenQuad->unbindVAO(cmdList);
 
 			{
 				cmdList.disable(GL_BLEND);

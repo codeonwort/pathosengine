@@ -65,11 +65,9 @@ namespace pathos {
 		cmdList.enable(GL_BLEND);
 		cmdList.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		geom->activate_position_uv(cmdList);
-		geom->activateIndexBuffer(cmdList);
+		geom->bindFullAttributesVAO(cmdList);
 		geom->drawPrimitive(cmdList);
-		geom->deactivate(cmdList);
-		geom->deactivateIndexBuffer(cmdList);
+		geom->unbindVAO(cmdList);
 		
 		cmdList.disable(GL_BLEND);
 	}

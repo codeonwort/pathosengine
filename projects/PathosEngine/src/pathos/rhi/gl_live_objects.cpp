@@ -33,7 +33,7 @@ static uint32 getBytesOfInternalformat(GLint internalformat) {
 			return 1;
 	}
 
-	CHECK_NO_ENTRY(); // #todo: Compressed formats
+	CHECK_NO_ENTRY(); // #todo-rhi: Check compressed formats
 	return 0;
 }
 

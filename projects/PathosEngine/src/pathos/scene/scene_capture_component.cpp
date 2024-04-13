@@ -39,7 +39,7 @@ namespace pathos {
 
 		gEngine->internal_pushSceneProxy(sceneProxy);
 
-		// #todo: Increment or always zero?
+		// #todo-renderer: Increment or always zero?
 		sceneCaptureFrameNumber++;
 	}
 

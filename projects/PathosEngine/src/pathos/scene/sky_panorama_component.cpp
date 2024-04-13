@@ -3,6 +3,7 @@
 namespace pathos {
 
 	IcosahedronGeometry::IcosahedronGeometry(uint32_t subdivisionStep /*= 0*/) {
+		initializeVertexLayout(EVertexAttributes::Position);
 		buildGeometry();
 		while (subdivisionStep --> 0) {
 			subdivide();

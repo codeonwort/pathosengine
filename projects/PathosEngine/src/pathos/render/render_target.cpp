@@ -245,7 +245,7 @@ namespace pathos {
 		if (glTextureObject != 0) {
 			GLuint texturePtr = glTextureObject;
 			GLuint* textureViewsPtr = glTextureViews;
-			ENQUEUE_RENDER_COMMAND(
+			ENQUEUE_DEFERRED_RENDER_COMMAND(
 				[texturePtr, textureViewsPtr](RenderCommandList& cmdList) {
 					gRenderDevice->deleteTextures(1, &texturePtr);
 					gRenderDevice->deleteTextures(6, textureViewsPtr);

@@ -73,8 +73,7 @@ namespace pathos {
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		cmdList.bindTextures(0, 3, nullptr);

@@ -105,7 +105,7 @@ namespace pathos {
 
 	void Texture::releaseGPUResource() {
 		if (glTexture != 0) {
-			ENQUEUE_RENDER_COMMAND([tex = glTexture](RenderCommandList& cmdList) {
+			ENQUEUE_DEFERRED_RENDER_COMMAND([tex = glTexture](RenderCommandList& cmdList) {
 				cmdList.registerDeferredTextureCleanup(tex);
 			});
 			glTexture = 0;

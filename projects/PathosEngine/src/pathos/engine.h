@@ -94,13 +94,19 @@ namespace pathos {
 		inline float getRenderThreadCPUTime() const { return elapsed_renderThread;          }
 		inline float getGPUTime()             const { return elapsed_gpu;                   } // Estimated time of GPU work (in milliseconds)
 
+		// --------------------------------------------------------------------
+		// Subsystems
+
 		inline InputSystem*     getInputSystem()   const { return inputSystem.get();    }
 		inline AssetStreamer*   getAssetStreamer() const { return assetStreamer.get();  }
 		inline GUIWindow*       getMainWindow()    const { return mainWindow.get();     }
 		inline DisplayObject2D* getOverlayRoot()   const { return appOverlayRoot.get(); }
 
+		// --------------------------------------------------------------------
+		// Common resources
+
 		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
-		inline MeshGeometry* getSystemGeometryUnitCube() const { return geometry_unitCube; }
+		inline MeshGeometry* getSystemGeometryUnitCube()  const { return geometry_unitCube;  }
 
 		inline Texture* getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline Texture* getSystemTexture2DWhite()      const { return texture2D_white;     }

@@ -43,8 +43,7 @@ void GalaxyGenerator::renderStarField(Texture* texture, uint32 width, uint32 hei
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, renderTarget, 0);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 	});
 }

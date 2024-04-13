@@ -59,11 +59,9 @@ namespace pathos {
 		uboData.color = rgba;
 		ubo.update(cmdList, 1, &uboData);
 
-		geom->activate_position_uv(cmdList);
-		geom->activateIndexBuffer(cmdList);
+		geom->bindFullAttributesVAO(cmdList);
 		geom->drawPrimitive(cmdList);
-		geom->deactivate(cmdList);
-		geom->deactivateIndexBuffer(cmdList);
+		geom->unbindVAO(cmdList);
 
 		if (bUseAlpha) {
 			cmdList.disable(GL_BLEND);

@@ -110,7 +110,7 @@ namespace pathos {
 			if (it.second.roughnessBlob != nullptr) blobsToDestroy.insert(it.second.roughnessBlob);
 			if (it.second.metallicBlob != nullptr) blobsToDestroy.insert(it.second.metallicBlob);
 		}
-		ENQUEUE_RENDER_COMMAND([blobsToDestroy](RenderCommandList& cmdList) {
+		ENQUEUE_DEFERRED_RENDER_COMMAND([blobsToDestroy](RenderCommandList& cmdList) {
 			for (ImageBlob* blob : blobsToDestroy) {
 				cmdList.registerDeferredCleanup(blob);
 			}
@@ -213,7 +213,7 @@ namespace pathos {
 			}
 
 			if (overrideIx != -1) {
-				// #todo: Would be best not to create it at first...
+				// #todo-loader: Would be best not to create it at first...
 				if (M != nullptr) {
 					delete M;
 				}
@@ -454,7 +454,7 @@ namespace pathos {
 #endif
 
 				MeshGeometry* geom = new MeshGeometry;
-				geom->setDrawArraysMode(false);
+				geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 				geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));
@@ -481,7 +481,7 @@ namespace pathos {
 					auto& indices = shape.indices[materialID];
 
 					MeshGeometry* geom = new MeshGeometry;
-					geom->setDrawArraysMode(false);
+					geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 					geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
 					geom->updateIndexData(&indices[0], static_cast<uint32>(indices.size()));

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "geometry.h"
+
+#include "badger/types/vector_types.h"
 #include <vector>
 
 namespace pathos {
@@ -9,7 +11,9 @@ namespace pathos {
 	class ProceduralGeometry : public MeshGeometry {
 		
 	public:
-		ProceduralGeometry() {}
+		ProceduralGeometry() {
+			initializeVertexLayout(EVertexAttributes::All);
+		}
 		~ProceduralGeometry() {}
 
 		void clear() {
@@ -24,14 +28,14 @@ namespace pathos {
 			updateIndexData((GLuint*)indices.data(), (uint32)indices.size());
 		}
 
-		void addTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
+		void addTriangle(const vector3& a, const vector3& b, const vector3& c) {
 			positions.push_back(a);
 			positions.push_back(b);
 			positions.push_back(c);
 
-			uvs.push_back(glm::vec2(0.0f));
-			uvs.push_back(glm::vec2(0.0f));
-			uvs.push_back(glm::vec2(0.0f));
+			uvs.push_back(vector2(0.0f));
+			uvs.push_back(vector2(0.0f));
+			uvs.push_back(vector2(0.0f));
 
 			uint32 i = (uint32)indices.size();
 			indices.push_back(i);
@@ -39,15 +43,15 @@ namespace pathos {
 			indices.push_back(i + 2);
 		}
 
-		void addQuad(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d) {
+		void addQuad(const vector3& a, const vector3& b, const vector3& c, const vector3& d) {
 			addTriangle(a, b, c);
 			addTriangle(a, c, d);
 		}
 
 	private:
 		// #todo-geometry: Duplicate of superclass members?
-		std::vector<glm::vec3> positions;
-		std::vector<glm::vec2> uvs;
+		std::vector<vector3> positions;
+		std::vector<vector2> uvs;
 		std::vector<uint32> indices;
 
 	};

@@ -106,6 +106,7 @@
     <ClCompile Include="src\pathos\render\overlay\overlaypass_image.cpp" />
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
     <ClCompile Include="src\pathos\rhi\gl_live_objects.cpp" />
+    <ClCompile Include="src\pathos\rhi\buffer.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
     <ClCompile Include="src\pathos\scene\actor_component.cpp" />
     <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp" />
@@ -198,6 +199,7 @@
     <ClCompile Include="src\pathos\rhi\gl_context_manager.cpp" />
     <ClCompile Include="src\pathos\rhi\gl_debug_group.cpp" />
     <ClCompile Include="src\pathos\util\log.cpp" />
+    <ClCompile Include="src\pathos\util\malloc_emulator.cpp" />
     <ClCompile Include="src\pathos\util\os_util.cpp" />
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp" />
     <ClCompile Include="src\pathos\util\resource_finder.cpp" />
@@ -223,6 +225,7 @@
     <ClInclude Include="src\badger\system\mem_alloc.h" />
     <ClInclude Include="src\badger\system\platform.h" />
     <ClInclude Include="src\badger\system\cpu.h" />
+    <ClInclude Include="src\badger\types\enum.h" />
     <ClInclude Include="src\badger\types\half_float.h" />
     <ClInclude Include="src\badger\system\stopwatch.h" />
     <ClInclude Include="src\badger\system\thread_pool.h" />
@@ -322,7 +325,7 @@
     <ClInclude Include="src\pathos\material\material_shader.h" />
     <ClInclude Include="src\pathos\material\material_shader_assembler.h" />
     <ClInclude Include="src\pathos\rhi\shader_program.h" />
-    <ClInclude Include="src\pathos\rhi\shader_storage_buffer.h" />
+    <ClInclude Include="src\pathos\rhi\buffer.h" />
     <ClInclude Include="src\pathos\smart_pointer.h" />
     <ClInclude Include="src\pathos\rhi\texture.h" />
     <ClInclude Include="src\pathos\text\text_actor.h" />
@@ -335,6 +338,7 @@
     <ClInclude Include="src\pathos\rhi\gl_context_manager.h" />
     <ClInclude Include="src\pathos\rhi\gl_debug_group.h" />
     <ClInclude Include="src\pathos\util\image_data.h" />
+    <ClInclude Include="src\pathos\util\malloc_emulator.h" />
     <ClInclude Include="src\pathos\util\os_util.h" />
     <ClInclude Include="src\pathos\util\renderdoc_integration.h" />
     <ClInclude Include="src\pathos\render\direct_lighting.h" />

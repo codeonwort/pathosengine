@@ -1,106 +1,69 @@
 #include "pathos/mesh/geometry.h"
-#include "pathos/util/log.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/util/log.h"
 
 #include "badger/assertion/assertion.h"
 #include <vector>
 
 namespace pathos {
 
-	static constexpr GLuint positionLocation  = 0;
-	static constexpr GLuint uvLocation        = 1;
-	static constexpr GLuint normalLocation    = 2;
-	static constexpr GLuint tangentLocation   = 3;
-	static constexpr GLuint bitangentLocation = 4;
+	static constexpr GLuint POSITION_LOCATION  = 0;
+	static constexpr GLuint UV_LOCATION        = 1;
+	static constexpr GLuint NORMAL_LOCATION    = 2;
+	static constexpr GLuint TANGENT_LOCATION   = 3;
+	static constexpr GLuint BITANGENT_LOCATION = 4;
+
+	struct VAOElement {
+		GLuint buffer;
+		GLuint index;
+		GLint  size;
+		GLenum type;
+		GLboolean normalized;
+		GLsizei stride;
+		GLintptr offset;
+	};
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// MeshGeometry
-	MeshGeometry::MeshGeometry()
-		: drawArraysMode(false)
-	{
+
+	MeshGeometry::MeshGeometry() {
+		localBounds = AABB{ vector3(0.0f), vector3(0.0f) };
+		indexDatatype = GL_UNSIGNED_INT;
 	}
 
 	MeshGeometry::~MeshGeometry() {
 		dispose();
 	}
 
+	void MeshGeometry::initializeVertexLayout(EVertexAttributes inVertexAttributes, bool useIndexBuffer /*= true*/) {
+		CHECK(vertexAttributes == EVertexAttributes::None);
+		vertexAttributes = inVertexAttributes;
+		bUseIndexBuffer = useIndexBuffer;
+	}
+
+	void MeshGeometry::dispose() {
+		disposeVAO();
+		releaseBuffer(positionBuffer);
+		releaseBuffer(uvBuffer);
+		releaseBuffer(normalBuffer);
+		releaseBuffer(tangentBuffer);
+		releaseBuffer(bitangentBuffer);
+		releaseBuffer(indexBuffer);
+	}
+
 	uint32 MeshGeometry::getIndexCount() const { return (uint32)indexData.size(); }
-
-	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList, int32 instanceCount) {
-		if (instanceCount == 1) {
-			if (drawArraysMode) {
-				cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
-			} else {
-				cmdList.drawElements(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0);
-			}
-		} else {
-			if (drawArraysMode) {
-				cmdList.drawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)positionData.size(), instanceCount);
-			} else {
-				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)indexData.size(), GL_UNSIGNED_INT, (void*)0, instanceCount);
-			}
-		}
-	}
-
-#define DEFINE_ACTIVATE_VAO(combination)                                    \
-	void MeshGeometry::activate_##combination(RenderCommandList& cmdList) { \
-		if(vao_##combination == 0) createVAO_##combination(cmdList);		\
-		cmdList.bindVertexArray(vao_##combination);							\
-	}																		
-	DEFINE_ACTIVATE_VAO(position)
-	DEFINE_ACTIVATE_VAO(position_uv)
-	DEFINE_ACTIVATE_VAO(position_normal)
-	DEFINE_ACTIVATE_VAO(position_uv_normal)
-	DEFINE_ACTIVATE_VAO(position_uv_normal_tangent_bitangent)
-#undef DEFINE_ACTIVATE_VAO
-
-	// #todo-renderthread: No flush when called in non-render thread
-	static void enqueueBufferUpload(GLuint bufferName, GLsizeiptr size, const void* data) {
-		if (isInRenderThread()) {
-			RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
-			cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
-		} else {
-			ENQUEUE_RENDER_COMMAND([bufferName, size, data](RenderCommandList& cmdList) {
-				cmdList.namedBufferData(bufferName, size, data, GL_STATIC_DRAW);
-			});
-			// 'data' could be volatile, so flush here
-			TEMP_FLUSH_RENDER_COMMAND(true);
-		}
-	}
-
-	// #todo-renderthread: No flush when called in non-render thread
-	static GLuint createBufferHelper(const char* debugName) {
-		CHECK(debugName != nullptr);
-		GLuint buffer = 0;
-		if (isInRenderThread()) {
-			gRenderDevice->createBuffers(1, &buffer);
-			gRenderDevice->objectLabel(GL_BUFFER, buffer, -1, debugName);
-			CHECK(buffer != 0);
-		} else {
-			std::string debugNameStr(debugName);
-			ENQUEUE_RENDER_COMMAND([bufferPtr = &buffer, debugNameStr](RenderCommandList& cmdList) {
-				gRenderDevice->createBuffers(1, bufferPtr);
-				gRenderDevice->objectLabel(GL_BUFFER, *bufferPtr, -1, debugNameStr.c_str());
-			});
-			// 'data' could be volatile, so flush here
-			TEMP_FLUSH_RENDER_COMMAND(true);
-		}
-		return buffer;
-	}
-
-	void MeshGeometry::deactivate(RenderCommandList& cmdList) {
-		cmdList.bindVertexArray(0);
-	}
 	
+	bool MeshGeometry::isIndex16Bit() const { return indexDatatype == GL_UNSIGNED_SHORT; }
+
 	void MeshGeometry::updatePositionData(const GLfloat* data, uint32 length) {
+		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position));
 		CHECKF(length % 3 == 0, "Invalid length");
 		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 
+		positionData.resize(length / 3);
 		positionData.assign(data2, data2 + length / 3);
-		if (!positionBuffer) {
-			positionBuffer = createBufferHelper("Buffer_position");
-		}
-		enqueueBufferUpload(positionBuffer, length * sizeof(GLfloat), positionData.data());
+
+		bufferUploadHelper(positionBuffer, length * sizeof(GLfloat), positionData.data(), gRenderDevice->getPositionBufferPool());
 
 		if (bCalculateLocalBounds) {
 			calculateLocalBounds();
@@ -108,30 +71,25 @@ namespace pathos {
 	}
 
 	void MeshGeometry::updateUVData(const GLfloat* data, uint32 length, bool bFlipY /*= false */) {
+		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv));
 		CHECKF(length % 2 == 0, "Invalid length");
-		const vector2* data2 = reinterpret_cast<const vector2*>(data);
 
+		const vector2* data2 = reinterpret_cast<const vector2*>(data);
+		uvData.resize(length / 2);
 		uvData.assign(data2, data2 + length / 2);
-		if (bFlipY) {
-			for (vector2& uv : uvData) {
-				uv.y = 1.0f - uv.y;
-			}
-		}
-		if (!uvBuffer) {
-			uvBuffer = createBufferHelper("Buffer_uv");
-		}
-		enqueueBufferUpload(uvBuffer, length * sizeof(GLfloat), uvData.data());
+		if (bFlipY) { for (vector2& uv : uvData) { uv.y = 1.0f - uv.y; } }
+
+		bufferUploadHelper(uvBuffer, length * sizeof(GLfloat), uvData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 
 	void MeshGeometry::updateNormalData(const GLfloat* data, uint32 length) {
+		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Normal));
 		CHECKF(length % 3 == 0, "Invalid length");
-		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 
+		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 		normalData.assign(data2, data2 + length / 3);
-		if (!normalBuffer) {
-			normalBuffer = createBufferHelper("Buffer_normal");
-		}
-		enqueueBufferUpload(normalBuffer, length * sizeof(GLfloat), normalData.data());
+
+		bufferUploadHelper(normalBuffer, length * sizeof(GLfloat), normalData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 	void MeshGeometry::updateNormalData(const std::vector<vector3>& inNormals)
 	{
@@ -141,54 +99,47 @@ namespace pathos {
 	}
 
 	void MeshGeometry::updateTangentData(const GLfloat* data, uint32 length) {
+		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent));
 		CHECKF(length % 3 == 0, "Invalid length");
-		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 
+		const vector3* data2 = reinterpret_cast<const vector3*>(data);
 		tangentData.assign(data2, data2 + length / 3);
-		if (!tangentBuffer) {
-			tangentBuffer = createBufferHelper("Buffer_tangent");
-		}
-		enqueueBufferUpload(tangentBuffer, length * sizeof(GLfloat), tangentData.data());
+
+		bufferUploadHelper(tangentBuffer, length * sizeof(GLfloat), tangentData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 	void MeshGeometry::updateBitangentData(const GLfloat* data, uint32 length) {
+		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Bitangent));
 		CHECKF(length % 3 == 0, "Invalid length");
+
 		const vector3* data2 = reinterpret_cast<const vector3*>(data);
-
 		bitangentData.assign(data2, data2 + length / 3);
-		if (!bitangentBuffer) {
-			bitangentBuffer = createBufferHelper("Buffer_bitangent");
-		}
-		enqueueBufferUpload(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data());
-	}
-	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
-		indexData.assign(data, data + length);
-		if (!indexBuffer) {
-			indexBuffer = createBufferHelper("Buffer_index");
-		}
-		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
-	}
-	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
-		indexData.resize(length);
-		for (uint32 i = 0; i < length; ++i) {
-			indexData[i] = (GLuint)data[i];
-		}
-		if (!indexBuffer) {
-			indexBuffer = createBufferHelper("Buffer_index");
-		}
-		enqueueBufferUpload(indexBuffer, length * sizeof(GLuint), indexData.data());
+
+		bufferUploadHelper(bitangentBuffer, length * sizeof(GLfloat), bitangentData.data(), gRenderDevice->getVaryingBufferPool());
 	}
 
-	void MeshGeometry::activateIndexBuffer(RenderCommandList& cmdList) {
-		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+	void MeshGeometry::updateIndexData(const GLuint* data, uint32 length) {
+		CHECK(bUseIndexBuffer);
+		indexData.assign(data, data + length);
+
+		bufferUploadHelper(indexBuffer, length * sizeof(GLuint), indexData.data(), gRenderDevice->getIndexBufferPool());
+		indexDatatype = GL_UNSIGNED_INT;
 	}
-	void MeshGeometry::deactivateIndexBuffer(RenderCommandList& cmdList) {
-		cmdList.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	void MeshGeometry::updateIndex16Data(const uint16* data, uint32 length) {
+		CHECK(bUseIndexBuffer);
+		// Keep shadow copy as 32-bit data
+		indexData.resize(length);
+		for (uint32 i = 0; i < length; ++i) indexData[i] = (GLuint)data[i];
+
+		// Send 16-bit data to GPU
+		bufferUploadHelper(indexBuffer, length * sizeof(uint16), (void*)data, gRenderDevice->getIndexBufferPool());
+		indexDatatype = GL_UNSIGNED_SHORT;
 	}
 
 	// requirements: positionData and indexData should be available.
 	void MeshGeometry::calculateNormals() {
-		if (drawArraysMode) calculateNormals_array();
-		else calculateNormals_indexed();
+		if (bUseIndexBuffer) calculateNormals_indexed(); 
+		else calculateNormals_array();
 	}
 	void MeshGeometry::calculateNormals_array() {
 		if (positionData.size() == 0) {
@@ -305,48 +256,78 @@ namespace pathos {
 		//LOG(LogInfo, "\tmax: %f %f %f", maxV.x, maxV.y, maxV.z);
 	}
 
-	void MeshGeometry::dispose() {
-		std::vector<GLuint> VBO;
-		if (positionBuffer != 0)  VBO.push_back(positionBuffer);
-		if (uvBuffer != 0)        VBO.push_back(uvBuffer);
-		if (normalBuffer != 0)    VBO.push_back(normalBuffer);
-		if (tangentBuffer != 0)   VBO.push_back(tangentBuffer);
-		if (bitangentBuffer != 0) VBO.push_back(bitangentBuffer);
-		if (indexBuffer != 0)     VBO.push_back(indexBuffer);
-		// #todo-lifecycle: Should manage lifecycle of GL resources
-		//gRenderDevice->deleteBuffers(static_cast<GLsizei>(VBO.size()), VBO.data());
-
-		std::vector<GLuint> VAO;
-		if (vao_position != 0)                             VAO.push_back(vao_position);
-		if (vao_position_uv != 0)                          VAO.push_back(vao_position_uv);
-		if (vao_position_normal != 0)                      VAO.push_back(vao_position_normal);
-		if (vao_position_uv_normal != 0)                   VAO.push_back(vao_position_uv_normal);
-		if (vao_position_uv_normal_tangent_bitangent != 0) VAO.push_back(vao_position_uv_normal_tangent_bitangent);
-		// #todo-lifecycle: Should manage lifecycle of GL resources
-		//gRenderDevice->deleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
+	void MeshGeometry::bindPositionOnlyVAO(RenderCommandList& cmdList) {
+		if (vaoPositionOnly == 0) {
+			createPositionVAO(cmdList);
+		}
+		cmdList.bindVertexArray(vaoPositionOnly);
 	}
 
-	struct VAOElement {
-		GLuint buffer;
-		GLuint index;
-		GLint size;
-		GLenum type;
-		GLboolean normalized;
-		GLsizei stride;
-	};
+	void MeshGeometry::bindFullAttributesVAO(RenderCommandList& cmdList) {
+		if (vaoFullAttributes == 0) {
+			createFullVAO(cmdList);
+		}
+		cmdList.bindVertexArray(vaoFullAttributes);
+	}
 
-	static void createVAO(
+	void MeshGeometry::unbindVAO(RenderCommandList& cmdList) {
+		cmdList.bindVertexArray(0);
+	}
+
+	void MeshGeometry::drawPrimitive(RenderCommandList& cmdList, int32 instanceCount) {
+		if (instanceCount == 1) {
+			if (bUseIndexBuffer) {
+				const uintptr_t indexOffsetBytes = (uintptr_t)indexBuffer.offset;
+				cmdList.drawElements(GL_TRIANGLES, (GLsizei)getIndexCount(), indexDatatype, (void*)indexOffsetBytes);
+			} else {
+				cmdList.drawArrays(GL_TRIANGLES, 0, (GLsizei)positionData.size());
+			}
+		} else {
+			if (bUseIndexBuffer) {
+				const uintptr_t indexOffsetBytes = (uintptr_t)indexBuffer.offset;
+				cmdList.drawElementsInstanced(GL_TRIANGLES, (GLsizei)getIndexCount(), indexDatatype, (void*)indexOffsetBytes, instanceCount);
+			} else {
+				cmdList.drawArraysInstanced(GL_TRIANGLES, 0, (GLsizei)positionData.size(), instanceCount);
+			}
+		}
+	}
+
+	void MeshGeometry::bufferUploadHelper(BufferView& bufferView, uint64 requestedBytes, void* data, BufferPool* bufferPool) {
+		CHECK(requestedBytes != 0);
+		if (bufferView.bufferPool != nullptr) CHECK(bufferView.bufferPool == bufferPool);
+		if (bufferView.offset == BufferPool::INVALID_OFFSET || bufferView.bytes != requestedBytes) {
+			if (bufferView.offset != BufferPool::INVALID_OFFSET) {
+				bufferPool->deallocate(bufferView.offset);
+				disposeVAO(); // #todo-performance: Some cases don't need recreation of VAO
+			}
+			bufferView.offset = bufferPool->suballocate(requestedBytes);
+			bufferView.bytes = requestedBytes;
+			bufferView.bufferPool = bufferPool;
+			CHECKF(bufferView.offset != BufferPool::INVALID_OFFSET, "Failed to suballocate from buffer pool");
+		}
+		bufferPool->writeToGPU((int64)bufferView.offset, (int64)bufferView.bytes, data);
+	}
+
+	void MeshGeometry::releaseBuffer(BufferView& bufferView) {
+		if (bufferView.offset != BufferPool::INVALID_OFFSET) {
+			bufferView.bufferPool->deallocate(bufferView.offset);
+			bufferView.offset = BufferPool::INVALID_OFFSET;
+			bufferView.bytes = 0;
+			bufferView.bufferPool = nullptr;
+		}
+	}
+
+	static void createVAOHelper(
 		RenderCommandList& cmdList,
 		GLuint indexBuffer,
 		GLuint* vao,
 		const std::vector<VAOElement>& descs,
 		const char* debugLabel)
 	{
-		CHECK(*vao == 0 && indexBuffer != 0);
+		CHECK(*vao == 0 && indexBuffer != 0 && descs.size() > 0);
 		gRenderDevice->createVertexArrays(1, vao);
 		gRenderDevice->objectLabel(GL_VERTEX_ARRAY, *vao, -1, debugLabel);
 
-#if 1
 		// attribindex and bindingindex are so confusing...
 		for (const VAOElement& desc : descs) {
 			CHECKF(desc.buffer != 0, "Null buffer is not allowed");
@@ -355,10 +336,9 @@ namespace pathos {
 				*vao,            // VAO
 				desc.index,      // binding index
 				desc.buffer,     // buffer name
-				0,               // offset
+				desc.offset,     // offset
 				desc.stride      // stride
 			);
-			cmdList.vertexArrayElementBuffer(*vao, indexBuffer);
 
 			cmdList.enableVertexArrayAttrib(
 				*vao,            // VAO
@@ -376,54 +356,60 @@ namespace pathos {
 			
 			cmdList.vertexArrayAttribBinding(*vao, desc.index, desc.index); // vao, attribindex, bindingindex
 		}
-#else
-		glBindVertexArray(*vao);
-		for (const VAOElement& desc : descs) {
-			CHECKF(desc.buffer != 0, "Null buffer is not allowed");
-			glBindBuffer(GL_ARRAY_BUFFER, desc.buffer);
-			glVertexAttribPointer(desc.index, desc.size, desc.type, desc.normalized, 0, (void*)0);
-			glEnableVertexArrayAttrib(*vao, desc.index);
+		if (indexBuffer != 0) {
+			cmdList.vertexArrayElementBuffer(*vao, indexBuffer);
 		}
-		glBindVertexArray(0);
-#endif
 	}
 
-	void MeshGeometry::createVAO_position(RenderCommandList& cmdList) {
-		createVAO(cmdList, indexBuffer, &vao_position, {
-			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
-		}, "VAO_position");
+	void MeshGeometry::createPositionVAO(RenderCommandList& cmdList) {
+		const GLuint indexBufferName     = bUseIndexBuffer ? indexBuffer.bufferPool->internal_getGLName() : 0;
+		const GLuint positionBufferName  = positionBuffer.bufferPool->internal_getGLName();
+
+		std::vector<VAOElement> descs;
+
+		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                       }
+		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset  };
+
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position)) {
+			descs.push_back(posDesc);
+			createVAOHelper(cmdList, indexBufferName, &vaoPositionOnly, descs, "VAO_positionOnly");
+		}
 	}
 
-	void MeshGeometry::createVAO_position_uv(RenderCommandList& cmdList) {
-		createVAO(cmdList, indexBuffer, &vao_position_uv, {
-			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) }
-		}, "VAO_position_uv");
+	void MeshGeometry::createFullVAO(RenderCommandList& cmdList) {
+		const GLuint indexBufferName     = bUseIndexBuffer ? indexBuffer.bufferPool->internal_getGLName() : 0;
+		const GLuint positionBufferName  = positionBuffer.bufferPool->internal_getGLName();
+		const GLuint uvBufferName        = uvBuffer.bufferPool->internal_getGLName();
+		const GLuint normalBufferName    = normalBuffer.bufferPool->internal_getGLName();
+		const GLuint tangentBufferName   = tangentBuffer.bufferPool->internal_getGLName();
+		const GLuint bitangentBufferName = bitangentBuffer.bufferPool->internal_getGLName();
+
+		std::vector<VAOElement> descs;
+
+		//                            { bufferName,          bindingIndex,       numElements, elementType, normalized, stride,               bufferOffset                       }
+		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset  };
+		const VAOElement uvDesc       { uvBufferName,        UV_LOCATION,        2,           GL_FLOAT,    GL_FALSE,   2 * sizeof(GL_FLOAT), (GLsizeiptr)uvBuffer.offset        };
+		const VAOElement normalDesc   { normalBufferName,    NORMAL_LOCATION,    3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)normalBuffer.offset    };
+		const VAOElement tangentDesc  { tangentBufferName,   TANGENT_LOCATION,   3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)tangentBuffer.offset   };
+		const VAOElement bitangentDesc{ bitangentBufferName, BITANGENT_LOCATION, 3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)bitangentBuffer.offset };
+
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position)) { descs.push_back(posDesc); }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv)) { descs.push_back(uvDesc); }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Normal)) { descs.push_back(normalDesc); }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent)) { descs.push_back(tangentDesc); }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Bitangent)) { descs.push_back(bitangentDesc); }
+
+		createVAOHelper(cmdList, indexBufferName, &vaoFullAttributes, descs, "VAO_fullAttributes");
 	}
 
-	void MeshGeometry::createVAO_position_normal(RenderCommandList& cmdList) {
-		createVAO(cmdList, indexBuffer, &vao_position_normal, {
-			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
-		}, "VAO_position_normal");
-	}
-
-	void MeshGeometry::createVAO_position_uv_normal(RenderCommandList& cmdList) {
-		createVAO(cmdList, indexBuffer, &vao_position_uv_normal, {
-			{ positionBuffer, positionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ uvBuffer,       uvLocation,       2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) },
-			{ normalBuffer,   normalLocation,   3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
-		}, "VAO_position_uv_normal");
-	}
-
-	void MeshGeometry::createVAO_position_uv_normal_tangent_bitangent(RenderCommandList& cmdList) {
-		createVAO(cmdList, indexBuffer, &vao_position_uv_normal_tangent_bitangent, {
-			{ positionBuffer,  positionLocation,  3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ uvBuffer,        uvLocation,        2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT) },
-			{ normalBuffer,    normalLocation,    3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ tangentBuffer,   tangentLocation,   3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) },
-			{ bitangentBuffer, bitangentLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT) }
-		}, "VAO_position_uv_normal_tangent_bitangent");
+	void MeshGeometry::disposeVAO() {
+		std::vector<GLuint> VAO;
+		if (vaoPositionOnly != 0) VAO.push_back(vaoPositionOnly);
+		if (vaoFullAttributes != 0) VAO.push_back(vaoFullAttributes);
+		ENQUEUE_DEFERRED_RENDER_COMMAND([VAO](RenderCommandList& cmdList) {
+			gRenderDevice->deleteVertexArrays(static_cast<GLsizei>(VAO.size()), VAO.data());
+		});
+		vaoPositionOnly = vaoFullAttributes = 0;
 	}
 
 }

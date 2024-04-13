@@ -162,7 +162,7 @@ namespace pathos {
 				renderThread->takeScreenshot();
 			});
 			registerConsoleCommand("memreport", [](const std::string& command) {
-				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
+				ENQUEUE_DEFERRED_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					int64 bufferMem, textureMem;
 					gRenderDevice->memreport(bufferMem, textureMem);
 					char msg[256];

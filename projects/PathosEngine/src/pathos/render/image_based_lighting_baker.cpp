@@ -145,8 +145,7 @@ namespace pathos {
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
-		cube->activate_position(cmdList);
-		cube->activateIndexBuffer(cmdList);
+		cube->bindPositionOnlyVAO(cmdList);
 
 		for (int32 i = 0; i < 6; ++i) {
 			const matrix4& viewproj = ImageBasedLightingBaker::cubeTransforms[i];
@@ -157,8 +156,7 @@ namespace pathos {
 			cube->drawPrimitive(cmdList);
 		}
 
-		cube->deactivate(cmdList);
-		cube->deactivateIndexBuffer(cmdList);
+		cube->unbindVAO(cmdList);
 
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
@@ -229,16 +227,14 @@ namespace pathos {
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0, i);
 				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
 
-				cubeGeom->activate_position(cmdList);
-				cubeGeom->activateIndexBuffer(cmdList);
+				cubeGeom->bindPositionOnlyVAO(cmdList);
 				cubeGeom->drawPrimitive(cmdList);
 			}
 		} else {
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, bakeDesc.renderTarget, 0);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT1, bakeDesc.depthTarget, 0);
 
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 		}
 
@@ -336,8 +332,7 @@ namespace pathos {
 				cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, outputTexture, mip, i);
 				cmdList.uniformMatrix4fv(uniform_transform, 1, GL_FALSE, &viewproj[0][0]);
 
-				cube->activate_position(cmdList);
-				cube->activateIndexBuffer(cmdList);
+				cube->bindPositionOnlyVAO(cmdList);
 				cube->drawPrimitive(cmdList);
 			}
 		}
@@ -392,8 +387,7 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		return brdfLUT;

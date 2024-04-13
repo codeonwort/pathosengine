@@ -1,7 +1,8 @@
 #include "render_device.h"
 #include "pathos/rhi/gl_context_manager.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/gl_live_objects.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/util/log.h"
 #include "pathos/console.h"
 
@@ -55,10 +56,21 @@ namespace pathos {
 
 	// NOTE: Should be set in EngineConfig.ini to be effective.
 	static ConsoleVariable<int32> cvarDumpGLDevice("r.dumpGLDevice", 0, "(read only) Dump GL device info to log/device_dump");
+	static ConsoleVariable<int32> cvarPositionBufferPoolSize("r.positionBufferPoolSize", 32 * 1024 * 1024, "(read only) Size of global position buffer pool in bytes");
+	static ConsoleVariable<int32> cvarVaryingBufferPoolSize("r.varyingBufferPoolSize", 64 * 1024 * 1024, "(read only) Size of global varying buffer pool in bytes");
+	static ConsoleVariable<int32> cvarIndexBufferPoolSize("r.indexBufferPoolSize", 32 * 1024 * 1024, "(read only) Size of global vertex buffer pool in bytes");
 
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
 		//CHECK(isInMainThread());
+		if (isInRenderThread()) {
+			lambda(gRenderDevice->getImmediateCommandList());
+		} else {
+			gRenderDevice->getEarlyCommandList().registerHook(lambda);
+		}
+	}
 
+	void ENQUEUE_DEFERRED_RENDER_COMMAND(std::function<void(RenderCommandList& commandList)> lambda) {
+		//CHECK(isInMainThread());
 		if (isInRenderThread()) {
 			lambda(gRenderDevice->getImmediateCommandList());
 		} else {
@@ -117,6 +129,9 @@ namespace pathos {
 	}
 
 	OpenGLDevice::~OpenGLDevice() {
+		positionBufferPool->releaseGPUResource();
+		varyingBufferPool->releaseGPUResource();
+		indexBufferPool->releaseGPUResource();
 		delete gGLLiveObjects;
 	}
 
@@ -134,11 +149,13 @@ namespace pathos {
 		checkExtensions();
 		queryCapabilities();
 
-		// #todo-renderthread: Wanna get rid of deferred_command_list :/
+		// #todo-renderthread: Wanna unify command lists
 		// Create command lists
+		early_command_list = makeUnique<RenderCommandList>("early");
 		immediate_command_list = makeUnique<RenderCommandList>("immediate");
 		deferred_command_list = makeUnique<RenderCommandList>("deferred");
 		hook_command_list = makeUnique<RenderCommandList>("hook");
+		early_command_list->setHookCommandList(hook_command_list.get());
 		immediate_command_list->setHookCommandList(hook_command_list.get());
 		deferred_command_list->setHookCommandList(hook_command_list.get());
 
@@ -159,6 +176,13 @@ namespace pathos {
 		} else {
 			LOG(LogInfo, "[RenderDevice] VRAM: unknown (Both 'NVX_gpu_memory_info' and 'ATI_meminfo' extensions are missing)");
 		}
+
+		positionBufferPool = new BufferPool;
+		positionBufferPool->createGPUResource(cvarPositionBufferPoolSize.getInt(), "GPositionBufferPool");
+		varyingBufferPool = new BufferPool;
+		varyingBufferPool->createGPUResource(cvarVaryingBufferPoolSize.getInt(), "GVaryingBufferPool");
+		indexBufferPool = new BufferPool;
+		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), "GIndexBufferPool");
 
 		return true;
 	}

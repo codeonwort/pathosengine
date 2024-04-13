@@ -1,8 +1,5 @@
 #pragma once
 
-// #todo-persistent-map-buffer
-// https://www.bfilipek.com/2015/01/persistent-mapped-buffers-in-opengl.html
-
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/render_command_list.h"
@@ -10,6 +7,7 @@
 
 namespace pathos {
 
+	// #todo-rhi: Replace with Buffer
 	class UniformBuffer {
 
 	public:
@@ -33,8 +31,6 @@ namespace pathos {
 				debugName = inDebugName;
 			}
 
-			//gRenderDevice->createBuffers(1, &ubo);
-
 			if (isInRenderThread()) {
 				gRenderDevice->createBuffers(1, &ubo);
 				RenderCommandList& cmdList = gRenderDevice->getImmediateCommandList();
@@ -43,7 +39,6 @@ namespace pathos {
 					cmdList.objectLabel(GL_BUFFER, this->ubo, -1, debugName.c_str());
 				}
 			} else {
-				// #todo-renderthread: No issue with order of commands?
 				ENQUEUE_RENDER_COMMAND([this](RenderCommandList& cmdList) {
 					gRenderDevice->createBuffers(1, &(this->ubo));
 					cmdList.namedBufferStorage(this->ubo, this->bufferSize, (GLvoid*)0, GL_DYNAMIC_STORAGE_BIT);

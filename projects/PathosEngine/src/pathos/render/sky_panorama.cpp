@@ -107,8 +107,7 @@ namespace pathos {
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
-		skyProxy->sphere->activate_position(cmdList);
-		skyProxy->sphere->activateIndexBuffer(cmdList);
+		skyProxy->sphere->bindPositionOnlyVAO(cmdList);
 		skyProxy->sphere->drawPrimitive(cmdList);
 	}
 

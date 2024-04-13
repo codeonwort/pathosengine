@@ -64,7 +64,7 @@ namespace pathos {
 		void overrideSceneRenderSettings(const SceneRenderSettings& inSettings);
 
 		// This should be called for each view.
-		// #todo: Parameter might be further generalized
+		// #todo-scene-proxy: Parameter might be further generalized
 		void createViewDependentRenderProxy(const matrix4& viewMatrix);
 
 		void checkFrustumCulling(const Camera& camera);

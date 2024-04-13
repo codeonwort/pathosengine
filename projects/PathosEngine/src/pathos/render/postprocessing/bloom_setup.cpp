@@ -81,8 +81,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(2, sceneContext.gbufferB);
 		cmdList.bindTextureUnit(3, sceneContext.gbufferC);
 
-		fullscreenQuad->activate_position_uv(cmdList);
-		fullscreenQuad->activateIndexBuffer(cmdList);
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
 	}

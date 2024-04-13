@@ -15,6 +15,8 @@
 
 namespace pathos {
 
+	class BufferPool;
+
 	// https://developer.nvidia.com/vulkan-turing
 	struct OpenGLExtensionSupport {
 		uint32 ATI_meminfo : 1;
@@ -52,7 +54,7 @@ namespace pathos {
 		int32 dedicatedVideoMemoryAvailableMiB = 0;
 	};
 
-	// Device API wrapper
+	// Graphics device API wrapper
 	class OpenGLDevice final : public Noncopyable {
 
 	public:
@@ -67,15 +69,16 @@ namespace pathos {
 		const OpenGLExtensionSupport& getExtensionSupport() const { return extensionSupport; }
 		const OpenGLDriverCapabilities& getCapabilities() const { return capabilities; }
 
-		// #todo-renderthread: I messed it up :/ Can I unify it?
+		// #todo-renderthread: I messed it up :/ Can I unify them?
 		__forceinline RenderCommandList& getImmediateCommandList() const { return *immediate_command_list.get(); }
 		// Used for queueing commands from non-render threads.
+		__forceinline RenderCommandList& getEarlyCommandList() const { return *early_command_list.get(); }
 		__forceinline RenderCommandList& getDeferredCommandList() const { return *deferred_command_list.get(); }
 		// Due to hooks appending commands at the rear of immediate list and messing up command order,
 		// we pass a dedicated list to the current hook and immediately flush it. Dirty but at least does not fuck up the order.
 		__forceinline RenderCommandList& getHookCommandList() const { return *hook_command_list.get(); }
 
-		// API for GPU resource creation and deletion (not queued in command list)
+	// API for GPU resource creation and deletion (not queued in command list)
 	public:
 		// Needed for texture view. Use createTextures() for normal case.
 		void genTextures(GLsizei n, GLuint* textures);
@@ -103,6 +106,10 @@ namespace pathos {
 
 		void objectLabel(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
+		inline BufferPool* getPositionBufferPool() const { return positionBufferPool; }
+		inline BufferPool* getVaryingBufferPool() const { return varyingBufferPool; }
+		inline BufferPool* getIndexBufferPool() const { return indexBufferPool; }
+
 	private:
 		void queryCapabilities();
 		void checkExtensions();
@@ -110,9 +117,14 @@ namespace pathos {
 		OpenGLDriverCapabilities capabilities;
 		OpenGLExtensionSupport extensionSupport;
 
+		uniquePtr<RenderCommandList> early_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> immediate_command_list; // For render thread itself
 		uniquePtr<RenderCommandList> deferred_command_list;  // For render hooks in non-render threads
 		uniquePtr<RenderCommandList> hook_command_list;
+
+		BufferPool* positionBufferPool = nullptr; // Global position-only vertex buffer pool
+		BufferPool* varyingBufferPool = nullptr; // Global non-position vertex buffer pool (normal, texcoord, ...)
+		BufferPool* indexBufferPool = nullptr; // Global index buffer pool
 	};
 
 	extern OpenGLDevice* gRenderDevice;
@@ -121,8 +133,11 @@ namespace pathos {
 
 namespace pathos {
 
-	// Reserve a render command from the game thread.
+	// Reserve a render command from the game thread. The command is executed BEFORE frame rendering.
 	void ENQUEUE_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda);
+
+	// Reserve a render command from the game thread. The command is executed AFTER frame rendering.
+	void ENQUEUE_DEFERRED_RENDER_COMMAND(std::function<void(RenderCommandList& immediateCommandList)> lambda);
 
 	// Block the game thread until all render commands so far are finished.
 	// CAUTION: Use only if must. Never use inside of game tick.

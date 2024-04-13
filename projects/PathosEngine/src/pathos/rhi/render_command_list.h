@@ -69,6 +69,7 @@ namespace pathos {
 		// Frees the memory after all commands are executed.
 		// CAUTION: The parameter should point a dynamically allocated memory and not free'd in other places.
 		void registerDeferredCleanup(void* dynamicMemory);
+		void registerDeferredBufferCleanup(GLuint buffer);
 		void registerDeferredTextureCleanup(GLuint texture);
 
 		// Free all memory that came from registerDeferredCleanup().
@@ -110,6 +111,7 @@ namespace pathos {
 
 		std::mutex deferredCleanupLock;
 		std::vector<void*> deferredMemoryCleanups;
+		std::vector<GLuint> deferredBufferCleanups;
 		std::vector<GLuint> deferredTextureCleanups;
 
 	public:

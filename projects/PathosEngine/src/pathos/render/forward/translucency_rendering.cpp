@@ -143,8 +143,7 @@ namespace pathos {
 			//	}
 			//}
 
-			proxy->geometry->activate_position_uv_normal_tangent_bitangent(cmdList);
-			proxy->geometry->activateIndexBuffer(cmdList);
+			proxy->geometry->bindFullAttributesVAO(cmdList);
 			proxy->geometry->drawPrimitive(cmdList);
 		}
 

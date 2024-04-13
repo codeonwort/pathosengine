@@ -14,6 +14,8 @@ namespace pathos {
 	class TextGeometry : public MeshGeometry {
 
 	public:
+		TextGeometry();
+
 		void configure(
 			RenderCommandList& cmdList,
 			FontTextureCache& cache,

@@ -165,8 +165,7 @@ namespace pathos {
 			ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_SSAO_BlurVertical);
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
-			fullscreenQuad->activate_position_uv(cmdList);
-			fullscreenQuad->activateIndexBuffer(cmdList);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
 
 			cmdList.useProgram(program_horizontal.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur);

@@ -23,7 +23,7 @@ namespace pathos {
 		struct UBO_PerObject {
 			static constexpr uint32 BINDING_POINT = 1;
 
-			// #todo: Upload only object ID. Read model transform from some buffer.
+			// #todo-material: Upload only object ID. Read model transform from some buffer.
 			matrix4 modelTransform;
 			matrix4 prevModelTransform;
 		};
