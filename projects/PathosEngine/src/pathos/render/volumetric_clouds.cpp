@@ -193,7 +193,7 @@ namespace pathos {
 			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
 
 			if (scene->proxyList_directionalLight.size() > 0) {
-				vector3 intensity = scene->proxyList_directionalLight[0]->illuminance;
+				vector3 intensity = scene->proxyList_directionalLight[0]->getIntensity();
 				intensity *= std::max(0.0f, cvar_cloud_sunIntensityScale.getFloat());
 				uboData.sunIntensity = vector4(intensity, 0.0f);
 				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);

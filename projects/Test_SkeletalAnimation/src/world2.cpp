@@ -18,7 +18,8 @@
 
 #define FOV_Y                     60.0f
 #define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, -1.0f))
-#define SUN_ILLUMINANCE           vector3(2.0f)
+#define SUN_COLOR                 vector3(1.0f)
+#define SUN_ILLUMINANCE           2.0f
 #define CAMERA_POSITION           vector3(0.0f, 2.0f, 6.0f)
 #define CAMERA_LOOK_AT            vector3(0.0f, 2.0f, 4.0f)
 
@@ -76,7 +77,7 @@ void World2::setupScene()
 
 	sunLight = spawnActor<DirectionalLightActor>();
 	sunLight->setDirection(SUN_DIRECTION);
-	sunLight->setIlluminance(SUN_ILLUMINANCE);
+	sunLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	pointLight0 = spawnActor<PointLightActor>();
 	pointLight0->setActorLocation(vector3(0.0f, 2.0f, 2.0f));

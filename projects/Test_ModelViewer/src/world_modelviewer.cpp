@@ -146,7 +146,7 @@ void World_ModelViewer::onInitialize() {
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);
-	sun->setIlluminance(sunIlluminance);
+	sun->setColorAndIlluminance(sunColor, sunIlluminance);
 
 	playerController = spawnActor<PlayerController>();
 
@@ -258,7 +258,7 @@ void World_ModelViewer::onTick(float deltaSeconds) {
 void World_ModelViewer::registerConsoleCommands() {
 	// Help message
 	gConsole->addLine(L"== MODEL VIEWER ======================", false, true);
-	gConsole->addLine(L"> Command lists: load_model / sun_illuminance / sun_direction", false, true);
+	gConsole->addLine(L"> Command lists: load_model / sun_color / sun_illuminance / sun_direction", false, true);
 	gConsole->addLine(L"> Enter each command without parameters to see help", false, true);
 	gConsole->addLine(L"======================================", false, true);
 
@@ -292,17 +292,35 @@ void World_ModelViewer::registerConsoleCommands() {
 		}
 	);
 
-	gEngine->registerConsoleCommand("sun_illuminance",
+	gEngine->registerConsoleCommand("sun_color",
 		[this](const std::string& command) {
 			float r, g, b;
-			int ret = sscanf_s(command.c_str(), "sun_illuminance %f %f %f", &r, &g, &b);
+			int ret = sscanf_s(command.c_str(), "sun_color %f %f %f", &r, &g, &b);
 			if (ret != 3) {
-				gConsole->addLine(L"Usage: sun_illuminance r g b", false, true);
+				gConsole->addLine(L"Usage: sun_color r g b", false, true);
 				wchar_t msg[256];
-				swprintf_s(msg, L"Sun illuminance: (%.3f, %.3f, %.3f) lux", sunIlluminance.r, sunIlluminance.g, sunIlluminance.b);
+				swprintf_s(msg, L"Sun color: (%.3f, %.3f, %.3f)", sunColor.r, sunColor.g, sunColor.b);
 				gConsole->addLine(msg, false, true);
 			} else {
-				sunIlluminance.r = r; sunIlluminance.g = g; sunIlluminance.b = b;
+				sunColor.r = glm::clamp(r, 0.0f, 1.0f);
+				sunColor.g = glm::clamp(g, 0.0f, 1.0f);
+				sunColor.b = glm::clamp(b, 0.0f, 1.0f);
+				sun->setColor(sunColor);
+			}
+		}
+	);
+
+	gEngine->registerConsoleCommand("sun_illuminance",
+		[this](const std::string& command) {
+			float newValue;
+			int ret = sscanf_s(command.c_str(), "sun_illuminance %f", &newValue);
+			if (ret != 1) {
+				gConsole->addLine(L"Usage: sun_illuminance value", false, true);
+				wchar_t msg[256];
+				swprintf_s(msg, L"Sun illuminance: %.3f lux", sunIlluminance);
+				gConsole->addLine(msg, false, true);
+			} else {
+				sunIlluminance = newValue;
 				sun->setIlluminance(sunIlluminance);
 			}
 		}

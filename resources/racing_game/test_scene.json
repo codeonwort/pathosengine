@@ -22,7 +22,8 @@
 		{
 			"name": "Sun",
 			"direction": [0, -0.4, -1],
-			"illuminance": [5.0, 5.0, 5.0]
+			"color": [5.0, 5.0, 5.0],
+			"illuminance": 5.0
 		}
 	],
 	"pointLight": [

@@ -99,17 +99,19 @@ namespace pathos {
 		}
 
 		for (auto& [unused_key, L] : document[KEY_DIRECTIONAL_LIGHTS].items()) {
-			if (!checkMembers(L, { "name", "direction", "illuminance" })) {
+			if (!checkMembers(L, { "name", "direction", "color", "illuminance" })) {
 				continue;
 			}
 
 			std::string name(parseName(L));
 			vector3 dir = parseVec3(L["direction"]);
-			vector3 illuminance = parseVec3(L["illuminance"]);
+			vector3 color = parseVec3(L["color"]);
+			float illuminance = L["illuminance"];
 
 			SceneDescription::DirLight desc;
 			desc.name = name;
 			desc.direction = glm::normalize(dir);
+			desc.color = color;
 			desc.illuminance = illuminance;
 
 			outDesc.dirLights.emplace_back(desc);

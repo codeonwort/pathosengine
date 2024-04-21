@@ -10,12 +10,13 @@
 
 #include "badger/math/random.h"
 
-#define CAMERA_POSITION    vector3(0.0f, 0.0f, 5.0f)
-#define CAMERA_LOOK_AT     vector3(0.0f, 0.0f, 0.0f)
-#define CAMERA_UP          vector3(0.0f, 1.0f, 0.0f)
+#define CAMERA_POSITION          vector3(0.0f, 0.0f, 5.0f)
+#define CAMERA_LOOK_AT           vector3(0.0f, 0.0f, 0.0f)
+#define CAMERA_UP                vector3(0.0f, 1.0f, 0.0f)
 
-#define SUN_DIRECTION      glm::normalize(vector3(0.5f, -0.5f, -1.0f))
-#define SUN_ILLUMINANCE    (10.0f * vector3(1.0f, 1.0f, 1.0f))
+#define SUN_DIRECTION            glm::normalize(vector3(0.5f, -0.5f, -1.0f))
+#define SUN_COLOR                vector3(1.0f, 1.0f, 1.0f)
+#define SUN_ILLUMINANCE          10.0f
 
 #define STARFIELD_WIDTH          4096
 #define STARFIELD_HEIGHT         2048
@@ -44,7 +45,7 @@ void World_RC2::onInitialize() {
 
 	sunActor = spawnActor<DirectionalLightActor>();
 	sunActor->setDirection(SUN_DIRECTION);
-	sunActor->setIlluminance(SUN_ILLUMINANCE);
+	sunActor->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	skyMaterial = Material::createMaterialInstance("skybox_rc2");
 	skyActor = spawnActor<SkyboxActor>();

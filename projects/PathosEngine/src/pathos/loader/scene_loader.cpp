@@ -111,6 +111,7 @@ namespace pathos {
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
 			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();
 			actor->setDirection(dirLight.direction);
+			actor->setColor(dirLight.color);
 			actor->setIlluminance(dirLight.illuminance);
 
 			outActorMap.insert(std::make_pair(dirLight.name, actor));

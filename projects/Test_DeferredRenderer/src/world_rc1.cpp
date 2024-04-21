@@ -60,7 +60,8 @@
 static const vector3             CAMERA_POSITION = RC1_SCALE * vector3(0.2f, 0.25f, 2.0f);
 static const vector3             CAMERA_LOOK_AT  = RC1_SCALE * vector3(0.2f, 0.25f, 1.9f);
 static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3             SUN_ILLUMINANCE = 1.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3             SUN_COLOR       = vector3(1.0f, 1.0f, 1.0f);
+static constexpr float           SUN_ILLUMINANCE = 1.0f;
 static constexpr float           Y_OFFSET        = 5000.0f; // Offset every actor to match with cloud layer
 
 // --------------------------------------------------------
@@ -255,7 +256,7 @@ void World_RC1::setupScene()
 	// Light
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
-	dirLight->setIlluminance(SUN_ILLUMINANCE);
+	dirLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	PointLightActor* pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
