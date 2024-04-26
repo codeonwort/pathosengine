@@ -18,10 +18,16 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
+		// Render volumetric clouds to a separate texture.
 		void renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene);
+
+		// Blend volumetric clouds with sceneColor.
+		void renderVolumetricCloudPost(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
 		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);
+
+		bool isPassEnabled(const SceneProxy* scene) const;
 
 	private:
 		uint32 renderTargetWidth = 0;
@@ -29,6 +35,8 @@ namespace pathos {
 		UniformBuffer ubo;
 
 		GLuint cloudNoiseSampler = 0;
+
+		GLuint fboPost = 0xffffffff;
 
 		// https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
 		GLuint texSTBN = 0;

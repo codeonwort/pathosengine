@@ -80,6 +80,7 @@
     <None Include="visualize_buffer.glsl" />
     <None Include="visualize_light_probe.glsl" />
     <None Include="volumetric_clouds.glsl" />
+    <None Include="volumetric_clouds_post.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

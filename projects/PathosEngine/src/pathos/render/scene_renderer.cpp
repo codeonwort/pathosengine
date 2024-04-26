@@ -317,13 +317,23 @@ namespace pathos {
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad);
 		}
 
-		// Add unlit and emissive
-		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
+		{
+			// Add unlit and emissive
+			SCOPED_CPU_COUNTER(ResolveUnlit);
+			SCOPED_GPU_COUNTER(ResolveUnlit);
+			resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
+		}
 
 		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
 			SCOPED_CPU_COUNTER(ScreenSpaceReflection);
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad);
+		}
+
+		if (bLightProbeRendering == false) {
+			SCOPED_CPU_COUNTER(VolumetricCloudsPost);
+			SCOPED_GPU_COUNTER(VolumetricCloudPostPass);
+			volumetricCloud->renderVolumetricCloudPost(cmdList, scene);
 		}
 
 		{
@@ -439,8 +449,7 @@ namespace pathos {
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
-				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->getVolumetricCloud(frameCounter));
-				toneMapping->setInput(EPostProcessInput::PPI_4, sceneRenderTargets->sceneLuminance);
+				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->sceneLuminance);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 

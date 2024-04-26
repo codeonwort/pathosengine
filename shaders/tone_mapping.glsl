@@ -7,7 +7,6 @@
 layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;
 layout (binding = 2) uniform sampler2D god_ray;
-layout (binding = 3) uniform sampler2D volumetricCloud;
 layout (binding = 4) uniform sampler2D sceneLuminance;
 
 layout (std140, binding = 1) uniform UBO_ToneMapping {
@@ -75,9 +74,6 @@ void main() {
 
 	vec4 c = vec4(sceneColor, 0.0);
 	c.rgb += godRay;
-
-	vec4 cloud = texture(volumetricCloud, screenUV);
-	c.rgb = mix(c.rgb, cloud.rgb, 1.0 - cloud.a);
 
 #if TONE_MAPPER == TONE_MAPPER_REINHARD
 	// Reinhard tone mapper
