@@ -121,7 +121,7 @@ void World_Game1::reloadScene()
 	binder.addBinding("SkyAtmosphere", &skyAtmosphere);
 	binder.addBinding("Skybox", &skybox);
 	binder.addBinding("SkyEquirectangularMap", &skyEquimap);
-	binder.addBinding("Sun", &sun);
+	binder.addBinding("Sun", &sun); // #wip: Check light intensities
 	binder.addBinding("PointLight0", &pointLight0);
 	binder.addBinding("PlayerCar", &playerCar);
 	binder.addBinding("Landscape", &landscape);

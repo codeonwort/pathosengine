@@ -93,6 +93,9 @@ namespace pathos {
 		// Translucency
 		static uniquePtr<class TranslucencyRendering>   translucency_pass;
 
+		// Auto exposure
+		static uniquePtr<class AutoExposurePass>        autoExposurePass;
+
 		// Debug rendering
 		static uniquePtr<class VisualizeBufferPass>     visualizeBuffer;
 		static uniquePtr<class VisualizeLightProbePass> visualizeLightProbe;

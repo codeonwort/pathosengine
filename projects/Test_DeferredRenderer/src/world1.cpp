@@ -20,7 +20,7 @@ static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 10.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_COLOR            = vector3(1.0f, 1.0f, 1.0f);
-static const float   SUN_ILLUMINANCE      = 5.0f;
+static const float   SUN_ILLUMINANCE      = 5.0f; // #wip: Check light intensities
 
 // 0=skybox, 1=atmosphere, 2=panorama
 #define              SKY_METHOD           2

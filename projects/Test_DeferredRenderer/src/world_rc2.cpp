@@ -16,6 +16,7 @@
 
 #define SUN_DIRECTION            glm::normalize(vector3(0.5f, -0.5f, -1.0f))
 #define SUN_COLOR                vector3(1.0f, 1.0f, 1.0f)
+// #wip: Check light intensities
 #define SUN_ILLUMINANCE          10.0f
 
 #define STARFIELD_WIDTH          4096

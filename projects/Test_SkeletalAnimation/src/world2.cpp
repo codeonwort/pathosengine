@@ -19,6 +19,7 @@
 #define FOV_Y                     60.0f
 #define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, -1.0f))
 #define SUN_COLOR                 vector3(1.0f)
+// #wip: Check light intensities
 #define SUN_ILLUMINANCE           2.0f
 #define CAMERA_POSITION           vector3(0.0f, 2.0f, 6.0f)
 #define CAMERA_LOOK_AT            vector3(0.0f, 2.0f, 4.0f)

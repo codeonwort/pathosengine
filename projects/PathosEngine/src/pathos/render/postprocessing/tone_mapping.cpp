@@ -12,7 +12,8 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
+	// #wip: Remove exposure cvar?
+	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
 	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
 
 	template<int32 ToneMapper>
@@ -35,6 +36,12 @@ namespace pathos {
 			return FIND_SHADER_PROGRAM(Program_ToneMapping_ACES);
 		}
 	}
+
+	struct UBO_ToneMapping {
+		float exposure;
+		float gamma;
+		int32 sceneLuminanceLastMip;
+	};
 
 }
 
@@ -64,6 +71,7 @@ namespace pathos {
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
 		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
 		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // volumetricCloud
+		const GLuint input4 = getInput(EPostProcessInput::PPI_4); // sceneLuminance
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -82,17 +90,19 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
-		uboData.exposure = cvar_tonemapping_exposure.getValue();
-		uboData.gamma    = cvar_gamma.getValue();
+		uboData.exposure              = cvar_tonemapping_exposure.getValue();
+		uboData.gamma                 = cvar_gamma.getValue();
+		uboData.sceneLuminanceLastMip = sceneContext.sceneLuminanceMipCount - 1;
 		ubo.update(cmdList, 1, &uboData);
 
-		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 4);
+		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 5);
 		colorAttachments[0] = input0;
 		colorAttachments[1] = input1;
 		colorAttachments[2] = input2;
 		colorAttachments[3] = input3;
+		colorAttachments[4] = input4;
 
-		cmdList.bindTextures(0, 4, colorAttachments);
+		cmdList.bindTextures(0, 5, colorAttachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

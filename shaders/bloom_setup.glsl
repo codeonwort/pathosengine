@@ -25,7 +25,8 @@ const float preExposure = 1.0;
 const float preExposureInv = 1.0;
 
 float getLuminance(vec3 v) {
-	return dot(v, vec3(0.3, 0.59, 0.11));
+	//return dot(v, vec3(0.3, 0.59, 0.11));
+	return dot(v, vec3(0.2125, 0.7154, 0.0721));
 }
 
 void main() {

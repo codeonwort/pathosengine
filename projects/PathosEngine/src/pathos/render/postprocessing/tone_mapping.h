@@ -16,11 +16,6 @@ namespace pathos {
 		GLuint fbo;
 		UniformBuffer ubo;
 
-		struct UBO_ToneMapping {
-			float exposure;
-			float gamma;
-		};
-
 	};
 
 }

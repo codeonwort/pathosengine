@@ -21,6 +21,7 @@
   <ItemGroup>
     <None Include="atmosphere.glsl" />
     <None Include="atmosphere_precompute.glsl" />
+    <None Include="auto_exposure.glsl" />
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_setup.glsl" />
     <None Include="bloom_upsample.glsl" />

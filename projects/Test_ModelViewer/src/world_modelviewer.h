@@ -60,7 +60,7 @@ private:
 
 	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
 	vector3 sunColor = vector3(1.0f);
-	float sunIlluminance = 10.0f;
+	float sunIlluminance = 10.0f; // #wip: Check light intensities
 
 	// GUI
 	pathos::Button* btn_load            = nullptr;

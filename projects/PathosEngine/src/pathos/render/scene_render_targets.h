@@ -5,6 +5,8 @@
 
 namespace pathos {
 
+	class Texture;
+
 	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
 
 	// For sky atmosphere and panorama sky.
@@ -40,10 +42,15 @@ namespace pathos {
 		uint32 csmWidth = 2048;
 		uint32 csmHeight = 2048;
 
-		GLuint sceneColor = 0; // This usually end up as an unpack of gbuffer, before any post-processing
+		GLuint sceneColor = 0;        // Accumulate scene luminance across multiple passes, before any post-processing.
 		GLuint sceneColorHalfRes = 0; // Half res version, generated before any post processing to start.
 		                              // PP passes that are too expensive to run in full res should use this.
-		GLuint sceneDepth = 0;
+		GLuint sceneDepth = 0;        // Written in depth pre-pass.
+
+		// Auto exposure
+		GLuint sceneLuminance = 0;
+		uint32 sceneLuminanceSize = 0;
+		uint32 sceneLuminanceMipCount = 0;
 
 		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
 		GLuint sceneColorHistory = 0; // For TAA

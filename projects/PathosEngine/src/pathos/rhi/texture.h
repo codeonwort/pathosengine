@@ -39,6 +39,8 @@ namespace pathos {
 		void createGPUResource(bool flushGPU = false);
 		void releaseGPUResource();
 
+		void createGPUResource_renderThread(RenderCommandList& cmdList);
+
 		inline const TextureCreateParams& getCreateParams() const { return createParams; }
 		inline GLuint internal_getGLName() const { return glTexture; }
 

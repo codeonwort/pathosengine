@@ -8,10 +8,12 @@ layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;
 layout (binding = 2) uniform sampler2D god_ray;
 layout (binding = 3) uniform sampler2D volumetricCloud;
+layout (binding = 4) uniform sampler2D sceneLuminance;
 
 layout (std140, binding = 1) uniform UBO_ToneMapping {
 	float exposure;    // cvar: r.tonemapping.exposure
 	float gamma;       // cvar: r.gamma
+	int   sceneLuminanceLastMip;
 } ubo;
 
 in VS_OUT {
@@ -63,6 +65,11 @@ void main() {
 	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
 	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
 	vec3 godRay     = textureLod(god_ray, screenUV, 0).rgb;
+
+	float avgLuminance = texelFetch(sceneLuminance, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
+	float autoExposure = 1.0 / (9.6 * avgLuminance);
+	// #wip: Apply auto exposure
+	//sceneColor *= autoExposure;
 
 	sceneColor = mix(sceneColor, sceneBloom, 0.04);
 

@@ -48,7 +48,7 @@ namespace pathos {
 	public:
 		vector3 direction; // From sun to earth
 
-		// #wip: Sun uses color (vector) + illuminance (scalar). If gonna support color temperature, provide a mechanism convert it to color.
+		// #wip: Sun uses color (vector) + illuminance (scalar). If gonna support color temperature, provide a mechanism that converts temperature to color.
 		vector3 color;     // Should be clamped to [0, 1]
 		float illuminance; // Unit: lux (= lm/m^2 = lumen per square meter)
 

@@ -26,6 +26,7 @@ static const vector3 CAMERA_POSITION    = vector3(0.7f, 0.6f, 2.5f);
 static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 0.1f, 0.0f);
 static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
 static const vector3 SUN_COLOR          = vector3(1.0f, 1.0f, 1.0f);
+// #wip: Check light intensities
 static const float   SUN_ILLUMINANCE    = 0.05f;
 
 // --------------------------------------------------------

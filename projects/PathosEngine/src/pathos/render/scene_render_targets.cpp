@@ -17,6 +17,10 @@ static uint32 calcCubemapNumMips(uint32 defaultSize, uint32 minSize) {
 	return num;
 }
 
+static uint32 calcTexture2DMaxMipCount(uint32 width, uint32 height) {
+	return (uint32)(1 + std::floor(std::log2(std::max(width, height))));
+}
+
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_resolutionScale("r.resolution_scale", 100, "Controls screen resolution percentage");
@@ -165,11 +169,17 @@ namespace pathos {
 		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, 1, "sceneColorHalfRes");
 		reallocTexture2D(sceneDepth,        PF_sceneDepth, sceneWidth,     sceneHeight,     1, "sceneDepth");
 
+		// Auto exposure
+		sceneLuminanceSize = 1024;
+		while (sceneLuminanceSize > sceneWidth || sceneLuminanceSize > sceneHeight) sceneLuminanceSize /= 2;
+		sceneLuminanceMipCount = calcTexture2DMaxMipCount(sceneLuminanceSize, sceneLuminanceSize);
+		reallocTexture2D(sceneLuminance, GL_R16F, sceneLuminanceSize, sceneLuminanceSize, sceneLuminanceMipCount, "sceneLuminance");
+
 		// Screen space reflection
 		if (bLightProbeRendering == false) {
 			// HiZ
 			constexpr GLenum PF_HiZ = GL_RG32F;
-			sceneDepthHiZMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			sceneDepthHiZMipmapCount = calcTexture2DMaxMipCount(sceneWidth, sceneHeight);
 			reallocTexture2D(sceneDepthHiZ, PF_HiZ, sceneWidth, sceneHeight, sceneDepthHiZMipmapCount, "sceneDepthHiZ");
 			reallocTexture2DViews(sceneDepthHiZViews, sceneDepthHiZMipmapCount, sceneDepthHiZ, PF_HiZ, "view_sceneDepthHiZMip");
 			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -178,7 +188,7 @@ namespace pathos {
 			cmdList.textureParameteri(sceneDepthHiZ, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			// Preintegration
 			constexpr GLenum PF_preintegration = GL_R8;
-			ssrPreintegrationMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(sceneWidth, sceneHeight))));
+			ssrPreintegrationMipmapCount = calcTexture2DMaxMipCount(sceneWidth, sceneHeight);
 			reallocTexture2D(ssrPreintegration, PF_preintegration, sceneWidth, sceneHeight, ssrPreintegrationMipmapCount, "ssrPreintegration");
 			reallocTexture2DViews(ssrPreintegrationViews, ssrPreintegrationMipmapCount, ssrPreintegration, PF_preintegration, "ssrPreintegrationMip");
 			cmdList.textureParameteri(ssrPreintegration, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -191,7 +201,7 @@ namespace pathos {
 			// Preconvolution (NOTE: starts at half res)
 			constexpr GLenum PF_preconvolution = GL_RGB16F;
 			const uint32 preconvWidth = sceneWidth / 2, preconvHeight = sceneHeight / 2;
-			ssrPreconvolutionMipmapCount = static_cast<uint32>(1 + floor(log2(std::max(preconvWidth, preconvHeight))));
+			ssrPreconvolutionMipmapCount = calcTexture2DMaxMipCount(preconvWidth, preconvHeight);
 			reallocTexture2D(ssrPreconvolution, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolution");
 			reallocTexture2D(ssrPreconvolutionTemp, PF_preconvolution, preconvWidth, preconvHeight, ssrPreconvolutionMipmapCount, "ssrPreconvolutionTemp");
 			reallocTexture2DViews(ssrPreconvolutionViews, ssrPreconvolutionMipmapCount, ssrPreconvolution, PF_preconvolution, "ssrPreconvolutionMip");

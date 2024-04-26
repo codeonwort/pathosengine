@@ -27,6 +27,7 @@
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
 #include "pathos/render/visualize_light_probe.h"
+#include "pathos/render/auto_exposure.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
@@ -325,11 +326,16 @@ namespace pathos {
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad);
 		}
 
-		// Translucency pass
 		{
 			SCOPED_CPU_COUNTER(Translucency);
 			SCOPED_GPU_COUNTER(Translucency);
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
+		}
+
+		{
+			SCOPED_CPU_COUNTER(AutoExposure);
+			SCOPED_GPU_COUNTER(AutoExposure);
+			autoExposurePass->renderAutoExposure(cmdList, scene);
 		}
 
 		if (bLightProbeRendering == false) {
@@ -429,10 +435,12 @@ namespace pathos {
 				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 
+				// #wip: Don't mix these textures inside of tone mapping shader...
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
 				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->getVolumetricCloud(frameCounter));
+				toneMapping->setInput(EPostProcessInput::PPI_4, sceneRenderTargets->sceneLuminance);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 
@@ -746,6 +754,9 @@ namespace pathos {
 	// Translucency
 	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
 
+	// Auto exposure
+	uniquePtr<AutoExposurePass>          SceneRenderer::autoExposurePass;
+
 	// Debug rendering
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
@@ -788,6 +799,11 @@ namespace pathos {
 			indirectLightingPass->initializeResources(cmdList);
 			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
+		}
+
+		{
+			autoExposurePass = makeUnique<AutoExposurePass>();
+			autoExposurePass->initializeResources(cmdList);
 		}
 
 		{
@@ -879,6 +895,8 @@ namespace pathos {
 		RELEASEPASS(volumetricCloud);
 
 		RELEASEPASS(translucency_pass);
+
+		RELEASEPASS(autoExposurePass);
 
 		RELEASEPASS(visualizeBuffer);
 		RELEASEPASS(visualizeLightProbe);
