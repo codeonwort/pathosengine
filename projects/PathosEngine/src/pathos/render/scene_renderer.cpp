@@ -416,7 +416,7 @@ namespace pathos {
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
 
 			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
-			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
+			const bool bNeedsHalfResSceneColor = isPPEnabled(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_CPU_COUNTER(SceneColorDownsample);
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
