@@ -18,8 +18,8 @@
 #include "badger/math/minmax.h"
 
 static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
-static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.92f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
-static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Density of god ray scattering (> 1.0)");
+static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.88f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
+static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.2f, "Density of god ray scattering (> 1.0)");
 
 namespace pathos {
 
@@ -52,6 +52,7 @@ namespace pathos {
 		vector2 lightPos;
 		float alphaDecay;
 		float density;
+		float lightIntensity;
 	};
 
 	class GodRayLightScatteringFS : public ShaderStage {
@@ -90,10 +91,7 @@ namespace pathos {
 
 namespace pathos {
 
-	GodRay::GodRay()
-		: godRayColor(vector3(1.0f, 0.5f, 0.0f))
-	{
-	}
+	GodRay::GodRay() {}
 
 	GodRay::~GodRay() {
 		CHECK(destroyed);
@@ -101,8 +99,8 @@ namespace pathos {
 
 	void GodRay::initializeResources(RenderCommandList& cmdList) {
 		createFBO(cmdList);
-		uboSilhouette.init<UBO_GodRaySilhouette>();
-		uboLightScattering.init<UBO_GodRayLightScattering>();
+		uboSilhouette.init<UBO_GodRaySilhouette>("UBO_GodRaySilhouette");
+		uboLightScattering.init<UBO_GodRayLightScattering>("UBO_GodRayLightScattering");
 	}
 
 	void GodRay::releaseResources(RenderCommandList& cmdList) {
@@ -152,6 +150,9 @@ namespace pathos {
 			return;
 		}
 
+		godRayColor = scene->godRayColor;
+		godRayIntensity = scene->godRayIntensity;
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
@@ -187,6 +188,7 @@ namespace pathos {
 			cmdList.useProgram(program.getGLName());
 
 			// Source
+			// #wip: Flickering due to TAA jitter
 			std::vector<StaticMeshProxy*>& sourceProxyList = scene->godRayMeshes;
 			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
 				renderSilhouette(cmdList, camera, sourceProxy);
@@ -215,20 +217,32 @@ namespace pathos {
 			lightPos = vector3(lightPosH) / lightPosH.w; // clip space
 
 			UBO_GodRayLightScattering uboData;
-			uboData.lightPos.x = (lightPos.x + 1.0f) / 2.0f;
-			uboData.lightPos.y = (lightPos.y + 1.0f) / 2.0f;
-			uboData.alphaDecay = badger::clamp(0.0f, cvar_godray_alphaDecay.getFloat(), 1.0f);
-			uboData.density    = badger::max(1.0f, cvar_godray_density.getFloat());
+			uboData.lightPos.x     = (lightPos.x + 1.0f) / 2.0f;
+			uboData.lightPos.y     = (lightPos.y + 1.0f) / 2.0f;
+			uboData.alphaDecay     = badger::clamp(0.0f, cvar_godray_alphaDecay.getFloat(), 1.0f);
+			uboData.density        = badger::max(1.0f, cvar_godray_density.getFloat());
+			uboData.lightIntensity = std::pow(godRayIntensity, 0.333f);
 			uboLightScattering.update(cmdList, UBO_GodRayLightScattering::BINDING_INDEX, &uboData);
 
 			cmdList.useProgram(program.getGLName());
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboLight);
-			
-			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
 
+			cmdList.viewport(0, 0, sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
+
+			cmdList.namedFramebufferTexture(fboLight, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 
+			cmdList.namedFramebufferTexture(fboLight, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			cmdList.namedFramebufferTexture(fboLight, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
 		}
 
 		// #todo-godray: This is just gaussian blur. Range filter kernel is needed.

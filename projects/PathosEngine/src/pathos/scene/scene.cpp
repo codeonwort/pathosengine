@@ -178,6 +178,8 @@ namespace pathos {
 		if (godRaySource != nullptr) {
 			godRaySource->createRenderProxy_internal(proxy, proxy->godRayMeshes);
 			proxy->godRayLocation = godRaySource->getLocation();
+			proxy->godRayColor = godRayColor;
+			proxy->godRayIntensity = godRayIntensity;
 		}
 
 		if (irradianceProbeAtlas != nullptr) {

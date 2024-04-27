@@ -36,17 +36,12 @@ namespace pathos {
 		// Blend god ray with sceneColor.
 		void renderGodRayPost(RenderCommandList& cmdList, SceneProxy* scene);
 
-		// Quite arbitrary, not physically based
-		inline void setGodRayColor(const vector3& inColor) { godRayColor = inColor; }
-
 	private:
 		void createFBO(RenderCommandList& cmdList);
 		void renderSilhouette(RenderCommandList& cmdList, Camera* camera, StaticMeshProxy* mesh);
 		bool isPassEnabled(SceneProxy* scene) const;
 
 	private:
-		vector3 godRayColor;
-
 		bool destroyed = false;
 
 		GLuint fboSilhouette = 0xffffffff;
@@ -57,6 +52,9 @@ namespace pathos {
 
 		UniformBuffer uboSilhouette;
 		UniformBuffer uboLightScattering;
+
+		vector3 godRayColor;
+		float godRayIntensity;
 
 	};
 

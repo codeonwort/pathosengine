@@ -1,6 +1,6 @@
 #version 460 core
 
-const int  NUM_SAMPLES   = 32; // Can't be put into UBO
+const int  NUM_SAMPLES   = 16; // Can't be put into UBO
 const vec2 JITTER_OFFSET = vec2(4.0, 4.0);
 const mat4 BAYER_MATRIX  = mat4(
 	0.0f,    0.5f,    0.125f,  0.625f,
@@ -18,8 +18,9 @@ in VS_OUT {
 
 layout (std140, binding = 1) uniform UBO_GodRay {
 	vec2 lightPos;
-	float alphaDecay; // default: 0.92
-	float density;    // default: 1.1
+	float alphaDecay;     // default: 0.92
+	float density;        // default: 1.1
+	float lightIntensity;
 } ubo;
 
 layout (binding = 0) uniform sampler2D src; // silhouette
@@ -45,11 +46,12 @@ void main() {
 
 	vec2 offset = JITTER_OFFSET / textureSize(src, 0);
 
-	for(int i = 0; i < NUM_SAMPLES; ++i) {
+	for (int i = 0; i < NUM_SAMPLES; ++i) {
 		pos -= delta;
-		result += alpha * texture2D(src, pos + offset * (0.5 - ditherValue));
+		//result += alpha * texture2D(src, pos + offset * (0.5 - ditherValue));
+		result += alpha * texture2D(src, pos);
 		alpha *= ubo.alphaDecay;
 	}
 
-	outColor = result;
+	outColor = result * ubo.lightIntensity;
 }

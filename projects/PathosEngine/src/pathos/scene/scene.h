@@ -68,6 +68,8 @@ namespace pathos {
 	// #todo-godray: Cleanup this mess
 	public:
 		StaticMeshComponent* godRaySource = nullptr;
+		vector3 godRayColor = vector3(1.0f, 0.5f, 0.0f);
+		float godRayIntensity = 1.0f;
 
 	private:
 		World* owner = nullptr;

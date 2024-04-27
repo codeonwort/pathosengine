@@ -120,6 +120,8 @@ namespace pathos {
 		//               These are filled by Scene::createRenderProxy() for now.
 		std::vector<StaticMeshProxy*>              godRayMeshes;
 		vector3                                    godRayLocation = vector3(0.0f);
+		vector3                                    godRayColor = vector3(1.0f, 0.5f, 0.0f);
+		float                                      godRayIntensity = 1.0f;
 
 		GLuint                                     irradianceAtlas = 0;
 		GLuint                                     depthProbeAtlas = 0;
