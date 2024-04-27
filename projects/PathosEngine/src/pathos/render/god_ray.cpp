@@ -18,7 +18,7 @@
 #include "badger/math/minmax.h"
 
 static ConsoleVariable<int32> cvar_godray_upsampling("r.godray.upsampling", 1, "Upsample god ray texture");
-static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.88f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
+static ConsoleVariable<float> cvar_godray_alphaDecay("r.godray.alphaDecay", 0.96f, "Alpha decay of god ray scattering (0.0 ~ 1.0)");
 static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.2f, "Density of god ray scattering (> 1.0)");
 
 namespace pathos {

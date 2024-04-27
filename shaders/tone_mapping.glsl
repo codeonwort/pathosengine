@@ -83,7 +83,7 @@ void main() {
 	if (ubo.useAutoExposure != 0) {
 		float logAvgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
 		float avgLuminance = exp(logAvgLuminance);
-		exposure = (0.148 / avgLuminance) - ubo.exposureCompensation;
+		exposure = (0.148 / avgLuminance) * pow(2.0, -ubo.exposureCompensation);
 	} else {
 		exposure = pow(2.0, ubo.exposureOverride - ubo.exposureCompensation);
 	}

@@ -53,5 +53,5 @@ void main() {
 		alpha *= ubo.alphaDecay;
 	}
 
-	outColor = result * ubo.lightIntensity;
+	outColor = result * (ubo.lightIntensity / float(NUM_SAMPLES));
 }
