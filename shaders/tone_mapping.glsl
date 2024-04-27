@@ -1,12 +1,12 @@
 #version 460 core
 
-//?#define TONE_MAPPER 0
-#define TONE_MAPPER_REINHARD 0
-#define TONE_MAPPER_ACES     1
+//?#define TONE_MAPPER          0
+#define TONE_MAPPER_REINHARD    0
+#define TONE_MAPPER_ACES        1
 
-layout (binding = 0) uniform sampler2D hdr_image;
-layout (binding = 1) uniform sampler2D hdr_bloom;
-layout (binding = 2) uniform sampler2D sceneLuminance;
+layout (binding = 0) uniform sampler2D sceneColorTexture;
+layout (binding = 1) uniform sampler2D bloomTexture;
+layout (binding = 2) uniform sampler2D sceneLuminanceTexture;
 
 // --------------------------------------------------------
 // Input
@@ -20,6 +20,7 @@ layout (std140, binding = 1) uniform UBO_ToneMapping {
 	float gamma;                 // cvar: r.tonemapping.gamma
 	int   useAutoExposure;
 	int   sceneLuminanceLastMip;
+	int   applyBloom;
 } ubo;
 
 // --------------------------------------------------------
@@ -68,26 +69,26 @@ void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
 	vec2 screenUV = fs_in.screenUV;
 
-	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
-	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
-
-	// Apply exposure.
-	float exposure = 0.0;
-	if (ubo.useAutoExposure != 0) {
-		float avgLuminance = texelFetch(sceneLuminance, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
-		exposure = 1.0 / (9.6 * avgLuminance);
-	} else {
-		exposure = ubo.exposureOverride;
-	}
-	sceneColor *= pow(2.0, exposure);
+	vec3 sceneColor = texelFetch(sceneColorTexture, texelXY, 0).rgb;
 
 	// Mix with bloom.
-	sceneColor = mix(sceneColor, sceneBloom, 0.04);
+	if (ubo.applyBloom != 0) {
+		vec3 sceneBloom = textureLod(bloomTexture, screenUV, 0).rgb;
+		sceneColor = mix(sceneColor, sceneBloom, 0.04);
+	}
+
+	// Apply exposure.
+	if (ubo.useAutoExposure != 0) {
+		float avgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
+		float exposure = 1.0 / (9.6 * avgLuminance);
+		sceneColor *= exposure;
+	} else {
+		sceneColor *= pow(2.0, ubo.exposureOverride);
+	}
 
 	// Apply tonemapping operator.
 #if TONE_MAPPER == TONE_MAPPER_REINHARD
 	sceneColor = sceneColor / (vec3(1.0) + sceneColor);
-	//c.rgb = vec3(1.0) - exp(-c.rgb * manualExposure);
 #elif TONE_MAPPER == TONE_MAPPER_ACES
 	sceneColor = ACESFitted(sceneColor);
 #endif

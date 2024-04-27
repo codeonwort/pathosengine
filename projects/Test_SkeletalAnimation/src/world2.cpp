@@ -16,22 +16,29 @@
 
 #include <time.h>
 
-#define FOV_Y                     60.0f
-#define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, -1.0f))
-#define SUN_COLOR                 vector3(1.0f)
-// #wip: Check light intensities
-#define SUN_ILLUMINANCE           2.0f
-#define CAMERA_POSITION           vector3(0.0f, 2.0f, 6.0f)
-#define CAMERA_LOOK_AT            vector3(0.0f, 2.0f, 4.0f)
+#define FOV_Y                             60.0f
+#define CAMERA_POSITION                   vector3(0.0f, 2.0f, 6.0f)
+#define CAMERA_LOOK_AT                    vector3(0.0f, 2.0f, 4.0f)
 
-#define DIR_MY_ANIMTEST           "resources/models/animtest/"
-#define FILE_MY_ANIMTEST          "resources/models/animtest/animtest.dae"
-#define DIR_RIGGED_FIGURE         "resources_external/KhronosGroup/RiggedFigure/"
-#define FILE_RIGGED_FIGURE        "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
-#define FILE_LPS_HEAD             "resources_external/LPSHead/head.obj"
-#define DIR_LPS_HEAD              "resources_external/LPSHead/"
-#define DOWNLOAD_ALERT_MSG1       L"If you can't see 2 animated models, run Setup.ps1"
-#define DOWNLOAD_ALERT_MSG2       L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
+#define SUN_DIRECTION                     glm::normalize(vector3(0.0f, -1.0f, -1.0f))
+#define SUN_COLOR                         vector3(1.0f, 1.0f, 1.0f)
+// #wip: Check light intensities
+#define SUN_ILLUMINANCE                   10000.0f
+
+#define POINT_LIGHT_LOCATION              vector3(0.0f, 2.0f, 2.0f)
+#define POINT_LIGHT_COLOR                 vector3(0.2f, 1.0f, 0.2f)
+#define POINT_LIGHT_INTENSITY             50000.0f
+#define POINT_LIGHT_ATTENUATION_RADIUS    10.0f
+#define POINT_LIGHT_SOURCE_RADIUS         0.2f
+
+#define DIR_MY_ANIMTEST                   "resources/models/animtest/"
+#define FILE_MY_ANIMTEST                  "resources/models/animtest/animtest.dae"
+#define DIR_RIGGED_FIGURE                 "resources_external/KhronosGroup/RiggedFigure/"
+#define FILE_RIGGED_FIGURE                "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
+#define FILE_LPS_HEAD                     "resources_external/LPSHead/head.obj"
+#define DIR_LPS_HEAD                      "resources_external/LPSHead/"
+#define DOWNLOAD_ALERT_MSG1               L"If you can't see 2 animated models, run Setup.ps1"
+#define DOWNLOAD_ALERT_MSG2               L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
 
 
 void World2::onInitialize()
@@ -81,10 +88,10 @@ void World2::setupScene()
 	sunLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	pointLight0 = spawnActor<PointLightActor>();
-	pointLight0->setActorLocation(vector3(0.0f, 2.0f, 2.0f));
-	pointLight0->setColorAndIntensity(vector3(1.0f, 5.0f, 1.0f), 100.0f);
-	pointLight0->setAttenuationRadius(10.0f);
-	pointLight0->setSourceRadius(0.2f);
+	pointLight0->setActorLocation(POINT_LIGHT_LOCATION);
+	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
+	pointLight0->setAttenuationRadius(POINT_LIGHT_ATTENUATION_RADIUS);
+	pointLight0->setSourceRadius(POINT_LIGHT_SOURCE_RADIUS);
 
 	//---------------------------------------------------------------------------------------
 	// Local light probes

@@ -43,6 +43,7 @@ namespace pathos {
 		float gamma;
 		int32 useAutoExposure;
 		int32 sceneLuminanceLastMip;
+		int32 applyBloom;
 	};
 
 }
@@ -91,6 +92,7 @@ namespace pathos {
 		uboData.gamma                 = cvar_tonemapping_gamma.getValue();
 		uboData.useAutoExposure       = (int32)bUseAutoExposure;
 		uboData.sceneLuminanceLastMip = bUseAutoExposure ? (sceneContext.sceneLuminanceMipCount - 1) : 0;
+		uboData.applyBloom            = (int32)bApplyBloom;
 		ubo.update(cmdList, UBO_ToneMapping::BINDING_INDEX, &uboData);
 
 		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 3);

@@ -454,12 +454,14 @@ namespace pathos {
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
 				const bool bAutoExposure = cvar_autoExposure.getInt() != 0;
+				const bool bApplyBloom = isPPEnabled(EPostProcessOrder::Bloom);
+				GLuint black2D = gEngine->getSystemTexture2DBlack()->internal_getGLName();
 
-				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
-				GLuint averageLuminance = bAutoExposure ? sceneRenderTargets->sceneLuminance : gEngine->getSystemTexture2DBlack()->internal_getGLName();
+				GLuint bloom = bApplyBloom ? sceneRenderTargets->sceneBloomChain : black2D;
+				GLuint averageLuminance = bAutoExposure ? sceneRenderTargets->sceneLuminance : black2D;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 				
-				toneMapping->useAutoExposure(bAutoExposure);
+				toneMapping->setParameters(bAutoExposure, bApplyBloom);
 
 				// #wip: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
