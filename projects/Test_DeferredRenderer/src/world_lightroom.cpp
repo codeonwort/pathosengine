@@ -157,7 +157,7 @@ void World_LightRoom::setupScene() {
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 2.5f, -0.1f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(0.25f, 0.15f);
-	rectLight0->setLightIntensity(30.0f * vector3(1.0f, 1.0f, 1.0f));
+	rectLight0->setColorAndIntensity(vector3(1.0f, 1.0f, 1.0f), 30.0f);
 	rectLight0->setAttenuationRadius(3.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
@@ -166,7 +166,7 @@ void World_LightRoom::setupScene() {
 		1, 1, PlaneGeometry::Direction::X);
 	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
 	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
-	vector3 rectGizmoEm = 10.0f * glm::normalize(rectLight0->getLightComponent()->intensity);
+	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));

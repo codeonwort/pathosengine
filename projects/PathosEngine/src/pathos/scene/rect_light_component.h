@@ -14,7 +14,7 @@ namespace pathos {
 		vector3   directionVS;
 		uint32    castsShadow;
 
-		vector3   intensity;
+		vector3   intensity; // Multiplied by color
 		float     falloffExponent;
 
 		vector3   upVS;
@@ -27,12 +27,13 @@ namespace pathos {
 
 	public:
 		RectLightComponent()
-			: intensity(vector3(1.0f))
-			, attenuationRadius(100.0f)
+			: color(vector3(1.0f, 1.0f, 1.0f))
+			, intensity(100.0f)
+			, attenuationRadius(1.0f)
 			, falloffExponent(0.001f)
 			, castsShadow(false)
-			, width(25.0f)
-			, height(25.0f)
+			, width(0.25f)
+			, height(0.25f)
 		{
 		}
 
@@ -47,7 +48,7 @@ namespace pathos {
 			proxy->attenuationRadius = attenuationRadius;
 			proxy->directionVS       = forward;
 			proxy->castsShadow       = castsShadow;
-			proxy->intensity         = intensity;
+			proxy->intensity         = color * intensity;
 			proxy->falloffExponent   = falloffExponent;
 			proxy->halfWidth         = 0.5f * width;
 			proxy->halfHeight        = 0.5f * height;
@@ -58,15 +59,13 @@ namespace pathos {
 		}
 
 	public:
-		vector3 intensity;
-
-		float   attenuationRadius;
+		vector3 color;             // Luminous efficiency function. Should be clamped to [0, 1]
+		float   intensity;         // Unit: candela = lm/sr = luminuous intensity
+		float   attenuationRadius; // Unit: meter
 		float   falloffExponent;
-
 		bool    castsShadow;
-
-		float   width;
-		float   height;
+		float   width;             // Unit: meter
+		float   height;            // Unit: meter
 
 	};
 
