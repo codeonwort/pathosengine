@@ -13,8 +13,6 @@
 // Based on "Robust Screen Space Ambient Occlusion in 1 ms in 1080p on PS4" (Wojciech Sterna, GPU Zen)
 
 // #todo-ssao: Upsample the blurred SSAO with a bilateral filter.
-// But... looks not bad with mere bilinear filtering
-// and I don't wanna make an additional full-resolution texture.
 
 namespace pathos {
 
@@ -74,8 +72,7 @@ namespace pathos {
 
 namespace pathos {
 
-	void SSAO::initializeResources(RenderCommandList& cmdList)
-	{
+	void SSAO::initializeResources(RenderCommandList& cmdList) {
 		ubo.init<UBO_SSAO>();
 		uboRandom.init<UBO_SSAO_Random>();
 
@@ -86,19 +83,16 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
 	}
 
-	void SSAO::releaseResources(RenderCommandList& cmdList)
-	{
+	void SSAO::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fboBlur);
 		gRenderDevice->deleteFramebuffers(1, &fboBlur2);
-
-		markDestroyed();
 	}
 
-	void SSAO::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
-	{
+	void SSAO::renderAmbientOcclusion(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SSAO);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		if (cvar_ssao_enable.getInt() == 0) {
 			GLfloat* clearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat) * 4);
@@ -180,8 +174,6 @@ namespace pathos {
 			cmdList.bindTextureUnit(0, sceneContext.ssaoMapTemp);
 			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 			fullscreenQuad->drawPrimitive(cmdList);
-
-			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		}
 	}
 

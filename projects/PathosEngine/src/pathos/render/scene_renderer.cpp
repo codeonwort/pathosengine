@@ -142,7 +142,13 @@ namespace pathos {
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
 		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
 		
-		const bool bRenderGodRay = (bLightProbeRendering == false);
+		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
+		const bool bRenderGodRay                  = (bLightProbeRendering == false);
+		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
+		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
+		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
+		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
+		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -214,9 +220,9 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
-		if (bLightProbeRendering == false) {
-			SCOPED_CPU_COUNTER(VolumetricClouds);
-			SCOPED_GPU_COUNTER(VolumetricCloudPass);
+		if (bRenderVolumetricCloud) {
+			SCOPED_CPU_COUNTER(VolumetricCloud);
+			SCOPED_GPU_COUNTER(VolumetricCloud);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
 
@@ -235,11 +241,12 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(SSAO);
 			SCOPED_GPU_COUNTER(SSAO);
-			ssao->renderPostProcess(cmdList, fullscreenQuad);
+			ssao->renderAmbientOcclusion(cmdList);
 		}
 
 		{
 			SCOPED_CPU_COUNTER(ClearSceneColor);
+			SCOPED_GPU_COUNTER(ClearSceneColor);
 			SCOPED_DRAW_EVENT(ClearSceneColor);
 			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
@@ -254,18 +261,17 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(DirectLighting);
 			SCOPED_GPU_COUNTER(DirectLighting);
-			SCOPED_DRAW_EVENT(DirectLighting);
 
 			directLightingPass->bindFramebuffer(cmdList);
 			directLightingPass->renderDirectLighting(cmdList, scene, camera);
 		}
 
 		{
-			SCOPED_CPU_COUNTER(Sky);
-			SCOPED_GPU_COUNTER(Sky);
-			SCOPED_DRAW_EVENT(Sky);
+			SCOPED_CPU_COUNTER(SkyLighting);
+			SCOPED_GPU_COUNTER(SkyLighting);
+			SCOPED_DRAW_EVENT(SkyLighting);
 
-			// Sky lighting is invalidated, for instance due to world transition.
+			// Sometimes sky lighting is invalidated due to, for instance, world transition.
 			// Clear current sky lighting textures and let sky passes update them.
 			if (scene->bInvalidateSkyLighting) {
 				float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -308,29 +314,29 @@ namespace pathos {
 			}
 		}
 
-		if (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0) {
+		if (bRenderIndirectLighting) {
 			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
 			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad);
 		}
 
+		// Add unlit and emissive
 		{
-			// Add unlit and emissive
 			SCOPED_CPU_COUNTER(ResolveUnlit);
 			SCOPED_GPU_COUNTER(ResolveUnlit);
 			resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
 		}
 
-		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
+		if (bRenderSSR) {
 			SCOPED_CPU_COUNTER(ScreenSpaceReflection);
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad);
 		}
 
-		if (bLightProbeRendering == false) {
-			SCOPED_CPU_COUNTER(VolumetricCloudsPost);
-			SCOPED_GPU_COUNTER(VolumetricCloudPostPass);
+		if (bRenderVolumetricCloud) {
+			SCOPED_CPU_COUNTER(VolumetricCloudPost);
+			SCOPED_GPU_COUNTER(VolumetricCloudPost);
 			volumetricCloud->renderVolumetricCloudPost(cmdList, scene);
 		}
 
@@ -352,7 +358,7 @@ namespace pathos {
 			autoExposurePass->renderAutoExposure(cmdList, scene);
 		}
 
-		if (bLightProbeRendering == false) {
+		if (bRenderLightProbeVisualization) {
 			visualizeLightProbe->render(cmdList, scene, camera);
 		}
 
@@ -591,13 +597,16 @@ namespace pathos {
 
 		if (sceneAfterLastPP != 0) {
 			SCOPED_CPU_COUNTER(BlitToFinalTarget);
+			SCOPED_GPU_COUNTER(BlitToFinalTarget);
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
 			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget(),
 				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
 		}
 
 		// Debug pass (r.viewmode)
-		if (bLightProbeRendering == false) {
+		if (bRenderBufferVisualization) {
+			SCOPED_CPU_COUNTER(VisualizeBuffer);
+			SCOPED_GPU_COUNTER(VisualizeBuffer);
 			visualizeBuffer->render(cmdList, scene, camera);
 		}
 

@@ -4,11 +4,12 @@
 #include "pathos/rhi/uniform_buffer.h"
 
 #include "badger/types/vector_types.h"
+#include "badger/types/noncopyable.h"
 
 namespace pathos {
 
 	// Screen Space Ambient Occlusion pass.
-	class SSAO : public PostProcess {
+	class SSAO final : public Noncopyable {
 
 	public:
 		static constexpr uint32 MAX_SAMPLE_POINTS = 64;
@@ -22,9 +23,9 @@ namespace pathos {
 		};
 
 	public:
-		virtual void initializeResources(RenderCommandList& cmdList) override;
-		virtual void releaseResources(RenderCommandList& cmdList) override;
-		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) override;
+		void initializeResources(RenderCommandList& cmdList);
+		void releaseResources(RenderCommandList& cmdList);
+		void renderAmbientOcclusion(RenderCommandList& cmdList);
 
 	private:
 		GLuint fboBlur = 0;
