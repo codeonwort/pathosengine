@@ -16,8 +16,9 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_ToneMapping {
-	float exposure;    // cvar: r.tonemapping.exposure
-	float gamma;       // cvar: r.gamma
+	float exposureOverride;      // cvar: r.tonemapping.exposureOverride
+	float gamma;                 // cvar: r.tonemapping.gamma
+	int   useAutoExposure;
 	int   sceneLuminanceLastMip;
 } ubo;
 
@@ -70,25 +71,30 @@ void main() {
 	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
 	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
 
-	float avgLuminance = texelFetch(sceneLuminance, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
-	float autoExposure = 1.0 / (9.6 * avgLuminance);
-	// #wip: Apply auto exposure
-	//sceneColor *= autoExposure;
+	// Apply exposure.
+	float exposure = 0.0;
+	if (ubo.useAutoExposure != 0) {
+		float avgLuminance = texelFetch(sceneLuminance, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
+		exposure = 1.0 / (9.6 * avgLuminance);
+	} else {
+		exposure = ubo.exposureOverride;
+	}
+	sceneColor *= pow(2.0, exposure);
 
+	// Mix with bloom.
 	sceneColor = mix(sceneColor, sceneBloom, 0.04);
 
-	vec4 c = vec4(sceneColor, 0.0);
-
+	// Apply tonemapping operator.
 #if TONE_MAPPER == TONE_MAPPER_REINHARD
-	// Reinhard tone mapper
-	c.rgb = vec3(1.0) - exp(-c.rgb * ubo.exposure);
+	sceneColor = sceneColor / (vec3(1.0) + sceneColor);
+	//c.rgb = vec3(1.0) - exp(-c.rgb * manualExposure);
 #elif TONE_MAPPER == TONE_MAPPER_ACES
-	// ACES tone mapper
-	c.rgb = ACESFitted(c.rgb);
+	sceneColor = ACESFitted(sceneColor);
 #endif
 
-	// Gamma correction
-	c.rgb = pow(c.rgb, vec3(1.0 / ubo.gamma));
+	// Gamma correction.
+	sceneColor = pow(sceneColor, vec3(1.0 / ubo.gamma));
 
-	outSceneColor = c;
+	// Final output.
+	outSceneColor = vec4(sceneColor, 0.0);
 }

@@ -12,9 +12,8 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
-	// #wip: Remove exposure cvar?
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.0f, "exposure parameter of tone mapping pass");
-	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
+	static ConsoleVariable<float> cvar_tonemapping_exposureOverride("r.tonemapping.exposureOverride", 0.0f, "Control exposure if r.autoExposure is disabled");
+	static ConsoleVariable<float> cvar_tonemapping_gamma("r.tonemapping.gamma", 2.2f, "gamma correction");
 
 	template<int32 ToneMapper>
 	class ToneMappingFS : public ShaderStage {
@@ -38,8 +37,11 @@ namespace pathos {
 	}
 
 	struct UBO_ToneMapping {
-		float exposure;
+		static constexpr uint32 BINDING_INDEX = 1;
+
+		float exposureOverride;
 		float gamma;
+		int32 useAutoExposure;
 		int32 sceneLuminanceLastMip;
 	};
 
@@ -47,8 +49,7 @@ namespace pathos {
 
 namespace pathos {
 
-	void ToneMapping::initializeResources(RenderCommandList& cmdList)
-	{
+	void ToneMapping::initializeResources(RenderCommandList& cmdList) {
 		ubo.init<UBO_ToneMapping>();
 
 		// tone mapping resource
@@ -56,15 +57,13 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 	}
 
-	void ToneMapping::releaseResources(RenderCommandList& cmdList)
-	{
+	void ToneMapping::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
 	}
 
-	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
-	{
+	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(ToneMapping);
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
@@ -88,10 +87,11 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
-		uboData.exposure              = cvar_tonemapping_exposure.getValue();
-		uboData.gamma                 = cvar_gamma.getValue();
-		uboData.sceneLuminanceLastMip = sceneContext.sceneLuminanceMipCount - 1;
-		ubo.update(cmdList, 1, &uboData);
+		uboData.exposureOverride      = cvar_tonemapping_exposureOverride.getValue();
+		uboData.gamma                 = cvar_tonemapping_gamma.getValue();
+		uboData.useAutoExposure       = (int32)bUseAutoExposure;
+		uboData.sceneLuminanceLastMip = bUseAutoExposure ? (sceneContext.sceneLuminanceMipCount - 1) : 0;
+		ubo.update(cmdList, UBO_ToneMapping::BINDING_INDEX, &uboData);
 
 		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 3);
 		colorAttachments[0] = input0;

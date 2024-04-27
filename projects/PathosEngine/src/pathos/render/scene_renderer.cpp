@@ -70,10 +70,11 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
-	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "Toggle indirect lighting");
+	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
+	static ConsoleVariable<int32> cvar_autoExposure("r.autoExposure", 1, "0 = disable, 1 = enable. If disabled, exposure is controlled by r.tonemapping.exposureOverride");
 
 	SceneRenderer::SceneRenderer()
 		: scene(nullptr)
@@ -147,6 +148,7 @@ namespace pathos {
 		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
 		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
 		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
+		const bool bRenderAutoExposure            = (bLightProbeRendering == false && cvar_autoExposure.getInt() != 0);
 		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
 		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
 
@@ -352,7 +354,7 @@ namespace pathos {
 			godRay->renderGodRayPost(cmdList, scene);
 		}
 
-		{
+		if (bRenderAutoExposure) {
 			SCOPED_CPU_COUNTER(AutoExposure);
 			SCOPED_GPU_COUNTER(AutoExposure);
 			autoExposurePass->renderAutoExposure(cmdList, scene);
@@ -451,14 +453,18 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ToneMapping);
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
+				const bool bAutoExposure = cvar_autoExposure.getInt() != 0;
 
 				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
+				GLuint averageLuminance = bAutoExposure ? sceneRenderTargets->sceneLuminance : gEngine->getSystemTexture2DBlack()->internal_getGLName();
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
+				
+				toneMapping->useAutoExposure(bAutoExposure);
 
 				// #wip: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
-				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->sceneLuminance);
+				toneMapping->setInput(EPostProcessInput::PPI_2, averageLuminance);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 
