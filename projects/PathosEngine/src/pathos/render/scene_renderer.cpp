@@ -141,6 +141,8 @@ namespace pathos {
 
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
 		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
+		
+		const bool bRenderGodRay = (bLightProbeRendering == false);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -212,20 +214,16 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
-		// Volumetric clouds
 		if (bLightProbeRendering == false) {
 			SCOPED_CPU_COUNTER(VolumetricClouds);
 			SCOPED_GPU_COUNTER(VolumetricCloudPass);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
 
-		// GodRay
-		// input: static meshes
-		// output: god ray texture
-		if (bLightProbeRendering == false) {
+		if (bRenderGodRay) {
 			SCOPED_CPU_COUNTER(GodRay);
-			SCOPED_GPU_COUNTER(RenderGodRay);
-			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad, this);
+			SCOPED_GPU_COUNTER(GodRay);
+			godRay->renderGodRay(cmdList, scene, camera, this);
 		}
 
 		{
@@ -342,6 +340,12 @@ namespace pathos {
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
+		if (bRenderGodRay) {
+			SCOPED_CPU_COUNTER(GodRayPost);
+			SCOPED_GPU_COUNTER(GodRayPost);
+			godRay->renderGodRayPost(cmdList, scene);
+		}
+
 		{
 			SCOPED_CPU_COUNTER(AutoExposure);
 			SCOPED_GPU_COUNTER(AutoExposure);
@@ -445,11 +449,10 @@ namespace pathos {
 				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 
-				// #wip: Don't mix these textures inside of tone mapping shader...
+				// #wip: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
-				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
-				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->sceneLuminance);
+				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->sceneLuminance);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 

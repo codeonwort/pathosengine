@@ -42,6 +42,7 @@
     <None Include="fxaa_fs.glsl" />
     <None Include="geom_common.glsl" />
     <None Include="god_ray_fs.glsl" />
+    <None Include="god_ray_post.glsl" />
     <None Include="god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="indirect_lighting.glsl" />

@@ -77,5 +77,6 @@
     <None Include="overlay_image.glsl" />
     <None Include="auto_exposure.glsl" />
     <None Include="volumetric_clouds_post.glsl" />
+    <None Include="god_ray_post.glsl" />
   </ItemGroup>
 </Project>

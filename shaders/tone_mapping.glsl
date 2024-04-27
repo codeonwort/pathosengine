@@ -6,8 +6,14 @@
 
 layout (binding = 0) uniform sampler2D hdr_image;
 layout (binding = 1) uniform sampler2D hdr_bloom;
-layout (binding = 2) uniform sampler2D god_ray;
-layout (binding = 4) uniform sampler2D sceneLuminance;
+layout (binding = 2) uniform sampler2D sceneLuminance;
+
+// --------------------------------------------------------
+// Input
+
+in VS_OUT {
+	vec2 screenUV;
+} fs_in;
 
 layout (std140, binding = 1) uniform UBO_ToneMapping {
 	float exposure;    // cvar: r.tonemapping.exposure
@@ -15,13 +21,14 @@ layout (std140, binding = 1) uniform UBO_ToneMapping {
 	int   sceneLuminanceLastMip;
 } ubo;
 
-in VS_OUT {
-	vec2 screenUV;
-} fs_in;
+// --------------------------------------------------------
+// Output
 
 out vec4 outSceneColor;
 
 // --------------------------------------------------------
+// Shader
+
 // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
 const mat3 ACESInputMat = mat3(
 	0.59719, 0.35458, 0.04823,
@@ -55,7 +62,6 @@ vec3 ACESFitted(vec3 color)
 
 	return color;
 }
-// --------------------------------------------------------
 
 void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
@@ -63,7 +69,6 @@ void main() {
 
 	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
 	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
-	vec3 godRay     = textureLod(god_ray, screenUV, 0).rgb;
 
 	float avgLuminance = texelFetch(sceneLuminance, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
 	float autoExposure = 1.0 / (9.6 * avgLuminance);
@@ -73,7 +78,6 @@ void main() {
 	sceneColor = mix(sceneColor, sceneBloom, 0.04);
 
 	vec4 c = vec4(sceneColor, 0.0);
-	c.rgb += godRay;
 
 #if TONE_MAPPER == TONE_MAPPER_REINHARD
 	// Reinhard tone mapper

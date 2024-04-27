@@ -69,8 +69,7 @@ namespace pathos {
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
-		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
-		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // sceneLuminance
+		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // sceneLuminance
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -94,13 +93,12 @@ namespace pathos {
 		uboData.sceneLuminanceLastMip = sceneContext.sceneLuminanceMipCount - 1;
 		ubo.update(cmdList, 1, &uboData);
 
-		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 4);
+		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 3);
 		colorAttachments[0] = input0;
 		colorAttachments[1] = input1;
 		colorAttachments[2] = input2;
-		colorAttachments[3] = input3;
 
-		cmdList.bindTextures(0, 4, colorAttachments);
+		cmdList.bindTextures(0, 3, colorAttachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

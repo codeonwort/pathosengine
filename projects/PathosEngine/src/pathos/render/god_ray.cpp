@@ -24,6 +24,8 @@ static ConsoleVariable<float> cvar_godray_density("r.godray.density", 1.1f, "Den
 namespace pathos {
 
 	struct UBO_GodRaySilhouette {
+		static constexpr uint32 BINDING_INDEX = 1;
+
 		matrix4 modelTransform;
 		vector3 godRayColor;
 	};
@@ -45,6 +47,8 @@ namespace pathos {
 	};
 
 	struct UBO_GodRayLightScattering {
+		static constexpr uint32 BINDING_INDEX = 1;
+
 		vector2 lightPos;
 		float alphaDecay;
 		float density;
@@ -75,6 +79,13 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingH, FullscreenVS, GodRayBilateralSamplingFS<true>);
 	DEFINE_SHADER_PROGRAM2(Program_GodRayBilateralSamplingV, FullscreenVS, GodRayBilateralSamplingFS<false>);
 
+	class GodRayPostFS : public ShaderStage {
+	public:
+		GodRayPostFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayPostFS") {
+			setFilepath("god_ray_post.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_GodRayPost, FullscreenVS, GodRayPostFS);
 }
 
 namespace pathos {
@@ -90,69 +101,74 @@ namespace pathos {
 
 	void GodRay::initializeResources(RenderCommandList& cmdList) {
 		createFBO(cmdList);
-		cmdList.genVertexArrays(1, &vao_dummy);
 		uboSilhouette.init<UBO_GodRaySilhouette>();
 		uboLightScattering.init<UBO_GodRayLightScattering>();
 	}
 
-	void GodRay::releaseResources(RenderCommandList& cmdList)
-	{
+	void GodRay::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
-			gRenderDevice->deleteVertexArrays(1, &vao_dummy);
-			gRenderDevice->deleteFramebuffers(2, fbo);
+			GLuint FBOs[] = { fboSilhouette, fboLight, fboBlurH, fboBlurV, fboPost };
+			gRenderDevice->deleteFramebuffers(_countof(FBOs), FBOs);
+			destroyed = true;
 		}
-		destroyed = true;
 	}
 
 	void GodRay::createFBO(RenderCommandList& cmdList) {
-		// generate fbo and textures
-		gRenderDevice->createFramebuffers(2, fbo);
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_SOURCE], -1, "FBO_GodRaySource");
-		cmdList.objectLabel(GL_FRAMEBUFFER, fbo[GOD_RAY_RESULT], -1, "FBO_GodRayResult");
+		gRenderDevice->createFramebuffers(1, &fboSilhouette);
+		gRenderDevice->createFramebuffers(1, &fboLight);
+		gRenderDevice->createFramebuffers(1, &fboBlurH);
+		gRenderDevice->createFramebuffers(1, &fboBlurV);
+		gRenderDevice->createFramebuffers(1, &fboPost);
 
-		// Silhoutte pass
-		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0);
+		// Silhoutte
+		cmdList.namedFramebufferDrawBuffer(fboSilhouette, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fboSilhouette, -1, "FBO_GodRaySilhouette");
 
-		// Light scattering pass
-		cmdList.namedFramebufferDrawBuffer(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0);
-		
-		gRenderDevice->createFramebuffers(1, &fboBlur1);
-		cmdList.namedFramebufferDrawBuffer(fboBlur1, GL_COLOR_ATTACHMENT0);
+		// Light scattering
+		cmdList.namedFramebufferDrawBuffer(fboLight, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fboLight, -1, "FBO_GodRayLight");
 
-		gRenderDevice->createFramebuffers(1, &fboBlur2);
-		cmdList.namedFramebufferDrawBuffer(fboBlur2, GL_COLOR_ATTACHMENT0);
+		// Blur
+		cmdList.namedFramebufferDrawBuffer(fboBlurH, GL_COLOR_ATTACHMENT0);
+		cmdList.namedFramebufferDrawBuffer(fboBlurV, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fboBlurH, -1, "FBO_GodRayBlurH");
+		cmdList.objectLabel(GL_FRAMEBUFFER, fboBlurV, -1, "FBO_GodRayBlurV");
+
+		// Post
+		cmdList.namedFramebufferDrawBuffer(fboPost, GL_COLOR_ATTACHMENT0);
+		cmdList.objectLabel(GL_FRAMEBUFFER, fboPost, -1, "FBO_GodRayPost");
 	}
 
 	void GodRay::renderGodRay(
 		RenderCommandList& cmdList,
 		SceneProxy* scene,
 		Camera* camera,
-		MeshGeometry* fullscreenQuad,
 		SceneRenderer* renderer)
 	{
 		SCOPED_DRAW_EVENT(GodRay);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		// Special case: no light source
+		if (!isPassEnabled(scene)) {
+			return;
+		}
 
-		// bind
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
+		// Bind framebuffer
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		GLfloat opaque_black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		GLfloat depth_clear[] = { 0.0f };
 
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_SOURCE], GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
-		cmdList.namedFramebufferTexture(fbo[GOD_RAY_RESULT], GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+		cmdList.namedFramebufferTexture(fboSilhouette, GL_COLOR_ATTACHMENT0, sceneContext.godRaySource, 0);
+		cmdList.namedFramebufferTexture(fboSilhouette, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
+		cmdList.namedFramebufferTexture(fboLight, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 
-		pathos::checkFramebufferStatus(cmdList, fbo[GOD_RAY_SOURCE], "fbo[GOD_RAY_SOURCE] is invalid");
-		pathos::checkFramebufferStatus(cmdList, fbo[GOD_RAY_RESULT], "fbo[GOD_RAY_RESULT] is invalid");
+		pathos::checkFramebufferStatus(cmdList, fboSilhouette, "fboSilhouette is invalid");
+		pathos::checkFramebufferStatus(cmdList, fboLight, "fboLight is invalid");
 
-		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_SOURCE], GL_COLOR, 0, transparent_black);
-		cmdList.clearNamedFramebufferfv(fbo[GOD_RAY_RESULT], GL_COLOR, 0, transparent_black);
-
-		// special case: no light source
-		if (!scene->isGodRayValid()) {
-			return;
-		}
+		cmdList.clearNamedFramebufferfv(fboSilhouette, GL_COLOR, 0, transparent_black);
+		cmdList.clearNamedFramebufferfv(fboLight, GL_COLOR, 0, transparent_black);
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		cmdList.enable(GL_DEPTH_TEST);
@@ -161,13 +177,13 @@ namespace pathos {
 			cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		}
 
-		// render silhouettes
+		// Render silhouettes
 		{
 			SCOPED_DRAW_EVENT(RenderSilhouette);
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRaySilhouette);
 
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_SOURCE]);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboSilhouette);
 			cmdList.useProgram(program.getGLName());
 
 			// Source
@@ -175,6 +191,8 @@ namespace pathos {
 			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
 				renderSilhouette(cmdList, camera, sourceProxy);
 			}
+
+			cmdList.bindVertexArray(0); // Cleanup potentially remaining VAO binding
 		}
 
 		{
@@ -185,33 +203,32 @@ namespace pathos {
 				sceneContext.sceneWidth / 2, sceneContext.sceneHeight / 2);
 		}
 
-		// light scattering pass
+		// Light scattering pass
 		{
 			SCOPED_DRAW_EVENT(LightScattering);
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayLightScattering);
 
 			vector3 lightPos = scene->godRayLocation;
-			const glm::mat4 lightMVP = camera->getViewProjectionMatrix();
-			auto lightPos_homo = lightMVP * glm::vec4(lightPos, 1.0f);
-			lightPos = vector3(lightPos_homo) / lightPos_homo.w;
+			const matrix4 lightMVP = camera->getViewProjectionMatrix();
+			vector4 lightPosH = lightMVP * vector4(lightPos, 1.0f);
+			lightPos = vector3(lightPosH) / lightPosH.w; // clip space
 
 			UBO_GodRayLightScattering uboData;
 			uboData.lightPos.x = (lightPos.x + 1.0f) / 2.0f;
 			uboData.lightPos.y = (lightPos.y + 1.0f) / 2.0f;
 			uboData.alphaDecay = badger::clamp(0.0f, cvar_godray_alphaDecay.getFloat(), 1.0f);
 			uboData.density    = badger::max(1.0f, cvar_godray_density.getFloat());
-			uboLightScattering.update(cmdList, 1, &uboData);
+			uboLightScattering.update(cmdList, UBO_GodRayLightScattering::BINDING_INDEX, &uboData);
 
-			cmdList.bindVertexArray(vao_dummy);
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo[GOD_RAY_RESULT]);
 			cmdList.useProgram(program.getGLName());
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboLight);
+			
 			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
-			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-			cmdList.bindVertexArray(0);
-			cmdList.useProgram(0);
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
 		}
 
 		// #todo-godray: This is just gaussian blur. Range filter kernel is needed.
@@ -224,17 +241,54 @@ namespace pathos {
 			ShaderProgram& program_vertical = FIND_SHADER_PROGRAM(Program_GodRayBilateralSamplingV);
 
 			cmdList.useProgram(program_horizontal.getGLName());
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur1);
-			cmdList.namedFramebufferTexture(fboBlur1, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlurH);
+			cmdList.namedFramebufferTexture(fboBlurH, GL_COLOR_ATTACHMENT0, sceneContext.godRayResultTemp, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
 
 			cmdList.useProgram(program_vertical.getGLName());
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlur2);
-			cmdList.namedFramebufferTexture(fboBlur2, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboBlurV);
+			cmdList.namedFramebufferTexture(fboBlurV, GL_COLOR_ATTACHMENT0, sceneContext.godRayResult, 0);
 			cmdList.bindTextureUnit(0, sceneContext.godRayResultTemp);
 			fullscreenQuad->drawPrimitive(cmdList);
+		}
+	}
+
+	void GodRay::renderGodRayPost(RenderCommandList& cmdList, SceneProxy* scene) {
+		if (isPassEnabled(scene)) {
+			SCOPED_DRAW_EVENT(GodRayPost);
+
+			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayPost);
+			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboPost);
+			cmdList.namedFramebufferTexture(fboPost, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+
+			pathos::checkFramebufferStatus(cmdList, fboPost, "[GodRayPost] FBO is invalid");
+
+			// Set render states
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.enable(GL_BLEND);
+			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+			cmdList.bindTextureUnit(0, sceneContext.godRayResult);
+
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			// Restore bindings
+			cmdList.bindTextureUnit(0, 0);
+
+			// Restore render states
+			cmdList.disable(GL_BLEND);
+			cmdList.namedFramebufferTexture(fboPost, GL_COLOR_ATTACHMENT0, 0, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		}
 	}
 
@@ -249,7 +303,7 @@ namespace pathos {
 		UBO_GodRaySilhouette uboData;
 		uboData.modelTransform = meshProxy->modelMatrix;
 		uboData.godRayColor = godRayColor;
-		uboSilhouette.update(cmdList, 1, &uboData);
+		uboSilhouette.update(cmdList, UBO_GodRaySilhouette::BINDING_INDEX, &uboData);
 
 		const bool wireframe = meshProxy->material->bWireframe;
 		if (wireframe) {
@@ -258,11 +312,14 @@ namespace pathos {
 
 		meshProxy->geometry->bindPositionOnlyVAO(cmdList);
 		meshProxy->geometry->drawPrimitive(cmdList);
-		meshProxy->geometry->unbindVAO(cmdList);
 
 		if (wireframe) {
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
+	}
+
+	bool GodRay::isPassEnabled(SceneProxy* scene) const {
+		return scene->isGodRayValid();
 	}
 
 }
