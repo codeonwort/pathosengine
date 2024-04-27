@@ -16,8 +16,9 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_ToneMapping {
-	float exposureOverride;      // cvar: r.tonemapping.exposureOverride
 	float gamma;                 // cvar: r.tonemapping.gamma
+	float exposureOverride;      // cvar: r.exposure.override
+	float exposureCompensation;  // cvar: r.exposure.compensation
 	int   useAutoExposure;
 	int   sceneLuminanceLastMip;
 	int   applyBloom;
@@ -78,13 +79,15 @@ void main() {
 	}
 
 	// Apply exposure.
+	float exposure = 0.0;
 	if (ubo.useAutoExposure != 0) {
-		float avgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
-		float exposure = 1.0 / (9.6 * avgLuminance);
-		sceneColor *= exposure;
+		float logAvgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
+		float avgLuminance = exp(logAvgLuminance);
+		exposure = (0.148 / avgLuminance) - ubo.exposureCompensation;
 	} else {
-		sceneColor *= pow(2.0, ubo.exposureOverride);
+		exposure = pow(2.0, ubo.exposureOverride - ubo.exposureCompensation);
 	}
+	sceneColor *= exposure;
 
 	// Apply tonemapping operator.
 #if TONE_MAPPER == TONE_MAPPER_REINHARD

@@ -13,15 +13,21 @@ namespace pathos {
 		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) override;
 
 		// Call this before renderPostProcess()
-		inline void setParameters(bool useAutoExposure, bool applyBloom) {
-			bUseAutoExposure = useAutoExposure;
-			bApplyBloom = applyBloom;
+		inline void setParameters(bool inUseAutoExposure, float inExposureOverride, float inExposureCompensation, bool inApplyBloom) {
+			bUseAutoExposure = inUseAutoExposure;
+			exposureOverride = inExposureOverride;
+			exposureCompensation = inExposureCompensation;
+			bApplyBloom = inApplyBloom;
 		}
 
 	private:
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
+
 		bool bUseAutoExposure = true;
+		float exposureOverride = 0.0f;
+		float exposureCompensation = 0.0f;
+
 		bool bApplyBloom = true;
 
 	};

@@ -12,7 +12,6 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
-	static ConsoleVariable<float> cvar_tonemapping_exposureOverride("r.tonemapping.exposureOverride", 0.0f, "Control exposure if r.autoExposure is disabled");
 	static ConsoleVariable<float> cvar_tonemapping_gamma("r.tonemapping.gamma", 2.2f, "gamma correction");
 
 	template<int32 ToneMapper>
@@ -39,8 +38,9 @@ namespace pathos {
 	struct UBO_ToneMapping {
 		static constexpr uint32 BINDING_INDEX = 1;
 
-		float exposureOverride;
 		float gamma;
+		float exposureOverride;
+		float exposureCompensation;
 		int32 useAutoExposure;
 		int32 sceneLuminanceLastMip;
 		int32 applyBloom;
@@ -88,8 +88,9 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
-		uboData.exposureOverride      = cvar_tonemapping_exposureOverride.getValue();
 		uboData.gamma                 = cvar_tonemapping_gamma.getValue();
+		uboData.exposureOverride      = exposureOverride;
+		uboData.exposureCompensation  = exposureCompensation;
 		uboData.useAutoExposure       = (int32)bUseAutoExposure;
 		uboData.sceneLuminanceLastMip = bUseAutoExposure ? (sceneContext.sceneLuminanceMipCount - 1) : 0;
 		uboData.applyBloom            = (int32)bApplyBloom;
