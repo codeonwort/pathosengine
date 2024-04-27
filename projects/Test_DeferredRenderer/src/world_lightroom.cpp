@@ -137,7 +137,7 @@ void World_LightRoom::setupScene() {
 #if TEST_POINT_LIGHT
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(1.0f + boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	pointLight0->setIntensity(10.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight0->setColorAndIntensity(vector3(1.0f, 1.0f, 1.0f), 10.0f);
 	pointLight0->setAttenuationRadius(0.7f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
@@ -145,7 +145,7 @@ void World_LightRoom::setupScene() {
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
 	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
-	vector3 plGizmoEm = 10.0f * glm::normalize(pointLight0->getLightComponent()->intensity);
+	vector3 plGizmoEm = 10.0f * pointLight0->getLightComponent()->color;
 	M_pointLightGizmo->setConstantParameter("emissive", vector3(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z));
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));

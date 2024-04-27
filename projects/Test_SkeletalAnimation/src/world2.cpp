@@ -82,7 +82,7 @@ void World2::setupScene()
 
 	pointLight0 = spawnActor<PointLightActor>();
 	pointLight0->setActorLocation(vector3(0.0f, 2.0f, 2.0f));
-	pointLight0->setIntensity(100.0f * vector3(1.0f, 5.0f, 1.0f));
+	pointLight0->setColorAndIntensity(vector3(1.0f, 5.0f, 1.0f), 100.0f);
 	pointLight0->setAttenuationRadius(10.0f);
 	pointLight0->setSourceRadius(0.2f);
 

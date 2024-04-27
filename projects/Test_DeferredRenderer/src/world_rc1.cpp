@@ -260,7 +260,8 @@ void World_RC1::setupScene()
 
 	PointLightActor* pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight->setColor(vector3(1.0f, 1.0f, 1.0f));
+	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f);
 	pointLight->setAttenuationRadius(RC1_SCALE * 50.0f);
 	pointLight->setSourceRadius(RC1_SCALE * 0.4f);
 

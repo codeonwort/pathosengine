@@ -119,6 +119,7 @@ namespace pathos {
 		// point lights
 		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
 			PointLightActor* actor = world->spawnActor<PointLightActor>();
+			actor->setColor(pLight.color);
 			actor->setIntensity(pLight.intensity);
 			actor->setAttenuationRadius(pLight.attenuationRadius);
 			actor->setFalloffExponent(pLight.falloffExponent);

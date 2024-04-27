@@ -124,20 +124,21 @@ namespace pathos {
 		}
 
 		for (auto& [unused_key, L] : document[KEY_POINT_LIGHTS].items()) {
-			if (!checkMembers(L, { "name", "location", "intensity",
+			if (!checkMembers(L, { "name", "location", "color", "intensity",
 					"attenuationRadius", "falloffExponent", "castsShadow" })) {
 				continue;
 			}
 
 			std::string name(parseName(L));
 			vector3 loc = parseVec3(L["location"]);
-			vector3 intensity = parseVec3(L["intensity"]);
+			vector3 color = parseVec3(L["color"]);
+			float intensity = L["intensity"];
 			float attenuationR = L["attenuationRadius"];
 			float falloffExp = L["falloffExponent"];
 			bool castsShadow = L["castsShadow"];
 
 			SceneDescription::PointLight desc{
-				name, loc, intensity, attenuationR, falloffExp, castsShadow
+				name, loc, color, intensity, attenuationR, falloffExp, castsShadow
 			};
 			outDesc.pointLights.emplace_back(desc);
 		}

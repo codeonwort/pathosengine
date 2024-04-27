@@ -7,7 +7,7 @@ namespace pathos {
 	struct DirectionalLightProxy : public SceneComponentProxy {
 		vector3 wsDirection;
 		float   padding0;
-		vector3 intensity; // #wip: Separate into color and illuminance?
+		vector3 intensity; // color * illuminance
 		float   padding1;
 		vector3 vsDirection;
 		float   padding2;
@@ -46,11 +46,9 @@ namespace pathos {
 		}
 
 	public:
-		vector3 direction; // From sun to earth
-
-		// #wip: Sun uses color (vector) + illuminance (scalar). If gonna support color temperature, provide a mechanism that converts temperature to color.
-		vector3 color;     // Should be clamped to [0, 1]
-		float illuminance; // Unit: lux (= lm/m^2 = lumen per square meter)
+		vector3 direction;   // From sun to earth
+		vector3 color;       // Luminous efficiency function. Should be clamped to [0, 1]
+		float   illuminance; // Unit: lux (= lm/m^2 = lumen per square meter)
 
 	};
 

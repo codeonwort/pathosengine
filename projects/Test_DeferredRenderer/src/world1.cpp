@@ -191,13 +191,13 @@ void World1::setupScene()
 	pointLight1->setActorLocation(vector3(PILLAR_x1, PILLAR_y1, PILLAR_z0));
 	pointLight2->setActorLocation(vector3(0.5f * (PILLAR_x0 + PILLAR_x1), PILLAR_y1, PILLAR_z1));
 
-	pointLight0->setIntensity(50.0f * vector3(1.0f, 0.0f, 0.0f));
+	pointLight0->setColorAndIntensity(vector3(1.0f, 0.0f, 0.0f), 50.0f);
 	pointLight0->setAttenuationRadius(2.0f);
 
-	pointLight1->setIntensity(50.0f * vector3(0.0f, 1.0f, 0.0f));
+	pointLight1->setColorAndIntensity(vector3(0.0f, 1.0f, 0.0f), 50.0f);
 	pointLight1->setAttenuationRadius(2.0f);
 
-	pointLight2->setIntensity(50.0f * vector3(0.0f, 0.0f, 1.0f));
+	pointLight2->setColorAndIntensity(vector3(0.0f, 0.0f, 1.0f), 50.0f);
 	pointLight2->setAttenuationRadius(2.0f);
 
 	godRaySource = spawnActor<StaticMeshActor>();
