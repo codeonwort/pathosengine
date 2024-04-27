@@ -41,6 +41,7 @@ namespace pathos {
 
 		matrix4 viewProj;
 		float skyboxLOD;
+		float intensityMultiplier;
 	};
 
 	DEFINE_SHADER_PROGRAM2(Program_Skybox, SkyboxVS, SkyboxFS);
@@ -136,8 +137,9 @@ namespace pathos {
 		{
 			matrix4 view = matrix4(matrix3(camera.getViewMatrix())); // view transform without transition
 			matrix4 proj = camera.getProjectionMatrix();
-			uboData.viewProj = proj * view;
-			uboData.skyboxLOD = skybox->textureLod;
+			uboData.viewProj            = proj * view;
+			uboData.skyboxLOD           = skybox->textureLod;
+			uboData.intensityMultiplier = skybox->intensityMultiplier;
 		}
 		ubo.update(cmdList, UBO_Skybox::BINDING_POINT, &uboData);
 

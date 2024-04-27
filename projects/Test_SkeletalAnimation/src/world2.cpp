@@ -24,10 +24,11 @@
 #define SUN_COLOR                         vector3(1.0f, 1.0f, 1.0f)
 // #wip: Check light intensities
 #define SUN_ILLUMINANCE                   10000.0f
+#define SKY_INTENSITY_MULTIPLIER          1000.0f
 
 #define POINT_LIGHT_LOCATION              vector3(0.0f, 2.0f, 2.0f)
 #define POINT_LIGHT_COLOR                 vector3(0.2f, 1.0f, 0.2f)
-#define POINT_LIGHT_INTENSITY             50000.0f
+#define POINT_LIGHT_INTENSITY             100000.0f
 #define POINT_LIGHT_ATTENUATION_RADIUS    10.0f
 #define POINT_LIGHT_SOURCE_RADIUS         0.2f
 
@@ -171,6 +172,7 @@ void World2::setupScene()
 
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
 	sky->setCubemapTexture(skyCubemapTexture);
+	sky->setIntensityMultiplier(SKY_INTENSITY_MULTIPLIER);
 
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
 }

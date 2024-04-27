@@ -20,6 +20,8 @@ namespace pathos {
 
 		void setCubemapTexture(Texture* texture, float lod = 0.0f);
 
+		void setIntensityMultiplier(float multiplier);
+
 		void setSkyboxMaterial(Material* material);
 
 		inline SkyboxComponent* getSkyboxComponent() const { return component; }

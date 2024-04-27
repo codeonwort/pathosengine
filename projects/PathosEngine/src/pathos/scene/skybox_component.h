@@ -12,6 +12,7 @@ namespace pathos {
 		CubeGeometry*    cube;
 		Texture*         texture;
 		float            textureLod;
+		float            intensityMultiplier;
 		Material*        skyboxMaterial;
 		bool             bUseCubemapTexture;
 		bool             bLightingDirty;
@@ -24,6 +25,10 @@ namespace pathos {
 
 		void setCubemapTexture(Texture* inTexture);
 		void setCubemapLOD(float inLOD);
+
+		// If Sun uses photometric unit but sky cubemap is not a proper HDR image,
+		// then sky could be too dark compared to Sun.
+		void setIntensityMultiplier(float inMultiplier);
 
 		void setSkyboxMaterial(Material* inMaterial);
 
@@ -38,6 +43,7 @@ namespace pathos {
 		CubeGeometry* cubeGeometry = nullptr;
 		Texture* cubemapTexture = nullptr;
 		float cubemapLod = 0.0f;
+		float intensityMultiplier = 1.0f;
 
 		Material* skyboxMaterial = nullptr;
 
