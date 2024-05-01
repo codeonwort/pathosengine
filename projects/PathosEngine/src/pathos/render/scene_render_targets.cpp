@@ -169,11 +169,14 @@ namespace pathos {
 		reallocTexture2D(sceneColorHalfRes, PF_sceneColor, sceneWidth / 2, sceneHeight / 2, 1, "sceneColorHalfRes");
 		reallocTexture2D(sceneDepth,        PF_sceneDepth, sceneWidth,     sceneHeight,     1, "sceneDepth");
 
-		// Auto exposure
+		// Auto exposure (average log luminance)
 		sceneLuminanceSize = 1024;
 		while (sceneLuminanceSize > sceneWidth || sceneLuminanceSize > sceneHeight) sceneLuminanceSize /= 2;
 		sceneLuminanceMipCount = calcTexture2DMaxMipCount(sceneLuminanceSize, sceneLuminanceSize);
 		reallocTexture2D(sceneLuminance, GL_R16F, sceneLuminanceSize, sceneLuminanceSize, sceneLuminanceMipCount, "sceneLuminance");
+
+		// Auto exposure (histogram)
+		reallocTexture2D(luminanceFromHistogram, GL_R32F, 1, 1, 1, "luminanceFromHistogram");
 
 		// Screen space reflection
 		if (bLightProbeRendering == false) {
@@ -294,6 +297,8 @@ namespace pathos {
 		safe_release(sceneColor);
 		safe_release(sceneColorHalfRes);
 		safe_release(sceneDepth);
+		safe_release(sceneLuminance);
+		safe_release(luminanceFromHistogram);
 		safe_release(sceneColorAA);
 		safe_release(sceneColorHistory);
 		safe_release(velocityMap);

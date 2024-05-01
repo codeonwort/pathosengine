@@ -75,7 +75,7 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
 
-	static ConsoleVariable<int32> cvar_exposure_auto("r.exposure.auto", 1, "0 = manual exposure, 1 = auto exposure. If manual, exposure value is set by r.exposure.override");
+	static ConsoleVariable<int32> cvar_exposure_mode("r.exposure.mode", 2, "0 = manual exposure, 1 = auto exposure by average luminance, 2 = auto exposure by luminance histogram. If manual, exposure value is set by r.exposure.override");
 	static ConsoleVariable<float> cvar_exposure_override("r.exposure.override", 0.0f, "Exposure value for manual exposure mode");
 	static ConsoleVariable<float> cvar_exposure_compensation("r.exposure.compensation", 0.0f, "Exposure bias applied after either auto or manual exposure is determined");
 
@@ -151,7 +151,7 @@ namespace pathos {
 		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
 		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
 		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
-		const bool bRenderAutoExposure            = (bLightProbeRendering == false && cvar_exposure_auto.getInt() != 0);
+		const bool bRenderAutoExposure            = (bLightProbeRendering == false && cvar_exposure_mode.getInt() != 0);
 		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
 		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
 
@@ -456,22 +456,37 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ToneMapping);
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
-				const bool bAutoExposure = cvar_exposure_auto.getInt() != 0;
+				const bool bAutoExposure = cvar_exposure_mode.getInt() != 0;
 				const float exposureOverride = cvar_exposure_override.getFloat();
 				const float exposureCompensation = cvar_exposure_compensation.getFloat();
 				const bool bApplyBloom = isPPEnabled(EPostProcessOrder::Bloom);
 				GLuint black2D = gEngine->getSystemTexture2DBlack()->internal_getGLName();
 
 				GLuint bloom = bApplyBloom ? sceneRenderTargets->sceneBloomChain : black2D;
-				GLuint averageLuminance = bAutoExposure ? sceneRenderTargets->sceneLuminance : black2D;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
+
+				GLuint luminanceTexture = black2D;
+				uint32 luminanceTargetMip = 0;
+				bool bLuminanceLogScale = false;
+				if (cvar_exposure_mode.getInt() == 1) {
+					luminanceTexture = sceneRenderTargets->sceneLuminance;
+					luminanceTargetMip = sceneRenderTargets->sceneLuminanceMipCount - 1;
+					bLuminanceLogScale = true;
+				} else if (cvar_exposure_mode.getInt() == 2) {
+					luminanceTexture = sceneRenderTargets->luminanceFromHistogram;
+					luminanceTargetMip = 0;
+					bLuminanceLogScale = false;
+				}
 				
-				toneMapping->setParameters(bAutoExposure, exposureOverride, exposureCompensation, bApplyBloom);
+				toneMapping->setParameters(
+					bAutoExposure, luminanceTargetMip, bLuminanceLogScale,
+					exposureOverride, exposureCompensation,
+					bApplyBloom);
 
 				// #wip: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
-				toneMapping->setInput(EPostProcessInput::PPI_2, averageLuminance);
+				toneMapping->setInput(EPostProcessInput::PPI_2, luminanceTexture);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 

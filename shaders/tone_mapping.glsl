@@ -20,7 +20,8 @@ layout (std140, binding = 1) uniform UBO_ToneMapping {
 	float exposureOverride;      // cvar: r.exposure.override
 	float exposureCompensation;  // cvar: r.exposure.compensation
 	int   useAutoExposure;
-	int   sceneLuminanceLastMip;
+	int   luminanceTargetMip;
+	int   isLuminanceLogScale;
 	int   applyBloom;
 } ubo;
 
@@ -81,11 +82,13 @@ void main() {
 	// Apply exposure.
 	float exposure = 0.0;
 	if (ubo.useAutoExposure != 0) {
-		float logAvgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.sceneLuminanceLastMip).r;
-		float avgLuminance = exp(logAvgLuminance);
-		exposure = (0.148 / avgLuminance) * pow(2.0, -ubo.exposureCompensation);
+		float avgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.luminanceTargetMip).r;
+		if (ubo.isLuminanceLogScale != 0) {
+			avgLuminance = exp(avgLuminance);
+		}
+		exposure = (0.148 / avgLuminance) * exp2(-ubo.exposureCompensation);
 	} else {
-		exposure = pow(2.0, ubo.exposureOverride - ubo.exposureCompensation);
+		exposure = exp2(ubo.exposureOverride - ubo.exposureCompensation);
 	}
 	sceneColor *= exposure;
 

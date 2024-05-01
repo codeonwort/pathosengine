@@ -42,7 +42,8 @@ namespace pathos {
 		float exposureOverride;
 		float exposureCompensation;
 		int32 useAutoExposure;
-		int32 sceneLuminanceLastMip;
+		int32 luminanceTargetMip;
+		int32 isLuminanceLogScale;
 		int32 applyBloom;
 	};
 
@@ -51,9 +52,8 @@ namespace pathos {
 namespace pathos {
 
 	void ToneMapping::initializeResources(RenderCommandList& cmdList) {
-		ubo.init<UBO_ToneMapping>();
+		ubo.init<UBO_ToneMapping>("UBO_ToneMapping");
 
-		// tone mapping resource
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 	}
@@ -92,7 +92,8 @@ namespace pathos {
 		uboData.exposureOverride      = exposureOverride;
 		uboData.exposureCompensation  = exposureCompensation;
 		uboData.useAutoExposure       = (int32)bUseAutoExposure;
-		uboData.sceneLuminanceLastMip = bUseAutoExposure ? (sceneContext.sceneLuminanceMipCount - 1) : 0;
+		uboData.luminanceTargetMip    = bUseAutoExposure ? luminanceTargetMip : 0;
+		uboData.isLuminanceLogScale   = bLuminanceLogScale ? 1 : 0;
 		uboData.applyBloom            = (int32)bApplyBloom;
 		ubo.update(cmdList, UBO_ToneMapping::BINDING_INDEX, &uboData);
 

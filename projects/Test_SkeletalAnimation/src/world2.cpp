@@ -23,15 +23,20 @@
 #define SUN_DIRECTION                     glm::normalize(vector3(0.0f, -1.0f, -1.0f))
 #define SUN_COLOR                         vector3(1.0f, 1.0f, 1.0f)
 // #wip: Check light intensities
-#define SUN_ILLUMINANCE                   100.0f
-#define SKY_INTENSITY_MULTIPLIER          30.0f
+// Too bright for luminance histogram. What's a proper value for minLogLuiminance?
+// 
+// Clear blue sky : 20000 lux
+// Overcast day   : 1000 lux
+// The skybox is full of clouds but not ~95%, so 3000 lux would it be?
+#define SUN_ILLUMINANCE                   3000.0f
+#define SKY_INTENSITY_MULTIPLIER          300.0f
 
-#define GOD_RAY_COLOR                     vector3(1.0f, 0.5f, 0.0f)
-#define GOD_RAY_INTENSITY                 5.0f
+#define GOD_RAY_COLOR                     vector3(0.9f, 0.5f, 0.0f)
+#define GOD_RAY_INTENSITY                 10000.0f
 
 #define POINT_LIGHT_LOCATION              vector3(0.0f, 2.0f, 2.0f)
 #define POINT_LIGHT_COLOR                 vector3(0.2f, 1.0f, 0.2f)
-#define POINT_LIGHT_INTENSITY             5000.0f
+#define POINT_LIGHT_INTENSITY             50000.0f
 #define POINT_LIGHT_ATTENUATION_RADIUS    10.0f
 #define POINT_LIGHT_SOURCE_RADIUS         0.2f
 

@@ -39,6 +39,8 @@ namespace pathos {
 		~Buffer();
 
 		void createGPUResource(bool flushGPU = false);
+		void createGPUResource_renderThread(RenderCommandList& cmdList);
+
 		void releaseGPUResource();
 
 		void writeToGPU(int64 offset, int64 size, void* data);

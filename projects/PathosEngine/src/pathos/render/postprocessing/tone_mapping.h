@@ -13,8 +13,17 @@ namespace pathos {
 		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) override;
 
 		// Call this before renderPostProcess()
-		inline void setParameters(bool inUseAutoExposure, float inExposureOverride, float inExposureCompensation, bool inApplyBloom) {
+		inline void setParameters(
+			bool inUseAutoExposure,
+			uint32 inLuminanceTargetMip,
+			bool inLuminanceLogScale,
+			float inExposureOverride,
+			float inExposureCompensation,
+			bool inApplyBloom)
+		{
 			bUseAutoExposure = inUseAutoExposure;
+			luminanceTargetMip = inLuminanceTargetMip;
+			bLuminanceLogScale = inLuminanceLogScale;
 			exposureOverride = inExposureOverride;
 			exposureCompensation = inExposureCompensation;
 			bApplyBloom = inApplyBloom;
@@ -25,6 +34,8 @@ namespace pathos {
 		UniformBuffer ubo;
 
 		bool bUseAutoExposure = true;
+		uint32 luminanceTargetMip = 0;
+		bool bLuminanceLogScale = false;
 		float exposureOverride = 0.0f;
 		float exposureCompensation = 0.0f;
 

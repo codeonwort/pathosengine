@@ -17,30 +17,32 @@ namespace pathos {
 		created = true;
 
 		auto This = this;
-		ENQUEUE_RENDER_COMMAND(
-			[This](RenderCommandList& cmdList) {
-				if (This->glBuffer != 0) {
-					gRenderDevice->deleteTextures(1, &This->glBuffer);
-					This->glBuffer = 0;
-				}
-				gRenderDevice->createBuffers(1, &This->glBuffer);
+		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
+			This->createGPUResource_renderThread(cmdList);
+		}); // ENQUEUE_RENDER_COMMAND
 
-				const BufferCreateParams& createParams = This->getCreateParams();
-				const GLuint glBuffer = This->glBuffer;
-
-				// #todo-rhi: Persistent mapping instead of GL_DYNAMIC_STORAGE_BIT
-				// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferStorage.xhtml
-				GLenum usage = 0;
-				if (ENUM_HAS_FLAG(createParams.usage, EBufferUsage::CpuWrite)) usage |= GL_DYNAMIC_STORAGE_BIT;
-
-				cmdList.namedBufferStorage(glBuffer, createParams.bufferSize, createParams.initialData, usage);
-				if (createParams.debugName.size() > 0) {
-					cmdList.objectLabel(GL_BUFFER, glBuffer, -1, createParams.debugName.c_str());
-				}
-			}
-		); // ENQUEUE_RENDER_COMMAND
 		if (flushGPU) {
 			FLUSH_RENDER_COMMAND(true);
+		}
+	}
+
+	void Buffer::createGPUResource_renderThread(RenderCommandList& cmdList) {
+		if (glBuffer != 0) {
+			gRenderDevice->deleteTextures(1, &glBuffer);
+			glBuffer = 0;
+		}
+		gRenderDevice->createBuffers(1, &glBuffer);
+
+		const BufferCreateParams& createParams = getCreateParams();
+
+		// #todo-rhi: Persistent mapping instead of GL_DYNAMIC_STORAGE_BIT
+		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBufferStorage.xhtml
+		GLenum usage = 0;
+		if (ENUM_HAS_FLAG(createParams.usage, EBufferUsage::CpuWrite)) usage |= GL_DYNAMIC_STORAGE_BIT;
+
+		cmdList.namedBufferStorage(glBuffer, createParams.bufferSize, createParams.initialData, usage);
+		if (createParams.debugName.size() > 0) {
+			cmdList.objectLabel(GL_BUFFER, glBuffer, -1, createParams.debugName.c_str());
 		}
 	}
 

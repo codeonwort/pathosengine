@@ -47,10 +47,13 @@ namespace pathos {
 		                              // PP passes that are too expensive to run in full res should use this.
 		GLuint sceneDepth = 0;        // Written in depth pre-pass.
 
-		// Auto exposure
+		// Auto exposure (average log luminance)
 		GLuint sceneLuminance = 0;
 		uint32 sceneLuminanceSize = 0;
 		uint32 sceneLuminanceMipCount = 0;
+
+		// Auto exposure (histogram)
+		GLuint luminanceFromHistogram = 0;
 
 		GLuint sceneColorAA = 0; // sceneColor after anti-aliasing pass
 		GLuint sceneColorHistory = 0; // For TAA
