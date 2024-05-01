@@ -9,6 +9,13 @@ namespace pathos {
 	class MeshGeometry;
 	class Buffer;
 
+	// See cvar "r.exposure.mode"
+	enum class EAutoExposureMode : uint32 {
+		Manual        = 0,
+		SimpleAverage = 1,
+		Histogram     = 2,
+	};
+
 	// Calculate average brightness of scene for auto exposure control.
 	class AutoExposurePass {
 
@@ -19,7 +26,11 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderAutoExposure(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderAutoExposure(RenderCommandList& cmdList, SceneProxy* scene, EAutoExposureMode mode);
+
+		void getAutoExposureResults(
+			const SceneRenderTargets& sceneContext, EAutoExposureMode mode,
+			GLuint& outLuminanceTexture, uint32& outLuminanceTargetMip, bool& outLuminanceLogScale);
 
 	private:
 		void renderAutoExposure_averageLogLuminance(RenderCommandList& cmdList, SceneProxy* scene);

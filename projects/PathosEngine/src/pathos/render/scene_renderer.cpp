@@ -145,13 +145,15 @@ namespace pathos {
 
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
 		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
+
+		const EAutoExposureMode autoExposureMode = (EAutoExposureMode)badger::clamp(0, cvar_exposure_mode.getInt(), 2);
 		
 		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
 		const bool bRenderGodRay                  = (bLightProbeRendering == false);
 		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
 		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
 		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
-		const bool bRenderAutoExposure            = (bLightProbeRendering == false && cvar_exposure_mode.getInt() != 0);
+		const bool bRenderAutoExposure            = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
 		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
 		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
 
@@ -360,7 +362,7 @@ namespace pathos {
 		if (bRenderAutoExposure) {
 			SCOPED_CPU_COUNTER(AutoExposure);
 			SCOPED_GPU_COUNTER(AutoExposure);
-			autoExposurePass->renderAutoExposure(cmdList, scene);
+			autoExposurePass->renderAutoExposure(cmdList, scene, autoExposureMode);
 		}
 
 		if (bRenderLightProbeVisualization) {
@@ -456,7 +458,6 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ToneMapping);
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
-				const bool bAutoExposure = cvar_exposure_mode.getInt() != 0;
 				const float exposureOverride = cvar_exposure_override.getFloat();
 				const float exposureCompensation = cvar_exposure_compensation.getFloat();
 				const bool bApplyBloom = isPPEnabled(EPostProcessOrder::Bloom);
@@ -465,21 +466,11 @@ namespace pathos {
 				GLuint bloom = bApplyBloom ? sceneRenderTargets->sceneBloomChain : black2D;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 
-				GLuint luminanceTexture = black2D;
-				uint32 luminanceTargetMip = 0;
-				bool bLuminanceLogScale = false;
-				if (cvar_exposure_mode.getInt() == 1) {
-					luminanceTexture = sceneRenderTargets->sceneLuminance;
-					luminanceTargetMip = sceneRenderTargets->sceneLuminanceMipCount - 1;
-					bLuminanceLogScale = true;
-				} else if (cvar_exposure_mode.getInt() == 2) {
-					luminanceTexture = sceneRenderTargets->luminanceFromHistogram;
-					luminanceTargetMip = 0;
-					bLuminanceLogScale = false;
-				}
+				GLuint luminanceTexture; uint32 luminanceTargetMip; bool bLuminanceLogScale;
+				autoExposurePass->getAutoExposureResults(*sceneRenderTargets, autoExposureMode, luminanceTexture, luminanceTargetMip, bLuminanceLogScale);
 				
 				toneMapping->setParameters(
-					bAutoExposure, luminanceTargetMip, bLuminanceLogScale,
+					bRenderAutoExposure, luminanceTargetMip, bLuminanceLogScale,
 					exposureOverride, exposureCompensation,
 					bApplyBloom);
 

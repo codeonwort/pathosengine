@@ -3,6 +3,7 @@
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/engine.h"
@@ -90,12 +91,35 @@ namespace pathos {
 		bDestroyed = true;
 	}
 
-	void AutoExposurePass::renderAutoExposure(RenderCommandList& cmdList, SceneProxy* scene) {
+	void AutoExposurePass::renderAutoExposure(RenderCommandList& cmdList, SceneProxy* scene, EAutoExposureMode mode) {
 		SCOPED_DRAW_EVENT(AutoExposure);
 
-		// #wip: Execute only one
-		renderAutoExposure_averageLogLuminance(cmdList, scene);
-		renderAutoExposure_luminanceHistogram(cmdList, scene);
+		if (mode == EAutoExposureMode::Manual) {
+			CHECKF(false, "[AutoExposure] Don't execute if using manual exposure");
+		} else if (mode == EAutoExposureMode::SimpleAverage) {
+			renderAutoExposure_averageLogLuminance(cmdList, scene);
+		} else if (mode == EAutoExposureMode::Histogram) {
+			renderAutoExposure_luminanceHistogram(cmdList, scene);
+		}
+	}
+
+	void AutoExposurePass::getAutoExposureResults(
+		const SceneRenderTargets& sceneContext, EAutoExposureMode mode,
+		GLuint& outLuminanceTexture, uint32& outLuminanceTargetMip, bool& outLuminanceLogScale)
+	{
+		if (mode == EAutoExposureMode::Manual) {
+			outLuminanceTexture = gEngine->getSystemTexture2DBlack()->internal_getGLName();
+			outLuminanceTargetMip = 0;
+			outLuminanceLogScale = false;
+		} else if (mode == EAutoExposureMode::SimpleAverage) {
+			outLuminanceTexture = sceneContext.sceneLuminance;
+			outLuminanceTargetMip = sceneContext.sceneLuminanceMipCount - 1;
+			outLuminanceLogScale = true;
+		} else if (mode == EAutoExposureMode::Histogram) {
+			outLuminanceTexture = sceneContext.luminanceFromHistogram;
+			outLuminanceTargetMip = 0;
+			outLuminanceLogScale = false;
+		}
 	}
 
 	void AutoExposurePass::renderAutoExposure_averageLogLuminance(RenderCommandList& cmdList, SceneProxy* scene) {
