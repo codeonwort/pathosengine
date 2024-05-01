@@ -189,14 +189,13 @@ namespace pathos {
 			uboData.oneOverLogLuminanceRange = 1.0f / logLuminanceRange;
 			uboHistogramGen.update(cmdList, UBO_HistogramGen::BINDING_INDEX, &uboData);
 
-			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, histogramBufferName);
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, histogramBufferName);
 			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
 
 			const uint32 dispatchX = (sceneContext.sceneWidth + 15) / 16;
 			const uint32 dispatchY = (sceneContext.sceneHeight + 15) / 16;
 			cmdList.dispatchCompute(dispatchX, dispatchY, 1);
-			// #wip: SSBO is not written? still all zero?
-			cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // For histogram SSBO
 		}
 
 		// Calculate average of histogram.
@@ -212,11 +211,11 @@ namespace pathos {
 			uboData.tau               = adaptationSpeed;
 			uboHistogramAvg.update(cmdList, UBO_HistogramAvg::BINDING_INDEX, &uboData);
 
-			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, histogramBufferName);
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, histogramBufferName);
 			cmdList.bindImageTexture(0, sceneContext.luminanceFromHistogram, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F);
 			
 			cmdList.dispatchCompute(16, 16, 1);
-			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); // For luminance texture
 		}
 	}
 

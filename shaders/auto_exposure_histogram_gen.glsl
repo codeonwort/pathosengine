@@ -27,7 +27,7 @@ layout (binding = 0) uniform sampler2D sceneColor;
 // --------------------------------------------------------
 // Output
 
-layout (std140, binding = 2) buffer BUFFER_Histogram {
+layout (std430, binding = 0) writeonly buffer BUFFER_Histogram {
 	uint bins[];
 };
 
