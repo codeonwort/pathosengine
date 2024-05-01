@@ -52,9 +52,13 @@ namespace pathos {
 		void initialize(); // Called by engine
 		void destroy();    // Called by engine
 
+		inline float getLastDeltaSeconds() const { return lastDeltaSeconds; }
+
 	protected:
 		Scene scene;
 		Camera camera;
+
+		float lastDeltaSeconds = 0.0f;
 
 		std::vector<Actor*> actors;          // Actors in this world
 		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)

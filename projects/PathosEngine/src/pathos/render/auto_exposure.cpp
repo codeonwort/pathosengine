@@ -144,7 +144,7 @@ namespace pathos {
 
 		const float minLogLuminance = cvar_exposure_minLogLuminance.getFloat();
 		const float logLuminanceRange = cvar_exposure_logLuminanceRange.getFloat();
-		const float DELTA_TIME = 1.0f / 6.0f; // #wip: Delta time in render thread?
+		const float timeDelta = scene->deltaSeconds;
 		const float adaptationSpeed = cvar_exposure_adaptationSpeed.getFloat();
 
 		// Clear histogram with zero values.
@@ -181,7 +181,7 @@ namespace pathos {
 			uboData.pixelCount        = (uint32)(sceneContext.sceneWidth * sceneContext.sceneHeight);
 			uboData.minLogLuminance   = minLogLuminance;
 			uboData.logLuminanceRange = logLuminanceRange;
-			uboData.timeDelta         = DELTA_TIME;
+			uboData.timeDelta         = timeDelta;
 			uboData.tau               = adaptationSpeed;
 			uboHistogramAvg.update(cmdList, UBO_HistogramAvg::BINDING_INDEX, &uboData);
 

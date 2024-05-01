@@ -733,7 +733,7 @@ namespace pathos {
 		data.zRange.z = camera->getFovYRadians();
 		data.zRange.w = camera->getAspectRatio();
 
-		data.time        = vector4(gEngine->getWorldTime(), 0.0, 0.0, 0.0);
+		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);

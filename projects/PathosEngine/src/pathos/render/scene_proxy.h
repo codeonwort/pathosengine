@@ -89,6 +89,8 @@ namespace pathos {
 		uint32                                     frameNumber; // number in game thread
 		Camera                                     camera;
 
+		float                                      deltaSeconds = 0.0f;
+
 		bool                                       bScreenshotReserved = false;
 		vector2i                                   screenshotSize = vector2i(0, 0);
 		std::vector<uint16>                        screenshotRawData;

@@ -135,6 +135,8 @@ namespace pathos {
 
 		World* const world = getWorld();
 
+		proxy->deltaSeconds = world->getLastDeltaSeconds();
+
 		ENQUEUE_RENDER_COMMAND([world](RenderCommandList& cmdList) {
 			for (auto& actor : world->actors) {
 				if (!actor->markedForDeath) {

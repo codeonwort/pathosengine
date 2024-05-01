@@ -79,7 +79,7 @@ namespace pathos {
 		} else {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
-			pathos::checkFramebufferStatus(cmdList, fbo, "toneMapping");
+			pathos::checkFramebufferStatus(cmdList, fbo, "[ToneMapping] FBO is invalid");
 		}
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
