@@ -11,8 +11,8 @@
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_exposure_minLogLuminance("r.exposure.minLogLuminance", 1.0f, "log2(minLuminance)");
-	static ConsoleVariable<float> cvar_exposure_logLuminanceRange("r.exposure.logLuminanceRange", 16.0f, "log2(luminanceRange)");
+	static ConsoleVariable<float> cvar_exposure_minLogLuminance("r.exposure.minLogLuminance", -10.0f, "log2(minLuminance)");
+	static ConsoleVariable<float> cvar_exposure_maxLogLuminance("r.exposure.maxLogLuminance", 20.0f, "log2(maxLuminance)");
 	static ConsoleVariable<float> cvar_exposure_adaptationSpeed("r.exposure.adaptationSpeed", 1.1f, "Eye adaptation speed");
 
 	constexpr uint32 HISTOGRAM_BIN_COUNT = 256;
@@ -163,11 +163,12 @@ namespace pathos {
 	void AutoExposurePass::renderAutoExposure_luminanceHistogram(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(LuminanceHistogram);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		GLuint histogramBufferName = luminanceHistogram->internal_getGLName();
+		const SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		const GLuint histogramBufferName = luminanceHistogram->internal_getGLName();
 
 		const float minLogLuminance = cvar_exposure_minLogLuminance.getFloat();
-		const float logLuminanceRange = cvar_exposure_logLuminanceRange.getFloat();
+		const float maxLogLuminance = cvar_exposure_maxLogLuminance.getFloat();
+		const float logLuminanceRange = maxLogLuminance - minLogLuminance;
 		const float timeDelta = scene->deltaSeconds;
 		const float adaptationSpeed = cvar_exposure_adaptationSpeed.getFloat();
 
@@ -188,12 +189,14 @@ namespace pathos {
 			uboData.oneOverLogLuminanceRange = 1.0f / logLuminanceRange;
 			uboHistogramGen.update(cmdList, UBO_HistogramGen::BINDING_INDEX, &uboData);
 
-			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, histogramBufferName);
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, histogramBufferName);
 			cmdList.bindTextureUnit(0, sceneContext.sceneColor);
 
-			uint32 dispatchX = (sceneContext.sceneWidth + 15) / 16;
-			uint32 dispatchY = (sceneContext.sceneHeight + 15) / 16;
+			const uint32 dispatchX = (sceneContext.sceneWidth + 15) / 16;
+			const uint32 dispatchY = (sceneContext.sceneHeight + 15) / 16;
 			cmdList.dispatchCompute(dispatchX, dispatchY, 1);
+			// #wip: SSBO is not written? still all zero?
+			cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 
 		// Calculate average of histogram.
@@ -209,10 +212,11 @@ namespace pathos {
 			uboData.tau               = adaptationSpeed;
 			uboHistogramAvg.update(cmdList, UBO_HistogramAvg::BINDING_INDEX, &uboData);
 
-			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, histogramBufferName);
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, histogramBufferName);
 			cmdList.bindImageTexture(0, sceneContext.luminanceFromHistogram, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32F);
-
+			
 			cmdList.dispatchCompute(16, 16, 1);
+			cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}
 	}
 

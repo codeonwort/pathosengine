@@ -22,7 +22,7 @@ layout (std140, binding = 1) uniform UBO {
 	float tau; // ex) 1.1
 } ubo;
 
-layout (std140, binding = 0) buffer BUFFER_Histogram {
+layout (std140, binding = 2) buffer BUFFER_Histogram {
 	uint bins[];
 };
 
@@ -61,7 +61,6 @@ void main() {
 		float luminanceLastFrame = imageLoad(rwLuminance, ivec2(0, 0)).r;
 		//float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * (1.0 - exp(-ubo.timeDelta * ubo.tau));
 		float adaptedLuminance = mix(luminanceLastFrame, weightedAverageLuminance, 1.0 - exp(-ubo.timeDelta * ubo.tau));
-		
 		imageStore(rwLuminance, ivec2(0, 0), vec4(adaptedLuminance));
 	}
 }
