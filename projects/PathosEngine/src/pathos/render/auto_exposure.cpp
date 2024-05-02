@@ -11,8 +11,8 @@
 
 namespace pathos {
 
-	static ConsoleVariable<float> cvar_exposure_minLogLuminance("r.exposure.minLogLuminance", -10.0f, "log2(minLuminance)");
-	static ConsoleVariable<float> cvar_exposure_maxLogLuminance("r.exposure.maxLogLuminance", 20.0f, "log2(maxLuminance)");
+	static ConsoleVariable<float> cvar_exposure_minLogLuminance("r.exposure.minLogLuminance", -4.0f, "log2(minLuminance)");
+	static ConsoleVariable<float> cvar_exposure_maxLogLuminance("r.exposure.maxLogLuminance", 16.0f, "log2(maxLuminance)");
 	static ConsoleVariable<float> cvar_exposure_adaptationSpeed("r.exposure.adaptationSpeed", 1.1f, "Eye adaptation speed");
 
 	constexpr uint32 HISTOGRAM_BIN_COUNT = 256;

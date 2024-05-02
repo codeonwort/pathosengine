@@ -134,7 +134,7 @@ namespace pathos {
 		// reallocOmniShadowMaps() is called from shadow_omni.cpp
 		// ...
 
-		if (sceneProxySource == SceneProxySource::MainScene) {
+		if (sceneProxySource == SceneProxySource::MainScene || sceneProxySource == SceneProxySource::SceneCapture) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
 			reallocSkyIrradianceMap(cmdList);
 			// One of sky passes will invoke reallocSkyPrefilterMap()

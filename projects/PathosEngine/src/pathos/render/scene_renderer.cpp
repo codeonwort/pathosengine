@@ -312,12 +312,15 @@ namespace pathos {
 				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
 				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 			}
-			if (scene->isSkyboxValid()) {
-				skyboxPass->renderSkybox(cmdList, scene);
-			} else if (scene->isPanoramaSkyValid()) {
-				panoramaSkyPass->renderPanoramaSky(cmdList, scene);
-			} else if (scene->isSkyAtmosphereValid()) {
-				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera, fullscreenQuad);
+			const bool bSceneProxyNeedsSky = (scene->sceneProxySource == SceneProxySource::MainScene || scene->sceneProxySource == SceneProxySource::SceneCapture);
+			if (bSceneProxyNeedsSky) {
+				if (scene->isSkyboxValid()) {
+					skyboxPass->renderSkybox(cmdList, scene);
+				} else if (scene->isPanoramaSkyValid()) {
+					panoramaSkyPass->renderPanoramaSky(cmdList, scene);
+				} else if (scene->isSkyAtmosphereValid()) {
+					skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera, fullscreenQuad);
+				}
 			}
 		}
 

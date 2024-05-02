@@ -7,11 +7,11 @@
 
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/render_target.h"
+#include "pathos/scene/scene_capture_component.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
-#include "pathos/scene/scene_capture_component.h"
 
 // --------------------------------------------------------
 // Constants
@@ -21,6 +21,7 @@ static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_COLOR            = vector3(1.0f, 1.0f, 1.0f);
 static const float   SUN_ILLUMINANCE      = 5.0f; // #wip: Check light intensities
+static const float   GOD_RAY_INTENSITY    = 10.0f;
 
 // 0=skybox, 1=atmosphere, 2=panorama
 #define              SKY_METHOD           2
@@ -119,7 +120,7 @@ void World1::setupSky()
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
 	ImageBlob* panoramaBlob = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
 	Texture* panoramaTex = ImageUtils::createTexture2DFromImage(panoramaBlob, 1, false, true, "Texture_Panorama");
-	panoramaSky->initialize(panoramaTex);
+	panoramaSky->setTexture(panoramaTex);
 #endif
 }
 
@@ -206,6 +207,7 @@ void World1::setupScene()
 	godRaySource->setActorLocation(vector3(0.0f, 5.0f, -15.0f));
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	getScene().godRaySource = godRaySource->getStaticMeshComponent();
+	getScene().godRayIntensity = GOD_RAY_INTENSITY;
 
 	// --------------------------------------------------------
 	// Static meshes

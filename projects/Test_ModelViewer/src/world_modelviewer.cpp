@@ -460,7 +460,7 @@ void World_ModelViewer::toggleSkyActor() {
 			skyAtmosphere = nullptr;
 		}
 		panoramaSky = spawnActor<PanoramaSkyActor>();
-		panoramaSky->initialize(panoramaTexture);
+		panoramaSky->setTexture(panoramaTexture);
 	}
 }
 

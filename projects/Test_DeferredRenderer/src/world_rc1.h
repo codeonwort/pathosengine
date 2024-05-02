@@ -14,6 +14,7 @@ namespace pathos {
 	class Material;
 	class OBJLoader;
 	class TextMeshActor;
+	class PanoramaSkyActor;
 }
 class PlayerController;
 class LightningActor;
@@ -68,6 +69,7 @@ private:
 
 	Material* M_tower = nullptr;
 	
+	PanoramaSkyActor* panoramaSky = nullptr;
 	Texture* starfieldTexture = nullptr;
 
 };

@@ -93,7 +93,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(Skybox);
 
 		renderSkyboxToScreen(cmdList, scene);
-		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skybox->bLightingDirty) {
+		if (scene->skybox->bLightingDirty) {
 			Texture* skyboxTexture = scene->skybox->texture;
 			GLuint inputCubemap = skyboxTexture ? skyboxTexture->internal_getGLName() : 0;
 			if (scene->skybox->bUseCubemapTexture == false) {

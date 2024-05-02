@@ -93,7 +93,7 @@ namespace pathos {
 
 		renderTransmittanceLUT(cmdList, fullscreenQuad);
 		renderToScreen(cmdList, scene, camera);
-		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skyAtmosphere->bLightingDirty) {
+		if (scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPrefilterMap(cmdList, scene);

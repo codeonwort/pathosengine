@@ -102,7 +102,7 @@ namespace pathos {
 			Texture* texture = ImageUtils::createTexture2DFromImage(blob, 1, false, true, "Texture_Sky");
 
 			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
-			actor->initialize(texture);
+			actor->setTexture(texture);
 
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
