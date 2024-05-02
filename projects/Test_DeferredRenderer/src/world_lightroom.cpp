@@ -22,12 +22,17 @@
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION    = vector3(0.7f, 0.6f, 2.5f);
-static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 0.1f, 0.0f);
-static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_COLOR          = vector3(1.0f, 1.0f, 1.0f);
-// #wip: Check light intensities
-static const float   SUN_ILLUMINANCE    = 0.05f;
+static const vector3 CAMERA_POSITION       = vector3(0.7f, 0.6f, 2.5f);
+static const vector3 CAMERA_LOOK_AT        = vector3(0.0f, 0.1f, 0.0f);
+static const vector3 SUN_DIRECTION         = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
+// No Sun
+static const vector3 SUN_COLOR             = vector3(1.0f, 1.0f, 1.0f);
+static const float   SUN_ILLUMINANCE       = 0.0f;
+// Household Light Bulb : 2700K, 800 lm ( https://physicallybased.info/ )
+static const vector3 POINT_LIGHT_COLOR     = vector3(255, 169, 87) / 255.0f;
+static const float   POINT_LIGHT_INTENSITY = 800.0f / (3.14f * 4.0f);
+static const vector3 RECT_LIGHT_COLOR      = vector3(255, 169, 87) / 255.0f;
+static const float   RECT_LIGHT_INTENSITY  = 800.0f;
 
 // --------------------------------------------------------
 // World
@@ -137,7 +142,7 @@ void World_LightRoom::setupScene() {
 #if TEST_POINT_LIGHT
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(1.0f + boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	pointLight0->setColorAndIntensity(vector3(1.0f, 1.0f, 1.0f), 10.0f);
+	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
 	pointLight0->setAttenuationRadius(0.7f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
@@ -157,7 +162,7 @@ void World_LightRoom::setupScene() {
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 2.5f, -0.1f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(0.25f, 0.15f);
-	rectLight0->setColorAndIntensity(vector3(1.0f, 1.0f, 1.0f), 30.0f);
+	rectLight0->setColorAndIntensity(RECT_LIGHT_COLOR, RECT_LIGHT_INTENSITY);
 	rectLight0->setAttenuationRadius(3.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(

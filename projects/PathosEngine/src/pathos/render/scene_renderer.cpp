@@ -477,7 +477,7 @@ namespace pathos {
 					exposureOverride, exposureCompensation,
 					bApplyBloom);
 
-				// #wip: Don't mix bloom inside of tone mapping shader.
+				// #todo-postprocess: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
 				toneMapping->setInput(EPostProcessInput::PPI_2, luminanceTexture);

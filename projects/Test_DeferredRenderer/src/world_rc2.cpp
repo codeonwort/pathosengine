@@ -16,11 +16,8 @@
 
 #define SUN_DIRECTION            glm::normalize(vector3(0.5f, -0.5f, -1.0f))
 #define SUN_COLOR                vector3(1.0f, 1.0f, 1.0f)
-// #wip: Check light intensities
-#define SUN_ILLUMINANCE          10.0f
-
-#define STARFIELD_WIDTH          4096
-#define STARFIELD_HEIGHT         2048
+#define SUN_ILLUMINANCE          50.0f
+#define SKY_INTENSITY            5.0f
 
 #define SQUARE_DIAMOND_COUNT     6
 #define SQUARE_DIAMOND_CENTER    vector3(0.0f, 0.0f, 0.0f)
@@ -49,6 +46,7 @@ void World_RC2::onInitialize() {
 	sunActor->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	skyMaterial = Material::createMaterialInstance("skybox_rc2");
+	skyMaterial->setConstantParameter("skyIntensity", SKY_INTENSITY);
 	skyActor = spawnActor<SkyboxActor>();
 	skyActor->setSkyboxMaterial(skyMaterial);
 

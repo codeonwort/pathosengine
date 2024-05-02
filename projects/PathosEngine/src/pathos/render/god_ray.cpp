@@ -188,7 +188,7 @@ namespace pathos {
 			cmdList.useProgram(program.getGLName());
 
 			// Source
-			// #wip: Flickering due to TAA jitter
+			// #todo-godray: Flickering due to TAA jitter
 			std::vector<StaticMeshProxy*>& sourceProxyList = scene->godRayMeshes;
 			for (StaticMeshProxy* sourceProxy : sourceProxyList) {
 				renderSilhouette(cmdList, camera, sourceProxy);

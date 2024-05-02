@@ -4,6 +4,8 @@
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_UNLIT
 #define SKYBOXMATERIAL
 
+PARAMETER_CONSTANT(float, skyIntensity)
+
 VPO_BEGIN
 vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 	return vec3(0.0);
@@ -38,7 +40,7 @@ MaterialAttributes getMaterialAttributes() {
 	}
 
 	//attr.color = 0.5 + 0.5 * viewDir;
-	attr.color = finalColor;
+	attr.color = uboMaterial.skyIntensity * finalColor;
 
 	return attr;
 }

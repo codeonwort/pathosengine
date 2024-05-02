@@ -20,8 +20,9 @@ static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 10.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
 static const vector3 SUN_COLOR            = vector3(1.0f, 1.0f, 1.0f);
-static const float   SUN_ILLUMINANCE      = 5.0f; // #wip: Check light intensities
-static const float   GOD_RAY_INTENSITY    = 10.0f;
+// Can't use real world lux as the pixel value of sun image in Ridgecrest_Road_Ref.hdr is 9.5
+static const float   SUN_ILLUMINANCE      = 9.5f;
+static const float   GOD_RAY_INTENSITY    = 5.0f;
 
 // 0=skybox, 1=atmosphere, 2=panorama
 #define              SKY_METHOD           2
