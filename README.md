@@ -56,6 +56,7 @@ Yet another Sponza scene.
   * Volumetric clouds
   * Post processing
     * God ray (light shaft)
+    * Auto exposure
     * Bloom
     * Tone mapping
     * Anti-aliasing (FXAA, TAA)
