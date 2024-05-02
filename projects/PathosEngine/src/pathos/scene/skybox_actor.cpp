@@ -8,6 +8,10 @@ namespace pathos {
 		component->bUseCubemapTexture = true;
 	}
 
+	void SkyboxActor::setIntensityMultiplier(float multiplier) {
+		component->setIntensityMultiplier(multiplier);
+	}
+
 	void SkyboxActor::setSkyboxMaterial(Material* material) {
 		component->setSkyboxMaterial(material);
 		component->bUseCubemapTexture = false;

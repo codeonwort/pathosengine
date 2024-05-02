@@ -135,6 +135,8 @@ namespace pathos {
 
 		World* const world = getWorld();
 
+		proxy->deltaSeconds = world->getLastDeltaSeconds();
+
 		ENQUEUE_RENDER_COMMAND([world](RenderCommandList& cmdList) {
 			for (auto& actor : world->actors) {
 				if (!actor->markedForDeath) {
@@ -178,6 +180,8 @@ namespace pathos {
 		if (godRaySource != nullptr) {
 			godRaySource->createRenderProxy_internal(proxy, proxy->godRayMeshes);
 			proxy->godRayLocation = godRaySource->getLocation();
+			proxy->godRayColor = godRayColor;
+			proxy->godRayIntensity = godRayIntensity;
 		}
 
 		if (irradianceProbeAtlas != nullptr) {

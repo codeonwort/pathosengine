@@ -12,14 +12,34 @@ namespace pathos {
 		virtual void releaseResources(RenderCommandList& cmdList) override;
 		virtual void renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) override;
 
+		// Call this before renderPostProcess()
+		inline void setParameters(
+			bool inUseAutoExposure,
+			uint32 inLuminanceTargetMip,
+			bool inLuminanceLogScale,
+			float inExposureOverride,
+			float inExposureCompensation,
+			bool inApplyBloom)
+		{
+			bUseAutoExposure = inUseAutoExposure;
+			luminanceTargetMip = inLuminanceTargetMip;
+			bLuminanceLogScale = inLuminanceLogScale;
+			exposureOverride = inExposureOverride;
+			exposureCompensation = inExposureCompensation;
+			bApplyBloom = inApplyBloom;
+		}
+
 	private:
-		GLuint fbo;
+		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
 
-		struct UBO_ToneMapping {
-			float exposure;
-			float gamma;
-		};
+		bool bUseAutoExposure = true;
+		uint32 luminanceTargetMip = 0;
+		bool bLuminanceLogScale = false;
+		float exposureOverride = 0.0f;
+		float exposureCompensation = 0.0f;
+
+		bool bApplyBloom = true;
 
 	};
 

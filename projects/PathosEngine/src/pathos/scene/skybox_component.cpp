@@ -27,6 +27,11 @@ namespace pathos {
 		bLightingDirty = true;
 	}
 
+	void SkyboxComponent::setIntensityMultiplier(float inMultiplier) {
+		intensityMultiplier = inMultiplier;
+		bLightingDirty = true;
+	}
+
 	void SkyboxComponent::setSkyboxMaterial(Material* inMaterial) {
 		if (skyboxMaterial != inMaterial) {
 			skyboxMaterial = inMaterial;
@@ -52,12 +57,13 @@ namespace pathos {
 		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
 
 		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
-		proxy->cube               = cubeGeometry;
-		proxy->texture            = cubemapTexture;
-		proxy->textureLod         = cubemapLod;
-		proxy->skyboxMaterial     = skyboxMaterial;
-		proxy->bUseCubemapTexture = bUseCubemapTexture;
-		proxy->bLightingDirty     = bLightingDirty && bMainScene;
+		proxy->cube                = cubeGeometry;
+		proxy->texture             = cubemapTexture;
+		proxy->textureLod          = cubemapLod;
+		proxy->intensityMultiplier = intensityMultiplier;
+		proxy->skyboxMaterial      = skyboxMaterial;
+		proxy->bUseCubemapTexture  = bUseCubemapTexture;
+		proxy->bLightingDirty      = bLightingDirty && bMainScene;
 
 		if (bMainScene) {
 			bLightingDirty = false;

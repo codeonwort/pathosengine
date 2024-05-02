@@ -2,14 +2,28 @@
 
 // Forked from https://www.shadertoy.com/view/4ljcz1
 
+// -------------------------------------------------------
+// Defines
+
 #define PI       3.14159265359
 #define NOISE    iq_noise
+
+// --------------------------------------------------------
+// Input
 
 in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
+layout (location = 1) uniform float uniform_dustIntensity;
+
+// --------------------------------------------------------
+// Output
+
 out vec4 outColor;
+
+// --------------------------------------------------------
+// Shader
 
 vec2 CubeToEquirectangular(vec3 v) {
     vec2 uv = vec2(atan(v.y, v.x), asin(v.z));
@@ -149,7 +163,7 @@ float starsInner(vec3 seed, float intensity) {
 }
 
 // This is a complete mess :(
-vec3 scene(vec3 dir) {
+vec3 traceScene(vec3 dir) {
 	const float GRAY_LEVEL = 0.27;
 
 	float intensityred   = NOISE(dir * 352.062) * 0.7;
@@ -179,8 +193,8 @@ vec3 scene(vec3 dir) {
 	const vec3 purple = vec3(0.5, 0.0, 0.9);
 	const vec3 white = vec3(1.0, 1.0, 1.0);
 
-	vec3 dustinner = purple;//vec3(0.9, 0.8, 0.8);
-	vec3 dustouter = white;
+	vec3 dustinner = uniform_dustIntensity * purple;//vec3(0.9, 0.8, 0.8);
+	vec3 dustouter = uniform_dustIntensity * white;
 	vec3 innermix = mix(dustinner, starscolor, 1.0 - galaxydust);
 	vec3 allmix = mix(dustouter, innermix, 1.0 - galaxydust2);
 
@@ -205,6 +219,6 @@ void main() {
 	float x1 = iq_hash(v);
 	outColor = vec4(x1, x1, x1, 1.0);
 #else
-    outColor = vec4(scene(dir), 1.0);
+    outColor = vec4(traceScene(dir), 1.0);
 #endif
 }

@@ -13,7 +13,7 @@
 // Input
 
 layout (std140, binding = 1) uniform UBO_AtmosphereScattering {
-    vec3   sunIlluminance;
+    vec3   sunIntensity;
     float  sunDiskSize;
 
     vec2   screenFlip;
@@ -162,8 +162,8 @@ float phaseM(float t)
 // Radiance of sun before hitting the atmosphere
 vec3 sunImage(ray_t camera, vec3 sunDir)
 {
+    vec3 sunIntensity = ubo.sunIntensity;
 	float sunSize = ubo.sunDiskSize;
-	vec3 sunIntensity = vec3(ubo.sunIlluminance);
 
     float threshold = asin(SUN_RADIUS / SUN_DISTANCE);
     float angle = acos(dot(camera.direction, -sunDir));
@@ -186,7 +186,7 @@ vec3 traceScene(ray_t camera, vec3 sunDir)
     const int inscatSteps = 8;
     
     float mu = dot(-sunDir, camera.direction);
-    vec3 Sun = vec3(ubo.sunIlluminance);
+    vec3 sunIntensity = vec3(ubo.sunIntensity);
     vec3 opticalDepth = vec3(0.0);
     
     vec3 P0 = camera.origin;
@@ -257,8 +257,8 @@ vec3 traceScene(ray_t camera, vec3 sunDir)
 #else
             vec3 currT = exp(-opticalDepth);
 #endif
-            SingleScattering += MAGIC_RAYLEIGH * seg * currT * (BetaR * exp(-height / Hr)) * phaseR(mu) * (TL * Sun);
-            SingleScattering += MAGIC_MIE * seg * currT * (BetaM * exp(-height / Hm)) * phaseM(mu) * (TL * Sun);
+            SingleScattering += MAGIC_RAYLEIGH * seg * currT * (BetaR * exp(-height / Hr)) * phaseR(mu) * (TL * sunIntensity);
+            SingleScattering += MAGIC_MIE * seg * currT * (BetaM * exp(-height / Hm)) * phaseM(mu) * (TL * sunIntensity);
             AtmosphereScattering += SingleScattering;
         }
         

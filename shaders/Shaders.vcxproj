@@ -21,6 +21,9 @@
   <ItemGroup>
     <None Include="atmosphere.glsl" />
     <None Include="atmosphere_precompute.glsl" />
+    <None Include="auto_exposure_scene_avg.glsl" />
+    <None Include="auto_exposure_histogram_avg.glsl" />
+    <None Include="auto_exposure_histogram_gen.glsl" />
     <None Include="bloom_downsample.glsl" />
     <None Include="bloom_setup.glsl" />
     <None Include="bloom_upsample.glsl" />
@@ -41,6 +44,7 @@
     <None Include="fxaa_fs.glsl" />
     <None Include="geom_common.glsl" />
     <None Include="god_ray_fs.glsl" />
+    <None Include="god_ray_post.glsl" />
     <None Include="god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="indirect_lighting.glsl" />
@@ -79,6 +83,7 @@
     <None Include="visualize_buffer.glsl" />
     <None Include="visualize_light_probe.glsl" />
     <None Include="volumetric_clouds.glsl" />
+    <None Include="volumetric_clouds_post.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

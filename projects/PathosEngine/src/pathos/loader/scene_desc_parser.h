@@ -30,12 +30,14 @@ namespace pathos {
 		struct DirLight {
 			std::string name;
 			vector3 direction;
-			vector3 illuminance;
+			vector3 color;
+			float illuminance;
 		};
 		struct PointLight {
 			std::string name;
 			vector3 location;
-			vector3 intensity;
+			vector3 color;
+			float intensity;
 			float attenuationRadius;
 			float falloffExponent;
 			bool castsShadow;

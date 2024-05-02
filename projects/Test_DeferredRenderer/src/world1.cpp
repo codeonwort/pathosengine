@@ -7,11 +7,11 @@
 
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/render/render_target.h"
+#include "pathos/scene/scene_capture_component.h"
 #include "pathos/loader/asset_streamer.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/gui/gui_window.h"
-#include "pathos/scene/scene_capture_component.h"
 
 // --------------------------------------------------------
 // Constants
@@ -19,7 +19,10 @@
 static const vector3 CAMERA_POSITION      = vector3(0.0f, 1.0f, 10.0f);
 static const vector3 CAMERA_LOOK_AT       = vector3(0.0f, 1.0f, 0.0f);
 static const vector3 SUN_DIRECTION        = glm::normalize(vector3(-0.5f, -1.0f, 1.0f));
-static const vector3 SUN_ILLUMINANCE      = 5.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 SUN_COLOR            = vector3(1.0f, 1.0f, 1.0f);
+// Can't use real world lux as the pixel value of sun image in Ridgecrest_Road_Ref.hdr is 9.5
+static const float   SUN_ILLUMINANCE      = 9.5f;
+static const float   GOD_RAY_INTENSITY    = 5.0f;
 
 // 0=skybox, 1=atmosphere, 2=panorama
 #define              SKY_METHOD           2
@@ -118,7 +121,7 @@ void World1::setupSky()
 	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
 	ImageBlob* panoramaBlob = ImageUtils::loadImage(SKY_PANORAMA_HDRI);
 	Texture* panoramaTex = ImageUtils::createTexture2DFromImage(panoramaBlob, 1, false, true, "Texture_Panorama");
-	panoramaSky->initialize(panoramaTex);
+	panoramaSky->setTexture(panoramaTex);
 #endif
 }
 
@@ -177,7 +180,7 @@ void World1::setupScene()
 
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
-	dirLight->setIlluminance(SUN_ILLUMINANCE);
+	dirLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	PointLightActor* pointLight0 = spawnActor<PointLightActor>();
 	PointLightActor* pointLight1 = spawnActor<PointLightActor>();
@@ -190,13 +193,13 @@ void World1::setupScene()
 	pointLight1->setActorLocation(vector3(PILLAR_x1, PILLAR_y1, PILLAR_z0));
 	pointLight2->setActorLocation(vector3(0.5f * (PILLAR_x0 + PILLAR_x1), PILLAR_y1, PILLAR_z1));
 
-	pointLight0->setIntensity(50.0f * vector3(1.0f, 0.0f, 0.0f));
+	pointLight0->setColorAndIntensity(vector3(1.0f, 0.0f, 0.0f), 50.0f);
 	pointLight0->setAttenuationRadius(2.0f);
 
-	pointLight1->setIntensity(50.0f * vector3(0.0f, 1.0f, 0.0f));
+	pointLight1->setColorAndIntensity(vector3(0.0f, 1.0f, 0.0f), 50.0f);
 	pointLight1->setAttenuationRadius(2.0f);
 
-	pointLight2->setIntensity(50.0f * vector3(0.0f, 0.0f, 1.0f));
+	pointLight2->setColorAndIntensity(vector3(0.0f, 0.0f, 1.0f), 50.0f);
 	pointLight2->setAttenuationRadius(2.0f);
 
 	godRaySource = spawnActor<StaticMeshActor>();
@@ -205,6 +208,7 @@ void World1::setupScene()
 	godRaySource->setActorLocation(vector3(0.0f, 5.0f, -15.0f));
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
 	getScene().godRaySource = godRaySource->getStaticMeshComponent();
+	getScene().godRayIntensity = GOD_RAY_INTENSITY;
 
 	// --------------------------------------------------------
 	// Static meshes

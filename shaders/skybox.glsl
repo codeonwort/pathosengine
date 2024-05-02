@@ -13,6 +13,7 @@ Interpolants SkyboxInterpolants {
 layout (std140, binding = 1) uniform UBO_Skybox {
 	mat4 viewProj;
 	float skyboxLOD;
+	float intensityMultiplier;
 } ubo;
 
 //////////////////////////////////////////////////////////////////////////
@@ -47,7 +48,8 @@ vec2 CubeToEquirectangular(vec3 v) {
 }
 
 void main() {
-	outSceneColor = textureLod(texCube, interpolants.cubeDir, ubo.skyboxLOD);
+	vec4 skySample = textureLod(texCube, interpolants.cubeDir, ubo.skyboxLOD);
+	outSceneColor = ubo.intensityMultiplier * skySample;
 }
 
 #endif // FRAGMENT_SHADER

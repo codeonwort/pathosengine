@@ -27,6 +27,7 @@
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
 #include "pathos/render/visualize_light_probe.h"
+#include "pathos/render/auto_exposure.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
@@ -69,10 +70,14 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
-	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "Toggle indirect lighting");
+	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
+
+	static ConsoleVariable<int32> cvar_exposure_mode("r.exposure.mode", 2, "0 = manual exposure, 1 = auto exposure by average luminance, 2 = auto exposure by luminance histogram. If manual, exposure value is set by r.exposure.override");
+	static ConsoleVariable<float> cvar_exposure_override("r.exposure.override", 0.0f, "Exposure value for manual exposure mode");
+	static ConsoleVariable<float> cvar_exposure_compensation("r.exposure.compensation", 0.0f, "Exposure bias applied after either auto or manual exposure is determined");
 
 	SceneRenderer::SceneRenderer()
 		: scene(nullptr)
@@ -140,6 +145,17 @@ namespace pathos {
 
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
 		const bool bLightProbeRendering = isLightProbeRendering(scene->sceneProxySource);
+
+		const EAutoExposureMode autoExposureMode = (EAutoExposureMode)badger::clamp(0, cvar_exposure_mode.getInt(), 2);
+		
+		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
+		const bool bRenderGodRay                  = (bLightProbeRendering == false);
+		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
+		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
+		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
+		const bool bRenderAutoExposure            = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
+		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
+		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -211,20 +227,16 @@ namespace pathos {
 			omniShadowPass->renderShadowMaps(cmdList, scene, camera);
 		}
 
-		// Volumetric clouds
-		if (bLightProbeRendering == false) {
-			SCOPED_CPU_COUNTER(VolumetricClouds);
-			SCOPED_GPU_COUNTER(VolumetricCloudPass);
+		if (bRenderVolumetricCloud) {
+			SCOPED_CPU_COUNTER(VolumetricCloud);
+			SCOPED_GPU_COUNTER(VolumetricCloud);
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
 
-		// GodRay
-		// input: static meshes
-		// output: god ray texture
-		if (bLightProbeRendering == false) {
+		if (bRenderGodRay) {
 			SCOPED_CPU_COUNTER(GodRay);
-			SCOPED_GPU_COUNTER(RenderGodRay);
-			godRay->renderGodRay(cmdList, scene, camera, fullscreenQuad, this);
+			SCOPED_GPU_COUNTER(GodRay);
+			godRay->renderGodRay(cmdList, scene, camera, this);
 		}
 
 		{
@@ -236,11 +248,12 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(SSAO);
 			SCOPED_GPU_COUNTER(SSAO);
-			ssao->renderPostProcess(cmdList, fullscreenQuad);
+			ssao->renderAmbientOcclusion(cmdList);
 		}
 
 		{
 			SCOPED_CPU_COUNTER(ClearSceneColor);
+			SCOPED_GPU_COUNTER(ClearSceneColor);
 			SCOPED_DRAW_EVENT(ClearSceneColor);
 			GLfloat* clearValues = (GLfloat*)cmdList.allocateSingleFrameMemory(4 * sizeof(GLfloat));
 			for (int32 i = 0; i < 4; ++i) clearValues[i] = 0.0f;
@@ -255,18 +268,17 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(DirectLighting);
 			SCOPED_GPU_COUNTER(DirectLighting);
-			SCOPED_DRAW_EVENT(DirectLighting);
 
 			directLightingPass->bindFramebuffer(cmdList);
 			directLightingPass->renderDirectLighting(cmdList, scene, camera);
 		}
 
 		{
-			SCOPED_CPU_COUNTER(Sky);
-			SCOPED_GPU_COUNTER(Sky);
-			SCOPED_DRAW_EVENT(Sky);
+			SCOPED_CPU_COUNTER(SkyLighting);
+			SCOPED_GPU_COUNTER(SkyLighting);
+			SCOPED_DRAW_EVENT(SkyLighting);
 
-			// Sky lighting is invalidated, for instance due to world transition.
+			// Sometimes sky lighting is invalidated due to, for instance, world transition.
 			// Clear current sky lighting textures and let sky passes update them.
 			if (scene->bInvalidateSkyLighting) {
 				float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -300,16 +312,19 @@ namespace pathos {
 				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
 				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 			}
-			if (scene->isSkyboxValid()) {
-				skyboxPass->renderSkybox(cmdList, scene);
-			} else if (scene->isPanoramaSkyValid()) {
-				panoramaSkyPass->renderPanoramaSky(cmdList, scene);
-			} else if (scene->isSkyAtmosphereValid()) {
-				skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera, fullscreenQuad);
+			const bool bSceneProxyNeedsSky = (scene->sceneProxySource == SceneProxySource::MainScene || scene->sceneProxySource == SceneProxySource::SceneCapture);
+			if (bSceneProxyNeedsSky) {
+				if (scene->isSkyboxValid()) {
+					skyboxPass->renderSkybox(cmdList, scene);
+				} else if (scene->isPanoramaSkyValid()) {
+					panoramaSkyPass->renderPanoramaSky(cmdList, scene);
+				} else if (scene->isSkyAtmosphereValid()) {
+					skyAtmospherePass->renderSkyAtmosphere(cmdList, scene, camera, fullscreenQuad);
+				}
 			}
 		}
 
-		if (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0) {
+		if (bRenderIndirectLighting) {
 			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
@@ -317,22 +332,43 @@ namespace pathos {
 		}
 
 		// Add unlit and emissive
-		resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
+		{
+			SCOPED_CPU_COUNTER(ResolveUnlit);
+			SCOPED_GPU_COUNTER(ResolveUnlit);
+			resolveUnlitPass->renderUnlit(cmdList, fullscreenQuad);
+		}
 
-		if (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0) {
+		if (bRenderSSR) {
 			SCOPED_CPU_COUNTER(ScreenSpaceReflection);
 			SCOPED_GPU_COUNTER(ScreenSpaceReflection);
 			screenSpaceReflectionPass->renderScreenSpaceReflection(cmdList, scene, camera, fullscreenQuad);
 		}
 
-		// Translucency pass
+		if (bRenderVolumetricCloud) {
+			SCOPED_CPU_COUNTER(VolumetricCloudPost);
+			SCOPED_GPU_COUNTER(VolumetricCloudPost);
+			volumetricCloud->renderVolumetricCloudPost(cmdList, scene);
+		}
+
 		{
 			SCOPED_CPU_COUNTER(Translucency);
 			SCOPED_GPU_COUNTER(Translucency);
 			translucency_pass->renderTranslucency(cmdList, scene, camera);
 		}
 
-		if (bLightProbeRendering == false) {
+		if (bRenderGodRay) {
+			SCOPED_CPU_COUNTER(GodRayPost);
+			SCOPED_GPU_COUNTER(GodRayPost);
+			godRay->renderGodRayPost(cmdList, scene);
+		}
+
+		if (bRenderAutoExposure) {
+			SCOPED_CPU_COUNTER(AutoExposure);
+			SCOPED_GPU_COUNTER(AutoExposure);
+			autoExposurePass->renderAutoExposure(cmdList, scene, autoExposureMode);
+		}
+
+		if (bRenderLightProbeVisualization) {
 			visualizeLightProbe->render(cmdList, scene, camera);
 		}
 
@@ -400,7 +436,7 @@ namespace pathos {
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
 
 			// Make half res version of sceneColor. A common source for PPs that are too expensive to run in full res.
-			const bool bNeedsHalfResSceneColor = isPPFinal(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
+			const bool bNeedsHalfResSceneColor = isPPEnabled(EPostProcessOrder::Bloom); // NOTE: Add other conditions if needed.
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_CPU_COUNTER(SceneColorDownsample);
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
@@ -425,14 +461,26 @@ namespace pathos {
 				SCOPED_CPU_COUNTER(ToneMapping);
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
+				const float exposureOverride = cvar_exposure_override.getFloat();
+				const float exposureCompensation = cvar_exposure_compensation.getFloat();
+				const bool bApplyBloom = isPPEnabled(EPostProcessOrder::Bloom);
+				GLuint black2D = gEngine->getSystemTexture2DBlack()->internal_getGLName();
 
-				GLuint bloom = isPPEnabled(EPostProcessOrder::Bloom) ? sceneRenderTargets->sceneBloomChain : sceneAfterLastPP;
+				GLuint bloom = bApplyBloom ? sceneRenderTargets->sceneBloomChain : black2D;
 				GLuint toneMappingRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorToneMapped;
 
+				GLuint luminanceTexture; uint32 luminanceTargetMip; bool bLuminanceLogScale;
+				autoExposurePass->getAutoExposureResults(*sceneRenderTargets, autoExposureMode, luminanceTexture, luminanceTargetMip, bLuminanceLogScale);
+				
+				toneMapping->setParameters(
+					bRenderAutoExposure, luminanceTargetMip, bLuminanceLogScale,
+					exposureOverride, exposureCompensation,
+					bApplyBloom);
+
+				// #todo-postprocess: Don't mix bloom inside of tone mapping shader.
 				toneMapping->setInput(EPostProcessInput::PPI_0, sceneAfterLastPP);
 				toneMapping->setInput(EPostProcessInput::PPI_1, bloom);
-				toneMapping->setInput(EPostProcessInput::PPI_2, sceneRenderTargets->godRayResult);
-				toneMapping->setInput(EPostProcessInput::PPI_3, sceneRenderTargets->getVolumetricCloud(frameCounter));
+				toneMapping->setInput(EPostProcessInput::PPI_2, luminanceTexture);
 				toneMapping->setOutput(EPostProcessOutput::PPO_0, toneMappingRenderTarget);
 				toneMapping->renderPostProcess(cmdList, fullscreenQuad);
 
@@ -571,13 +619,16 @@ namespace pathos {
 
 		if (sceneAfterLastPP != 0) {
 			SCOPED_CPU_COUNTER(BlitToFinalTarget);
+			SCOPED_GPU_COUNTER(BlitToFinalTarget);
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
 			copyTexture(cmdList, sceneAfterLastPP, getFinalRenderTarget(),
 				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
 		}
 
 		// Debug pass (r.viewmode)
-		if (bLightProbeRendering == false) {
+		if (bRenderBufferVisualization) {
+			SCOPED_CPU_COUNTER(VisualizeBuffer);
+			SCOPED_GPU_COUNTER(VisualizeBuffer);
 			visualizeBuffer->render(cmdList, scene, camera);
 		}
 
@@ -676,7 +727,7 @@ namespace pathos {
 		data.zRange.z = camera->getFovYRadians();
 		data.zRange.w = camera->getAspectRatio();
 
-		data.time        = vector4(gEngine->getWorldTime(), 0.0, 0.0, 0.0);
+		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
 		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
 		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
@@ -746,6 +797,9 @@ namespace pathos {
 	// Translucency
 	uniquePtr<TranslucencyRendering>     SceneRenderer::translucency_pass;
 
+	// Auto exposure
+	uniquePtr<AutoExposurePass>          SceneRenderer::autoExposurePass;
+
 	// Debug rendering
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
@@ -788,6 +842,11 @@ namespace pathos {
 			indirectLightingPass->initializeResources(cmdList);
 			screenSpaceReflectionPass->initializeResources(cmdList);
 			translucency_pass->initializeResources(cmdList);
+		}
+
+		{
+			autoExposurePass = makeUnique<AutoExposurePass>();
+			autoExposurePass->initializeResources(cmdList);
 		}
 
 		{
@@ -879,6 +938,8 @@ namespace pathos {
 		RELEASEPASS(volumetricCloud);
 
 		RELEASEPASS(translucency_pass);
+
+		RELEASEPASS(autoExposurePass);
 
 		RELEASEPASS(visualizeBuffer);
 		RELEASEPASS(visualizeLightProbe);

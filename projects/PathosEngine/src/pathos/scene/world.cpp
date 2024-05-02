@@ -63,6 +63,8 @@ namespace pathos {
 		}
 
 		onPostTick(deltaSeconds);
+
+		lastDeltaSeconds = deltaSeconds;
 	}
 
 	void World::initialize() {

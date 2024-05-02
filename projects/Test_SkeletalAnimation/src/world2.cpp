@@ -16,20 +16,35 @@
 
 #include <time.h>
 
-#define FOV_Y                     60.0f
-#define SUN_DIRECTION             glm::normalize(vector3(0.0f, -1.0f, -1.0f))
-#define SUN_ILLUMINANCE           vector3(2.0f)
-#define CAMERA_POSITION           vector3(0.0f, 2.0f, 6.0f)
-#define CAMERA_LOOK_AT            vector3(0.0f, 2.0f, 4.0f)
+#define FOV_Y                             60.0f
+#define CAMERA_POSITION                   vector3(0.0f, 2.0f, 6.0f)
+#define CAMERA_LOOK_AT                    vector3(0.0f, 2.0f, 4.0f)
 
-#define DIR_MY_ANIMTEST           "resources/models/animtest/"
-#define FILE_MY_ANIMTEST          "resources/models/animtest/animtest.dae"
-#define DIR_RIGGED_FIGURE         "resources_external/KhronosGroup/RiggedFigure/"
-#define FILE_RIGGED_FIGURE        "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
-#define FILE_LPS_HEAD             "resources_external/LPSHead/head.obj"
-#define DIR_LPS_HEAD              "resources_external/LPSHead/"
-#define DOWNLOAD_ALERT_MSG1       L"If you can't see 2 animated models, run Setup.ps1"
-#define DOWNLOAD_ALERT_MSG2       L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
+#define SUN_DIRECTION                     glm::normalize(vector3(0.0f, -1.0f, -1.0f))
+#define SUN_COLOR                         vector3(1.0f, 1.0f, 1.0f)
+// Sun is 20000 lux for clear blue sky and 1000 lux for overcast day.
+// The skybox is full of clouds but not ~95%, so 3000 lux would it be?
+#define SUN_ILLUMINANCE                   3000.0f
+// Skybox is LDR image, so apply fake boost.
+#define SKY_INTENSITY_MULTIPLIER          300.0f
+
+#define GOD_RAY_COLOR                     vector3(0.9f, 0.5f, 0.0f)
+#define GOD_RAY_INTENSITY                 10000.0f
+
+#define POINT_LIGHT_LOCATION              vector3(0.0f, 2.0f, 2.0f)
+#define POINT_LIGHT_COLOR                 vector3(0.2f, 1.0f, 0.2f)
+#define POINT_LIGHT_INTENSITY             50000.0f
+#define POINT_LIGHT_ATTENUATION_RADIUS    10.0f
+#define POINT_LIGHT_SOURCE_RADIUS         0.2f
+
+#define DIR_MY_ANIMTEST                   "resources/models/animtest/"
+#define FILE_MY_ANIMTEST                  "resources/models/animtest/animtest.dae"
+#define DIR_RIGGED_FIGURE                 "resources_external/KhronosGroup/RiggedFigure/"
+#define FILE_RIGGED_FIGURE                "resources_external/KhronosGroup/RiggedFigure/RiggedFigure.dae"
+#define FILE_LPS_HEAD                     "resources_external/LPSHead/head.obj"
+#define DIR_LPS_HEAD                      "resources_external/LPSHead/"
+#define DOWNLOAD_ALERT_MSG1               L"If you can't see 2 animated models, run Setup.ps1"
+#define DOWNLOAD_ALERT_MSG2               L"움직이는 모델 2개가 표시되지 않으면 Setup.ps1을 실행해주세요"
 
 
 void World2::onInitialize()
@@ -76,13 +91,13 @@ void World2::setupScene()
 
 	sunLight = spawnActor<DirectionalLightActor>();
 	sunLight->setDirection(SUN_DIRECTION);
-	sunLight->setIlluminance(SUN_ILLUMINANCE);
+	sunLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	pointLight0 = spawnActor<PointLightActor>();
-	pointLight0->setActorLocation(vector3(0.0f, 2.0f, 2.0f));
-	pointLight0->setIntensity(100.0f * vector3(1.0f, 5.0f, 1.0f));
-	pointLight0->setAttenuationRadius(10.0f);
-	pointLight0->setSourceRadius(0.2f);
+	pointLight0->setActorLocation(POINT_LIGHT_LOCATION);
+	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
+	pointLight0->setAttenuationRadius(POINT_LIGHT_ATTENUATION_RADIUS);
+	pointLight0->setSourceRadius(POINT_LIGHT_SOURCE_RADIUS);
 
 	//---------------------------------------------------------------------------------------
 	// Local light probes
@@ -162,8 +177,11 @@ void World2::setupScene()
 
 	SkyboxActor* sky = spawnActor<SkyboxActor>();
 	sky->setCubemapTexture(skyCubemapTexture);
+	sky->setIntensityMultiplier(SKY_INTENSITY_MULTIPLIER);
 
 	scene.godRaySource = godRaySourceMesh->getStaticMeshComponent();
+	scene.godRayColor = GOD_RAY_COLOR;
+	scene.godRayIntensity = GOD_RAY_INTENSITY;
 }
 
 void World2::loadDAE()

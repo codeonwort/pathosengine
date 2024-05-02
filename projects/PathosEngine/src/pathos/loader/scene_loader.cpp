@@ -102,7 +102,7 @@ namespace pathos {
 			Texture* texture = ImageUtils::createTexture2DFromImage(blob, 1, false, true, "Texture_Sky");
 
 			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
-			actor->initialize(texture);
+			actor->setTexture(texture);
 
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyEquimap.name, actor));
@@ -111,6 +111,7 @@ namespace pathos {
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
 			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();
 			actor->setDirection(dirLight.direction);
+			actor->setColor(dirLight.color);
 			actor->setIlluminance(dirLight.illuminance);
 
 			outActorMap.insert(std::make_pair(dirLight.name, actor));
@@ -118,6 +119,7 @@ namespace pathos {
 		// point lights
 		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
 			PointLightActor* actor = world->spawnActor<PointLightActor>();
+			actor->setColor(pLight.color);
 			actor->setIntensity(pLight.intensity);
 			actor->setAttenuationRadius(pLight.attenuationRadius);
 			actor->setFalloffExponent(pLight.falloffExponent);

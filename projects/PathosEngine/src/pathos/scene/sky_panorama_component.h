@@ -47,6 +47,8 @@ namespace pathos {
 		~PanoramaSkyComponent();
 
 		// Pass a panorama-style texture (i.e., equirectangular map).
+		// Sky lighting is marked as dirty and will be updated automatically.
+		// NOTE: The update happens even if the same Texture instance is set.
 		void setTexture(Texture* texture);
 
 		inline bool hasValidResources() const {

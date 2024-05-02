@@ -24,25 +24,34 @@ DEFINE_SHADER_PROGRAM2(Program_Starfield, FullscreenVS, StarfieldFS);
 //////////////////////////////////////////////////////////////////////////
 
 GLuint GalaxyGenerator::dummyFBO = 0;
-PlaneGeometry* GalaxyGenerator::fullscreenQuad = nullptr;
 
-void GalaxyGenerator::renderStarField(Texture* texture, uint32 width, uint32 height) {
+void GalaxyGenerator::renderStarField(Texture* texture, uint32 width, uint32 height, float dustIntensity) {
 	CHECK(isInMainThread());
 
-	ENQUEUE_RENDER_COMMAND([texture, width, height](RenderCommandList& cmdList) {
+	ENQUEUE_RENDER_COMMAND([texture, width, height, dustIntensity](RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(RenderStarfield);
 
 		GLuint fbo = dummyFBO;
 		GLuint renderTarget = texture->internal_getGLName();
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
-		cmdList.viewport(0, 0, width, height);
-		cmdList.disable(GL_DEPTH_TEST);
-
+		// Set shader program.
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Starfield);
 		cmdList.useProgram(program.getGLName());
+
+		// Set render target.
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, renderTarget, 0);
 
+		// Set resource bindings.
+		cmdList.uniform1f(1, dustIntensity);
+
+		// Set render states.
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.disable(GL_BLEND);
+		cmdList.viewport(0, 0, width, height);
+
+		// Drawcall.
 		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 	});
@@ -51,15 +60,10 @@ void GalaxyGenerator::renderStarField(Texture* texture, uint32 width, uint32 hei
 void GalaxyGenerator::internal_createResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 	gRenderDevice->createFramebuffers(1, &dummyFBO);
 	cmdList.namedFramebufferDrawBuffer(dummyFBO, GL_COLOR_ATTACHMENT0);
-
-	fullscreenQuad = new PlaneGeometry(2.0f, 2.0f);
 }
 
 void GalaxyGenerator::internal_destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 	gRenderDevice->deleteFramebuffers(1, &dummyFBO);
-
-	delete fullscreenQuad;
-	fullscreenQuad = nullptr;
 }
 
 DEFINE_GLOBAL_RENDER_ROUTINE(GalaxyGenerator, GalaxyGenerator::internal_createResources, GalaxyGenerator::internal_destroyResources);

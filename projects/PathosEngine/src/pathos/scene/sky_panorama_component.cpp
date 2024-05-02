@@ -138,11 +138,11 @@ namespace pathos {
 	void PanoramaSkyComponent::setTexture(Texture* inTexture) {
 		if (texture != inTexture) {
 			texture = inTexture;
-			bLightingDirty = true;
 		}
 		if (sphere == nullptr) {
 			sphere = new IcosahedronGeometry(0);
 		}
+		bLightingDirty = true;
 	}
 
 	void PanoramaSkyComponent::createRenderProxy(SceneProxy* scene) {

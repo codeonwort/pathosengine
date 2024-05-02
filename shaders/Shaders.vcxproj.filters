@@ -75,5 +75,10 @@
     <None Include="visualize_light_probe.glsl" />
     <None Include="clear_texture.glsl" />
     <None Include="overlay_image.glsl" />
+    <None Include="auto_exposure_scene_avg.glsl" />
+    <None Include="volumetric_clouds_post.glsl" />
+    <None Include="god_ray_post.glsl" />
+    <None Include="auto_exposure_histogram_avg.glsl" />
+    <None Include="auto_exposure_histogram_gen.glsl" />
   </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/fullscreen_util.h"
+#include "pathos/mesh/geometry.h"
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/console.h"
@@ -88,6 +89,14 @@ namespace pathos {
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud, VolumetricCloudCS);
 
+	class VolumetricCloudPostFS : public ShaderStage {
+	public:
+		VolumetricCloudPostFS() : ShaderStage(GL_FRAGMENT_SHADER, "VolumetricCloudPostFS") {
+			setFilepath("volumetric_clouds_post.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_VolumetricCloudPost, FullscreenVS, VolumetricCloudPostFS);
+
 }
 
 namespace pathos {
@@ -144,11 +153,16 @@ namespace pathos {
 		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_R, GL_REPEAT);
 		cmdList.objectLabel(GL_SAMPLER, cloudNoiseSampler, -1, "Sampler_CloudNoise");
+
+		gRenderDevice->createFramebuffers(1, &fboPost);
+		cmdList.namedFramebufferDrawBuffer(fboPost, GL_COLOR_ATTACHMENT0);
 	}
 
 	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteTextures(1, &texSTBN);
 		gRenderDevice->deleteSamplers(1, &cloudNoiseSampler);
+
+		gRenderDevice->deleteFramebuffers(1, &fboPost);
 	}
 
 	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -159,11 +173,11 @@ namespace pathos {
 
 		const uint32 sceneWidth = sceneContext.sceneWidth;
 		const uint32 sceneHeight = sceneContext.sceneHeight;
+		const bool bRenderClouds = isPassEnabled(scene);
 
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
 		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
 
-		const bool bRenderClouds = bHasValidResources && scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
 		if (!bRenderClouds) {
 			float clearValues[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			pathos::clearTexture2D(
@@ -193,7 +207,7 @@ namespace pathos {
 			uboData.erosionNoiseScale = cvar_cloud_erosionNoiseScale.getFloat();
 
 			if (scene->proxyList_directionalLight.size() > 0) {
-				vector3 intensity = scene->proxyList_directionalLight[0]->illuminance;
+				vector3 intensity = scene->proxyList_directionalLight[0]->getIntensity();
 				intensity *= std::max(0.0f, cvar_cloud_sunIntensityScale.getFloat());
 				uboData.sunIntensity = vector4(intensity, 0.0f);
 				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);
@@ -233,8 +247,46 @@ namespace pathos {
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		
 		cmdList.bindSampler(2, 0);
 		cmdList.bindSampler(3, 0);
+	}
+
+	void VolumetricCloudPass::renderVolumetricCloudPost(RenderCommandList& cmdList, SceneProxy* scene) {
+		if (isPassEnabled(scene)) {
+			SCOPED_DRAW_EVENT(VolumetricCloudPost);
+
+			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloudPost);
+			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboPost);
+			cmdList.namedFramebufferTexture(fboPost, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+
+			pathos::checkFramebufferStatus(cmdList, fboPost, "[VolumetricCloudPost] FBO is invalid");
+
+			// Set render states
+			cmdList.disable(GL_DEPTH_TEST);
+			cmdList.enable(GL_BLEND);
+			cmdList.blendFuncSeparate(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ZERO, GL_ONE);
+
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+			cmdList.bindTextureUnit(0, sceneContext.getVolumetricCloud(scene->frameNumber));
+
+			fullscreenQuad->bindFullAttributesVAO(cmdList);
+			fullscreenQuad->drawPrimitive(cmdList);
+
+			// Restore bindings
+			cmdList.bindTextureUnit(0, 0);
+
+			// Restore render states
+			cmdList.disable(GL_BLEND);
+			cmdList.namedFramebufferTexture(fboPost, GL_COLOR_ATTACHMENT0, 0, 0);
+			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		}
 	}
 
 	void VolumetricCloudPass::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)
@@ -269,6 +321,10 @@ namespace pathos {
 			cmdList.textureStorage2D(sceneContext.volumetricCloudA, 1, PF_volumetricCloud, renderTargetWidth, renderTargetHeight);
 			cmdList.textureStorage2D(sceneContext.volumetricCloudB, 1, PF_volumetricCloud, renderTargetWidth, renderTargetHeight);
 		}
+	}
+
+	bool VolumetricCloudPass::isPassEnabled(const SceneProxy* scene) const {
+		return bHasValidResources && scene->isVolumetricCloudValid() && (cvar_enable_volClouds.getInt() != 0);
 	}
 
 }

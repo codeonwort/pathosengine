@@ -17,7 +17,7 @@ namespace pathos {
 			setAsRootComponent(component);
 		}
 
-		void initialize(Texture* texture) {
+		void setTexture(Texture* texture) {
 			component->setTexture(texture);
 		}
 

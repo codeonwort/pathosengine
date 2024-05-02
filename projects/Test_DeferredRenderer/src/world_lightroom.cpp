@@ -22,10 +22,17 @@
 // --------------------------------------------------------
 // Constants
 
-static const vector3 CAMERA_POSITION    = vector3(0.7f, 0.6f, 2.5f);
-static const vector3 CAMERA_LOOK_AT     = vector3(0.0f, 0.1f, 0.0f);
-static const vector3 SUN_DIRECTION      = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3 SUN_ILLUMINANCE    = 0.05f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3 CAMERA_POSITION       = vector3(0.7f, 0.6f, 2.5f);
+static const vector3 CAMERA_LOOK_AT        = vector3(0.0f, 0.1f, 0.0f);
+static const vector3 SUN_DIRECTION         = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
+// No Sun
+static const vector3 SUN_COLOR             = vector3(1.0f, 1.0f, 1.0f);
+static const float   SUN_ILLUMINANCE       = 0.0f;
+// Household Light Bulb : 2700K, 800 lm ( https://physicallybased.info/ )
+static const vector3 POINT_LIGHT_COLOR     = vector3(255, 169, 87) / 255.0f;
+static const float   POINT_LIGHT_INTENSITY = 800.0f / (3.14f * 4.0f);
+static const vector3 RECT_LIGHT_COLOR      = vector3(255, 169, 87) / 255.0f;
+static const float   RECT_LIGHT_INTENSITY  = 800.0f;
 
 // --------------------------------------------------------
 // World
@@ -130,12 +137,12 @@ void World_LightRoom::setupScene() {
 
 	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
 	sun->setDirection(SUN_DIRECTION);
-	sun->setIlluminance(SUN_ILLUMINANCE);
+	sun->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 #if TEST_POINT_LIGHT
 	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
 	pointLight0->setActorLocation(1.0f + boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
-	pointLight0->setIntensity(10.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
 	pointLight0->setAttenuationRadius(0.7f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
@@ -143,7 +150,7 @@ void World_LightRoom::setupScene() {
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
 	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
-	vector3 plGizmoEm = 10.0f * glm::normalize(pointLight0->getLightComponent()->intensity);
+	vector3 plGizmoEm = 10.0f * pointLight0->getLightComponent()->color;
 	M_pointLightGizmo->setConstantParameter("emissive", vector3(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z));
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	pointLight0Gizmo->setStaticMesh(new Mesh(G_pointLightGizmo, M_pointLightGizmo));
@@ -155,7 +162,7 @@ void World_LightRoom::setupScene() {
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 2.5f, -0.1f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(0.25f, 0.15f);
-	rectLight0->setLightIntensity(30.0f * vector3(1.0f, 1.0f, 1.0f));
+	rectLight0->setColorAndIntensity(RECT_LIGHT_COLOR, RECT_LIGHT_INTENSITY);
 	rectLight0->setAttenuationRadius(3.0f);
 
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
@@ -164,7 +171,7 @@ void World_LightRoom::setupScene() {
 		1, 1, PlaneGeometry::Direction::X);
 	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
 	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
-	vector3 rectGizmoEm = 10.0f * glm::normalize(rectLight0->getLightComponent()->intensity);
+	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
 	rectLight0Gizmo->setStaticMesh(new Mesh(G_rectLightGizmo, M_rectLightGizmo));

@@ -25,7 +25,7 @@ namespace pathos {
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;
 
-		vector3 sunIlluminance;
+		vector3 sunIntensity;
 		float   sunDiskSize;
 
 		vector2 screenFlip; // (flipX, flipY)
@@ -93,7 +93,7 @@ namespace pathos {
 
 		renderTransmittanceLUT(cmdList, fullscreenQuad);
 		renderToScreen(cmdList, scene, camera);
-		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->skyAtmosphere->bLightingDirty) {
+		if (scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPrefilterMap(cmdList, scene);
@@ -105,13 +105,13 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		vector3 sunIlluminance = vector3(13.61839144264511f);
+		vector3 sunIntensity = vector3(13.61839144264511f);
 		if (scene->proxyList_directionalLight.size() > 0) {
-			sunIlluminance = scene->proxyList_directionalLight[0]->illuminance;
+			sunIntensity = scene->proxyList_directionalLight[0]->getIntensity();
 		}
 
 		UBO_Atmosphere uboData;
-		uboData.sunIlluminance  = sunIlluminance;
+		uboData.sunIntensity    = sunIntensity;
 		uboData.sunDiskSize     = cvar_sunDisk.getFloat();
 		uboData.screenFlip.x    = camera->getLens().isFlipX() ? -1.0f : 1.0f;
 		uboData.screenFlip.y    = camera->getLens().isFlipY() ? -1.0f : 1.0f;
@@ -162,9 +162,9 @@ namespace pathos {
 
 		Camera tempCamera(PerspectiveLens(90.0f, 1.0f, 0.1f, 1000.0f));
 
-		vector3 sunIlluminance = vector3(13.61839144264511f);
+		vector3 sunIntensity = vector3(13.61839144264511f);
 		if (scene->proxyList_directionalLight.size() > 0) {
-			sunIlluminance = scene->proxyList_directionalLight[0]->illuminance;
+			sunIntensity = scene->proxyList_directionalLight[0]->getIntensity();
 		}
 		float sunDiskSize = cvar_sunDisk.getFloat();
 
@@ -183,7 +183,7 @@ namespace pathos {
 			bool flipScreenXY = (i != 2 && i != 3);
 
 			UBO_Atmosphere uboData;
-			uboData.sunIlluminance  = sunIlluminance;
+			uboData.sunIntensity    = sunIntensity;
 			uboData.sunDiskSize     = sunDiskSize;
 			uboData.screenFlip.x    = flipScreenXY ? -1.0f : 1.0f;
 			uboData.screenFlip.y    = flipScreenXY ? -1.0f : 1.0f;

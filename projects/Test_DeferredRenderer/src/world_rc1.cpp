@@ -51,6 +51,7 @@
 #define STARFIELD_WIDTH          4096
 #define STARFIELD_HEIGHT         2048
 #define STARFIELD_CUBEMAP_SIZE   512
+#define STARFIELD_DUST_INTENSITY 10.0f
 
 // #todo-cloud: I downscaled everything to 1/100 in https://github.com/codeonwort/pathosengine/pull/41,
 // but volumetric clouds' min march step is tens of meters, so can't deal with 1 meter-sized occluders.
@@ -60,7 +61,8 @@
 static const vector3             CAMERA_POSITION = RC1_SCALE * vector3(0.2f, 0.25f, 2.0f);
 static const vector3             CAMERA_LOOK_AT  = RC1_SCALE * vector3(0.2f, 0.25f, 1.9f);
 static const vector3             SUN_DIRECTION   = glm::normalize(vector3(0.0f, -1.0f, -1.0f));
-static const vector3             SUN_ILLUMINANCE = 1.0f * vector3(1.0f, 1.0f, 1.0f);
+static const vector3             SUN_COLOR       = vector3(1.0f, 1.0f, 1.0f);
+static constexpr float           SUN_ILLUMINANCE = 1.0f; // #todo-cloud: Real world illuminance makes clouds too bright
 static constexpr float           Y_OFFSET        = 5000.0f; // Offset every actor to match with cloud layer
 
 // --------------------------------------------------------
@@ -117,19 +119,16 @@ void World_RC1::onInitialize()
 	traceCamera.addInput(InputConstants::KEYBOARD_C);
 
 	InputManager* inputManager = getInputManager();
-	inputManager->bindButtonPressed("updateSky", updateSky, [this]()
-		{
-			updateStarfield();
-		}
-	);
-	inputManager->bindButtonPressed("traceCamera", traceCamera, [this]()
-		{
-			vector3 position = getCamera().getPosition();
-			Rotator rotation = Rotator(getCamera().getYaw(), getCamera().getPitch(), 0.0f); // no roll yet
-			LOG(LogDebug, "Camera (x, y, z) = (%f, %f, %f), (pitch, yaw, roll) = (%f, %f, %f)",
-				position.x, position.y, position.z, rotation.yaw, rotation.pitch, rotation.roll);
-		}
-	);
+	inputManager->bindButtonPressed("updateSky", updateSky, [this]() {
+		LOG(LogDebug, "Regenerate starfield");
+		updateStarfield();
+	});
+	inputManager->bindButtonPressed("traceCamera", traceCamera, [this]() {
+		vector3 position = getCamera().getPosition();
+		Rotator rotation = Rotator(getCamera().getYaw(), getCamera().getPitch(), 0.0f); // no roll yet
+		LOG(LogDebug, "Camera (x, y, z) = (%f, %f, %f), (pitch, yaw, roll) = (%f, %f, %f)",
+			position.x, position.y, position.z, rotation.yaw, rotation.pitch, rotation.roll);
+	});
 }
 
 void World_RC1::onTick(float deltaSeconds)
@@ -227,10 +226,10 @@ void World_RC1::setupSky()
 		starfieldTexture = new Texture(createParams);
 		starfieldTexture->createGPUResource();
 	}
-	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT, STARFIELD_DUST_INTENSITY);
 
-	PanoramaSkyActor* panoramaSky = spawnActor<PanoramaSkyActor>();
-	panoramaSky->initialize(starfieldTexture);
+	panoramaSky = spawnActor<PanoramaSkyActor>();
+	panoramaSky->setTexture(starfieldTexture);
 
 	// Volumetric cloud
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
@@ -255,11 +254,12 @@ void World_RC1::setupScene()
 	// Light
 	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
-	dirLight->setIlluminance(SUN_ILLUMINANCE);
+	dirLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 	PointLightActor* pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f * vector3(1.0f, 1.0f, 1.0f));
+	pointLight->setColor(vector3(1.0f, 1.0f, 1.0f));
+	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f);
 	pointLight->setAttenuationRadius(RC1_SCALE * 50.0f);
 	pointLight->setSourceRadius(RC1_SCALE * 0.4f);
 
@@ -327,7 +327,8 @@ void World_RC1::setupScene()
 void World_RC1::updateStarfield()
 {
 	gEngine->executeConsoleCommand("recompile_shaders");
-	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT);
+	GalaxyGenerator::renderStarField(starfieldTexture, STARFIELD_WIDTH, STARFIELD_HEIGHT, STARFIELD_DUST_INTENSITY);
+	panoramaSky->setTexture(starfieldTexture);
 }
 
 void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
@@ -345,7 +346,8 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	M_tower->setTextureParameter("metallic", loader->findTexture("M_Tower.png"));
 }
 
-//////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------
+// RingActor
 
 RingActor::RingActor()
 {
@@ -473,7 +475,8 @@ vector3 RingActor::getRandomInnerPosition() const
 	return G->getPosition(innerVertexIndices[ix]);
 }
 
-//////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------
+// SpaceshipActor
 
 void SpaceshipActor::onSpawn()
 {

@@ -13,8 +13,17 @@ namespace pathos {
 			setAsRootComponent(lightComponent);
 		}
 
-		inline RectLightComponent* getLightComponent() const {
-			return lightComponent;
+		void setColor(const vector3& color)     { lightComponent->color = color; }
+		void setIntensity(float intensity)      { lightComponent->intensity = intensity; }
+		void setAttenuationRadius(float radius) { lightComponent->attenuationRadius = radius; }
+		void setFalloffExponent(float exponent) { lightComponent->falloffExponent = exponent; }
+		void setCastsShadow(bool value)         { lightComponent->castsShadow = value; }
+		void setWidth(float width)              { lightComponent->width = width; }
+		void setHeight(float height)            { lightComponent->height = height; }
+
+		void setColorAndIntensity(const vector3& color, float intensity) {
+			lightComponent->color = color;
+			lightComponent->intensity = intensity;
 		}
 
 		void setLightSize(float width, float height) {
@@ -22,13 +31,7 @@ namespace pathos {
 			lightComponent->height = height;
 		}
 
-		void setLightIntensity(const vector3& intensity) {
-			lightComponent->intensity = intensity;
-		}
-
-		void setAttenuationRadius(float radius) {
-			lightComponent->attenuationRadius = radius;
-		}
+		inline RectLightComponent* getLightComponent() const { return lightComponent; }
 
 	private:
 		RectLightComponent* lightComponent;

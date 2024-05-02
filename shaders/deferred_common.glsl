@@ -95,7 +95,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	vec4 temporalJitter;
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
 	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-	vec4 time; // (currentTime, ?, ?, ?)
+	vec4 time; // (currentTime, deltaSeconds, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	vec4 sunParameters;
@@ -126,6 +126,7 @@ vec2 CubeToEquirectangular(vec3 v)
 }
 
 float getWorldTime() { return uboPerFrame.time.x; }
+float getDeltaSeconds() { return uboPerFrame.time.y; }
 float getAspectRatio() { return uboPerFrame.zRange.w; }
 
 vec3 getWorldPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {

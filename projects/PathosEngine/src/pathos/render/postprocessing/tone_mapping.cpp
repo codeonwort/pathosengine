@@ -12,8 +12,7 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_tonemapping_operator("r.tonemapping.operator", 1, "0 = Reinhard, 1 = ACES");
-	static ConsoleVariable<float> cvar_tonemapping_exposure("r.tonemapping.exposure", 1.2f, "exposure parameter of tone mapping pass");
-	static ConsoleVariable<float> cvar_gamma("r.gamma", 2.2f, "gamma correction");
+	static ConsoleVariable<float> cvar_tonemapping_gamma("r.tonemapping.gamma", 2.2f, "gamma correction");
 
 	template<int32 ToneMapper>
 	class ToneMappingFS : public ShaderStage {
@@ -36,34 +35,41 @@ namespace pathos {
 		}
 	}
 
+	struct UBO_ToneMapping {
+		static constexpr uint32 BINDING_INDEX = 1;
+
+		float gamma;
+		float exposureOverride;
+		float exposureCompensation;
+		int32 useAutoExposure;
+		int32 luminanceTargetMip;
+		int32 isLuminanceLogScale;
+		int32 applyBloom;
+	};
+
 }
 
 namespace pathos {
 
-	void ToneMapping::initializeResources(RenderCommandList& cmdList)
-	{
-		ubo.init<UBO_ToneMapping>();
+	void ToneMapping::initializeResources(RenderCommandList& cmdList) {
+		ubo.init<UBO_ToneMapping>("UBO_ToneMapping");
 
-		// tone mapping resource
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 	}
 
-	void ToneMapping::releaseResources(RenderCommandList& cmdList)
-	{
+	void ToneMapping::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 
 		markDestroyed();
 	}
 
-	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad)
-	{
+	void ToneMapping::renderPostProcess(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {
 		SCOPED_DRAW_EVENT(ToneMapping);
 
 		const GLuint input0 = getInput(EPostProcessInput::PPI_0); // sceneColor
 		const GLuint input1 = getInput(EPostProcessInput::PPI_1); // sceneBloom
-		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // godRayResult
-		const GLuint input3 = getInput(EPostProcessInput::PPI_3); // volumetricCloud
+		const GLuint input2 = getInput(EPostProcessInput::PPI_2); // sceneLuminance
 		const GLuint output0 = getOutput(EPostProcessOutput::PPO_0); // toneMappingResult or backbuffer
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -73,7 +79,7 @@ namespace pathos {
 		} else {
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, output0, 0);
-			pathos::checkFramebufferStatus(cmdList, fbo, "toneMapping");
+			pathos::checkFramebufferStatus(cmdList, fbo, "[ToneMapping] FBO is invalid");
 		}
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
@@ -82,17 +88,21 @@ namespace pathos {
 		cmdList.useProgram(program.getGLName());
 
 		UBO_ToneMapping uboData;
-		uboData.exposure = cvar_tonemapping_exposure.getValue();
-		uboData.gamma    = cvar_gamma.getValue();
-		ubo.update(cmdList, 1, &uboData);
+		uboData.gamma                 = cvar_tonemapping_gamma.getValue();
+		uboData.exposureOverride      = exposureOverride;
+		uboData.exposureCompensation  = exposureCompensation;
+		uboData.useAutoExposure       = (int32)bUseAutoExposure;
+		uboData.luminanceTargetMip    = bUseAutoExposure ? luminanceTargetMip : 0;
+		uboData.isLuminanceLogScale   = bLuminanceLogScale ? 1 : 0;
+		uboData.applyBloom            = (int32)bApplyBloom;
+		ubo.update(cmdList, UBO_ToneMapping::BINDING_INDEX, &uboData);
 
-		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 4);
+		GLuint* colorAttachments = (GLuint*)cmdList.allocateSingleFrameMemory(sizeof(GLuint) * 3);
 		colorAttachments[0] = input0;
 		colorAttachments[1] = input1;
 		colorAttachments[2] = input2;
-		colorAttachments[3] = input3;
 
-		cmdList.bindTextures(0, 4, colorAttachments);
+		cmdList.bindTextures(0, 3, colorAttachments);
 
 		fullscreenQuad->drawPrimitive(cmdList);
 	}

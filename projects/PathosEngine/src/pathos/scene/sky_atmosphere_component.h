@@ -23,11 +23,11 @@ namespace pathos {
 
 			bool bLightingDirty = false;
 			if (scene->sceneProxySource == SceneProxySource::MainScene) {
-				
-				float colorDelta = glm::length(sun->illuminance - lastSunIlluminance);
+				vector3 sunIntensity = sun->illuminance * sun->color;
+				float intensityDelta = glm::length(sun->illuminance - lastSunIntensity);
 				float cosTheta = glm::dot(sun->direction, lastSunDirectionWS);
-				if (colorDelta > 0.1f || cosTheta < 0.99f) {
-					lastSunIlluminance = sun->illuminance;
+				if (intensityDelta > 0.1f || cosTheta < 0.99f) {
+					lastSunIntensity = sunIntensity;
 					lastSunDirectionWS = sun->direction;
 					bLightingDirty = true;
 				}
@@ -40,7 +40,7 @@ namespace pathos {
 		}
 
 	private:
-		vector3 lastSunIlluminance = vector3(-100.0f);
+		vector3 lastSunIntensity   = vector3(0.0f);
 		vector3 lastSunDirectionWS = vector3(0.0f);
 
 	};

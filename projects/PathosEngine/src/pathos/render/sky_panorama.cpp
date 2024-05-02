@@ -68,7 +68,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(PanoramaSky);
 
 		renderToScreen(cmdList, scene);
-		if (scene->sceneProxySource == SceneProxySource::MainScene && scene->panoramaSky->bLightingDirty) {
+		if (scene->panoramaSky->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPrefilterMap(cmdList, scene);

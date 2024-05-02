@@ -1,26 +1,38 @@
 #version 460 core
 
-//?#define TONE_MAPPER 0
-#define TONE_MAPPER_REINHARD 0
-#define TONE_MAPPER_ACES     1
+//?#define TONE_MAPPER          0
+#define TONE_MAPPER_REINHARD    0
+#define TONE_MAPPER_ACES        1
 
-layout (binding = 0) uniform sampler2D hdr_image;
-layout (binding = 1) uniform sampler2D hdr_bloom;
-layout (binding = 2) uniform sampler2D god_ray;
-layout (binding = 3) uniform sampler2D volumetricCloud;
+layout (binding = 0) uniform sampler2D sceneColorTexture;
+layout (binding = 1) uniform sampler2D bloomTexture;
+layout (binding = 2) uniform sampler2D sceneLuminanceTexture;
 
-layout (std140, binding = 1) uniform UBO_ToneMapping {
-	float exposure;    // cvar: r.tonemapping.exposure
-	float gamma;       // cvar: r.gamma
-} ubo;
+// --------------------------------------------------------
+// Input
 
 in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
+layout (std140, binding = 1) uniform UBO_ToneMapping {
+	float gamma;                 // cvar: r.tonemapping.gamma
+	float exposureOverride;      // cvar: r.exposure.override
+	float exposureCompensation;  // cvar: r.exposure.compensation
+	int   useAutoExposure;
+	int   luminanceTargetMip;
+	int   isLuminanceLogScale;
+	int   applyBloom;
+} ubo;
+
+// --------------------------------------------------------
+// Output
+
 out vec4 outSceneColor;
 
 // --------------------------------------------------------
+// Shader
+
 // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
 const mat3 ACESInputMat = mat3(
 	0.59719, 0.35458, 0.04823,
@@ -54,34 +66,42 @@ vec3 ACESFitted(vec3 color)
 
 	return color;
 }
-// --------------------------------------------------------
 
 void main() {
 	ivec2 texelXY = ivec2(gl_FragCoord.xy);
 	vec2 screenUV = fs_in.screenUV;
 
-	vec3 sceneColor = texelFetch(hdr_image, texelXY, 0).rgb;
-	vec3 sceneBloom = textureLod(hdr_bloom, screenUV, 0).rgb;
-	vec3 godRay     = textureLod(god_ray, screenUV, 0).rgb;
+	vec3 sceneColor = texelFetch(sceneColorTexture, texelXY, 0).rgb;
 
-	sceneColor = mix(sceneColor, sceneBloom, 0.04);
+	// Mix with bloom.
+	if (ubo.applyBloom != 0) {
+		vec3 sceneBloom = textureLod(bloomTexture, screenUV, 0).rgb;
+		sceneColor = mix(sceneColor, sceneBloom, 0.04);
+	}
 
-	vec4 c = vec4(sceneColor, 0.0);
-	c.rgb += godRay;
+	// Apply exposure.
+	float exposure = 0.0;
+	if (ubo.useAutoExposure != 0) {
+		float avgLuminance = texelFetch(sceneLuminanceTexture, ivec2(0, 0), ubo.luminanceTargetMip).r;
+		if (ubo.isLuminanceLogScale != 0) {
+			avgLuminance = exp(avgLuminance);
+		}
+		exposure = (0.148 / avgLuminance) * exp2(-ubo.exposureCompensation);
+	} else {
+		exposure = exp2(ubo.exposureOverride - ubo.exposureCompensation);
+	}
+	sceneColor *= exposure;
 
-	vec4 cloud = texture(volumetricCloud, screenUV);
-	c.rgb = mix(c.rgb, cloud.rgb, 1.0 - cloud.a);
-
+	// Apply tonemapping operator.
 #if TONE_MAPPER == TONE_MAPPER_REINHARD
-	// Reinhard tone mapper
-	c.rgb = vec3(1.0) - exp(-c.rgb * ubo.exposure);
+	sceneColor = sceneColor / (vec3(1.0) + sceneColor);
 #elif TONE_MAPPER == TONE_MAPPER_ACES
-	// ACES tone mapper
-	c.rgb = ACESFitted(c.rgb);
+	sceneColor = ACESFitted(sceneColor);
 #endif
 
-	// Gamma correction
-	c.rgb = pow(c.rgb, vec3(1.0 / ubo.gamma));
+	// Gamma correction.
+	sceneColor = pow(sceneColor, vec3(1.0 / ubo.gamma));
 
-	outSceneColor = c;
+	// Final output.
+	outSceneColor = vec4(sceneColor, 0.0);
 }

@@ -39,7 +39,7 @@ namespace pathos {
 		vector4               temporalJitter; // (x, y, ?, ?)
 		vector4               screenResolution; // (w, h, 1/w, 1/h)
 		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-		vector4               time; // (currentTime, ?, ?, ?)
+		vector4               time; // (currentTime, deltaSeconds, ?, ?)
 
 		matrix4               sunViewProj[4];
 		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
@@ -92,6 +92,9 @@ namespace pathos {
 
 		// Translucency
 		static uniquePtr<class TranslucencyRendering>   translucency_pass;
+
+		// Auto exposure
+		static uniquePtr<class AutoExposurePass>        autoExposurePass;
 
 		// Debug rendering
 		static uniquePtr<class VisualizeBufferPass>     visualizeBuffer;
