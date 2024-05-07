@@ -16,12 +16,15 @@
 
 namespace pathos {
 
+	// Changing it greater than 4 will break the program. ex) see UBO_PerFrame.
+	static const int32 MAX_CASCADE_COUNT = 4;
+
 	// Light frustum could be too large if we use camera's zFar as is.
 	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 500.0f, "Custom zFar for CSM");
-	static ConsoleVariable<int32> cvar_csm_cascadeCount("r.csm.cascadeCount", 4, "Control the cascade count of shadowmap");
+	static ConsoleVariable<int32> cvar_csm_cascadeCount("r.csm.cascadeCount", MAX_CASCADE_COUNT, "Control the cascade count of shadowmap");
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
-		CHECKF(destroyed, "Resource leak");
+		CHECKF(bDestroyed, "Resource leak");
 	}
 
 	void DirectionalShadowMap::setLightDirection(const vector3& direction) {
@@ -38,10 +41,10 @@ namespace pathos {
 	}
 
 	void DirectionalShadowMap::releaseResources(RenderCommandList& cmdList) {
-		if (!destroyed) {
+		if (!bDestroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 		}
-		destroyed = true;
+		bDestroyed = true;
 	}
 
 	void DirectionalShadowMap::renderShadowMap(
@@ -55,8 +58,8 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		int32 numCascades = badger::clamp(0, cvar_csm_cascadeCount.getInt(), 4);
-		sceneContext.reallocDirectionalShadowMaps(cmdList, numCascades);
+		const uint32 numCascades = sceneContext.csmCount;
+		sceneContext.reallocDirectionalShadowMaps(cmdList);
 
 		if (numCascades == 0) return; // Early exit
 
@@ -69,7 +72,7 @@ namespace pathos {
 		uint32 currentMIID = 0xffffffff;
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-		for (uint32 i = 0u; i < sceneContext.csmCount; ++i) {
+		for (uint32 i = 0u; i < numCascades; ++i) {
 			SCOPED_DRAW_EVENT(RenderCascade);
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, i);
@@ -171,6 +174,9 @@ namespace pathos {
 		const Camera* camera)
 	{
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+
+		sceneContext.csmCount = (uint32)badger::clamp(1, cvar_csm_cascadeCount.getInt(), MAX_CASCADE_COUNT);
+		
 		if (scene->proxyList_directionalLight.size() > 0) {
 			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);
 		}

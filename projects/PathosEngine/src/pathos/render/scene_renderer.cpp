@@ -729,18 +729,16 @@ namespace pathos {
 
 		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
-		data.sunViewProj[0] = sunShadowMap->getViewProjection(0);
-		data.sunViewProj[1] = sunShadowMap->getViewProjection(1);
-		data.sunViewProj[2] = sunShadowMap->getViewProjection(2);
-		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
+		for (uint32 i = 0; i < sceneRenderTargets->csmCount; ++i) {
+			data.sunViewProj[i] = sunShadowMap->getViewProjection(i);
+		}
 		
-		data.sunParameters.x = sunShadowMap->getShadowMapZFar();
-		data.sunParameters.y = (float)sceneRenderTargets->csmCount;
+		data.shadowmapZFar = sunShadowMap->getShadowMapZFar();
+		data.csmCount = sceneRenderTargets->csmCount;
 
-		data.csmDepths.x = sunShadowMap->getZSlice(0);
-		data.csmDepths.y = sunShadowMap->getZSlice(1);
-		data.csmDepths.z = sunShadowMap->getZSlice(2);
-		data.csmDepths.w = sunShadowMap->getZSlice(3);
+		for (uint32 i = 0; i < sceneRenderTargets->csmCount; ++i) {
+			data.csmDepths[i] = sunShadowMap->getZSlice(i);
+		}
 
 		data.cameraDirectionVS = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
 		data.cameraPositionVS = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));

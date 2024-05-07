@@ -329,11 +329,11 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList, uint32 newCascadeCount) {
-		if (csmCount == newCascadeCount && cascadedShadowMap != 0) {
+	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList) {
+		if (actualCsmCount == csmCount && cascadedShadowMap != 0) {
 			return;
 		}
-		csmCount = newCascadeCount;
+		actualCsmCount = csmCount;
 
 		if (cascadedShadowMap != 0) {
 			cmdList.deleteTextures(1, &cascadedShadowMap);

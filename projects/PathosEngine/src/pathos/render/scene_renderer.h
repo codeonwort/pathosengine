@@ -36,22 +36,25 @@ namespace pathos {
 		matrix4               prevViewProj;
 
 		vector4               projParams;
-		vector4               temporalJitter; // (x, y, ?, ?)
-		vector4               screenResolution; // (w, h, 1/w, 1/h)
-		vector4               zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-		vector4               time; // (currentTime, deltaSeconds, ?, ?)
+		vector4               temporalJitter;    // (x, y, ?, ?)
+		vector4               screenResolution;  // (w, h, 1/w, 1/h)
+		vector4               zRange;            // (zNear, zFar, fovYHalf_radians, aspectRatio(w/h))
+		vector4               time;              // (currentTime, deltaSeconds, ?, ?)
 
 		matrix4               sunViewProj[4];
-		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
-		vector4               csmDepths;     // 4 cascades
+		float                 shadowmapZFar;
+		uint32                csmCount;
+		float                 __pad0;
+		float                 __pad1;
+		vector4               csmDepths;         // 4 cascades
 
 		vector3               cameraDirectionVS;
 		uint32                bReverseZ;
 
-		vector3               cameraPositionVS; // View space
-		float                 __pad1;
+		vector3               cameraPositionVS;  // View space
+		float                 __pad2;
 
-		vector3               cameraPositionWS; // World space
+		vector3               cameraPositionWS;  // World space
 		uint32                sunExists;
 
 		DirectionalLightProxy sunLight;

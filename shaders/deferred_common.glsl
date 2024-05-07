@@ -34,14 +34,17 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	vec4 time;              // (currentTime, deltaSeconds, ?, ?)
 
 	mat4x4 sunViewProjection[4];
-	vec4 sunParameters;
+	float  shadowmapZFar;
+	uint   csmCount;
+	float  _pad0;
+	float  _pad1;
 	vec4 csmDepths;
 	
 	vec3 cameraDirectionVS; // View space
 	uint bReverseZ;
 
 	vec3 cameraPositionVS;  // View space
-	float _padding1;
+	float _pad2;
 
 	vec3 cameraPositionWS;  // World space
 	uint sunExists;

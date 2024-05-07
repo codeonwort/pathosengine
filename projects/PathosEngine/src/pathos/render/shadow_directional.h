@@ -38,11 +38,10 @@ namespace pathos {
 
 	private:
 		void setLightDirection(const vector3& direction);
-		// Update viewProjectionMatrices
-		void calculateBounds(const Camera& camera, uint32 numCascades);
+		void calculateBounds(const Camera& camera, uint32 numCascades); // Update viewProjectionMatrices
 
 	private:
-		bool destroyed = false;
+		bool bDestroyed = false;
 
 		GLuint fbo = 0xffffffff;
 		UniformBuffer uboPerFrame;

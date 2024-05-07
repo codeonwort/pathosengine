@@ -79,6 +79,9 @@ namespace pathos {
 		GLuint volumetricCloudB = 0; // Prev and current, rotated
 
 		// Cascaded Shadow Maps
+	private:
+		uint32 actualCsmCount = 0;
+	public:
 		uint32 csmCount = 4;
 		uint32 csmWidth = 2048;
 		uint32 csmHeight = 2048;
@@ -147,7 +150,7 @@ namespace pathos {
 		void freeSceneTextures(RenderCommandList& cmdList);
 
 		// Called every frame by renderer
-		void reallocDirectionalShadowMaps(RenderCommandList& cmdList, uint32 newCascadeCount);
+		void reallocDirectionalShadowMaps(RenderCommandList& cmdList);
 		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
 
 		// Deferred renderer only

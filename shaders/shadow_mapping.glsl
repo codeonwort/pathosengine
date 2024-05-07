@@ -10,7 +10,7 @@ CAUTION: Need to include deferred_common.glsl prior to this file
 #define DEBUG_CSM_ID     0
 
 #define SOFT_SHADOW      1
-#define NUM_CASCADES     4
+#define MAX_CASCADES     4
 #define MIN_SHADOWING    0.1
 
 struct ShadowQuery {
@@ -35,24 +35,24 @@ float getShadowingFactor(sampler2DArrayShadow csm, ShadowQuery query) {
 	float linearZ = -query.vPos.z;
 
 	// Make array here due to stupid uniform alignment
-	float csmDepths[4];
-	csmDepths[0] = uboPerFrame.csmDepths.x;
-	csmDepths[1] = uboPerFrame.csmDepths.y;
-	csmDepths[2] = uboPerFrame.csmDepths.z;
-	csmDepths[3] = uboPerFrame.csmDepths.w;
+	uint csmCount = uboPerFrame.csmCount;
+	float csmDepths[MAX_CASCADES];
+	for (uint i = 0; i < uboPerFrame.csmCount; ++i) {
+		csmDepths[i] = uboPerFrame.csmDepths[i];
+	}
 	
 	uint csmLayer = 0;
-	for (; csmLayer < NUM_CASCADES; ++csmLayer) {
+	for (; csmLayer < csmCount; ++csmLayer) {
 		if (linearZ < csmDepths[csmLayer]) {
 			break;
 		}
 	}
-	if (csmLayer >= NUM_CASCADES) {
+	if (csmLayer >= csmCount) {
 		return 1.0;
 	}
 
 #if DEBUG_CSM_ID
-	return float(csmLayer) / NUM_CASCADES;
+	return float(csmLayer) / csmCount;
 #endif
 
 	const float SLOPE_BIAS = 0.005;

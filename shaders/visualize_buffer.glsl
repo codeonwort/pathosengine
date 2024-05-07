@@ -67,9 +67,9 @@ void main() {
 	} else if (viewmode == VIEWMODE_CSMLAYER) {
 		// Green = near, blue = far, red = out of range
 		float zNear = uboPerFrame.zRange.x;
-		float zFar = uboPerFrame.sunParameters.x;
+		float zFar = uboPerFrame.shadowmapZFar;
 		float currZ = gbufferData.vs_coords.z;
-		float numCascades = uboPerFrame.sunParameters.y;
+		float numCascades = float(uboPerFrame.csmCount);
 		float linearZ = (-currZ - zNear) / (zFar - zNear);
 		if (linearZ < 1.0 && gbufferData.material_id != 0) {
 			float k = float(int(linearZ * numCascades)) / numCascades;
