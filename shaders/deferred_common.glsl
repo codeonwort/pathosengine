@@ -28,22 +28,22 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 prevViewProjTransform;
 
 	vec4 projParams;
-	vec4 temporalJitter;   // For TAA
-	vec4 screenResolution; // (w, h, 1/w, 1/h)
-	vec4 zRange;           // (near, far, fovYHalf_radians, aspectRatio(w/h))
-	vec4 time;             // (currentTime, deltaSeconds, ?, ?)
+	vec4 temporalJitter;    // For TAA
+	vec4 screenResolution;  // (w, h, 1/w, 1/h)
+	vec4 zRange;            // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4 time;              // (currentTime, deltaSeconds, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	vec4 sunParameters;
 	vec4 csmDepths;
 	
-	vec3 eyeDirection;   // view space
+	vec3 cameraDirectionVS; // View space
 	uint bReverseZ;
 
-	vec3 eyePosition;    // view space
+	vec3 cameraPositionVS;  // View space
 	float _padding1;
 
-	vec3 ws_eyePosition; // world space
+	vec3 cameraPositionWS;  // World space
 	uint sunExists;
 
 	DirectionalLight sunLight;

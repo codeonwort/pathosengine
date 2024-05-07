@@ -646,7 +646,7 @@ void main() {
 	}
 
 	Ray cameraRay;
-	cameraRay.origin = uboPerFrame.ws_eyePosition;
+	cameraRay.origin = uboPerFrame.cameraPositionWS;
 	cameraRay.direction = viewDir;
 
 	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.

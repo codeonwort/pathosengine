@@ -45,13 +45,13 @@ namespace pathos {
 		vector4               sunParameters; // (CSM_zFar, numCascades, ?, ?)
 		vector4               csmDepths;     // 4 cascades
 
-		vector3               eyeDirection;
+		vector3               cameraDirectionVS;
 		uint32                bReverseZ;
 
-		vector3               eyePosition;
+		vector3               cameraPositionVS; // View space
 		float                 __pad1;
 
-		vector3               ws_eyePosition;
+		vector3               cameraPositionWS; // World space
 		uint32                sunExists;
 
 		DirectionalLightProxy sunLight;

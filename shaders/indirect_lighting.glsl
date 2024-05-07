@@ -103,11 +103,11 @@ vec3 mixProbeSamples(vec3 L0, vec3 L1, bool b0, bool b1, float k) {
 
 vec3 getImageBasedLighting(GBufferData gbufferData) {
 	vec3 N = gbufferData.normal;
-	vec3 V = normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
+	vec3 V = normalize(uboPerFrame.cameraPositionVS - gbufferData.vs_coords);
 	float NdotV = max(dot(N, V), 0.0);
 
 	vec3 N_world = gbufferData.ws_normal;
-	vec3 V_world = normalize(uboPerFrame.ws_eyePosition - gbufferData.ws_coords);
+	vec3 V_world = normalize(uboPerFrame.cameraPositionWS - gbufferData.ws_coords);
 	vec3 R_world = reflect(-V_world, N_world);
 
 	vec3 albedo = gbufferData.albedo;

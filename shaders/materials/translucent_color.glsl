@@ -35,7 +35,7 @@ vec4 getSceneColor(MaterialAttributes_Translucent attr) {
 
 	vec3 vs_coords = interpolants.positionVS;
 	vec3 N = normalize(attr.normal);
-	vec3 V = normalize(uboPerFrame.eyePosition - vs_coords);
+	vec3 V = normalize(uboPerFrame.cameraPositionVS - vs_coords);
 
 	// Fake glass material (well I don't remember where this formula came from?)
 	{

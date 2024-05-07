@@ -742,14 +742,14 @@ namespace pathos {
 		data.csmDepths.z = sunShadowMap->getZSlice(2);
 		data.csmDepths.w = sunShadowMap->getZSlice(3);
 
-		data.eyeDirection = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
-		data.eyePosition  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
+		data.cameraDirectionVS = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
+		data.cameraPositionVS = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
 
-		data.ws_eyePosition = camera->getPosition();
+		data.cameraPositionWS = camera->getPosition();
 
 		data.bReverseZ = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1 : 0;
 
-		// Regard first directional light as Sun.
+		// Treat the first directional light as Sun.
 		data.sunExists = bSunExists;
 		data.sunLight  = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();
 

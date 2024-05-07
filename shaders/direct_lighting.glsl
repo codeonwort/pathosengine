@@ -81,7 +81,7 @@ float getShadowingByPointLight(GBufferData gbufferData, PointLight light, int sh
 
 // Wo in view space
 vec3 getOutgoingDirection(GBufferData gbufferData) {
-	return normalize(uboPerFrame.eyePosition - gbufferData.vs_coords);
+	return normalize(uboPerFrame.cameraPositionVS - gbufferData.vs_coords);
 }
 
 float getSphereLightRoughness(PointLight light, float distance, float roughness) {

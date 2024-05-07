@@ -297,7 +297,7 @@ void main() {
 	// View space values
 	vec3 positionVS = gbufferData.vs_coords; //getViewPositionFromSceneDepth(screenUV, sceneDepth);
 	vec3 normalVS = gbufferData.normal;
-	vec3 viewDirectionVS = normalize(positionVS - uboPerFrame.eyePosition);
+	vec3 viewDirectionVS = normalize(positionVS - uboPerFrame.cameraPositionVS);
 	vec3 reflectionDirVS = reflect(viewDirectionVS, normalVS);
 
 #if REVERSE_Z
