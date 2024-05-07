@@ -23,6 +23,9 @@ I'm developing in the following environment and won't consider backward compatib
 
 ## Sample Images
 
+<details open>
+  <summary>Collapse</summary>
+
 ![AreaLightTest](https://user-images.githubusercontent.com/11644393/191719865-a5db07fa-336b-4d3c-96cf-5b0da60812c5.jpg)
 Area light sources (sphere light and rect light).
 
@@ -40,6 +43,8 @@ Asynchronous glTF asset loading, Cook-Torrance BRDF for local illumination, and 
 
 ![GLTF-Sponza](https://user-images.githubusercontent.com/11644393/199479551-c4d0a6f8-e705-4570-9b7d-c2a43f785b74.jpg)
 Yet another Sponza scene.
+
+</details>
 
 ## Summary of Rendering Features
 * Rendering pipeline
