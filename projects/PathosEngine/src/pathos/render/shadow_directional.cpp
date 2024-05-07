@@ -18,6 +18,7 @@ namespace pathos {
 
 	// Light frustum could be too large if we use camera's zFar as is.
 	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 500.0f, "Custom zFar for CSM");
+	static ConsoleVariable<int32> cvar_csm_cascadeCount("r.csm.cascadeCount", 4, "Control the cascade count of shadowmap");
 
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(destroyed, "Resource leak");
@@ -54,6 +55,11 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
+		int32 numCascades = badger::clamp(0, cvar_csm_cascadeCount.getInt(), 4);
+		sceneContext.reallocDirectionalShadowMaps(cmdList, numCascades);
+
+		if (numCascades == 0) return; // Early exit
+
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.enable(GL_DEPTH_CLAMP); // Let vertices farther than zFar to be clamped to zFar
@@ -63,7 +69,7 @@ namespace pathos {
 		uint32 currentMIID = 0xffffffff;
 
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
-		for (uint32 i = 0u; i < sceneContext.numCascades; ++i) {
+		for (uint32 i = 0u; i < sceneContext.csmCount; ++i) {
 			SCOPED_DRAW_EVENT(RenderCascade);
 
 			cmdList.namedFramebufferTextureLayer(fbo, GL_DEPTH_ATTACHMENT, sceneContext.cascadedShadowMap, 0, i);
@@ -168,7 +174,7 @@ namespace pathos {
 		if (scene->proxyList_directionalLight.size() > 0) {
 			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);
 		}
-		calculateBounds(*camera, sceneContext.numCascades);
+		calculateBounds(*camera, sceneContext.csmCount);
 	}
 
 	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades)

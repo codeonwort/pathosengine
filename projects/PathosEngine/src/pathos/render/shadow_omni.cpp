@@ -77,13 +77,10 @@ namespace pathos {
 			}
 		}
 
-		sceneContext.reallocOmniShadowMaps(cmdList, numShadowCastingLights, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+		sceneContext.reallocOmniShadowMaps(cmdList, numShadowCastingLights, SHADOW_MAP_SIZE);
 		GLuint shadowMaps = sceneContext.omniShadowMaps; // cubemap array
 
-		// Early exit
-		if (numShadowCastingLights == 0) {
-			return;
-		}
+		if (numShadowCastingLights == 0) return; // Early exit
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OmniShadow);
 

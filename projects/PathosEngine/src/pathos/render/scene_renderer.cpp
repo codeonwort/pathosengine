@@ -735,7 +735,7 @@ namespace pathos {
 		data.sunViewProj[3] = sunShadowMap->getViewProjection(3);
 		
 		data.sunParameters.x = sunShadowMap->getShadowMapZFar();
-		data.sunParameters.y = (float)sceneRenderTargets->numCascades;
+		data.sunParameters.y = (float)sceneRenderTargets->csmCount;
 
 		data.csmDepths.x = sunShadowMap->getZSlice(0);
 		data.csmDepths.y = sunShadowMap->getZSlice(1);

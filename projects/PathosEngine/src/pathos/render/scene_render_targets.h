@@ -38,12 +38,8 @@ namespace pathos {
 		uint32 unscaledSceneWidth = 0;
 		uint32 unscaledSceneHeight = 0;
 
-		uint32 numCascades = 4;
-		uint32 csmWidth = 2048;
-		uint32 csmHeight = 2048;
-
 		GLuint sceneColor = 0;        // Accumulate scene luminance across multiple passes, before any post-processing.
-		GLuint sceneColorHalfRes = 0; // Half res version, generated before any post processing to start.
+		GLuint sceneColorHalfRes = 0; // Half res version, generated before any post processing starts.
 		                              // PP passes that are too expensive to run in full res should use this.
 		GLuint sceneDepth = 0;        // Written in depth pre-pass.
 
@@ -64,7 +60,7 @@ namespace pathos {
 
 		GLuint sceneFinal = 0; // Final texture rendered on the screen
 
-		// Screen space reflection
+		// Screen Space Reflection
 		GLuint sceneDepthHiZ = 0;
 		uint32 sceneDepthHiZMipmapCount = 0;
 		std::vector<GLuint> sceneDepthHiZViews;
@@ -78,45 +74,54 @@ namespace pathos {
 		std::vector<GLuint> ssrPreconvolutionViews;
 		std::vector<GLuint> ssrPreconvolutionTempViews;
 
+		// Volumetric Clouds
 		GLuint volumetricCloudA = 0; // Prev and current, rotated
 		GLuint volumetricCloudB = 0; // Prev and current, rotated
 
+		// Cascaded Shadow Maps
+		uint32 csmCount = 4;
+		uint32 csmWidth = 2048;
+		uint32 csmHeight = 2048;
 		GLuint cascadedShadowMap = 0;
+
+		// Omnidirectional Shadow Maps
+		uint32 omniShadowMapLayerCount = 0;
+		uint32 omniShadowMapSize = 0;
 		GLuint omniShadowMaps = 0; // cubemap array
 
-		// Indirect lighting
+		// Indirect Lighting
 		GLuint localSpecularIBLs = 0;        // Cubemap array for local reflection probes
 		GLuint skyIrradianceMap = 0;         // Cubemap for sky indirect diffuse
 		GLuint skyPrefilteredMap = 0;        // Cubemap for sky indirect specular
 		uint32 skyPrefilterMapMipCount = 1;
 		uint32 skyPrefilterMapSize = 0;
 
-		// Deferred shading only
+		// Deferred Shading
 		bool useGBuffer = true;
 		GLuint gbufferA = 0;
 		GLuint gbufferB = 0;
 		GLuint gbufferC = 0;
 
-		// post processing: god ray
+		// Post Processing: God Ray
 		GLuint godRaySource = 0;
 		GLuint godRayResult = 0;
 		GLuint godRayResultTemp = 0;
 
-		// post processing: depth of field
+		// Post Processing: Depth of Field
 		GLuint sceneColorDoFInput = 0;
 		GLuint dofSubsum0 = 0;
 		GLuint dofSubsum1 = 0;
 
-		// post processing: bloom
+		// Post Processing: Bloom
 		GLuint sceneBloomSetup = 0;         // Source for sceneBloomChain mip0
 		uint32 sceneBloomChainMipCount = 0; // # of mipmaps of sceneBloomChain
 		GLuint sceneBloomChain = 0;         // mip0: half resolution, mip1: quarter resolution, mip2: ...
 		std::vector<GLuint> sceneBloomChainViews;
 
-		// post processing: tone mapping
+		// Post Processing: Tone Mapping
 		GLuint sceneColorToneMapped = 0;
 
-		// post processing: ssao
+		// Post Processing: Screen Space Ambient Occlusion
 		GLuint ssaoHalfNormalAndDepth = 0;
 		GLuint ssaoMap = 0;
 		GLuint ssaoMapTemp = 0;
@@ -142,7 +147,8 @@ namespace pathos {
 		void freeSceneTextures(RenderCommandList& cmdList);
 
 		// Called every frame by renderer
-		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height);
+		void reallocDirectionalShadowMaps(RenderCommandList& cmdList, uint32 newCascadeCount);
+		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
 
 		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);

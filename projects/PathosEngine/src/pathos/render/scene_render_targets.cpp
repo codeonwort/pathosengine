@@ -122,17 +122,8 @@ namespace pathos {
 		//////////////////////////////////////////////////////////////////////////
 		// Independent of screen resolution
 		
-		// CSM
-		reallocTexture2DArray(cascadedShadowMap, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, numCascades, "CascadedShadowMap");
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		
+		// reallocDirectionalShadowMaps() is called from shadow_directional.cpp
 		// reallocOmniShadowMaps() is called from shadow_omni.cpp
-		// ...
 
 		if (sceneProxySource == SceneProxySource::MainScene || sceneProxySource == SceneProxySource::SceneCapture) {
 			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
@@ -338,20 +329,44 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void SceneRenderTargets::reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 width, uint32 height) {
+	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList, uint32 newCascadeCount) {
+		if (csmCount == newCascadeCount && cascadedShadowMap != 0) {
+			return;
+		}
+		csmCount = newCascadeCount;
+
+		if (cascadedShadowMap != 0) {
+			cmdList.deleteTextures(1, &cascadedShadowMap);
+			cascadedShadowMap = 0;
+		}
+		if (csmCount > 0) {
+			gRenderDevice->createTextures(GL_TEXTURE_2D_ARRAY, 1, &cascadedShadowMap);
+			cmdList.textureStorage3D(cascadedShadowMap, 1, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, csmCount);
+			cmdList.objectLabel(GL_TEXTURE, cascadedShadowMap, -1, "CascadedShadowMap");
+
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+	}
+
+	void SceneRenderTargets::reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize) {
+		if (omniShadowMapLayerCount == (numPointLights * 6) && omniShadowMapSize == shadowMapSize && omniShadowMaps != 0) {
+			return;
+		}
+		omniShadowMapLayerCount = numPointLights * 6;
+		omniShadowMapSize = shadowMapSize;
+
 		if (omniShadowMaps != 0) {
 			cmdList.deleteTextures(1, &omniShadowMaps);
 			omniShadowMaps = 0;
 		}
-		if (numPointLights > 0) {
+		if (omniShadowMapLayerCount > 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &omniShadowMaps);
-			cmdList.textureStorage3D(
-				omniShadowMaps,
-				1,
-				GL_DEPTH_COMPONENT32F,
-				width,
-				height,
-				numPointLights * 6);
+			cmdList.textureStorage3D(omniShadowMaps, 1 /*mip count*/, GL_DEPTH_COMPONENT32F, omniShadowMapSize, omniShadowMapSize, omniShadowMapLayerCount);
 			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 			cmdList.textureParameteri(omniShadowMaps, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
