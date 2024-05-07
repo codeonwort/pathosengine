@@ -1,9 +1,9 @@
 #version 460 core
 
-#include "common.glsl"
+#include "core/common.glsl"
+#include "core/brdf.glsl"
 #include "deferred_common.glsl"
 #include "shadow_mapping.glsl"
-#include "brdf.glsl"
 
 #define LIGHT_SOURCE_DIRECTIONAL 0
 #define LIGHT_SOURCE_POINT       1

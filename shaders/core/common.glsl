@@ -1,4 +1,5 @@
 //? #version 460 core
+// common.glsl
 
 // #todo: If you see a term 'radiance' in shaders, probably it means 'luminance'.
 

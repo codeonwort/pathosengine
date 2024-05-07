@@ -14,16 +14,16 @@ namespace pathos {
 	class OverlayStandardVS : public ShaderStage {
 	public:
 		OverlayStandardVS() : ShaderStage(GL_VERTEX_SHADER, "OverlayStandardVS") {
-			addDefine("VERTEX_SHADER 1");
-			setFilepath("overlay_standard.glsl");
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("overlay/overlay_standard.glsl");
 		}
 	};
 
 	class OverlayStandardFS : public ShaderStage {
 	public:
 		OverlayStandardFS() : ShaderStage(GL_FRAGMENT_SHADER, "OverlayStandardFS") {
-			addDefine("FRAGMENT_SHADER 1");
-			setFilepath("overlay_standard.glsl");
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("overlay/overlay_standard.glsl");
 		}
 	};
 

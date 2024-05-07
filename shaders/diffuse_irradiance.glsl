@@ -1,6 +1,6 @@
 #version 460 core
 
-#include "common.glsl"
+#include "core/common.glsl"
 
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 

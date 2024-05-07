@@ -1,6 +1,6 @@
 #version 460 core
 
-#include "common.glsl"
+#include "core/common.glsl"
 #include "geom_common.glsl"
 #include "deferred_common.glsl"
 

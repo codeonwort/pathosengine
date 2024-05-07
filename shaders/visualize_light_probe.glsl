@@ -5,7 +5,7 @@
 // --------------------------------------------------------
 // Common
 
-#include "common.glsl"
+#include "core/common.glsl"
 #include "deferred_common.glsl"
 
 #if VERTEX_SHADER

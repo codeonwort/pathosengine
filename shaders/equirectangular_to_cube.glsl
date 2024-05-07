@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////
 
 #if VERTEX_SHADER
+
 //const vec3[4] vertices = vec3[4](vec3(-1,-1,1), vec3(1,-1,1), vec3(-1,1,1), vec3(1,1,1));
 
 layout (location = 0) in vec3 position;
@@ -15,7 +16,8 @@ void main() {
     local_position = position;
     gl_Position = transform * vec4(local_position, 1.0);
 }
-#endif
+
+#endif // VERTEX_SHADER
 
 ////////////////////////////////////////////////////////////
 
@@ -49,17 +51,13 @@ void main() {
 ////////////////////////////////////////////////////////////
 
 #if FRAGMENT_SHADER
+
+#include "core/transform.glsl"
+
 in vec3 local_position;
 out vec4 out_color;
 
 layout (binding = 0) uniform sampler2D equirectangularMap;
-
-vec2 CubeToEquirectangular(vec3 v) {
-    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= vec2(0.1591, 0.3183); // inverse atan
-    uv += 0.5;
-    return uv;
-}
 
 void main() {
     vec2 uv = CubeToEquirectangular(normalize(local_position));
@@ -67,4 +65,5 @@ void main() {
     
     out_color = vec4(color, 1.0);
 }
-#endif
+
+#endif // FRAGMENT_SHADER

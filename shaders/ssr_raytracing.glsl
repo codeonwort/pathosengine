@@ -6,7 +6,7 @@
 
 #version 460 core
 
-#include "common.glsl"
+#include "core/common.glsl"
 #include "deferred_common.glsl"
 
 // Start tracing in this level.

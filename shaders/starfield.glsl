@@ -1,11 +1,12 @@
 #version 460 core
 
+#include "core/transform.glsl"
+
 // Forked from https://www.shadertoy.com/view/4ljcz1
 
 // -------------------------------------------------------
 // Defines
 
-#define PI       3.14159265359
 #define NOISE    iq_noise
 
 // --------------------------------------------------------
@@ -24,37 +25,6 @@ out vec4 outColor;
 
 // --------------------------------------------------------
 // Shader
-
-vec2 CubeToEquirectangular(vec3 v) {
-    vec2 uv = vec2(atan(v.y, v.x), asin(v.z));
-    uv *= vec2(0.1591, 0.3183); // inverse atan
-    uv += 0.5;
-    return uv;
-}
-
-vec3 EquirectangularToCube(vec2 uv) {
-	uv -= 0.5;
-	uv *= vec2(2.0 * PI, PI);
-
-	// x = cos(u) * cos(v)
-	// y = sin(u) * cos(v)
-	// z = sin(v)
-	return vec3(cos(uv.y) * cos(uv.x), cos(uv.y) * sin(uv.x), sin(uv.y));
-}
-
-// Ray Tracing Gems 16.5.4.2
-vec3 OctahedralConcentricMapping(vec2 uv) {
-	uv = 2.0 * uv - 1.0;
-	float d = 1 - (abs(uv.x) + abs(uv.y));
-	float r = 1 - abs(d);
-
-	float phi = (r == 0.0) ? 0.0 : (PI / 4.0) * ((abs(uv.x) - abs(uv.y)) / r + 1.0);
-	float f = r * sqrt(2.0 - r*r);
-	float x = f * sign(uv.x) * cos(phi);
-	float y = f * sign(uv.y) * sin(phi);
-	float z = sign(d) * (1.0 - r*r);
-	return vec3(x, y, z);
-}
 
 //// iq: https://www.shadertoy.com/view/4sfGzS
 float iq_hash(vec3 p)

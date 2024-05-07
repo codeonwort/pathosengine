@@ -1,8 +1,8 @@
 #version 460 core
 
-#include "common.glsl"
+#include "core/common.glsl"
+#include "core/brdf.glsl"
 #include "deferred_common.glsl"
-#include "brdf.glsl"
 
 // #todo-light-probe: SH encoding for indirect diffuse
 

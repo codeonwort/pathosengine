@@ -3,7 +3,7 @@
 // --------------------------------------------------------
 // Common
 
-#include "common.glsl"
+#include "core/common.glsl"
 #include "deferred_common.glsl"
 
 #define UBO_BINDING_OBJECT    1
@@ -143,7 +143,7 @@ vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
 }
 
 #if FORWARD_SHADING
-#include "brdf.glsl"
+#include "core/brdf.glsl"
 #endif
 
 // Controls world position offset.

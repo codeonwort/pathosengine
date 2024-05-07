@@ -1,82 +1,18 @@
 //? #version 460 core
+// deferred_common.glsl
+
+#include "core/light.glsl"
 
 // --------------------------------------------------------
 // Global constants
 
-// UBO binding slots reserved globally.
-// Each pass should use binding slots after these.
+// UBO binding slots reserved globally. Render passes should use binding slots after these.
 #define SLOT_UBO_PER_FRAME         0
-
-// --------------------------------------------------------
-// Lights
-
-// Total 64 bytes
-struct PointLight {
-	// 16 bytes
-	vec3  worldPosition;
-	float attenuationRadius;
-	// 16 bytes
-	vec3  intensity;
-	float falloffExponent;
-	// 16 bytes
-	vec3  positionVS;
-	uint  castsShadow;
-	// 16 bytes
-	float sourceRadius;
-	vec3  padding0;
-};
-
-// Total 48 bytes
-struct DirectionalLight {
-	// 16 bytes
-	vec3  wsDirection;
-	float padding0;
-	// 16 bytes
-	vec3  intensity;
-	float padding1;
-	// 16 bytes
-	vec3  vsDirection;
-	float padding2;
-};
-
-// Total 80 bytes
-struct RectLight {
-	// 16 bytes
-	vec3 positionVS;
-	float attenuationRadius;
-	// 16 bytes
-	vec3 directionVS;
-	uint castsShadow;
-	// 16 bytes
-	vec3 intensity;
-	float falloffExponent;
-	// 16 bytes
-	vec3 upVS;
-	float halfHeight;
-	// 16 bytes
-	vec3 rightVS;
-	float halfWidth;
-};
-
-// SIGGRAPH 2013: Real Shading in Unreal Engine 4 by Brian Karis, Epic Games
-// r: light's attenuation radius
-// d: distance
-float pointLightFalloff(float r, float d) {
-	float num = d / r;
-	num = num * num;
-	num = num * num;
-	num = 1.0 - num;
-	num = clamp(num, 0.0, 1.0);
-	num = num * num;
-
-	float denom = 1.0 + d * d;
-
-	return num / denom;
-}
 
 // --------------------------------------------------------
 // Uniform buffers
 
+// #todo: Move UBO_PerFrame to another header.
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
 layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
@@ -92,10 +28,10 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 prevViewProjTransform;
 
 	vec4 projParams;
-	vec4 temporalJitter;
+	vec4 temporalJitter;   // For TAA
 	vec4 screenResolution; // (w, h, 1/w, 1/h)
-	vec4 zRange; // (near, far, fovYHalf_radians, aspectRatio(w/h))
-	vec4 time; // (currentTime, deltaSeconds, ?, ?)
+	vec4 zRange;           // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4 time;             // (currentTime, deltaSeconds, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	vec4 sunParameters;
@@ -112,18 +48,6 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 	DirectionalLight sunLight;
 } uboPerFrame;
-
-// --------------------------------------------------------
-// Math utils
-
-// https://learnopengl.com/PBR/IBL/Diffuse-irradiance
-vec2 CubeToEquirectangular(vec3 v)
-{
-    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= vec2(0.1591, 0.3183); // inverse atan
-    uv += 0.5;
-    return uv;
-}
 
 float getWorldTime() { return uboPerFrame.time.x; }
 float getDeltaSeconds() { return uboPerFrame.time.y; }

@@ -17,16 +17,16 @@ namespace pathos {
 	class OverlayImageVS : public ShaderStage {
 	public:
 		OverlayImageVS() : ShaderStage(GL_VERTEX_SHADER, "OverlayImageVS") {
-			addDefine("VERTEX_SHADER 1");
-			setFilepath("overlay_image.glsl");
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("overlay/overlay_image.glsl");
 		}
 	};
 
 	class OverlayImageFS : public ShaderStage {
 	public:
 		OverlayImageFS() : ShaderStage(GL_FRAGMENT_SHADER, "OverlayImageFS") {
-			addDefine("FRAGMENT_SHADER 1");
-			setFilepath("overlay_image.glsl");
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("overlay/overlay_image.glsl");
 		}
 	};
 

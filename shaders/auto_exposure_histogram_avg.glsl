@@ -2,7 +2,7 @@
 
 // https://www.alextardif.com/HistogramLuminance.html
 
-#include "common.glsl"
+#include "core/common.glsl"
 
 // -------------------------------------------------------
 // Defines

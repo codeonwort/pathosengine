@@ -1,8 +1,7 @@
-//
-// Utilities
-//
+//? #version 460 core
+// brdf.glsl
 
-#include "common.glsl"
+#include "core/common.glsl"
 
 // Schlick's approximation of fresnel
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {

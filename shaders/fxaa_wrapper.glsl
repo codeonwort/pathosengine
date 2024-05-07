@@ -8,7 +8,7 @@
 	#define FXAA_QUALITY__PRESET 23
 #endif
 
-#include "nvidia_fxaa.glsl"
+#include "fxaa/nvidia_fxaa.glsl"
 #include "deferred_common.glsl"
 
 // --------------------------------------------------------

@@ -18,16 +18,16 @@ namespace pathos {
 	class OverlayTextVS : public ShaderStage {
 	public:
 		OverlayTextVS() : ShaderStage(GL_VERTEX_SHADER, "OverlayTextVS") {
-			addDefine("VERTEX_SHADER 1");
-			setFilepath("overlay_text.glsl");
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("overlay/overlay_text.glsl");
 		}
 	};
 
 	class OverlayTextFS : public ShaderStage {
 	public:
 		OverlayTextFS() : ShaderStage(GL_FRAGMENT_SHADER, "OverlayTextFS") {
-			addDefine("FRAGMENT_SHADER 1");
-			setFilepath("overlay_text.glsl");
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("overlay/overlay_text.glsl");
 		}
 	};
 

@@ -34,6 +34,8 @@ void main() {
 
 #if FRAGMENT_SHADER
 
+#include "core/transform.glsl"
+
 layout (binding = 0) uniform sampler2D texSky;
 
 in VS_OUT {
@@ -41,13 +43,6 @@ in VS_OUT {
 } fs_in;
 
 layout (location = 0) out vec4 outSceneColor;
-
-vec2 CubeToEquirectangular(vec3 v) {
-    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= vec2(0.1591, 0.3183); // inverse atan
-    uv += 0.5;
-    return uv;
-}
 
 void main() {
 #if 0

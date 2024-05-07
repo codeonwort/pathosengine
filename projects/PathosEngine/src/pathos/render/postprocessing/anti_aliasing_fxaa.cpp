@@ -31,7 +31,7 @@ namespace pathos {
 			addDefine("FXAA_GLSL_130", 1);
 			addDefine("FXAA_GREEN_AS_LUMA", 1);
 			addDefine("FXAA_QUALITY__PRESET", 23);
-			setFilepath("fxaa_fs.glsl");
+			setFilepath("fxaa_wrapper.glsl");
 		}
 	};
 
