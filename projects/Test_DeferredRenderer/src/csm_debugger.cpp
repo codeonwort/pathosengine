@@ -1,16 +1,18 @@
 #include "csm_debugger.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/camera.h"
+#include "pathos/console.h"
 
 #include "badger/math/minmax.h"
 #include "badger/math/vector_math.h"
 
-// #todo-shadow: Make it variable?
-constexpr uint32 NUM_CSM_FRUSTUMS = 4;
+// #todo-shadow: Move to engine
 
 CSMDebugger::CSMDebugger() {
 	setStaticMesh(new Mesh);
 	getStaticMeshComponent()->castsShadow = false;
+
+	// #todo: Wireframe width can be controlled by glLineWidth() but it's a global state.
 
 	// For camera frustum
 	G = new ProceduralGeometry;
@@ -28,8 +30,15 @@ CSMDebugger::CSMDebugger() {
 }
 
 void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDirection) {
+	auto cvarCsmZFar = ConsoleVariableManager::get().find("r.csm.zFar");
+	auto cvarCsmCount = ConsoleVariableManager::get().find("r.csm.cascadeCount");
+	CHECK(cvarCsmZFar != nullptr && cvarCsmCount != nullptr);
+
+	const float csmZFar = badger::max(1.0f, cvarCsmZFar->getFloat());
+	const int32 numCascades = badger::clamp(1, cvarCsmCount->getInt(), 4);
+
 	std::vector<vector3> frustumPlanes;
-	camera.getFrustumVertices(frustumPlanes, NUM_CSM_FRUSTUMS);
+	camera.getFrustumVertices(frustumPlanes, numCascades, csmZFar);
 
 	bool cascadeMasks[4] = { true, true, true, true };
 
@@ -37,7 +46,7 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 	{
 		G->clear();
 
-		constexpr uint32 iMax = 4 * (NUM_CSM_FRUSTUMS + 1);
+		const uint32 iMax = 4 * (numCascades + 1);
 		for (uint32 i = 0; i < iMax; i += 4) {
 			if (cascadeMasks[i / 4] == false || (i / 4 == 4 && cascadeMasks[3] == false)) {
 				continue;
@@ -101,7 +110,7 @@ void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDire
 		};
 
 		std::vector<vector3> lightViewVertices;
-		for (uint32 i = 0u; i <= NUM_CSM_FRUSTUMS; ++i) {
+		for (int32 i = 0; i <= numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4], lightViewVertices);
 		}
 		for (uint32 i = 0; i < (uint32)lightViewVertices.size(); i += 8) {

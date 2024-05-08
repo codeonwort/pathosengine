@@ -28,7 +28,7 @@ namespace pathos {
 	SceneRenderTargets::SceneRenderTargets() {}
 
 	SceneRenderTargets::~SceneRenderTargets() {
-		CHECK(destroyed);
+		CHECK(bDestroyed);
 	}
 
 	void SceneRenderTargets::reallocSceneTextures(
@@ -41,7 +41,7 @@ namespace pathos {
 		CHECK(newWidth > 0 && newHeight > 0);
 		const bool bLightProbeRendering = isLightProbeRendering(sceneProxySource);
 
-		destroyed = false;
+		bDestroyed = false;
 
 		unscaledSceneWidth = newWidth;
 		unscaledSceneHeight = newHeight;
@@ -326,7 +326,7 @@ namespace pathos {
 
 		gRenderDevice->deleteTextures((GLsizei)textures.size(), textures.data());
 
-		destroyed = true;
+		bDestroyed = true;
 	}
 
 	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList) {

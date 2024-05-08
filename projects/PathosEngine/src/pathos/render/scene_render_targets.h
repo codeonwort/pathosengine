@@ -9,8 +9,7 @@ namespace pathos {
 
 	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
 
-	// For sky atmosphere and panorama sky.
-	// Skybox will use the size of its source cubemap.
+	// For sky atmosphere and panorama sky. Skybox will use the size of its source cubemap.
 	constexpr uint32 SKY_PREFILTER_MAP_DEFAULT_SIZE = 512;
 	constexpr uint32 SKY_PREFILTER_MAP_MIN_SIZE = 128;
 	constexpr uint32 SKY_PREFILTER_MAP_MAX_NUM_MIPS = 5;
@@ -20,7 +19,7 @@ namespace pathos {
 	struct SceneRenderTargets {
 
 	private:
-		bool destroyed = false;
+		bool bDestroyed = false;
 
 	public:
 		// CAUTION: These can be different than those of SceneRenderSettings due to resolution scaling.
@@ -149,13 +148,9 @@ namespace pathos {
 
 		void freeSceneTextures(RenderCommandList& cmdList);
 
-		// Called every frame by renderer
 		void reallocDirectionalShadowMaps(RenderCommandList& cmdList);
 		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
-
-		// Deferred renderer only
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
-
 		void reallocSkyIrradianceMap(RenderCommandList& cmdList);
 		void reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize);
 
