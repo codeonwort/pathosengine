@@ -1,7 +1,7 @@
 #include "world1.h"
 #include "world_rc1.h"
 #include "world_rc2.h"
-#include "world_lightroom.h"
+#include "world_lightroom_old.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
@@ -28,7 +28,7 @@ void changeWorld() {
 		gEngine->getMainWindow()->setTitle("Rendering Challenge 2");
 		break;
 	case 2:
-		newWorld = new World_LightRoom;
+		newWorld = new World_LightRoomOld;
 		gEngine->getMainWindow()->setTitle("Light Room");
 		break;
 	case 3:

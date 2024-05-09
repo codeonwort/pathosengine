@@ -24,7 +24,7 @@ class PlayerController;
 // --------------------------------------------------------
 
 // A world to test lighting features.
-class World_LightRoom : public World {
+class World_LightRoomOld : public World {
 
 public:
 	void onInitialize() override;

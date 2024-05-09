@@ -1,4 +1,4 @@
-#include "world_lightroom.h"
+#include "world_lightroom_old.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
@@ -37,13 +37,13 @@ static const float   RECT_LIGHT_INTENSITY  = 800.0f;
 // --------------------------------------------------------
 // World
 
-void World_LightRoom::onInitialize() {
+void World_LightRoomOld::onInitialize() {
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 	setupInput();
 	setupScene();
 }
 
-void World_LightRoom::onTick(float deltaSeconds) {
+void World_LightRoomOld::onTick(float deltaSeconds) {
 	if (TEST_RECT_LIGHT) {
 		float t = gEngine->getWorldTime() * 1.57f;
 		float w = 0.01f * (25.0f + 10.0f * cosf(t));
@@ -60,11 +60,11 @@ void World_LightRoom::onTick(float deltaSeconds) {
 	}
 }
 
-void World_LightRoom::setupInput() {
+void World_LightRoomOld::setupInput() {
 	playerController = TEMP_SPAWN_ACTOR(PlayerController);
 }
 
-void World_LightRoom::setupScene() {
+void World_LightRoomOld::setupScene() {
 	// --------------------------------------------------------
 	// Ground & walls
 
