@@ -6,6 +6,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/console.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/types/matrix_types.h"
@@ -13,6 +14,10 @@
 #include "badger/math/minmax.h"
 
 namespace pathos {
+
+	static constexpr int32 OMNISHADOW_MIN_SIZE = 256;
+	static constexpr int32 OMNISHADOW_MAX_SIZE = 4096;
+	static ConsoleVariable<int32> cvar_omnishadow_size("r.omnishadow.size", 512, "Control the size of omni shadow maps (must be power of 2, min = 256, max = 4096)");
 
 	struct UBO_OmniShadow {
 		static constexpr GLuint BINDING_POINT = 1;
@@ -46,9 +51,6 @@ namespace pathos {
 
 namespace pathos {
 
-	// #todo-shadow: Adaptive shadow map size
-	const uint32 OmniShadowPass::SHADOW_MAP_SIZE = 256;
-
 	void OmniShadowPass::initializeResources(RenderCommandList& cmdList)
 	{
 		gRenderDevice->createFramebuffers(1, &fbo);
@@ -77,11 +79,15 @@ namespace pathos {
 			}
 		}
 
-		sceneContext.reallocOmniShadowMaps(cmdList, numShadowCastingLights, SHADOW_MAP_SIZE);
-		GLuint shadowMaps = sceneContext.omniShadowMaps; // cubemap array
+		uint32 shadowMapSize = (uint32)badger::clamp(OMNISHADOW_MIN_SIZE, cvar_omnishadow_size.getInt(), OMNISHADOW_MAX_SIZE);
+		shadowMapSize = (uint32)(std::exp2(std::ceil(std::log2(shadowMapSize)))); // Convert to bit manipulation if you want to :p
+
+		sceneContext.reallocOmniShadowMaps(cmdList, numShadowCastingLights, shadowMapSize);
+		GLuint shadowMaps = sceneContext.omniShadowMaps; // Cubemap array
 
 		if (numShadowCastingLights == 0) return; // Early exit
 
+		// #todo-shadow: Replace with material shaders? But I need different gl_FragDepth output than material pixel shaders.
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OmniShadow);
 
 		cmdList.useProgram(program.getGLName());
@@ -89,7 +95,7 @@ namespace pathos {
 		cmdList.depthFunc(GL_LESS);
 		cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferDrawBuffers(fbo, 0, nullptr);
-		cmdList.viewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+		cmdList.viewport(0, 0, shadowMapSize, shadowMapSize);
 
 		vector3 faceDirections[6] = {
 			vector3(1.0f, 0.0f, 0.0f), vector3(-1.0f, 0.0f, 0.0f),
