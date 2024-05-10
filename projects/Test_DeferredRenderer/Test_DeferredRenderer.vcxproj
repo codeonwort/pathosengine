@@ -96,6 +96,7 @@
     <ClCompile Include="src\player_controller.cpp" />
     <ClCompile Include="src\transform_test_actor.cpp" />
     <ClCompile Include="src\world1.cpp" />
+    <ClCompile Include="src\world_lightroom.cpp" />
     <ClCompile Include="src\world_lightroom_old.cpp" />
     <ClCompile Include="src\world_rc1.cpp" />
     <ClCompile Include="src\world_rc2.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="src\world_lightroom_old.h" />
     <ClInclude Include="src\world_rc1.h" />
     <ClInclude Include="src\world_rc2.h" />
+    <ClInclude Include="src\world_lightroom.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

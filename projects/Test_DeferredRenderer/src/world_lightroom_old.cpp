@@ -1,4 +1,5 @@
 #include "world_lightroom_old.h"
+#include "player_controller.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
@@ -7,8 +8,6 @@
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/rect_light_actor.h"
-
-#include "player_controller.h"
 
 #if SHARED_PTR_ACTORS
 	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())

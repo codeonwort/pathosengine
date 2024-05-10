@@ -1,7 +1,7 @@
 #include "world1.h"
 #include "world_rc1.h"
 #include "world_rc2.h"
-#include "world_lightroom_old.h"
+#include "world_lightroom.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
@@ -15,7 +15,7 @@ const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
 	static const int32 numWorlds = 4;
-	static int32 worldIndex = 0;
+	static int32 worldIndex = 2; // #wip: LightRoom first
 
 	World* newWorld = nullptr;
 	switch (worldIndex) {
@@ -28,7 +28,7 @@ void changeWorld() {
 		gEngine->getMainWindow()->setTitle("Rendering Challenge 2");
 		break;
 	case 2:
-		newWorld = new World_LightRoomOld;
+		newWorld = new World_LightRoom;
 		gEngine->getMainWindow()->setTitle("Light Room");
 		break;
 	case 3:
