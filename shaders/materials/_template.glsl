@@ -116,7 +116,7 @@ struct MaterialAttributes_Translucent {
 	vec3 positionVS;   // view space
 	vec3 position;     // local space
 	vec3 normal;       // local space
-	vec3 tangent;      // local space
+	vec4 tangent;      // local space
 	vec3 bitangent;    // local space
 	vec2 texcoord;     // local space
 	vec4 clipPos;      // clip space
@@ -126,16 +126,19 @@ struct MaterialAttributes_Translucent {
 struct VertexShaderInput {
 	vec3 position;
 	vec3 normal;
-	vec3 tangent;
+	vec4 tangent;
 	vec3 bitangent;
 	vec2 texcoord;
 };
 
 // All inputs in local space of the object
-vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
+vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap) {
 	mat3 model = mat3(uboPerObject.modelTransform);
 	model = inverse(transpose(model)); // Cannot assure uniform scaling.
-	vec3 T = normalize(model * t);
+	if (t.w == 0.0) {
+		return model * normalize(n);
+	}
+	vec3 T = normalize(model * t.xyz);
 	vec3 B = normalize(model * b);
 	vec3 N = normalize(model * n);
 	mat3 TBN = mat3(T, B, N);
@@ -163,7 +166,7 @@ $NEED getSceneColor
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec2 inTexcoord;
 layout (location = 2) in vec3 inNormal;
-layout (location = 3) in vec3 inTangent;
+layout (location = 3) in vec4 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
 void main_staticMesh() {
@@ -243,9 +246,9 @@ void main() {
 		vec3 worldNormal = attr.normal;
 	#else
 		vec3 worldNormal = applyNormalMap(
-			normalize(interpolants.normal),
-			normalize(interpolants.tangent),
-			normalize(interpolants.bitangent),
+			interpolants.normal,
+			interpolants.tangent,
+			interpolants.bitangent,
 			attr.normal);
 	#endif
 	vec3 normalVS = (uboPerFrame.viewTransform * vec4(worldNormal, 0.0)).xyz;

@@ -100,10 +100,10 @@ namespace pathos {
 
 	void MeshGeometry::updateTangentData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent));
-		CHECKF(length % 3 == 0, "Invalid length");
+		CHECKF(length % 4 == 0, "Invalid length");
 
-		const vector3* data2 = reinterpret_cast<const vector3*>(data);
-		tangentData.assign(data2, data2 + length / 3);
+		const vector4* data2 = reinterpret_cast<const vector4*>(data);
+		tangentData.assign(data2, data2 + length / 4);
 
 		bufferUploadHelper(tangentBuffer, length * sizeof(GLfloat), tangentData.data(), gRenderDevice->getVaryingBufferPool());
 	}
@@ -221,23 +221,45 @@ namespace pathos {
 			accum2[i2] += bitangent;
 		}
 
-		std::vector<GLfloat> tangents(numPos * 3, 0.0f);
+		std::vector<GLfloat> tangents(numPos * 4, 0.0f);
 		std::vector<GLfloat> bitangents(numPos * 3, 0.0f);
 
 		for (int32 i = 0; i < numPos; ++i) {
 			vector3 v = glm::normalize(accum[i]);
-			tangents[i * 3 + 0] = v.x;
-			tangents[i * 3 + 1] = v.y;
-			tangents[i * 3 + 2] = v.z;
+			bool invalid = glm::any(glm::isnan(v));
+			if (invalid) {
+				tangents[i * 3 + 0] = tangents[i * 3 + 1] = tangents[i * 3 + 2] = tangents[i * 3 + 3] = 0.0f;
+			} else {
+				tangents[i * 3 + 0] = v.x;
+				tangents[i * 3 + 1] = v.y;
+				tangents[i * 3 + 2] = v.z;
+				tangents[i * 3 + 3] = 1.0f; // #wip: tangent w component
+			}
 
-			v = glm::normalize(accum2[i]);
-			bitangents[i * 3 + 0] = v.x;
-			bitangents[i * 3 + 1] = v.y;
-			bitangents[i * 3 + 2] = v.z;
+			if (invalid) {
+				bitangents[i * 3 + 0] = bitangents[i * 3 + 1] = bitangents[i * 3 + 2] = 0.0f;
+			} else {
+				v = glm::normalize(accum2[i]);
+				bitangents[i * 3 + 0] = v.x;
+				bitangents[i * 3 + 1] = v.y;
+				bitangents[i * 3 + 2] = v.z;
+			}
 		}
 
-		updateTangentData(tangents.data(), numPos * 3);
-		updateBitangentData(bitangents.data(), numPos * 3);
+		updateTangentData(tangents.data(), (uint32)tangents.size());
+		updateBitangentData(bitangents.data(), (uint32)bitangents.size());
+	}
+
+	void MeshGeometry::calculateBitangentOnly() {
+		CHECK(normalData.size() == tangentData.size());
+		std::vector<float> Bs(tangentData.size() * 3);
+		for (size_t i = 0; i < tangentData.size(); ++i) {
+			vector3 B = glm::cross(normalData[i], vector3(tangentData[i]));
+			Bs[3 * i + 0] = B.x;
+			Bs[3 * i + 1] = B.y;
+			Bs[3 * i + 2] = B.z;
+		}
+		updateBitangentData(Bs.data(), (uint32)Bs.size());
 	}
 
 	void MeshGeometry::calculateLocalBounds() {
@@ -390,13 +412,13 @@ namespace pathos {
 		const VAOElement posDesc      { positionBufferName,  POSITION_LOCATION,  3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)positionBuffer.offset  };
 		const VAOElement uvDesc       { uvBufferName,        UV_LOCATION,        2,           GL_FLOAT,    GL_FALSE,   2 * sizeof(GL_FLOAT), (GLsizeiptr)uvBuffer.offset        };
 		const VAOElement normalDesc   { normalBufferName,    NORMAL_LOCATION,    3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)normalBuffer.offset    };
-		const VAOElement tangentDesc  { tangentBufferName,   TANGENT_LOCATION,   3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)tangentBuffer.offset   };
+		const VAOElement tangentDesc  { tangentBufferName,   TANGENT_LOCATION,   4,           GL_FLOAT,    GL_FALSE,   4 * sizeof(GL_FLOAT), (GLsizeiptr)tangentBuffer.offset   };
 		const VAOElement bitangentDesc{ bitangentBufferName, BITANGENT_LOCATION, 3,           GL_FLOAT,    GL_FALSE,   3 * sizeof(GL_FLOAT), (GLsizeiptr)bitangentBuffer.offset };
 
-		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position)) { descs.push_back(posDesc); }
-		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv)) { descs.push_back(uvDesc); }
-		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Normal)) { descs.push_back(normalDesc); }
-		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent)) { descs.push_back(tangentDesc); }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position))  { descs.push_back(posDesc);       }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Uv))        { descs.push_back(uvDesc);        }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Normal))    { descs.push_back(normalDesc);    }
+		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Tangent))   { descs.push_back(tangentDesc);   }
 		if (ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Bitangent)) { descs.push_back(bitangentDesc); }
 
 		createVAOHelper(cmdList, indexBufferName, &vaoFullAttributes, descs, "VAO_fullAttributes");

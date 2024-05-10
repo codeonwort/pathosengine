@@ -22,7 +22,13 @@ Rotator Rotator::directionToYawPitch(const vector3& dir)
 }
 
 matrix4 Rotator::toMatrix() const {
-	return glm::eulerAngleYXZ(glm::radians(yaw), glm::radians(pitch), glm::radians(roll));
+	if (convention == RotatorConvention::YXZ) {
+		return glm::eulerAngleYXZ(glm::radians(yaw), glm::radians(pitch), glm::radians(roll));
+	} else if (convention == RotatorConvention::ZYX) {
+		return glm::eulerAngleZYX(glm::radians(roll), glm::radians(yaw), glm::radians(pitch));
+	}
+	CHECK_NO_ENTRY();
+	return glm::eulerAngleXYZ(glm::radians(pitch), glm::radians(yaw), glm::radians(roll));
 }
 
 vector3 Rotator::toDirection() const {
