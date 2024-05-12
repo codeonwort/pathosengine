@@ -18,9 +18,20 @@
 						1,
 						1
 					],
-					"intensity":54351.41306588226,
+					"intensity":5435.141306588225,
 					"type":"point",
-					"name":"Light"
+					"range":20,
+					"name":"PointLight"
+				},
+				{
+					"color":[
+						1,
+						1,
+						1
+					],
+					"intensity":68.30000101774931,
+					"type":"directional",
+					"name":"Sun"
 				}
 			]
 		}
@@ -43,7 +54,8 @@
 				10,
 				11,
 				12,
-				13
+				13,
+				14
 			]
 		}
 	],
@@ -63,7 +75,7 @@
 					"light":0
 				}
 			},
-			"name":"Light",
+			"name":"PointLight",
 			"rotation":[
 				-0.7071068286895752,
 				0,
@@ -254,6 +266,25 @@
 				0,
 				4,
 				10
+			]
+		},
+		{
+			"extensions":{
+				"KHR_lights_punctual":{
+					"light":1
+				}
+			},
+			"name":"Sun",
+			"rotation":[
+				-0.9238795638084412,
+				0,
+				0,
+				0.3826834261417389
+			],
+			"translation":[
+				0,
+				15,
+				0
 			]
 		}
 	],

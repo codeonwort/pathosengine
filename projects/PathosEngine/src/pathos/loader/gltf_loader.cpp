@@ -6,6 +6,8 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/point_light_component.h"
+#include "pathos/scene/directional_light_component.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
@@ -58,12 +60,14 @@ namespace pathos {
 		LOG(LogInfo, "[GLTF] Textures: %u", (uint32)tinyModel->textures.size());
 		LOG(LogInfo, "[GLTF] Materials: %u", (uint32)tinyModel->materials.size());
 		LOG(LogInfo, "[GLTF] Meshes: %u", (uint32)tinyModel->meshes.size());
+		LOG(LogInfo, "[GLTF] Lights: %u", (uint32)tinyModel->lights.size());
 		LOG(LogInfo, "[GLTF] Nodes: %u", (uint32)tinyModel->nodes.size());
 		LOG(LogInfo, "[GLTF] Scenes: %u", (uint32)tinyModel->scenes.size());
 
 		parseTextures(tinyModel.get());
 		parseMaterials(tinyModel.get());
 		parseMeshes(tinyModel.get());
+		parseLights(tinyModel.get());
 
 		const size_t totalNodes = tinyModel->nodes.size();
 		transformParentIx.resize(totalNodes, -1);
@@ -76,7 +80,9 @@ namespace pathos {
 
 			GLTFModelDesc desc{};
 			desc.name = tinyNode.name;
+			// Mesh
 			desc.mesh = (tinyNode.mesh != -1) ? meshes[tinyNode.mesh] : nullptr;
+			// Transform
 			if (tinyNode.translation.size() >= 3) {
 				desc.translation.x = (float)tinyNode.translation[0];
 				desc.translation.y = (float)tinyNode.translation[1];
@@ -100,6 +106,14 @@ namespace pathos {
 			if (tinyNode.matrix.size() >= 16) {
 				// #todo-gltf: Parse matrix
 				LOG(LogWarning, "[GLTF] Should parse matrix");
+			}
+			// Extensions
+			if (tinyNode.extensions.size() > 0) {
+				auto lightIt = tinyNode.extensions.find("KHR_lights_punctual");
+				if (lightIt != tinyNode.extensions.end()) {
+					// Index in tinyModel->lights
+					desc.lightIndex = lightIt->second.Get("light").GetNumberAsInt();
+				}
 			}
 
 			finalModels.push_back(desc);
@@ -171,7 +185,9 @@ namespace pathos {
 		finalizeGPUUpload();
 
 		uint32 numStaticMeshComponents = 0;
-		uint32 numSceneComponents = 0;
+		uint32 numPointLightComponents = 0;
+		uint32 numDirectionalLightComponents = 0;
+		uint32 numSceneComponents = 0; // Placeholders not recognized as concrete components.
 		uint32 numSkipped = 0; // tinyNodes not referenced by tinyScene.
 
 		std::vector<SceneComponent*> comps(numModels(), nullptr);
@@ -193,6 +209,28 @@ namespace pathos {
 				StaticMeshComponent* smc = static_cast<StaticMeshComponent*>(comps[i]);
 				smc->setStaticMesh(desc.mesh);
 				++numStaticMeshComponents;
+			} else if (desc.lightIndex != -1) {
+				const auto& lightDesc = pendingLights[desc.lightIndex];
+				if (lightDesc.type == GLTFPendingLight::EType::Point) {
+					comps[i] = new PointLightComponent;
+					PointLightComponent* lightComp = static_cast<PointLightComponent*>(comps[i]);
+					lightComp->color = lightDesc.point.color;
+					lightComp->intensity = lightDesc.point.intensity / (3.14f * 4.0f);
+					lightComp->attenuationRadius = lightDesc.point.attenuationRadius;
+					++numPointLightComponents;
+				} else if (lightDesc.type == GLTFPendingLight::EType::Directional) {
+					comps[i] = new DirectionalLightComponent;
+					DirectionalLightComponent* lightComp = static_cast<DirectionalLightComponent*>(comps[i]);
+					lightComp->color = lightDesc.directional.color;
+					lightComp->illuminance = lightDesc.directional.intensity;
+					lightComp->direction = matrix3(desc.rotation.toMatrix()) * vector3(0, -1, 0);
+					lightComp->direction.y *= -1;
+					++numDirectionalLightComponents;
+				} else {
+					// #wip-light: spot and area
+					comps[i] = new SceneComponent;
+					++numSceneComponents;
+				}
 			} else {
 				comps[i] = new SceneComponent;
 				++numSceneComponents;
@@ -217,8 +255,12 @@ namespace pathos {
 			}
 		}
 
-		LOG(LogInfo, "[GLTF] Num static meshes = %u, Num placeholders = %u, Num skipped = %u",
-			numStaticMeshComponents, numSceneComponents, numSkipped);
+		LOG(LogInfo, "[GLTF] Try to create %u components:", (uint32)numModels());
+		LOG(LogInfo, "[GLTF] - Static meshes      : %u", numStaticMeshComponents);
+		LOG(LogInfo, "[GLTF] - Point lights       : %u", numPointLightComponents);
+		LOG(LogInfo, "[GLTF] - Directional lights : %u", numDirectionalLightComponents);
+		LOG(LogInfo, "[GLTF] - Placeholders       : %u", numSceneComponents);
+		LOG(LogInfo, "[GLTF] - Skipped            : %u", numSkipped);
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {
@@ -416,44 +458,46 @@ namespace pathos {
 					CHECK(numPos != 0);
 
 					// Texcoord buffer
-					auto it_uv0 = tinyPrim.attributes.find("TEXCOORD_0");
-					uint8* uvBlob = nullptr;
-					bool bUseTempUV = false;
-					bool bFlipTexcoordY = false;
-					float* tempUV = nullptr;
-					if (it_uv0 != tinyPrim.attributes.end()) {
-						const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
-						const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
-						CHECK(uvDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-						CHECK(uvDesc.type == TINYGLTF_TYPE_VEC2);
+					{
+						auto it_uv0 = tinyPrim.attributes.find("TEXCOORD_0");
+						uint8* uvBlob = nullptr;
+						bool bUseTempUV = false;
+						bool bFlipTexcoordY = false;
+						float* tempUV = nullptr;
+						if (it_uv0 != tinyPrim.attributes.end()) {
+							const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
+							const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
+							CHECK(uvDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							CHECK(uvDesc.type == TINYGLTF_TYPE_VEC2);
 
-						uvBlob = getBlobPtr(uvDesc);
-						if (uvView.byteStride == 0) {
-							bFlipTexcoordY = true;
+							uvBlob = getBlobPtr(uvDesc);
+							if (uvView.byteStride == 0) {
+								bFlipTexcoordY = true;
+							} else {
+								bUseTempUV = true;
+								tempUV = new float[numPos * 2];
+								for (uint32 i = 0; i < numPos; ++i) {
+									float* curr = (float*)uvBlob;
+									tempUV[i * 2 + 0] = curr[0];
+									tempUV[i * 2 + 1] = 1.0f - curr[1];
+									uvBlob += uvView.byteStride;
+								}
+							}
 						} else {
 							bUseTempUV = true;
 							tempUV = new float[numPos * 2];
 							for (uint32 i = 0; i < numPos; ++i) {
-								float* curr = (float*)uvBlob;
-								tempUV[i * 2 + 0] = curr[0];
-								tempUV[i * 2 + 1] = 1.0f - curr[1];
-								uvBlob += uvView.byteStride;
+								tempUV[i * 2 + 0] = tempUV[i * 2 + 1] = 0.0f;
 							}
 						}
-					} else {
-						bUseTempUV = true;
-						tempUV = new float[numPos * 2];
-						for (uint32 i = 0; i < numPos; ++i) {
-							tempUV[i * 2 + 0] = tempUV[i * 2 + 1] = 0.0f;
+						pending.uvBlob = bUseTempUV ? (void*)tempUV : (void*)uvBlob;
+						pending.uvLength = numPos * 2;
+						pending.bShouldFreeUV = bUseTempUV;
+						pending.bFlipTexcoordY = bFlipTexcoordY;
+						// #todo-gltf: Other UV channels
+						if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
+							//LOG(LogDebug, "[GLTF] Need to parse TEXCOORD_1");
 						}
-					}
-					pending.uvBlob = bUseTempUV ? (void*)tempUV : (void*)uvBlob;
-					pending.uvLength = numPos * 2;
-					pending.bShouldFreeUV = bUseTempUV;
-					pending.bFlipTexcoordY = bFlipTexcoordY;
-					// #todo-gltf: Other UV channels
-					if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
-						//LOG(LogDebug, "[GLTF] Need to parse TEXCOORD_1");
 					}
 
 					// Normal buffer
@@ -536,6 +580,30 @@ namespace pathos {
 			}
 
 			meshes.push_back(mesh);
+		}
+	}
+
+	void GLTFLoader::parseLights(tinygltf::Model* tinyModel) {
+		for (size_t lightIx = 0; lightIx < tinyModel->lights.size(); ++lightIx) {
+			const tinygltf::Light& tinyLight = tinyModel->lights[lightIx];
+			GLTFPendingLight light;
+
+			if (tinyLight.type == "point") {
+				light.type = GLTFPendingLight::EType::Point;
+				light.point.color = vector3(tinyLight.color[0], tinyLight.color[1], tinyLight.color[2]);
+				light.point.intensity = (float)tinyLight.intensity;
+				light.point.attenuationRadius = (float)tinyLight.range;
+			} else if (tinyLight.type == "directional") {
+				light.type = GLTFPendingLight::EType::Directional;
+				light.point.color = vector3(tinyLight.color[0], tinyLight.color[1], tinyLight.color[2]);
+				light.point.intensity = (float)tinyLight.intensity;
+			} else {
+				// #wip-light: "spot" and "area"
+				LOG(LogDebug, "[GLTF] Light type not supported yet: %s (%s)", tinyLight.type.data(), tinyLight.name.data());
+				//continue;
+			}
+
+			pendingLights.emplace_back(light);
 		}
 	}
 

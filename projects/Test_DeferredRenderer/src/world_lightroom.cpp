@@ -6,6 +6,7 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
@@ -24,9 +25,8 @@
 void World_LightRoom::onInitialize() {
 	playerController = spawnActor<PlayerController>();
 
-	auto sun = spawnActor<DirectionalLightActor>();
-	sun->setDirection(SUN_DIRECTION);
-	sun->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
+	// #wip-skyocclusion: Sky light leaks into interior.
+	auto skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 
 	AssetReferenceGLTF assetRef(MODEL_FILEPATH);
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_LightRoom::onLoadGLTF, 0);
@@ -56,14 +56,13 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 
 	for (size_t i = 0; i < loader->numModels(); ++i) {
 		const auto& modelDesc = loader->getModel(i);
-		if (modelDesc.name == "Light") {
-			PointLightActor* light = spawnActor<PointLightActor>();
+		if (modelDesc.name == "PointLight") {
+			PointLightComponent* light = static_cast<PointLightComponent*>(components[i]);
 			// Surprisingly every faces of Ball are parallel to view vector when rendering omni shadow maps
 			// if Light and Ball have the same center.
-			light->setActorLocation(modelDesc.translation + vector3(0.05f, 0.05f, 0.05f));
-			light->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
-			light->setAttenuationRadius(POINT_LIGHT_ATTENUATION_RADIUS);
-			light->setSourceRadius(0.5f);
+			light->setLocation(light->getLocation() + vector3(0.05f, 0.05f, 0.05f));
+			// #wip-light: source radius not parsed yet
+			light->sourceRadius = 0.5f;
 		} else if (modelDesc.name == "Camera") {
 			getCamera().moveToPosition(modelDesc.translation);
 			getCamera().rotatePitch(modelDesc.rotation.pitch);
