@@ -18,7 +18,7 @@ Rotator Rotator::directionToYawPitch(const vector3& dir)
 	float planeRightY = -cos(yaw);
 	float roll = asin(up.x * planeRightX + up.z * planeRightY);
 	if (up.y < 0.0f) roll = (roll < 0.0f ? -1.0f : 1.0f) * glm::pi<float>() - roll;
-	return Rotator(glm::degrees(yaw), glm::degrees(pitch), glm::degrees(roll));
+	return Rotator(glm::degrees(yaw), glm::degrees(pitch), glm::degrees(roll), RotatorConvention::YXZ);
 }
 
 matrix4 Rotator::toMatrix() const {

@@ -20,4 +20,8 @@ private:
 
 	PlayerController* playerController = nullptr;
 	StaticMeshComponent* ballComponent = nullptr;
+
+	std::vector<StaticMeshComponent*> fractures;
+	std::vector<vector3> fractureOrigins;
+	std::vector<vector3> fractureTargets;
 };
