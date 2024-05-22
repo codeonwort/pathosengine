@@ -24,4 +24,8 @@ private:
 	std::vector<StaticMeshComponent*> fractures;
 	std::vector<vector3> fractureOrigins;
 	std::vector<vector3> fractureTargets;
+
+	std::vector<StaticMeshComponent*> leafComponents;
+	std::vector<vector3> leafOrigins;
+	std::vector<vector3> leafTargets;
 };

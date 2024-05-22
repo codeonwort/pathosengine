@@ -6,13 +6,16 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
 
 #include "badger/math/random.h"
+
 
 #define MODEL_FILEPATH                    "resources/lightroom/LightRoom.gltf"
 #define POINT_LIGHT_COLOR                 (vector3(255, 169, 87) / 255.0f)
@@ -59,6 +62,12 @@ void World_LightRoom::onTick(float deltaSeconds) {
 		//pos = fractureOrigins[i] + (fractureTargets[i] - fractureOrigins[i]) * 0.1f;
 		fractures[i]->setLocation(fractureTargets[i]);
 	}
+
+	float worldTime = gEngine->getWorldTime();
+	for (auto i = 0; i < leafComponents.size(); ++i) {
+		float t = 0.5f + 0.5f * std::cosf(worldTime + (float(i) * 1.57f));
+		leafComponents[i]->setLocation(glm::mix(leafOrigins[i], leafTargets[i], t));
+	}
 }
 
 void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
@@ -89,6 +98,12 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 	M_fracture->setConstantParameter("roughness", 1.0f);
 	M_fracture->setConstantParameter("emissive", vector3(0.0f));
 
+	struct LeafMarker {
+		vector3 center;
+		float radius;
+	};
+	std::vector<LeafMarker> leafMarkers;
+
 	for (size_t i = 0; i < loader->numModels(); ++i) {
 		const auto& modelDesc = loader->getModel(i);
 		if (modelDesc.name == "PointLight") {
@@ -114,6 +129,62 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			pos.y += -0.1f + 0.2f * Random();
 			fractureOrigins.push_back(pos);
 			fractureTargets.push_back(pos);
+		} else if (modelDesc.name.find("LeafMarker") != std::string::npos) {
+			auto smc = static_cast<StaticMeshComponent*>(components[i]);
+			smc->setVisibility(false);
+			leafMarkers.push_back({ smc->getLocation(), smc->getScale().x });
+		}
+	}
+
+	// Spawn leaf lights
+	{
+		const int NUM_LEAF_LIGHTS = 5000;
+
+		auto M_leafLight = Material::createMaterialInstance("solid_color");
+		M_leafLight->setConstantParameter("albedo", vector3(0.0f));
+		M_leafLight->setConstantParameter("metallic", 0.0f);
+		M_leafLight->setConstantParameter("roughness", 1.0f);
+		M_leafLight->setConstantParameter("emissive", vector3(100.0f, 60.0f, 30.0f));
+
+		auto G_leafLight = new SphereGeometry(1.0f, 20);
+
+		float totalLeafWeight = 0.0f;
+		size_t numMarkers = leafMarkers.size();
+		std::vector<float> leafWeights(numMarkers);
+		for (auto i = 0; i < numMarkers; ++i) {
+			float w = leafMarkers[i].radius;
+			leafWeights[i] = w;
+			totalLeafWeight += w;
+		}
+		for (auto i = 0; i < numMarkers; ++i) {
+			leafWeights[i] /= totalLeafWeight;
+		}
+
+		leafComponents.resize(NUM_LEAF_LIGHTS);
+		leafOrigins.resize(NUM_LEAF_LIGHTS);
+		leafTargets.resize(NUM_LEAF_LIGHTS);
+		for (auto i = 0; i < NUM_LEAF_LIGHTS; ++i) {
+			float r = Random();
+			size_t j;
+			for (j = 0; j < numMarkers; ++j) {
+				if (r < leafWeights[j]) {
+					break;
+				}
+				r -= leafWeights[j];
+			}
+
+			float lightRange = 0.05f + 0.05f * Random();
+			vector3 lightCenter = leafMarkers[j].center + (0.1f * RandomInUnitSphere()) + (leafMarkers[j].radius * RandomInUnitSphere());
+
+			auto sphere = spawnActor<StaticMeshActor>();
+			sphere->setStaticMesh(new Mesh(G_leafLight, M_leafLight));
+			sphere->setActorLocation(lightCenter);
+			sphere->setActorScale(lightRange);
+			sphere->getStaticMeshComponent()->castsShadow = false;
+
+			leafOrigins[i] = lightCenter;
+			leafTargets[i] = lightCenter + 0.1f * RandomInUnitSphere();
+			leafComponents[i] = sphere->getStaticMeshComponent();
 		}
 	}
 }
