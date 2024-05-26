@@ -138,11 +138,11 @@ namespace pathos {
 		};
 
 		SceneRenderSettings settings;
-		settings.sceneWidth = radianceCubemap->getWidth();
-		settings.sceneHeight = radianceCubemap->getWidth();
+		settings.sceneWidth        = radianceCubemap->getWidth();
+		settings.sceneHeight       = radianceCubemap->getWidth();
 		settings.enablePostProcess = false;
 		settings.finalRenderTarget = radianceCubemap->getRenderTargetView(faceIndex);
-		settings.finalDepthTarget = depthCubemap->getRenderTargetView(faceIndex);
+		settings.finalDepthTarget  = depthCubemap->getRenderTargetView(faceIndex);
 
 		vector3 probePos = getProbeLocationByIndex(probeIndex);
 		const float zNear = 0.01f;

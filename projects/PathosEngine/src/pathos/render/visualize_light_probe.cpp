@@ -105,6 +105,8 @@ namespace pathos {
 			return;
 		}
 
+		SCOPED_DRAW_EVENT(VisualizeLightProbe);
+
 		//////////////////////////////////////////////////////////////////////////
 		// Prepare UBO & SSBO data
 

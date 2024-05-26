@@ -92,37 +92,6 @@ namespace pathos {
 	MeshGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
 	matrix4 ImageBasedLightingBaker::cubeTransforms[6];
 
-	GLuint ImageBasedLightingBaker::projectPanoramaToCubemap(
-		GLuint equirectangularMap,
-		uint32 outputSize,
-		const char* debugName)
-	{
-		CHECK(isInMainThread());
-
-		GLuint cubemap = 0;
-		const std::string debugNameStr = debugName ? debugName : "";
-		
-		ENQUEUE_RENDER_COMMAND([equirectangularMap, outputSize, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
-			if (debugNameStr.size() > 0) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *cubemapPtr, -1, debugNameStr.c_str());
-			}
-
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureStorage2D(*cubemapPtr, 1, GL_RGB16F, outputSize, outputSize);
-
-			projectPanoramaToCubemap_renderThread(cmdList, equirectangularMap, *cubemapPtr, outputSize);
-		});
-		
-		FLUSH_RENDER_COMMAND();
-
-		return cubemap;
-	}
-
 	void ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
@@ -244,35 +213,6 @@ namespace pathos {
 		}
 	}
 
-	GLuint ImageBasedLightingBaker::bakeSkyIrradianceMap(
-		GLuint inputCubemap,
-		uint32 size,
-		bool bAutoDestroyCubemap,
-		const char* debugName)
-	{
-		CHECK(isInMainThread());
-
-		GLuint irradianceMap = 0;
-
-		ENQUEUE_RENDER_COMMAND([inputCubemap, size, bAutoDestroyCubemap, irradianceMapPtr = &irradianceMap, debugName](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
-			if (debugName != nullptr) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *irradianceMapPtr, -1, debugName);
-			}
-			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
-
-			bakeSkyIrradianceMap_renderThread(cmdList, inputCubemap, *irradianceMapPtr, size);
-
-			if (bAutoDestroyCubemap) {
-				cmdList.deleteTextures(1, &inputCubemap);
-			}
-		});
-
-		FLUSH_RENDER_COMMAND();
-
-		return irradianceMap;
-	}
-
 	void ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputSkyCubemap,
@@ -339,29 +279,6 @@ namespace pathos {
 
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
-	}
-
-	void ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 targetSize, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
-		CHECK(isInMainThread());
-
-		GLuint envMap = 0;
-		uint32 maxMipLevels = std::min(static_cast<uint32>(floor(log2(targetSize)) + 1), 5u);
-
-		ENQUEUE_RENDER_COMMAND([cubemap, targetSize, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
-			if (debugName != nullptr) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *envMapPtr, -1, debugName);
-			}
-			cmdList.textureStorage2D(*envMapPtr, maxMipLevels, GL_RGB16F, targetSize, targetSize);
-			cmdList.generateTextureMipmap(*envMapPtr);
-
-			bakeSpecularIBL_renderThread(cmdList, cubemap, targetSize, maxMipLevels, *envMapPtr);
-		});
-
-		FLUSH_RENDER_COMMAND();
-
-		outEnvMap = envMap;
-		outMipLevels = maxMipLevels;
 	}
 
 	GLuint ImageBasedLightingBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
@@ -433,6 +350,9 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO);
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO_2color);
 		gRenderDevice->deleteTextures(1, &ImageBasedLightingBaker::internal_BRDFIntegrationMap);
+		// Just cleanup references as they are owned by gEngine.
+		ImageBasedLightingBaker::fullscreenQuad = nullptr;
+		ImageBasedLightingBaker::dummyCube = nullptr;
 	}
 
 	DEFINE_GLOBAL_RENDER_ROUTINE(ImageBasedLightingBaker, ImageBasedLightingBaker::internal_createIrradianceBakerResources, ImageBasedLightingBaker::internal_destroyIrradianceBakerResources);
