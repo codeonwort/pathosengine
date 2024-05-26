@@ -85,6 +85,7 @@
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="visualize_light_probe.glsl" />
+    <None Include="visualize_sky_occlusion.glsl" />
     <None Include="volumetric_clouds.glsl" />
     <None Include="volumetric_clouds_post.glsl" />
   </ItemGroup>

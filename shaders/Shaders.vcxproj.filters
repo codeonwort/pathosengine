@@ -83,5 +83,6 @@
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
     <None Include="core\image_based_lighting.glsl" />
+    <None Include="visualize_sky_occlusion.glsl" />
   </ItemGroup>
 </Project>

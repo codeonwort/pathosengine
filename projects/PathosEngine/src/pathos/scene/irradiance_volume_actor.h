@@ -9,7 +9,7 @@
 #define SEPARATE_RADIANCE_CUBEMAPS 0
 
 namespace pathos {
-	// #wip: Move to image_based_lighting.h?
+	// #wip-skyocclusion: Parameterize
 	extern const uint32 irradianceProbeTileSize;
 	extern const uint32 irradianceProbeTileCountX;
 	extern const uint32 irradianceProbeTileCountY;

@@ -74,45 +74,46 @@ namespace pathos {
 		static uniquePtr<UniformBuffer> ubo_perFrame;
 
 		// G-buffer rendering
-		static uniquePtr<class DepthPrepass>            depthPrepass;
-		static uniquePtr<class GBufferPass>             gbufferPass;
-		static uniquePtr<ResolveUnlitPass>              resolveUnlitPass;
+		static uniquePtr<class DepthPrepass>              depthPrepass;
+		static uniquePtr<class GBufferPass>               gbufferPass;
+		static uniquePtr<ResolveUnlitPass>                resolveUnlitPass;
 
 		// Shadowmap rendering
-		static uniquePtr<class DirectionalShadowMap>    sunShadowMap;
-		static uniquePtr<class OmniShadowPass>          omniShadowPass;
+		static uniquePtr<class DirectionalShadowMap>      sunShadowMap;
+		static uniquePtr<class OmniShadowPass>            omniShadowPass;
 
 		// Local & global illumination
-		static uniquePtr<DirectLightingPass>            directLightingPass;
-		static uniquePtr<IndirectLightingPass>          indirectLightingPass;
-		static uniquePtr<ScreenSpaceReflectionPass>     screenSpaceReflectionPass;
+		static uniquePtr<DirectLightingPass>              directLightingPass;
+		static uniquePtr<IndirectLightingPass>            indirectLightingPass;
+		static uniquePtr<ScreenSpaceReflectionPass>       screenSpaceReflectionPass;
 
 		// Sky & atmosphere
-		static uniquePtr<class SkyboxPass>              skyboxPass;
-		static uniquePtr<class PanoramaSkyPass>         panoramaSkyPass;
-		static uniquePtr<class SkyAtmospherePass>       skyAtmospherePass;
-		static uniquePtr<class VolumetricCloudPass>     volumetricCloud;
+		static uniquePtr<class SkyboxPass>                skyboxPass;
+		static uniquePtr<class PanoramaSkyPass>           panoramaSkyPass;
+		static uniquePtr<class SkyAtmospherePass>         skyAtmospherePass;
+		static uniquePtr<class VolumetricCloudPass>       volumetricCloud;
 
 		// Translucency
-		static uniquePtr<class TranslucencyRendering>   translucency_pass;
+		static uniquePtr<class TranslucencyRendering>     translucency_pass;
 
 		// Auto exposure
-		static uniquePtr<class AutoExposurePass>        autoExposurePass;
+		static uniquePtr<class AutoExposurePass>          autoExposurePass;
 
 		// Debug rendering
-		static uniquePtr<class VisualizeBufferPass>     visualizeBuffer;
-		static uniquePtr<class VisualizeLightProbePass> visualizeLightProbe;
+		static uniquePtr<class VisualizeBufferPass>       visualizeBuffer;
+		static uniquePtr<class VisualizeLightProbePass>   visualizeLightProbe;
+		static uniquePtr<class VisualizeSkyOcclusionPass> visualizeSkyOcclusionPass;
 
 		// Post-processing
-		static uniquePtr<class GodRay>                  godRay;
-		static uniquePtr<class SSAO>                    ssao;
-		static uniquePtr<class BloomSetup>              bloomSetup;
-		static uniquePtr<class BloomPass>               bloomPass;
-		static uniquePtr<class ToneMapping>             toneMapping;
-		static uniquePtr<class FXAA>                    fxaa;
-		static uniquePtr<class TAA>                     taa;
-		static uniquePtr<class FSR1>                    fsr1;
-		static uniquePtr<class DepthOfField>            depthOfField;
+		static uniquePtr<class GodRay>                    godRay;
+		static uniquePtr<class SSAO>                      ssao;
+		static uniquePtr<class BloomSetup>                bloomSetup;
+		static uniquePtr<class BloomPass>                 bloomPass;
+		static uniquePtr<class ToneMapping>               toneMapping;
+		static uniquePtr<class FXAA>                      fxaa;
+		static uniquePtr<class TAA>                       taa;
+		static uniquePtr<class FSR1>                      fsr1;
+		static uniquePtr<class DepthOfField>              depthOfField;
 
 	public:
 		SceneRenderer();

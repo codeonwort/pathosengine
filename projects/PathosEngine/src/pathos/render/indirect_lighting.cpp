@@ -155,6 +155,7 @@ namespace pathos {
 			cmdList.disable(GL_DEPTH_TEST);
 			cmdList.enable(GL_BLEND);
 			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		}
 
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
@@ -170,8 +171,6 @@ namespace pathos {
 			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
-
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);

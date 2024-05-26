@@ -65,9 +65,7 @@ namespace pathos {
 	void VisualizeLightProbePass::initializeResources(RenderCommandList& cmdList) {
 		auto attribs = EPrimitiveInitOptions::CalculatePosition | EPrimitiveInitOptions::CalculateUV | EPrimitiveInitOptions::CalculateNormal;
 		sphereGeom = new SphereGeometry(1.0f, 20, attribs);
-
 		gRenderDevice->createFramebuffers(1, &fbo);
-
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
 	}
 
@@ -77,11 +75,7 @@ namespace pathos {
 		ubo.safeDestroy();
 	}
 
-	void VisualizeLightProbePass::render(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera)
-	{
+	void VisualizeLightProbePass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		if (cvar_visLightProbe.getInt() == 0) {
 			return;
 		}
