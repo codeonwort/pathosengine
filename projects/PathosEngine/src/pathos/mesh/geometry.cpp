@@ -401,10 +401,10 @@ namespace pathos {
 	void MeshGeometry::createFullVAO(RenderCommandList& cmdList) {
 		const GLuint indexBufferName     = bUseIndexBuffer ? indexBuffer.bufferPool->internal_getGLName() : 0;
 		const GLuint positionBufferName  = positionBuffer.bufferPool->internal_getGLName();
-		const GLuint uvBufferName        = uvBuffer.bufferPool->internal_getGLName();
-		const GLuint normalBufferName    = normalBuffer.bufferPool->internal_getGLName();
-		const GLuint tangentBufferName   = tangentBuffer.bufferPool->internal_getGLName();
-		const GLuint bitangentBufferName = bitangentBuffer.bufferPool->internal_getGLName();
+		const GLuint uvBufferName        = (uvBuffer.bufferPool        != nullptr) ? uvBuffer.bufferPool->internal_getGLName()        : 0;
+		const GLuint normalBufferName    = (normalBuffer.bufferPool    != nullptr) ? normalBuffer.bufferPool->internal_getGLName()    : 0;
+		const GLuint tangentBufferName   = (tangentBuffer.bufferPool   != nullptr) ? tangentBuffer.bufferPool->internal_getGLName()   : 0;
+		const GLuint bitangentBufferName = (bitangentBuffer.bufferPool != nullptr) ? bitangentBuffer.bufferPool->internal_getGLName() : 0;
 
 		std::vector<VAOElement> descs;
 
