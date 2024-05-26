@@ -9,6 +9,7 @@
 #define SEPARATE_RADIANCE_CUBEMAPS 0
 
 namespace pathos {
+	// #wip: Move to image_based_lighting.h?
 	extern const uint32 irradianceProbeTileSize;
 	extern const uint32 irradianceProbeTileCountX;
 	extern const uint32 irradianceProbeTileCountY;
@@ -49,6 +50,7 @@ namespace pathos {
 		// @param numSteps The number of update steps to perform.
 		void updateProbes(int32 numSteps);
 
+		// #todo-light-probe: Use ActorComponent::createRenderProxy() instead
 		void internal_createRenderProxy(SceneProxy* sceneProxy) const;
 
 		inline uint32 numProbes() const { return gridSize.x * gridSize.y * gridSize.z; }

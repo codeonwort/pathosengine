@@ -9,8 +9,10 @@
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_target.h"
+#include "pathos/render/image_based_lighting.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/log.h"
 
@@ -37,6 +39,9 @@ namespace pathos {
 			depthProbeAtlas = makeUnique<RenderTarget2D>();
 			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::depthProbeFormat, "Scene_DepthProbeAtlas");
 			depthProbeAtlas->immediateUpdateResource();
+		}
+		if (irradianceVolumeBuffer == nullptr) {
+			//
 		}
 	}
 
@@ -123,9 +128,9 @@ namespace pathos {
 		sprintf_s(counterName, "CreateRenderProxy (%s)", pathos::getSceneProxySourceString(source));
 		SCOPED_CPU_COUNTER_STRING(counterName);
 
-		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera, fence, fenceValue);
-
 		World* const world = getWorld();
+
+		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera, fence, fenceValue);
 
 		proxy->deltaSeconds = world->getLastDeltaSeconds();
 
@@ -192,6 +197,52 @@ namespace pathos {
 				}
 			}
 		}
+
+		// Update irradiance volume buffer.
+		{
+			const size_t numVolumes = proxy->proxyList_irradianceVolume.size();
+			size_t numPrevVolumes = 0;
+			if (irradianceVolumeBuffer != nullptr) {
+				numPrevVolumes = irradianceVolumeBuffer->getCreateParams().bufferSize / sizeof(IrradianceVolumeInfo);
+			}
+			if (numVolumes == 0) {
+				if (irradianceVolumeBuffer != nullptr) {
+					irradianceVolumeBuffer->releaseGPUResource();
+					irradianceVolumeBuffer = nullptr;
+				}
+			} else {
+				// Buffer size does not fit; recreate the buffer.
+				if (numPrevVolumes < numVolumes || numPrevVolumes > numVolumes * 2) {
+					if (irradianceVolumeBuffer != nullptr) {
+						irradianceVolumeBuffer->releaseGPUResource();
+					}
+					BufferCreateParams createParams{
+						EBufferUsage::CpuWrite,
+						(uint32)(numVolumes * sizeof(IrradianceVolumeInfo)),
+						nullptr,
+						"Buffer_SSBO_IrradianceVolume",
+					};
+					irradianceVolumeBuffer = makeUnique<Buffer>(createParams);
+					irradianceVolumeBuffer->createGPUResource();
+				}
+				// Upload the data.
+				// #todo-light-probe: Reupload only if changed.
+				std::vector<IrradianceVolumeInfo> bufferData;
+				for (const IrradianceVolumeProxy* volumeProxy : proxy->proxyList_irradianceVolume) {
+					IrradianceVolumeInfo bufferItem{
+						volumeProxy->minBounds,
+						volumeProxy->irradianceTileFirstID,
+						volumeProxy->maxBounds,
+						volumeProxy->numProbes,
+						volumeProxy->gridSize,
+						volumeProxy->captureRadius,
+					};
+					bufferData.emplace_back(bufferItem);
+				}
+				irradianceVolumeBuffer->writeToGPU(0, bufferData.size() * sizeof(IrradianceVolumeInfo), bufferData.data());
+			}
+		}
+		proxy->irradianceVolumeBuffer = irradianceVolumeBuffer.get();
 
 		proxy->finalize_mainThread();
 

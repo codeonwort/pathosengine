@@ -19,6 +19,7 @@
 namespace pathos {
 
 	class Fence;
+	class Buffer;
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 
 	enum class SceneProxySource : uint8 {
@@ -125,14 +126,14 @@ namespace pathos {
 		vector3                                    godRayColor = vector3(1.0f, 0.5f, 0.0f);
 		float                                      godRayIntensity = 1.0f;
 
+		// Light probe
 		GLuint                                     irradianceAtlas = 0;
 		GLuint                                     depthProbeAtlas = 0;
 		float                                      irradianceAtlasWidth = 0.0f;
 		float                                      irradianceAtlasHeight = 0.0f;
 		uint32                                     irradianceTileCountX = 0;
 		uint32                                     irradianceTileSize = 0;
-
-		// Light probe based GI
+		Buffer*                                    irradianceVolumeBuffer = nullptr;
 		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
 

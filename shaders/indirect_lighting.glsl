@@ -2,23 +2,8 @@
 
 #include "core/common.glsl"
 #include "core/brdf.glsl"
+#include "core/image_based_lighting.glsl"
 #include "deferred_common.glsl"
-
-// #todo-light-probe: SH encoding for indirect diffuse
-
-struct IrradianceVolume {
-	vec3 minBounds;
-	uint firstTileID;
-	vec3 maxBounds;
-	uint numProbes;
-	uvec3 gridSize;
-	float captureRadius;
-};
-
-struct ReflectionProbe {
-	vec3 positionWS;
-	float captureRadius;
-};
 
 // --------------------------------------------------------
 // Input

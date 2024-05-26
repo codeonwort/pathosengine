@@ -82,5 +82,6 @@
     <None Include="auto_exposure_histogram_gen.glsl" />
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
+    <None Include="core\image_based_lighting.glsl" />
   </ItemGroup>
 </Project>

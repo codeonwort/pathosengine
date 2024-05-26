@@ -19,6 +19,7 @@ namespace pathos {
 	class SkyActor;
 	class VolumetricCloudActor;
 	class RenderTarget2D;
+	class Buffer;
 
 	// Represents a 3D scene.
 	class Scene final {
@@ -45,7 +46,7 @@ namespace pathos {
 		World* getWorld() const { return owner; }
 
 		// -----------------------------------------------------------------------
-		// Irradiance Atlas API
+		// Irradiance Probe Atlas API
 
 		// Irradiance atlas filled by local light probes.
 		void initializeIrradianceProbeAtlas();
@@ -78,6 +79,10 @@ namespace pathos {
 
 		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
 		uniquePtr<RenderTarget2D> depthProbeAtlas;
+
+		uniquePtr<Buffer> irradianceVolumeBuffer;
+		// #todo-light-probe: Manage a buffer for reflection probes here
+		//uniquePtr<Buffer> reflectionProbeBuffer;
 
 		// Save as member to prepare various sizes of atlases per scene.
 		uint32 irradianceTileTotalCount = 0;

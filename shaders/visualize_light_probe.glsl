@@ -6,6 +6,7 @@
 // Common
 
 #include "core/common.glsl"
+#include "core/image_based_lighting.glsl"
 #include "deferred_common.glsl"
 
 #if VERTEX_SHADER
@@ -21,19 +22,6 @@ INTERPOLANTS_QUALIFIER Interpolants {
 	vec3 positionWS;
 	vec3 normalWS;
 } interpolants;
-
-struct IrradianceVolume {
-	vec3 minBounds;
-	uint firstTileID;
-	vec3 maxBounds;
-	uint numProbes;
-	uvec3 gridSize;
-	uint _pad0;
-};
-struct ReflectionProbe {
-	vec3 positionWS;
-	float captureRadius;
-};
 
 layout (std140, binding = 1) uniform UBO_VisualizeLightProbe {
 	uint numIrradianceVolumes;
