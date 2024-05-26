@@ -69,17 +69,12 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
-
-		uint32 ssbo1Size = pathos::reflectionProbeMaxCount * sizeof(ReflectionProbeInfo);
-		ssbo1 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo1Size, nullptr, "SSBO_1_IndirectLighting" });
-		ssbo1->createGPUResource();
 	}
 
 	void VisualizeLightProbePass::releaseResources(RenderCommandList& cmdList) {
 		delete sphereGeom;
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		ubo.safeDestroy();
-		delete ssbo1;
 	}
 
 	void VisualizeLightProbePass::render(
@@ -93,26 +88,17 @@ namespace pathos {
 
 		SCOPED_DRAW_EVENT(VisualizeLightProbe);
 
-		//////////////////////////////////////////////////////////////////////////
-		// Prepare UBO & SSBO data
-
-		Buffer* irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
-
-		std::vector<ReflectionProbeInfo> ssbo1Data;
-		for (const ReflectionProbeProxy* proxy : scene->proxyList_reflectionProbe) {
-			if (proxy->specularIBL != nullptr) {
-				ReflectionProbeInfo ssboItem{
-					proxy->positionWS,
-					proxy->captureRadius,
-				};
-				ssbo1Data.emplace_back(ssboItem);
-			}
-		}
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
+		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
 		// Nothing to visualize
-		if (irradianceVolumeBuffer == nullptr && ssbo1Data.size() == 0) {
+		if (irradianceVolumeBuffer == 0 && reflectionProbeBuffer == 0) {
 			return;
 		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Prepare UBO & SSBO data
 
 		uint32 totalIrradianceProbes = 0;
 		for (size_t i = 0; i < scene->proxyList_irradianceVolume.size(); ++i)
@@ -123,7 +109,7 @@ namespace pathos {
 		UBO_VisualizeLightProbe uboData;
 		uboData.numIrradianceVolumes = (uint32)scene->proxyList_irradianceVolume.size();
 		uboData.totalIrradianceProbes = totalIrradianceProbes;
-		uboData.numReflectionProbes = (uint32)ssbo1Data.size();
+		uboData.numReflectionProbes = (uint32)scene->proxyList_reflectionProbe.size();
 		uboData.irradianceProbeRadius = std::max(0.01f, cvar_visIrradianceProbeRadius.getFloat());
 		uboData.reflectionProbeRadius = std::max(0.01f, cvar_visReflectionProbeRadius.getFloat());
 		uboData.irradianceAtlasWidth = scene->irradianceAtlasWidth;
@@ -133,40 +119,37 @@ namespace pathos {
 
 		//////////////////////////////////////////////////////////////////////////
 
+		// Bind shader program
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeLightProbe);
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.useProgram(program.getGLName());
 
-		// Change render states
-		cmdList.enable(GL_DEPTH_TEST);
-
+		// Bind framebuffer
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
-		
-		ubo.update(cmdList, UBO_VisualizeLightProbe::BINDING_SLOT, &uboData);
-		if (uboData.numIrradianceVolumes > 0) {
-			irradianceVolumeBuffer->bindAsSSBO(cmdList, SSBO_IrradianceVolume_BINDING_SLOT);
-		}
-		if (uboData.numReflectionProbes > 0) {
-			GLsizeiptr bytes = ssbo1Data.size() * sizeof(ReflectionProbeInfo);
-			ssbo1->writeToGPU_renderThread(cmdList, 0, bytes, ssbo1Data.data());
-			ssbo1->bindAsSSBO(cmdList, SSBO_ReflectionProbe_BINDING_SLOT);
-		}
 
+		// Change render states
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		
+		// Bind buffers
+		ubo.update(cmdList, UBO_VisualizeLightProbe::BINDING_SLOT, &uboData);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
+
+		// Bind textures
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		cmdList.bindTextureUnit(0, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(1, sceneContext.localSpecularIBLs);
 
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
+		// Drawcall
 		uint32 instanceCount = totalIrradianceProbes + uboData.numReflectionProbes;
 		sphereGeom->bindFullAttributesVAO(cmdList);
 		sphereGeom->drawPrimitive(cmdList, instanceCount);
 
+		// Restore render states
 		cmdList.disable(GL_DEPTH_TEST);
 	}
 

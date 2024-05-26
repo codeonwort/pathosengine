@@ -129,6 +129,7 @@ namespace pathos {
 		SCOPED_CPU_COUNTER_STRING(counterName);
 
 		World* const world = getWorld();
+		const bool isLightProbeRendering = pathos::isLightProbeRendering(source);
 
 		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera, fence, fenceValue);
 
@@ -199,7 +200,7 @@ namespace pathos {
 		}
 
 		// Update irradiance volume buffer.
-		{
+		if (isLightProbeRendering == false) {
 			const size_t numVolumes = proxy->proxyList_irradianceVolume.size();
 			size_t numPrevVolumes = 0;
 			if (irradianceVolumeBuffer != nullptr) {
@@ -242,7 +243,52 @@ namespace pathos {
 				irradianceVolumeBuffer->writeToGPU(0, bufferData.size() * sizeof(IrradianceVolumeInfo), bufferData.data());
 			}
 		}
-		proxy->irradianceVolumeBuffer = irradianceVolumeBuffer.get();
+		proxy->irradianceVolumeBuffer = (irradianceVolumeBuffer != nullptr) ? irradianceVolumeBuffer->internal_getGLName() : 0;
+
+		// Update reflection probe buffer.
+		if (isLightProbeRendering == false) {
+			const size_t numProbes = proxy->proxyList_reflectionProbe.size();
+			size_t numPrevProbes = 0;
+			if (reflectionProbeBuffer != nullptr) {
+				numPrevProbes = reflectionProbeBuffer->getCreateParams().bufferSize / sizeof(ReflectionProbeInfo);
+			}
+			if (numProbes == 0) {
+				if (reflectionProbeBuffer != nullptr) {
+					reflectionProbeBuffer->releaseGPUResource();
+					reflectionProbeBuffer = nullptr;
+				}
+			} else {
+				// Buffer size does not fit; recreate the buffer.
+				if (numPrevProbes < numProbes || numPrevProbes > numProbes * 2) {
+					if (reflectionProbeBuffer != nullptr) {
+						reflectionProbeBuffer->releaseGPUResource();
+					}
+					BufferCreateParams createParams{
+						EBufferUsage::CpuWrite,
+						(uint32)(numProbes * sizeof(ReflectionProbeInfo)),
+						nullptr,
+						"Buffer_SSBO_IrradianceVolume",
+					};
+					reflectionProbeBuffer = makeUnique<Buffer>(createParams);
+					reflectionProbeBuffer->createGPUResource();
+				}
+				// Upload the data.
+				// #todo-light-probe: Reupload only if changed.
+				std::vector<ReflectionProbeInfo> bufferData;
+				for (const ReflectionProbeProxy* probeProxy : proxy->proxyList_reflectionProbe) {
+					if (probeProxy->specularIBL == nullptr) {
+						continue;
+					}
+					ReflectionProbeInfo bufferItem{
+						probeProxy->positionWS,
+						probeProxy->captureRadius,
+					};
+					bufferData.emplace_back(bufferItem);
+				}
+				reflectionProbeBuffer->writeToGPU(0, bufferData.size() * sizeof(ReflectionProbeInfo), bufferData.data());
+			}
+		}
+		proxy->reflectionProbeBuffer = (reflectionProbeBuffer != nullptr) ? reflectionProbeBuffer->internal_getGLName() : 0;
 
 		proxy->finalize_mainThread();
 

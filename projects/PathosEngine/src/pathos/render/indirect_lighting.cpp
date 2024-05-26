@@ -74,18 +74,12 @@ namespace pathos {
 	void IndirectLightingPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-
 		ubo.init<UBO_IndirectLighting>("UBO_IndirectLighting");
-
-		uint32 ssbo1Size = pathos::reflectionProbeMaxCount * sizeof(ReflectionProbeInfo);
-		ssbo1 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo1Size, nullptr, "SSBO_1_IndirectLighting" });
-		ssbo1->createGPUResource();
 	}
 
 	void IndirectLightingPass::releaseResources(RenderCommandList& cmdList) {
 		if (!destroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
-			delete ssbo1;
 		}
 		destroyed = true;
 	}
@@ -99,17 +93,16 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(IndirectLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		Buffer* irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
+		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
+		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Prepare for UBO & SSBO data
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
-		std::vector<ReflectionProbeInfo> reflectionProbeInfoArray;
 		if (cvar_indirectLighting_probeSpecular.getInt() != 0) {
 			const size_t numReflectionProbes = scene->proxyList_reflectionProbe.size();
-			reflectionProbeInfoArray.reserve(numReflectionProbes);
 			GLuint cubemapArray = sceneContext.localSpecularIBLs;
 
 			int32 cubemapIndex = 0;
@@ -130,10 +123,22 @@ namespace pathos {
 					size /= 2;
 				}
 				++cubemapIndex;
-
-				ReflectionProbeInfo info{ proxy->positionWS, proxy->captureRadius };
-				reflectionProbeInfoArray.emplace_back(info);
 			}
+		}
+
+		UBO_IndirectLighting uboData;
+		{
+			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
+			uboData.diffuseBoost               = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
+			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
+			uboData.skyRadianceProbeMaxLOD     = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
+			uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
+			uboData.numReflectionProbes        = (uint32)scene->proxyList_reflectionProbe.size();
+			uboData.numIrradianceVolumes       = (uint32)scene->proxyList_irradianceVolume.size();
+			uboData.irradianceAtlasWidth       = scene->irradianceAtlasWidth;
+			uboData.irradianceAtlasHeight      = scene->irradianceAtlasHeight;
+			uboData.irradianceTileCountX       = scene->irradianceTileCountX;
+			uboData.irradianceTileSize         = scene->irradianceTileSize;
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -152,29 +157,9 @@ namespace pathos {
 			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
 		}
 
-		UBO_IndirectLighting uboData;
-		{
-			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
-			uboData.diffuseBoost               = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
-			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
-			uboData.skyRadianceProbeMaxLOD     = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
-			uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
-			uboData.numReflectionProbes        = (uint32)reflectionProbeInfoArray.size();
-			uboData.numIrradianceVolumes       = (uint32)scene->proxyList_irradianceVolume.size();
-			uboData.irradianceAtlasWidth       = scene->irradianceAtlasWidth;
-			uboData.irradianceAtlasHeight      = scene->irradianceAtlasHeight;
-			uboData.irradianceTileCountX       = scene->irradianceTileCountX;
-			uboData.irradianceTileSize         = scene->irradianceTileSize;
-		}
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
-
-		if (irradianceVolumeBuffer != nullptr) {
-			irradianceVolumeBuffer->bindAsSSBO(cmdList, SSBO_IrradianceVolume_BINDING_SLOT);
-		}
-		if (reflectionProbeInfoArray.size() > 0) {
-			ssbo1->writeToGPU_renderThread(cmdList, 0, reflectionProbeInfoArray.size() * sizeof(ReflectionProbeInfo), reflectionProbeInfoArray.data());
-			ssbo1->bindAsSSBO(cmdList, SSBO_ReflectionProbe_BINDING_SLOT);
-		}
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;

@@ -81,8 +81,7 @@ namespace pathos {
 		uniquePtr<RenderTarget2D> depthProbeAtlas;
 
 		uniquePtr<Buffer> irradianceVolumeBuffer;
-		// #todo-light-probe: Manage a buffer for reflection probes here
-		//uniquePtr<Buffer> reflectionProbeBuffer;
+		uniquePtr<Buffer> reflectionProbeBuffer;
 
 		// Save as member to prepare various sizes of atlases per scene.
 		uint32 irradianceTileTotalCount = 0;

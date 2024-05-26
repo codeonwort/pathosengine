@@ -32,7 +32,6 @@ namespace pathos {
 	private:
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
-		Buffer* ssbo1 = nullptr; // For reflection probe
 
 		bool destroyed = false;
 
