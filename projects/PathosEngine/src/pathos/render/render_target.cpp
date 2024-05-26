@@ -6,6 +6,7 @@ namespace pathos {
 
 	GLenum RENDER_TARGET_FORMAT_TO_GL_FORMAT(RenderTargetFormat RTF) {
 		switch (RTF) {
+			case RenderTargetFormat::R8F:          return GL_R8;
 			case RenderTargetFormat::R16F:         return GL_R16F;
 			case RenderTargetFormat::RGBA16F:      return GL_RGBA16F;
 			case RenderTargetFormat::RGBA16I:      return GL_RGBA16I;
@@ -25,6 +26,7 @@ namespace pathos {
 
 	bool RENDER_TARGET_FORMAT_isColorFormat(RenderTargetFormat format) {
 		switch (format) {
+			case RenderTargetFormat::R8F:
 			case RenderTargetFormat::R16F:
 			case RenderTargetFormat::RGBA16F:
 			case RenderTargetFormat::RGBA16I:
@@ -46,6 +48,7 @@ namespace pathos {
 
 	bool RENDER_TARGET_FORMAT_isDepthFormat(RenderTargetFormat format) {
 		switch (format) {
+			case RenderTargetFormat::R8F:
 			case RenderTargetFormat::R16F:
 			case RenderTargetFormat::RGBA16F:
 			case RenderTargetFormat::RGBA16I:

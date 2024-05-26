@@ -31,19 +31,11 @@ namespace pathos {
 			uint32 atlasHeight = paddedSide * irradianceTileCountY;
 
 			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
-			irradianceProbeAtlas->respecTexture(
-				atlasWidth,
-				atlasHeight,
-				pathos::irradianceProbeFormat,
-				"Scene_IrradianceProbeAtlas");
+			irradianceProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::irradianceProbeFormat, "Scene_IrradianceProbeAtlas");
 			irradianceProbeAtlas->immediateUpdateResource();
 
 			depthProbeAtlas = makeUnique<RenderTarget2D>();
-			depthProbeAtlas->respecTexture(
-				atlasWidth,
-				atlasHeight,
-				pathos::depthProbeFormat,
-				"Scene_DepthProbeAtlas");
+			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::depthProbeFormat, "Scene_DepthProbeAtlas");
 			depthProbeAtlas->immediateUpdateResource();
 		}
 	}

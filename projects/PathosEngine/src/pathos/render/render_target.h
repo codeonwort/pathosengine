@@ -9,8 +9,13 @@ namespace pathos {
 	class RenderTarget2D;
 	class RenderTargetCube;
 
+	// If add a new field, must deal with it in the following functions:
+	// - RENDER_TARGET_FORMAT_TO_GL_FORMAT()
+	// - RENDER_TARGET_FORMAT_isColorFormat()
+	// - RENDER_TARGET_FORMAT_isDepthFormat()
 	enum class RenderTargetFormat : uint8
 	{
+		R8F,
 		R16F,
 
 		RGBA16F,
