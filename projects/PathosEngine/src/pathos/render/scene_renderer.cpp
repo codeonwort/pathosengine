@@ -152,6 +152,8 @@ namespace pathos {
 		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
 		const bool bRenderGodRay                    = (bLightProbeRendering == false);
 		const bool bRenderVolumetricCloud           = (bLightProbeRendering == false);
+		// #todo-light-probe: Render sky for light probes?
+		const bool bRenderSky                       = (bLightProbeRendering == false);
 		const bool bRenderIndirectLighting          = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
 		const bool bRenderSSR                       = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
 		const bool bRenderAutoExposure              = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
@@ -314,8 +316,7 @@ namespace pathos {
 				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
 				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 			}
-			const bool bSceneProxyNeedsSky = (scene->sceneProxySource == SceneProxySource::MainScene || scene->sceneProxySource == SceneProxySource::SceneCapture);
-			if (bSceneProxyNeedsSky) {
+			if (bRenderSky) {
 				if (scene->isSkyboxValid()) {
 					skyboxPass->renderSkybox(cmdList, scene);
 				} else if (scene->isPanoramaSkyValid()) {

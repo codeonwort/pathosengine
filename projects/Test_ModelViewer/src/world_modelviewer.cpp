@@ -393,7 +393,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 
 	AABB originalWorldBounds = getActorWorldBounds(modelActor);
 
-	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.1f);
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 1.1f * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.
 	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
@@ -413,7 +413,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, probeGrid);
 
-	worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.5f);
+	worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 1.5f * originalWorldBounds.getHalfSize());
 	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
 	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
 	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));

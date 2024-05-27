@@ -29,6 +29,7 @@ namespace pathos {
 #if SEPARATE_RADIANCE_CUBEMAPS
 		size_t totalProbes = gridSize.x * gridSize.y * gridSize.z;
 		radianceCubemaps.resize(totalProbes);
+		depthCubemaps.resize(totalProbes);
 #endif
 		
 		setActorLocation(minBounds);
@@ -197,7 +198,7 @@ namespace pathos {
 			sprintf_s(debugName, "IrradianceProbe_Capture%u", probeIndex);
 
 			radianceCubemaps[probeIndex] = makeUnique<RenderTargetCube>();
-			radianceCubemaps[probeIndex]->respecTexture(irradianceProbeTileSize, irradianceProbeFormat, 1, debugName);
+			radianceCubemaps[probeIndex]->respecTexture(tileSize, pathos::IRRADIANCE_PROBE_FORMAT, 1, debugName);
 		}
 		return radianceCubemaps[probeIndex].get();
 #else
@@ -216,7 +217,7 @@ namespace pathos {
 			sprintf_s(debugName, "DepthProbe_Capture%u", probeIndex);
 
 			depthCubemaps[probeIndex] = makeUnique<RenderTargetCube>();
-			depthCubemaps[probeIndex]->respecTexture(irradianceProbeTileSize, depthProbeFormat, 1, debugName);
+			depthCubemaps[probeIndex]->respecTexture(tileSize, pathos::DEPTH_PROBE_FORMAT, 1, debugName);
 		}
 		return depthCubemaps[probeIndex].get();
 #else
