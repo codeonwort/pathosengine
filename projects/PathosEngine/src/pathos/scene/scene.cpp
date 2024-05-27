@@ -111,8 +111,7 @@ namespace pathos {
 	}
 
 	bool Scene::freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID) {
-		auto it = std::find(irradianceTileAllocs.begin(), irradianceTileAllocs.end(),
-			IrradianceTileRange{ firstTileID, lastTileID });
+		auto it = std::find(irradianceTileAllocs.begin(), irradianceTileAllocs.end(), IrradianceTileRange{ firstTileID, lastTileID });
 		if (it != irradianceTileAllocs.end()) {
 			irradianceTileAllocs.erase(it);
 			return true;

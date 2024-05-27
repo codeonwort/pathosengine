@@ -57,10 +57,10 @@ namespace pathos {
 		vector3 getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const;
 
 		void captureFace(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, uint32 faceIndex);
-		void bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc);
+		void bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex);
 
-		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc);
-		RenderTargetCube* getDepthCubemapForProbe(uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc);
+		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex, uint32 tileSize);
+		RenderTargetCube* getDepthCubemapForProbe(uint32 probeIndex, uint32 tileSize);
 
 		vector3 minBounds = vector3(0.0f);
 		vector3 maxBounds = vector3(0.0f);
