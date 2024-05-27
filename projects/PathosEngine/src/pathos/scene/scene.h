@@ -1,8 +1,9 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/scene/actor.h"
+#include "pathos/render/image_based_lighting.h"
 #include "pathos/material/material_id.h"
+#include "pathos/scene/actor.h"
 #include "pathos/scene/camera.h"
 #include "pathos/smart_pointer.h"
 
@@ -24,6 +25,8 @@ namespace pathos {
 	// Represents a 3D scene.
 	class Scene final {
 		friend class World;
+		friend class IrradianceVolumeActor;
+		friend class ReflectionProbeActor;
 
 	public:
 		Scene();
@@ -43,13 +46,12 @@ namespace pathos {
 			Fence* fence = nullptr,
 			uint64 fenceValue = 0);
 
-		World* getWorld() const { return owner; }
+		inline World* getWorld() const { return owner; }
 
 		// -----------------------------------------------------------------------
-		// Irradiance Probe Atlas API
+		// Light Probe API
 
-		// Irradiance atlas filled by local light probes.
-		void initializeIrradianceProbeAtlas();
+		void updateLightProbes();
 	
 		// @return First tile ID.
 		uint32 allocateIrradianceTiles(uint32 numRequiredTiles);
@@ -66,6 +68,16 @@ namespace pathos {
 		GLuint getIrradianceProbeAtlasTexture() const;
 		GLuint getDepthProbeAtlasTexture() const;
 
+		inline const IrradianceProbeAtlasDesc& getIrradianceProbeAtlasDesc() const { return irradianceProbeAtlasDesc; }
+
+	private:
+		void registerIrradianceVolume(IrradianceVolumeActor* actor);
+		void unregisterIrradianceVolume(IrradianceVolumeActor* actor);
+		void registerReflectionProbe(ReflectionProbeActor* actor);
+		void unregisterReflectionProbe(ReflectionProbeActor* actor);
+
+		void initializeIrradianceProbeAtlas();
+
 	// #todo-godray: Cleanup this mess
 	public:
 		StaticMeshComponent* godRaySource = nullptr;
@@ -74,21 +86,12 @@ namespace pathos {
 
 	private:
 		World* owner = nullptr;
+		std::vector<ReflectionProbeActor*> reflectionProbes; // Actors spawned in the owner world
+		std::vector<IrradianceVolumeActor*> irradianceVolumes; // Actors spawned in the owner world
 
 		bool bInvalidateSkyLighting = false;
 
-		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
-		uniquePtr<RenderTarget2D> depthProbeAtlas;
-
-		uniquePtr<Buffer> irradianceVolumeBuffer;
-		uniquePtr<Buffer> reflectionProbeBuffer;
-
-		// Save as member to prepare various sizes of atlases per scene.
-		uint32 irradianceTileTotalCount = 0;
-		uint32 irradianceTileCountX = 0;
-		uint32 irradianceTileCountY = 0;
-		uint32 irradianceTileSize = 0;
-
+		IrradianceProbeAtlasDesc irradianceProbeAtlasDesc;
 		struct IrradianceTileRange {
 			uint32 begin, end; // Both inclusive
 			bool operator==(const IrradianceTileRange& other) const {
@@ -96,6 +99,11 @@ namespace pathos {
 			}
 		};
 		std::vector<IrradianceTileRange> irradianceTileAllocs;
+
+		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
+		uniquePtr<RenderTarget2D> depthProbeAtlas;
+		uniquePtr<Buffer> irradianceVolumeBuffer;
+		uniquePtr<Buffer> reflectionProbeBuffer;
 
 	};
 

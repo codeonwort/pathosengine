@@ -1,7 +1,10 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/smart_pointer.h"
+
 #include "badger/types/int_types.h"
+#include "badger/assertion/assertion.h"
 
 namespace pathos {
 

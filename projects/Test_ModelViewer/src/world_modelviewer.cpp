@@ -400,8 +400,9 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
 	// Limit the size of the probe grid.
 	probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
-	if (probeGrid.x * probeGrid.y * probeGrid.z > pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY) {
-		double total = (double)(pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
+	const auto& atlasDesc = getScene().getIrradianceProbeAtlasDesc();
+	if (probeGrid.x * probeGrid.y * probeGrid.z > atlasDesc.totalTileCount()) {
+		double total = (double)(atlasDesc.totalTileCount());
 		uint32 n = (uint32)(std::pow(total, 1.0 / 3.0));
 		probeGrid = vector3ui(n, n, n);
 	}

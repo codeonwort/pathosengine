@@ -27,6 +27,7 @@ layout (binding = 0) uniform usampler2D gbufferA;
 layout (binding = 1) uniform sampler2D  gbufferB;
 layout (binding = 2) uniform usampler2D gbufferC;
 layout (binding = 3) uniform sampler2D  irradianceProbeAtlas;
+layout (binding = 4) uniform sampler2D  depthProbeAtlas;
 
 // --------------------------------------------------------
 // Output
@@ -102,6 +103,9 @@ float sampleSkyOcclusion(GBufferData gbufferData) {
 	float C0 = mix(C00, C01, ratio.y);
 	float C1 = mix(C10, C11, ratio.y);
 	float C = mix(C0, C1, ratio.z);
+
+	// #wip-skyocclusion: Prevent the resource from being compiled out
+	C += max(textureLod(depthProbeAtlas, vec2(0.0), 0).r, 1e-16);
 
 	return C;
 }

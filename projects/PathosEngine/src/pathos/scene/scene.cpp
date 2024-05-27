@@ -1,8 +1,7 @@
 #include "scene.h"
-#include "pathos/console.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene_component.h"
-#include "pathos/scene/reflection_probe_component.h"
+#include "pathos/scene/reflection_probe_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/directional_light_component.h"
@@ -15,39 +14,74 @@
 #include "pathos/rhi/buffer.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/log.h"
+#include "pathos/console.h"
+
+#include <algorithm>
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileSize("r.irradianceProbeAtlas.tileSize", 8, "Tile size");
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountX("r.irradianceProbeAtlas.tileCountX", 64, "Tile count in x-axis");
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountY("r.irradianceProbeAtlas.tileCountY", 64, "Tile count in y-axis");
+
+	static ConsoleVariable<int32> cvar_numReflectionProbeUpdates("r.indirectLighting.updateReflectionProbesPerFrame", 1, "Number of reflection probes to update per frame");
+	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.indirectLighting.updateIrradianceProbesPerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Scene::Scene() {}
 	Scene::~Scene() {}
 
+	void Scene::updateLightProbes() {
+		SCOPED_CPU_COUNTER(LightProbeSceneProxy);
+
+		const vector3 cameraPos = getWorld()->getCamera().getPosition();
+
+		auto compareIrradianceVolumes = [&cameraPos](const IrradianceVolumeActor* A, const IrradianceVolumeActor* B) {
+			return glm::distance(A->getActorLocation(), cameraPos) < glm::distance(B->getActorLocation(), cameraPos);
+		};
+		auto compareReflectionProbes = [](const ReflectionProbeActor* A, const ReflectionProbeActor* B) {
+			if (B->bUpdateEveryFrame == false) return false;
+			if (A->lastUpdateTime == B->lastUpdateTime) return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
+			return A->lastUpdateTime < B->lastUpdateTime;
+		};
+		std::sort(irradianceVolumes.begin(), irradianceVolumes.end(), compareIrradianceVolumes);
+		std::sort(reflectionProbes.begin(), reflectionProbes.end(), compareReflectionProbes);
+
+		int32 numProbeUpdates = std::min(cvar_numReflectionProbeUpdates.getInt(), (int32)reflectionProbes.size());
+		for (int32 i = 0; i < numProbeUpdates; ++i) {
+			if (reflectionProbes[i]->bUpdateEveryFrame == false) break;
+			reflectionProbes[i]->captureScene();
+		}
+
+		numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_numIrradianceProbeUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
+		if (numProbeUpdates > 0) {
+			initializeIrradianceProbeAtlas();
+			irradianceVolumes[0]->updateProbes(irradianceProbeAtlasDesc, numProbeUpdates);
+		}
+	}
+
 	void Scene::initializeIrradianceProbeAtlas() {
 		if (irradianceProbeAtlas == nullptr) {
-			irradianceTileCountX = pathos::irradianceProbeTileCountX;
-			irradianceTileCountY = pathos::irradianceProbeTileCountY;
-			irradianceTileTotalCount = irradianceTileCountX * irradianceTileCountY;
-			irradianceTileSize = pathos::irradianceProbeTileSize;
+			irradianceProbeAtlasDesc.tileSize = cvar_irradianceProbeAtlas_tileSize.getInt();
+			irradianceProbeAtlasDesc.tileCountX = cvar_irradianceProbeAtlas_tileCountX.getInt();
+			irradianceProbeAtlasDesc.tileCountY = cvar_irradianceProbeAtlas_tileCountY.getInt();
 
-			uint32 paddedSide = (irradianceTileSize + 2);
-			uint32 atlasWidth = paddedSide * irradianceTileCountX;
-			uint32 atlasHeight = paddedSide * irradianceTileCountY;
+			uint32 paddedSide = (irradianceProbeAtlasDesc.tileSize + 2);
+			uint32 atlasWidth = paddedSide * irradianceProbeAtlasDesc.tileCountX;
+			uint32 atlasHeight = paddedSide * irradianceProbeAtlasDesc.tileCountY;
 
 			irradianceProbeAtlas = makeUnique<RenderTarget2D>();
-			irradianceProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::irradianceProbeFormat, "Scene_IrradianceProbeAtlas");
+			irradianceProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::IRRADIANCE_PROBE_FORMAT, "Texture_IrradianceProbeAtlas");
 			irradianceProbeAtlas->immediateUpdateResource();
 
 			depthProbeAtlas = makeUnique<RenderTarget2D>();
-			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::depthProbeFormat, "Scene_DepthProbeAtlas");
+			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::DEPTH_PROBE_FORMAT, "Texture_DepthProbeAtlas");
 			depthProbeAtlas->immediateUpdateResource();
-		}
-		if (irradianceVolumeBuffer == nullptr) {
-			//
 		}
 	}
 
 	uint32 Scene::allocateIrradianceTiles(uint32 numRequiredTiles) {
 		if (irradianceProbeAtlas == nullptr) {
-			return IRRADIANCE_TILE_INVALID_ID;
+			return IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 		}
 		uint32 beginID = 0, endID = numRequiredTiles - 1;
 		for (const auto& allocRange : irradianceTileAllocs) {
@@ -58,13 +92,13 @@ namespace pathos {
 				break;
 			}
 		}
-		if (endID < irradianceTileTotalCount) {
+		if (endID < irradianceProbeAtlasDesc.totalTileCount()) {
 			irradianceTileAllocs.push_back(IrradianceTileRange{ beginID, endID });
 			return beginID;
 		}
 		
 		// Failed to allocate tiles. Find out the reason.
-		uint32 remainingTiles = irradianceTileTotalCount;
+		uint32 remainingTiles = irradianceProbeAtlasDesc.totalTileCount();
 		for (const auto& allocRange : irradianceTileAllocs) {
 			remainingTiles -= allocRange.end - allocRange.begin + 1;
 		}
@@ -73,7 +107,7 @@ namespace pathos {
 		} else {
 			LOG(LogWarning, "%s: Fragmentation. Required: %u, remaining: %u but remaining tiles are not contiguous", __FUNCTION__, numRequiredTiles, remainingTiles);
 		}
-		return IRRADIANCE_TILE_INVALID_ID;
+		return IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 	}
 
 	bool Scene::freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID) {
@@ -87,16 +121,17 @@ namespace pathos {
 	}
 
 	void Scene::getIrradianceTileTexelOffset(uint32 tileID, uint32& outX, uint32& outY) const {
-		outX = 1 + (tileID % irradianceTileCountX) * (2 + irradianceTileSize);
-		outY = 1 + (tileID / irradianceTileCountX) * (2 + irradianceTileSize);
+		const auto& desc = irradianceProbeAtlasDesc;
+		outX = 1 + (tileID % desc.tileCountX) * (2 + desc.tileSize);
+		outY = 1 + (tileID / desc.tileCountX) * (2 + desc.tileSize);
 	}
 
 	void Scene::getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const {
 		if (irradianceProbeAtlas != nullptr) {
 			uint32 x0, y0, x1, y1;
 			getIrradianceTileTexelOffset(tileID, x0, y0);
-			x1 = x0 + irradianceTileSize;
-			y1 = y0 + irradianceTileSize;
+			x1 = x0 + irradianceProbeAtlasDesc.tileSize;
+			y1 = y0 + irradianceProbeAtlasDesc.tileSize;
 			float dx = 0.5f / (float)irradianceProbeAtlas->getWidth();
 			float dy = 0.5f / (float)irradianceProbeAtlas->getHeight();
 			outBounds.x = +dx + x0 / (float)irradianceProbeAtlas->getWidth();
@@ -111,6 +146,21 @@ namespace pathos {
 	}
 	GLuint Scene::getDepthProbeAtlasTexture() const {
 		return depthProbeAtlas->getInternalTexture()->internal_getGLName();
+	}
+
+	void Scene::registerIrradianceVolume(IrradianceVolumeActor* actor) {
+		irradianceVolumes.push_back(actor);
+	}
+	void Scene::unregisterIrradianceVolume(IrradianceVolumeActor* actor) {
+		auto it = std::find(irradianceVolumes.begin(), irradianceVolumes.end(), actor);
+		irradianceVolumes.erase(it);
+	}
+	void Scene::registerReflectionProbe(ReflectionProbeActor* actor) {
+		reflectionProbes.push_back(actor);
+	}
+	void Scene::unregisterReflectionProbe(ReflectionProbeActor* actor) {
+		auto it = std::find(reflectionProbes.begin(), reflectionProbes.end(), actor);
+		reflectionProbes.erase(it);
 	}
 
 	void Scene::invalidateSkyLighting() {
@@ -187,8 +237,8 @@ namespace pathos {
 			proxy->depthProbeAtlas = depthProbeAtlas->getInternalTexture()->internal_getGLName();
 			proxy->irradianceAtlasWidth = (float)irradianceProbeAtlas->getWidth();
 			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
-			proxy->irradianceTileCountX = irradianceTileCountX;
-			proxy->irradianceTileSize = irradianceTileSize;
+			proxy->irradianceTileCountX = irradianceProbeAtlasDesc.tileCountX;
+			proxy->irradianceTileSize = irradianceProbeAtlasDesc.tileSize;
 		}
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {

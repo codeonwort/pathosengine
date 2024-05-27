@@ -1,4 +1,6 @@
 #include "reflection_probe_actor.h"
+#include "pathos/scene/world.h"
+#include "pathos/scene/scene.h"
 
 namespace pathos {
 
@@ -13,6 +15,14 @@ namespace pathos {
 			lastUpdateTime = gEngine->getWorldTime();
 		}
 		updatePhase = (updatePhase + 1) % 7;
+	}
+
+	void ReflectionProbeActor::onSpawn() {
+		getWorld()->getScene().registerReflectionProbe(this);
+	}
+
+	void ReflectionProbeActor::onDestroy() {
+		getWorld()->getScene().unregisterReflectionProbe(this);
 	}
 
 }

@@ -3,18 +3,10 @@
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
+#include "pathos/render/image_based_lighting.h"
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
-
-// #todo-light-probe: Depth atlas is too low-res for visibility test.
-namespace pathos {
-	const uint32 irradianceProbeTileSize = 8;
-	const uint32 irradianceProbeTileCountX = 64;
-	const uint32 irradianceProbeTileCountY = 64;
-	const RenderTargetFormat irradianceProbeFormat = RenderTargetFormat::RGBA16F;
-	const RenderTargetFormat depthProbeFormat = RenderTargetFormat::R16F;
-}
 
 namespace pathos {
 
@@ -48,26 +40,26 @@ namespace pathos {
 		bVolumeInitialized = true;
 	}
 
-	void IrradianceVolumeActor::updateProbes(int32 numSteps) {
+	void IrradianceVolumeActor::updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numSteps) {
 		Scene& currentScene = getWorld()->getScene();
-		if (irradianceTileFirstID == IRRADIANCE_TILE_INVALID_ID) {
+		if (irradianceTileFirstID == IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
 			irradianceTileFirstID = currentScene.allocateIrradianceTiles(numProbes());
-			if (irradianceTileFirstID == IRRADIANCE_TILE_INVALID_ID) {
+			if (irradianceTileFirstID == IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
 				LOG(LogWarning, "[IrradianceVolume] Failed to allocate irradiance tiles");
 				return;
 			}
 		}
 
 		uint32 probeIndex = currentUpdateIndex;
-		RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex);
-		RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex);
+		RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex, atlasDesc);
+		RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex, atlasDesc);
 
 		for (int32 i = 0; i < numSteps; ++i) {
 			if (currentUpdatePhase <= 5) {
 				uint32 faceIndex = currentUpdatePhase;
 				captureFace(radianceCubemap, depthCubemap, probeIndex, faceIndex);
 			} else {
-				bakeIrradiance(radianceCubemap, depthCubemap, probeIndex);
+				bakeIrradiance(radianceCubemap, depthCubemap, probeIndex, atlasDesc);
 			}
 
 			currentUpdatePhase += 1;
@@ -95,14 +87,19 @@ namespace pathos {
 		}
 	}
 
+	void IrradianceVolumeActor::onSpawn() {
+		getWorld()->getScene().registerIrradianceVolume(this);
+	}
+
 	void IrradianceVolumeActor::onDestroy() {
-		if (irradianceTileFirstID != IRRADIANCE_TILE_INVALID_ID) {
+		if (irradianceTileFirstID != IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
 			uint32 lastID = irradianceTileFirstID + numProbes() - 1;
 			bool bFreed = getWorld()->getScene().freeIrradianceTiles(irradianceTileFirstID, lastID);
 			if (!bFreed) {
 				LOG(LogError, "%s: Failed to free irradiance tiles", __FUNCTION__);
 			}
 		}
+		getWorld()->getScene().unregisterIrradianceVolume(this);
 	}
 
 	vector3 IrradianceVolumeActor::getProbeLocationByIndex(uint32 probeIndex) const {
@@ -165,7 +162,7 @@ namespace pathos {
 		gEngine->internal_pushSceneProxy(sceneProxy);
 	}
 
-	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex) {
+	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc) {
 		Scene& currentScene = getWorld()->getScene();
 		GLuint inputRadianceTexture = radianceCubemap->getGLTexture();
 		GLuint inputDepthTexture = depthCubemap->getGLTexture();
@@ -173,25 +170,26 @@ namespace pathos {
 		GLuint RT_depthAtlas = currentScene.getDepthProbeAtlasTexture();
 
 		uint32 tileID = irradianceTileFirstID + probeIndex;
+		uint32 tileSize = atlasDesc.tileSize;
 		vector2ui viewportOffset;
 		vector4 tileBounds;
 		currentScene.getIrradianceTileTexelOffset(tileID, viewportOffset.x, viewportOffset.y);
 		currentScene.getIrradianceTileBounds(tileID, tileBounds);
 
 		ENQUEUE_RENDER_COMMAND(
-			[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset](RenderCommandList& cmdList) {
+			[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset, tileSize](RenderCommandList& cmdList) {
 				IrradianceMapBakeDesc bakeDesc;
 				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
 				bakeDesc.renderTarget = RT_atlas;
 				bakeDesc.depthTarget = RT_depthAtlas;
-				bakeDesc.viewportSize = irradianceProbeTileSize;
+				bakeDesc.viewportSize = tileSize;
 				bakeDesc.viewportOffset = viewportOffset;
 				ImageBasedLightingBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
 			}
 		);
 	}
 
-	RenderTargetCube* IrradianceVolumeActor::getRadianceCubemapForProbe(uint32 probeIndex) {
+	RenderTargetCube* IrradianceVolumeActor::getRadianceCubemapForProbe(uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc) {
 #if SEPARATE_RADIANCE_CUBEMAPS
 		if (radianceCubemaps[probeIndex] == nullptr) {
 			char debugName[128];
@@ -209,8 +207,8 @@ namespace pathos {
 		if (singleRadianceCubemap == nullptr) {
 			singleRadianceCubemap = makeUnique<RenderTargetCube>();
 			singleRadianceCubemap->respecTexture(
-				irradianceProbeTileSize,
-				irradianceProbeFormat,
+				atlasDesc.tileSize,
+				pathos::IRRADIANCE_PROBE_FORMAT,
 				1,
 				"IrradianceProbe_Capture");
 		}
@@ -218,7 +216,7 @@ namespace pathos {
 #endif
 	}
 
-	RenderTargetCube* IrradianceVolumeActor::getDepthCubemapForProbe(uint32 probeIndex) {
+	RenderTargetCube* IrradianceVolumeActor::getDepthCubemapForProbe(uint32 probeIndex, const IrradianceProbeAtlasDesc& atlasDesc) {
 #if SEPARATE_RADIANCE_CUBEMAPS
 		if (depthCubemaps[probeIndex] == nullptr) {
 			char debugName[128];
@@ -236,8 +234,8 @@ namespace pathos {
 		if (singleDepthCubemap == nullptr) {
 			singleDepthCubemap = makeUnique<RenderTargetCube>();
 			singleDepthCubemap->respecTexture(
-				irradianceProbeTileSize,
-				depthProbeFormat,
+				atlasDesc.tileSize,
+				pathos::DEPTH_PROBE_FORMAT,
 				1,
 				"DepthProbe_Capture");
 		}
