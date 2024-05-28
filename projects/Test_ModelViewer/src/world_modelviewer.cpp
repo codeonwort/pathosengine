@@ -22,6 +22,11 @@
 #include "badger/math/constants.h"
 #include "badger/math/minmax.h"
 
+
+// Initial values
+static vector3     SUN_DIRECTION     = vector3(0.0f, -1.0f, -1.0f);
+static vector3     SUN_COLOR         = vector3(1.0f);
+static float       SUN_ILLUMINANCE   = 1.0f;
 static const char* SKY_PANORAMA_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 class RotationBoard : public DisplayObject2D {
@@ -143,6 +148,10 @@ void World_ModelViewer::onInitialize() {
 
 	toggleSkyActor();
 	toggleProbeGI();
+
+	sunDirection = SUN_DIRECTION;
+	sunColor = SUN_COLOR;
+	sunIlluminance = SUN_ILLUMINANCE;
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);
@@ -393,7 +402,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 
 	AABB originalWorldBounds = getActorWorldBounds(modelActor);
 
-	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 1.1f * originalWorldBounds.getHalfSize());
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 0.9f * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.
 	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
