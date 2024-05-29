@@ -153,7 +153,7 @@ namespace pathos {
 		const bool bRenderGodRay                    = (bLightProbeRendering == false);
 		const bool bRenderVolumetricCloud           = (bLightProbeRendering == false);
 		// #todo-light-probe: Render sky for light probes?
-		const bool bRenderSky                       = (bLightProbeRendering == false);
+		const bool bRenderSky                       = true || (bLightProbeRendering == false);
 		const bool bRenderIndirectLighting          = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
 		const bool bRenderSSR                       = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
 		const bool bRenderAutoExposure              = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);

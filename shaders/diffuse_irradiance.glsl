@@ -68,7 +68,7 @@ void main() {
     up         = cross(dir, right);
 
     // #todo: Loop count ~= 7781
-    // Should optimize this.
+    // Should optimize this. Maybe https://www.activision.com/cdn/research/paper_egsr.pdf
     float sampleDelta = 0.05;
     float nrSamples = 0.0;
     for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta) {

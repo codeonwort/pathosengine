@@ -94,8 +94,9 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, sceneContext.gbufferA);
 		cmdList.bindTextureUnit(1, sceneContext.gbufferB);
 		cmdList.bindTextureUnit(2, sceneContext.gbufferC);
-		cmdList.bindTextureUnit(3, scene->irradianceAtlas);
-		cmdList.bindTextureUnit(4, scene->depthProbeAtlas);
+		cmdList.bindTextureUnit(3, sceneContext.sceneDepth);
+		cmdList.bindTextureUnit(4, scene->irradianceAtlas);
+		cmdList.bindTextureUnit(5, scene->depthProbeAtlas);
 
 		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);

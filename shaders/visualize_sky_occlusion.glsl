@@ -32,8 +32,9 @@ layout (std140, binding = 2) buffer SSBO {
 layout (binding = 0) uniform usampler2D gbufferA;
 layout (binding = 1) uniform sampler2D  gbufferB;
 layout (binding = 2) uniform usampler2D gbufferC;
-layout (binding = 3) uniform sampler2D  irradianceProbeAtlas;
-layout (binding = 4) uniform sampler2D  depthProbeAtlas;
+layout (binding = 3) uniform sampler2D  sceneDepth;
+layout (binding = 4) uniform sampler2D  irradianceProbeAtlas;
+layout (binding = 5) uniform sampler2D  depthProbeAtlas;
 
 // --------------------------------------------------------
 // Output
@@ -196,7 +197,8 @@ void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbufferA, gbufferB, gbufferC, gbufferData);
 
-	float occlusion = sampleSkyOcclusion(gbufferData);
+	float deviceZ = texture(sceneDepth, interpolants.screenUV).r;
+	float occlusion = (deviceZ == 0.0) ? 1.0 : sampleSkyOcclusion(gbufferData);
 
 	outColor = vec4(occlusion.xxx, 1);
 }

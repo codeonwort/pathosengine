@@ -26,7 +26,7 @@
 // Initial values
 static vector3     SUN_DIRECTION     = vector3(0.0f, -1.0f, -1.0f);
 static vector3     SUN_COLOR         = vector3(1.0f);
-static float       SUN_ILLUMINANCE   = 1.0f;
+static float       SUN_ILLUMINANCE   = 1000.0f;
 static const char* SKY_PANORAMA_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 class RotationBoard : public DisplayObject2D {
