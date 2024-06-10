@@ -494,18 +494,15 @@ bool World_ModelViewer::toggleProbeGI() {
 	};
 	auto cvarUpdateIndirectDiffuse  = findCVar("r.indirectLighting.updateIrradianceProbesPerFrame");
 	auto cvarUpdateIndirectSpecular = findCVar("r.indirectLighting.updateReflectionProbesPerFrame");
-	auto cvarApplyIndirectDiffuse   = findCVar("r.indirectLighting.probeDiffuse");
-	auto cvarApplyIndirectSpecular  = findCVar("r.indirectLighting.probeSpecular");
+	auto cvarIndirectLighting       = findCVar("r.indirectLighting");
 	if (bEnableProbeGI) {
 		setCVarInt(cvarUpdateIndirectDiffuse,  1);
 		setCVarInt(cvarUpdateIndirectSpecular, 1);
-		setCVarInt(cvarApplyIndirectDiffuse,   1);
-		setCVarInt(cvarApplyIndirectSpecular,  1);
+		setCVarInt(cvarIndirectLighting,       1);
 	} else {
 		setCVarInt(cvarUpdateIndirectDiffuse,  0);
 		setCVarInt(cvarUpdateIndirectSpecular, 0);
-		setCVarInt(cvarApplyIndirectDiffuse,   0);
-		setCVarInt(cvarApplyIndirectSpecular,  0);
+		setCVarInt(cvarIndirectLighting,       0);
 	}
 	bEnableProbeGI = !bEnableProbeGI;
 	return !bEnableProbeGI;
