@@ -30,6 +30,10 @@
 #include "pathos/render/visualize_sky_occlusion.h"
 #include "pathos/render/auto_exposure.h"
 #include "pathos/render/forward/translucency_rendering.h"
+#include "pathos/render/direct_lighting.h"
+#include "pathos/render/indirect_lighting.h"
+#include "pathos/render/resolve_unlit.h"
+#include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
 #include "pathos/render/postprocessing/bloom.h"
@@ -71,7 +75,6 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
-	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");

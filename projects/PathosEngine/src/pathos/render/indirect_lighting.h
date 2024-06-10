@@ -13,6 +13,9 @@ namespace pathos {
 	class SceneProxy;
 	class MeshGeometry;
 	class Buffer;
+	template<typename> class ConsoleVariable;
+
+	extern ConsoleVariable<int32> cvar_indirectLighting;
 
 	class IndirectLightingPass {
 

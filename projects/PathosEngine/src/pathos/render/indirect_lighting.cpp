@@ -24,9 +24,7 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_indirectLighting_probeDiffuse("r.indirectLighting.probeDiffuse", 1, "Toggle indirect diffuse by irradiance volume");
-	static ConsoleVariable<int32> cvar_indirectLighting_probeSpecular("r.indirectLighting.probeSpecular", 1, "Toggle indirect specular by reflection probe");
-
+	ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "0 = disable, 1 = all, 2 = diffuse only, 3 = sky diffuse only, 4 = specular only");
 	static ConsoleVariable<float> cvar_indirectLighting_skyBoost("r.indirectLighting.skyBoost", 1.0f, "Sky indirect diffuse/specular boost");
 	static ConsoleVariable<float> cvar_indirectLighting_diffuseBoost("r.indirectLighting.diffuseBoost", 1.0f, "IrradianceVolume indirect diffuse boost");
 	static ConsoleVariable<float> cvar_indirectLighting_specularBoost("r.indirectLighting.specularBoost", 1.0f, "ReflectionProbe indirect specular boost");
@@ -37,18 +35,18 @@ namespace pathos {
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
 
-		float skyLightBoost;
-		float diffuseBoost;
-		float specularBoost;
-		float _pad0;
+		float  skyLightBoost;
+		float  diffuseBoost;
+		float  specularBoost;
+		uint32 lightingMode; // cvar_indirectLighting
 
-		float skyRadianceProbeMaxLOD;
-		float localReflectionProbeMaxLOD;
+		float  skyRadianceProbeMaxLOD;
+		float  localReflectionProbeMaxLOD;
 		uint32 numReflectionProbes;
 		uint32 numIrradianceVolumes;
 
-		float irradianceAtlasWidth;
-		float irradianceAtlasHeight;
+		float  irradianceAtlasWidth;
+		float  irradianceAtlasHeight;
 		uint32 irradianceTileCountX;
 		uint32 irradianceTileSize;
 	};
@@ -101,7 +99,8 @@ namespace pathos {
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
-		if (cvar_indirectLighting_probeSpecular.getInt() != 0) {
+		int32 indirectLightingMode = cvar_indirectLighting.getInt();
+		if (indirectLightingMode == 1 || indirectLightingMode == 4) {
 			const size_t numReflectionProbes = scene->proxyList_reflectionProbe.size();
 			GLuint cubemapArray = sceneContext.localSpecularIBLs;
 
@@ -131,6 +130,7 @@ namespace pathos {
 			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
 			uboData.diffuseBoost               = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
 			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
+			uboData.lightingMode               = (uint32)indirectLightingMode;
 			uboData.skyRadianceProbeMaxLOD     = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
 			uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
 			uboData.numReflectionProbes        = (uint32)scene->proxyList_reflectionProbe.size();

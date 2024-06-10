@@ -9,6 +9,12 @@
 #define COSINE_WEIGHTED_INTERPOLATION    0
 #define PROBE_VISIBILITY_AWARE           0
 
+#define LIGHTINGMODE_NONE                0
+#define LIGHTINGMODE_ALL                 1
+#define LIGHTINGMODE_DIFFUSE_ONLY        2
+#define LIGHTINGMODE_SKY_DIFFUSE_ONLY    3
+#define LIGHTINGMODE_SPECULAR_ONLY       4
+
 // --------------------------------------------------------
 // Input
 
@@ -21,7 +27,7 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	float skyLightBoost;
 	float diffuseBoost;
 	float specularBoost;
-	float _pad0;
+	uint  lightingMode; // cvar_indirectLighting
 
 	float skyReflectionProbeMaxLOD;
 	float reflectionProbeMaxLOD; // Max LOD of local reflection probes
@@ -118,7 +124,7 @@ void findIrradianceProbes(vec3 position, IrradianceVolume vol, out ProbeDesc pro
 	}
 }
 
-vec3 getIndirectDiffuse(GBufferData gbufferData) {
+vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 	const vec3 surfacePositionWS = gbufferData.ws_coords;
 	const vec3 surfaceNormalWS   = gbufferData.ws_normal;
 
@@ -153,7 +159,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData) {
 	ProbeDesc[8] probes;
 	findIrradianceProbes(surfacePositionWS, vol, probes);
 
-	vec3 samples[8];
+	vec4 samples[8];
 	float weights[8], totalWeights = 0.0;
 #if PROBE_VISIBILITY_AWARE
 	bool visibility[8];
@@ -167,7 +173,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData) {
 		// Sample irradiance probe
 		vec2 encodedUV = ONVEncode(surfaceNormalWS);
 		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
-		samples[i] = textureLod(irradianceProbeAtlas, atlasUV, 0).rgb;
+		samples[i] = textureLod(irradianceProbeAtlas, atlasUV, 0);
 
 		// Calculate probe weight
 		weights[i] = max(0.0, dot(surfaceNormalWS, -probeToSurface));
@@ -193,10 +199,19 @@ vec3 getIndirectDiffuse(GBufferData gbufferData) {
 
 	vec3 irradiance = vec3(0.0);
 #if COSINE_WEIGHTED_INTERPOLATION
-	for (uint i = 0; i < 8; ++i) {
-		irradiance += samples[i] * weights[i] / totalWeights;
+	if (skyLightingOnly) {
+		float skyOcclusion = 0.0;
+		for (uint i = 0; i < 8; ++i) {
+			skyOcclusion += samples[i].w * weights[i] / totalWeights;
+		}
+		skyOcclusion = min(1, skyOcclusion);
+		irradiance = ubo.skyLightBoost * skyOcclusion * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+	} else {
+		for (uint i = 0; i < 8; ++i) {
+			irradiance += samples[i].xyz * weights[i] / totalWeights;
+		}
+		irradiance = max(vec3(0.0), ubo.diffuseBoost * irradiance);
 	}
-	irradiance = max(vec3(0.0), ubo.diffuseBoost * irradiance);
 #else
 	// Trilinear interpolation
 	vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
@@ -204,15 +219,27 @@ vec3 getIndirectDiffuse(GBufferData gbufferData) {
 	vec3 cellSize  = volSize / fNumCells;
 	vec3 ratio     = (surfacePositionWS - probes[0].center) / cellSize;
 
-	vec3 C00 = mix(samples[0], samples[1], ratio.x);
-	vec3 C01 = mix(samples[2], samples[3], ratio.x);
-	vec3 C10 = mix(samples[4], samples[5], ratio.x);
-	vec3 C11 = mix(samples[6], samples[7], ratio.x);
-	vec3 C0  = mix(C00, C01, ratio.y);
-	vec3 C1  = mix(C10, C11, ratio.y);
-	vec3 C   = mix(C0, C1, ratio.z);
+	if (skyLightingOnly) {
+		float C00 = mix(samples[0].w, samples[1].w, ratio.x);
+		float C01 = mix(samples[2].w, samples[3].w, ratio.x);
+		float C10 = mix(samples[4].w, samples[5].w, ratio.x);
+		float C11 = mix(samples[6].w, samples[7].w, ratio.x);
+		float C0  = mix(C00, C01, ratio.y);
+		float C1  = mix(C10, C11, ratio.y);
+		float C   = mix(C0, C1, ratio.z); // skyOcclusion
 
-	irradiance = ubo.diffuseBoost * C;
+		irradiance = ubo.skyLightBoost * C * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+	} else {
+		vec3 C00 = mix(samples[0].xyz, samples[1].xyz, ratio.x);
+		vec3 C01 = mix(samples[2].xyz, samples[3].xyz, ratio.x);
+		vec3 C10 = mix(samples[4].xyz, samples[5].xyz, ratio.x);
+		vec3 C11 = mix(samples[6].xyz, samples[7].xyz, ratio.x);
+		vec3 C0  = mix(C00, C01, ratio.y);
+		vec3 C1  = mix(C10, C11, ratio.y);
+		vec3 C   = mix(C0, C1, ratio.z);
+
+		irradiance = ubo.diffuseBoost * C;
+	}
 #endif
 
 	return irradiance;
@@ -272,8 +299,15 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	const vec3 kD                  = (1.0 - metallic) * (1.0 - kS);
 	const vec2 envBRDF             = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
 
-	vec3 diffuseIndirect   = getIndirectDiffuse(gbufferData);
-	vec3 specularIndirect  = getIndirectSpecular(gbufferData);
+	vec3 diffuseIndirect  = vec3(0.0);
+	vec3 specularIndirect = vec3(0.0);
+	uint lightingMode     = ubo.lightingMode;
+	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_DIFFUSE_ONLY || lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY) {
+		diffuseIndirect = getIndirectDiffuse(gbufferData, lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY);
+	}
+	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_SPECULAR_ONLY) {
+		specularIndirect = getIndirectSpecular(gbufferData);
+	}
 	float ambientOcclusion = texture2D(ssaoMap, fs_in.screenUV).r;
 
 	vec3 finalLighting = kD * albedo * diffuseIndirect;
