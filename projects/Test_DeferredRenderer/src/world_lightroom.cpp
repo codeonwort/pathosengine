@@ -8,6 +8,7 @@
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
+#include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/util/log.h"
@@ -42,6 +43,7 @@ void World_LightRoom::onInitialize() {
 	gEngine->getAssetStreamer()->enqueueGLTF(assetRef, this, &World_LightRoom::onLoadGLTF, 0);
 
 	gConsole->addLine(L"r.omnishadow.size 2048");
+	gConsole->addLine(L"r.indirectLighting 1");
 }
 
 void World_LightRoom::onTick(float deltaSeconds) {
@@ -133,6 +135,24 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			auto smc = static_cast<StaticMeshComponent*>(components[i]);
 			smc->setVisibility(false);
 			leafMarkers.push_back({ smc->getLocation(), smc->getScale().x });
+		} else if (modelDesc.name.find("LightProbeVolume") != std::string::npos) {
+			auto placeholder = components[i];
+			auto bounds = AABB::fromCenterAndHalfSize(placeholder->getLocation(), 0.5f * placeholder->getScale());
+
+			// Irradiance atlas overflow
+#if 0
+			// Calculate proper grid size for irradiance volume.
+			vector3 probeGridf = bounds.getSize() / 0.5f; // per 0.5 meters
+			vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
+			// Limit the size of the probe grid.
+			probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
+#else
+			const vector3ui probeGrid(4, 4, 4);
+#endif
+
+			auto volume = spawnActor<IrradianceVolumeActor>();
+			volume->initializeVolume(bounds.minBounds, bounds.maxBounds, probeGrid);
+			irradianceVolumes.push_back(volume);
 		}
 	}
 

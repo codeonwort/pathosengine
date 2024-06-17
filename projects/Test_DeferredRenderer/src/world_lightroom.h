@@ -6,6 +6,7 @@ using namespace pathos;
 namespace pathos {
 	class GLTFLoader;
 	class StaticMeshComponent;
+	class IrradianceVolumeActor;
 }
 class PlayerController;
 
@@ -28,4 +29,6 @@ private:
 	std::vector<StaticMeshComponent*> leafComponents;
 	std::vector<vector3> leafOrigins;
 	std::vector<vector3> leafTargets;
+
+	std::vector<IrradianceVolumeActor*> irradianceVolumes;
 };
