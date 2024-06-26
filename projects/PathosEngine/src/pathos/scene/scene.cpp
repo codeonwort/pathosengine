@@ -20,14 +20,19 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileSize("r.irradianceProbeAtlas.tileSize", 8, "Tile size");
-	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountX("r.irradianceProbeAtlas.tileCountX", 64, "Tile count in x-axis");
-	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountY("r.irradianceProbeAtlas.tileCountY", 64, "Tile count in y-axis");
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileSize("r.irradianceProbeAtlas.tileSize", -1, "Override tile size (if positive)");
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountX("r.irradianceProbeAtlas.tileCountX", -1, "Override tile count in x-axis (if positive)");
+	static ConsoleVariable<int32> cvar_irradianceProbeAtlas_tileCountY("r.irradianceProbeAtlas.tileCountY", -1, "Override tile count in y-axis (if positive)");
 
 	static ConsoleVariable<int32> cvar_numReflectionProbeUpdates("r.indirectLighting.updateReflectionProbesPerFrame", 1, "Number of reflection probes to update per frame");
 	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.indirectLighting.updateIrradianceProbesPerFrame", 1, "Number of irradiance probes to update per frame");
 
-	Scene::Scene() {}
+	Scene::Scene() {
+		irradianceProbeAtlasDesc.tileSize = 6;
+		irradianceProbeAtlasDesc.tileCountX = 128;
+		irradianceProbeAtlasDesc.tileCountY = 128;
+	}
+
 	Scene::~Scene() {}
 
 	void Scene::updateLightProbes() {
@@ -61,9 +66,9 @@ namespace pathos {
 
 	void Scene::initializeIrradianceProbeAtlas() {
 		if (irradianceProbeAtlas == nullptr) {
-			irradianceProbeAtlasDesc.tileSize = cvar_irradianceProbeAtlas_tileSize.getInt();
-			irradianceProbeAtlasDesc.tileCountX = cvar_irradianceProbeAtlas_tileCountX.getInt();
-			irradianceProbeAtlasDesc.tileCountY = cvar_irradianceProbeAtlas_tileCountY.getInt();
+			if (cvar_irradianceProbeAtlas_tileSize.getInt() > 0) irradianceProbeAtlasDesc.tileSize = cvar_irradianceProbeAtlas_tileSize.getInt();
+			if (cvar_irradianceProbeAtlas_tileCountX.getInt() > 0) irradianceProbeAtlasDesc.tileCountX = cvar_irradianceProbeAtlas_tileCountX.getInt();
+			if (cvar_irradianceProbeAtlas_tileCountY.getInt() > 0) irradianceProbeAtlasDesc.tileCountY = cvar_irradianceProbeAtlas_tileCountY.getInt();
 
 			uint32 paddedSide = (irradianceProbeAtlasDesc.tileSize + 2);
 			uint32 atlasWidth = paddedSide * irradianceProbeAtlasDesc.tileCountX;
@@ -77,6 +82,10 @@ namespace pathos {
 			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::DEPTH_PROBE_FORMAT, "Texture_DepthProbeAtlas");
 			depthProbeAtlas->immediateUpdateResource();
 		}
+	}
+
+	void Scene::initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc) {
+		irradianceProbeAtlasDesc = desc;
 	}
 
 	uint32 Scene::allocateIrradianceTiles(uint32 numRequiredTiles) {

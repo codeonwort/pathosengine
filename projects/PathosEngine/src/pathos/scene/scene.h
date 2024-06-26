@@ -51,8 +51,10 @@ namespace pathos {
 		// -----------------------------------------------------------------------
 		// Light Probe API
 
+		void initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc);
+
 		void updateLightProbes();
-	
+
 		// @return First tile ID.
 		uint32 allocateIrradianceTiles(uint32 numRequiredTiles);
 

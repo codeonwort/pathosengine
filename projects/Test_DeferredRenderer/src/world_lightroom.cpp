@@ -25,6 +25,10 @@
 #define SUN_DIRECTION                     glm::normalize(vector3(0.0f, -1.0f, -1.0f))
 #define SUN_COLOR                         vector3(1.0f, 1.0f, 1.0f)
 #define SUN_ILLUMINANCE                   0.5f
+#define LIGHT_PROBE_TILE_COUNT_X          128
+#define LIGHT_PROBE_TILE_COUNT_Y          128
+#define LIGHT_PROBE_TILE_SIZE             6
+#define LIGHT_PROBE_INTERVAL              1.0f
 
 // #wip-skyocclusion: Sky light leaks into interior.
 #define CREATE_SKY_ACTOR                  1
@@ -33,6 +37,12 @@
 // World
 
 void World_LightRoom::onInitialize() {
+	IrradianceProbeAtlasDesc atlasDesc;
+	atlasDesc.tileCountX = LIGHT_PROBE_TILE_COUNT_X;
+	atlasDesc.tileCountY = LIGHT_PROBE_TILE_COUNT_Y;
+	atlasDesc.tileSize = LIGHT_PROBE_TILE_SIZE;
+	getScene().initializeIrradianceProbeAtlasDesc(atlasDesc);
+
 	playerController = spawnActor<PlayerController>();
 
 #if CREATE_SKY_ACTOR
@@ -106,6 +116,8 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 	};
 	std::vector<LeafMarker> leafMarkers;
 
+	uint32 totalLightProbe = 0;
+
 	for (size_t i = 0; i < loader->numModels(); ++i) {
 		const auto& modelDesc = loader->getModel(i);
 		if (modelDesc.name == "PointLight") {
@@ -139,22 +151,22 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			auto placeholder = components[i];
 			auto bounds = AABB::fromCenterAndHalfSize(placeholder->getLocation(), 0.5f * placeholder->getScale());
 
-			// Irradiance atlas overflow
-#if 0
 			// Calculate proper grid size for irradiance volume.
-			vector3 probeGridf = bounds.getSize() / 0.5f; // per 0.5 meters
+			vector3 probeGridf = bounds.getSize() / LIGHT_PROBE_INTERVAL;
 			vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
 			// Limit the size of the probe grid.
 			probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
-#else
-			const vector3ui probeGrid(4, 4, 4);
-#endif
+
+			totalLightProbe += probeGrid.x * probeGrid.y * probeGrid.z;
 
 			auto volume = spawnActor<IrradianceVolumeActor>();
 			volume->initializeVolume(bounds.minBounds, bounds.maxBounds, probeGrid);
 			irradianceVolumes.push_back(volume);
 		}
 	}
+
+	const uint32 lightProbeLimit = getScene().getIrradianceProbeAtlasDesc().totalTileCount();
+	LOG(LogDebug, "Total light probe: %u, limit: %u", totalLightProbe, lightProbeLimit);
 
 	// Spawn leaf lights
 	{
