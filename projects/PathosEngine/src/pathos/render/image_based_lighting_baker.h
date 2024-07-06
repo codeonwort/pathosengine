@@ -77,6 +77,15 @@ namespace pathos {
 			GLuint targetCubemap,
 			uint32 targetSize);
 
+		/// <summary>
+		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
+		/// Therefore sky specular IBLs still use old impl.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="srcCubemap">Radiance-captured cubemap. Should have size of 128 and mip count of 7.</param>
+		/// <param name="dstCubemap">Cubemap that will store the filtering result. Should have size of 128 and mip count of 7.</param>
+		static void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
+
 		// -----------------------------------------------------------------------
 
 		// Default BRDF integration map of 512 size

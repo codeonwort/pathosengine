@@ -84,6 +84,26 @@ namespace pathos {
 
 namespace pathos {
 
+	class ReflectionProbeDownsampleCS : public ShaderStage {
+	public:
+		ReflectionProbeDownsampleCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeDownsampleCS") {
+			setFilepath("reflection_probe_downsample.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeDownsample, ReflectionProbeDownsampleCS);
+
+	class ReflectionProbeFilteringCS : public ShaderStage {
+	public:
+		ReflectionProbeFilteringCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeFilteringCS") {
+			setFilepath("reflection_probe_filtering.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeFiltering, ReflectionProbeFilteringCS);
+
+}
+
+namespace pathos {
+
 	GLuint ImageBasedLightingBaker::internal_BRDFIntegrationMap = 0xffffffff;
 	GLuint ImageBasedLightingBaker::dummyVAO = 0;
 	GLuint ImageBasedLightingBaker::dummyFBO = 0;
@@ -227,6 +247,52 @@ namespace pathos {
 		bakeDesc.depthTarget  = 0;
 		bakeDesc.viewportSize = targetSize;
 		bakeDiffuseIBL_renderThread(cmdList, inputSkyCubemap, 0, bakeDesc);
+	}
+
+	void ImageBasedLightingBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeReflectionProbe);
+
+		const uint32 BASE_SIZE = 128;
+		const uint32 MIP_COUNT = 7;
+		const uint32 MIPS_TOTAL_PIXELS = (128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1);
+
+		// Pass 1. Downsample
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeDownsample);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			uint32 inputCubemapSize = BASE_SIZE;
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				const uint32 targetCubemapSize = inputCubemapSize >> 1;
+				const uint32 numGroups = (targetCubemapSize + 7) / 8;
+
+				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
+				cmdList.bindTextureUnit(0, srcCubemap);
+				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+				cmdList.dispatchCompute(numGroups, numGroups, 6);
+
+				inputCubemapSize = targetCubemapSize;
+			}
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
+		}
+
+		// Pass 2. Filtering
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeFiltering);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(dstCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+			const uint32 numGroups = (MIPS_TOTAL_PIXELS + 63) / 64;
+			cmdList.bindTextureUnit(0, srcCubemap);
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+			}
+			cmdList.dispatchCompute(numGroups, 6, 1);
+		}
 	}
 
 	void ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
