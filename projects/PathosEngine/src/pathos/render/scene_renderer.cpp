@@ -75,6 +75,7 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
+	static ConsoleVariable<int32> cvar_depth_prepass("r.depth_prepass", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -153,6 +154,7 @@ namespace pathos {
 		const EAutoExposureMode autoExposureMode = (EAutoExposureMode)badger::clamp(0, cvar_exposure_mode.getInt(), 2);
 		
 		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
+		const bool bRenderDepthPrepass              = (cvar_depth_prepass.getInt() != 0);
 		const bool bRenderGodRay                    = (bLightProbeRendering == false);
 		const bool bRenderVolumetricCloud           = (bLightProbeRendering == false);
 		// #todo-light-probe: Render sky for light probes?
@@ -207,10 +209,9 @@ namespace pathos {
 			cmdList.enable(GL_CULL_FACE);
 		}
 
-		{
+		if (bRenderDepthPrepass) {
 			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
-
 			depthPrepass->renderPreDepth(cmdList, scene, camera);
 		}
 
@@ -240,16 +241,16 @@ namespace pathos {
 			volumetricCloud->renderVolumetricCloud(cmdList, scene);
 		}
 
+		{
+			SCOPED_CPU_COUNTER(BasePass);
+			SCOPED_GPU_COUNTER(BasePass);
+			gbufferPass->renderGBuffers(cmdList, scene, camera, bRenderDepthPrepass);
+		}
+
 		if (bRenderGodRay) {
 			SCOPED_CPU_COUNTER(GodRay);
 			SCOPED_GPU_COUNTER(GodRay);
 			godRay->renderGodRay(cmdList, scene, camera, this);
-		}
-
-		{
-			SCOPED_CPU_COUNTER(BasePass);
-			SCOPED_GPU_COUNTER(BasePass);
-			gbufferPass->renderGBuffers(cmdList, scene, camera);
 		}
 
 		{

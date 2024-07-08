@@ -43,11 +43,9 @@ namespace pathos {
 		pathos::checkFramebufferStatus(cmdList, fbo, "GBuffer setup is invalid");
 	}
 
-	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, bool hasDepthPrepass) {
 		SCOPED_DRAW_EVENT(GBufferPass);
 
-		// #todo-renderer: Dynamically toggle depth prepass.
-		constexpr bool bUseDepthPrepass = true;
 		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
 
 		SceneRenderTargets* sceneRenderTargets = cmdList.sceneRenderTargets;
@@ -66,7 +64,7 @@ namespace pathos {
 		cmdList.clearNamedFramebufferfv(fbo, GL_COLOR, 1, color_zero);
 		cmdList.clearNamedFramebufferfv(fbo, GL_COLOR, 2, color_zero);
 		cmdList.clearNamedFramebufferfv(fbo, GL_COLOR, 3, color_zero);
-		if (!bUseDepthPrepass) {
+		if (!hasDepthPrepass) {
 			cmdList.clearNamedFramebufferfv(fbo, GL_DEPTH, 0, sceneDepthClearValue);
 		}
 
@@ -74,15 +72,14 @@ namespace pathos {
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.viewport(0, 0, sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
 
-		// #todo-depthprepass: Currently using GEQUAL or LEQUAL as I'm not doing full-depth prepass.
-		// Switch to EQUAL when doing full-depth prepass.
-		if (bUseDepthPrepass) {
-			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
+		// #todo-depth-prepass: Assume depth prepass renders every opaque objects.
+		if (hasDepthPrepass) {
 			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.depthFunc(GL_EQUAL);
 			cmdList.depthMask(GL_FALSE);
 		} else {
-			cmdList.depthFunc(bReverseZ ? GL_GREATER : GL_LESS);
 			cmdList.enable(GL_DEPTH_TEST);
+			cmdList.depthFunc(bReverseZ ? GL_GEQUAL : GL_LEQUAL);
 			cmdList.depthMask(GL_TRUE);
 		}
 
