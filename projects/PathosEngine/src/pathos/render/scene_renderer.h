@@ -4,16 +4,9 @@
 #include "pathos/render/renderer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/direct_lighting.h"
-#include "pathos/render/indirect_lighting.h"
-#include "pathos/render/resolve_unlit.h"
-#include "pathos/render/screen_space_reflection.h"
-#include "pathos/render/postprocessing/anti_aliasing.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/smart_pointer.h"
-
-#include <memory>
 
 namespace pathos {
 
@@ -74,45 +67,46 @@ namespace pathos {
 		static uniquePtr<UniformBuffer> ubo_perFrame;
 
 		// G-buffer rendering
-		static uniquePtr<class DepthPrepass>            depthPrepass;
-		static uniquePtr<class GBufferPass>             gbufferPass;
-		static uniquePtr<ResolveUnlitPass>              resolveUnlitPass;
+		static uniquePtr<class DepthPrepass>              depthPrepass;
+		static uniquePtr<class GBufferPass>               gbufferPass;
+		static uniquePtr<class ResolveUnlitPass>          resolveUnlitPass;
 
 		// Shadowmap rendering
-		static uniquePtr<class DirectionalShadowMap>    sunShadowMap;
-		static uniquePtr<class OmniShadowPass>          omniShadowPass;
+		static uniquePtr<class DirectionalShadowMap>      sunShadowMap;
+		static uniquePtr<class OmniShadowPass>            omniShadowPass;
 
 		// Local & global illumination
-		static uniquePtr<DirectLightingPass>            directLightingPass;
-		static uniquePtr<IndirectLightingPass>          indirectLightingPass;
-		static uniquePtr<ScreenSpaceReflectionPass>     screenSpaceReflectionPass;
+		static uniquePtr<class DirectLightingPass>        directLightingPass;
+		static uniquePtr<class IndirectLightingPass>      indirectLightingPass;
+		static uniquePtr<class ScreenSpaceReflectionPass> screenSpaceReflectionPass;
 
 		// Sky & atmosphere
-		static uniquePtr<class SkyboxPass>              skyboxPass;
-		static uniquePtr<class PanoramaSkyPass>         panoramaSkyPass;
-		static uniquePtr<class SkyAtmospherePass>       skyAtmospherePass;
-		static uniquePtr<class VolumetricCloudPass>     volumetricCloud;
+		static uniquePtr<class SkyboxPass>                skyboxPass;
+		static uniquePtr<class PanoramaSkyPass>           panoramaSkyPass;
+		static uniquePtr<class SkyAtmospherePass>         skyAtmospherePass;
+		static uniquePtr<class VolumetricCloudPass>       volumetricCloud;
 
 		// Translucency
-		static uniquePtr<class TranslucencyRendering>   translucency_pass;
+		static uniquePtr<class TranslucencyRendering>     translucency_pass;
 
 		// Auto exposure
-		static uniquePtr<class AutoExposurePass>        autoExposurePass;
+		static uniquePtr<class AutoExposurePass>          autoExposurePass;
 
 		// Debug rendering
-		static uniquePtr<class VisualizeBufferPass>     visualizeBuffer;
-		static uniquePtr<class VisualizeLightProbePass> visualizeLightProbe;
+		static uniquePtr<class VisualizeBufferPass>       visualizeBuffer;
+		static uniquePtr<class VisualizeLightProbePass>   visualizeLightProbe;
+		static uniquePtr<class VisualizeSkyOcclusionPass> visualizeSkyOcclusionPass;
 
 		// Post-processing
-		static uniquePtr<class GodRay>                  godRay;
-		static uniquePtr<class SSAO>                    ssao;
-		static uniquePtr<class BloomSetup>              bloomSetup;
-		static uniquePtr<class BloomPass>               bloomPass;
-		static uniquePtr<class ToneMapping>             toneMapping;
-		static uniquePtr<class FXAA>                    fxaa;
-		static uniquePtr<class TAA>                     taa;
-		static uniquePtr<class FSR1>                    fsr1;
-		static uniquePtr<class DepthOfField>            depthOfField;
+		static uniquePtr<class GodRay>                    godRay;
+		static uniquePtr<class SSAO>                      ssao;
+		static uniquePtr<class BloomSetup>                bloomSetup;
+		static uniquePtr<class BloomPass>                 bloomPass;
+		static uniquePtr<class ToneMapping>               toneMapping;
+		static uniquePtr<class FXAA>                      fxaa;
+		static uniquePtr<class TAA>                       taa;
+		static uniquePtr<class FSR1>                      fsr1;
+		static uniquePtr<class DepthOfField>              depthOfField;
 
 	public:
 		SceneRenderer();

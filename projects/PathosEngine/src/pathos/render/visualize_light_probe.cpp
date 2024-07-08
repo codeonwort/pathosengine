@@ -4,6 +4,7 @@
 #include "pathos/rhi/buffer.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/render/image_based_lighting.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
@@ -14,6 +15,25 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_visLightProbe("r.visualizeLightProbe", 0, "0 = disable, 1 = enable");
 	static ConsoleVariable<float> cvar_visIrradianceProbeRadius("r.visualizeLightProbe.irradianceProbeRadius", 0.05f, "Radius of visualized probes in irradiance volumes (meters)");
 	static ConsoleVariable<float> cvar_visReflectionProbeRadius("r.visualizeLightProbe.reflectionProbeRadius", 1.0f, "Radius of visualized reflection probes (meters)");
+
+	struct UBO_VisualizeLightProbe {
+		static constexpr uint32 BINDING_SLOT = 1;
+
+		uint32 numIrradianceVolumes;
+		uint32 totalIrradianceProbes;
+		uint32 numReflectionProbes;
+		float irradianceProbeRadius;
+
+		float reflectionProbeRadius;
+		float irradianceAtlasWidth;
+		float irradianceAtlasHeight;
+		uint32 irradianceTileCountX;
+
+		uint32 irradianceTileSize;
+	};
+
+	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2;
+	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 3;
 
 	class VisualizeLightProbeVS : public ShaderStage {
 	public:
@@ -39,112 +59,51 @@ namespace pathos {
 
 namespace pathos {
 
-	struct UBO_VisualizeLightProbe {
-		uint32 numIrradianceVolumes;
-		uint32 totalIrradianceProbes;
-		uint32 numReflectionProbes;
-		float irradianceProbeRadius;
-
-		float reflectionProbeRadius;
-		float irradianceAtlasWidth;
-		float irradianceAtlasHeight;
-		uint32 irradianceTileCountX;
-
-		uint32 irradianceTileSize;
-	};
-	struct IrradianceVolumeInfo {
-		vector3 minBounds;
-		uint32 irradianceTileFirstID;
-		vector3 maxBounds;
-		uint32 numProbes;
-		vector3ui gridSize;
-		uint32 _pad0;
-	};
-	struct ReflectionProbeInfo {
-		vector3 positionWS;
-		float captureRadius;
-	};
-	static constexpr uint32 UBO_BINDING_SLOT = 1;
-	static constexpr uint32 SSBO_0_BINDING_SLOT = 2;
-	static constexpr uint32 SSBO_1_BINDING_SLOT = 3;
-
 	VisualizeLightProbePass::VisualizeLightProbePass() {}
 	VisualizeLightProbePass::~VisualizeLightProbePass() {}
 
 	void VisualizeLightProbePass::initializeResources(RenderCommandList& cmdList) {
 		auto attribs = EPrimitiveInitOptions::CalculatePosition | EPrimitiveInitOptions::CalculateUV | EPrimitiveInitOptions::CalculateNormal;
 		sphereGeom = new SphereGeometry(1.0f, 20, attribs);
-
 		gRenderDevice->createFramebuffers(1, &fbo);
-
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
-
-		const uint32 ssbo0Size = sizeof(IrradianceVolumeInfo) * (pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
-		ssbo0 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo0Size, nullptr, "SSBO_0_IndirectLighting" });
-		ssbo0->createGPUResource();
-
-		uint32 ssbo1Size = pathos::reflectionProbeMaxCount * sizeof(ReflectionProbeInfo);
-		ssbo1 = new Buffer(BufferCreateParams{ EBufferUsage::CpuWrite, ssbo1Size, nullptr, "SSBO_1_IndirectLighting" });
-		ssbo1->createGPUResource();
 	}
 
 	void VisualizeLightProbePass::releaseResources(RenderCommandList& cmdList) {
 		delete sphereGeom;
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		ubo.safeDestroy();
-		delete ssbo0;
-		delete ssbo1;
 	}
 
-	void VisualizeLightProbePass::render(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera)
-	{
+	void VisualizeLightProbePass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		if (cvar_visLightProbe.getInt() == 0) {
+			return;
+		}
+
+		SCOPED_DRAW_EVENT(VisualizeLightProbe);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
+		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
+
+		// Nothing to visualize
+		if (irradianceVolumeBuffer == 0 && reflectionProbeBuffer == 0) {
 			return;
 		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Prepare UBO & SSBO data
 
-		std::vector<IrradianceVolumeInfo> ssbo0Data;
-		for (const IrradianceVolumeProxy* proxy : scene->proxyList_irradianceVolume) {
-			IrradianceVolumeInfo ssboItem{
-				proxy->minBounds,
-				proxy->irradianceTileFirstID,
-				proxy->maxBounds,
-				proxy->numProbes,
-				proxy->gridSize
-			};
-			ssbo0Data.emplace_back(ssboItem);
-		}
-		std::vector<ReflectionProbeInfo> ssbo1Data;
-		for (const ReflectionProbeProxy* proxy : scene->proxyList_reflectionProbe) {
-			if (proxy->specularIBL != nullptr) {
-				ReflectionProbeInfo ssboItem{
-					proxy->positionWS,
-					proxy->captureRadius,
-				};
-				ssbo1Data.emplace_back(ssboItem);
-			}
-		}
-
-		// Nothing to visualize
-		if (ssbo0Data.size() == 0 && ssbo1Data.size() == 0) {
-			return;
-		}
-
 		uint32 totalIrradianceProbes = 0;
-		for (size_t i = 0; i < ssbo0Data.size(); ++i)
+		for (size_t i = 0; i < scene->proxyList_irradianceVolume.size(); ++i)
 		{
-			totalIrradianceProbes += ssbo0Data[i].numProbes;
+			totalIrradianceProbes += scene->proxyList_irradianceVolume[i]->numProbes;
 		}
 
 		UBO_VisualizeLightProbe uboData;
-		uboData.numIrradianceVolumes = (uint32)ssbo0Data.size();
+		uboData.numIrradianceVolumes = (uint32)scene->proxyList_irradianceVolume.size();
 		uboData.totalIrradianceProbes = totalIrradianceProbes;
-		uboData.numReflectionProbes = (uint32)ssbo1Data.size();
+		uboData.numReflectionProbes = (uint32)scene->proxyList_reflectionProbe.size();
 		uboData.irradianceProbeRadius = std::max(0.01f, cvar_visIrradianceProbeRadius.getFloat());
 		uboData.reflectionProbeRadius = std::max(0.01f, cvar_visReflectionProbeRadius.getFloat());
 		uboData.irradianceAtlasWidth = scene->irradianceAtlasWidth;
@@ -154,42 +113,37 @@ namespace pathos {
 
 		//////////////////////////////////////////////////////////////////////////
 
+		// Bind shader program
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeLightProbe);
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
 		cmdList.useProgram(program.getGLName());
 
-		// Change render states
-		cmdList.enable(GL_DEPTH_TEST);
-
+		// Bind framebuffer
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		cmdList.namedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, sceneContext.sceneDepth, 0);
-		
-		ubo.update(cmdList, UBO_BINDING_SLOT, &uboData);
-		if (uboData.numIrradianceVolumes > 0) {
-			GLsizeiptr bytes = ssbo0Data.size() * sizeof(IrradianceVolumeInfo);
-			ssbo0->writeToGPU_renderThread(cmdList, 0, bytes, ssbo0Data.data());
-			ssbo0->bindAsSSBO(cmdList, SSBO_0_BINDING_SLOT);
-		}
-		if (uboData.numReflectionProbes > 0) {
-			GLsizeiptr bytes = ssbo1Data.size() * sizeof(ReflectionProbeInfo);
-			ssbo1->writeToGPU_renderThread(cmdList, 0, bytes, ssbo1Data.data());
-			ssbo1->bindAsSSBO(cmdList, SSBO_1_BINDING_SLOT);
-		}
 
+		// Change render states
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+		
+		// Bind buffers
+		ubo.update(cmdList, UBO_VisualizeLightProbe::BINDING_SLOT, &uboData);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
+
+		// Bind textures
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		cmdList.bindTextureUnit(0, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(1, sceneContext.localSpecularIBLs);
 
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
+		// Drawcall
 		uint32 instanceCount = totalIrradianceProbes + uboData.numReflectionProbes;
 		sphereGeom->bindFullAttributesVAO(cmdList);
 		sphereGeom->drawPrimitive(cmdList, instanceCount);
 
+		// Restore render states
 		cmdList.disable(GL_DEPTH_TEST);
 	}
 

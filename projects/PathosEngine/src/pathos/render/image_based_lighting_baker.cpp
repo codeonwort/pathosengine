@@ -84,6 +84,26 @@ namespace pathos {
 
 namespace pathos {
 
+	class ReflectionProbeDownsampleCS : public ShaderStage {
+	public:
+		ReflectionProbeDownsampleCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeDownsampleCS") {
+			setFilepath("reflection_probe_downsample.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeDownsample, ReflectionProbeDownsampleCS);
+
+	class ReflectionProbeFilteringCS : public ShaderStage {
+	public:
+		ReflectionProbeFilteringCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeFilteringCS") {
+			setFilepath("reflection_probe_filtering.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeFiltering, ReflectionProbeFilteringCS);
+
+}
+
+namespace pathos {
+
 	GLuint ImageBasedLightingBaker::internal_BRDFIntegrationMap = 0xffffffff;
 	GLuint ImageBasedLightingBaker::dummyVAO = 0;
 	GLuint ImageBasedLightingBaker::dummyFBO = 0;
@@ -91,37 +111,6 @@ namespace pathos {
 	MeshGeometry* ImageBasedLightingBaker::fullscreenQuad = nullptr;
 	MeshGeometry* ImageBasedLightingBaker::dummyCube = nullptr;
 	matrix4 ImageBasedLightingBaker::cubeTransforms[6];
-
-	GLuint ImageBasedLightingBaker::projectPanoramaToCubemap(
-		GLuint equirectangularMap,
-		uint32 outputSize,
-		const char* debugName)
-	{
-		CHECK(isInMainThread());
-
-		GLuint cubemap = 0;
-		const std::string debugNameStr = debugName ? debugName : "";
-		
-		ENQUEUE_RENDER_COMMAND([equirectangularMap, outputSize, cubemapPtr = &cubemap, debugNameStr](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, cubemapPtr);
-			if (debugNameStr.size() > 0) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *cubemapPtr, -1, debugNameStr.c_str());
-			}
-
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(*cubemapPtr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureStorage2D(*cubemapPtr, 1, GL_RGB16F, outputSize, outputSize);
-
-			projectPanoramaToCubemap_renderThread(cmdList, equirectangularMap, *cubemapPtr, outputSize);
-		});
-		
-		FLUSH_RENDER_COMMAND();
-
-		return cubemap;
-	}
 
 	void ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
 		RenderCommandList& cmdList,
@@ -244,35 +233,6 @@ namespace pathos {
 		}
 	}
 
-	GLuint ImageBasedLightingBaker::bakeSkyIrradianceMap(
-		GLuint inputCubemap,
-		uint32 size,
-		bool bAutoDestroyCubemap,
-		const char* debugName)
-	{
-		CHECK(isInMainThread());
-
-		GLuint irradianceMap = 0;
-
-		ENQUEUE_RENDER_COMMAND([inputCubemap, size, bAutoDestroyCubemap, irradianceMapPtr = &irradianceMap, debugName](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, irradianceMapPtr);
-			if (debugName != nullptr) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *irradianceMapPtr, -1, debugName);
-			}
-			cmdList.textureStorage2D(*irradianceMapPtr, 1, GL_RGB16F, size, size);
-
-			bakeSkyIrradianceMap_renderThread(cmdList, inputCubemap, *irradianceMapPtr, size);
-
-			if (bAutoDestroyCubemap) {
-				cmdList.deleteTextures(1, &inputCubemap);
-			}
-		});
-
-		FLUSH_RENDER_COMMAND();
-
-		return irradianceMap;
-	}
-
 	void ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
 		RenderCommandList& cmdList,
 		GLuint inputSkyCubemap,
@@ -287,6 +247,52 @@ namespace pathos {
 		bakeDesc.depthTarget  = 0;
 		bakeDesc.viewportSize = targetSize;
 		bakeDiffuseIBL_renderThread(cmdList, inputSkyCubemap, 0, bakeDesc);
+	}
+
+	void ImageBasedLightingBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeReflectionProbe);
+
+		const uint32 BASE_SIZE = 128;
+		const uint32 MIP_COUNT = 7;
+		const uint32 MIPS_TOTAL_PIXELS = (128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1);
+
+		// Pass 1. Downsample
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeDownsample);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			uint32 inputCubemapSize = BASE_SIZE;
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				const uint32 targetCubemapSize = inputCubemapSize >> 1;
+				const uint32 numGroups = (targetCubemapSize + 7) / 8;
+
+				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
+				cmdList.bindTextureUnit(0, srcCubemap);
+				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+				cmdList.dispatchCompute(numGroups, numGroups, 6);
+
+				inputCubemapSize = targetCubemapSize;
+			}
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
+		}
+
+		// Pass 2. Filtering
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeFiltering);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(dstCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+			const uint32 numGroups = (MIPS_TOTAL_PIXELS + 63) / 64;
+			cmdList.bindTextureUnit(0, srcCubemap);
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+			}
+			cmdList.dispatchCompute(numGroups, 6, 1);
+		}
 	}
 
 	void ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
@@ -339,29 +345,6 @@ namespace pathos {
 
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
-	}
-
-	void ImageBasedLightingBaker::bakeSkyPrefilteredEnvMap(GLuint cubemap, uint32 targetSize, GLuint& outEnvMap, uint32& outMipLevels, const char* debugName) {
-		CHECK(isInMainThread());
-
-		GLuint envMap = 0;
-		uint32 maxMipLevels = std::min(static_cast<uint32>(floor(log2(targetSize)) + 1), 5u);
-
-		ENQUEUE_RENDER_COMMAND([cubemap, targetSize, envMapPtr = &envMap, maxMipLevels, debugName](RenderCommandList& cmdList) {
-			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, envMapPtr);
-			if (debugName != nullptr) {
-				gRenderDevice->objectLabel(GL_TEXTURE, *envMapPtr, -1, debugName);
-			}
-			cmdList.textureStorage2D(*envMapPtr, maxMipLevels, GL_RGB16F, targetSize, targetSize);
-			cmdList.generateTextureMipmap(*envMapPtr);
-
-			bakeSpecularIBL_renderThread(cmdList, cubemap, targetSize, maxMipLevels, *envMapPtr);
-		});
-
-		FLUSH_RENDER_COMMAND();
-
-		outEnvMap = envMap;
-		outMipLevels = maxMipLevels;
 	}
 
 	GLuint ImageBasedLightingBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
@@ -433,6 +416,9 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO);
 		gRenderDevice->deleteFramebuffers(1, &ImageBasedLightingBaker::dummyFBO_2color);
 		gRenderDevice->deleteTextures(1, &ImageBasedLightingBaker::internal_BRDFIntegrationMap);
+		// Just cleanup references as they are owned by gEngine.
+		ImageBasedLightingBaker::fullscreenQuad = nullptr;
+		ImageBasedLightingBaker::dummyCube = nullptr;
 	}
 
 	DEFINE_GLOBAL_RENDER_ROUTINE(ImageBasedLightingBaker, ImageBasedLightingBaker::internal_createIrradianceBakerResources, ImageBasedLightingBaker::internal_destroyIrradianceBakerResources);

@@ -26,7 +26,7 @@ MaterialAttributes getMaterialAttributes() {
 	//        (but they are constants for now, so no matters)
 	vec3 P = interpolants.position * 4.0;
 	vec3 N = normalize(interpolants.normal);
-	vec3 T = normalize(interpolants.tangent);
+	vec3 T = normalize(interpolants.tangent.xyz);
 	vec3 B = normalize(interpolants.bitangent);
 
 	vec3 blendWeights = abs(N);

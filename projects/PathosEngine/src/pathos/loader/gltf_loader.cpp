@@ -6,6 +6,8 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/point_light_component.h"
+#include "pathos/scene/directional_light_component.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
 
@@ -58,12 +60,14 @@ namespace pathos {
 		LOG(LogInfo, "[GLTF] Textures: %u", (uint32)tinyModel->textures.size());
 		LOG(LogInfo, "[GLTF] Materials: %u", (uint32)tinyModel->materials.size());
 		LOG(LogInfo, "[GLTF] Meshes: %u", (uint32)tinyModel->meshes.size());
+		LOG(LogInfo, "[GLTF] Lights: %u", (uint32)tinyModel->lights.size());
 		LOG(LogInfo, "[GLTF] Nodes: %u", (uint32)tinyModel->nodes.size());
 		LOG(LogInfo, "[GLTF] Scenes: %u", (uint32)tinyModel->scenes.size());
 
 		parseTextures(tinyModel.get());
 		parseMaterials(tinyModel.get());
 		parseMeshes(tinyModel.get());
+		parseLights(tinyModel.get());
 
 		const size_t totalNodes = tinyModel->nodes.size();
 		transformParentIx.resize(totalNodes, -1);
@@ -75,7 +79,10 @@ namespace pathos {
 			}
 
 			GLTFModelDesc desc{};
+			desc.name = tinyNode.name;
+			// Mesh
 			desc.mesh = (tinyNode.mesh != -1) ? meshes[tinyNode.mesh] : nullptr;
+			// Transform
 			if (tinyNode.translation.size() >= 3) {
 				desc.translation.x = (float)tinyNode.translation[0];
 				desc.translation.y = (float)tinyNode.translation[1];
@@ -87,20 +94,26 @@ namespace pathos {
 				desc.scale.z = (float)tinyNode.scale[2];
 			}
 			if (tinyNode.rotation.size() >= 4) {
-				glm::quat q(
-					(float)tinyNode.rotation[0], (float)tinyNode.rotation[1],
-					(float)tinyNode.rotation[2], (float)tinyNode.rotation[3]);
-				vector3 rot = glm::eulerAngles(q);
-				// #todo-gltf: Rotation values mapping?
-				desc.rotation.pitch = glm::degrees(rot.x) * 2.0f;
-				desc.rotation.yaw = glm::degrees(rot.y) + 180.0f;
-				desc.rotation.roll = glm::degrees(rot.z) * 2.0f;
-				desc.rotation.clampValues();
-				//LOG(LogDebug, "[GLTF] node=%u, pitch=%f yaw=%f roll=%f", nodeIx, desc.rotation.pitch, desc.rotation.yaw, desc.rotation.roll);
+				// GLTF rotation is (x, y, z, w) but glm::quat is (w, x, y, z)
+				glm::quat q((float)tinyNode.rotation[3], (float)tinyNode.rotation[0], (float)tinyNode.rotation[1], (float)tinyNode.rotation[2]);
+				vector3 rot = glm::eulerAngles(q); // Maps to ZYX rotation ( why not documented :/ )
+
+				desc.rotation.pitch = glm::degrees(rot.x);
+				desc.rotation.yaw = glm::degrees(rot.y);
+				desc.rotation.roll = glm::degrees(rot.z);
+				desc.rotation.convention = RotatorConvention::ZYX;
 			}
 			if (tinyNode.matrix.size() >= 16) {
 				// #todo-gltf: Parse matrix
 				LOG(LogWarning, "[GLTF] Should parse matrix");
+			}
+			// Extensions
+			if (tinyNode.extensions.size() > 0) {
+				auto lightIt = tinyNode.extensions.find("KHR_lights_punctual");
+				if (lightIt != tinyNode.extensions.end()) {
+					// Index in tinyModel->lights
+					desc.lightIndex = lightIt->second.Get("light").GetNumberAsInt();
+				}
 			}
 
 			finalModels.push_back(desc);
@@ -156,23 +169,38 @@ namespace pathos {
 				geometry->calculateNormals();
 			}
 
-			// #todo-gltf: Parse tangent
-			geometry->calculateTangentBasis();
+			if (pending.tangentBlob != nullptr) {
+				geometry->updateTangentData((float*)pending.tangentBlob, pending.tangentLength);
+				if (pending.bShouldFreeTangent) {
+					delete[] pending.tangentBlob;
+				}
+				geometry->calculateBitangentOnly();
+			} else {
+				geometry->calculateTangentBasis();
+			}
 		}
 	}
 
-	void GLTFLoader::attachToActor(Actor* targetActor) {
+	void GLTFLoader::attachToActor(Actor* targetActor, std::vector<SceneComponent*>* outComponents) {
 		finalizeGPUUpload();
 
 		uint32 numStaticMeshComponents = 0;
-		uint32 numSceneComponents = 0;
+		uint32 numPointLightComponents = 0;
+		uint32 numDirectionalLightComponents = 0;
+		uint32 numSceneComponents = 0; // Placeholders not recognized as concrete components.
 		uint32 numSkipped = 0; // tinyNodes not referenced by tinyScene.
 
 		std::vector<SceneComponent*> comps(numModels(), nullptr);
+		if (outComponents != nullptr) {
+			outComponents->clear();
+		}
 		for (size_t i = 0; i < numModels(); ++i) {
 			const GLTFModelDesc& desc = getModel(i);
 			if (desc.bReferencedByScene == false) {
 				++numSkipped;
+				if (outComponents != nullptr) {
+					outComponents->push_back(nullptr);
+				}
 				continue;
 			}
 
@@ -181,6 +209,29 @@ namespace pathos {
 				StaticMeshComponent* smc = static_cast<StaticMeshComponent*>(comps[i]);
 				smc->setStaticMesh(desc.mesh);
 				++numStaticMeshComponents;
+			} else if (desc.lightIndex != -1) {
+				const auto& lightDesc = pendingLights[desc.lightIndex];
+				if (lightDesc.type == GLTFPendingLight::EType::Point) {
+					comps[i] = new PointLightComponent;
+					PointLightComponent* lightComp = static_cast<PointLightComponent*>(comps[i]);
+					lightComp->color = lightDesc.point.color;
+					lightComp->intensity = lightDesc.point.intensity / (3.14f * 4.0f);
+					lightComp->attenuationRadius = lightDesc.point.attenuationRadius;
+					++numPointLightComponents;
+				} else if (lightDesc.type == GLTFPendingLight::EType::Directional) {
+					comps[i] = new DirectionalLightComponent;
+					DirectionalLightComponent* lightComp = static_cast<DirectionalLightComponent*>(comps[i]);
+					lightComp->color = lightDesc.directional.color;
+					lightComp->illuminance = lightDesc.directional.intensity;
+					lightComp->direction = matrix3(desc.rotation.toMatrix()) * vector3(0, -1, 0);
+					lightComp->direction.y *= -1;
+					++numDirectionalLightComponents;
+				} else {
+					// #todo-gltf: Spot and area lights
+					LOG(LogWarning, "[GLTF] Spot and area lights are not supported yet: %s", desc.name.c_str());
+					comps[i] = new SceneComponent;
+					++numSceneComponents;
+				}
 			} else {
 				comps[i] = new SceneComponent;
 				++numSceneComponents;
@@ -190,6 +241,9 @@ namespace pathos {
 			comps[i]->setRotation(desc.rotation);
 
 			targetActor->registerComponent(comps[i]);
+			if (outComponents != nullptr) {
+				outComponents->push_back(comps[i]);
+			}
 		}
 		for (size_t i = 0; i < numModels(); ++i) {
 			if (getModel(i).bReferencedByScene == false) {
@@ -202,8 +256,12 @@ namespace pathos {
 			}
 		}
 
-		LOG(LogInfo, "[GLTF] Num static meshes = %u, Num placeholders = %u, Num skipped = %u",
-			numStaticMeshComponents, numSceneComponents, numSkipped);
+		LOG(LogInfo, "[GLTF] Try to create %u components:", (uint32)numModels());
+		LOG(LogInfo, "[GLTF] - Static meshes      : %u", numStaticMeshComponents);
+		LOG(LogInfo, "[GLTF] - Point lights       : %u", numPointLightComponents);
+		LOG(LogInfo, "[GLTF] - Directional lights : %u", numDirectionalLightComponents);
+		LOG(LogInfo, "[GLTF] - Placeholders       : %u", numSceneComponents);
+		LOG(LogInfo, "[GLTF] - Skipped            : %u", numSkipped);
 	}
 
 	void GLTFLoader::parseTextures(tinygltf::Model* tinyModel) {
@@ -401,71 +459,111 @@ namespace pathos {
 					CHECK(numPos != 0);
 
 					// Texcoord buffer
-					auto it_uv0 = tinyPrim.attributes.find("TEXCOORD_0");
-					uint8* uvBlob = nullptr;
-					bool bTempUV = false;
-					bool bFlipTexcoordY = false;
-					float* tempUV = nullptr;
-					if (it_uv0 != tinyPrim.attributes.end()) {
-						const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
-						const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
-						CHECK(uvDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-						CHECK(uvDesc.type == TINYGLTF_TYPE_VEC2);
+					{
+						auto it_uv0 = tinyPrim.attributes.find("TEXCOORD_0");
+						uint8* uvBlob = nullptr;
+						bool bUseTempUV = false;
+						bool bFlipTexcoordY = false;
+						float* tempUV = nullptr;
+						if (it_uv0 != tinyPrim.attributes.end()) {
+							const tinygltf::Accessor& uvDesc = tinyModel->accessors[it_uv0->second];
+							const tinygltf::BufferView& uvView = tinyModel->bufferViews[uvDesc.bufferView];
+							CHECK(uvDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							CHECK(uvDesc.type == TINYGLTF_TYPE_VEC2);
 
-						uvBlob = getBlobPtr(uvDesc);
-						if (uvView.byteStride == 0) {
-							bFlipTexcoordY = true;
+							uvBlob = getBlobPtr(uvDesc);
+							if (uvView.byteStride == 0) {
+								bFlipTexcoordY = true;
+							} else {
+								bUseTempUV = true;
+								tempUV = new float[numPos * 2];
+								for (uint32 i = 0; i < numPos; ++i) {
+									float* curr = (float*)uvBlob;
+									tempUV[i * 2 + 0] = curr[0];
+									tempUV[i * 2 + 1] = 1.0f - curr[1];
+									uvBlob += uvView.byteStride;
+								}
+							}
 						} else {
+							bUseTempUV = true;
 							tempUV = new float[numPos * 2];
 							for (uint32 i = 0; i < numPos; ++i) {
-								float* curr = (float*)uvBlob;
-								tempUV[i * 2 + 0] = curr[0];
-								tempUV[i * 2 + 1] = 1.0f - curr[1];
-								uvBlob += uvView.byteStride;
+								tempUV[i * 2 + 0] = tempUV[i * 2 + 1] = 0.0f;
 							}
 						}
-					} else {
-						tempUV = new float[numPos * 2];
-						for (uint32 i = 0; i < numPos; ++i) {
-							tempUV[i * 2 + 0] = tempUV[i * 2 + 1] = 0.0f;
+						pending.uvBlob = bUseTempUV ? (void*)tempUV : (void*)uvBlob;
+						pending.uvLength = numPos * 2;
+						pending.bShouldFreeUV = bUseTempUV;
+						pending.bFlipTexcoordY = bFlipTexcoordY;
+						// #todo-gltf: Other UV channels
+						if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
+							//LOG(LogDebug, "[GLTF] Need to parse TEXCOORD_1");
 						}
-					}
-					pending.uvBlob = bTempUV ? (void*)tempUV : (void*)uvBlob;
-					pending.uvLength = numPos * 2;
-					pending.bShouldFreeUV = bTempUV;
-					pending.bFlipTexcoordY = bFlipTexcoordY;
-					// #todo-gltf: Other UV channels
-					if (tinyPrim.attributes.find("TEXCOORD_1") != tinyPrim.attributes.end()) {
-						//LOG(LogDebug, "[GLTF] Need to parse TEXCOORD_1");
 					}
 
 					// Normal buffer
-					auto it_n = tinyPrim.attributes.find("NORMAL");
-					uint8* normBlob = nullptr;
-					bool bTempNormal = false;
-					float* tempN = nullptr;
-					if (it_n != tinyPrim.attributes.end()) {
-						const tinygltf::Accessor& normDesc = tinyModel->accessors[it_n->second];
-						const tinygltf::BufferView& normView = tinyModel->bufferViews[normDesc.bufferView];
-						CHECK(normDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-						CHECK(normDesc.type == TINYGLTF_TYPE_VEC3);
+					{
+						auto it_n = tinyPrim.attributes.find("NORMAL");
+						uint8* normBlob = nullptr;
+						bool bTempNormal = false;
+						float* tempN = nullptr;
+						if (it_n != tinyPrim.attributes.end()) {
+							const tinygltf::Accessor& normDesc = tinyModel->accessors[it_n->second];
+							const tinygltf::BufferView& normView = tinyModel->bufferViews[normDesc.bufferView];
+							CHECK(normDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							CHECK(normDesc.type == TINYGLTF_TYPE_VEC3);
 
-						normBlob = getBlobPtr(normDesc);
-						if (normView.byteStride != 0) {
-							bTempNormal = true;
-							tempN = new float[numPos * 3];
-							for (uint32 i = 0; i < numPos; ++i) {
-								float* curr = (float*)normBlob;
-								tempN[i * 3 + 0] = curr[0];
-								tempN[i * 3 + 1] = curr[1];
-								tempN[i * 3 + 2] = curr[2];
-								normBlob += normView.byteStride;
+							normBlob = getBlobPtr(normDesc);
+							if (normView.byteStride != 0) {
+								bTempNormal = true;
+								tempN = new float[numPos * 3];
+								for (uint32 i = 0; i < numPos; ++i) {
+									float* curr = (float*)normBlob;
+									tempN[i * 3 + 0] = curr[0];
+									tempN[i * 3 + 1] = curr[1];
+									tempN[i * 3 + 2] = curr[2];
+									normBlob += normView.byteStride;
+								}
 							}
 						}
+						pending.normalBlob = bTempNormal ? (void*)tempN : (void*)normBlob;
+						pending.normalLength = numPos * 3;
+						pending.bShouldFreeNormal = bTempNormal;
 					}
-					pending.normalBlob = bTempNormal ? (void*)tempN : (void*)normBlob;
-					pending.normalLength = numPos * 3;
-					pending.bShouldFreeNormal = bTempNormal;
+
+					// Tangent buffer
+					// NOTE: Blender does not export tangents for non-triangulated meshes.
+					{
+						auto it_tan = tinyPrim.attributes.find("TANGENT");
+						uint8* tanBlob = nullptr;
+						uint32 tanLength = 0;
+						bool bTempTangent = false;
+						float* tempT = nullptr;
+						if (it_tan != tinyPrim.attributes.end()) {
+							const tinygltf::Accessor& tanDesc = tinyModel->accessors[it_tan->second];
+							const tinygltf::BufferView& tanView = tinyModel->bufferViews[tanDesc.bufferView];
+							CHECK(tanDesc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							CHECK(tanDesc.type == TINYGLTF_TYPE_VEC4);
+
+							tanBlob = getBlobPtr(tanDesc);
+							tanLength = (uint32)tanDesc.count * 4;
+							if (tanView.byteStride != 0) {
+								bTempTangent = true;
+								tempT = new float[tanLength];
+								for (uint32 i = 0; i < numPos; ++i) {
+									float* curr = (float*)tanBlob;
+									tempT[i * 3 + 0] = curr[0];
+									tempT[i * 3 + 1] = curr[1];
+									tempT[i * 3 + 2] = curr[2];
+									tempT[i * 3 + 3] = 1.0f; // #todo-geometry: tangent w
+									tanBlob += tanView.byteStride;
+								}
+							}
+						}
+						pending.tangentBlob = bTempTangent ? (void*)tempT : (void*)tanBlob;
+						pending.tangentLength = tanLength;
+						pending.bShouldFreeTangent = bTempTangent;
+					}
 
 					pendingGeometries.push_back(pending);
 
@@ -483,6 +581,30 @@ namespace pathos {
 			}
 
 			meshes.push_back(mesh);
+		}
+	}
+
+	void GLTFLoader::parseLights(tinygltf::Model* tinyModel) {
+		for (size_t lightIx = 0; lightIx < tinyModel->lights.size(); ++lightIx) {
+			const tinygltf::Light& tinyLight = tinyModel->lights[lightIx];
+			GLTFPendingLight light;
+
+			if (tinyLight.type == "point") {
+				light.type = GLTFPendingLight::EType::Point;
+				light.point.color = vector3(tinyLight.color[0], tinyLight.color[1], tinyLight.color[2]);
+				light.point.intensity = (float)tinyLight.intensity;
+				light.point.attenuationRadius = (float)tinyLight.range;
+			} else if (tinyLight.type == "directional") {
+				light.type = GLTFPendingLight::EType::Directional;
+				light.point.color = vector3(tinyLight.color[0], tinyLight.color[1], tinyLight.color[2]);
+				light.point.intensity = (float)tinyLight.intensity;
+			} else {
+				// #todo-gltf: "spot" and "area"
+				LOG(LogWarning, "[GLTF] Light type not supported yet: %s (%s)", tinyLight.type.data(), tinyLight.name.data());
+				continue;
+			}
+
+			pendingLights.emplace_back(light);
 		}
 	}
 

@@ -45,17 +45,19 @@ namespace pathos {
 		// #note-geometry:
 		// - GL uses GLsizeiptr(int64), but I'm restricting to uint32.
 		// - 'length' can be confusing. It means the number of elements, not total bytes.
-		void updatePositionData(const GLfloat* data, uint32 length);
-		void updateUVData(const GLfloat* data, uint32 length, bool bFlipY = false);
-		void updateNormalData(const GLfloat* data, uint32 length);
-		void updateTangentData(const GLfloat* data, uint32 length);
-		void updateBitangentData(const GLfloat* data, uint32 length);
 
-		void updateIndexData(const GLuint* data, uint32 length);
-		void updateIndex16Data(const uint16* data, uint32 length);
+		void updatePositionData(const GLfloat* data, uint32 length);                // data: flattened array of vec3, length: the number of floats
+		void updateUVData(const GLfloat* data, uint32 length, bool bFlipY = false); // data: flattened array of vec2, length: the number of floats
+		void updateNormalData(const GLfloat* data, uint32 length);                  // data: flattened array of vec3, length: the number of floats
+		void updateTangentData(const GLfloat* data, uint32 length);                 // data: flattened array of vec4, length: the number of floats
+		void updateBitangentData(const GLfloat* data, uint32 length);               // data: flattened array of vec3, length: the number of floats
+
+		void updateIndexData(const GLuint* data, uint32 length);                    // data: flattened array of uvec3, length: the number of uints
+		void updateIndex16Data(const uint16* data, uint32 length);                  // data: flattened array of ushort3, length: the number of shorts
 
 		void calculateNormals();
 		void calculateTangentBasis();
+		void calculateBitangentOnly();
 		void calculateLocalBounds();
 
 		inline vector3 getPosition(uint32 index) const { return positionData[index]; }
@@ -88,7 +90,7 @@ namespace pathos {
 		std::vector<vector3> positionData;
 		std::vector<vector2> uvData;
 		std::vector<vector3> normalData;
-		std::vector<vector3> tangentData;
+		std::vector<vector4> tangentData;
 		std::vector<vector3> bitangentData;
 		
 		std::vector<GLuint>  indexData;

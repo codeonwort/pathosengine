@@ -15,8 +15,7 @@ namespace pathos {
 
 	class VisualizeBufferFS : public ShaderStage {
 	public:
-		VisualizeBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeBufferFS")
-		{
+		VisualizeBufferFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeBufferFS") {
 			setFilepath("visualize_buffer.glsl");
 		}
 	};

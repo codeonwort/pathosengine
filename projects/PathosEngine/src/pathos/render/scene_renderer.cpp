@@ -27,8 +27,13 @@
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
 #include "pathos/render/visualize_light_probe.h"
+#include "pathos/render/visualize_sky_occlusion.h"
 #include "pathos/render/auto_exposure.h"
 #include "pathos/render/forward/translucency_rendering.h"
+#include "pathos/render/direct_lighting.h"
+#include "pathos/render/indirect_lighting.h"
+#include "pathos/render/resolve_unlit.h"
+#include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
 #include "pathos/render/postprocessing/bloom.h"
@@ -70,7 +75,6 @@ namespace pathos {
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_frustum_culling("r.frustum_culling", 1, "0 = disable, 1 = enable");
-	static ConsoleVariable<int32> cvar_indirectLighting("r.indirectLighting", 1, "0 = disable, 1 = enable");
 	static ConsoleVariable<int32> cvar_enable_ssr("r.ssr.enable", 1, "0 = disable SSR, 1 = enable SSR");
 	static ConsoleVariable<int32> cvar_enable_bloom("r.bloom", 1, "0 = disable bloom, 1 = enable bloom");
 	static ConsoleVariable<int32> cvar_enable_dof("r.dof.enable", 1, "0 = disable DoF, 1 = enable DoF");
@@ -149,13 +153,16 @@ namespace pathos {
 		const EAutoExposureMode autoExposureMode = (EAutoExposureMode)badger::clamp(0, cvar_exposure_mode.getInt(), 2);
 		
 		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
-		const bool bRenderGodRay                  = (bLightProbeRendering == false);
-		const bool bRenderVolumetricCloud         = (bLightProbeRendering == false);
-		const bool bRenderIndirectLighting        = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
-		const bool bRenderSSR                     = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
-		const bool bRenderAutoExposure            = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
-		const bool bRenderLightProbeVisualization = (bLightProbeRendering == false);
-		const bool bRenderBufferVisualization     = (bLightProbeRendering == false);
+		const bool bRenderGodRay                    = (bLightProbeRendering == false);
+		const bool bRenderVolumetricCloud           = (bLightProbeRendering == false);
+		// #todo-light-probe: Render sky for light probes?
+		const bool bRenderSky                       = true || (bLightProbeRendering == false);
+		const bool bRenderIndirectLighting          = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
+		const bool bRenderSSR                       = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
+		const bool bRenderAutoExposure              = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
+		const bool bRenderLightProbeVisualization   = (bLightProbeRendering == false);
+		const bool bRenderBufferVisualization       = (bLightProbeRendering == false);
+		const bool bRenderSkyOcclusionVisualization = (bLightProbeRendering == false);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -312,8 +319,7 @@ namespace pathos {
 				//int32 numActiveSkies = (int32)bRenderSkybox + (int32)bRenderPanorama + (int32)bRenderAtmosphere;
 				//CHECKF(numActiveSkies <= 1, "At most one sky representation is allowed at the same time");
 			}
-			const bool bSceneProxyNeedsSky = (scene->sceneProxySource == SceneProxySource::MainScene || scene->sceneProxySource == SceneProxySource::SceneCapture);
-			if (bSceneProxyNeedsSky) {
+			if (bRenderSky) {
 				if (scene->isSkyboxValid()) {
 					skyboxPass->renderSkybox(cmdList, scene);
 				} else if (scene->isPanoramaSkyValid()) {
@@ -369,6 +375,8 @@ namespace pathos {
 		}
 
 		if (bRenderLightProbeVisualization) {
+			SCOPED_CPU_COUNTER(VisualizeLightProbe);
+			SCOPED_GPU_COUNTER(VisualizeLightProbe);
 			visualizeLightProbe->render(cmdList, scene, camera);
 		}
 
@@ -632,6 +640,12 @@ namespace pathos {
 			visualizeBuffer->render(cmdList, scene, camera);
 		}
 
+		if (bRenderSkyOcclusionVisualization) {
+			SCOPED_CPU_COUNTER(VisualizeSkyOcclusion);
+			SCOPED_GPU_COUNTER(VisualizeSkyOcclusion);
+			visualizeSkyOcclusionPass->renderSkyOcclusion(cmdList, scene, camera);
+		}
+
 		sceneRenderTargets = nullptr;
 		scene = nullptr;
 		camera = nullptr;
@@ -801,6 +815,7 @@ namespace pathos {
 	// Debug rendering
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
+	uniquePtr<VisualizeSkyOcclusionPass> SceneRenderer::visualizeSkyOcclusionPass;
 
 	// Post-processing
 	uniquePtr<GodRay>                    SceneRenderer::godRay;
@@ -886,6 +901,9 @@ namespace pathos {
 
 			visualizeLightProbe = makeUnique<VisualizeLightProbePass>();
 			visualizeLightProbe->initializeResources(cmdList);
+
+			visualizeSkyOcclusionPass = makeUnique<VisualizeSkyOcclusionPass>();
+			visualizeSkyOcclusionPass->initializeResources(cmdList);
 		}
 
 		{
@@ -941,6 +959,7 @@ namespace pathos {
 
 		RELEASEPASS(visualizeBuffer);
 		RELEASEPASS(visualizeLightProbe);
+		RELEASEPASS(visualizeSkyOcclusionPass);
 
 		RELEASEPASS(godRay);
 		RELEASEPASS(ssao);

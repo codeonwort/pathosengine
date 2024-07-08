@@ -23,21 +23,27 @@ namespace pathos {
 	class ImageBasedLightingBaker {
 
 	public:
-		// Generate irradiance cubemap from radiance capture cubemap.
-		// @param inputRadianceCubemap : Radiance cubemap.
-		// @param inputDepthCubemap    : Depth cubemap.
-		// @param bakeDesc             : Irradiance map desc.
+		/// <summary>
+		/// Generate irradiance cubemap from radiance capture cubemap.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="inputRadianceCubemap">Input radiance cubemap</param>
+		/// <param name="inputDepthCubemap">Input depth cubemap</param>
+		/// <param name="bakeDesc">Baking options</param>
 		static void bakeDiffuseIBL_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputRadianceCubemap,
 			GLuint inputDepthCubemap,
 			const IrradianceMapBakeDesc& bakeDesc);
 
-		// Render specular IBL to an existing cubemap.
-		// @param inputTexture  : Radiance cubemap.
-		// @param textureSize   : Width and height of outputTexture.
-		// @param numMips       : Mip count of outputTexture.
-		// @param outputTexture : Cubemap render target. Should be a valid GL texture.
+		/// <summary>
+		/// Render specular IBL cubemap from radiance capture cubemap.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="inputTexture">Input radiance cubemap</param>
+		/// <param name="outputTextureSize">Output cubemap size</param>
+		/// <param name="numMips">The number of mips to render</param>
+		/// <param name="outputTexture">Output cubemap</param>
 		static void bakeSpecularIBL_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
@@ -45,59 +51,40 @@ namespace pathos {
 			uint32 numMips,
 			GLuint outputTexture);
 
-		// -----------------------------------------------------------------------
-		// API for sky IBL but obsolete.
-		// - Assumes sky is static.
-		// - Flushes render thread and GPU.
-
-		// Create a cubemap equivalent of the given equirectangular 2D texture.
-		// NOTE: Flush render thread and GPU.
-		// @param equirectangularMap : 2D input texture.
-		// @param size               : Output cubemap size.
-		// @param debugName          : Output cubemap's GL name.
-		static GLuint projectPanoramaToCubemap(
-			GLuint equirectangularMap,
-			uint32 size,
-			const char* debugName = nullptr);
-
-		// Render the given equirectangular (panorama) texture to the cubemap.
-		// @param cmdList           : Render command list.
-		// @param inputTexture      : Input panorama texture2D.
-		// @param outputTexture     : Output textureCube.
-		// @param outputTextureSize : Output texture size.
+		/// <summary>
+		/// Render the given equirectangular (panorama) texture to the cubemap texture.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="inputTexture">Input panorama texture2D</param>
+		/// <param name="outputTexture">Output textureCube</param>
+		/// <param name="outputTextureSize">Output texture size</param>
 		static void projectPanoramaToCubemap_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
 			GLuint outputTexture,
 			uint32 outputTextureSize);
 
-		// Create a cubemap texture and bake irradiance to it.
-		// NOTE: Flush render thread and GPU.
-		// @param inputCubemap             : Radiance cubemap from which irradiance will be integrated.
-		// @param size                     : Size of the cubemap that will be returned.
-		// @param bAutoDestroyInputCubemap : Destroy input cubemap texture after irradiance map is generated.
-		// @param debugName                : GL debug name of the returned texture.
-		// @return Name of GL texture that represents irradiance map.
-		static GLuint bakeSkyIrradianceMap(
-			GLuint inputCubemap,
-			uint32 size,
-			bool bAutoDestroyInputCubemap,
-			const char* debugName = nullptr);
-
+		/// <summary>
+		/// Similar to bakeDiffuseIBL_renderThread(), but only for sky lighting.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="inputSkyCubemap">Sky cubemap from which irradiance will be integrated</param>
+		/// <param name="targetCubemap">Target cubemap to store sky irradiance map</param>
+		/// <param name="targetSize">The size of target cubemap</param>
 		static void bakeSkyIrradianceMap_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputSkyCubemap,
 			GLuint targetCubemap,
 			uint32 targetSize);
 
-		// Create a cubemap texture and bake specular IBL to it.
-		// NOTE: Flush render thread and GPU.
-		static void bakeSkyPrefilteredEnvMap(
-			GLuint cubemap,
-			uint32 targetSize,
-			GLuint& outEnvMap,
-			uint32& outMipLevels,
-			const char* debugName = nullptr);
+		/// <summary>
+		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
+		/// Therefore sky specular IBLs still use old impl.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="srcCubemap">Radiance-captured cubemap. Should have size of 128 and mip count of 7.</param>
+		/// <param name="dstCubemap">Cubemap that will store the filtering result. Should have size of 128 and mip count of 7.</param>
+		static void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
 
 		// -----------------------------------------------------------------------
 

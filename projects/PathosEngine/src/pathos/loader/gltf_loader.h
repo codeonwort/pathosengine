@@ -18,10 +18,13 @@ namespace pathos {
 	class Mesh;
 	class MeshGeometry;
 	class Actor;
+	class SceneComponent;
 	struct ImageBlob;
 
 	struct GLTFModelDesc {
+		std::string name;
 		Mesh* mesh = nullptr;
+		int32 lightIndex = -1;
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
 		Rotator rotation;
@@ -68,6 +71,29 @@ namespace pathos {
 		void* normalBlob;
 		uint32 normalLength;
 		bool bShouldFreeNormal;
+
+		void* tangentBlob;
+		uint32 tangentLength;
+		bool bShouldFreeTangent;
+	};
+
+	struct GLTFPendingLight {
+		enum class EType { Point, Directional, Spot, Area };
+		struct PointLight {
+			vector3 color;
+			float intensity;
+			float attenuationRadius;
+		};
+		struct DirectionalLight {
+			vector3 color;
+			float intensity;
+		};
+
+		EType type;
+		union {
+			PointLight point;
+			DirectionalLight directional;
+		};
 	};
 
 	class GLTFLoader final : public Noncopyable {
@@ -81,8 +107,10 @@ namespace pathos {
 
 		void finalizeGPUUpload();
 
-		// Craft StaticMeshComponents and attach to the actor.
-		void attachToActor(Actor* targetActor);
+		// Craft components and attach to the actor.
+		// If outComponents is not null, outComponents[i] contains a component corresponding to getModel(i).
+		// outComponents[i] is null if a component was not created for that model for some reason.
+		void attachToActor(Actor* targetActor, std::vector<SceneComponent*>* outComponents = nullptr);
 
 		// NOTE: Should finalize first.
 		size_t numModels() const { return finalModels.size(); }
@@ -92,6 +120,7 @@ namespace pathos {
 		void parseTextures(tinygltf::Model* tinyModel);
 		void parseMaterials(tinygltf::Model* tinyModel);
 		void parseMeshes(tinygltf::Model* tinyModel);
+		void parseLights(tinygltf::Model* tinyModel);
 		void checkSceneReference(tinygltf::Model* tinyModel, int32 sceneIndex, std::vector<GLTFModelDesc>& finalModels);
 
 	private:
@@ -102,6 +131,7 @@ namespace pathos {
 		std::vector<GLTFPendingTexture> pendingTextures;
 		std::vector<GLTFPendingTextureParameter> pendingTextureParameters;
 		std::vector<GLTFPendingGeometry> pendingGeometries;
+		std::vector<GLTFPendingLight> pendingLights;
 
 		std::vector<Material*> materials;
 		std::vector<Mesh*> meshes;

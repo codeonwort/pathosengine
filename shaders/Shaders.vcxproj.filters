@@ -82,5 +82,10 @@
     <None Include="auto_exposure_histogram_gen.glsl" />
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
+    <None Include="core\image_based_lighting.glsl" />
+    <None Include="visualize_sky_occlusion.glsl" />
+    <None Include="reflection_probe_downsample.glsl" />
+    <None Include="reflection_probe_filtering.glsl" />
+    <None Include="reflection_probe_coeffs_const_32.glsl" />
   </ItemGroup>
 </Project>

@@ -13,6 +13,9 @@ namespace pathos {
 	class SceneProxy;
 	class MeshGeometry;
 	class Buffer;
+	template<typename> class ConsoleVariable;
+
+	extern ConsoleVariable<int32> cvar_indirectLighting;
 
 	class IndirectLightingPass {
 
@@ -32,8 +35,6 @@ namespace pathos {
 	private:
 		GLuint fbo = 0xffffffff;
 		UniformBuffer ubo;
-		Buffer* ssbo0 = nullptr; // For irradiance volume
-		Buffer* ssbo1 = nullptr; // For reflection probe
 
 		bool destroyed = false;
 

@@ -22,6 +22,11 @@
 #include "badger/math/constants.h"
 #include "badger/math/minmax.h"
 
+
+// Initial values
+static vector3     SUN_DIRECTION     = vector3(0.0f, -1.0f, -1.0f);
+static vector3     SUN_COLOR         = vector3(1.0f);
+static float       SUN_ILLUMINANCE   = 1000.0f;
 static const char* SKY_PANORAMA_HDRI = "resources/skybox/HDRI/Ridgecrest_Road_Ref.hdr";
 
 class RotationBoard : public DisplayObject2D {
@@ -143,6 +148,10 @@ void World_ModelViewer::onInitialize() {
 
 	toggleSkyActor();
 	toggleProbeGI();
+
+	sunDirection = SUN_DIRECTION;
+	sunColor = SUN_COLOR;
+	sunIlluminance = SUN_ILLUMINANCE;
 
 	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(sunDirection);
@@ -393,15 +402,16 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 
 	AABB originalWorldBounds = getActorWorldBounds(modelActor);
 
-	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.1f);
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 0.9f * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.
 	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
 	vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
 	// Limit the size of the probe grid.
 	probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
-	if (probeGrid.x * probeGrid.y * probeGrid.z > pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY) {
-		double total = (double)(pathos::irradianceProbeTileCountX * pathos::irradianceProbeTileCountY);
+	const auto& atlasDesc = getScene().getIrradianceProbeAtlasDesc();
+	if (probeGrid.x * probeGrid.y * probeGrid.z > atlasDesc.totalTileCount()) {
+		double total = (double)(atlasDesc.totalTileCount());
 		uint32 n = (uint32)(std::pow(total, 1.0 / 3.0));
 		probeGrid = vector3ui(n, n, n);
 	}
@@ -412,7 +422,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(worldBounds.minBounds, worldBounds.maxBounds, probeGrid);
 
-	worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), originalWorldBounds.getHalfSize() * 1.5f);
+	worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 1.5f * originalWorldBounds.getHalfSize());
 	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
 	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
 	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));
@@ -484,18 +494,15 @@ bool World_ModelViewer::toggleProbeGI() {
 	};
 	auto cvarUpdateIndirectDiffuse  = findCVar("r.indirectLighting.updateIrradianceProbesPerFrame");
 	auto cvarUpdateIndirectSpecular = findCVar("r.indirectLighting.updateReflectionProbesPerFrame");
-	auto cvarApplyIndirectDiffuse   = findCVar("r.indirectLighting.probeDiffuse");
-	auto cvarApplyIndirectSpecular  = findCVar("r.indirectLighting.probeSpecular");
+	auto cvarIndirectLighting       = findCVar("r.indirectLighting");
 	if (bEnableProbeGI) {
 		setCVarInt(cvarUpdateIndirectDiffuse,  1);
 		setCVarInt(cvarUpdateIndirectSpecular, 1);
-		setCVarInt(cvarApplyIndirectDiffuse,   1);
-		setCVarInt(cvarApplyIndirectSpecular,  1);
+		setCVarInt(cvarIndirectLighting,       1);
 	} else {
 		setCVarInt(cvarUpdateIndirectDiffuse,  0);
 		setCVarInt(cvarUpdateIndirectSpecular, 0);
-		setCVarInt(cvarApplyIndirectDiffuse,   0);
-		setCVarInt(cvarApplyIndirectSpecular,  0);
+		setCVarInt(cvarIndirectLighting,       0);
 	}
 	bEnableProbeGI = !bEnableProbeGI;
 	return !bEnableProbeGI;

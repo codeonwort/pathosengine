@@ -2,23 +2,18 @@
 
 #include "core/common.glsl"
 #include "core/brdf.glsl"
+#include "core/image_based_lighting.glsl"
 #include "deferred_common.glsl"
 
-// #todo-light-probe: SH encoding for indirect diffuse
+// #todo-light-probe: Finish indirect lighting shader
+#define COSINE_WEIGHTED_INTERPOLATION    0
+#define PROBE_VISIBILITY_AWARE           0
 
-struct IrradianceVolume {
-	vec3 minBounds;
-	uint firstTileID;
-	vec3 maxBounds;
-	uint numProbes;
-	uvec3 gridSize;
-	float captureRadius;
-};
-
-struct ReflectionProbe {
-	vec3 positionWS;
-	float captureRadius;
-};
+#define LIGHTINGMODE_NONE                0
+#define LIGHTINGMODE_ALL                 1
+#define LIGHTINGMODE_DIFFUSE_ONLY        2
+#define LIGHTINGMODE_SKY_DIFFUSE_ONLY    3
+#define LIGHTINGMODE_SPECULAR_ONLY       4
 
 // --------------------------------------------------------
 // Input
@@ -32,7 +27,7 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	float skyLightBoost;
 	float diffuseBoost;
 	float specularBoost;
-	float _pad0;
+	uint  lightingMode; // cvar_indirectLighting
 
 	float skyReflectionProbeMaxLOD;
 	float reflectionProbeMaxLOD; // Max LOD of local reflection probes
@@ -45,11 +40,11 @@ layout (std140, binding = 1) uniform UBO_IndirectLighting {
 	uint irradianceTileSize;
 } ubo;
 
-layout (std140, binding = 2) readonly buffer SSBO_0_IndirectLighting {
+layout (std140, binding = 2) readonly buffer SSBO_IrradianceVolume {
 	IrradianceVolume irradianceVolumeInfo[];
 } ssbo0;
 
-layout (std140, binding = 3) readonly buffer SSBO_1_IndirectLighting {
+layout (std140, binding = 3) readonly buffer SSBO_ReflectionProbe {
 	ReflectionProbe reflectionProbeInfo[];
 } ssbo1;
 
@@ -61,7 +56,7 @@ layout (binding = 4) uniform samplerCube      skyIrradianceProbe;     // Sky dif
 layout (binding = 5) uniform samplerCube      skyReflectionProbe;     // Sky specular IBL
 layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
 layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Prefiltered local specular IBLs
-layout (binding = 8) uniform sampler2D        irradianceAtlas;        // ONV-encoded irradiance maps from local irradiance probes
+layout (binding = 8) uniform sampler2D        irradianceProbeAtlas;   // ONV-encoded irradiance maps from local irradiance probes
 layout (binding = 9) uniform sampler2D        depthProbeAtlas;        // ONV-encoded linear depths from local irradiance probes
 
 // --------------------------------------------------------
@@ -71,6 +66,25 @@ layout (location = 0) out vec4 outSceneColor;
 
 // --------------------------------------------------------
 // Shader
+
+struct ProbeDesc {
+	uint probeIx; // probe linear index in irradiance volume
+	uint tileIx;  // corresponding tile index in probe atlas
+	vec3 center;  // center position in world space
+};
+
+void getExtendedBounds(IrradianceVolume vol, out vec3 minBounds, out vec3 maxBounds) {
+	vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
+	vec3 volSize = vol.maxBounds - vol.minBounds;
+	vec3 cellSize = volSize / fNumCells;
+
+	minBounds = vol.minBounds - cellSize;
+	maxBounds = vol.maxBounds + cellSize;
+}
+
+bool isPositionInBounds(vec3 position, vec3 minBounds, vec3 maxBounds) {
+	return all(lessThanEqual(minBounds, position)) && all(lessThan(position, maxBounds));
+}
 
 // See scene.cpp
 uvec2 getIrradianceTileTexel(uint tileID) {
@@ -90,189 +104,239 @@ vec4 getIrradianceTileBounds(uint tileID) {
 	return bounds;
 }
 
-float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
-	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
+// If the position is in extended bounds, some probes are duplicated.
+void findIrradianceProbes(vec3 position, IrradianceVolume vol, out ProbeDesc probes[8]) {
+	uvec3 maxGridCoord   = vol.gridSize - uvec3(1, 1, 1);
+	vec3 fNumCells       = vec3(maxGridCoord);
+	vec3 volSize         = vol.maxBounds - vol.minBounds;
+	vec3 cellSize        = volSize / fNumCells;
+	vec3 localUVW        = (position - vol.minBounds) / volSize;
+	ivec3 firstGridCoord = clamp(ivec3(localUVW * fNumCells), ivec3(0, 0, 0), ivec3(maxGridCoord));
+	bvec3 axisIn         = lessThanEqual(vol.minBounds, position) && lessThan(position, vol.maxBounds);
+
+	for (uint i = 0; i < 8; ++i) {
+		uvec3 gridCoordOffset = uvec3(axisIn) * uvec3(i & 1, (i & 3) >> 1, i >> 2);
+		uvec3 gridCoord       = uvec3(firstGridCoord) + gridCoordOffset;
+		uint probeIx          = gridCoord.x + (gridCoord.y * vol.gridSize.x) + (gridCoord.z * vol.gridSize.x * vol.gridSize.y);
+		probes[i].probeIx     = probeIx;
+		probes[i].tileIx      = probeIx + vol.firstTileID;
+		probes[i].center      = vol.minBounds + vec3(gridCoord) * cellSize;
+	}
 }
 
-vec3 mixProbeSamples(vec3 L0, vec3 L1, bool b0, bool b1, float k) {
-	if (b0 && b1) return mix(L0, L1, k);
-	if (b0 && !b1) return L0;
-	if (!b0 && b1) return L1;
-	return vec3(1.0, 0.0, 0.0);
-}
+vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
+	const vec3 surfacePositionWS = gbufferData.ws_coords;
+	const vec3 surfaceNormalWS   = gbufferData.ws_normal;
 
-vec3 getImageBasedLighting(GBufferData gbufferData) {
-	vec3 N = gbufferData.normal;
-	vec3 V = normalize(uboPerFrame.cameraPositionVS - gbufferData.vs_coords);
-	float NdotV = max(dot(N, V), 0.0);
-
-	vec3 N_world = gbufferData.ws_normal;
-	vec3 V_world = normalize(uboPerFrame.cameraPositionWS - gbufferData.ws_coords);
-	vec3 R_world = reflect(-V_world, N_world);
-
-	vec3 albedo = gbufferData.albedo;
-	float metallic = gbufferData.metallic;
-	float roughness = gbufferData.roughness;
-	float localAO = gbufferData.ao;
-
-	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, min(albedo, vec3(1.0)), metallic);
-	
-	vec3 Lo = vec3(0.0);
-
-	vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
-
-	vec3 kS = F;
-	vec3 kD = (1.0 - metallic) * (1.0 - kS);
-
-	// Diffuse GI
+	// Find an irradiance volume that contains the surface position.
 	int irradianceVolumeIndex = -1;
+	bool inExtendedBounds = false;
 	for (uint i = 0; i < ubo.numIrradianceVolumes; ++i) {
 		IrradianceVolume vol = ssbo0.irradianceVolumeInfo[i];
-		bool bInside = all(lessThanEqual(vol.minBounds, gbufferData.ws_coords))
-			&& all(lessThan(gbufferData.ws_coords, vol.maxBounds));
-
-		if (bInside) {
+		if (isPositionInBounds(surfacePositionWS, vol.minBounds, vol.maxBounds)) {
 			irradianceVolumeIndex = int(i);
 			break;
 		}
 	}
-	vec3 diffuseIndirect = vec3(0.0);
 	if (irradianceVolumeIndex == -1) {
-		diffuseIndirect = texture(skyIrradianceProbe, N_world).rgb * albedo;
-		diffuseIndirect *= ubo.skyLightBoost;
-	} else {
-		// #todo: Move some calculations to UBO or SSBO
-		IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
-		vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
-		vec3 volSize = vol.maxBounds - vol.minBounds;
-		vec3 cellSize = volSize / fNumCells;
-		vec3 relPos = (gbufferData.ws_coords - vol.minBounds) / volSize; // [0, 1)
-		uvec3 minGridCoord = uvec3(relPos * fNumCells);
-		
-		vec3 diffuseSamples[8];
-		bool diffuseSamplesValid[8];
-		vec3 probeMinPos = vol.minBounds + vec3(minGridCoord) * cellSize;
-
-// 0: Just leak
-// 1: Zero value from non-visible probes, but just interpolate.
-// 2: Completely ignore non-visible probes.
-#define LIGHT_LEAK_SOLUTION 0
-
-		for (uint i = 0; i < 8; ++i) {
-			uvec3 gridCoordOffset = uvec3(i & 1, (i & 3) >> 1, i >> 2);
-			uvec3 gridCoord = minGridCoord + gridCoordOffset;
-			uint probeIx = gridCoord.x
-				+ gridCoord.y * vol.gridSize.x
-				+ gridCoord.z * (vol.gridSize.x * vol.gridSize.y);
-			
-			uint tileIx = probeIx + vol.firstTileID;
-			vec2 encodedUV = ONVEncode(N_world);
-			vec4 uvBounds = getIrradianceTileBounds(tileIx);
-			vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
-
-			diffuseSamples[i] = textureLod(irradianceAtlas, atlasUV, 0).rgb;
-			
-			vec3 probePos = vol.minBounds + vec3(gridCoord) * cellSize;
-			vec3 N_probe = normalize(gbufferData.ws_coords - probePos);
-			vec2 probeDepthLocalUV = ONVEncode(N_probe);
-			vec2 probeDepthAtlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * probeDepthLocalUV;
-			float probeDepth = textureLod(depthProbeAtlas, probeDepthAtlasUV, 0).r;
-
-			diffuseSamplesValid[i] = dot(N_world, N_probe) <= 0.0 && length(gbufferData.ws_coords - probePos) <= probeDepth;
-#if LIGHT_LEAK_SOLUTION == 1
-			if (diffuseSamplesValid[i] == false) diffuseSamples[i] = vec3(0.0, 0.0, 0.0);
-#endif
+		vec3 extendedMin, extendedMax;
+		for (uint i = 0; i < ubo.numIrradianceVolumes; ++i) {
+			getExtendedBounds(ssbo0.irradianceVolumeInfo[i], extendedMin, extendedMax);
+			if (isPositionInBounds(surfacePositionWS, extendedMin, extendedMax)) {
+				irradianceVolumeIndex = int(i);
+				inExtendedBounds = true;
+				break;
+			}
 		}
-
-		// Trilinear interpolation
-		vec3 ratio = (gbufferData.ws_coords - probeMinPos) / cellSize;
-
-#if LIGHT_LEAK_SOLUTION == 2
-		// Dafuq is this
-		vec3 C00 = mixProbeSamples(diffuseSamples[0], diffuseSamples[1], diffuseSamplesValid[0], diffuseSamplesValid[1], ratio.x);
-		vec3 C01 = mixProbeSamples(diffuseSamples[2], diffuseSamples[3], diffuseSamplesValid[2], diffuseSamplesValid[3], ratio.x);
-		vec3 C10 = mixProbeSamples(diffuseSamples[4], diffuseSamples[5], diffuseSamplesValid[4], diffuseSamplesValid[5], ratio.x);
-		vec3 C11 = mixProbeSamples(diffuseSamples[6], diffuseSamples[7], diffuseSamplesValid[6], diffuseSamplesValid[7], ratio.x);
-		vec3 C0 = mixProbeSamples(C00, C01, diffuseSamplesValid[0] || diffuseSamplesValid[1], diffuseSamplesValid[2] || diffuseSamplesValid[3], ratio.y);
-		vec3 C1 = mixProbeSamples(C10, C11, diffuseSamplesValid[4] || diffuseSamplesValid[5], diffuseSamplesValid[6] || diffuseSamplesValid[7], ratio.y);
-		vec3 C = mixProbeSamples(
-			C0, C1,
-			diffuseSamplesValid[0] || diffuseSamplesValid[1] || diffuseSamplesValid[2] || diffuseSamplesValid[3],
-			diffuseSamplesValid[4] || diffuseSamplesValid[5] || diffuseSamplesValid[6] || diffuseSamplesValid[7],
-			ratio.z);
-#else
-		vec3 C00 = mix(diffuseSamples[0], diffuseSamples[1], ratio.x);
-		vec3 C01 = mix(diffuseSamples[2], diffuseSamples[3], ratio.x);
-		vec3 C10 = mix(diffuseSamples[4], diffuseSamples[5], ratio.x);
-		vec3 C11 = mix(diffuseSamples[6], diffuseSamples[7], ratio.x);
-		vec3 C0 = mix(C00, C01, ratio.y);
-		vec3 C1 = mix(C10, C11, ratio.y);
-		vec3 C = mix(C0, C1, ratio.z);
-#endif
-
-		diffuseIndirect = C;
-		diffuseIndirect *= ubo.diffuseBoost;
 	}
 
-	// Specular GI
-	// Select closest reflection probe.
-	int localSpecularIndex = -1;
-	float reflectionProbeMinDist = 60000.0f;
+	// If not in an irradiance volume, just return sky lighting.
+	if (irradianceVolumeIndex == -1) {
+		return ubo.skyLightBoost * texture(skyIrradianceProbe, surfaceNormalWS).rgb;
+	}
+
+	const IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
+	ProbeDesc[8] probes;
+	findIrradianceProbes(surfacePositionWS, vol, probes);
+
+	vec4 samples[8];
+	float weights[8], totalWeights = 0.0;
+#if PROBE_VISIBILITY_AWARE
+	bool visibility[8];
+#endif
+
+	for (uint i = 0; i < 8; ++i) {
+		ProbeDesc probe = probes[i];
+		vec4 uvBounds = getIrradianceTileBounds(probe.tileIx);
+		vec3 probeToSurface = normalize(surfacePositionWS - probe.center);
+
+		// Sample irradiance probe
+		vec2 encodedUV = ONVEncode(surfaceNormalWS);
+		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
+		samples[i] = textureLod(irradianceProbeAtlas, atlasUV, 0);
+
+		// Calculate probe weight
+		weights[i] = max(0.0, dot(surfaceNormalWS, -probeToSurface));
+		totalWeights += weights[i];
+
+#if PROBE_VISIBILITY_AWARE
+		// Sample depth probe
+		vec2 probeDepthLocalUV = ONVEncode(probeToSurface);
+		vec2 probeDepthAtlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * probeDepthLocalUV;
+		float probeDepth = textureLod(depthProbeAtlas, probeDepthAtlasUV, 0).r;
+
+		// Test visibility
+		float distanceToProbe = length(surfacePositionWS - probe.center);
+		const float tolerance = 0.005;
+		// dot() is for backface check
+		visibility[i] = dot(surfaceNormalWS, probeToSurface) <= 0.0 && distanceToProbe - tolerance <= probeDepth;
+		if (visibility[i] == false) {
+			totalWeights -= weights[i];
+			weights[i] = 0.0;
+		}
+#endif
+	}
+
+	vec3 irradiance = vec3(0.0);
+#if COSINE_WEIGHTED_INTERPOLATION
+	if (skyLightingOnly) {
+		float skyOcclusion = 0.0;
+		for (uint i = 0; i < 8; ++i) {
+			skyOcclusion += samples[i].w * weights[i] / totalWeights;
+		}
+		skyOcclusion = min(1, skyOcclusion);
+		irradiance = ubo.skyLightBoost * skyOcclusion * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+	} else {
+		for (uint i = 0; i < 8; ++i) {
+			irradiance += samples[i].xyz * weights[i] / totalWeights;
+		}
+		irradiance = max(vec3(0.0), ubo.diffuseBoost * irradiance);
+	}
+#else
+	// Trilinear interpolation
+	vec3 fNumCells = vec3(vol.gridSize - uvec3(1, 1, 1));
+	vec3 volSize   = vol.maxBounds - vol.minBounds;
+	vec3 cellSize  = volSize / fNumCells;
+	vec3 ratio     = (surfacePositionWS - probes[0].center) / cellSize;
+
+	if (skyLightingOnly) {
+		float C00 = mix(samples[0].w, samples[1].w, ratio.x);
+		float C01 = mix(samples[2].w, samples[3].w, ratio.x);
+		float C10 = mix(samples[4].w, samples[5].w, ratio.x);
+		float C11 = mix(samples[6].w, samples[7].w, ratio.x);
+		float C0  = mix(C00, C01, ratio.y);
+		float C1  = mix(C10, C11, ratio.y);
+		float C   = mix(C0, C1, ratio.z); // skyOcclusion
+
+		irradiance = ubo.skyLightBoost * C * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+	} else {
+		vec3 C00 = mix(samples[0].xyz, samples[1].xyz, ratio.x);
+		vec3 C01 = mix(samples[2].xyz, samples[3].xyz, ratio.x);
+		vec3 C10 = mix(samples[4].xyz, samples[5].xyz, ratio.x);
+		vec3 C11 = mix(samples[6].xyz, samples[7].xyz, ratio.x);
+		vec3 C0  = mix(C00, C01, ratio.y);
+		vec3 C1  = mix(C10, C11, ratio.y);
+		vec3 C   = mix(C0, C1, ratio.z);
+
+		irradiance = ubo.diffuseBoost * C;
+	}
+#endif
+
+	return irradiance;
+}
+
+vec3 getIndirectSpecular(GBufferData gbufferData) {
+	const vec3 surfacePositionWS   = gbufferData.ws_coords;
+	const vec3 surfaceNormalWS     = gbufferData.ws_normal;
+	const float roughness          = gbufferData.roughness;
+	const vec3 viewDirectionWS     = normalize(uboPerFrame.cameraPositionWS - surfacePositionWS);
+	const vec3 specularDirectionWS = reflect(-viewDirectionWS, surfaceNormalWS);
+
+	// Find the closest reflection probe.
+	int probeIndex = -1;
+	float probeMinDist = 60000.0f;
 	for (uint i = 0; i < ubo.numReflectionProbes; ++i) {
 		ReflectionProbe probe = ssbo1.reflectionProbeInfo[i];
-		float dist = length(gbufferData.ws_coords - probe.positionWS);
+		float dist = length(surfacePositionWS - probe.positionWS);
 		// #todo: Fetch probe depth and check if this reflection probe is visible from the surface point.
-		if (dist <= probe.captureRadius && dist < reflectionProbeMinDist) {
-			dist = reflectionProbeMinDist;
-			localSpecularIndex = int(i);
+		if (dist <= probe.captureRadius && dist < probeMinDist) {
+			dist = probeMinDist;
+			probeIndex = int(i);
 		}
 	}
+
+	// Sample the reflection probe.
 	vec3 specularSample;
-	if (localSpecularIndex == -1) {
-		specularSample = textureLod(skyReflectionProbe, R_world, roughness * ubo.skyReflectionProbeMaxLOD).rgb;
+	if (probeIndex == -1) {
+		specularSample = textureLod(skyReflectionProbe, specularDirectionWS, roughness * ubo.skyReflectionProbeMaxLOD).rgb;
 		specularSample *= ubo.skyLightBoost;
 	} else {
-		vec4 R4 = vec4(R_world, float(localSpecularIndex));
+		vec4 R4 = vec4(specularDirectionWS, float(probeIndex));
 		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.reflectionProbeMaxLOD).rgb;
 		specularSample *= ubo.specularBoost;
-		//if (localSpecularIndex == 0) specularSample = vec3(10.0, 10.0, 0.0);
-		//if (localSpecularIndex == 1) specularSample = vec3(0.0, 10.0, 0.0);
-		//if (localSpecularIndex == 2) specularSample = vec3(0.0, 0.0, 10.0);
-		//if (localSpecularIndex == 3) specularSample = vec3(10.0, 0.0, 10.0);
+		//if (probeIndex == 0) specularSample = vec3(10.0, 10.0, 0.0);
+		//if (probeIndex == 1) specularSample = vec3(0.0, 10.0, 0.0);
+		//if (probeIndex == 2) specularSample = vec3(0.0, 0.0, 10.0);
+		//if (probeIndex == 3) specularSample = vec3(10.0, 0.0, 10.0);
 	}
-	vec2 envBRDF          = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
-	vec3 specularIndirect = specularSample * (kS * envBRDF.x + envBRDF.y);
 
-	// Ambient occlusion
-	// NOTE: Applying occlusion AFTER integrating over hemisphere
-	//       is physically wrong but that's a limit of IBL approaches.
-	float ssaoSample = texture2D(ssaoMap, fs_in.screenUV).r;
+	return specularSample;
+}
 
-	vec3 finalIrradiance = kD * albedo * diffuseIndirect;
-	finalIrradiance += specularIndirect;
-	finalIrradiance *= ssaoSample;
+vec3 getImageBasedLighting(GBufferData gbufferData) {
+	const vec3 surfacePositionWS   = gbufferData.ws_coords;
+	const vec3 surfaceNormalWS     = gbufferData.ws_normal;
+	const vec3 viewDirectionWS     = normalize(uboPerFrame.cameraPositionWS - surfacePositionWS);
+	const float NdotV              = max(0.0, dot(surfaceNormalWS, viewDirectionWS));
 
-	return finalIrradiance;
+	const vec3 albedo              = gbufferData.albedo;
+	const float metallic           = gbufferData.metallic;
+	const float roughness          = gbufferData.roughness;
+
+	const vec3 F0                  = mix(vec3(0.04), min(albedo, vec3(1.0)), metallic);
+	const vec3 F                   = fresnelSchlickRoughness(NdotV, F0, roughness);
+	const vec3 kS                  = F;
+	const vec3 kD                  = (1.0 - metallic) * (1.0 - kS);
+	const vec2 envBRDF             = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
+
+	vec3 diffuseIndirect  = vec3(0.0);
+	vec3 specularIndirect = vec3(0.0);
+	uint lightingMode     = ubo.lightingMode;
+	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_DIFFUSE_ONLY || lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY) {
+		diffuseIndirect = getIndirectDiffuse(gbufferData, lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY);
+	}
+	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_SPECULAR_ONLY) {
+		specularIndirect = getIndirectSpecular(gbufferData);
+	}
+	float ambientOcclusion = texture2D(ssaoMap, fs_in.screenUV).r;
+
+	vec3 finalLighting = kD * albedo * diffuseIndirect;
+	finalLighting += (kS * envBRDF.x + envBRDF.y) * specularIndirect;
+	// NOTE: Applying occlusion after integrating over hemisphere is physically wrong.
+	// #todo-light-probe: Specular occlusion for indirect specular
+	finalLighting *= ambientOcclusion;
+
+	return finalLighting;
 }
 
 vec3 getGlobalIllumination(GBufferData gbufferData) {
-	uint shadingModel = gbufferData.material_id;
-	vec3 irradiance = vec3(0.0);
+	const uint shadingModel = gbufferData.material_id;
+	vec3 lighting = vec3(0.0);
 
 	if (shadingModel == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
-		irradiance.rgb = getImageBasedLighting(gbufferData);
+		lighting.rgb = getImageBasedLighting(gbufferData);
 	}
 
-	return irradiance;
+	return lighting;
 }
 
 void main() {
 	GBufferData gbufferData;
 	unpackGBuffer(ivec2(gl_FragCoord.xy), gbufferA, gbufferB, gbufferC, gbufferData);
 
-	vec3 irradiance = getGlobalIllumination(gbufferData);
-	irradiance.rgb = max(vec3(0.0), irradiance.rgb);
+	vec3 lighting = getGlobalIllumination(gbufferData);
+	lighting = max(vec3(0.0), lighting);
 
-	outSceneColor = vec4(irradiance, 0.0);
+	// Additive blending
+	outSceneColor = vec4(lighting, 0.0);
 }

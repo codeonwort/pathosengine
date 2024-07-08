@@ -12,6 +12,9 @@ namespace pathos {
 			setAsRootComponent(probeComponent);
 		}
 
+		virtual void onSpawn() override;
+		virtual void onDestroy() override;
+
 		void captureScene();
 
 		void setCaptureRadius(float radius) { probeComponent->captureRadius = radius; }

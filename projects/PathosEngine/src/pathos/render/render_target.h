@@ -1,7 +1,10 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/smart_pointer.h"
+
 #include "badger/types/int_types.h"
+#include "badger/assertion/assertion.h"
 
 namespace pathos {
 
@@ -9,8 +12,13 @@ namespace pathos {
 	class RenderTarget2D;
 	class RenderTargetCube;
 
+	// If add a new field, must deal with it in the following functions:
+	// - RENDER_TARGET_FORMAT_TO_GL_FORMAT()
+	// - RENDER_TARGET_FORMAT_isColorFormat()
+	// - RENDER_TARGET_FORMAT_isDepthFormat()
 	enum class RenderTargetFormat : uint8
 	{
+		R8F,
 		R16F,
 
 		RGBA16F,

@@ -18,14 +18,13 @@ namespace pathos {
 
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
+
 		void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
 		SphereGeometry* sphereGeom = nullptr;
 		GLuint fbo = 0;
 		UniformBuffer ubo;
-		Buffer* ssbo0 = nullptr; // For irradiance volume
-		Buffer* ssbo1 = nullptr; // For reflection probes
 
 	};
 

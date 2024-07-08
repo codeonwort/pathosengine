@@ -19,6 +19,9 @@
 namespace pathos {
 
 	class Fence;
+	class Buffer;
+	class DirectionalLightComponent;
+
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 
 	enum class SceneProxySource : uint8 {
@@ -56,8 +59,8 @@ namespace pathos {
 		void finalize_mainThread();
 
 		// DO NOT USE. Dirty hack :(
-		inline void internal_setSunComponent(class DirectionalLightComponent* dirLightComponent) { tempSunComponent = dirLightComponent; }
-		inline class DirectionalLightComponent* internal_getSunComponent() { return tempSunComponent; }
+		inline void internal_setSunComponent(DirectionalLightComponent* dirLightComponent) { tempSunComponent = dirLightComponent; }
+		inline DirectionalLightComponent* internal_getSunComponent() { return tempSunComponent; }
 		inline Fence* internal_getFence() const { return fence; }
 		inline uint64 internal_getFenceValue() const { return fenceValue; }
 
@@ -109,8 +112,8 @@ namespace pathos {
 		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
 
 		// Standard mesh proxies
-		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshOpaque;
-		std::vector<struct StaticMeshProxy*>       proxyList_staticMeshTranslucent;
+		StaticMeshProxyList                        proxyList_staticMeshOpaque;
+		StaticMeshProxyList                        proxyList_staticMeshTranslucent;
 		
 		bool                                       bInvalidateSkyLighting = false;
 		struct SkyboxProxy*                        skybox = nullptr;
@@ -120,24 +123,25 @@ namespace pathos {
 
 		// #todo-godray: Wrap with GodRayProxy class.
 		//               These are filled by Scene::createRenderProxy() for now.
-		std::vector<StaticMeshProxy*>              godRayMeshes;
+		StaticMeshProxyList                        godRayMeshes;
 		vector3                                    godRayLocation = vector3(0.0f);
 		vector3                                    godRayColor = vector3(1.0f, 0.5f, 0.0f);
 		float                                      godRayIntensity = 1.0f;
 
+		// Light probe
 		GLuint                                     irradianceAtlas = 0;
 		GLuint                                     depthProbeAtlas = 0;
 		float                                      irradianceAtlasWidth = 0.0f;
 		float                                      irradianceAtlasHeight = 0.0f;
 		uint32                                     irradianceTileCountX = 0;
 		uint32                                     irradianceTileSize = 0;
-
-		// Light probe based GI
 		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
+		GLuint                                     irradianceVolumeBuffer = 0;
+		GLuint                                     reflectionProbeBuffer = 0;
 
 	private:
-		class DirectionalLightComponent*           tempSunComponent = nullptr;
+		DirectionalLightComponent*                 tempSunComponent = nullptr;
 
 		Fence*                                     fence;
 		uint64                                     fenceValue;

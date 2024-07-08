@@ -59,14 +59,17 @@ void main() {
 #endif
 
     vec3 irradiance = vec3(0.0);
+#if ONV_ENCODING
+    float skyVisibility = 0.0f;
+#endif
 
     vec3 up    = vec3(0.0, 1.0, 0.0);
     vec3 right = cross(up, dir);
     up         = cross(dir, right);
 
-    // #todo: Loop count ~= 15562
-    // Should optimize this.
-    float sampleDelta = 0.025;
+    // #todo: Loop count ~= 7781
+    // Should optimize this. Maybe https://www.activision.com/cdn/research/paper_egsr.pdf
+    float sampleDelta = 0.05;
     float nrSamples = 0.0;
     for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta) {
         for (float theta = 0.0; theta < 0.5 * PI; theta += sampleDelta) {
@@ -79,14 +82,23 @@ void main() {
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * dir;
 
             irradiance += texture(inRadianceCubemap, sampleVec).rgb * cosTheta * sinTheta;
+#if ONV_ENCODING
+            float isSky = texture(inDepthCubemap, sampleVec).r > 64000.0 ? 1.0 : 0.0;
+            skyVisibility += isSky * cosTheta * sinTheta;
+#endif
             nrSamples++;
         }
     }
     irradiance = PI * irradiance * (1.0 / float(nrSamples));
-
-    outIrradiance = vec4(irradiance, 1.0);
 #if ONV_ENCODING
+    skyVisibility = PI * skyVisibility * (1.0 / float(nrSamples));
+#endif
+
+#if ONV_ENCODING
+    outIrradiance = vec4(irradiance, skyVisibility);
     outLinearDepth = texture(inDepthCubemap, dir).r;
+#else
+    outIrradiance = vec4(irradiance, 1.0);
 #endif
 }
 

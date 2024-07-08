@@ -58,9 +58,9 @@ private:
 	IrradianceVolumeActor* irradianceVolume = nullptr;
 	std::vector<ReflectionProbeActor*> reflectionProbes;
 
-	vector3 sunDirection = vector3(0.0f, -1.0f, -1.0f);
-	vector3 sunColor = vector3(1.0f);
-	float sunIlluminance = 10000.0f;
+	vector3 sunDirection;
+	vector3 sunColor;
+	float sunIlluminance;
 
 	// GUI
 	pathos::Button* btn_load            = nullptr;

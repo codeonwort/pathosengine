@@ -1,13 +1,14 @@
 #pragma once
 
 #include "scene_component.h"
-#include "pathos/smart_pointer.h"
 #include "pathos/render/render_target.h"
+#include "pathos/smart_pointer.h"
 
 // Captures either radiance for indirect specular or irradiance for indirect diffuse.
 
 namespace pathos {
 
+	// #todo-light-probe: Not here
 	extern const uint32 reflectionProbeCubemapSize;
 	extern const uint32 reflectionProbeNumMips;
 	constexpr uint32 reflectionProbeMaxCount = 340;

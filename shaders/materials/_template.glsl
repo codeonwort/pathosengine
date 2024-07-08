@@ -6,11 +6,12 @@
 #include "core/common.glsl"
 #include "deferred_common.glsl"
 
+// Binding slot 0 is used for per-frame UBO.
 #define UBO_BINDING_OBJECT    1
 #define UBO_BINDING_MATERIAL  2
 #define UBO_BINDING_LIGHTINFO 3
 
-// #todo-driver-bug: What's this :/
+// #todo-driver-bug: Nasty workaround for Ryzen 6800U driver :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
 // VERTEX_SHADER or FRAGMENT_SHADER
@@ -26,7 +27,7 @@ $NEED SHADINGMODEL
 // - Textures and other vertex attributes will be bound.
 // [OUTPUTWORLDNORMAL]
 // - getMaterialAttributes() returns world normal, not local normal.
-// - Normal mapping will be skipped.
+// - Normal mapping will not be performed.
 // [SKYBOXMATERIAL]
 // - This material is not for static meshes, but for skybox.
 
@@ -116,7 +117,7 @@ struct MaterialAttributes_Translucent {
 	vec3 positionVS;   // view space
 	vec3 position;     // local space
 	vec3 normal;       // local space
-	vec3 tangent;      // local space
+	vec4 tangent;      // local space
 	vec3 bitangent;    // local space
 	vec2 texcoord;     // local space
 	vec4 clipPos;      // clip space
@@ -126,16 +127,19 @@ struct MaterialAttributes_Translucent {
 struct VertexShaderInput {
 	vec3 position;
 	vec3 normal;
-	vec3 tangent;
+	vec4 tangent;
 	vec3 bitangent;
 	vec2 texcoord;
 };
 
 // All inputs in local space of the object
-vec3 applyNormalMap(vec3 n, vec3 t, vec3 b, vec3 normalmap) {
+vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap) {
 	mat3 model = mat3(uboPerObject.modelTransform);
 	model = inverse(transpose(model)); // Cannot assure uniform scaling.
-	vec3 T = normalize(model * t);
+	if (t.w == 0.0) {
+		return model * normalize(n);
+	}
+	vec3 T = normalize(model * t.xyz);
 	vec3 B = normalize(model * b);
 	vec3 N = normalize(model * n);
 	mat3 TBN = mat3(T, B, N);
@@ -163,7 +167,7 @@ $NEED getSceneColor
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec2 inTexcoord;
 layout (location = 2) in vec3 inNormal;
-layout (location = 3) in vec3 inTangent;
+layout (location = 3) in vec4 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
 void main_staticMesh() {
@@ -243,9 +247,9 @@ void main() {
 		vec3 worldNormal = attr.normal;
 	#else
 		vec3 worldNormal = applyNormalMap(
-			normalize(interpolants.normal),
-			normalize(interpolants.tangent),
-			normalize(interpolants.bitangent),
+			interpolants.normal,
+			interpolants.tangent,
+			interpolants.bitangent,
 			attr.normal);
 	#endif
 	vec3 normalVS = (uboPerFrame.viewTransform * vec4(worldNormal, 0.0)).xyz;
@@ -282,8 +286,7 @@ void main() {
 #endif
 
 #if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
-	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)'
-	// in packGBuffer() is bugged only on Ryzen 6800U.
+	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)' in packGBuffer() is bugged, only on Ryzen 6800U.
 	if (attr.emissive.yz == vec2(0.0)) {
 		packOutput2.z = 0;
 	}

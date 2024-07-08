@@ -23,10 +23,10 @@
 #include "pathos/overlay/display_object_proxy.h"
 #include "pathos/overlay/display_object.h"
 
-#include "pathos/loader/image_loader.h"    // subsystem: image loader
+#include "pathos/loader/image_loader.h"   // subsystem: image loader
 #include "pathos/text/font_mgr.h"         // subsystem: font manager
 #include "pathos/gui/gui_window.h"        // subsystem: gui
-#include "pathos/input/input_system.h"    // subsystem: input
+#include "pathos/input/input_system.h"    // subsystem: input handling
 #include "pathos/loader/asset_streamer.h" // subsystem: asset streamer
 
 #include <inttypes.h>
@@ -43,9 +43,6 @@ namespace pathos {
 	// #note: Setting this to 0 can make world delta seconds = 0.0
 	//        and the world will look like frozen.
 	static ConsoleVariable<int32> maxFPS("t.maxFPS", 1000, "Limit max framerate (0 = no limit)");
-
-	static ConsoleVariable<int32> cvar_numReflectionProbeUpdates("r.indirectLighting.updateReflectionProbesPerFrame", 1, "Number of reflection probes to update per frame");
-	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.indirectLighting.updateIrradianceProbesPerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Engine*        gEngine  = nullptr;
 	ConsoleWindow* gConsole = nullptr;
@@ -503,47 +500,7 @@ namespace pathos {
 
 					// Process probe lighting.
 					{
-						SCOPED_CPU_COUNTER(LightProbeSceneProxy);
-
-						// Gather probe lighting related actors.
-						std::vector<ReflectionProbeActor*> reflectionProbes;
-						std::vector<IrradianceVolumeActor*> irradianceVolumes;
-						for (Actor* actor : currentWorld->actors) {
-							ReflectionProbeActor* probeActor = dynamic_cast<ReflectionProbeActor*>(actor);
-							if (probeActor != nullptr && probeActor->bUpdateEveryFrame) {
-								reflectionProbes.push_back(probeActor);
-								continue;
-							}
-
-							IrradianceVolumeActor* volumeActor = dynamic_cast<IrradianceVolumeActor*>(actor);
-							if (volumeActor != nullptr) {
-								irradianceVolumes.push_back(volumeActor);
-							}
-						}
-
-						auto compareReflectionProbes = [](const ReflectionProbeActor* A, const ReflectionProbeActor* B) {
-							if (A->lastUpdateTime == B->lastUpdateTime) {
-								return A->internal_getUpdatePhase() > B->internal_getUpdatePhase();
-							}
-							return A->lastUpdateTime < B->lastUpdateTime;
-						};
-						const vector3 cameraPos = currentWorld->getCamera().getPosition();
-						auto compareIrradianceVolumes = [&cameraPos](const IrradianceVolumeActor* A, const IrradianceVolumeActor* B) {
-							return glm::distance(A->getActorLocation(), cameraPos) < glm::distance(B->getActorLocation(), cameraPos);
-						};
-						std::sort(reflectionProbes.begin(), reflectionProbes.end(), compareReflectionProbes);
-						std::sort(irradianceVolumes.begin(), irradianceVolumes.end(), compareIrradianceVolumes);
-
-						int32 numProbeUpdates = std::min(cvar_numReflectionProbeUpdates.getInt(), (int32)reflectionProbes.size());
-						for (int32 i = 0; i < numProbeUpdates; ++i) {
-							reflectionProbes[i]->captureScene();
-						}
-
-						numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_numIrradianceProbeUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
-						if (numProbeUpdates > 0) {
-							currentWorld->getScene().initializeIrradianceProbeAtlas();
-							irradianceVolumes[0]->updateProbes(numProbeUpdates);
-						}
+						currentWorld->getScene().updateLightProbes();
 					}
 
 					// Render the main view.
@@ -648,13 +605,11 @@ namespace pathos {
 	// GUI callback functions
 	/////////////////////////////////////////////////////////////////////
 
-	void Engine::onCloseWindow()
-	{
+	void Engine::onCloseWindow() {
 		gEngine->stop();
 	}
 
-	void Engine::onIdle()
-	{
+	void Engine::onIdle() {
 		gEngine->tickMainThread();
 	}
 

@@ -11,7 +11,7 @@ CAUTION: Need to include deferred_common.glsl prior to this file
 
 #define SOFT_SHADOW      1
 #define MAX_CASCADES     4
-#define MIN_SHADOWING    0.1
+#define MIN_SHADOWING    0.0
 
 struct ShadowQuery {
 	vec3 vPos;    // position in view space

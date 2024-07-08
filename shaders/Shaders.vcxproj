@@ -31,6 +31,7 @@
     <None Include="clear_texture.glsl" />
     <None Include="core\common.glsl" />
     <None Include="copy_texture.fs.glsl" />
+    <None Include="core\image_based_lighting.glsl" />
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
     <None Include="deferred_common.glsl" />
@@ -66,6 +67,9 @@
     <None Include="overlay\overlay_standard.glsl" />
     <None Include="overlay\overlay_text.glsl" />
     <None Include="prefix_sum.glsl" />
+    <None Include="reflection_probe_coeffs_const_32.glsl" />
+    <None Include="reflection_probe_downsample.glsl" />
+    <None Include="reflection_probe_filtering.glsl" />
     <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
     <None Include="skybox.glsl" />
@@ -84,6 +88,7 @@
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="visualize_light_probe.glsl" />
+    <None Include="visualize_sky_occlusion.glsl" />
     <None Include="volumetric_clouds.glsl" />
     <None Include="volumetric_clouds_post.glsl" />
   </ItemGroup>
