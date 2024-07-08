@@ -30,8 +30,9 @@
 #define LIGHT_PROBE_TILE_SIZE             6
 #define LIGHT_PROBE_INTERVAL              1.0f
 
-// #wip-skyocclusion: Sky light leaks into interior.
-#define CREATE_SKY_ACTOR                  1
+// #todo-light-probe: Light probe rendering is too slow. Just allow sky light leak.
+#define CREATE_SKY_ATMOSPHERE             1
+#define CREATE_IRRADIANCE_VOLUME          0
 
 // --------------------------------------------------------
 // World
@@ -45,7 +46,7 @@ void World_LightRoom::onInitialize() {
 
 	playerController = spawnActor<PlayerController>();
 
-#if CREATE_SKY_ACTOR
+#if CREATE_SKY_ATMOSPHERE
 	auto skyAtmosphere = spawnActor<SkyAtmosphereActor>();
 #endif
 
@@ -148,6 +149,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			smc->setVisibility(false);
 			leafMarkers.push_back({ smc->getLocation(), smc->getScale().x });
 		} else if (modelDesc.name.find("LightProbeVolume") != std::string::npos) {
+#if CREATE_IRRADIANCE_VOLUME
 			auto placeholder = components[i];
 			auto bounds = AABB::fromCenterAndHalfSize(placeholder->getLocation(), 0.5f * placeholder->getScale());
 
@@ -162,6 +164,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			auto volume = spawnActor<IrradianceVolumeActor>();
 			volume->initializeVolume(bounds.minBounds, bounds.maxBounds, probeGrid);
 			irradianceVolumes.push_back(volume);
+#endif
 		}
 	}
 

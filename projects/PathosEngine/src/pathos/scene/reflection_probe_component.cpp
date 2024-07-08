@@ -5,7 +5,7 @@
 #include "pathos/render/image_based_lighting_baker.h"
 
 namespace pathos {
-	const uint32 reflectionProbeCubemapSize = 128; // #wip-probe: Cubemap size is forced to 128.
+	const uint32 reflectionProbeCubemapSize = 128; // #todo-light-probe: Cubemap size is forced to 128.
 	const uint32 reflectionProbeNumMips = 7;
 	const RenderTargetFormat reflectionProbeFormat = RenderTargetFormat::RGBA16F;
 }
@@ -93,21 +93,6 @@ namespace pathos {
 	}
 
 	void ReflectionProbeComponent::bakeIBL() {
-#if 0 // #wip-probe: Replace implementation of reflection probe filtering.
-		GLuint radianceCapture = radianceCubemap->getGLTexture();
-		GLuint textureIBL = specularIBL->getGLTexture();
-		uint32 numMips = specularIBL->getNumMips();
-		ENQUEUE_RENDER_COMMAND(
-			[radianceCapture, textureIBL, numMips](RenderCommandList& cmdList) {
-				ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
-					cmdList,
-					radianceCapture,
-					reflectionProbeCubemapSize,
-					numMips,
-					textureIBL);
-			}
-		);
-#else
 		GLuint srcCubemap = radianceCubemap->getGLTexture();
 		GLuint dstCubemap = specularIBL->getGLTexture();
 		if (srcCubemap == 0 || specularIBL == 0) return;
@@ -117,7 +102,6 @@ namespace pathos {
 				ImageBasedLightingBaker::bakeReflectionProbe_renderThread(cmdList, srcCubemap, dstCubemap);
 			}
 		);
-#endif
 	}
 
 }

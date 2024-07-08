@@ -2,7 +2,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/scene/scene.h"
 
-// #wip-probe: If 0, update all at once for easy debugging.
+// #todo-light-probe: If 0, update all at once for easy debugging.
 #define PROGRESSIVE_UPDATE 1
 
 namespace pathos {
