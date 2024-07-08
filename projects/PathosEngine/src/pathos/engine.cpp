@@ -134,7 +134,7 @@ namespace pathos {
 		// Launch the render thread and initialize remaining subsystems that require GL context.
 		renderThread->run();
 		renderThread->waitForInitialization();
-		TEMP_FLUSH_RENDER_COMMAND();
+		FLUSH_RENDER_COMMAND();
 #undef BailIfFalse
 
 		// Register engine commands

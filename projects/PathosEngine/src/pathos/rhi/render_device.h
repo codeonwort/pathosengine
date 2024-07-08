@@ -143,7 +143,4 @@ namespace pathos {
 	// CAUTION: Use only if must. Never use inside of game tick.
 	void FLUSH_RENDER_COMMAND(bool waitForGPU = false);
 
-	// #todo-renderthread: Flushes by this might be not needed after multithreading is properly implemented.
-	void TEMP_FLUSH_RENDER_COMMAND(bool waitForGPU = false);
-
 }

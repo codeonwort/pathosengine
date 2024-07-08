@@ -99,27 +99,6 @@ namespace pathos {
 		}
 	}
 
-	void TEMP_FLUSH_RENDER_COMMAND(bool waitForGPU) {
-		CHECK(isInMainThread());
-
-		std::mutex flushMutex;
-		std::condition_variable flushCondVar;
-		std::unique_lock<std::mutex> cvLock(flushMutex);
-		std::atomic<bool> alreadyFlushed = false;
-
-		gRenderDevice->getDeferredCommandList().registerHook([&flushCondVar, &alreadyFlushed, waitForGPU](RenderCommandList& cmdList) -> void {
-			if (waitForGPU) {
-				glFinish();
-			}
-			alreadyFlushed = true;
-			flushCondVar.notify_all();
-		});
-
-		if (!alreadyFlushed) {
-			flushCondVar.wait(cvLock);
-		}
-	}
-
 	OpenGLDevice::OpenGLDevice() {
 		CHECKF(gRenderDevice == nullptr, "Render device already exists");
 		gRenderDevice = this;
