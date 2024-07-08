@@ -160,7 +160,14 @@ namespace pathos {
 			if (true || ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);
 			if (true || ai_mesh->HasTextureCoords(0)) G->updateUVData(texcoords.data(), 2 * N);
 			if (true || ai_mesh->HasTangentsAndBitangents()) {
-				G->updateTangentData(tangents.data(), 3 * N);
+				std::vector<GLfloat> tangents4(4 * N);
+				for (auto i = 0u; i < N; ++i) {
+					tangents4[4 * i + 0] = tangents[3 * i + 0];
+					tangents4[4 * i + 1] = tangents[3 * i + 1];
+					tangents4[4 * i + 2] = tangents[3 * i + 2];
+					tangents4[4 * i + 3] = 1.0f;
+				}
+				G->updateTangentData(tangents4.data(), 4 * N);
 				G->updateBitangentData(bitangents.data(), 3 * N);
 			}
 			G->updateIndexData(&indices[0], (uint32_t)indices.size());
