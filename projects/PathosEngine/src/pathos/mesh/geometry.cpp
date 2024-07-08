@@ -233,7 +233,7 @@ namespace pathos {
 				tangents[i * 3 + 0] = v.x;
 				tangents[i * 3 + 1] = v.y;
 				tangents[i * 3 + 2] = v.z;
-				tangents[i * 3 + 3] = 1.0f; // #wip: tangent w component
+				tangents[i * 3 + 3] = 1.0f; // #todo-geometry: tangent w component
 			}
 
 			if (invalid) {

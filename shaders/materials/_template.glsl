@@ -6,11 +6,12 @@
 #include "core/common.glsl"
 #include "deferred_common.glsl"
 
+// Binding slot 0 is used for per-frame UBO.
 #define UBO_BINDING_OBJECT    1
 #define UBO_BINDING_MATERIAL  2
 #define UBO_BINDING_LIGHTINFO 3
 
-// #todo-driver-bug: What's this :/
+// #todo-driver-bug: Nasty workaround for Ryzen 6800U driver :/
 #define WORKAROUND_RYZEN_6800U_BUG 1
 
 // VERTEX_SHADER or FRAGMENT_SHADER
@@ -26,7 +27,7 @@ $NEED SHADINGMODEL
 // - Textures and other vertex attributes will be bound.
 // [OUTPUTWORLDNORMAL]
 // - getMaterialAttributes() returns world normal, not local normal.
-// - Normal mapping will be skipped.
+// - Normal mapping will not be performed.
 // [SKYBOXMATERIAL]
 // - This material is not for static meshes, but for skybox.
 
@@ -285,8 +286,7 @@ void main() {
 #endif
 
 #if WORKAROUND_RYZEN_6800U_BUG && SHADINGMODEL == MATERIAL_SHADINGMODEL_DEFAULTLIT
-	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)'
-	// in packGBuffer() is bugged only on Ryzen 6800U.
+	// #todo-driver-bug: Somehow the line 'out2.z = packHalf2x16(emissive.yz)' in packGBuffer() is bugged, only on Ryzen 6800U.
 	if (attr.emissive.yz == vec2(0.0)) {
 		packOutput2.z = 0;
 	}

@@ -227,7 +227,8 @@ namespace pathos {
 					lightComp->direction.y *= -1;
 					++numDirectionalLightComponents;
 				} else {
-					// #wip-light: spot and area
+					// #todo-gltf: Spot and area lights
+					LOG(LogWarning, "[GLTF] Spot and area lights are not supported yet: %s", desc.name.c_str());
 					comps[i] = new SceneComponent;
 					++numSceneComponents;
 				}
@@ -554,7 +555,7 @@ namespace pathos {
 									tempT[i * 3 + 0] = curr[0];
 									tempT[i * 3 + 1] = curr[1];
 									tempT[i * 3 + 2] = curr[2];
-									tempT[i * 3 + 3] = 1.0f; // #wip: tangent w
+									tempT[i * 3 + 3] = 1.0f; // #todo-geometry: tangent w
 									tanBlob += tanView.byteStride;
 								}
 							}
@@ -598,9 +599,9 @@ namespace pathos {
 				light.point.color = vector3(tinyLight.color[0], tinyLight.color[1], tinyLight.color[2]);
 				light.point.intensity = (float)tinyLight.intensity;
 			} else {
-				// #wip-light: "spot" and "area"
-				LOG(LogDebug, "[GLTF] Light type not supported yet: %s (%s)", tinyLight.type.data(), tinyLight.name.data());
-				//continue;
+				// #todo-gltf: "spot" and "area"
+				LOG(LogWarning, "[GLTF] Light type not supported yet: %s (%s)", tinyLight.type.data(), tinyLight.name.data());
+				continue;
 			}
 
 			pendingLights.emplace_back(light);

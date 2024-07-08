@@ -131,7 +131,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		} else if (modelDesc.name == "Ball") {
 			ballComponent = static_cast<StaticMeshComponent*>(components[i]);
 		} else if (modelDesc.name.find("RectLightMarker") != std::string::npos) {
-			// #wip-light: Wanna place rect light but I can't align rotation.
+			// #todo-gltf: Wanna place rect light but I can't align rotation.
 			auto smc = static_cast<StaticMeshComponent*>(components[i]);
 			smc->getStaticMesh()->setMaterial(0, M_rectLight);
 			smc->castsShadow = false;

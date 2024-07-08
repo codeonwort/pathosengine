@@ -15,7 +15,7 @@ const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
 	static const int32 numWorlds = 4;
-	static int32 worldIndex = 2; // #wip: LightRoom first
+	static int32 worldIndex = 0;
 
 	World* newWorld = nullptr;
 	switch (worldIndex) {
