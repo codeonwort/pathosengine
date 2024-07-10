@@ -19,4 +19,9 @@ namespace pathos {
 	uniquePtr<T> makeUnique(Args&& ...args) {
 		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
+
+	template<typename T, typename ...Args>
+	sharedPtr<T> makeShared(Args&& ...args) {
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
 }
