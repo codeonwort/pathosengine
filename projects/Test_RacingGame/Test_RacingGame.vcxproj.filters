@@ -18,7 +18,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\world_game1.cpp">
+    <ClCompile Include="src\world_racing_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\player_controller.cpp">
@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\world_game1.h">
+    <ClInclude Include="src\world_racing_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\player_controller.h">

@@ -86,11 +86,11 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
-    <ClCompile Include="src\world_game1.cpp" />
+    <ClCompile Include="src\world_racing_game.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\player_controller.h" />
-    <ClInclude Include="src\world_game1.h" />
+    <ClInclude Include="src\world_racing_game.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PathosEngine\PathosEngine.vcxproj">

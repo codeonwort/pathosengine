@@ -1,11 +1,11 @@
-#include "world_game1.h"
+#include "world_racing_game.h"
 #include "pathos/core_minimal.h"
 using namespace pathos;
 
-const char*         WINDOW_TITLE = "Test: Racing Game";
-const int32         WINDOW_WIDTH = 1920;
-const int32         WINDOW_HEIGHT = 1080;
-const bool          WINDOW_FULLSCREEN = false;
+const char* WINDOW_TITLE = "Test: Racing Game";
+const int32 WINDOW_WIDTH = 1920;
+const int32 WINDOW_HEIGHT = 1080;
+const bool WINDOW_FULLSCREEN = false;
 
 #define WORLD_CLASS World_Game1
 

@@ -1,4 +1,4 @@
-#include "world_game1.h"
+#include "world_racing_game.h"
 #include "player_controller.h"
 
 #include "pathos/core_minimal.h"
@@ -43,8 +43,7 @@ const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	},
 };
 
-void World_Game1::onInitialize()
-{
+void World_Game1::onInitialize() {
 	SCOPED_CPU_COUNTER(World_Game1_initialize);
 
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
@@ -68,8 +67,11 @@ void World_Game1::onInitialize()
 	gConsole->addLine("Press 'P' to toggle photo mode");
 }
 
-void World_Game1::onTick(float deltaSeconds)
-{
+void World_Game1::onDestroy() {
+	// #wip: 2215 VAOs still alive?
+}
+
+void World_Game1::onTick(float deltaSeconds) {
 	//vector3 loc = pointLight0->getActorLocation();
 	//loc.x = 10.0f * ::sinf(gEngine->getWorldTime());
 	//pointLight0->setActorLocation(loc);
@@ -77,10 +79,8 @@ void World_Game1::onTick(float deltaSeconds)
 	//p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
 }
 
-void World_Game1::prepareAssets()
-{
-	for (size_t i = 0u; i < wavefrontModelRefs.size(); ++i)
-	{
+void World_Game1::prepareAssets() {
+	for (size_t i = 0u; i < wavefrontModelRefs.size(); ++i) {
 		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(wavefrontModelRefs[i], this, &World_Game1::onLoadOBJ, i);
 	}
 
@@ -96,8 +96,8 @@ void World_Game1::prepareAssets()
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);
 
-	carDummyMesh = new Mesh(G_sphere, M_color);
-	landscapeMesh = new Mesh(G_plane, M_landscape);
+	carDummyMesh = makeShared<Mesh>(G_sphere, M_color);
+	landscapeMesh = makeShared<Mesh>(G_plane, M_landscape);
 
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
 		uint32 vtWidth = imageBlob->width;
@@ -113,8 +113,7 @@ void World_Game1::prepareAssets()
 	cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
 }
 
-void World_Game1::reloadScene()
-{
+void World_Game1::reloadScene() {
 	destroyAllActors();
 
 	ActorBinder binder;
@@ -153,18 +152,16 @@ void World_Game1::reloadScene()
 	setupScene();
 }
 
-void World_Game1::setupScene()
-{
-	playerCar->setStaticMesh(carMesh ? carMesh : carDummyMesh);
-	landscape->setStaticMesh(landscapeMesh);
+void World_Game1::setupScene() {
+	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
+	landscape->setStaticMesh(landscapeMesh.get());
 	landscape->getStaticMeshComponent()->castsShadow = false;
 	for (size_t i = 0; i < treeActors.size(); ++i) {
-		treeActors[i]->setStaticMesh(treeMesh);
+		treeActors[i]->setStaticMesh(treeMesh.get());
 	}
 }
 
-void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload)
-{
+void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	uint32 assetIndex = (uint32)payload;
 
 	if (!loader->isValid()) {
@@ -173,10 +170,10 @@ void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 	}
 
 	if (assetIndex == 0) {
-		carMesh = loader->craftMeshFromAllShapes();
+		carMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes());
 		setupScene();
 	} else if (assetIndex == 1) {
-		treeMesh = loader->craftMeshFromAllShapes();
+		treeMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes());
 		treeMesh->doubleSided = true;
 		setupScene();
 	}
