@@ -68,7 +68,7 @@ void World_Game1::onInitialize() {
 }
 
 void World_Game1::onDestroy() {
-	// #wip: 2215 VAOs still alive?
+	//
 }
 
 void World_Game1::onTick(float deltaSeconds) {
@@ -170,7 +170,7 @@ void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	}
 
 	if (assetIndex == 0) {
-		carMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes());
+		carMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes(true));
 		setupScene();
 	} else if (assetIndex == 1) {
 		treeMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes());
