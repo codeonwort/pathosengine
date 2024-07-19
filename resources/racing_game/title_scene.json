@@ -1,0 +1,21 @@
+{
+	"name": "TitleScene",
+	"skybox": {
+		"name": "Skybox",
+		"flipPreference": "hlsl",
+		"textures": [
+			"resources/skybox/cubemap1/pos_x.jpg", "resources/skybox/cubemap1/neg_x.jpg",
+			"resources/skybox/cubemap1/pos_y.jpg", "resources/skybox/cubemap1/neg_y.jpg",
+			"resources/skybox/cubemap1/pos_z.jpg", "resources/skybox/cubemap1/neg_z.jpg"
+		],
+		"generateMipmaps": true
+	},
+	"directionalLight": [
+		{
+			"name": "Sun",
+			"direction": [0, -0.4, -1],
+			"color": [1.0, 1.0, 1.0],
+			"illuminance": 5.0
+		}
+	]
+}

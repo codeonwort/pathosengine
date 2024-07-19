@@ -43,7 +43,7 @@ const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	},
 };
 
-void World_Game1::onInitialize() {
+void World_RacingGame::onInitialize() {
 	SCOPED_CPU_COUNTER(World_Game1_initialize);
 
 	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
@@ -67,21 +67,17 @@ void World_Game1::onInitialize() {
 	gConsole->addLine("Press 'P' to toggle photo mode");
 }
 
-void World_Game1::onDestroy() {
+void World_RacingGame::onDestroy() {
 	//
 }
 
-void World_Game1::onTick(float deltaSeconds) {
-	//vector3 loc = pointLight0->getActorLocation();
-	//loc.x = 10.0f * ::sinf(gEngine->getWorldTime());
-	//pointLight0->setActorLocation(loc);
-	//PointLightComponent* p = static_cast<PointLightComponent*>(pointLight0->getRootComponent());
-	//p->color.g = (1.0f + ::cosf(gEngine->getWorldTime())) * 10.0f;
+void World_RacingGame::onTick(float deltaSeconds) {
+	//
 }
 
-void World_Game1::prepareAssets() {
+void World_RacingGame::prepareAssets() {
 	for (size_t i = 0u; i < wavefrontModelRefs.size(); ++i) {
-		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(wavefrontModelRefs[i], this, &World_Game1::onLoadOBJ, i);
+		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(wavefrontModelRefs[i], this, &World_RacingGame::onLoadOBJ, i);
 	}
 
 	Material* M_color = Material::createMaterialInstance("solid_color");
@@ -113,7 +109,7 @@ void World_Game1::prepareAssets() {
 	cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
 }
 
-void World_Game1::reloadScene() {
+void World_RacingGame::reloadScene() {
 	destroyAllActors();
 
 	ActorBinder binder;
@@ -152,7 +148,7 @@ void World_Game1::reloadScene() {
 	setupScene();
 }
 
-void World_Game1::setupScene() {
+void World_RacingGame::setupScene() {
 	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
 	landscape->setStaticMesh(landscapeMesh.get());
 	landscape->getStaticMeshComponent()->castsShadow = false;
@@ -161,7 +157,7 @@ void World_Game1::setupScene() {
 	}
 }
 
-void World_Game1::onLoadOBJ(OBJLoader* loader, uint64 payload) {
+void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	uint32 assetIndex = (uint32)payload;
 
 	if (!loader->isValid()) {

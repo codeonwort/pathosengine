@@ -1,0 +1,45 @@
+#include "world_racing_title.h"
+#include "world_racing_game.h"
+#include "widget/title_widget.h"
+
+#include "pathos/scene/directional_light_actor.h"
+#include "pathos/scene/skybox_actor.h"
+#include "pathos/loader/scene_loader.h"
+
+#define TITLE_SCENE_DESC_FILE          "resources/racing_game/title_scene.json"
+
+void World_RacingTitle::onInitialize() {
+	loadScene();
+	createWidgets();
+}
+
+void World_RacingTitle::onDestroy() {
+	auto rootOverlay = gEngine->getOverlayRoot();
+	rootOverlay->removeChild(titleWidget);
+	delete titleWidget;
+}
+
+void World_RacingTitle::onTick(float deltaSeconds) {
+	//
+}
+
+void World_RacingTitle::onStartGame() {
+	World* gameWorld = new World_RacingGame;
+	gEngine->setWorld(gameWorld);
+}
+
+void World_RacingTitle::loadScene() {
+	ActorBinder binder;
+	binder.addBinding("Skybox", &skybox);
+	binder.addBinding("Sun", &sun);
+
+	SceneLoader sceneLoader;
+	sceneLoader.loadSceneDescription(this, TITLE_SCENE_DESC_FILE, binder);
+}
+
+void World_RacingTitle::createWidgets() {
+	auto rootOverlay = gEngine->getOverlayRoot();
+
+	titleWidget = new TitleWidget(this);
+	rootOverlay->addChild(titleWidget);
+}

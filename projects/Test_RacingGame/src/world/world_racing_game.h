@@ -19,7 +19,7 @@ namespace pathos {
 }
 class PlayerController;
 
-class World_Game1 : public World {
+class World_RacingGame : public World {
 	
 public:
 	// BEGIN_INTERFACE: World

@@ -15,21 +15,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\main_racing_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\world_racing_game.cpp">
+    <ClCompile Include="src\world\world_racing_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\player_controller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\world\world_racing_title.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\widget\title_widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\world_racing_game.h">
+    <ClInclude Include="src\world\world_racing_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\player_controller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\world\world_racing_title.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos_forward_decl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\widget\title_widget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
