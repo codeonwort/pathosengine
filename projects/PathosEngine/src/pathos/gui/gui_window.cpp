@@ -42,7 +42,8 @@ namespace pathos {
 
 	static void onGlutClose() {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
-		window->onClose();
+		// #todo: Need to cleanup engine termination process.
+		if (window != nullptr) window->onClose();
 	}
 
 	static void onGlutIdle() {

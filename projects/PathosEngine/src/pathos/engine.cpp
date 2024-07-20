@@ -185,6 +185,8 @@ namespace pathos {
 		LOG(LogInfo, "=== PATHOS has been initialized ===");
 		LOG(LogInfo, "");
 
+		engineStatus = EngineStatus::Initialized;
+
 		return true;
 	}
 
@@ -263,27 +265,34 @@ namespace pathos {
 	}
 
 	void Engine::start() {
+		if (engineStatus != EngineStatus::Initialized) {
+			LOG(LogError, "[Engine] Engine status: %u", (uint32)engineStatus);
+			return;
+		}
+
 		stopwatch_gameThread.start();
 		assetStreamer->initialize(conf.numWorkersForAssetStreamer);
 		renderThread->markMainLoopStarted();
-		mainWindow->startMainLoop();
+
+		engineStatus = EngineStatus::Running;
+
+		mainWindow->startMainLoop(); // Blocking loop
 	}
 
-	void Engine::stop() {
+	void Engine::stop(bool immediate) {
+		if (engineStatus != EngineStatus::Running) {
+			LOG(LogError, "[Engine] Engine status: %u", (uint32)engineStatus);
+			return;
+		}
+
 		LOG(LogInfo, "");
-		LOG(LogInfo, "=== Destroy PATHOS ===");
+		LOG(LogInfo, "=== Destroying PATHOS ===");
 
-		mainWindow->stopMainLoop();
+		engineStatus = EngineStatus::Destroying;
 
-		assetStreamer->destroy();
-		pathos::destroyImageLibrary();
-
-		renderThread->terminate();
-
-		appOverlayRoot.reset();
-
-		LOG(LogInfo, "=== PATHOS has been destroyed ===");
-		LOG(LogInfo, "");
+		if (immediate) {
+			stopDeferred();
+		}
 	}
 
 	// For scene capture
@@ -601,16 +610,40 @@ namespace pathos {
 		}
 	}
 
+	void Engine::stopDeferred() {
+		if (engineStatus != EngineStatus::Destroying) {
+			return;
+		}
+
+		mainWindow->stopMainLoop();
+
+		assetStreamer->destroy();
+		pathos::destroyImageLibrary();
+
+		renderThread->terminate();
+
+		appOverlayRoot.reset();
+
+		LOG(LogInfo, "=== PATHOS has been destroyed ===");
+		LOG(LogInfo, "");
+
+		engineStatus = EngineStatus::Destroyed;
+	}
+
 	/////////////////////////////////////////////////////////////////////
 	// GUI callback functions
 	/////////////////////////////////////////////////////////////////////
 
 	void Engine::onCloseWindow() {
-		gEngine->stop();
+		gEngine->stop(true);
 	}
 
 	void Engine::onIdle() {
-		gEngine->tickMainThread();
+		if (gEngine->engineStatus == EngineStatus::Destroying) {
+			gEngine->stopDeferred();
+		} else {
+			gEngine->tickMainThread();
+		}
 	}
 
 	void Engine::onMainWindowDisplay() {

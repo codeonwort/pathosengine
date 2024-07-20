@@ -64,8 +64,8 @@ void TitleWidget::bindInput() {
 			// #wip: Implement settings widget.
 			LOG(LogDebug, "WIP: Settings");
 		} else if (labels[selectedLabel] == exitLabel) {
-			// #wip: Notify the game engine to terminate.
-			LOG(LogDebug, "WIP: Exit");
+			LOG(LogDebug, "Exit Game");
+			gEngine->stop();
 		} else {
 			LOG(LogError, "Unknown label index: %d", selectedLabel);
 		}
