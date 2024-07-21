@@ -5,6 +5,7 @@
 
 BaseWidget::BaseWidget() {
 	inputManager = gEngine->getInputSystem()->createInputManager();
+	inputManager->bindXInput(XInputUserIndex::USER0);
 }
 
 BaseWidget::~BaseWidget() {

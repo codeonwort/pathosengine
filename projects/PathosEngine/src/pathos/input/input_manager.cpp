@@ -244,9 +244,10 @@ namespace pathos {
 		else if (specialKey == InputConstants::ALT) isAltActive = true;
 
 		// #todo-input: Redundant; same as processRawKeyDown
-		for (const ButtonBinding& binding : buttonPressedBindings) {
-			if (binding.contains(specialKey)) {
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(specialKey) && binding.bPressFired == false) {
 				matchingEvents.push_back(binding.event_name_hash);
+				binding.bPressFired = true;
 			}
 		}
 
@@ -278,6 +279,12 @@ namespace pathos {
 
 			it->second();
 		}
+
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(specialKey)) {
+				binding.bPressFired = false;
+			}
+		}
 	}
 
 	void InputManager::processButtonDown(InputConstants input)
@@ -285,9 +292,10 @@ namespace pathos {
 		std::vector<uint32> matchingEvents;
 
 		// #todo-input: Redundant; same as processRawKeyDown
-		for (const ButtonBinding& binding : buttonPressedBindings) {
-			if (binding.contains(input)) {
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(input) && binding.bPressFired == false) {
 				matchingEvents.push_back(binding.event_name_hash);
+				binding.bPressFired = true;
 			}
 		}
 
@@ -314,6 +322,12 @@ namespace pathos {
 			CHECK(it != buttonReleasedMapping.end());
 
 			it->second();
+		}
+
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(input)) {
+				binding.bPressFired = false;
+			}
 		}
 	}
 

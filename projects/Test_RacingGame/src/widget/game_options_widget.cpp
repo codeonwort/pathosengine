@@ -30,10 +30,9 @@ void GameOptionsWidget::createUI() {
 }
 
 void GameOptionsWidget::bindInput() {
-	ButtonBinding up, down, confirm;
-	up.addInput(InputConstants::KEYBOARD_ARROW_UP);
-	down.addInput(InputConstants::KEYBOARD_ARROW_DOWN);
-	confirm.addInput(InputConstants::SPACE);
+	ButtonBinding up({ InputConstants::KEYBOARD_ARROW_UP, InputConstants::XBOXONE_DPAD_UP });
+	ButtonBinding down({ InputConstants::KEYBOARD_ARROW_DOWN, InputConstants::XBOXONE_DPAD_DOWN });
+	ButtonBinding confirm({ InputConstants::SPACE, InputConstants::XBOXONE_A });
 
 	// #wip
 	inputManager->bindButtonPressed("up", up, [this]() {

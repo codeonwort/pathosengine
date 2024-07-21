@@ -38,6 +38,7 @@ namespace pathos {
 	private:
 		uint32 event_name_hash = 0xffffffff;
 		std::vector<InputConstants> keys;
+		bool bPressFired = false;
 
 	};
 
