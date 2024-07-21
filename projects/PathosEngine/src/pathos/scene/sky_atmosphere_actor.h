@@ -16,7 +16,7 @@ namespace pathos {
 			setAsRootComponent(component);
 		}
 
-		SkyAtmosphereComponent* getComponent() const { return component; }
+		SkyAtmosphereComponent* getSkyComponent() const { return component; }
 
 	private:
 		SkyAtmosphereComponent* component;

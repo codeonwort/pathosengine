@@ -19,7 +19,9 @@
 #define SCENE_DESC_FILE          "resources/racing_game/test_scene.json"
 #define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/landscape.jpg"
 
-#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
+// #wip: Proper weather map for volumetric clouds
+//#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
+#define CLOUD_WEATHER_MAP_FILE   "resources/render_challenge_1/WeatherMap.png"
 #define CLOUD_SHAPE_NOISE_FILE   "resources/common/noiseShapePacked.tga"
 #define CLOUD_EROSION_NOISE_FILE "resources/common/noiseErosionPacked.tga"
 
@@ -95,6 +97,7 @@ void World_RacingGame::prepareAssets() {
 	carDummyMesh = makeShared<Mesh>(G_sphere, M_color);
 	landscapeMesh = makeShared<Mesh>(G_plane, M_landscape);
 
+	// Volumetric Clouds
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
 		uint32 vtWidth = imageBlob->width;
 		uint32 vtHeight = imageBlob->height;
@@ -107,6 +110,9 @@ void World_RacingGame::prepareAssets() {
 	weatherTexture = ImageUtils::createTexture2DFromImage(weatherMapBlob, 1, false, true, "Texture_WeatherMap");
 	cloudShapeNoise = ImageUtils::createTexture3DFromImage(cloudShapeNoiseBlob, calcVolumeSize(cloudShapeNoiseBlob), 0, false, true, "Texture_CloudShapeNoise");
 	cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
+	gConsole->addLine(L"r.cloud.minY 1000", true, false);
+	gConsole->addLine(L"r.cloud.maxY 4000", true, false);
+	gConsole->addLine(L"r.cloud.sunIntensityScale 80", true, false);
 }
 
 void World_RacingGame::reloadScene() {
@@ -123,6 +129,10 @@ void World_RacingGame::reloadScene() {
 
 	SceneLoader sceneLoader;
 	sceneLoader.loadSceneDescription(this, SCENE_DESC_FILE, binder);
+
+	skybox->getSkyComponent()->setVisibility(false);
+	//skyEquimap->getSkyComponent()->setVisibility(false);
+	skyAtmosphere->getSkyComponent()->setVisibility(false);
 
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();

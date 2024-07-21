@@ -49,7 +49,7 @@ namespace pathos {
 	}
 
 	void SkyboxComponent::createRenderProxy(SceneProxy* scene) {
-		if (!hasValidResources()) {
+		if (!hasValidResources() || !getVisibility()) {
 			scene->skybox = nullptr;
 			return;
 		}

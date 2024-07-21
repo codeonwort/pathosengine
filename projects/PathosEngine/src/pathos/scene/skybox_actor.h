@@ -24,7 +24,7 @@ namespace pathos {
 
 		void setSkyboxMaterial(Material* material);
 
-		inline SkyboxComponent* getSkyboxComponent() const { return component; }
+		inline SkyboxComponent* getSkyComponent() const { return component; }
 
 	private:
 		SkyboxComponent* component;
