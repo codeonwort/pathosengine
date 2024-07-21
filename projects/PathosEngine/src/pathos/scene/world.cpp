@@ -88,7 +88,7 @@ namespace pathos {
 		}
 		actors.clear();
 
-		gEngine->getInputSystem()->destroyInputManager(inputManager);
+		delete inputManager;
 
 		onDestroy();
 	}

@@ -14,17 +14,17 @@ namespace pathos {
 	// InputSystem is a bridge between Engine and InputManager.
 	// It just delegates all works to input managers.
 	class InputSystem final {
+		friend class InputManager;
 
 	public:
 		InputSystem();
 		~InputSystem();
 
-		// CAUTION: Usually each world instance should acquire its own manager by World::getInputManager().
+		// CAUTION: Usually each world instance should use its own input manager via World::getInputManager().
 		InputManager* getDefaultInputManager() const { return defaultInputManager; }
 
-		// Created for current world instance.
+		// Create an input manager and add to input chain.
 		InputManager* createInputManager();
-		void destroyInputManager(InputManager* inputManager);
 
 		void tick();
 
@@ -37,6 +37,8 @@ namespace pathos {
 		void processButtonUp(InputConstants input);
 
 	private:
+		void unregisterInputManager(InputManager* inputManager);
+
 		// - Shared by every aspects of the engine instance.
 		// - Can be shared across different worlds, so it's better that each world instance
 		//   create its own input manager.

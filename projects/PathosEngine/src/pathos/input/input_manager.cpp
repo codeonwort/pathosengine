@@ -1,4 +1,5 @@
 #include "input_manager.h"
+#include "input_system.h"
 
 #include "badger/system/platform.h"
 #include "badger/types/string_hash.h"
@@ -12,6 +13,14 @@
 #endif
 
 namespace pathos {
+
+	InputManager::InputManager(InputSystem* inOwner) {
+		owner = inOwner;
+	}
+
+	InputManager::~InputManager() {
+		owner->unregisterInputManager(this);
+	}
 
 	bool InputManager::hasButtonPressed(const char* eventName) const
 	{
@@ -150,6 +159,17 @@ namespace pathos {
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
 		size_t numRemoved = axisMapping.erase(hash);
 		return (bool)numRemoved;
+	}
+
+	void InputManager::activate() {
+		bActivated = true;
+	}
+
+	void InputManager::deactivate(bool clearKeyStates /*= true*/) {
+		bActivated = false;
+		if (clearKeyStates) {
+			::memset(asciiMap, 0, sizeof(asciiMap));
+		}
 	}
 
 	float InputManager::getAxis(const char* eventName) const

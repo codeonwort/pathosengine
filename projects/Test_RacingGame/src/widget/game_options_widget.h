@@ -9,13 +9,14 @@ using namespace pathos;
 
 namespace pathos {
 	class Label;
+	class Rectangle;
 }
 class World_RacingTitle;
 
-class TitleWidget : public BaseWidget {
+class GameOptionsWidget : public BaseWidget {
 
 public:
-	TitleWidget(World_RacingTitle* inOwnerWorld);
+	GameOptionsWidget(World_RacingTitle* inOwnerWorld);
 
 private:
 	void createUI();
@@ -24,11 +25,9 @@ private:
 
 	World_RacingTitle* ownerWorld = nullptr;
 
-	Label* startLabel = nullptr;
-	Label* optionsLabel = nullptr;
-	Label* exitLabel = nullptr;
+	pathos::Rectangle* background = nullptr;
 
-	int32 selectedLabel = -1;
-	std::vector<Label*> labels;
+	int32 selectedItem = -1;
+	std::vector<DisplayObject2D*> optionItems;
 
 };

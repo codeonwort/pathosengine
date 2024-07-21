@@ -88,6 +88,8 @@
   <ItemGroup>
     <ClCompile Include="src\main_racing_game.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
+    <ClCompile Include="src\widget\base_widget.cpp" />
+    <ClCompile Include="src\widget\game_options_widget.cpp" />
     <ClCompile Include="src\widget\title_widget.cpp" />
     <ClCompile Include="src\world\world_racing_game.cpp" />
     <ClCompile Include="src\world\world_racing_title.cpp" />
@@ -95,6 +97,8 @@
   <ItemGroup>
     <ClInclude Include="src\pathos_forward_decl.h" />
     <ClInclude Include="src\player_controller.h" />
+    <ClInclude Include="src\widget\base_widget.h" />
+    <ClInclude Include="src\widget\game_options_widget.h" />
     <ClInclude Include="src\widget\title_widget.h" />
     <ClInclude Include="src\world\world_racing_game.h" />
     <ClInclude Include="src\world\world_racing_title.h" />

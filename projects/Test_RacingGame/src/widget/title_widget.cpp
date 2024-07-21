@@ -5,7 +5,9 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
-TitleWidget::TitleWidget(World_RacingTitle* inOwnerWorld) {
+TitleWidget::TitleWidget(World_RacingTitle* inOwnerWorld)
+	: BaseWidget()
+{
 	ownerWorld = inOwnerWorld;
 	createUI();
 	bindInput();
@@ -22,21 +24,21 @@ void TitleWidget::createUI() {
 	startLabel->setY(screenHeight / 2.0f);
 	addChild(startLabel);
 
-	settingsLabel = new pathos::Label;
-	settingsLabel->setText(L"Settings");
-	settingsLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
-	settingsLabel->setX(screenWidth / 2.0f);
-	settingsLabel->setY(startLabel->getY() + 20.0f);
-	addChild(settingsLabel);
+	optionsLabel = new pathos::Label;
+	optionsLabel->setText(L"Options");
+	optionsLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
+	optionsLabel->setX(screenWidth / 2.0f);
+	optionsLabel->setY(startLabel->getY() + 20.0f);
+	addChild(optionsLabel);
 
 	exitLabel = new pathos::Label;
 	exitLabel->setText(L"Exit");
 	exitLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
 	exitLabel->setX(screenWidth / 2.0f);
-	exitLabel->setY(settingsLabel->getY() + 20.0f);
+	exitLabel->setY(optionsLabel->getY() + 20.0f);
 	addChild(exitLabel);
 
-	labels = { startLabel, settingsLabel, exitLabel };
+	labels = { startLabel, optionsLabel, exitLabel };
 	selectedLabel = 0;
 	updateUI();
 }
@@ -47,7 +49,6 @@ void TitleWidget::bindInput() {
 	down.addInput(InputConstants::KEYBOARD_ARROW_DOWN);
 	confirm.addInput(InputConstants::SPACE);
 
-	InputManager* inputManager = gEngine->getInputSystem()->getDefaultInputManager();
 	inputManager->bindButtonPressed("up", up, [this]() {
 		selectedLabel = (selectedLabel - 1 + (int32)labels.size()) % labels.size();
 		updateUI();
@@ -58,13 +59,13 @@ void TitleWidget::bindInput() {
 	});
 	inputManager->bindButtonPressed("confirm", confirm, [this]() {
 		if (labels[selectedLabel] == startLabel) {
-			LOG(LogDebug, "Start Game");
-			ownerWorld->onStartGame();
-		} else if (labels[selectedLabel] == settingsLabel) {
-			// #wip: Implement settings widget.
-			LOG(LogDebug, "WIP: Settings");
+			LOG(LogDebug, "[Game] Start game world");
+			ownerWorld->onStartGameWorld();
+		} else if (labels[selectedLabel] == optionsLabel) {
+			LOG(LogDebug, "[Game] Open options widget");
+			ownerWorld->onOpenOptionsWidget();
 		} else if (labels[selectedLabel] == exitLabel) {
-			LOG(LogDebug, "Exit Game");
+			LOG(LogDebug, "[Game] Exit the program");
 			gEngine->stop();
 		} else {
 			LOG(LogError, "Unknown label index: %d", selectedLabel);

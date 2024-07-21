@@ -1,6 +1,7 @@
 #include "world_racing_title.h"
 #include "world_racing_game.h"
 #include "widget/title_widget.h"
+#include "widget/game_options_widget.h"
 
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
@@ -15,17 +16,27 @@ void World_RacingTitle::onInitialize() {
 
 void World_RacingTitle::onDestroy() {
 	auto rootOverlay = gEngine->getOverlayRoot();
+
 	rootOverlay->removeChild(titleWidget);
+	rootOverlay->removeChild(optionsWidget);
 	delete titleWidget;
+	delete optionsWidget;
 }
 
 void World_RacingTitle::onTick(float deltaSeconds) {
 	//
 }
 
-void World_RacingTitle::onStartGame() {
+void World_RacingTitle::onStartGameWorld() {
 	World* gameWorld = new World_RacingGame;
 	gEngine->setWorld(gameWorld);
+}
+
+void World_RacingTitle::onOpenOptionsWidget() {
+	auto rootOverlay = gEngine->getOverlayRoot();
+
+	titleWidget->setWidgetEnabled(false);
+	optionsWidget->setWidgetEnabled(true);
 }
 
 void World_RacingTitle::loadScene() {
@@ -41,5 +52,11 @@ void World_RacingTitle::createWidgets() {
 	auto rootOverlay = gEngine->getOverlayRoot();
 
 	titleWidget = new TitleWidget(this);
+	optionsWidget = new GameOptionsWidget(this);
+
 	rootOverlay->addChild(titleWidget);
+	rootOverlay->addChild(optionsWidget);
+
+	titleWidget->setWidgetEnabled(true);
+	optionsWidget->setWidgetEnabled(false);
 }

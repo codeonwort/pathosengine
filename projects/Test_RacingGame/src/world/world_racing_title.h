@@ -5,6 +5,7 @@
 using namespace pathos;
 
 class TitleWidget;
+class GameOptionsWidget;
 #include "pathos_forward_decl.h"
 
 class World_RacingTitle : public World {
@@ -17,7 +18,8 @@ protected:
 	// END_INTERFACE: World
 
 public:
-	void onStartGame();
+	void onStartGameWorld();
+	void onOpenOptionsWidget();
 
 private:
 	void loadScene();
@@ -27,4 +29,5 @@ private:
 	DirectionalLightActor* sun = nullptr;
 
 	TitleWidget* titleWidget = nullptr;
+	GameOptionsWidget* optionsWidget = nullptr;
 };

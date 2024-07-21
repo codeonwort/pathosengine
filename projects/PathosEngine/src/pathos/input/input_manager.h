@@ -72,6 +72,8 @@ namespace pathos {
 		friend class XInputManager;
 
 	public:
+		~InputManager();
+
 		// Returns true if a buttonPressed binding already exists for the given eventName, false otherwise.
 		bool hasButtonPressed(const char* eventName) const;
 		// Returns true if a buttonReleased binding already exists for the given eventName, false otherwise.
@@ -93,6 +95,10 @@ namespace pathos {
 		// Unbind an existing axis binding for 'eventName'. Returns true if there was a binding.
 		bool unbindAxis(const char* eventName);
 
+		void activate();
+		// Deactivated input manager does not fire events until activated again.
+		void deactivate(bool clearKeyStates = true);
+
 		void tick();
 		void updateAxisValue();
 
@@ -107,7 +113,7 @@ namespace pathos {
 		void bindXInput(XInputUserIndex userIndex);
 
 	private:
-		InputManager() = default;
+		InputManager(InputSystem* inOwner);
 
 		// #todo-input: Integrate
 		void processRawKeyDown(uint8 ascii);
@@ -118,6 +124,9 @@ namespace pathos {
 		void processButtonUp(InputConstants input);
 
 	private:
+		bool bActivated = true;
+		InputSystem* owner = nullptr;
+
 		bool asciiMap[256] = { false, };
 		bool isShiftActive = false;
 		bool isCtrlActive = false;
