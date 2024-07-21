@@ -113,6 +113,8 @@ namespace pathos {
 		// - To disconnect, pass XInputUserIndex::MAX_USERS as an argument.
 		void bindXInput(XInputUserIndex userIndex);
 
+		void copyKeyStateFrom(InputManager* another);
+
 	private:
 		InputManager(InputSystem* inOwner);
 

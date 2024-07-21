@@ -17,9 +17,11 @@ protected:
 	virtual void onTick(float deltaSeconds) override;
 	// END_INTERFACE: World
 
+// Events
 public:
 	void onStartGameWorld();
 	void onOpenOptionsWidget();
+	void onCloseOptionsWidget();
 
 private:
 	void loadScene();

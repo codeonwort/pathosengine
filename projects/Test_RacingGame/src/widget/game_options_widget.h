@@ -26,8 +26,13 @@ private:
 	World_RacingTitle* ownerWorld = nullptr;
 
 	pathos::Rectangle* background = nullptr;
+	pathos::Label* resolutionHeaderLabel = nullptr;
+	pathos::Label* resolutionContentLabel = nullptr;
+	pathos::Label* backToTitleLabel = nullptr;
 
 	int32 selectedItem = -1;
-	std::vector<DisplayObject2D*> optionItems;
+	std::vector<pathos::Label*> optionItems;
+
+	int32 selectedResolution = -1;
 
 };

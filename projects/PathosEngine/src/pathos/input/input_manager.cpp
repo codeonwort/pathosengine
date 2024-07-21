@@ -183,6 +183,21 @@ namespace pathos {
 		xinputUserIndex = userIndex;
 	}
 
+	void InputManager::copyKeyStateFrom(InputManager* another) {
+		for (int32 i = 0; i < _countof(another->asciiMap); ++i) {
+			asciiMap[i] = another->asciiMap[i];
+			if (asciiToInputConstants[i] != InputConstants::UNDEFINED) {
+				InputConstants ic = asciiToInputConstants[i];
+				for (ButtonBinding& binding : buttonPressedBindings) {
+					if (binding.contains(ic)) {
+						binding.bPressFired = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	void InputManager::processRawKeyDown(uint8 ascii)
 	{
 		std::vector<uint32> matchingEvents;

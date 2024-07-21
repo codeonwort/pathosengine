@@ -77,7 +77,7 @@ void TitleWidget::updateUI() {
 		if ((int32)i == selectedLabel) {
 			labels[i]->setColor(vector3(1.0f, 1.0f, 1.0f));
 		} else {
-			labels[i]->setColor(vector3(0.2f, 0.2f, 0.2f));
+			labels[i]->setColor(vector3(0.4f, 0.4f, 0.4f));
 		}
 	}
 }

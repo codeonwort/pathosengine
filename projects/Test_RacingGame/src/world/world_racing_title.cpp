@@ -33,10 +33,13 @@ void World_RacingTitle::onStartGameWorld() {
 }
 
 void World_RacingTitle::onOpenOptionsWidget() {
-	auto rootOverlay = gEngine->getOverlayRoot();
-
 	titleWidget->setWidgetEnabled(false);
 	optionsWidget->setWidgetEnabled(true);
+}
+
+void World_RacingTitle::onCloseOptionsWidget() {
+	titleWidget->setWidgetEnabled(true);
+	optionsWidget->setWidgetEnabled(false);
 }
 
 void World_RacingTitle::loadScene() {

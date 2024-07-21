@@ -49,6 +49,7 @@ namespace pathos {
 
 		inline void setX(float value) { x = value; }
 		inline void setY(float value) { y = value; }
+		inline void setXY(float newX, float newY) { x = newX; y = newY; }
 		inline void setScaleX(float value) { scaleX = value; }
 		inline void setScaleY(float value) { scaleY = value; }
 

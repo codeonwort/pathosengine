@@ -16,6 +16,9 @@ void BaseWidget::setWidgetEnabled(bool value) {
 	setVisible(value);
 	if (value) {
 		inputManager->activate();
+		// When activating a widget, it may handle keyPress events immediately, which is not preferrable.
+		// Prevent it by copying key press states from the default input manager.
+		inputManager->copyKeyStateFrom(gEngine->getInputSystem()->getDefaultInputManager());
 	} else {
 		inputManager->deactivate(true);
 	}
