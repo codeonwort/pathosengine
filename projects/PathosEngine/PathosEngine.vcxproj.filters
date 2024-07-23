@@ -132,7 +132,7 @@
     <ClCompile Include="src\pathos\render\shadow_directional.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\gl3w\gl3w.c">
+    <ClCompile Include="src\thirdparty\gl3w.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp">
@@ -273,10 +273,10 @@
     <ClCompile Include="src\badger\math\spline.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\init_tinygltf.cpp">
+    <ClCompile Include="src\thirdparty\tinygltf.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\init_tinyobjloader.cpp">
+    <ClCompile Include="src\thirdparty\tinyobjloader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\spline_loader.cpp">
