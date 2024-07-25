@@ -90,6 +90,8 @@
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
     <ClCompile Include="src\badger\system\cpu.cpp" />
     <ClCompile Include="src\badger\system\thread_pool.cpp" />
+    <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
     <ClCompile Include="src\thirdparty\gl3w.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -249,6 +251,8 @@
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />
+    <ClInclude Include="src\pathos\scene\landscape_actor.h" />
+    <ClInclude Include="src\pathos\scene\landscape_component.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />

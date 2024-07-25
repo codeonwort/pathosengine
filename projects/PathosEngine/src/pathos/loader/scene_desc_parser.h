@@ -48,6 +48,12 @@ namespace pathos {
 			Rotator rotation;
 			vector3 scale;
 		};
+		struct Landscape {
+			std::string name;
+			vector3 location;
+			Rotator rotation;
+			vector3 scale;
+		};
 
 		std::string sceneName;
 		SkyAtmosphere skyAtmosphere;
@@ -56,6 +62,7 @@ namespace pathos {
 		std::vector<DirLight> dirLights;
 		std::vector<PointLight> pointLights;
 		std::vector<StaticMesh> staticMeshes;
+		std::vector<Landscape> landscapes;
 	};
 
 	class SceneDescriptionParser {

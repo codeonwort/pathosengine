@@ -5,6 +5,8 @@
 #include "pathos/render_minimal.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/scene/static_mesh_actor.h"
+#include "pathos/scene/landscape_actor.h"
+#include "pathos/scene/landscape_component.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/skybox_actor.h"
 #include "pathos/scene/sky_panorama_actor.h"
@@ -88,14 +90,9 @@ void World_RacingGame::prepareAssets() {
 	M_color->setConstantParameter("roughness", 0.2f);
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
-	Texture* landscapeAlbedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 1, true, true, "Texture_Landscape");
-	Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
-
 	auto G_sphere = new SphereGeometry(1.0f, 30);
-	auto G_plane = new PlaneGeometry(128.0f, 128.0f, 1, 1);
 
 	carDummyMesh = makeShared<Mesh>(G_sphere, M_color);
-	landscapeMesh = makeShared<Mesh>(G_plane, M_landscape);
 
 	// Volumetric Clouds
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
@@ -160,11 +157,28 @@ void World_RacingGame::reloadScene() {
 
 void World_RacingGame::setupScene() {
 	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
-	landscape->setStaticMesh(landscapeMesh.get());
-	landscape->getStaticMeshComponent()->castsShadow = false;
 	for (size_t i = 0; i < treeActors.size(); ++i) {
 		treeActors[i]->setStaticMesh(treeMesh.get());
 	}
+
+	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
+	gConsole->addLine(L"r.depth_prepass 0");
+
+	// #wip-landscape: Temp material
+	Material* M_landscape = Material::createMaterialInstance("landscape");
+	M_landscape->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
+	M_landscape->setConstantParameter("metallic", 0.0f);
+	M_landscape->setConstantParameter("roughness", 0.2f);
+	M_landscape->setConstantParameter("emissive", vector3(0.0f));
+	landscape->getLandscapeComponent()->setMaterial(M_landscape);
+	landscape->initializeSectors(40.0f, 40.0f, 10, 10);
+	landscape->setActorLocation(-200.0f, -1.0f, -200.0f);
+	//Texture* landscapeAlbedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 1, true, true, "Texture_Landscape");
+	//Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
+
+	// 1. PARAMETER_BUFFER
+	// 2. gl_DrawID
+	// which are currently not supported in material assembler.
 }
 
 void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {

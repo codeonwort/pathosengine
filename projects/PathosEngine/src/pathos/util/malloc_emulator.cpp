@@ -4,21 +4,28 @@
 
 #define DEBUG_MALLOC_EMULATOR 0
 
+static uint64 alignBytes(uint64 size, uint64 alignment) {
+	return (size + (alignment - 1)) & ~(alignment - 1);
+}
+
 namespace pathos {
 
 	MallocEmulator::~MallocEmulator() {
 		cleanup();
 	}
 
-	void MallocEmulator::initialize(uint64 totalBytes) {
+	void MallocEmulator::initialize(uint64 inTotalBytes, uint64 inAlignment) {
+		alignment = inAlignment;
 		CHECK(root == nullptr);
-		root = new Range{ 0, totalBytes, nullptr, nullptr, nullptr };
-		remainingBytes = totalBytes;
+		root = new Range{ 0, inTotalBytes, nullptr, nullptr, nullptr };
+		remainingBytes = inTotalBytes;
 		numAllocations = 1; // root node
 	}
 
 	uint64 MallocEmulator::allocate(uint64 bytes) {
 		CHECK(root != nullptr && bytes > 0);
+		bytes = (alignment == 0) ? bytes : alignBytes(bytes, alignment);
+
 		std::vector<Range*> Q{ root };
 		Range* node = nullptr;
 		// #todo-performance: Can't decide one branch and forget another unless I track 'maximum allocatable bytes' for every node.

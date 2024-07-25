@@ -4,6 +4,7 @@
 #include "pathos/material/material_shader.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/landscape_component.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/rect_light_component.h"
 #include "pathos/scene/directional_light_component.h"
@@ -38,6 +39,7 @@ namespace pathos {
 		proxyList_shadowMesh.clear();
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
+		proxyList_landscape.clear();
 		proxyList_reflectionProbe.clear();
 		proxyList_irradianceVolume.clear();
 		skybox = nullptr;
@@ -147,6 +149,10 @@ namespace pathos {
 		}
 
 		proxyList_shadowMesh.push_back(proxy);
+	}
+
+	void SceneProxy::addLandscapeProxy(LandscapeProxy* proxy) {
+		proxyList_landscape.push_back(proxy);
 	}
 
 }

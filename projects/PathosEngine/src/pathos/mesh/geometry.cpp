@@ -53,6 +53,9 @@ namespace pathos {
 
 	uint32 MeshGeometry::getIndexCount() const { return (uint32)indexData.size(); }
 	
+	// gRenderDevice->getIndexBufferPool() gaurantees 4-byte alignment
+	uint32 MeshGeometry::getFirstIndex() const { return (uint32)indexBuffer.offset / (isIndex16Bit() ? 2 : 4); }
+
 	bool MeshGeometry::isIndex16Bit() const { return indexDatatype == GL_UNSIGNED_SHORT; }
 
 	void MeshGeometry::updatePositionData(const GLfloat* data, uint32 length) {

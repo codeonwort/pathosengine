@@ -10,6 +10,7 @@
 #define KEY_DIRECTIONAL_LIGHTS    "directionalLight"
 #define KEY_POINT_LIGHTS          "pointLight"
 #define KEY_STATIC_MESHES         "staticMesh"
+#define KEY_LANDSCAPES            "landscape"
 
 namespace pathos {
 
@@ -168,6 +169,30 @@ namespace pathos {
 		}
 	}
 
+	static void parseLandscapes(nlohmann::json& document, SceneDescription& outDesc) {
+		if (!document.contains(KEY_LANDSCAPES)) {
+			return;
+		}
+
+		for (auto& [unused_key, SM] : document[KEY_LANDSCAPES].items()) {
+			if (!checkMembers(SM, { "name", "location", "rotation", "scale" })) {
+				continue;
+			}
+
+			std::string name(parseName(SM));
+			vector3 loc = parseVec3(SM["location"]);
+			vector3 rot = parseVec3(SM["rotation"]);
+			vector3 scale = parseVec3(SM["scale"]);
+
+			// #todo-loader: How to support actual assets here?
+
+			SceneDescription::Landscape desc{
+				name, loc, Rotator(rot.x, rot.y, rot.z), scale
+			};
+			outDesc.landscapes.emplace_back(desc);
+		}
+	}
+
 	bool SceneDescriptionParser::parse(const std::string& jsonString, SceneDescription& outDesc) {
 		nlohmann::json document = nlohmann::json::parse(jsonString);
 
@@ -186,6 +211,7 @@ namespace pathos {
 		parseDirLights(document, outDesc);
 		parsePointLights(document, outDesc);
 		parseStaticMeshes(document, outDesc);
+		parseLandscapes(document, outDesc);
 
 		return true;
 	}

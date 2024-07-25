@@ -13,6 +13,7 @@ namespace pathos {
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
+	class LandscapeActor;
 	class Mesh;
 	class Texture;
 	class OBJLoader;
@@ -49,11 +50,11 @@ private:
 	PointLightActor* pointLight0 = nullptr;
 
 	StaticMeshActor* playerCar = nullptr;
-	StaticMeshActor* landscape = nullptr; // #todo-landscape: Implement LandscapeActor
+
+	LandscapeActor* landscape = nullptr;
 
 	sharedPtr<Mesh> carMesh;
 	sharedPtr<Mesh> carDummyMesh;
-	sharedPtr<Mesh> landscapeMesh;
 
 	std::vector<StaticMeshActor*> treeActors;
 	sharedPtr<Mesh> treeMesh;

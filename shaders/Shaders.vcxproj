@@ -53,6 +53,7 @@
     <None Include="indirect_lighting.glsl" />
     <None Include="materials\gltf_opaque.glsl" />
     <None Include="materials\guard_tower.glsl" />
+    <None Include="materials\landscape.glsl" />
     <None Include="materials\lightning_bolt.glsl" />
     <None Include="materials\pbr_texture.glsl" />
     <None Include="materials\solid_color.glsl" />

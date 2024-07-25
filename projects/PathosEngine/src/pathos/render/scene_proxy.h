@@ -23,6 +23,7 @@ namespace pathos {
 	class DirectionalLightComponent;
 
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
+	using LandscapeProxyList = std::vector<struct LandscapeProxy*>;
 
 	enum class SceneProxySource : uint8 {
 		MainScene         = 0,
@@ -78,6 +79,9 @@ namespace pathos {
 
 		void addShadowMeshProxy(struct ShadowMeshProxy* proxy);
 
+		void addLandscapeProxy(struct LandscapeProxy* proxy);
+		const LandscapeProxyList& getLandscapeMeshes() const { return proxyList_landscape; }
+
 		//
 		// Utilities to check if various proxies are valid.
 		//
@@ -114,6 +118,9 @@ namespace pathos {
 		// Standard mesh proxies
 		StaticMeshProxyList                        proxyList_staticMeshOpaque;
 		StaticMeshProxyList                        proxyList_staticMeshTranslucent;
+
+		// Landscape
+		LandscapeProxyList                         proxyList_landscape;
 		
 		bool                                       bInvalidateSkyLighting = false;
 		struct SkyboxProxy*                        skybox = nullptr;

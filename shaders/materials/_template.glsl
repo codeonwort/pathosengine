@@ -150,8 +150,12 @@ vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap) {
 #include "core/brdf.glsl"
 #endif
 
+$NEED embedGlsl
+
+#if VERTEX_SHADER
 // Controls world position offset.
 $NEED getVertexPositionOffset
+#endif
 
 // Most important output of material shaders.
 $NEED getMaterialAttributes

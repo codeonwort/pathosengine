@@ -91,14 +91,14 @@ namespace pathos {
 		releaseGPUResource();
 	}
 
-	void BufferPool::createGPUResource(uint64 totalBytes, const char* debugName, bool flushGPU /*= false*/) {
+	void BufferPool::createGPUResource(uint64 totalBytes, uint64 alignment, const char* debugName, bool flushGPU /*= false*/) {
 		CHECK(internalBuffer == nullptr);
 		if (internalBuffer == nullptr) {
 			CHECKF(totalBytes <= 0xffffffff, "totalBytes can't exceed uint32 max yet... need to refactor Buffer class");
 			BufferCreateParams createParams{ EBufferUsage::CpuWrite, (uint32)totalBytes, nullptr, debugName };
 			internalBuffer = new Buffer(createParams);
 			internalBuffer->createGPUResource(flushGPU);
-			mallocEmulator.initialize(totalBytes);
+			mallocEmulator.initialize(totalBytes, alignment);
 		}
 	}
 

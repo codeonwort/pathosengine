@@ -62,6 +62,7 @@ namespace pathos {
 
 		inline vector3 getPosition(uint32 index) const { return positionData[index]; }
 		uint32 getIndexCount() const;
+		uint32 getFirstIndex() const;
 		bool isIndex16Bit() const;
 		inline const AABB& getLocalBounds() const { return localBounds; }
 

@@ -68,7 +68,7 @@ namespace pathos {
 
 		~BufferPool();
 
-		void createGPUResource(uint64 totalBytes, const char* debugName, bool flushGPU = false);
+		void createGPUResource(uint64 totalBytes, uint64 alignment, const char* debugName, bool flushGPU = false);
 		void releaseGPUResource();
 
 		void writeToGPU(int64 offset, int64 size, void* data);

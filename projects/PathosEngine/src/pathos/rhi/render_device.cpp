@@ -157,11 +157,12 @@ namespace pathos {
 		}
 
 		positionBufferPool = new BufferPool;
-		positionBufferPool->createGPUResource(cvarPositionBufferPoolSize.getInt(), "GPositionBufferPool");
+		positionBufferPool->createGPUResource(cvarPositionBufferPoolSize.getInt(), 0, "GPositionBufferPool");
 		varyingBufferPool = new BufferPool;
-		varyingBufferPool->createGPUResource(cvarVaryingBufferPoolSize.getInt(), "GVaryingBufferPool");
+		varyingBufferPool->createGPUResource(cvarVaryingBufferPoolSize.getInt(), 0, "GVaryingBufferPool");
+		// indexBufferPool needs 4-byte alignment for Multi Indirect Draw.
 		indexBufferPool = new BufferPool;
-		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), "GIndexBufferPool");
+		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), 4, "GIndexBufferPool");
 
 		return true;
 	}
