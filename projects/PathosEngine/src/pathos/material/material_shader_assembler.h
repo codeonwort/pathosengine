@@ -13,16 +13,17 @@ namespace pathos {
 
 		// Check if _template.glsl is valid.
 		bool checkPlaceholders() const {
-			return lineIx_shaderstage != -1
-				&& lineIx_shadingmodel != -1
-				&& lineIx_outputworldnormal != -1 // Optional
-				&& lineIx_skyboxmaterial != -1 // Optional
-				&& lineIx_ubo != -1
-				&& lineIx_textureParams != -1
-				&& lineIx_getVPO != -1
+			return lineIx_shaderstage          != -1
+				&& lineIx_shadingmodel         != -1
+				&& lineIx_outputworldnormal    != -1 // Optional
+				&& lineIx_skyboxmaterial       != -1 // Optional
+				&& lineIx_transferdrawid       != -1 // Optional
+				&& lineIx_ubo                  != -1
+				&& lineIx_textureParams        != -1
+				&& lineIx_getVPO               != -1
 				//&& lineIx_getSceneColor != -1 // Forward shading only
-				&& lineIx_embedGlsl != -1 // Optional
-				&& lineIx_getMaterialAttrs != -1;
+				&& lineIx_embedGlsl            != -1 // Optional
+				&& lineIx_getMaterialAttrs     != -1;
 		}
 
 		// Find line numbers that start with a $NEED token.
@@ -52,6 +53,9 @@ namespace pathos {
 		void replaceSkyboxMaterial(const std::string& skyboxMaterial) {
 			sourceLines[lineIx_skyboxmaterial] = skyboxMaterial;
 		}
+		void replaceTransferDrawID(const std::string& defineTransferDrawID) {
+			sourceLines[lineIx_transferdrawid] = defineTransferDrawID;
+		}
 		void replaceUBO(const std::string& defineUBO) {
 			sourceLines[lineIx_ubo] = defineUBO;
 		}
@@ -77,6 +81,7 @@ namespace pathos {
 		int32 lineIx_shadingmodel      = -1;
 		int32 lineIx_outputworldnormal = -1;
 		int32 lineIx_skyboxmaterial    = -1;
+		int32 lineIx_transferdrawid    = -1;
 		int32 lineIx_ubo               = -1;
 		int32 lineIx_textureParams     = -1;
 		int32 lineIx_getVPO            = -1;

@@ -19,7 +19,8 @@
 #include "badger/math/random.h"
 
 #define SCENE_DESC_FILE          "resources/racing_game/test_scene.json"
-#define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/landscape.jpg"
+#define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/everest_albedo.png"
+#define LANDSCAPE_HEIGHT_MAP     "resources/racing_game/everest_height.png"
 
 // #wip: Proper weather map for volumetric clouds
 //#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
@@ -164,21 +165,17 @@ void World_RacingGame::setupScene() {
 	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
 	gConsole->addLine(L"r.depth_prepass 0");
 
+	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, true, true, "Texture_Landscape_Albedo");
+	Texture* heightTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP), 0, false, true, "Texture_Landscape_Height");
+
 	// #wip-landscape: Temp material
 	Material* M_landscape = Material::createMaterialInstance("landscape");
-	M_landscape->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
-	M_landscape->setConstantParameter("metallic", 0.0f);
-	M_landscape->setConstantParameter("roughness", 0.2f);
-	M_landscape->setConstantParameter("emissive", vector3(0.0f));
-	landscape->getLandscapeComponent()->setMaterial(M_landscape);
-	landscape->initializeSectors(40.0f, 40.0f, 10, 10);
-	landscape->setActorLocation(-200.0f, -1.0f, -200.0f);
-	//Texture* landscapeAlbedo = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 1, true, true, "Texture_Landscape");
-	//Material* M_landscape = pathos::createPBRMaterial(landscapeAlbedo);
+	M_landscape->setTextureParameter("albedo", albedoTexture);
+	M_landscape->setTextureParameter("heightmap", heightTexture);
 
-	// 1. PARAMETER_BUFFER
-	// 2. gl_DrawID
-	// which are currently not supported in material assembler.
+	landscape->getLandscapeComponent()->setMaterial(M_landscape);
+	landscape->initializeSectors(80.0f, 80.0f, 10, 10);
+	landscape->setActorLocation(-400.0f, -20.0f, -400.0f);
 }
 
 void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {

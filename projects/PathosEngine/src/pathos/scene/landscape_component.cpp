@@ -12,6 +12,7 @@ struct DrawElementsIndirectCommand {
 };
 
 struct LandscapeSectorParameter {
+	vector4 uvBounds;
 	float offsetX;
 	float offsetY;
 	float _pad0;
@@ -92,6 +93,7 @@ namespace pathos {
 				drawCommands.emplace_back(cmd);
 
 				LandscapeSectorParameter sector{
+					vector4((float)sectorX / countX, (float)sectorY / countY, (float)(sectorX + 1) / countX, (float)(sectorY + 1) / countY),
 					sectorX * sizeX,
 					sectorY * sizeY,
 					0.0f,

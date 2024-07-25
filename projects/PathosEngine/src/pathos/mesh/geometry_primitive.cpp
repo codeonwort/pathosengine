@@ -61,10 +61,11 @@ namespace pathos {
 				positions[size_t(k * 3)] = x0 + segW * j;
 				positions[size_t(k * 3 + 1)] = y0 + segH * i;
 				positions[size_t(k * 3 + 2)] = 0.0f;
-				//uvs[k * 2] = (float)j / gridX;
-				//uvs[k * 2 + 1] = (float)i / gridY;
-				uvs[size_t(k * 2)] = (float)j;
-				uvs[size_t(k * 2 + 1)] = (float)i;
+				// #todo-geometry: Normalize or repeat UV?
+				uvs[size_t(k * 2)] = (float)j / gridX;
+				uvs[size_t(k * 2 + 1)] = (float)i / gridY;
+				//uvs[size_t(k * 2)] = (float)j;
+				//uvs[size_t(k * 2 + 1)] = (float)i;
 				normals[size_t(k * 3)] = 0.0f;
 				normals[size_t(k * 3 + 1)] = 0.0f;
 				normals[size_t(k * 3 + 2)] = 1.0f;
