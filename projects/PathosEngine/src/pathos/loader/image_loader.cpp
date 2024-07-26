@@ -222,7 +222,7 @@ namespace pathos {
 		createParams.width                = blobs[0]->width;
 		createParams.height               = blobs[0]->height;
 		createParams.depth                = 1;
-		createParams.mipLevels            = mipLevels ? 0 : 1; // #wip: Why did I force it to be 0 or 1? Can't remember...
+		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_CUBE_MAP;
 		createParams.glStorageFormat      = blobs[0]->glStorageFormat;
 		createParams.imageBlobs           = blobs;
