@@ -1,6 +1,6 @@
 #include "geometry_primitive.h"
 
-// NOTE: CCW winding
+// NOTE: All triangles are counter-clockwise w.r.t OpenGL coordinate system.
 
 namespace pathos {
 
@@ -28,6 +28,88 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// PlaneGeometry
+	void PlaneGeometry::generate(
+		float width, float height,
+		uint32 gridX, uint32 gridY,
+		PlaneGeometry::Direction direction,
+		EPrimitiveInitOptions options,
+		std::vector<float>& outPositions,
+		std::vector<float>& outUVs,
+		std::vector<float>& outNormals,
+		std::vector<uint32>& outIndices)
+	{
+		const uint32 numVertices = (gridX + 1) * (gridY + 1);
+		const float segW = width / gridX, segH = height / gridY;
+		const float x0 = -0.5f * width, y0 = -0.5f * height;
+
+		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
+
+		CHECKF(ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculatePosition), "Position must be calculated");
+		outPositions.resize(numVertices * 3);
+		if (bCalculateUV) outUVs.resize(numVertices * 2);
+		if (bCalculateNormal) outNormals.resize(numVertices * 3);
+		outIndices.resize(gridX * gridY * 6);
+
+		// Calculate attributes assuming Direction::Z
+		size_t k = 0;
+		for (auto i = 0u; i <= gridY; i++) {
+			for (auto j = 0u; j <= gridX; j++) {
+				outPositions[size_t(k * 3)] = x0 + segW * j;
+				outPositions[size_t(k * 3 + 1)] = y0 + segH * i;
+				outPositions[size_t(k * 3 + 2)] = 0.0f;
+				if (bCalculateUV) {
+					// #todo-geometry: Normalize or repeat UV?
+					outUVs[size_t(k * 2)] = (float)j / gridX;
+					outUVs[size_t(k * 2 + 1)] = (float)i / gridY;
+					//outUVs[size_t(k * 2)] = (float)j;
+					//outUVs[size_t(k * 2 + 1)] = (float)i;
+				}
+				if (bCalculateNormal) {
+					outNormals[size_t(k * 3)] = 0.0f;
+					outNormals[size_t(k * 3 + 1)] = 0.0f;
+					outNormals[size_t(k * 3 + 2)] = 1.0f;
+				}
+				k++;
+			}
+		}
+
+		// If not Direction::Z, then rotate the attributes.
+		if (direction == PlaneGeometry::Direction::X) {
+			for (auto i = 0u; i < outPositions.size(); i += 3) {
+				outPositions[size_t(i + 2)] = -outPositions[i];
+				outPositions[i] = 0.0f;
+				if (bCalculateNormal) {
+					outNormals[i] = 1.0f;
+					outNormals[size_t(i + 1)] = outNormals[size_t(i + 2)] = 0.0f;
+				}
+			}
+		} else if (direction == PlaneGeometry::Direction::Y) {
+			for (auto i = 0u; i < outPositions.size(); i += 3) {
+				outPositions[size_t(i + 2)] = -outPositions[size_t(i + 1)];
+				outPositions[size_t(i + 1)] = 0.0f;
+				if (bCalculateNormal) {
+					outNormals[size_t(i + 1)] = 1.0f;
+					outNormals[i] = outNormals[size_t(i + 2)] = 0.0f;
+				}
+			}
+		}
+
+		k = 0;
+		for (auto i = 0u; i < gridY; i++) {
+			auto baseY = i * (gridX + 1);
+			for (auto j = 0u; j < gridX; j++) {
+				outIndices[k] = baseY + j;
+				outIndices[k + 1] = baseY + j + 1;
+				outIndices[k + 2] = baseY + j + (gridX + 1);
+				outIndices[k + 3] = baseY + j + 1;
+				outIndices[k + 4] = baseY + j + (gridX + 1) + 1;
+				outIndices[k + 5] = baseY + j + (gridX + 1);
+				k += 6;
+			}
+		}
+	}
+
 	PlaneGeometry::PlaneGeometry(
 		float inWidth, float inHeight,
 		uint32 inGridX, uint32 inGridY,
@@ -39,73 +121,23 @@ namespace pathos {
 		, gridY(inGridY)
 	{
 		initializeVertexLayout(toVertexAttributes(options));
-		buildGeometry(direction);
+		buildGeometry(direction, options);
 		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
 			calculateTangentBasis();
 		}
 	}
 
-	void PlaneGeometry::buildGeometry(PlaneGeometry::Direction direction) {
-		const uint32 numVertices = (gridX + 1) * (gridY + 1);
-		const float segW = width / gridX, segH = height / gridY;
-		const float x0 = -width / 2, y0 = -height / 2;
+	void PlaneGeometry::buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options) {
+		std::vector<GLfloat> positions, uvs, normals;
+		std::vector<GLuint> indices;
+		PlaneGeometry::generate(width, height, gridX, gridY, direction, options, positions, uvs, normals, indices);
 
-		std::vector<GLfloat> positions(numVertices * 3);
-		std::vector<GLfloat> uvs(numVertices * 2);
-		std::vector<GLfloat> normals(numVertices * 3);
-		std::vector<GLuint> indices(gridX * gridY * 6);
-
-		size_t k = 0;
-		for (auto i = 0u; i <= gridY; i++) {
-			for (auto j = 0u; j <= gridX; j++) {
-				positions[size_t(k * 3)] = x0 + segW * j;
-				positions[size_t(k * 3 + 1)] = y0 + segH * i;
-				positions[size_t(k * 3 + 2)] = 0.0f;
-				// #todo-geometry: Normalize or repeat UV?
-				uvs[size_t(k * 2)] = (float)j / gridX;
-				uvs[size_t(k * 2 + 1)] = (float)i / gridY;
-				//uvs[size_t(k * 2)] = (float)j;
-				//uvs[size_t(k * 2 + 1)] = (float)i;
-				normals[size_t(k * 3)] = 0.0f;
-				normals[size_t(k * 3 + 1)] = 0.0f;
-				normals[size_t(k * 3 + 2)] = 1.0f;
-				k++;
-			}
-		}
-
-		if (direction == PlaneGeometry::Direction::X) {
-			for (auto i = 0u; i < positions.size(); i += 3) {
-				positions[size_t(i + 2)] = -positions[i];
-				positions[i] = 0.0f;
-				normals[i] = 1.0f;
-				normals[size_t(i + 1)] = normals[size_t(i + 2)] = 0.0f;
-			}
-		} else if (direction == PlaneGeometry::Direction::Y) {
-			for (auto i = 0u; i < positions.size(); i += 3) {
-				positions[size_t(i + 2)] = -positions[size_t(i + 1)];
-				positions[size_t(i + 1)] = 0.0f;
-				normals[size_t(i + 1)] = 1.0f;
-				normals[i] = normals[size_t(i + 2)] = 0.0f;
-			}
-		}
-
-		k = 0;
-		for (auto i = 0u; i < gridY; i++) {
-			auto baseY = i * (gridX + 1);
-			for (auto j = 0u; j < gridX; j++) {
-				indices[k] = baseY + j;
-				indices[k + 1] = baseY + j + 1;
-				indices[k + 2] = baseY + j + (gridX + 1);
-				indices[k + 3] = baseY + j + 1;
-				indices[k + 4] = baseY + j + (gridX + 1) + 1;
-				indices[k + 5] = baseY + j + (gridX + 1);
-				k += 6;
-			}
-		}
+		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
 
 		updatePositionData(positions.data(), (uint32)positions.size());
-		updateUVData(uvs.data(), (uint32)uvs.size());
-		updateNormalData(normals.data(), (uint32)normals.size());
+		if (bCalculateUV) updateUVData(uvs.data(), (uint32)uvs.size());
+		if (bCalculateNormal) updateNormalData(normals.data(), (uint32)normals.size());
 		updateIndexData(indices.data(), (uint32)indices.size());
 	}
 

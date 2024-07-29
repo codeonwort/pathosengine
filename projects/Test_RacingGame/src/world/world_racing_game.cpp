@@ -153,15 +153,6 @@ void World_RacingGame::reloadScene() {
 		treeActors.push_back(tree);
 	}
 
-	setupScene();
-}
-
-void World_RacingGame::setupScene() {
-	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
-	for (size_t i = 0; i < treeActors.size(); ++i) {
-		treeActors[i]->setStaticMesh(treeMesh.get());
-	}
-
 	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
 	gConsole->addLine(L"r.depth_prepass 0");
 
@@ -176,6 +167,15 @@ void World_RacingGame::setupScene() {
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
 	landscape->initializeSectors(80.0f, 80.0f, 10, 10);
 	landscape->setActorLocation(-400.0f, -20.0f, -400.0f);
+
+	setupScene();
+}
+
+void World_RacingGame::setupScene() {
+	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
+	for (size_t i = 0; i < treeActors.size(); ++i) {
+		treeActors[i]->setStaticMesh(treeMesh.get());
+	}
 }
 
 void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {

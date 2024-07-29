@@ -15,7 +15,7 @@ namespace pathos {
 	struct LandscapeProxy : public SceneComponentProxy {
 		Buffer* indirectDrawArgsBuffer;
 		Buffer* sectorParameterBuffer;
-		MeshGeometry* tempGeometry; // #wip-landscape
+		MeshGeometry* geometry;
 		Material* material;
 		uint32 indirectDrawCount;
 		matrix4 modelMatrix;
@@ -35,7 +35,11 @@ namespace pathos {
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
 	private:
-		std::vector<uniquePtr<MeshGeometry>> geometries;
+		uniquePtr<MeshGeometry> geometry; // All LODs in a single mesh
+		std::vector<uint32> numVertices;  // Per LOD
+		std::vector<uint32> numIndices;   // Per LOD
+		std::vector<int32> indexOffsets;  // Per LOD
+
 		Material* material = nullptr;
 		uniquePtr<Buffer> indirectDrawArgsBuffer;
 		uniquePtr<Buffer> sectorParameterBuffer;

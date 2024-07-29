@@ -141,9 +141,7 @@ namespace pathos {
 				// #todo-renderer: Batching by same state
 				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-				// #wip-landscape: How to bind vertex buffers for all geometries?
-				// Maybe need to put all LODs into a single geometry instance...
-				proxy->tempGeometry->bindFullAttributesVAO(cmdList);
+				proxy->geometry->bindFullAttributesVAO(cmdList);
 
 				constexpr uint32 SSBO_BINDING_INDEX = 0;
 				proxy->sectorParameterBuffer->bindAsSSBO(cmdList, SSBO_BINDING_INDEX);

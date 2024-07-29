@@ -20,15 +20,30 @@ namespace pathos {
 	ENUM_CLASS_FLAGS(EPrimitiveInitOptions);
 
 	class PlaneGeometry : public MeshGeometry {
+
 	public:
 		// Determines surface normal direction.
 		enum class Direction { X = 0, Y = 1, Z = 2 };
+
+		// NOTE: CalculateTangentBasis flag in options is ignored.
+		static void generate(
+			float width, float height,
+			uint32 gridX, uint32 gridY,
+			PlaneGeometry::Direction direction,
+			EPrimitiveInitOptions options,
+			std::vector<float>& outPositions,
+			std::vector<float>& outUVs,
+			std::vector<float>& outNormals,
+			std::vector<uint32>& outIndices);
+
 		PlaneGeometry(
 			float width, float height,
-			uint32 segW = 1, uint32 segH = 1,
+			uint32 gridX = 1, uint32 gridY = 1,
 			PlaneGeometry::Direction direction = PlaneGeometry::Direction::Z,
 			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-		void buildGeometry(PlaneGeometry::Direction direction);
+
+		void buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options);
+
 	private:
 		float width, height;
 		uint32 gridX, gridY;

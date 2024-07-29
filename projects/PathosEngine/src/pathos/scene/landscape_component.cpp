@@ -26,15 +26,47 @@ namespace pathos {
 
 	LandscapeComponent::~LandscapeComponent() {
 		indirectDrawArgsBuffer.reset();
-		geometries.clear();
+		geometry.reset();
 	}
 
 	void LandscapeComponent::initializeSectors(float inSizeX, float inSizeY, int32 inCountX, int32 inCountY) {
 		sizeX = inSizeX; sizeY = inSizeY; countX = inCountX; countY = inCountY;
 
-		for (int32 divs = 8; divs > 0; divs /= 2) {
-			MeshGeometry* G = new PlaneGeometry(sizeX, sizeY, divs, divs);
-			geometries.push_back(uniquePtr<MeshGeometry>(G));
+		// Combine all LODs into a single mesh.
+		{
+			std::vector<float> positions, uvs, normals;
+			std::vector<uint32> indices;
+
+			uint32 baseIndex = 0;
+			for (int32 divs = 8; divs > 0; divs /= 2) {
+				std::vector<float> tempPositions, tempUVs, tempNormals;
+				std::vector<uint32> tempIndices;
+				PlaneGeometry::generate(
+					sizeX, sizeY, divs, divs,
+					PlaneGeometry::Direction::Z, EPrimitiveInitOptions::Default,
+					tempPositions, tempUVs, tempNormals, tempIndices);
+
+				positions.insert(positions.end(), tempPositions.begin(), tempPositions.end());
+				uvs.insert(uvs.end(), tempUVs.begin(), tempUVs.end());
+				normals.insert(normals.end(), tempNormals.begin(), tempNormals.end());
+
+				//for (uint32& ix : tempIndices) ix += baseIndex;
+				indices.insert(indices.end(), tempIndices.begin(), tempIndices.end());
+
+				numVertices.push_back((uint32)(tempPositions.size() / 3));
+				numIndices.push_back((uint32)tempIndices.size());
+				indexOffsets.push_back((int32)baseIndex);
+
+				baseIndex += (uint32)(tempPositions.size() / 3);
+			}
+
+			geometry = makeUnique<MeshGeometry>();
+			geometry->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
+			geometry->updatePositionData(positions.data(), (uint32)positions.size());
+			geometry->updateUVData(uvs.data(), (uint32)uvs.size());
+			geometry->updateNormalData(normals.data(), (uint32)normals.size());
+			geometry->updateIndexData(indices.data(), (uint32)indices.size());
+			geometry->calculateTangentBasis();
 		}
 
 		{
@@ -62,8 +94,8 @@ namespace pathos {
 	}
 
 	void LandscapeComponent::createRenderProxy(SceneProxy* scene) {
-		bool bValid = sizeX > 0.0f && sizeY > 0.0f && countX > 0 && countY > 0
-			&& geometries.size() > 0 && material != nullptr && indirectDrawArgsBuffer != nullptr;
+		const bool bValid = sizeX > 0.0f && sizeY > 0.0f && countX > 0 && countY > 0
+			&& geometry != nullptr && material != nullptr && indirectDrawArgsBuffer != nullptr;
 		if (!bValid) {
 			return;
 		}
@@ -76,18 +108,16 @@ namespace pathos {
 		drawCommands.reserve(countX * countY);
 		sectorParams.reserve(countX * countY);
 
-		// #wip-landscape: Calculate proper LOD per sector
-		//const int32 LOD = (sectorY * countX + sectorX) % geometries.size();
-		const int32 LOD = 0;
-		MeshGeometry* G = geometries[LOD].get();
+		// #wip-landscape: LOD 0 is OK but LOD 1 looks broken
+		const int32 LOD = 1;
 
 		for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
-			for (int32 sectorY = 0; sectorY < countY; ++sectorY) {				
+			for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
 				DrawElementsIndirectCommand cmd{
-					G->getIndexCount(),
+					numIndices[LOD],
 					1, // instanceCount
-					G->getFirstIndex(), // CAUTION: Unlike glDrawElements, it's not byte offset.
-					0, // baseVertex
+					geometry->getFirstIndex(), // CAUTION: Unlike glDrawElements, it's not byte offset.
+					indexOffsets[LOD], // baseVertex
 					0, // baseInstance
 				};
 				drawCommands.emplace_back(cmd);
@@ -110,7 +140,7 @@ namespace pathos {
 
 		proxy->indirectDrawArgsBuffer = indirectDrawArgsBuffer.get();
 		proxy->sectorParameterBuffer  = sectorParameterBuffer.get();
-		proxy->tempGeometry           = G;
+		proxy->geometry               = geometry.get();
 		proxy->material               = material;
 		proxy->indirectDrawCount      = countX * countY;
 		proxy->modelMatrix            = getLocalMatrix();
