@@ -37,7 +37,9 @@ namespace pathos {
 			std::vector<float> positions, uvs, normals;
 			std::vector<uint32> indices;
 
+			uint32 baseVertex = 0;
 			uint32 baseIndex = 0;
+
 			for (int32 divs = 8; divs > 0; divs /= 2) {
 				std::vector<float> tempPositions, tempUVs, tempNormals;
 				std::vector<uint32> tempIndices;
@@ -50,14 +52,15 @@ namespace pathos {
 				uvs.insert(uvs.end(), tempUVs.begin(), tempUVs.end());
 				normals.insert(normals.end(), tempNormals.begin(), tempNormals.end());
 
-				//for (uint32& ix : tempIndices) ix += baseIndex;
+				for (uint32& ix : tempIndices) ix += baseVertex;
 				indices.insert(indices.end(), tempIndices.begin(), tempIndices.end());
 
 				numVertices.push_back((uint32)(tempPositions.size() / 3));
 				numIndices.push_back((uint32)tempIndices.size());
-				indexOffsets.push_back((int32)baseIndex);
+				indexOffsets.push_back(baseIndex);
 
-				baseIndex += (uint32)(tempPositions.size() / 3);
+				baseVertex += (uint32)(tempPositions.size() / 3);
+				baseIndex += (uint32)tempIndices.size();
 			}
 
 			geometry = makeUnique<MeshGeometry>();
@@ -108,16 +111,17 @@ namespace pathos {
 		drawCommands.reserve(countX * countY);
 		sectorParams.reserve(countX * countY);
 
-		// #wip-landscape: LOD 0 is OK but LOD 1 looks broken
-		const int32 LOD = 1;
-
 		for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
 			for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
+				// #wip-landscape: Calculate proper LOD
+				// #wip-landscape: Solve T-junction
+				const int32 LOD = (sectorY * countX + sectorX) % numVertices.size();
+
 				DrawElementsIndirectCommand cmd{
 					numIndices[LOD],
 					1, // instanceCount
-					geometry->getFirstIndex(), // CAUTION: Unlike glDrawElements, it's not byte offset.
-					indexOffsets[LOD], // baseVertex
+					geometry->getFirstIndex() + indexOffsets[LOD], // CAUTION: Unlike glDrawElements, it's not byte offset.
+					0, // baseVertex
 					0, // baseInstance
 				};
 				drawCommands.emplace_back(cmd);
@@ -132,7 +136,7 @@ namespace pathos {
 				sectorParams.emplace_back(sector);
 			}
 		}
-		
+
 		indirectDrawArgsBuffer->writeToGPU(0, indirectDrawArgsBuffer->getCreateParams().bufferSize, drawCommands.data());
 		sectorParameterBuffer->writeToGPU(0, sectorParameterBuffer->getCreateParams().bufferSize, sectorParams.data());
 

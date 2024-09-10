@@ -149,7 +149,7 @@ namespace pathos {
 
 				cmdList.multiDrawElementsIndirect(
 					GL_TRIANGLES,
-					GL_UNSIGNED_INT,
+					proxy->geometry->isIndex16Bit() ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
 					0, // offset for indirect draw buffer
 					proxy->indirectDrawCount,
 					0 // stride
