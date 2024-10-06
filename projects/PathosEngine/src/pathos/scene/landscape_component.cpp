@@ -13,10 +13,10 @@ struct DrawElementsIndirectCommand {
 
 struct LandscapeSectorParameter {
 	vector4 uvBounds;
-	float offsetX;
-	float offsetY;
-	float _pad0;
-	float _pad1;
+	float   offsetX;
+	float   offsetY;
+	uint32  lod;
+	float   _pad0;
 };
 
 namespace pathos {
@@ -103,19 +103,28 @@ namespace pathos {
 			return;
 		}
 		
-		vector3 cameraPosition = scene->camera.getPosition();
-		vector3 cameraDirection = scene->camera.getEyeVector();
+		const vector3 cameraPosition = scene->camera.getPosition();
+		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
+		const vector3 cameraDirection = scene->camera.getEyeVector();
 
 		std::vector<DrawElementsIndirectCommand> drawCommands;
 		std::vector<LandscapeSectorParameter> sectorParams;
 		drawCommands.reserve(countX * countY);
 		sectorParams.reserve(countX * countY);
 
+		const vector3 basePosition = getLocation();
+		const vector2 basePositionXY = vector2(basePosition.x, basePosition.z);
+
 		for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
 			for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
-				// #wip-landscape: Calculate proper LOD
+				// Calculate LOD (criteria: distance to camera).
+				vector2 sectorCenterXY = basePositionXY;
+				sectorCenterXY += vector2(((float)sectorX + 0.5f) * sizeX, ((float)sectorY + 0.5f) * sizeY);
+				vector2 unitOffset = glm::abs((sectorCenterXY - cameraXY) / vector2(sizeX, sizeY));
+				uint32 distanceToCamera = (uint32)(std::max(unitOffset.x, unitOffset.y));
+
 				// #wip-landscape: Solve T-junction
-				const int32 LOD = (sectorY * countX + sectorX) % numVertices.size();
+				const int32 LOD = std::min(distanceToCamera, 2u);
 
 				DrawElementsIndirectCommand cmd{
 					numIndices[LOD],
@@ -130,7 +139,7 @@ namespace pathos {
 					vector4((float)sectorX / countX, (float)sectorY / countY, (float)(sectorX + 1) / countX, (float)(sectorY + 1) / countY),
 					sectorX * sizeX,
 					sectorY * sizeY,
-					0.0f,
+					(uint32)LOD,
 					0.0f,
 				};
 				sectorParams.emplace_back(sector);

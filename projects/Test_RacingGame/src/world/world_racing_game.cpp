@@ -166,7 +166,7 @@ void World_RacingGame::reloadScene() {
 
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
 	landscape->initializeSectors(80.0f, 80.0f, 10, 10);
-	landscape->setActorLocation(-400.0f, -20.0f, -400.0f);
+	landscape->setActorLocation(-400.0f, -30.0f, -400.0f);
 
 	setupScene();
 }
