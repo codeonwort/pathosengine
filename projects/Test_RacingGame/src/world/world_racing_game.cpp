@@ -37,6 +37,8 @@
 
 #define NUM_TREES                100
 
+static ConsoleVariable<int32> cvarLandscapeDebugMode("game.landscape_debug", 0, "Landscape debug rendering");
+
 const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	{
 		"resources_external/SportsCar/sportsCar.obj",
@@ -77,7 +79,9 @@ void World_RacingGame::onDestroy() {
 }
 
 void World_RacingGame::onTick(float deltaSeconds) {
-	//
+	if (M_landscape != nullptr) {
+		M_landscape->setConstantParameter("debugMode", cvarLandscapeDebugMode.getInt());
+	}
 }
 
 void World_RacingGame::prepareAssets() {
@@ -156,12 +160,12 @@ void World_RacingGame::reloadScene() {
 	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
 	gConsole->addLine(L"r.depth_prepass 0");
 
-	const int32 landscapeSectorCountX = 10, landscapeSectorCountY = 10;
+	const int32 landscapeSectorCountX = 10, landscapeSectorCountY = 7;
 	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, true, true, "Texture_Landscape_Albedo");
 	Texture* heightTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP), 0, false, true, "Texture_Landscape_Height");
 
 	// #wip-landscape: Temp material
-	Material* M_landscape = Material::createMaterialInstance("landscape");
+	M_landscape = Material::createMaterialInstance("landscape");
 	M_landscape->setTextureParameter("albedo", albedoTexture);
 	M_landscape->setTextureParameter("heightmap", heightTexture);
 	M_landscape->setConstantParameter("sectorCountX", landscapeSectorCountX);

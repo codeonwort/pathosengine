@@ -1,6 +1,7 @@
 #include "landscape_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/material/material.h"
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
 struct DrawElementsIndirectCommand {
@@ -21,6 +22,8 @@ struct LandscapeSectorParameter {
 
 namespace pathos {
 
+	static const int32 LANDSCAPE_BASE_DIVISIONS = 16;
+
 	LandscapeComponent::LandscapeComponent() {
 	}
 
@@ -40,7 +43,7 @@ namespace pathos {
 			uint32 baseVertex = 0;
 			uint32 baseIndex = 0;
 
-			for (int32 divs = 8; divs > 0; divs /= 2) {
+			for (int32 divs = LANDSCAPE_BASE_DIVISIONS; divs > 0; divs /= 2) {
 				std::vector<float> tempPositions, tempUVs, tempNormals;
 				std::vector<uint32> tempIndices;
 				PlaneGeometry::generate(
@@ -115,15 +118,14 @@ namespace pathos {
 		const vector3 basePosition = getLocation();
 		const vector2 basePositionXY = vector2(basePosition.x, basePosition.z);
 
-		for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
-			for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
+		for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
+			for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
 				// Calculate LOD (criteria: distance to camera).
 				vector2 sectorCenterXY = basePositionXY;
 				sectorCenterXY += vector2(((float)sectorX + 0.5f) * sizeX, ((float)sectorY + 0.5f) * sizeY);
 				vector2 unitOffset = glm::abs((sectorCenterXY - cameraXY) / vector2(sizeX, sizeY));
 				uint32 distanceToCamera = (uint32)(std::max(unitOffset.x, unitOffset.y));
 
-				// #wip-landscape: T-junction not fully fixed...
 				const int32 LOD = std::min(distanceToCamera, 2u);
 
 				DrawElementsIndirectCommand cmd{
@@ -148,6 +150,8 @@ namespace pathos {
 
 		indirectDrawArgsBuffer->writeToGPU(0, indirectDrawArgsBuffer->getCreateParams().bufferSize, drawCommands.data());
 		sectorParameterBuffer->writeToGPU(0, sectorParameterBuffer->getCreateParams().bufferSize, sectorParams.data());
+
+		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
 
 		LandscapeProxy* proxy = ALLOC_RENDER_PROXY<LandscapeProxy>(scene);
 

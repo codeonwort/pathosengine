@@ -7,6 +7,8 @@ PARAMETER_TEXTURE(0, sampler2D, albedo)
 PARAMETER_TEXTURE(1, sampler2D, heightmap)
 PARAMETER_CONSTANT(int, sectorCountX)
 PARAMETER_CONSTANT(int, sectorCountY)
+PARAMETER_CONSTANT(int, baseDivisions)
+PARAMETER_CONSTANT(int, debugMode)
 
 EMBED_GLSL_BEGIN
 struct SectorParameter {
@@ -32,6 +34,7 @@ ivec2 getSectorCoords(int glDrawID) {
 int getSectorLinearIndex(ivec2 sectorCoords) {
 	return sectorCoords.y * uboMaterial.sectorCountX + sectorCoords.x;
 }
+
 EMBED_GLSL_END
 
 VPO_BEGIN
@@ -48,23 +51,25 @@ vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 
 	ivec2 neighborCoords = sectorCoords;
 	bool fixY = false;
-	if (borderFlags.x) { neighborCoords.y -= 1; fixY = true; }
-	else if (borderFlags.y) { neighborCoords.x += 1; }
-	else if (borderFlags.z) { neighborCoords.y += 1; fixY = true; }
-	else if (borderFlags.w) { neighborCoords.x -= 1; }
-	bool neighborExists = all(greaterThan(neighborCoords, ivec2(0, 0)) && lessThan(neighborCoords, ivec2(uboMaterial.sectorCountX, uboMaterial.sectorCountY)));
+	if (borderFlags.x) { neighborCoords.x -= 1; }
+	else if (borderFlags.y) { neighborCoords.y += 1; fixY = true; }
+	else if (borderFlags.z) { neighborCoords.x += 1; }
+	else if (borderFlags.w) { neighborCoords.y -= 1; fixY = true; }
+	bool currentAtCorner = any(borderFlags.xz) && any(borderFlags.yw);
+	bool neighborExists = all(greaterThanEqual(neighborCoords, ivec2(0, 0)) && lessThan(neighborCoords, ivec2(uboMaterial.sectorCountX, uboMaterial.sectorCountY)));
 
-	if (currentAtBorder && neighborExists) {
+	// Fix T-junction.
+	if (currentAtBorder && !currentAtCorner && neighborExists) {
 		int neighborSectorIndex = getSectorLinearIndex(neighborCoords);
 		SectorParameter neighbor = sectorParameters[neighborSectorIndex];
 		if (sector.lod < neighbor.lod) {
-			float divs = float(8 >> neighbor.lod);
-			vec2 off = vec2(!fixY, fixY) * vec2(1.0 / divs);
+			float divs = float(uboMaterial.baseDivisions >> neighbor.lod);
+			vec2 off = vec2(fixY, !fixY) * vec2(1.0 / divs, 1.0 / divs);
 
 			vec2 uv1 = floor(vsi.texcoord * divs) / divs;
-			vec2 uv2 = floor((vsi.texcoord + off) * divs) / divs;
-			vec2 ratioXY = (uv2 - vsi.texcoord) / (uv2 - uv1);
-			float ratio = fixY ? ratioXY.y : ratioXY.x;
+			vec2 uv2 = uv1 + off;
+			vec2 ratioXY = (uv2 - vsi.texcoord) / off;
+			float ratio = fixY ? ratioXY.x : ratioXY.y;
 
 			uv1 = getNormalizedUV(uv1, sector.uvBounds);
 			uv2 = getNormalizedUV(uv2, sector.uvBounds);
@@ -75,7 +80,7 @@ vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 		}
 	}
 
-	heightFactor *= 50.0f; // Temp multiplier
+	heightFactor *= 50.0; // Temp multiplier
 
 	return vec3(sector.offsetX, heightFactor, sector.offsetY);
 }
@@ -89,8 +94,17 @@ MaterialAttributes getMaterialAttributes() {
 	MaterialAttributes_DefaultLit attr;
 
 	vec3 lodColors[] = { vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f) };
+	vec3 baseColor = texture(albedo, uv).rgb;
 
-	attr.albedo    = texture(albedo, uv).rgb * lodColors[sector.lod % 3]; // Visualize LOD
+	if (uboMaterial.debugMode == 1) {
+		baseColor = texture(albedo, uv).rgb * lodColors[sector.lod % 3]; // Visualize LOD
+	} else if (uboMaterial.debugMode == 2) {
+		baseColor = vec3(uv, 0.0);
+	} else if (uboMaterial.debugMode == 3) {
+		baseColor = vec3(interpolants.texcoord, 0.0);
+	}
+
+	attr.albedo    = baseColor;
 	//attr.albedo    = texture(heightmap, uv).rrr;
 	// #wip-landscape: Provide normalmap or derive from heightmap
 	attr.normal    = vec3(0.0, 0.0, 1.0);
