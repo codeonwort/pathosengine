@@ -156,6 +156,7 @@ void World_RacingGame::reloadScene() {
 	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
 	gConsole->addLine(L"r.depth_prepass 0");
 
+	const int32 landscapeSectorCountX = 10, landscapeSectorCountY = 10;
 	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, true, true, "Texture_Landscape_Albedo");
 	Texture* heightTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP), 0, false, true, "Texture_Landscape_Height");
 
@@ -163,9 +164,11 @@ void World_RacingGame::reloadScene() {
 	Material* M_landscape = Material::createMaterialInstance("landscape");
 	M_landscape->setTextureParameter("albedo", albedoTexture);
 	M_landscape->setTextureParameter("heightmap", heightTexture);
+	M_landscape->setConstantParameter("sectorCountX", landscapeSectorCountX);
+	M_landscape->setConstantParameter("sectorCountY", landscapeSectorCountY);
 
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
-	landscape->initializeSectors(80.0f, 80.0f, 10, 10);
+	landscape->initializeSectors(80.0f, 80.0f, landscapeSectorCountX, landscapeSectorCountY);
 	landscape->setActorLocation(-400.0f, -30.0f, -400.0f);
 
 	setupScene();

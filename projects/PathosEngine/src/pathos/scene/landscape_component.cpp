@@ -123,7 +123,7 @@ namespace pathos {
 				vector2 unitOffset = glm::abs((sectorCenterXY - cameraXY) / vector2(sizeX, sizeY));
 				uint32 distanceToCamera = (uint32)(std::max(unitOffset.x, unitOffset.y));
 
-				// #wip-landscape: Solve T-junction
+				// #wip-landscape: T-junction not fully fixed...
 				const int32 LOD = std::min(distanceToCamera, 2u);
 
 				DrawElementsIndirectCommand cmd{
