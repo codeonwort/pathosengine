@@ -2,6 +2,10 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
+#include "pathos/util/image_data.h"
+
+#include "badger/types/half_float.h"
+#include "badger/math/minmax.h"
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
 struct DrawElementsIndirectCommand {
@@ -97,6 +101,69 @@ namespace pathos {
 			sectorParameterBuffer = makeUnique<Buffer>(bufferCreateParams);
 			sectorParameterBuffer->createGPUResource();
 		}
+	}
+
+	void LandscapeComponent::initializeHeightMap(ImageBlob* blob) {
+		CHECK(blob->glStorageFormat == GL_R8 || blob->glStorageFormat == GL_R16);
+		const uint32 stride = (blob->glStorageFormat == GL_R8) ? 1 : 2;
+
+		uint8* streamU8 = (uint8*)blob->rawBytes;
+		uint16* streamU16 = (uint16*)blob->rawBytes;
+
+		heightMapWidth = blob->width;
+		heightMapHeight = blob->height;
+		heightMapValues.reserve(heightMapWidth * heightMapHeight);
+		for (uint32 y = 0; y < heightMapHeight; ++y) {
+			for (uint32 x = 0; x < heightMapWidth; ++x) {
+				// #wip-heightmap: Should I flip Y?
+				uint32 linearIx = y * heightMapWidth + x;
+				//uint32 linearIx = (heightMapHeight - y - 1) * heightMapWidth + x;
+				//float h = (stride == 1) ? ((float)streamU8[linearIx] / 255.0f) : half_to_float(streamU16[linearIx]);
+				float h = (stride == 1) ? ((float)streamU8[linearIx] / 255.0f) : ((float)streamU16[linearIx] / 65535.0f);
+				heightMapValues.push_back(h);
+			}
+		}
+	}
+
+	vector2 LandscapeComponent::getNormalizedUV(float x, float z) const {
+		float u = badger::clamp(0.0f, x / (sizeX * (float)countX), 1.0f);
+		float v = badger::clamp(0.0f, z / (sizeY * (float)countY), 1.0f);
+		return vector2(u, v);
+	}
+
+	float LandscapeComponent::sampleHeightmap(float u, float v) const {
+		if (heightMapValues.size() == 0) return 0.0f;
+		u = badger::clamp(0.0f, u, 1.0f);
+		v = badger::clamp(0.0f, v, 1.0f);
+		float du = 1.0f / (float)heightMapWidth;
+		float dv = 1.0f / (float)heightMapHeight;
+
+		int32 maxX = (int32)heightMapWidth - 1;
+		int32 maxY = (int32)heightMapHeight - 1;
+
+		int32 x1 = badger::min(int32(u * (float)heightMapWidth), maxX - 1);
+		int32 y1 = badger::min(int32(v * (float)heightMapWidth), maxY - 1);
+		int32 x2 = badger::min(x1 + 1, maxX);
+		int32 y2 = badger::min(y1 + 1, maxY);
+
+		float u1 = (float)x1 / heightMapWidth;
+		float v1 = (float)y1 / heightMapHeight;
+		float u2 = u1 + du;
+		float v2 = v1 + dv;
+
+		float ku = (u2 - u) / du;
+		float kv = (v2 - v) / dv;
+
+		// #wip-heightmap: Bilinear interpolation is not the way?
+		float h00 = heightMapValues[y1 * (int32)heightMapWidth + x1];
+		float h10 = heightMapValues[y1 * (int32)heightMapWidth + x2];
+		float h01 = heightMapValues[y2 * (int32)heightMapWidth + x1];
+		float h11 = heightMapValues[y2 * (int32)heightMapWidth + x2];
+		float h0 = h00 + ku * (h10 - h00);
+		float h1 = h01 + ku * (h11 - h01);
+		float h = h0 + kv * (h1 - h0);
+
+		return h;
 	}
 
 	void LandscapeComponent::createRenderProxy(SceneProxy* scene) {

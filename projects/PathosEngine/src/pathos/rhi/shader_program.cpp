@@ -28,11 +28,11 @@ namespace pathos {
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
 						program->reload();
-						});
 					});
+				});
 				FLUSH_RENDER_COMMAND();
 				LOG(LogInfo, "End reloading shaders.");
-				});
+			});
 		}
 	} internal_recompileShaders;
 

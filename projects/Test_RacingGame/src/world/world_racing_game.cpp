@@ -35,7 +35,16 @@
 #define PLAYERCAM_HEIGHT_OFFSET  2.8f
 #define PLAYERCAM_FORWARD_OFFSET 10.0f
 
+#define TREE_MAX_X               300.0f
+#define TREE_MAX_Z               300.0f
+#define TREE_SCALE               0.05f
 #define NUM_TREES                100
+#define LANDSCAPE_POSITION       vector3(-400.0f, -10.0f, -400.0f)
+#define LANDSCAPE_SECTOR_SIZE_X  20.0f
+#define LANDSCAPE_SECTOR_SIZE_Y  20.0f
+#define LANDSCAPE_SECTOR_COUNT_X 40
+#define LANDSCAPE_SECTOR_COUNT_Y 40
+#define HEIGHTMAP_MULTIPLIER     50.0f
 
 static ConsoleVariable<int32> cvarLandscapeDebugMode("game.landscape_debug", 0, "Landscape debug rendering");
 
@@ -139,6 +148,7 @@ void World_RacingGame::reloadScene() {
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();
 	playerController->setPlayerPawn(playerCar);
+	playerController->setLandscape(landscape);
 	playerController->cameraHeightOffset = PLAYERCAM_HEIGHT_OFFSET;
 	playerController->cameraForwardOffset = PLAYERCAM_FORWARD_OFFSET;
 
@@ -148,32 +158,36 @@ void World_RacingGame::reloadScene() {
 	treeActors.clear();
 	for (uint32 i = 0; i < NUM_TREES; ++i) {
 		StaticMeshActor* tree = spawnActor<StaticMeshActor>();
-		float x = (Random() + 0.02f) * 500.0f;
-		float z = (Random() + 0.02f) * 500.0f;
+		float x = (0.02f + (Random() - 0.02f)) * TREE_MAX_X;
+		float z = (0.02f + (Random() - 0.02f)) * TREE_MAX_Z;
 		if (Random() < 0.5f) x *= -1;
 		if (Random() < 0.5f) z *= -1;
-		tree->setActorLocation(x, -2.0f, z);
-		tree->setActorScale(0.05f);
+		tree->setActorLocation(x, 0.0f, z);
+		tree->setActorScale(TREE_SCALE);
 		treeActors.push_back(tree);
 	}
 
 	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
 	gConsole->addLine(L"r.depth_prepass 0");
 
-	const int32 landscapeSectorCountX = 10, landscapeSectorCountY = 7;
-	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, true, true, "Texture_Landscape_Albedo");
-	Texture* heightTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP), 0, false, true, "Texture_Landscape_Height");
+	constexpr bool sRGB = true, autoDestroyBlob = true;
+	auto heightMapBlob = ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP);
+	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, sRGB, autoDestroyBlob, "Texture_Landscape_Albedo");
+	Texture* heightTexture = ImageUtils::createTexture2DFromImage(heightMapBlob, 0, !sRGB, !autoDestroyBlob, "Texture_Landscape_Height");
 
 	// #wip-landscape: Temp material
 	M_landscape = Material::createMaterialInstance("landscape");
 	M_landscape->setTextureParameter("albedo", albedoTexture);
 	M_landscape->setTextureParameter("heightmap", heightTexture);
-	M_landscape->setConstantParameter("sectorCountX", landscapeSectorCountX);
-	M_landscape->setConstantParameter("sectorCountY", landscapeSectorCountY);
+	M_landscape->setConstantParameter("heightmapMultiplier", HEIGHTMAP_MULTIPLIER);
+	M_landscape->setConstantParameter("sectorCountX", LANDSCAPE_SECTOR_COUNT_X);
+	M_landscape->setConstantParameter("sectorCountY", LANDSCAPE_SECTOR_COUNT_Y);
 
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
-	landscape->initializeSectors(80.0f, 80.0f, landscapeSectorCountX, landscapeSectorCountY);
-	landscape->setActorLocation(-400.0f, -30.0f, -400.0f);
+	landscape->getLandscapeComponent()->setHeightMultiplier(HEIGHTMAP_MULTIPLIER);
+	landscape->initializeHeightMap(heightMapBlob);
+	landscape->initializeSectors(LANDSCAPE_SECTOR_SIZE_X, LANDSCAPE_SECTOR_SIZE_Y, LANDSCAPE_SECTOR_COUNT_X, LANDSCAPE_SECTOR_COUNT_Y);
+	landscape->setActorLocation(LANDSCAPE_POSITION);
 
 	setupScene();
 }
@@ -182,6 +196,10 @@ void World_RacingGame::setupScene() {
 	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
 	for (size_t i = 0; i < treeActors.size(); ++i) {
 		treeActors[i]->setStaticMesh(treeMesh.get());
+
+		vector3 treePos = treeActors[i]->getActorLocation();
+		treePos.y = -1.0f + landscape->getLandscapeY(treePos.x, treePos.z);
+		treeActors[i]->setActorLocation(treePos);
 	}
 }
 

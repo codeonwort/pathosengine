@@ -3,6 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/camera.h"
+#include "pathos/scene/landscape_actor.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
@@ -107,6 +108,9 @@ void PlayerController::tickGameplay(float deltaSeconds)
 
 	vector3 pawnLoc = playerPawn->getActorLocation();
 	pawnLoc += linearVelocity * deltaSeconds;
+	if (landscape != nullptr) {
+		pawnLoc.y = landscape->getLandscapeY(pawnLoc.x, pawnLoc.z);
+	}
 	playerPawn->setActorLocation(pawnLoc);
 	
 	// Because SportsCar asset is facing +X...

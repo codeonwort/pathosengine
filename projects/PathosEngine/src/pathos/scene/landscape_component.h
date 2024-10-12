@@ -11,6 +11,7 @@ namespace pathos {
 	class MeshGeometry;
 	class Material;
 	class Buffer;
+	struct ImageBlob;
 
 	struct LandscapeProxy : public SceneComponentProxy {
 		Buffer* indirectDrawArgsBuffer;
@@ -30,15 +31,35 @@ namespace pathos {
 
 		void initializeSectors(float inSizeX, float inSizeY, int32 inCountX, int32 inCountY);
 
+		// Prepare heightmap data for sampleHeightmap().
+		void initializeHeightMap(ImageBlob* blob);
+
+		// Default value is 1.0.
+		inline void setHeightMultiplier(float multiplier) { heightMultiplier = multiplier; }
+
+		vector2 getNormalizedUV(float x, float z) const;
+
+		float sampleHeightmap(float u, float v) const; // [0, 1]
+
+		inline float getHeightMultiplier() const { return heightMultiplier; }
+
 		inline void setMaterial(Material* inMaterial) { material = inMaterial; }
 
+		//~ BEGIN ActorComponent interface
 		virtual void createRenderProxy(SceneProxy* scene) override;
+		//~ END ActorComponent interface
 
 	private:
 		uniquePtr<MeshGeometry> geometry; // All LODs in a single mesh
 		std::vector<uint32> numVertices;  // Per LOD
 		std::vector<uint32> numIndices;   // Per LOD
 		std::vector<int32> indexOffsets;  // Per LOD
+
+		// To sample heightmap in CPU
+		uint32 heightMapWidth = 0;
+		uint32 heightMapHeight = 0;
+		std::vector<float> heightMapValues;
+		float heightMultiplier = 1.0f;
 
 		Material* material = nullptr;
 		uniquePtr<Buffer> indirectDrawArgsBuffer;

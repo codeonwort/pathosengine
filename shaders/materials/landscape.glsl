@@ -5,6 +5,7 @@
 
 PARAMETER_TEXTURE(0, sampler2D, albedo)
 PARAMETER_TEXTURE(1, sampler2D, heightmap)
+PARAMETER_CONSTANT(float, heightmapMultiplier)
 PARAMETER_CONSTANT(int, sectorCountX)
 PARAMETER_CONSTANT(int, sectorCountY)
 PARAMETER_CONSTANT(int, baseDivisions)
@@ -80,7 +81,7 @@ vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 		}
 	}
 
-	heightFactor *= 50.0; // Temp multiplier
+	heightFactor *= uboMaterial.heightmapMultiplier;
 
 	return vec3(sector.offsetX, heightFactor, sector.offsetY);
 }
