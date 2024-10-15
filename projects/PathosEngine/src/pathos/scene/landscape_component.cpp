@@ -7,6 +7,9 @@
 #include "badger/types/half_float.h"
 #include "badger/math/minmax.h"
 
+// #wip-indirect-draw: Fill draw buffer from GPU
+#define LANDSCAPE_GPU_DRIVEN 1
+
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
 struct DrawElementsIndirectCommand {
 	uint32  count;
@@ -33,6 +36,7 @@ namespace pathos {
 
 	LandscapeComponent::~LandscapeComponent() {
 		indirectDrawArgsBuffer.reset();
+		sectorParameterBuffer.reset();
 		geometry.reset();
 	}
 
@@ -168,11 +172,52 @@ namespace pathos {
 
 	void LandscapeComponent::createRenderProxy(SceneProxy* scene) {
 		const bool bValid = sizeX > 0.0f && sizeY > 0.0f && countX > 0 && countY > 0
-			&& geometry != nullptr && material != nullptr && indirectDrawArgsBuffer != nullptr;
+			&& geometry != nullptr && material != nullptr
+			&& sectorParameterBuffer != nullptr && indirectDrawArgsBuffer != nullptr;
 		if (!bValid) {
 			return;
 		}
+
+		// #wip-indirect-draw: If gpu driven, gbuffer_pass will run a landscape culling shader and fill the buffers.
+		if (LANDSCAPE_GPU_DRIVEN == 0) {
+			fillIndirectDrawBuffers(scene);
+		}
 		
+		const vector3 cameraPosition = scene->camera.getPosition();
+		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
+		const vector3 cameraDirection = scene->camera.getEyeVector();
+
+		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
+
+		LandscapeProxy* proxy = ALLOC_RENDER_PROXY<LandscapeProxy>(scene);
+
+		proxy->indirectDrawArgsBuffer  = indirectDrawArgsBuffer.get();
+		proxy->sectorParameterBuffer   = sectorParameterBuffer.get();
+		proxy->geometry                = geometry.get();
+		proxy->material                = material;
+		proxy->modelMatrix             = getLocalMatrix();
+		proxy->prevModelMatrix         = prevModelMatrix;
+		proxy->indirectDrawCount       = countX * countY;
+		proxy->bGpuDriven              = (bool)LANDSCAPE_GPU_DRIVEN;
+		// For gpu driven
+		CHECK(numIndices.size() >= 4 && indexOffsets.size() >= 4);
+		for (uint32 i = 0; i < 4; ++i) {
+			proxy->indexCountPerLOD[i] = numIndices[i];
+			proxy->firstIndexPerLOD[i] = geometry->getFirstIndex() + indexOffsets[i];
+		}
+		proxy->actorPosition           = getLocation();
+		proxy->sectorSizeX             = sizeX;
+		proxy->cameraPosition          = cameraPosition;
+		proxy->sectorSizeY             = sizeY;
+		proxy->sectorCountX            = countX;
+		proxy->sectorCountY            = countY;
+
+		scene->addLandscapeProxy(proxy);
+
+		prevModelMatrix = getLocalMatrix();
+	}
+
+	void LandscapeComponent::fillIndirectDrawBuffers(SceneProxy* scene) {
 		const vector3 cameraPosition = scene->camera.getPosition();
 		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
 		const vector3 cameraDirection = scene->camera.getEyeVector();
@@ -217,22 +262,6 @@ namespace pathos {
 
 		indirectDrawArgsBuffer->writeToGPU(0, indirectDrawArgsBuffer->getCreateParams().bufferSize, drawCommands.data());
 		sectorParameterBuffer->writeToGPU(0, sectorParameterBuffer->getCreateParams().bufferSize, sectorParams.data());
-
-		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
-
-		LandscapeProxy* proxy = ALLOC_RENDER_PROXY<LandscapeProxy>(scene);
-
-		proxy->indirectDrawArgsBuffer = indirectDrawArgsBuffer.get();
-		proxy->sectorParameterBuffer  = sectorParameterBuffer.get();
-		proxy->geometry               = geometry.get();
-		proxy->material               = material;
-		proxy->indirectDrawCount      = countX * countY;
-		proxy->modelMatrix            = getLocalMatrix();
-		proxy->prevModelMatrix        = prevModelMatrix;
-
-		scene->addLandscapeProxy(proxy);
-
-		prevModelMatrix = getLocalMatrix();
 	}
 
 }

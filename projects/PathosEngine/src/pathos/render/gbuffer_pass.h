@@ -28,6 +28,7 @@ namespace pathos {
 	private:
 		GLuint fbo = 0;
 		UniformBuffer uboPerObject;
+		UniformBuffer uboLandscapeCulling;
 
 		MeshGeometry* fullscreenQuad = nullptr;
 

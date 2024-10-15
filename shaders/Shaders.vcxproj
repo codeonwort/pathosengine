@@ -51,6 +51,7 @@
     <None Include="god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="indirect_lighting.glsl" />
+    <None Include="landscape_indirect_draw.glsl" />
     <None Include="materials\gltf_opaque.glsl" />
     <None Include="materials\guard_tower.glsl" />
     <None Include="materials\landscape.glsl" />

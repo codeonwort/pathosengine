@@ -14,13 +14,23 @@ namespace pathos {
 	struct ImageBlob;
 
 	struct LandscapeProxy : public SceneComponentProxy {
-		Buffer* indirectDrawArgsBuffer;
-		Buffer* sectorParameterBuffer;
+		Buffer*       indirectDrawArgsBuffer;
+		Buffer*       sectorParameterBuffer;
 		MeshGeometry* geometry;
-		Material* material;
-		uint32 indirectDrawCount;
-		matrix4 modelMatrix;
-		matrix4 prevModelMatrix;
+		Material*     material;
+		matrix4       modelMatrix;
+		matrix4       prevModelMatrix;
+		uint32        indirectDrawCount;
+		bool          bGpuDriven;
+		// For gpu driven
+		vector4ui     indexCountPerLOD;
+		vector4ui     firstIndexPerLOD;
+		vector3       actorPosition;
+		float         sectorSizeX;
+		vector3       cameraPosition;
+		float         sectorSizeY;
+		uint32        sectorCountX;
+		uint32        sectorCountY;
 	};
 
 	class LandscapeComponent : public SceneComponent {
@@ -50,6 +60,8 @@ namespace pathos {
 		//~ END ActorComponent interface
 
 	private:
+		void fillIndirectDrawBuffers(SceneProxy* scene); // CPU version
+
 		uniquePtr<MeshGeometry> geometry; // All LODs in a single mesh
 		std::vector<uint32> numVertices;  // Per LOD
 		std::vector<uint32> numIndices;   // Per LOD
