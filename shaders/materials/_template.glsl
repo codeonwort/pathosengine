@@ -30,14 +30,14 @@ $NEED SHADINGMODEL
 // - Normal mapping will not be performed.
 // [SKYBOXMATERIAL]
 // - This material is not for static meshes, but for skybox.
-// [TRANSFERDRAWID]
+// [TRANSFER_DRAW_ID]
 // - Define interpolants.drawID and assign gl_DrawID.
 // [TRANSFER_INSTANCE_ID]
 // - Define interpolants.instanceID and assign gl_InstanceID.
 
 $NEED OUTPUTWORLDNORMAL
 $NEED SKYBOXMATERIAL
-$NEED TRANSFERDRAWID
+$NEED TRANSFER_DRAW_ID
 $NEED TRANSFER_INSTANCE_ID
 
 #define FORWARD_SHADING (SKYBOXMATERIAL || SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
@@ -128,7 +128,7 @@ struct MaterialAttributes_Translucent {
 	vec2 texcoord;     // local space
 	vec4 clipPos;      // clip space
 	vec4 prevClipPos;  // clip space
-#if TRANSFERDRAWID
+#if TRANSFER_DRAW_ID
 	flat uint drawID;
 #endif
 #if TRANSFER_INSTANCE_ID
@@ -220,7 +220,7 @@ void main_staticMesh() {
 	interpolants.clipPos = positionCS;
 	interpolants.prevClipPos = uboPerFrame.prevViewProjTransform * prevPositionWS;
 
-#if TRANSFERDRAWID
+#if TRANSFER_DRAW_ID
 	interpolants.drawID = gl_DrawID;
 #endif
 #if TRANSFER_INSTANCE_ID

@@ -19,7 +19,7 @@
 #define NEED_SHADINGMODEL                 "SHADINGMODEL"
 #define NEED_OUTPUTWORLDNORMAL            "OUTPUTWORLDNORMAL"
 #define NEED_SKYBOXMATERIAL               "SKYBOXMATERIAL"
-#define NEED_TRANSFERDRAWID               "TRANSFERDRAWID"
+#define NEED_TRANSFERDRAWID               "TRANSFER_DRAW_ID"
 #define NEED_TRANSFERINSTANCEID           "TRANSFER_INSTANCE_ID"
 #define NEED_UBO                          "UBO_Material"
 #define NEED_TEXTUREPARAMETERS            "TEXTURE_PARAMETERS"
@@ -37,7 +37,7 @@
 #define KEYWORD_NONTRIVIALDEPTH           "#define NONTRIVIALDEPTH"
 #define KEYWORD_OUTPUTWORLDNORMAL         "#define OUTPUTWORLDNORMAL"
 #define KEYWORD_SKYBOXMATERIAL            "#define SKYBOXMATERIAL"
-#define KEYWORD_TRANSFERDRAWID            "#define TRANSFERDRAWID"
+#define KEYWORD_TRANSFER_DRAW_ID          "#define TRANSFER_DRAW_ID"
 #define KEYWORD_TRANSFER_INSTANCE_ID      "#define TRANSFER_INSTANCE_ID"
 #define KEYWORD_VPO_BEGIN                 "VPO_BEGIN"
 #define KEYWORD_VPO_END                   "VPO_END"
@@ -327,7 +327,7 @@ namespace pathos {
 				bOutputWorldNormal = true;
 			} else if (0 == line.find(KEYWORD_SKYBOXMATERIAL)) {
 				bSkyboxMaterial = true;
-			} else if (0 == line.find(KEYWORD_TRANSFERDRAWID)) {
+			} else if (0 == line.find(KEYWORD_TRANSFER_DRAW_ID)) {
 				bTransferDrawID = true;
 			} else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) {
 				bTransferInstanceID = true;
@@ -376,12 +376,7 @@ namespace pathos {
 			MT.replaceSkyboxMaterial("");
 		}
 
-		if (bTransferDrawID) {
-			MT.replaceTransferDrawID("#define TRANSFERDRAWID 1");
-		} else {
-			MT.replaceTransferDrawID("");
-		}
-
+		MT.replaceTransferDrawID(bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
 		MT.replaceTransferInstanceID(bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
 
 		// Construct material uniform buffer.

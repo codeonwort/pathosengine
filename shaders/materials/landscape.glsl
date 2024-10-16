@@ -1,7 +1,7 @@
 // Landscape material
 
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_DEFAULTLIT
-#define TRANSFERDRAWID
+#define TRANSFER_DRAW_ID
 
 PARAMETER_TEXTURE(0, sampler2D, albedo)
 PARAMETER_TEXTURE(1, sampler2D, heightmap)
