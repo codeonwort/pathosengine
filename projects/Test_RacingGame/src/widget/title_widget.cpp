@@ -5,6 +5,12 @@
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
+// Constants
+static const std::string LABEL_FONT = "defaultLarge";
+static const float LABEL_SPACE_Y = 50.0f;
+static const vector3 LABEL_COLOR(0.4f, 0.4f, 0.4f);
+static const vector3 LABEL_COLOR_FOCUS(1.0f, 1.0, 1.0);
+
 TitleWidget::TitleWidget(World_RacingTitle* inOwnerWorld)
 	: BaseWidget()
 {
@@ -18,24 +24,24 @@ void TitleWidget::createUI() {
 	const int32 screenHeight = gEngine->getConfig().windowHeight;
 
 	startLabel = new pathos::Label;
+	startLabel->setFont(LABEL_FONT);
 	startLabel->setText(L"Start");
-	startLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
 	startLabel->setX(screenWidth / 2.0f);
 	startLabel->setY(screenHeight / 2.0f);
 	addChild(startLabel);
 
 	optionsLabel = new pathos::Label;
+	optionsLabel->setFont(LABEL_FONT);
 	optionsLabel->setText(L"Options");
-	optionsLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
 	optionsLabel->setX(screenWidth / 2.0f);
-	optionsLabel->setY(startLabel->getY() + 20.0f);
+	optionsLabel->setY(startLabel->getY() + LABEL_SPACE_Y);
 	addChild(optionsLabel);
 
 	exitLabel = new pathos::Label;
+	exitLabel->setFont(LABEL_FONT);
 	exitLabel->setText(L"Exit");
-	exitLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
 	exitLabel->setX(screenWidth / 2.0f);
-	exitLabel->setY(optionsLabel->getY() + 20.0f);
+	exitLabel->setY(optionsLabel->getY() + LABEL_SPACE_Y);
 	addChild(exitLabel);
 
 	labels = { startLabel, optionsLabel, exitLabel };
@@ -75,9 +81,9 @@ void TitleWidget::bindInput() {
 void TitleWidget::updateUI() {
 	for (auto i = 0; i < labels.size(); ++i) {
 		if ((int32)i == selectedLabel) {
-			labels[i]->setColor(vector3(1.0f, 1.0f, 1.0f));
+			labels[i]->setColor(LABEL_COLOR_FOCUS);
 		} else {
-			labels[i]->setColor(vector3(0.4f, 0.4f, 0.4f));
+			labels[i]->setColor(LABEL_COLOR);
 		}
 	}
 }

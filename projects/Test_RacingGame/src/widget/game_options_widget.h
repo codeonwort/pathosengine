@@ -23,12 +23,16 @@ private:
 	void bindInput();
 	void updateUI();
 
+	void applyCurrentOptions();
+
 	World_RacingTitle* ownerWorld = nullptr;
 
 	pathos::Rectangle* background = nullptr;
 	pathos::Label* resolutionHeaderLabel = nullptr;
 	pathos::Label* resolutionContentLabel = nullptr;
+	
 	pathos::Label* backToTitleLabel = nullptr;
+	pathos::Label* applyLabel = nullptr;
 
 	int32 selectedItem = -1;
 	std::vector<pathos::Label*> optionItems;

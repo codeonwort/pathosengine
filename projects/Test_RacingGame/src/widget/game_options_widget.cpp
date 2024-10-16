@@ -5,15 +5,21 @@
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/brush.h"
 #include "pathos/input/input_manager.h"
+#include "pathos/gui/gui_window.h"
 #include "pathos/util/log.h"
 
+// Constants
 // #wip: Query available display resolutions and actually change the resolution.
 static const int32 RESOLUTION_PRESETS[][2] = {
 	{ 1024, 768 },
 	{ 1600, 900 },
 	{ 1920, 1080 },
 };
-const int32 NUM_RESOLUTIONS = _countof(RESOLUTION_PRESETS);
+static const int32 NUM_RESOLUTIONS = _countof(RESOLUTION_PRESETS);
+static const std::string LABEL_FONT = "defaultLarge";
+static const float LABEL_SPACE_Y = 50.0f;
+static const vector3 LABEL_COLOR(0.4f, 0.4f, 0.4f);
+static const vector3 LABEL_COLOR_FOCUS(1.0f, 1.0, 1.0);
 
 GameOptionsWidget::GameOptionsWidget(World_RacingTitle* inOwnerWorld)
 	: BaseWidget()
@@ -35,21 +41,26 @@ void GameOptionsWidget::createUI() {
 	addChild(background);
 
 	resolutionHeaderLabel = new pathos::Label(L"Resolution");
-	resolutionHeaderLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
+	resolutionHeaderLabel->setFont(LABEL_FONT);
 	resolutionHeaderLabel->setXY(20.0f, 20.0f);
 	background->addChild(resolutionHeaderLabel);
 
 	resolutionContentLabel = new pathos::Label(L"1920 x 1080");
-	resolutionContentLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
-	resolutionContentLabel->setXY(resolutionHeaderLabel->getX() + 200.0f, resolutionHeaderLabel->getY());
+	resolutionContentLabel->setFont(LABEL_FONT);
+	resolutionContentLabel->setXY(resolutionHeaderLabel->getX() + 320.0f, resolutionHeaderLabel->getY());
 	background->addChild(resolutionContentLabel);
 
 	backToTitleLabel = new pathos::Label(L"Exit");
-	backToTitleLabel->setColor(vector3(1.0f, 0.2f, 0.1f));
-	backToTitleLabel->setXY(20.0f, background->getHeight() - 40.0f);
+	backToTitleLabel->setFont(LABEL_FONT);
+	backToTitleLabel->setXY(20.0f, background->getHeight() - 80.0f);
 	background->addChild(backToTitleLabel);
 
-	optionItems = { resolutionHeaderLabel, backToTitleLabel };
+	applyLabel = new pathos::Label(L"Apply");
+	applyLabel->setFont(LABEL_FONT);
+	applyLabel->setXY(20.0f, backToTitleLabel->getY() - 80.0f);
+	background->addChild(applyLabel);
+
+	optionItems = { resolutionHeaderLabel, applyLabel, backToTitleLabel };
 	selectedItem = 0;
 	selectedResolution = NUM_RESOLUTIONS - 1;
 	updateUI();
@@ -83,7 +94,10 @@ void GameOptionsWidget::bindInput() {
 		}
 	});
 	inputManager->bindButtonPressed("confirm", confirm, [this]() {
-		if (optionItems[selectedItem] == backToTitleLabel) {
+		if (optionItems[selectedItem] == applyLabel) {
+			this->applyCurrentOptions();
+		}
+		else if (optionItems[selectedItem] == backToTitleLabel) {
 			ownerWorld->onCloseOptionsWidget();
 		}
 	});
@@ -99,15 +113,23 @@ void GameOptionsWidget::updateUI() {
 
 	for (auto i = 0; i < optionItems.size(); ++i) {
 		if ((int32)i == selectedItem) {
-			optionItems[i]->setColor(vector3(1.0f, 1.0f, 1.0f));
+			optionItems[i]->setColor(LABEL_COLOR_FOCUS);
 			if (optionItems[i] == resolutionHeaderLabel) {
-				resolutionContentLabel->setColor(vector3(1.0f, 1.0f, 1.0f));
+				resolutionContentLabel->setColor(LABEL_COLOR_FOCUS);
 			}
 		} else {
-			optionItems[i]->setColor(vector3(0.4f, 0.4f, 0.4f));
+			optionItems[i]->setColor(LABEL_COLOR);
 			if (optionItems[i] == resolutionHeaderLabel) {
-				resolutionContentLabel->setColor(vector3(0.4f, 0.4f, 0.4f));
+				resolutionContentLabel->setColor(LABEL_COLOR);
 			}
 		}
 	}
+}
+
+void GameOptionsWidget::applyCurrentOptions() {
+	CHECK(0 <= selectedResolution && selectedResolution < NUM_RESOLUTIONS);
+	uint32 newResolutionX = (uint32)RESOLUTION_PRESETS[selectedResolution][0];
+	uint32 newResolutionY = (uint32)RESOLUTION_PRESETS[selectedResolution][1];
+	// #wip: Screen goes black if smaller than certain size?
+	gEngine->getMainWindow()->setSize(newResolutionX, newResolutionY);
 }
