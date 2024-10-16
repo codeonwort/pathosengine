@@ -20,6 +20,7 @@
 #define NEED_OUTPUTWORLDNORMAL            "OUTPUTWORLDNORMAL"
 #define NEED_SKYBOXMATERIAL               "SKYBOXMATERIAL"
 #define NEED_TRANSFERDRAWID               "TRANSFERDRAWID"
+#define NEED_TRANSFERINSTANCEID           "TRANSFER_INSTANCE_ID"
 #define NEED_UBO                          "UBO_Material"
 #define NEED_TEXTUREPARAMETERS            "TEXTURE_PARAMETERS"
 #define NEED_VPO                          "getVertexPositionOffset"
@@ -37,6 +38,7 @@
 #define KEYWORD_OUTPUTWORLDNORMAL         "#define OUTPUTWORLDNORMAL"
 #define KEYWORD_SKYBOXMATERIAL            "#define SKYBOXMATERIAL"
 #define KEYWORD_TRANSFERDRAWID            "#define TRANSFERDRAWID"
+#define KEYWORD_TRANSFER_INSTANCE_ID      "#define TRANSFER_INSTANCE_ID"
 #define KEYWORD_VPO_BEGIN                 "VPO_BEGIN"
 #define KEYWORD_VPO_END                   "VPO_END"
 #define KEYWORD_ATTR_BEGIN                "ATTR_BEGIN"
@@ -59,6 +61,7 @@ namespace pathos {
 			{ NEED_OUTPUTWORLDNORMAL    , &MT.lineIx_outputworldnormal    },
 			{ NEED_SKYBOXMATERIAL       , &MT.lineIx_skyboxmaterial       },
 			{ NEED_TRANSFERDRAWID       , &MT.lineIx_transferdrawid       },
+			{ NEED_TRANSFERINSTANCEID   , &MT.lineIx_transferinstanceid   },
 			{ NEED_UBO                  , &MT.lineIx_ubo                  },
 			{ NEED_TEXTUREPARAMETERS    , &MT.lineIx_textureParams        },
 			{ NEED_VPO                  , &MT.lineIx_getVPO               },
@@ -313,6 +316,7 @@ namespace pathos {
 		bool bOutputWorldNormal      = false;
 		bool bSkyboxMaterial         = false;
 		bool bTransferDrawID         = false;
+		bool bTransferInstanceID     = false;
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
 			if (0 == line.find(KEYWORD_SHADINGMODEL)) {
@@ -325,6 +329,8 @@ namespace pathos {
 				bSkyboxMaterial = true;
 			} else if (0 == line.find(KEYWORD_TRANSFERDRAWID)) {
 				bTransferDrawID = true;
+			} else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) {
+				bTransferInstanceID = true;
 			} else if (0 == line.find(KEYWORD_VPO_BEGIN)) {
 				materialVPOBeginIx = lineIx + 1;
 			} else if (0 == line.find(KEYWORD_VPO_END)) {
@@ -375,6 +381,8 @@ namespace pathos {
 		} else {
 			MT.replaceTransferDrawID("");
 		}
+
+		MT.replaceTransferInstanceID(bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
 
 		// Construct material uniform buffer.
 		uint32 uboTotalElements = 0; // 1 element = 4 bytes

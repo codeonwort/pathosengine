@@ -18,6 +18,7 @@ namespace pathos {
 				&& lineIx_outputworldnormal    != -1 // Optional
 				&& lineIx_skyboxmaterial       != -1 // Optional
 				&& lineIx_transferdrawid       != -1 // Optional
+				&& lineIx_transferinstanceid   != -1 // Optional
 				&& lineIx_ubo                  != -1
 				&& lineIx_textureParams        != -1
 				&& lineIx_getVPO               != -1
@@ -56,6 +57,9 @@ namespace pathos {
 		void replaceTransferDrawID(const std::string& defineTransferDrawID) {
 			sourceLines[lineIx_transferdrawid] = defineTransferDrawID;
 		}
+		void replaceTransferInstanceID(const std::string& defineTransferInstanceID) {
+			sourceLines[lineIx_transferinstanceid] = defineTransferInstanceID;
+		}
 		void replaceUBO(const std::string& defineUBO) {
 			sourceLines[lineIx_ubo] = defineUBO;
 		}
@@ -77,17 +81,18 @@ namespace pathos {
 			sourceLines[lineIx_embedGlsl] = embedGlsl;
 		}
 
-		int32 lineIx_shaderstage       = -1;
-		int32 lineIx_shadingmodel      = -1;
-		int32 lineIx_outputworldnormal = -1;
-		int32 lineIx_skyboxmaterial    = -1;
-		int32 lineIx_transferdrawid    = -1;
-		int32 lineIx_ubo               = -1;
-		int32 lineIx_textureParams     = -1;
-		int32 lineIx_getVPO            = -1;
-		int32 lineIx_getMaterialAttrs  = -1;
-		int32 lineIx_getSceneColor     = -1;
-		int32 lineIx_embedGlsl         = -1;
+		int32 lineIx_shaderstage           = -1;
+		int32 lineIx_shadingmodel          = -1;
+		int32 lineIx_outputworldnormal     = -1;
+		int32 lineIx_skyboxmaterial        = -1;
+		int32 lineIx_transferdrawid        = -1;
+		int32 lineIx_transferinstanceid    = -1;
+		int32 lineIx_ubo                   = -1;
+		int32 lineIx_textureParams         = -1;
+		int32 lineIx_getVPO                = -1;
+		int32 lineIx_getMaterialAttrs      = -1;
+		int32 lineIx_getSceneColor         = -1;
+		int32 lineIx_embedGlsl             = -1;
 		std::vector<std::string> sourceLines; // Source code of _template.glsl
 	};
 

@@ -32,10 +32,13 @@ $NEED SHADINGMODEL
 // - This material is not for static meshes, but for skybox.
 // [TRANSFERDRAWID]
 // - Define interpolants.drawID and assign gl_DrawID.
+// [TRANSFER_INSTANCE_ID]
+// - Define interpolants.instanceID and assign gl_InstanceID.
 
 $NEED OUTPUTWORLDNORMAL
 $NEED SKYBOXMATERIAL
 $NEED TRANSFERDRAWID
+$NEED TRANSFER_INSTANCE_ID
 
 #define FORWARD_SHADING (SKYBOXMATERIAL || SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
@@ -128,6 +131,9 @@ struct MaterialAttributes_Translucent {
 #if TRANSFERDRAWID
 	flat uint drawID;
 #endif
+#if TRANSFER_INSTANCE_ID
+	flat uint instanceID;
+#endif
 } interpolants;
 
 struct VertexShaderInput {
@@ -216,6 +222,9 @@ void main_staticMesh() {
 
 #if TRANSFERDRAWID
 	interpolants.drawID = gl_DrawID;
+#endif
+#if TRANSFER_INSTANCE_ID
+	interpolants.instanceID = gl_InstanceID;
 #endif
 
 	gl_Position = positionCS;
