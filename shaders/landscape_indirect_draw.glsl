@@ -89,6 +89,9 @@ void main() {
 
 	uint LOD = min(distanceToCamera, 2);
 
+	// #wip-landscape: Perform culling
+	bool bCulled = false;
+
 	// Output
 	outSectors[ix] = SectorParameter(
 		uvBounds,                      // uvBounds
@@ -99,7 +102,7 @@ void main() {
 	);
 	outCommands[ix] = DrawElementsIndirectCommand(
 		ubo.indexCountPerLOD[LOD], // count
-		1,                         // instanceCount
+		bCulled ? 0 : 1,           // instanceCount
 		ubo.firstIndexPerLOD[LOD], // firstIndex
 		0,                         // baseVertex
 		0                          // baseInstance

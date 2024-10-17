@@ -120,15 +120,25 @@ namespace pathos {
 		};
 
 		//////////////////////////////////////////////////////////////////////////
-		// Independent of screen resolution
+		// Textures that are independent of screen resolution.
+		// They don't need to be recreated on window resize. (should be not recreated)
 		
 		// reallocDirectionalShadowMaps() is called from shadow_directional.cpp
 		// reallocOmniShadowMaps() is called from shadow_omni.cpp
 
 		if (sceneProxySource == SceneProxySource::MainScene || sceneProxySource == SceneProxySource::SceneCapture) {
-			reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
-			reallocSkyIrradianceMap(cmdList);
+			if (localSpecularIBLs == 0) {
+				reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
+			}
+			if (skyIrradianceMap == 0) {
+				reallocSkyIrradianceMap(cmdList);
+			}
 			// One of sky passes will invoke reallocSkyPrefilterMap()
+
+			// Auto exposure (histogram)
+			if (luminanceFromHistogram == 0) {
+				reallocTexture2D(luminanceFromHistogram, GL_R32F, 1, 1, 1, "luminanceFromHistogram");
+			}
 		}
 
 		//////////////////////////////////////////////////////////////////////////
@@ -165,9 +175,6 @@ namespace pathos {
 		while (sceneLuminanceSize > sceneWidth || sceneLuminanceSize > sceneHeight) sceneLuminanceSize /= 2;
 		sceneLuminanceMipCount = calcTexture2DMaxMipCount(sceneLuminanceSize, sceneLuminanceSize);
 		reallocTexture2D(sceneLuminance, GL_R16F, sceneLuminanceSize, sceneLuminanceSize, sceneLuminanceMipCount, "sceneLuminance");
-
-		// Auto exposure (histogram)
-		reallocTexture2D(luminanceFromHistogram, GL_R32F, 1, 1, 1, "luminanceFromHistogram");
 
 		// Screen space reflection
 		if (bLightProbeRendering == false) {
