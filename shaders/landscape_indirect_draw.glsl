@@ -41,7 +41,7 @@ layout (std140, binding = 1) uniform UBO {
 	float sectorSizeY;
 	uint  sectorCountX;
 	uint  sectorCountY;
-	float _pad0;
+	float cullDistance;
 	float _pad1;
 } ubo;
 
@@ -89,8 +89,11 @@ void main() {
 
 	uint LOD = min(distanceToCamera, 2);
 
-	// #wip-landscape: Perform culling
-	bool bCulled = false;
+	// #wip-landscape: frustum culling
+	// ...
+
+	// distance culling
+	bool bCulled = distanceToCamera >= ubo.cullDistance;
 
 	// Output
 	outSectors[ix] = SectorParameter(

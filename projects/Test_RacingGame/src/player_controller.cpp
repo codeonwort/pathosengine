@@ -9,6 +9,8 @@
 
 #include "badger/math/minmax.h"
 
+#define MOVE_FAST_FACTOR 100.0f
+
 void PlayerController::onSpawn()
 {
 	setupInput();
@@ -135,7 +137,7 @@ void PlayerController::tickPhotoMode(float deltaSeconds)
 	int32 currMouseY = input->getMouseY();
 
 	// movement per seconds
-	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
+	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * MOVE_FAST_FACTOR);
 	const float speedRight   = 2.0f * deltaSeconds * moveMultiplier;
 	const float speedForward = 2.0f * deltaSeconds * moveMultiplier;
 	const float speedUp      = 2.0f * deltaSeconds * moveMultiplier;

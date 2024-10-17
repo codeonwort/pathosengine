@@ -31,6 +31,7 @@ namespace pathos {
 		float         sectorSizeY;
 		uint32        sectorCountX;
 		uint32        sectorCountY;
+		float         cullDistance;
 	};
 
 	class LandscapeComponent : public SceneComponent {
@@ -44,16 +45,18 @@ namespace pathos {
 		// Prepare heightmap data for sampleHeightmap().
 		void initializeHeightMap(ImageBlob* blob);
 
-		// Default value is 1.0.
-		inline void setHeightMultiplier(float multiplier) { heightMultiplier = multiplier; }
-
 		vector2 getNormalizedUV(float x, float z) const;
 
 		float sampleHeightmap(float u, float v) const; // [0, 1]
 
-		inline float getHeightMultiplier() const { return heightMultiplier; }
-
 		inline void setMaterial(Material* inMaterial) { material = inMaterial; }
+
+		// Default value is 1.0.
+		inline float getHeightMultiplier() const { return heightMultiplier; }
+		inline void setHeightMultiplier(float multiplier) { heightMultiplier = multiplier; }
+
+		inline float getCullDistance() const { return cullDistance; }
+		inline void setCullDistance(float value) { cullDistance = value; }
 
 		//~ BEGIN ActorComponent interface
 		virtual void createRenderProxy(SceneProxy* scene) override;
@@ -77,6 +80,8 @@ namespace pathos {
 		uniquePtr<Buffer> indirectDrawArgsBuffer;
 		uniquePtr<Buffer> sectorParameterBuffer;
 		matrix4 prevModelMatrix = matrix4(1.0f);
+
+		float cullDistance;
 
 		// For sectors
 		float sizeX = 0.0f;

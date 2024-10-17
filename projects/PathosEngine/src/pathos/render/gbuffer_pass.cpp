@@ -22,7 +22,7 @@ namespace pathos {
 		float     sectorSizeY;
 		uint32    sectorCountX;
 		uint32    sectorCountY;
-		float     _pad0;
+		float     cullDistance;
 		float     _pad1;
 	};
 
@@ -122,7 +122,6 @@ namespace pathos {
 			const std::vector<LandscapeProxy*>& proxyList = scene->getLandscapeMeshes();
 			const size_t numProxies = proxyList.size();
 
-			// #wip-indirect-draw: Run landscape culling shader
 			bool bPrepareGpuDriven = false;
 			for (size_t proxyIx = 0; proxyIx < numProxies && !bPrepareGpuDriven; ++proxyIx) {
 				bPrepareGpuDriven = bPrepareGpuDriven || proxyList[proxyIx]->bGpuDriven;
@@ -146,7 +145,7 @@ namespace pathos {
 					uboData.sectorSizeY      = proxy->sectorSizeY;
 					uboData.sectorCountX     = proxy->sectorCountX;
 					uboData.sectorCountY     = proxy->sectorCountY;
-					uboData._pad0            = 0.0f;
+					uboData.cullDistance     = proxy->cullDistance;
 					uboData._pad1            = 0.0f;
 
 					uboLandscapeCulling.update(cmdList, UBO_LandscapeCulling::BINDING_POINT, &uboData);

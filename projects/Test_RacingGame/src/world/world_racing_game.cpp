@@ -39,12 +39,13 @@
 #define TREE_MAX_Z               300.0f
 #define TREE_SCALE               0.05f
 #define NUM_TREES                100
-#define LANDSCAPE_POSITION       vector3(-400.0f, -10.0f, -400.0f)
-#define LANDSCAPE_SECTOR_SIZE_X  20.0f
-#define LANDSCAPE_SECTOR_SIZE_Y  20.0f
-#define LANDSCAPE_SECTOR_COUNT_X 40
-#define LANDSCAPE_SECTOR_COUNT_Y 40
-#define HEIGHTMAP_MULTIPLIER     50.0f
+#define LANDSCAPE_POSITION       vector3(-2000.0f, -10.0f, -2000.0f)
+#define LANDSCAPE_SECTOR_SIZE_X  10.0f
+#define LANDSCAPE_SECTOR_SIZE_Y  10.0f
+#define LANDSCAPE_SECTOR_COUNT_X 400
+#define LANDSCAPE_SECTOR_COUNT_Y 400
+#define LANDSCAPE_CULL_DISTANCE  500.0f
+#define HEIGHTMAP_MULTIPLIER     100.0f
 
 static ConsoleVariable<int32> cvarLandscapeDebugMode("game.landscape_debug", 0, "Landscape debug rendering");
 
@@ -185,6 +186,7 @@ void World_RacingGame::reloadScene() {
 
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
 	landscape->getLandscapeComponent()->setHeightMultiplier(HEIGHTMAP_MULTIPLIER);
+	landscape->getLandscapeComponent()->setCullDistance(LANDSCAPE_CULL_DISTANCE);
 	landscape->initializeHeightMap(heightMapBlob);
 	landscape->initializeSectors(LANDSCAPE_SECTOR_SIZE_X, LANDSCAPE_SECTOR_SIZE_Y, LANDSCAPE_SECTOR_COUNT_X, LANDSCAPE_SECTOR_COUNT_Y);
 	landscape->setActorLocation(LANDSCAPE_POSITION);

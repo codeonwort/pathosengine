@@ -30,8 +30,10 @@ struct LandscapeSectorParameter {
 namespace pathos {
 
 	static const int32 LANDSCAPE_BASE_DIVISIONS = 16;
+	static const float LANDSCAPE_BASE_CULL_DISTANCE = 500.0f;
 
 	LandscapeComponent::LandscapeComponent() {
+		cullDistance = LANDSCAPE_BASE_CULL_DISTANCE;
 	}
 
 	LandscapeComponent::~LandscapeComponent() {
@@ -179,6 +181,7 @@ namespace pathos {
 		}
 
 		// #wip-indirect-draw: If gpu driven, gbuffer_pass will run a landscape culling shader and fill the buffers.
+		// Need to run culling shader at the beginning of scene renderer.
 		if (LANDSCAPE_GPU_DRIVEN == 0) {
 			fillIndirectDrawBuffers(scene);
 		}
@@ -211,6 +214,7 @@ namespace pathos {
 		proxy->sectorSizeY             = sizeY;
 		proxy->sectorCountX            = countX;
 		proxy->sectorCountY            = countY;
+		proxy->cullDistance            = cullDistance;
 
 		scene->addLandscapeProxy(proxy);
 
