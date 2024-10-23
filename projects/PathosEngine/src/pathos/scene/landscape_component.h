@@ -32,6 +32,7 @@ namespace pathos {
 		uint32        sectorCountX;
 		uint32        sectorCountY;
 		float         cullDistance;
+		float         heightMultiplier;
 	};
 
 	class LandscapeComponent : public SceneComponent {
@@ -63,7 +64,7 @@ namespace pathos {
 		//~ END ActorComponent interface
 
 	private:
-		void fillIndirectDrawBuffers(SceneProxy* scene); // CPU version
+		uint32 fillIndirectDrawBuffers(SceneProxy* scene); // CPU version
 
 		uniquePtr<MeshGeometry> geometry; // All LODs in a single mesh
 		std::vector<uint32> numVertices;  // Per LOD

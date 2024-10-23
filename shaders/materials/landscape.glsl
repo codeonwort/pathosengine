@@ -26,7 +26,7 @@ layout (std140, binding = 0) readonly buffer SSBO_SectorParameter {
 
 vec2 getNormalizedUV(vec2 localUV, vec4 uvBounds) {
 	// y-axis messed up
-	return mix(uvBounds.xw, uvBounds.zy, localUV);
+	return mix(uvBounds.xy, uvBounds.zw, localUV);
 }
 
 ivec2 getSectorCoords(int glDrawID) {
@@ -83,7 +83,10 @@ vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 
 	heightFactor *= uboMaterial.heightmapMultiplier;
 
-	return vec3(sector.offsetX, heightFactor, sector.offsetY);
+	vec3 vpo = vec3(sector.offsetX, sector.offsetY, heightFactor);
+	vpo = mat3(uboPerObject.modelTransform) * vpo;
+
+	return vpo.xyz;
 }
 VPO_END
 

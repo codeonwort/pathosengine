@@ -6,6 +6,7 @@
 
 #include "badger/types/half_float.h"
 #include "badger/math/minmax.h"
+#include "badger/math/hit_test.h"
 
 // #wip-indirect-draw: Fill draw buffer from GPU
 #define LANDSCAPE_GPU_DRIVEN 1
@@ -26,6 +27,25 @@ struct LandscapeSectorParameter {
 	uint32  lod;
 	float   _pad0;
 };
+
+static AABB calculateWorldBounds(const AABB& localBounds, const matrix4& localToWorld) {
+	vector3 minB = localBounds.minBounds;
+	vector3 maxB = localBounds.maxBounds;
+	vector3 vs[8];
+	for (uint32 i = 0; i < 8; ++i) {
+		vs[i].x = (i & 1) ? minB.x : maxB.x;
+		vs[i].y = ((i >> 1) & 1) ? minB.y : maxB.y;
+		vs[i].z = ((i >> 2) & 1) ? minB.z : maxB.z;
+	}
+	minB = vector3(std::numeric_limits<float>::max());
+	maxB = vector3(std::numeric_limits<float>::lowest());
+	for (uint32 i = 0; i < 8; ++i) {
+		vs[i] = vector3(localToWorld * vector4(vs[i], 1.0f));
+		minB = glm::min(minB, vs[i]);
+		maxB = glm::max(maxB, vs[i]);
+	}
+	return AABB::fromMinMax(minB, maxB);
+}
 
 namespace pathos {
 
@@ -60,6 +80,12 @@ namespace pathos {
 					sizeX, sizeY, divs, divs,
 					PlaneGeometry::Direction::Z, EPrimitiveInitOptions::Default,
 					tempPositions, tempUVs, tempNormals, tempIndices);
+
+				// Place first vertex at origin
+				for (size_t i = 0; i < tempPositions.size(); i += 3) {
+					tempPositions[i + 0] += 0.5f * sizeX;
+					tempPositions[i + 1] += 0.5f * sizeY;
+				}
 
 				positions.insert(positions.end(), tempPositions.begin(), tempPositions.end());
 				uvs.insert(uvs.end(), tempUVs.begin(), tempUVs.end());
@@ -180,15 +206,14 @@ namespace pathos {
 			return;
 		}
 
-		// #wip-indirect-draw: If gpu driven, gbuffer_pass will run a landscape culling shader and fill the buffers.
-		// Need to run culling shader at the beginning of scene renderer.
+		// If not gpu driven, perform culling and fill indirect draw buffers in CPU.
+		uint32 indirectDrawCount = countX * countY;
 		if (LANDSCAPE_GPU_DRIVEN == 0) {
-			fillIndirectDrawBuffers(scene);
+			indirectDrawCount = fillIndirectDrawBuffers(scene);
 		}
 		
 		const vector3 cameraPosition = scene->camera.getPosition();
 		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
-		const vector3 cameraDirection = scene->camera.getEyeVector();
 
 		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
 
@@ -200,7 +225,7 @@ namespace pathos {
 		proxy->material                = material;
 		proxy->modelMatrix             = getLocalMatrix();
 		proxy->prevModelMatrix         = prevModelMatrix;
-		proxy->indirectDrawCount       = countX * countY;
+		proxy->indirectDrawCount       = indirectDrawCount;
 		proxy->bGpuDriven              = (bool)LANDSCAPE_GPU_DRIVEN;
 		// For gpu driven
 		CHECK(numIndices.size() >= 4 && indexOffsets.size() >= 4);
@@ -215,16 +240,16 @@ namespace pathos {
 		proxy->sectorCountX            = countX;
 		proxy->sectorCountY            = countY;
 		proxy->cullDistance            = cullDistance;
+		proxy->heightMultiplier        = heightMultiplier;
 
 		scene->addLandscapeProxy(proxy);
 
 		prevModelMatrix = getLocalMatrix();
 	}
 
-	void LandscapeComponent::fillIndirectDrawBuffers(SceneProxy* scene) {
+	uint32 LandscapeComponent::fillIndirectDrawBuffers(SceneProxy* scene) {
 		const vector3 cameraPosition = scene->camera.getPosition();
 		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
-		const vector3 cameraDirection = scene->camera.getEyeVector();
 
 		std::vector<DrawElementsIndirectCommand> drawCommands;
 		std::vector<LandscapeSectorParameter> sectorParams;
@@ -234,8 +259,24 @@ namespace pathos {
 		const vector3 basePosition = getLocation();
 		const vector2 basePositionXY = vector2(basePosition.x, basePosition.z);
 
+		Frustum3D frustum;
+		scene->camera.getFrustumPlanes(frustum);
+
+		uint32 visibleSectors = 0;
 		for (int32 sectorY = 0; sectorY < countY; ++sectorY) {
 			for (int32 sectorX = 0; sectorX < countX; ++sectorX) {
+				// Frustum culling
+				{
+					vector3 minV(sizeX * (float)sectorX, sizeY * (float)sectorY, 0.0f);
+					vector3 maxV = minV + vector3(sizeX, sizeY, heightMultiplier);
+					AABB localBounds = AABB::fromMinMax(minV, maxV);
+					AABB worldBounds = calculateWorldBounds(localBounds, getLocalMatrix());
+					bool inFrustum = badger::hitTest::AABB_frustum_noFarPlane(worldBounds, frustum);
+					if (!inFrustum) {
+						continue;
+					}
+				}
+
 				// Calculate LOD (criteria: distance to camera).
 				vector2 sectorCenterXY = basePositionXY;
 				sectorCenterXY += vector2(((float)sectorX + 0.5f) * sizeX, ((float)sectorY + 0.5f) * sizeY);
@@ -261,11 +302,15 @@ namespace pathos {
 					0.0f,
 				};
 				sectorParams.emplace_back(sector);
+
+				++visibleSectors;
 			}
 		}
 
-		indirectDrawArgsBuffer->writeToGPU(0, indirectDrawArgsBuffer->getCreateParams().bufferSize, drawCommands.data());
-		sectorParameterBuffer->writeToGPU(0, sectorParameterBuffer->getCreateParams().bufferSize, sectorParams.data());
+		indirectDrawArgsBuffer->writeToGPU(0, sizeof(DrawElementsIndirectCommand) * visibleSectors, drawCommands.data());
+		sectorParameterBuffer->writeToGPU(0, sizeof(LandscapeSectorParameter) * visibleSectors, sectorParams.data());
+
+		return visibleSectors;
 	}
 
 }

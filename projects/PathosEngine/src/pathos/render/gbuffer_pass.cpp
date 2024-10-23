@@ -9,11 +9,15 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
+#include "badger/math/plane.h"
+
 namespace pathos {
 	
 	struct UBO_LandscapeCulling {
 		static constexpr uint32 BINDING_POINT = 1;
 
+		Frustum3D cameraFrustum;
+		matrix4   localToWorld;
 		vector4ui indexCountPerLOD;
 		vector4ui firstIndexPerLOD;
 		vector3   actorPosition;
@@ -23,7 +27,7 @@ namespace pathos {
 		uint32    sectorCountX;
 		uint32    sectorCountY;
 		float     cullDistance;
-		float     _pad1;
+		float     heightMultiplier;
 	};
 
 	class LandscapeCullingCS : public ShaderStage {
@@ -132,11 +136,16 @@ namespace pathos {
 				ShaderProgram& cullingProgram = FIND_SHADER_PROGRAM(Program_LandscapeCulling);
 				cmdList.useProgram(cullingProgram.getGLName());
 
+				Frustum3D cameraFrustum;
+				camera->getFrustumPlanes(cameraFrustum);
+
 				for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 					LandscapeProxy* proxy = proxyList[proxyIx];
 					if (proxy->bGpuDriven == false) continue;
 
 					UBO_LandscapeCulling uboData;
+					uboData.cameraFrustum    = cameraFrustum;
+					uboData.localToWorld     = proxy->modelMatrix;
 					uboData.indexCountPerLOD = proxy->indexCountPerLOD;
 					uboData.firstIndexPerLOD = proxy->firstIndexPerLOD;
 					uboData.actorPosition    = proxy->actorPosition;
@@ -146,7 +155,7 @@ namespace pathos {
 					uboData.sectorCountX     = proxy->sectorCountX;
 					uboData.sectorCountY     = proxy->sectorCountY;
 					uboData.cullDistance     = proxy->cullDistance;
-					uboData._pad1            = 0.0f;
+					uboData.heightMultiplier = proxy->heightMultiplier;
 
 					uboLandscapeCulling.update(cmdList, UBO_LandscapeCulling::BINDING_POINT, &uboData);
 
@@ -165,9 +174,6 @@ namespace pathos {
 				LandscapeProxy* proxy = proxyList[proxyIx];
 				Material* material = proxy->material;
 				MaterialShader* materialShader = material->internal_getMaterialShader();
-
-				// #wip-landscape: Frustum culling
-				// ...
 
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
 				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());

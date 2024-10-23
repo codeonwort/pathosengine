@@ -39,7 +39,7 @@
 #define TREE_MAX_Z               300.0f
 #define TREE_SCALE               0.05f
 #define NUM_TREES                100
-#define LANDSCAPE_POSITION       vector3(-2000.0f, -10.0f, -2000.0f)
+#define LANDSCAPE_POSITION       vector3(-2000.0f, -10.0f, 2000.0f)
 #define LANDSCAPE_SECTOR_SIZE_X  10.0f
 #define LANDSCAPE_SECTOR_SIZE_Y  10.0f
 #define LANDSCAPE_SECTOR_COUNT_X 400
