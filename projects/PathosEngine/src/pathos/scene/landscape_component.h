@@ -46,6 +46,8 @@ namespace pathos {
 		// Prepare heightmap data for sampleHeightmap().
 		void initializeHeightMap(ImageBlob* blob);
 
+		inline void setGpuDriven(bool enable) { bGpuDriven = enable; }
+
 		vector2 getNormalizedUV(float x, float z) const;
 
 		float sampleHeightmap(float u, float v) const; // [0, 1]
@@ -65,6 +67,8 @@ namespace pathos {
 
 	private:
 		uint32 fillIndirectDrawBuffers(SceneProxy* scene); // CPU version
+
+		bool bGpuDriven = true;
 
 		uniquePtr<MeshGeometry> geometry; // All LODs in a single mesh
 		std::vector<uint32> numVertices;  // Per LOD

@@ -39,6 +39,7 @@
 #define TREE_MAX_Z               300.0f
 #define TREE_SCALE               0.05f
 #define NUM_TREES                100
+#define LANDSCAPE_GPU_DRIVEN     true
 #define LANDSCAPE_POSITION       vector3(-2000.0f, -10.0f, 2000.0f)
 #define LANDSCAPE_SECTOR_SIZE_X  10.0f
 #define LANDSCAPE_SECTOR_SIZE_Y  10.0f
@@ -184,6 +185,7 @@ void World_RacingGame::reloadScene() {
 	M_landscape->setConstantParameter("sectorCountX", LANDSCAPE_SECTOR_COUNT_X);
 	M_landscape->setConstantParameter("sectorCountY", LANDSCAPE_SECTOR_COUNT_Y);
 
+	landscape->getLandscapeComponent()->setGpuDriven(LANDSCAPE_GPU_DRIVEN);
 	landscape->getLandscapeComponent()->setMaterial(M_landscape);
 	landscape->getLandscapeComponent()->setHeightMultiplier(HEIGHTMAP_MULTIPLIER);
 	landscape->getLandscapeComponent()->setCullDistance(LANDSCAPE_CULL_DISTANCE);

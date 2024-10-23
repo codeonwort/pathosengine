@@ -8,9 +8,6 @@
 #include "badger/math/minmax.h"
 #include "badger/math/hit_test.h"
 
-// #wip-indirect-draw: Fill draw buffer from GPU
-#define LANDSCAPE_GPU_DRIVEN 1
-
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
 struct DrawElementsIndirectCommand {
 	uint32  count;
@@ -189,7 +186,7 @@ namespace pathos {
 
 		// If not gpu driven, perform culling and fill indirect draw buffers in CPU.
 		uint32 indirectDrawCount = countX * countY;
-		if (LANDSCAPE_GPU_DRIVEN == 0) {
+		if (bGpuDriven == false) {
 			indirectDrawCount = fillIndirectDrawBuffers(scene);
 		}
 		
@@ -207,7 +204,7 @@ namespace pathos {
 		proxy->modelMatrix             = getLocalMatrix();
 		proxy->prevModelMatrix         = prevModelMatrix;
 		proxy->indirectDrawCount       = indirectDrawCount;
-		proxy->bGpuDriven              = (bool)LANDSCAPE_GPU_DRIVEN;
+		proxy->bGpuDriven              = bGpuDriven;
 		// For gpu driven
 		CHECK(numIndices.size() >= 4 && indexOffsets.size() >= 4);
 		for (uint32 i = 0; i < 4; ++i) {
