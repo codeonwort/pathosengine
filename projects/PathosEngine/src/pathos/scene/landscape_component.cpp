@@ -28,25 +28,6 @@ struct LandscapeSectorParameter {
 	float   _pad0;
 };
 
-static AABB calculateWorldBounds(const AABB& localBounds, const matrix4& localToWorld) {
-	vector3 minB = localBounds.minBounds;
-	vector3 maxB = localBounds.maxBounds;
-	vector3 vs[8];
-	for (uint32 i = 0; i < 8; ++i) {
-		vs[i].x = (i & 1) ? minB.x : maxB.x;
-		vs[i].y = ((i >> 1) & 1) ? minB.y : maxB.y;
-		vs[i].z = ((i >> 2) & 1) ? minB.z : maxB.z;
-	}
-	minB = vector3(std::numeric_limits<float>::max());
-	maxB = vector3(std::numeric_limits<float>::lowest());
-	for (uint32 i = 0; i < 8; ++i) {
-		vs[i] = vector3(localToWorld * vector4(vs[i], 1.0f));
-		minB = glm::min(minB, vs[i]);
-		maxB = glm::max(maxB, vs[i]);
-	}
-	return AABB::fromMinMax(minB, maxB);
-}
-
 namespace pathos {
 
 	static const int32 LANDSCAPE_BASE_DIVISIONS = 16;
@@ -270,7 +251,7 @@ namespace pathos {
 					vector3 minV(sizeX * (float)sectorX, sizeY * (float)sectorY, 0.0f);
 					vector3 maxV = minV + vector3(sizeX, sizeY, heightMultiplier);
 					AABB localBounds = AABB::fromMinMax(minV, maxV);
-					AABB worldBounds = calculateWorldBounds(localBounds, getLocalMatrix());
+					AABB worldBounds = badger::calculateWorldBounds(localBounds, getLocalMatrix());
 					bool inFrustum = badger::hitTest::AABB_frustum_noFarPlane(worldBounds, frustum);
 					if (!inFrustum) {
 						continue;
