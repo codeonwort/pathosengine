@@ -3,6 +3,7 @@
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
 #include "pathos/util/image_data.h"
+#include "pathos/console.h"
 
 #include "badger/types/half_float.h"
 #include "badger/math/minmax.h"
@@ -25,6 +26,8 @@ struct LandscapeSectorParameter {
 	float   _pad0;
 };
 
+static ConsoleVariable<int32> cvarLandscapeDebugMode("r.landscape.debugMode", 0, "0 = none, 1 = LOD, 2 = UV, 3 = localUV");
+
 namespace pathos {
 
 	static const int32 LANDSCAPE_BASE_DIVISIONS = 16;
@@ -32,12 +35,14 @@ namespace pathos {
 
 	LandscapeComponent::LandscapeComponent() {
 		cullDistance = LANDSCAPE_BASE_CULL_DISTANCE;
+		material = uniquePtr<Material>(Material::createMaterialInstance("landscape"));
 	}
 
 	LandscapeComponent::~LandscapeComponent() {
 		indirectDrawArgsBuffer.reset();
 		sectorParameterBuffer.reset();
 		geometry.reset();
+		material.reset();
 	}
 
 	void LandscapeComponent::initializeSectors(float inSizeX, float inSizeY, int32 inCountX, int32 inCountY) {
@@ -184,6 +189,8 @@ namespace pathos {
 			return;
 		}
 
+		updateMaterial();
+
 		// If not gpu driven, perform culling and fill indirect draw buffers in CPU.
 		uint32 indirectDrawCount = countX * countY;
 		if (bGpuDriven == false) {
@@ -193,14 +200,12 @@ namespace pathos {
 		const vector3 cameraPosition = scene->camera.getPosition();
 		const vector2 cameraXY = vector2(cameraPosition.x, cameraPosition.z);
 
-		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
-
 		LandscapeProxy* proxy = ALLOC_RENDER_PROXY<LandscapeProxy>(scene);
 
 		proxy->indirectDrawArgsBuffer  = indirectDrawArgsBuffer.get();
 		proxy->sectorParameterBuffer   = sectorParameterBuffer.get();
 		proxy->geometry                = geometry.get();
-		proxy->material                = material;
+		proxy->material                = material.get();
 		proxy->modelMatrix             = getLocalMatrix();
 		proxy->prevModelMatrix         = prevModelMatrix;
 		proxy->indirectDrawCount       = indirectDrawCount;
@@ -223,6 +228,18 @@ namespace pathos {
 		scene->addLandscapeProxy(proxy);
 
 		prevModelMatrix = getLocalMatrix();
+	}
+
+	void LandscapeComponent::updateMaterial() {
+		auto albedo = albedoTexture != nullptr ? albedoTexture : gEngine->getSystemTexture2DGrey();
+		auto heightmap = heightmapTexture != nullptr ? heightmapTexture : gEngine->getSystemTexture2DBlack();
+		material->setTextureParameter("albedo", albedo);
+		material->setTextureParameter("heightmap", heightmap);
+		material->setConstantParameter("heightmapMultiplier", heightMultiplier);
+		material->setConstantParameter("sectorCountX", countX);
+		material->setConstantParameter("sectorCountY", countY);
+		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
+		material->setConstantParameter("debugMode", cvarLandscapeDebugMode.getInt());
 	}
 
 	uint32 LandscapeComponent::fillIndirectDrawBuffers(SceneProxy* scene) {

@@ -48,8 +48,6 @@
 #define LANDSCAPE_CULL_DISTANCE  500.0f
 #define HEIGHTMAP_MULTIPLIER     100.0f
 
-static ConsoleVariable<int32> cvarLandscapeDebugMode("game.landscape_debug", 0, "Landscape debug rendering");
-
 const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	{
 		"resources_external/SportsCar/sportsCar.obj",
@@ -90,9 +88,6 @@ void World_RacingGame::onDestroy() {
 }
 
 void World_RacingGame::onTick(float deltaSeconds) {
-	if (M_landscape != nullptr) {
-		M_landscape->setConstantParameter("debugMode", cvarLandscapeDebugMode.getInt());
-	}
 }
 
 void World_RacingGame::prepareAssets() {
@@ -175,20 +170,13 @@ void World_RacingGame::reloadScene() {
 	constexpr bool sRGB = true, autoDestroyBlob = true;
 	auto heightMapBlob = ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP);
 	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, sRGB, autoDestroyBlob, "Texture_Landscape_Albedo");
-	Texture* heightTexture = ImageUtils::createTexture2DFromImage(heightMapBlob, 0, !sRGB, !autoDestroyBlob, "Texture_Landscape_Height");
-
-	// #wip-landscape: Temp material
-	M_landscape = Material::createMaterialInstance("landscape");
-	M_landscape->setTextureParameter("albedo", albedoTexture);
-	M_landscape->setTextureParameter("heightmap", heightTexture);
-	M_landscape->setConstantParameter("heightmapMultiplier", HEIGHTMAP_MULTIPLIER);
-	M_landscape->setConstantParameter("sectorCountX", LANDSCAPE_SECTOR_COUNT_X);
-	M_landscape->setConstantParameter("sectorCountY", LANDSCAPE_SECTOR_COUNT_Y);
+	Texture* heightmapTexture = ImageUtils::createTexture2DFromImage(heightMapBlob, 0, !sRGB, !autoDestroyBlob, "Texture_Landscape_Height");
 
 	landscape->getLandscapeComponent()->setGpuDriven(LANDSCAPE_GPU_DRIVEN);
-	landscape->getLandscapeComponent()->setMaterial(M_landscape);
 	landscape->getLandscapeComponent()->setHeightMultiplier(HEIGHTMAP_MULTIPLIER);
 	landscape->getLandscapeComponent()->setCullDistance(LANDSCAPE_CULL_DISTANCE);
+	landscape->getLandscapeComponent()->setAlbedoTexture(albedoTexture);
+	landscape->getLandscapeComponent()->setHeightmapTexture(heightmapTexture);
 	landscape->initializeHeightMap(heightMapBlob);
 	landscape->initializeSectors(LANDSCAPE_SECTOR_SIZE_X, LANDSCAPE_SECTOR_SIZE_Y, LANDSCAPE_SECTOR_COUNT_X, LANDSCAPE_SECTOR_COUNT_Y);
 	landscape->setActorLocation(LANDSCAPE_POSITION);

@@ -109,7 +109,6 @@ MaterialAttributes getMaterialAttributes() {
 	}
 
 	attr.albedo    = baseColor;
-	//attr.albedo    = texture(heightmap, uv).rrr;
 	// #wip-landscape: Provide normalmap or derive from heightmap
 	attr.normal    = vec3(0.0, 0.0, 1.0);
 	attr.metallic  = 0.0;

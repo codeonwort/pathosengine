@@ -11,6 +11,7 @@ namespace pathos {
 	class MeshGeometry;
 	class Material;
 	class Buffer;
+	class Texture;
 	struct ImageBlob;
 
 	struct LandscapeProxy : public SceneComponentProxy {
@@ -46,13 +47,15 @@ namespace pathos {
 		// Prepare heightmap data for sampleHeightmap().
 		void initializeHeightMap(ImageBlob* blob);
 
+		// Landscape uses its internal material, so only configure texture parameters.
+		inline void setAlbedoTexture(Texture* texture) { albedoTexture = texture; }
+		inline void setHeightmapTexture(Texture* texture) { heightmapTexture = texture; }
+
 		inline void setGpuDriven(bool enable) { bGpuDriven = enable; }
 
 		vector2 getNormalizedUV(float x, float z) const;
 
 		float sampleHeightmap(float u, float v) const; // [0, 1]
-
-		inline void setMaterial(Material* inMaterial) { material = inMaterial; }
 
 		// Default value is 1.0.
 		inline float getHeightMultiplier() const { return heightMultiplier; }
@@ -66,6 +69,7 @@ namespace pathos {
 		//~ END ActorComponent interface
 
 	private:
+		void updateMaterial();
 		uint32 fillIndirectDrawBuffers(SceneProxy* scene); // CPU version
 
 		bool bGpuDriven = true;
@@ -81,7 +85,9 @@ namespace pathos {
 		std::vector<float> heightMapValues;
 		float heightMultiplier = 1.0f;
 
-		Material* material = nullptr;
+		uniquePtr<Material> material;
+		Texture* albedoTexture = nullptr;
+		Texture* heightmapTexture = nullptr;
 		uniquePtr<Buffer> indirectDrawArgsBuffer;
 		uniquePtr<Buffer> sectorParameterBuffer;
 		matrix4 prevModelMatrix = matrix4(1.0f);

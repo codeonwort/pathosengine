@@ -53,7 +53,6 @@ private:
 	StaticMeshActor* playerCar = nullptr;
 
 	LandscapeActor* landscape = nullptr;
-	Material* M_landscape = nullptr;
 
 	sharedPtr<Mesh> carMesh;
 	sharedPtr<Mesh> carDummyMesh;
