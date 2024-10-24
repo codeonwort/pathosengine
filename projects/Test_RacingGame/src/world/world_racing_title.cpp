@@ -24,7 +24,8 @@ void World_RacingTitle::onDestroy() {
 }
 
 void World_RacingTitle::onTick(float deltaSeconds) {
-	//
+	if (titleWidget) titleWidget->fitToScreenSize();
+	if (optionsWidget) optionsWidget->fitToScreenSize();
 }
 
 void World_RacingTitle::onStartGameWorld() {

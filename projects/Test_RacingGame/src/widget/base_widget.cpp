@@ -1,11 +1,14 @@
 #include "base_widget.h"
 
 #include "pathos/engine.h"
+#include "pathos/gui/gui_window.h"
 #include "pathos/input/input_manager.h"
 
 BaseWidget::BaseWidget() {
 	inputManager = gEngine->getInputSystem()->createInputManager();
 	inputManager->bindXInput(XInputUserIndex::USER0);
+
+	gEngine->getMainWindow()->getSize(&baseResolutionX, &baseResolutionY);
 }
 
 BaseWidget::~BaseWidget() {
@@ -22,4 +25,16 @@ void BaseWidget::setWidgetEnabled(bool value) {
 	} else {
 		inputManager->deactivate(true);
 	}
+}
+
+void BaseWidget::fitToScreenSize() {
+	uint32 newResolutionX, newResolutionY;
+	gEngine->getMainWindow()->getSize(&newResolutionX, &newResolutionY);
+
+	const float scaleX = (float)newResolutionX / (float)baseResolutionX;
+	const float scaleY = (float)newResolutionY / (float)baseResolutionY;
+	
+	const float scale = std::min(scaleX, scaleY);
+	setScaleX(scale);
+	setScaleY(scale);
 }

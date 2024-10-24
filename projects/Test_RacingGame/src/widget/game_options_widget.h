@@ -13,6 +13,21 @@ namespace pathos {
 }
 class World_RacingTitle;
 
+class ChoiceControl : public DisplayObject2D {
+public:
+	ChoiceControl(const std::wstring& label, const std::vector<std::wstring>& choices);
+	~ChoiceControl();
+	pathos::Label* getHeaderLabel() const { return header; }
+	pathos::Label* getContentLabel() const { return content; }
+	void changeChoice(int32 delta);
+	int32 getChoice() const { return selectedContent; }
+private:
+	pathos::Label* header = nullptr;
+	pathos::Label* content = nullptr;
+	int32 selectedContent = -1;
+	std::vector<std::wstring> contents;
+};
+
 class GameOptionsWidget : public BaseWidget {
 
 public:
@@ -28,15 +43,12 @@ private:
 	World_RacingTitle* ownerWorld = nullptr;
 
 	pathos::Rectangle* background = nullptr;
-	pathos::Label* resolutionHeaderLabel = nullptr;
-	pathos::Label* resolutionContentLabel = nullptr;
-	
+	ChoiceControl* resolutionControl = nullptr;
+	ChoiceControl* fullscreenControl = nullptr;
 	pathos::Label* backToTitleLabel = nullptr;
 	pathos::Label* applyLabel = nullptr;
 
 	int32 selectedItem = -1;
 	std::vector<pathos::Label*> optionItems;
-
-	int32 selectedResolution = -1;
 
 };

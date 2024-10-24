@@ -17,7 +17,11 @@ public:
 	// false: invisible and ignore input.
 	void setWidgetEnabled(bool value);
 
+	void fitToScreenSize();
+
 protected:
 	InputManager* inputManager = nullptr;
+
+	uint32 baseResolutionX, baseResolutionY;
 
 };
