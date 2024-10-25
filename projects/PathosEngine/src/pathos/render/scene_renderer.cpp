@@ -218,7 +218,7 @@ namespace pathos {
 		if (bRenderDepthPrepass) {
 			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
-			depthPrepass->renderPreDepth(cmdList, scene, camera);
+			depthPrepass->renderPreDepth(cmdList, scene, camera, landscapeRendering.get());
 		}
 
 		// #todo-light-probe: Don't need to render this per scene proxy,

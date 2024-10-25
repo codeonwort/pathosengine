@@ -93,7 +93,7 @@ namespace pathos {
 
 		const bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
 
-		landscapeRendering->renderGBuffers(cmdList, scene, camera, uboPerObject);
+		landscapeRendering->renderLandscape(cmdList, scene, camera, uboPerObject, false);
 
 		// Draw opaque static meshes
 		{

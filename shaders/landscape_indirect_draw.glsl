@@ -166,6 +166,7 @@ void main() {
 	}
 
 	// Distance culling
+	// #wip: Bugged?
 	bool bDistanceCulled = distanceToCamera >= ubo.cullDistance;
 
 	bool bCulled = bFrustumCulled || bDistanceCulled;

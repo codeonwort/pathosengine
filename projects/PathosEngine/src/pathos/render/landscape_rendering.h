@@ -25,8 +25,8 @@ namespace pathos {
 		// it precedes any mesh rendering (e.g., depth prepass, gbuffer pass, ...) passes.
 		void preprocess(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
-		// Call at GBufferPass::renderGBuffers(), after gbuffer setup is finished, but before doing mesh rendering.
-		void renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, UniformBuffer& uboPerObject);
+		// Call at depth prepass and gbuffer pass, after framebuffer setup is finished, but before doing mesh rendering.
+		void renderLandscape(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, UniformBuffer& uboPerObject, bool isDepthPrepass);
 
 	private:
 		UniformBuffer uboLandscapeCulling;

@@ -1,6 +1,7 @@
 #include "depth_prepass.h"
 #include "scene_render_targets.h"
 #include "scene_proxy.h"
+#include "landscape_rendering.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
@@ -27,11 +28,17 @@ namespace pathos {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
+	void DepthPrepass::renderPreDepth(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		LandscapeRendering* landscapeRendering)
 	{
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
+		CHECK(cvarFrustum != nullptr);
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
@@ -50,10 +57,11 @@ namespace pathos {
 		*sceneDepthClearValue = pathos::getDeviceFarDepth();
 		cmdList.clearNamedFramebufferfv(fbo, GL_DEPTH, 0, sceneDepthClearValue);
 
-		static ConsoleVariableBase* cvarFrustum = ConsoleVariableManager::get().find("r.frustum_culling");
-		CHECK(cvarFrustum != nullptr);
 		const bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
 
+		landscapeRendering->renderLandscape(cmdList, scene, camera, uboPerObject, true);
+
+		// Draw opaque static meshes.
 		{
 			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
 			const size_t numProxies = proxyList.size();

@@ -99,15 +99,17 @@ namespace pathos {
 		}
 	}
 
-	void LandscapeRendering::renderGBuffers(
+	void LandscapeRendering::renderLandscape(
 		RenderCommandList& cmdList,
 		SceneProxy* scene,
 		Camera* camera,
-		UniformBuffer& uboPerObject)
+		UniformBuffer& uboPerObject,
+		bool isDepthPrepass)
 	{
+		SCOPED_DRAW_EVENT(RenderLandscape);
+
 		const std::vector<LandscapeProxy*>& proxyList = scene->getLandscapeMeshes();
 		const size_t numProxies = proxyList.size();
-
 		uint32 currentProgramHash = 0;
 		uint32 currentMIID = 0xffffffff;
 
@@ -155,7 +157,11 @@ namespace pathos {
 			// #todo-renderer: Batching by same state
 			if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-			proxy->geometry->bindFullAttributesVAO(cmdList);
+			if (isDepthPrepass && materialShader->bTrivialDepthOnlyPass) {
+				proxy->geometry->bindPositionOnlyVAO(cmdList);
+			} else {
+				proxy->geometry->bindFullAttributesVAO(cmdList);
+			}
 
 			constexpr uint32 SSBO_BINDING_INDEX = 0;
 			proxy->sectorParameterBuffer->bindAsSSBO(cmdList, SSBO_BINDING_INDEX);

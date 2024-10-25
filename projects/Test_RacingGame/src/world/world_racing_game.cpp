@@ -35,10 +35,10 @@
 #define PLAYERCAM_HEIGHT_OFFSET  2.8f
 #define PLAYERCAM_FORWARD_OFFSET 10.0f
 
-#define TREE_MAX_X               300.0f
-#define TREE_MAX_Z               300.0f
+#define TREE_MAX_X               900.0f
+#define TREE_MAX_Z               900.0f
 #define TREE_SCALE               0.05f
-#define NUM_TREES                100
+#define NUM_TREES                200
 #define LANDSCAPE_GPU_DRIVEN     true
 #define LANDSCAPE_POSITION       vector3(-2000.0f, -10.0f, 2000.0f)
 #define LANDSCAPE_SECTOR_SIZE_X  10.0f
@@ -163,9 +163,6 @@ void World_RacingGame::reloadScene() {
 		tree->setActorScale(TREE_SCALE);
 		treeActors.push_back(tree);
 	}
-
-	// #wip-landscape: Depth prepass does not handle landscape proxy yet.
-	gConsole->addLine(L"r.depth_prepass 0");
 
 	constexpr bool sRGB = true, autoDestroyBlob = true;
 	auto heightMapBlob = ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP);
