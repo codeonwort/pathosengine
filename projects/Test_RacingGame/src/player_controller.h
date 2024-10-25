@@ -1,5 +1,9 @@
 #pragma once
 
+namespace pathos {
+	class LandscapeActor;
+}
+
 #include "pathos/scene/actor.h"
 using namespace pathos;
 
@@ -11,6 +15,7 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 
 	void setPlayerPawn(Actor* player);
+	inline void setLandscape(LandscapeActor* inLandscape) { landscape = inLandscape; }
 	void togglePhotoMode();
 
 	float cameraHeightOffset  = 1.8f;
@@ -22,6 +27,7 @@ private:
 	void tickPhotoMode(float deltaSeconds);
 
 	Actor* playerPawn = nullptr;
+	LandscapeActor* landscape = nullptr;
 	bool inPhotoMode = false;
 
 	// gameplay

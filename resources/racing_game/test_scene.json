@@ -43,12 +43,14 @@
 			"location": [0, -1, 0],
 			"rotation": [0, 0, 0],
 			"scale": [1.5, 1.5, 1.5]
-		},
+		}
+	],
+	"landscape": [
 		{
 			"name": "Landscape",
 			"location": [0, -1.0, 0],
 			"rotation": [0, -90, 0],
-			"scale": [100, 100, 100]
+			"scale": [1, 1, 1]
 		}
 	]
 }

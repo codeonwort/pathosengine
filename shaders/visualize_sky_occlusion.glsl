@@ -4,10 +4,10 @@
 #include "core/image_based_lighting.glsl"
 #include "deferred_common.glsl"
 
-// #wip-skyocclusion: Hard cut between grid cells
+// #todo-skyocclusion: Hard cut between grid cells
 #define COSINE_WEIGHTED_INTERPOLATION    1
 
-// #wip-skyocclusion: Can't make it right :(
+// #todo-skyocclusion: Can't make it right :(
 #define PROBE_VISIBILITY_AWARE           1
 
 // --------------------------------------------------------

@@ -30,9 +30,15 @@ $NEED SHADINGMODEL
 // - Normal mapping will not be performed.
 // [SKYBOXMATERIAL]
 // - This material is not for static meshes, but for skybox.
+// [TRANSFER_DRAW_ID]
+// - Define interpolants.drawID and assign gl_DrawID.
+// [TRANSFER_INSTANCE_ID]
+// - Define interpolants.instanceID and assign gl_InstanceID.
 
 $NEED OUTPUTWORLDNORMAL
 $NEED SKYBOXMATERIAL
+$NEED TRANSFER_DRAW_ID
+$NEED TRANSFER_INSTANCE_ID
 
 #define FORWARD_SHADING (SKYBOXMATERIAL || SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
@@ -122,6 +128,12 @@ struct MaterialAttributes_Translucent {
 	vec2 texcoord;     // local space
 	vec4 clipPos;      // clip space
 	vec4 prevClipPos;  // clip space
+#if TRANSFER_DRAW_ID
+	flat uint drawID;
+#endif
+#if TRANSFER_INSTANCE_ID
+	flat uint instanceID;
+#endif
 } interpolants;
 
 struct VertexShaderInput {
@@ -150,8 +162,12 @@ vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap) {
 #include "core/brdf.glsl"
 #endif
 
+$NEED embedGlsl
+
+#if VERTEX_SHADER
 // Controls world position offset.
 $NEED getVertexPositionOffset
+#endif
 
 // Most important output of material shaders.
 $NEED getMaterialAttributes
@@ -203,6 +219,13 @@ void main_staticMesh() {
 
 	interpolants.clipPos = positionCS;
 	interpolants.prevClipPos = uboPerFrame.prevViewProjTransform * prevPositionWS;
+
+#if TRANSFER_DRAW_ID
+	interpolants.drawID = gl_DrawID;
+#endif
+#if TRANSFER_INSTANCE_ID
+	interpolants.instanceID = gl_InstanceID;
+#endif
 
 	gl_Position = positionCS;
 }

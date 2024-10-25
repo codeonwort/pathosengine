@@ -59,6 +59,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,6 +76,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,13 +86,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\main_racing_game.cpp" />
     <ClCompile Include="src\player_controller.cpp" />
-    <ClCompile Include="src\world_game1.cpp" />
+    <ClCompile Include="src\widget\base_widget.cpp" />
+    <ClCompile Include="src\widget\game_options_widget.cpp" />
+    <ClCompile Include="src\widget\title_widget.cpp" />
+    <ClCompile Include="src\world\world_racing_game.cpp" />
+    <ClCompile Include="src\world\world_racing_title.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\pathos_forward_decl.h" />
     <ClInclude Include="src\player_controller.h" />
-    <ClInclude Include="src\world_game1.h" />
+    <ClInclude Include="src\widget\base_widget.h" />
+    <ClInclude Include="src\widget\game_options_widget.h" />
+    <ClInclude Include="src\widget\title_widget.h" />
+    <ClInclude Include="src\world\world_racing_game.h" />
+    <ClInclude Include="src\world\world_racing_title.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PathosEngine\PathosEngine.vcxproj">

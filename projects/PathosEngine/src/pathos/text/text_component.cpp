@@ -1,8 +1,9 @@
 #include "text_component.h"
-// For static mesh proxy
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
+
+#include "badger/math/hit_test.h"
 
 // Fallback font that must exist.
 #define DEFAULT_FONT_TAG    "default"
@@ -14,25 +15,6 @@ namespace pathos {
 		0.0f, -1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
-
-	static AABB calculateWorldBounds(const AABB& localBounds, const matrix4& localToWorld) {
-		vector3 minB = localBounds.minBounds;
-		vector3 maxB = localBounds.maxBounds;
-		vector3 vs[8];
-		for (uint32 i = 0; i < 8; ++i) {
-			vs[i].x = (i & 1) ? minB.x : maxB.x;
-			vs[i].y = ((i >> 1) & 1) ? minB.y : maxB.y;
-			vs[i].z = ((i >> 2) & 1) ? minB.z : maxB.z;
-		}
-		minB = vector3(std::numeric_limits<float>::max());
-		maxB = vector3(std::numeric_limits<float>::lowest());
-		for (uint32 i = 0; i < 8; ++i) {
-			vs[i] = vector3(localToWorld * vector4(vs[i], 1.0f));
-			minB = glm::min(minB, vs[i]);
-			maxB = glm::max(maxB, vs[i]);
-		}
-		return AABB::fromMinMax(minB, maxB);
-	}
 
 	TextMeshComponent::TextMeshComponent() {
 		geom = makeUnique<TextGeometry>();
@@ -54,7 +36,7 @@ namespace pathos {
 		proxy->geometry = geom.get();
 		proxy->material = material.get();
 		// #todo-frustum-culling: Proper worldBounds for text component
-		proxy->worldBounds = calculateWorldBounds(AABB::fromCenterAndHalfSize(vector3(0.0f), vector3(1.0f)), proxy->modelMatrix);
+		proxy->worldBounds = badger::calculateWorldBounds(AABB::fromCenterAndHalfSize(vector3(0.0f), vector3(1.0f)), proxy->modelMatrix);
 
 		scene->addStaticMeshProxy(proxy);
 	}

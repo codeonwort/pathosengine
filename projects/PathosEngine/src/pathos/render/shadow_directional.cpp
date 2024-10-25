@@ -161,6 +161,7 @@ namespace pathos {
 		cmdList.clipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 		cmdList.disable(GL_DEPTH_CLAMP);
 
+		// #todo-renderer: Although it reverts the UBO properly, The debug name in RenderDoc appears as "UBO_PerFrame_CSM".
 		// Revert uboPerFrame.
 		uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, (void*)&cachedPerFrameUBOData);
 	}

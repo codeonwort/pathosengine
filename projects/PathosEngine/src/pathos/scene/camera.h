@@ -26,7 +26,8 @@ namespace pathos {
 		inline bool isFlipX() const { return bFlipX; }
 		inline bool isFlipY() const { return bFlipY; }
 
-		void setFovY(float inFovY_degrees);
+		void setFovYDegrees(float inFovY_degrees);
+		void setFovYRadians(float inFovY_radians);
 		void setAspectRatio(float inAspectRatio);
 
 		inline void setProjectionFlips(bool bFlipHorizontal, bool bFlipVertical) {

@@ -132,7 +132,7 @@
     <ClCompile Include="src\pathos\render\shadow_directional.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\gl3w\gl3w.c">
+    <ClCompile Include="src\thirdparty\gl3w.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp">
@@ -273,10 +273,10 @@
     <ClCompile Include="src\badger\math\spline.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\init_tinygltf.cpp">
+    <ClCompile Include="src\thirdparty\tinygltf.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\init_tinyobjloader.cpp">
+    <ClCompile Include="src\thirdparty\tinyobjloader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\spline_loader.cpp">
@@ -415,6 +415,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_sky_occlusion.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\landscape_actor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\landscape_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\landscape_rendering.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -915,6 +924,15 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\image_based_lighting.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\landscape_actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\landscape_component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\render\landscape_rendering.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

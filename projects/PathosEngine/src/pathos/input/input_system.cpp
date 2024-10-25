@@ -5,17 +5,15 @@
 
 namespace pathos {
 
-	InputSystem::InputSystem()
-	{
-		defaultInputManager = new InputManager;
+	InputSystem::InputSystem() {
+		defaultInputManager = new InputManager(this);
 		inputChain.push_back(defaultInputManager);
 
 		g_xinputManager = new XInputManager;
 		//defaultInputManager->bindXInput(XInputUserIndex::USER0);
 	}
 
-	InputSystem::~InputSystem()
-	{
+	InputSystem::~InputSystem() {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
 			delete manager;
@@ -23,70 +21,70 @@ namespace pathos {
 	}
 
 	pathos::InputManager* InputSystem::createInputManager() {
-		InputManager* im = new InputManager;
+		InputManager* im = new InputManager(this);
 		inputChain.push_back(im);
 		return im;
 	}
 
-	void InputSystem::destroyInputManager(InputManager* inputManager) {
+	void InputSystem::unregisterInputManager(InputManager* inputManager) {
 		inputChain.remove(inputManager);
 	}
 
-	void InputSystem::tick()
-	{
+	void InputSystem::tick() {
 		g_xinputManager->update();
 
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->tick();
 			manager->updateAxisValue();
 		}
 	}
 
-	void InputSystem::processRawKeyDown(uint8 ascii)
-	{
+	void InputSystem::processRawKeyDown(uint8 ascii) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processRawKeyDown(ascii);
 		}
 	}
 
-	void InputSystem::processRawKeyUp(uint8 ascii)
-	{
+	void InputSystem::processRawKeyUp(uint8 ascii) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processRawKeyUp(ascii);
 		}
 	}
 
-	void InputSystem::processSpecialKeyDown(InputConstants specialKey)
-	{
+	void InputSystem::processSpecialKeyDown(InputConstants specialKey) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processSpecialKeyDown(specialKey);
 		}
 	}
 
-	void InputSystem::processSpecialKeyUp(InputConstants specialKey)
-	{
+	void InputSystem::processSpecialKeyUp(InputConstants specialKey) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processSpecialKeyUp(specialKey);
 		}
 	}
 
-	void InputSystem::processButtonDown(InputConstants input)
-	{
+	void InputSystem::processButtonDown(InputConstants input) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processButtonDown(input);
 		}
 	}
 
-	void InputSystem::processButtonUp(InputConstants input)
-	{
+	void InputSystem::processButtonUp(InputConstants input) {
 		for (auto it = inputChain.begin(); it != inputChain.end(); ++it) {
 			InputManager* manager = *it;
+			if (!manager->bActivated) continue;
 			manager->processButtonUp(input);
 		}
 	}

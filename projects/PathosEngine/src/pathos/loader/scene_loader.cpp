@@ -9,6 +9,7 @@
 #include "pathos/scene/sky_panorama_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/static_mesh_actor.h"
+#include "pathos/scene/landscape_actor.h"
 
 #include "badger/system/stopwatch.h"
 #include <fstream>
@@ -136,6 +137,15 @@ namespace pathos {
 			actor->setActorScale(sm.scale);
 
 			outActorMap.insert(std::make_pair(sm.name, actor));
+		}
+		// landscapes
+		for (const SceneDescription::Landscape& land : sceneDesc.landscapes) {
+			LandscapeActor* actor = world->spawnActor<LandscapeActor>();
+			actor->setActorLocation(land.location);
+			actor->setActorRotation(land.rotation);
+			actor->setActorScale(land.scale);
+
+			outActorMap.insert(std::make_pair(land.name, actor));
 		}
 	}
 

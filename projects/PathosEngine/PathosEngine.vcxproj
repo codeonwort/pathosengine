@@ -90,7 +90,10 @@
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
     <ClCompile Include="src\badger\system\cpu.cpp" />
     <ClCompile Include="src\badger\system\thread_pool.cpp" />
-    <ClCompile Include="src\gl3w\gl3w.c">
+    <ClCompile Include="src\pathos\render\landscape_rendering.cpp" />
+    <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
+    <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
+    <ClCompile Include="src\thirdparty\gl3w.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -98,8 +101,8 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
-    <ClCompile Include="src\init_tinygltf.cpp" />
-    <ClCompile Include="src\init_tinyobjloader.cpp" />
+    <ClCompile Include="src\thirdparty\tinygltf.cpp" />
+    <ClCompile Include="src\thirdparty\tinyobjloader.cpp" />
     <ClCompile Include="src\pathos\overlay\button.cpp" />
     <ClCompile Include="src\pathos\render\auto_exposure.cpp" />
     <ClCompile Include="src\pathos\render\fullscreen_util.cpp" />
@@ -241,6 +244,7 @@
     <ClInclude Include="src\pathos\render\fullscreen_util.h" />
     <ClInclude Include="src\pathos\render\gbuffer_pass.h" />
     <ClInclude Include="src\pathos\render\image_based_lighting.h" />
+    <ClInclude Include="src\pathos\render\landscape_rendering.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h" />
@@ -249,6 +253,8 @@
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />
+    <ClInclude Include="src\pathos\scene\landscape_actor.h" />
+    <ClInclude Include="src\pathos\scene\landscape_component.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />

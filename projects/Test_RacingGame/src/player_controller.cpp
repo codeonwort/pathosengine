@@ -3,10 +3,13 @@
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/camera.h"
+#include "pathos/scene/landscape_actor.h"
 #include "pathos/input/input_manager.h"
 #include "pathos/util/log.h"
 
 #include "badger/math/minmax.h"
+
+#define MOVE_FAST_FACTOR 100.0f
 
 void PlayerController::onSpawn()
 {
@@ -96,7 +99,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	linearSpeed += powerForward * deltaSeconds;
 	vector3 linearVelocity = linearSpeed * forwardDir;
 
-	// #todo-game: Simulate torque
+	// #todo-racing-game: Simulate torque
 	float turnRate = powf(badger::min(1.0f, fabs(linearSpeed) / 50.0f), 3.0f);
 	//LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
 	if (linearSpeed > 0.0f) {
@@ -107,6 +110,9 @@ void PlayerController::tickGameplay(float deltaSeconds)
 
 	vector3 pawnLoc = playerPawn->getActorLocation();
 	pawnLoc += linearVelocity * deltaSeconds;
+	if (landscape != nullptr) {
+		pawnLoc.y = landscape->getLandscapeY(pawnLoc.x, pawnLoc.z);
+	}
 	playerPawn->setActorLocation(pawnLoc);
 	
 	// Because SportsCar asset is facing +X...
@@ -131,7 +137,7 @@ void PlayerController::tickPhotoMode(float deltaSeconds)
 	int32 currMouseY = input->getMouseY();
 
 	// movement per seconds
-	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * 10.0f);
+	const float moveMultiplier = badger::max(1.0f, input->getAxis("moveFast") * MOVE_FAST_FACTOR);
 	const float speedRight   = 2.0f * deltaSeconds * moveMultiplier;
 	const float speedForward = 2.0f * deltaSeconds * moveMultiplier;
 	const float speedUp      = 2.0f * deltaSeconds * moveMultiplier;

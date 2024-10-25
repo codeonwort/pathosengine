@@ -1,4 +1,5 @@
 #include "input_manager.h"
+#include "input_system.h"
 
 #include "badger/system/platform.h"
 #include "badger/types/string_hash.h"
@@ -12,6 +13,14 @@
 #endif
 
 namespace pathos {
+
+	InputManager::InputManager(InputSystem* inOwner) {
+		owner = inOwner;
+	}
+
+	InputManager::~InputManager() {
+		owner->unregisterInputManager(this);
+	}
 
 	bool InputManager::hasButtonPressed(const char* eventName) const
 	{
@@ -152,6 +161,17 @@ namespace pathos {
 		return (bool)numRemoved;
 	}
 
+	void InputManager::activate() {
+		bActivated = true;
+	}
+
+	void InputManager::deactivate(bool clearKeyStates /*= true*/) {
+		bActivated = false;
+		if (clearKeyStates) {
+			::memset(asciiMap, 0, sizeof(asciiMap));
+		}
+	}
+
 	float InputManager::getAxis(const char* eventName) const
 	{
 		uint32 hash = COMPILE_TIME_CRC32_STR(eventName);
@@ -161,6 +181,21 @@ namespace pathos {
 	void InputManager::bindXInput(XInputUserIndex userIndex)
 	{
 		xinputUserIndex = userIndex;
+	}
+
+	void InputManager::copyKeyStateFrom(InputManager* another) {
+		for (int32 i = 0; i < _countof(another->asciiMap); ++i) {
+			asciiMap[i] = another->asciiMap[i];
+			if (asciiToInputConstants[i] != InputConstants::UNDEFINED) {
+				InputConstants ic = asciiToInputConstants[i];
+				for (ButtonBinding& binding : buttonPressedBindings) {
+					if (binding.contains(ic)) {
+						binding.bPressFired = true;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	void InputManager::processRawKeyDown(uint8 ascii)
@@ -224,9 +259,10 @@ namespace pathos {
 		else if (specialKey == InputConstants::ALT) isAltActive = true;
 
 		// #todo-input: Redundant; same as processRawKeyDown
-		for (const ButtonBinding& binding : buttonPressedBindings) {
-			if (binding.contains(specialKey)) {
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(specialKey) && binding.bPressFired == false) {
 				matchingEvents.push_back(binding.event_name_hash);
+				binding.bPressFired = true;
 			}
 		}
 
@@ -258,6 +294,12 @@ namespace pathos {
 
 			it->second();
 		}
+
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(specialKey)) {
+				binding.bPressFired = false;
+			}
+		}
 	}
 
 	void InputManager::processButtonDown(InputConstants input)
@@ -265,9 +307,10 @@ namespace pathos {
 		std::vector<uint32> matchingEvents;
 
 		// #todo-input: Redundant; same as processRawKeyDown
-		for (const ButtonBinding& binding : buttonPressedBindings) {
-			if (binding.contains(input)) {
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(input) && binding.bPressFired == false) {
 				matchingEvents.push_back(binding.event_name_hash);
+				binding.bPressFired = true;
 			}
 		}
 
@@ -294,6 +337,12 @@ namespace pathos {
 			CHECK(it != buttonReleasedMapping.end());
 
 			it->second();
+		}
+
+		for (ButtonBinding& binding : buttonPressedBindings) {
+			if (binding.contains(input)) {
+				binding.bPressFired = false;
+			}
 		}
 	}
 

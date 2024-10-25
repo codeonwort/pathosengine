@@ -146,7 +146,7 @@ namespace pathos {
 	}
 
 	void PanoramaSkyComponent::createRenderProxy(SceneProxy* scene) {
-		if (!hasValidResources()) {
+		if (!hasValidResources() || !getVisibility()) {
 			scene->panoramaSky = nullptr;
 			return;
 		}

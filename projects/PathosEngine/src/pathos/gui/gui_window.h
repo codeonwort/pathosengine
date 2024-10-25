@@ -67,11 +67,15 @@ namespace pathos {
 		void onMouseFunc(int button, int state, int x, int y);
 		void onMouseDrag(int x, int y);
 
+		void getSize(uint32* outWidth, uint32* outHeight) const;
+
 		void setTitle(const char* newTitle);
 		void setTitle(std::string&& newTitle);
 		void setSize(uint32 newWidth, uint32 newHeight);
 		//void hideToTaskbar();
 		//void flashTaskbar();
+
+		void setFullscreen(bool enable);
 
 	private:
 		bool initialized;

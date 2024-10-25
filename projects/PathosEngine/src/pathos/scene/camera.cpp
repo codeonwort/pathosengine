@@ -28,8 +28,13 @@ namespace pathos {
 		return transform;
 	}
 
-	void PerspectiveLens::setFovY(float inFovY_degrees) {
+	void PerspectiveLens::setFovYDegrees(float inFovY_degrees) {
 		fovY_radians = glm::radians(inFovY_degrees);
+		updateProjectionMatrix();
+	}
+
+	void PerspectiveLens::setFovYRadians(float inFovY_radians) {
+		fovY_radians = inFovY_radians;
 		updateProjectionMatrix();
 	}
 

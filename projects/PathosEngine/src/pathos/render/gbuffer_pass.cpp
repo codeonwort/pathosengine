@@ -1,8 +1,10 @@
 #include "gbuffer_pass.h"
 #include "scene_render_targets.h"
+#include "landscape_rendering.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/scene/static_mesh_component.h"
+#include "pathos/scene/landscape_component.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/engine_policy.h"
@@ -43,7 +45,13 @@ namespace pathos {
 		pathos::checkFramebufferStatus(cmdList, fbo, "GBuffer setup is invalid");
 	}
 
-	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, bool hasDepthPrepass) {
+	void GBufferPass::renderGBuffers(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		bool hasDepthPrepass,
+		LandscapeRendering* landscapeRendering)
+	{
 		SCOPED_DRAW_EVENT(GBufferPass);
 
 		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
@@ -83,8 +91,11 @@ namespace pathos {
 			cmdList.depthMask(GL_TRUE);
 		}
 
-		bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
+		const bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
 
+		landscapeRendering->renderLandscape(cmdList, scene, camera, uboPerObject, false);
+
+		// Draw opaque static meshes
 		{
 			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
 			const size_t numProxies = proxyList.size();
@@ -152,6 +163,7 @@ namespace pathos {
 			}
 		}
 
+		// Restore render state
 		cmdList.depthMask(GL_TRUE);
 	}
 

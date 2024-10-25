@@ -42,7 +42,8 @@ namespace pathos {
 
 	static void onGlutClose() {
 		GUIWindow* window = GUIWindow::handleToWindow[glutGetWindow()];
-		window->onClose();
+		// #todo: Need to cleanup engine termination process.
+		if (window != nullptr) window->onClose();
 	}
 
 	static void onGlutIdle() {
@@ -255,6 +256,11 @@ namespace pathos {
 		glutSetWindowTitle(title.c_str());
 	}
 
+	void GUIWindow::getSize(uint32* outWidth, uint32* outHeight) const {
+		*outWidth = windowWidth;
+		*outHeight = windowHeight;
+	}
+
 	void GUIWindow::setTitle(std::string&& newTitle)
 	{
 		title = std::move(newTitle);
@@ -264,9 +270,18 @@ namespace pathos {
 	}
 
 	void GUIWindow::setSize(uint32 newWidth, uint32 newHeight) {
-		newWidth = badger::clamp(WINDOW_MIN_WIDTH, newWidth, 65536u);
-		newHeight = badger::clamp(WINDOW_MIN_HEIGHT, newHeight, 65536u);
-		glutReshapeWindow((int)newWidth, (int)newHeight);
+		windowWidth = badger::clamp(WINDOW_MIN_WIDTH, newWidth, 65536u);
+		windowHeight = badger::clamp(WINDOW_MIN_HEIGHT, newHeight, 65536u);
+		glutReshapeWindow((int)windowWidth, (int)windowHeight);
+	}
+
+	void GUIWindow::setFullscreen(bool enable) {
+		if (enable) {
+			glutFullScreen();
+		} else {
+			glutPositionWindow(0, 0);
+			glutReshapeWindow(windowWidth, windowHeight);
+		}
 	}
 
 	void GUIWindow::checkSpecialKeyDown(int specialKey)

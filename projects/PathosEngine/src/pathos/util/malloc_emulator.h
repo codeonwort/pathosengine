@@ -26,7 +26,7 @@ namespace pathos {
 
 		~MallocEmulator();
 
-		void initialize(uint64 totalBytes);
+		void initialize(uint64 totalBytes, uint64 alignment = 0);
 
 		void cleanup();
 
@@ -49,6 +49,7 @@ namespace pathos {
 		Range* root = nullptr;
 		uint64 remainingBytes = 0;
 		uint64 numAllocations = 0;
+		uint64 alignment = 0;
 
 	};
 

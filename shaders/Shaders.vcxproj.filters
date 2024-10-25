@@ -87,5 +87,7 @@
     <None Include="reflection_probe_downsample.glsl" />
     <None Include="reflection_probe_filtering.glsl" />
     <None Include="reflection_probe_coeffs_const_32.glsl" />
+    <None Include="materials\landscape.glsl" />
+    <None Include="landscape_indirect_draw.glsl" />
   </ItemGroup>
 </Project>

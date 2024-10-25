@@ -10,54 +10,74 @@
 #include <vector>
 #include <algorithm>
 
-#define MATERIAL_FOLDER            "shaders/materials/"
-#define MATERIAL_TEMPLATE_FILENAME "_template.glsl"
+#define MATERIAL_FOLDER                   "shaders/materials/"
+#define MATERIAL_TEMPLATE_FILENAME        "_template.glsl"
 
 // Tokens in the template which are filled by the material assembler or material shaders
-#define NEED_HEADER                "$NEED"
-#define NEED_SHADERSTAGE           "SHADERSTAGE"
-#define NEED_SHADINGMODEL          "SHADINGMODEL"
-#define NEED_OUTPUTWORLDNORMAL     "OUTPUTWORLDNORMAL"
-#define NEED_SKYBOXMATERIAL        "SKYBOXMATERIAL"
-#define NEED_UBO                   "UBO_Material"
-#define NEED_TEXTUREPARAMETERS     "TEXTURE_PARAMETERS"
-#define NEED_VPO                   "getVertexPositionOffset"
-#define NEED_MATERIALATTRS         "getMaterialAttributes"
-#define NEED_GETSCENECOLOR         "getSceneColor"
+#define NEED_HEADER                       "$NEED"
+#define NEED_SHADERSTAGE                  "SHADERSTAGE"
+#define NEED_SHADINGMODEL                 "SHADINGMODEL"
+#define NEED_OUTPUTWORLDNORMAL            "OUTPUTWORLDNORMAL"
+#define NEED_SKYBOXMATERIAL               "SKYBOXMATERIAL"
+#define NEED_TRANSFERDRAWID               "TRANSFER_DRAW_ID"
+#define NEED_TRANSFERINSTANCEID           "TRANSFER_INSTANCE_ID"
+#define NEED_UBO                          "UBO_Material"
+#define NEED_TEXTUREPARAMETERS            "TEXTURE_PARAMETERS"
+#define NEED_VPO                          "getVertexPositionOffset"
+#define NEED_MATERIALATTRS                "getMaterialAttributes"
+#define NEED_GETSCENECOLOR                "getSceneColor"
+#define NEED_EMBEDGLSL                    "embedGlsl"
 
 // Macros that are used by material shaders
-#define PARAMETER_CONSTANT         "PARAMETER_CONSTANT"
-#define PARAMETER_TEXTURE          "PARAMETER_TEXTURE"
+#define PARAMETER_CONSTANT                "PARAMETER_CONSTANT"
+#define PARAMETER_TEXTURE                 "PARAMETER_TEXTURE"
 
+// Keywords
+#define KEYWORD_SHADINGMODEL              "#define SHADINGMODEL"
+#define KEYWORD_NONTRIVIALDEPTH           "#define NONTRIVIALDEPTH"
+#define KEYWORD_OUTPUTWORLDNORMAL         "#define OUTPUTWORLDNORMAL"
+#define KEYWORD_SKYBOXMATERIAL            "#define SKYBOXMATERIAL"
+#define KEYWORD_TRANSFER_DRAW_ID          "#define TRANSFER_DRAW_ID"
+#define KEYWORD_TRANSFER_INSTANCE_ID      "#define TRANSFER_INSTANCE_ID"
+#define KEYWORD_VPO_BEGIN                 "VPO_BEGIN"
+#define KEYWORD_VPO_END                   "VPO_END"
+#define KEYWORD_ATTR_BEGIN                "ATTR_BEGIN"
+#define KEYWORD_ATTR_END                  "ATTR_END"
+#define KEYWORD_FORWARDSHADING_BEGIN      "FORWARDSHADING_BEGIN"
+#define KEYWORD_FORWARDSHADING_END        "FORWARDSHADING_END"
+#define KEYWORD_EMBED_GLSL_BEGIN          "EMBED_GLSL_BEGIN"
+#define KEYWORD_EMBED_GLSL_END            "EMBED_GLSL_END"
+
+// MaterialTemplate
 namespace pathos {
 
 	void MaterialTemplate::updatePlaceholderIx() {
-		// Find $NEED lines
 		MaterialTemplate& MT = *this;
 		const std::string NEED(NEED_HEADER);
 		const int32 totalLines = (int32)MT.sourceLines.size();
+		const std::pair<const char*, int* const> targetLines[] = {
+			{ NEED_SHADERSTAGE          , &MT.lineIx_shaderstage          },
+			{ NEED_SHADINGMODEL         , &MT.lineIx_shadingmodel         },
+			{ NEED_OUTPUTWORLDNORMAL    , &MT.lineIx_outputworldnormal    },
+			{ NEED_SKYBOXMATERIAL       , &MT.lineIx_skyboxmaterial       },
+			{ NEED_TRANSFERDRAWID       , &MT.lineIx_transferdrawid       },
+			{ NEED_TRANSFERINSTANCEID   , &MT.lineIx_transferinstanceid   },
+			{ NEED_UBO                  , &MT.lineIx_ubo                  },
+			{ NEED_TEXTUREPARAMETERS    , &MT.lineIx_textureParams        },
+			{ NEED_VPO                  , &MT.lineIx_getVPO               },
+			{ NEED_MATERIALATTRS        , &MT.lineIx_getMaterialAttrs     },
+			{ NEED_GETSCENECOLOR        , &MT.lineIx_getSceneColor        },
+			{ NEED_EMBEDGLSL            , &MT.lineIx_embedGlsl            },
+		};
 		for (int32 lineIx = 0; lineIx < totalLines; ++lineIx) {
 			const std::string& line = MT.sourceLines[lineIx];
 			if (line.find(NEED) == 0) {
-				std::string header = line.substr(NEED.size() + 1);
-				if (header == NEED_SHADERSTAGE) {
-					MT.lineIx_shaderstage = lineIx;
-				} else if (header == NEED_SHADINGMODEL) {
-					MT.lineIx_shadingmodel = lineIx;
-				} else if (header == NEED_OUTPUTWORLDNORMAL) {
-					MT.lineIx_outputworldnormal = lineIx;
-				} else if (header == NEED_SKYBOXMATERIAL) {
-					MT.lineIx_skyboxmaterial = lineIx;
-				} else if (header == NEED_UBO) {
-					MT.lineIx_ubo = lineIx;
-				} else if (header == NEED_TEXTUREPARAMETERS) {
-					MT.lineIx_textureParams = lineIx;
-				} else if (header == NEED_VPO) {
-					MT.lineIx_getVPO = lineIx;
-				} else if (header == NEED_MATERIALATTRS) {
-					MT.lineIx_getMaterialAttrs = lineIx;
-				} else if (header == NEED_GETSCENECOLOR) {
-					MT.lineIx_getSceneColor = lineIx;
+				const std::string header = line.substr(NEED.size() + 1);
+				for (int32 i = 0; i < _countof(targetLines); ++i) {
+					if (header == targetLines[i].first) {
+						*(targetLines[i].second) = lineIx;
+						break;
+					}
 				}
 			}
 		}
@@ -86,6 +106,7 @@ namespace pathos {
 
 }
 
+// MaterialShaderAssembler
 namespace pathos {
 
 	MaterialShaderAssembler& MaterialShaderAssembler::get() {
@@ -283,37 +304,49 @@ namespace pathos {
 
 		// Find definitions
 		int32 materialShadingModelIx = -1;
-		int32 materialVPOBeginIx = -1; // inclusive
-		int32 materialVPOEndIx = -1; // inclusive
-		int32 materialAttrBeginIx = -1; // inclusive
-		int32 materialAttrEndIx = -1; // inclusive
-		int32 getSceneColorBeginIx = -1; // inclusive
-		int32 getSceneColorEndIx = -1; // inclusive
-		bool bTrivialDepthOnlyPass = true;
-		bool bOutputWorldNormal = false;
-		bool bSkyboxMaterial = false;
+		int32 materialVPOBeginIx     = -1; // inclusive
+		int32 materialVPOEndIx       = -1; // inclusive
+		int32 materialAttrBeginIx    = -1; // inclusive
+		int32 materialAttrEndIx      = -1; // inclusive
+		int32 getSceneColorBeginIx   = -1; // inclusive
+		int32 getSceneColorEndIx     = -1; // inclusive
+		int32 embedGlslBeginIx       = -1; // inclusive
+		int32 embedGlslEndIx         = -1; // inclusive
+		bool bTrivialDepthOnlyPass   = true;
+		bool bOutputWorldNormal      = false;
+		bool bSkyboxMaterial         = false;
+		bool bTransferDrawID         = false;
+		bool bTransferInstanceID     = false;
 		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
 			const std::string& line = materialLines[lineIx];
-			if (0 == line.find("#define SHADINGMODEL")) {
+			if (0 == line.find(KEYWORD_SHADINGMODEL)) {
 				materialShadingModelIx = lineIx;
-			} else if (0 == line.find("#define NONTRIVIALDEPTH")) {
+			} else if (0 == line.find(KEYWORD_NONTRIVIALDEPTH)) {
 				bTrivialDepthOnlyPass = false;
-			} else if (0 == line.find("#define OUTPUTWORLDNORMAL")) {
+			} else if (0 == line.find(KEYWORD_OUTPUTWORLDNORMAL)) {
 				bOutputWorldNormal = true;
-			} else if (0 == line.find("#define SKYBOXMATERIAL")) {
+			} else if (0 == line.find(KEYWORD_SKYBOXMATERIAL)) {
 				bSkyboxMaterial = true;
-			} else if (0 == line.find("VPO_BEGIN")) {
+			} else if (0 == line.find(KEYWORD_TRANSFER_DRAW_ID)) {
+				bTransferDrawID = true;
+			} else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) {
+				bTransferInstanceID = true;
+			} else if (0 == line.find(KEYWORD_VPO_BEGIN)) {
 				materialVPOBeginIx = lineIx + 1;
-			} else if (0 == line.find("VPO_END")) {
+			} else if (0 == line.find(KEYWORD_VPO_END)) {
 				materialVPOEndIx = lineIx - 1;
-			} else if (0 == line.find("ATTR_BEGIN")) {
+			} else if (0 == line.find(KEYWORD_ATTR_BEGIN)) {
 				materialAttrBeginIx = lineIx + 1;
-			} else if (0 == line.find("ATTR_END")) {
+			} else if (0 == line.find(KEYWORD_ATTR_END)) {
 				materialAttrEndIx = lineIx - 1;
-			} else if (0 == line.find("FORWARDSHADING_BEGIN")) {
+			} else if (0 == line.find(KEYWORD_FORWARDSHADING_BEGIN)) {
 				getSceneColorBeginIx = lineIx + 1;
-			} else if (0 == line.find("FORWARDSHADING_END")) {
+			} else if (0 == line.find(KEYWORD_FORWARDSHADING_END)) {
 				getSceneColorEndIx = lineIx - 1;
+			} else if (0 == line.find(KEYWORD_EMBED_GLSL_BEGIN)) {
+				embedGlslBeginIx = lineIx + 1;
+			} else if (0 == line.find(KEYWORD_EMBED_GLSL_END)) {
+				embedGlslEndIx = lineIx - 1;
 			}
 		}
 		const bool bMaterialWellDefined =
@@ -323,7 +356,9 @@ namespace pathos {
 			&& (materialVPOBeginIx < materialVPOEndIx)
 			&& (materialAttrBeginIx != -1)
 			&& (materialAttrEndIx != -1)
-			&& (materialAttrBeginIx < materialAttrEndIx);
+			&& (materialAttrBeginIx < materialAttrEndIx)
+			&& (getSceneColorBeginIx <= getSceneColorEndIx)
+			&& (embedGlslBeginIx <= embedGlslEndIx);
 		CHECK(bMaterialWellDefined);
 
 		MaterialTemplate MT = materialTemplate->makeClone();
@@ -340,6 +375,9 @@ namespace pathos {
 		} else {
 			MT.replaceSkyboxMaterial("");
 		}
+
+		MT.replaceTransferDrawID(bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
+		MT.replaceTransferInstanceID(bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
 
 		// Construct material uniform buffer.
 		uint32 uboTotalElements = 0; // 1 element = 4 bytes
@@ -448,6 +486,18 @@ namespace pathos {
 			attrs += '\n';
 		}
 		MT.replaceAttr(attrs);
+
+		// Material shader contains GLSL code that need to be embeded as is.
+		if (embedGlslBeginIx >= 0 && embedGlslEndIx >= 0) {
+			std::string embed;
+			for (int32 ix = embedGlslBeginIx; ix <= embedGlslEndIx; ++ix) {
+				embed += materialLines[ix];
+				embed += '\n';
+			}
+			MT.replaceEmbedGlsl(embed);
+		} else {
+			MT.replaceEmbedGlsl("");
+		}
 
 		// Parse shading model.
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;

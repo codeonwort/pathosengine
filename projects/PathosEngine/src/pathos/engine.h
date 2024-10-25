@@ -39,7 +39,7 @@ namespace pathos {
 
 	using Screenshot = std::pair<vector2i, uint8*>; // Assumes rgb8 format
 
-	// @see Engine::init
+	// See Engine::init method.
 	struct EngineConfig {
 		EngineConfig()
 			: windowWidth(1920)
@@ -58,6 +58,14 @@ namespace pathos {
 		uint32 numWorkersForAssetStreamer;
 	};
 
+	enum class EngineStatus {
+		Uninitialized,
+		Initialized,
+		Running,
+		Destroying,
+		Destroyed,
+	};
+
 	class Engine final : public Noncopyable {
 		friend class EngineUtil;
 		friend class RenderThread;
@@ -71,7 +79,7 @@ namespace pathos {
 		static bool init(int argc, char** argv, const EngineConfig& conf);
 
 		void start(); // Start the engine main loop.
-		void stop();  // Stop and destroy the engine.
+		void stop(bool immediate = false);  // Stop and destroy the engine.
 
 		// proc = [](const std::string& command) { ... }
 		void registerConsoleCommand(const char* command, ExecProc proc);
@@ -167,6 +175,8 @@ namespace pathos {
 		void readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines);
 
 		void tickMainThread();
+		
+		void stopDeferred();
 
 		// GUI event listeners
 		// - GLUT callbacks -> GUIWindow callbacks -> engine callbacks (here).
@@ -186,6 +196,7 @@ namespace pathos {
 	// Game thread
 	private:
 		EngineConfig conf;
+		EngineStatus engineStatus = EngineStatus::Uninitialized;
 		Stopwatch stopwatch_gameThread;
 		Stopwatch stopwatch_app;
 

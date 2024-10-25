@@ -37,6 +37,7 @@ namespace pathos {
 				{
 					switch (bpp) {
 						case 8:  outStorageFormat = GL_R8;      outPixelFormat = GL_RED;  outDataType = GL_UNSIGNED_BYTE;  break;
+						case 16: outStorageFormat = GL_R16;     outPixelFormat = GL_RED;  outDataType = GL_UNSIGNED_SHORT; break; // #todo-loader: r16 or rg8?
 						case 24: outStorageFormat = GL_RGB8;    outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_BYTE;  break;
 						case 32: outStorageFormat = GL_RGBA8;   outPixelFormat = GL_BGRA; outDataType = GL_UNSIGNED_BYTE;  break;
 						case 48: outStorageFormat = GL_RGB16;   outPixelFormat = GL_BGR;  outDataType = GL_UNSIGNED_SHORT; break;
@@ -221,7 +222,7 @@ namespace pathos {
 		createParams.width                = blobs[0]->width;
 		createParams.height               = blobs[0]->height;
 		createParams.depth                = 1;
-		createParams.mipLevels            = mipLevels ? 0 : 1;
+		createParams.mipLevels            = mipLevels;
 		createParams.glDimension          = GL_TEXTURE_CUBE_MAP;
 		createParams.glStorageFormat      = blobs[0]->glStorageFormat;
 		createParams.imageBlobs           = blobs;

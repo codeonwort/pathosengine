@@ -17,7 +17,7 @@ namespace pathos {
 	public:
 		virtual void createRenderProxy(SceneProxy* scene) override {
 			const DirectionalLightComponent* sun = scene->internal_getSunComponent();
-			if (sun == nullptr) {
+			if (sun == nullptr || getVisibility() == false) {
 				return;
 			}
 

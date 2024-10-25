@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 namespace pathos {
@@ -12,17 +13,20 @@ namespace pathos {
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
+	class LandscapeActor;
 	class Mesh;
+	class Material;
 	class Texture;
 	class OBJLoader;
 }
 class PlayerController;
 
-class World_Game1 : public World {
+class World_RacingGame : public World {
 	
 public:
 	// BEGIN_INTERFACE: World
 	virtual void onInitialize() override;
+	virtual void onDestroy() override;
 	virtual void onTick(float deltaSeconds) override;
 	// END_INTERFACE: World
 
@@ -47,14 +51,14 @@ private:
 	PointLightActor* pointLight0 = nullptr;
 
 	StaticMeshActor* playerCar = nullptr;
-	StaticMeshActor* landscape = nullptr; // #todo-landscape: Implement LandscapeActor
 
-	Mesh* carMesh = nullptr;
-	Mesh* carDummyMesh = nullptr;
-	Mesh* landscapeMesh = nullptr;
+	LandscapeActor* landscape = nullptr;
+
+	sharedPtr<Mesh> carMesh;
+	sharedPtr<Mesh> carDummyMesh;
 
 	std::vector<StaticMeshActor*> treeActors;
-	Mesh* treeMesh = nullptr;
+	sharedPtr<Mesh> treeMesh;
 
 	PlayerController* playerController = nullptr;
 };

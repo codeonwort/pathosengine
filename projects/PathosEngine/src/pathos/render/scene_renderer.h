@@ -66,6 +66,8 @@ namespace pathos {
 
 		static uniquePtr<UniformBuffer> ubo_perFrame;
 
+		static uniquePtr<class LandscapeRendering>        landscapeRendering;
+
 		// G-buffer rendering
 		static uniquePtr<class DepthPrepass>              depthPrepass;
 		static uniquePtr<class GBufferPass>               gbufferPass;
