@@ -99,7 +99,7 @@ void PlayerController::tickGameplay(float deltaSeconds)
 	linearSpeed += powerForward * deltaSeconds;
 	vector3 linearVelocity = linearSpeed * forwardDir;
 
-	// #todo-game: Simulate torque
+	// #todo-racing-game: Simulate torque
 	float turnRate = powf(badger::min(1.0f, fabs(linearSpeed) / 50.0f), 3.0f);
 	//LOG(LogDebug, "linSpeed=%f turnRate=%f", linearSpeed, turnRate);
 	if (linearSpeed > 0.0f) {

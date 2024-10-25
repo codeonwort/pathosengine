@@ -130,7 +130,7 @@ namespace pathos {
 		heightMapValues.reserve(heightMapWidth * heightMapHeight);
 		for (uint32 y = 0; y < heightMapHeight; ++y) {
 			for (uint32 x = 0; x < heightMapWidth; ++x) {
-				// #wip-heightmap: Should I flip Y?
+				// #todo-racing-game: Should I flip Y?
 				uint32 linearIx = y * heightMapWidth + x;
 				//uint32 linearIx = (heightMapHeight - y - 1) * heightMapWidth + x;
 				//float h = (stride == 1) ? ((float)streamU8[linearIx] / 255.0f) : half_to_float(streamU16[linearIx]);
@@ -169,7 +169,7 @@ namespace pathos {
 		float ku = (u2 - u) / du;
 		float kv = (v2 - v) / dv;
 
-		// #wip-heightmap: Bilinear interpolation is not the way?
+		// #todo-racing-game: Bilinear or barycentric?
 		float h00 = heightMapValues[y1 * (int32)heightMapWidth + x1];
 		float h10 = heightMapValues[y1 * (int32)heightMapWidth + x2];
 		float h01 = heightMapValues[y2 * (int32)heightMapWidth + x1];

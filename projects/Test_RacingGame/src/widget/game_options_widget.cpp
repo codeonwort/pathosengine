@@ -172,7 +172,7 @@ void GameOptionsWidget::applyCurrentOptions() {
 	uint32 newResolutionX = (uint32)RESOLUTION_PRESETS[selectedResolution][0];
 	uint32 newResolutionY = (uint32)RESOLUTION_PRESETS[selectedResolution][1];
 
-	// #wip: Screen goes black if smaller than certain size.
+	// #todo-racing-game: Screen goes black if smaller than certain size.
 	// Only if using auto exposure with luminance histogram :o
 	// Maybe memory barrier problem?
 	// rwLuminance results in nan (auto_exposure_histogram_avg.glsl)

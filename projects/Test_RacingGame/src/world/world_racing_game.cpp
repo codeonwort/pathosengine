@@ -24,8 +24,7 @@
 #define LANDSCAPE_HEIGHT_MAP     "resources/racing_game/korea_height.png"
 #define LANDSCAPE_NORMAL_MAP     "resources/racing_game/korea_normal.png"
 
-// #wip: Proper weather map for volumetric clouds
-//#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
+// Well let's borrow weather map from RC1.
 #define CLOUD_WEATHER_MAP_FILE   "resources/render_challenge_1/WeatherMap.png"
 #define CLOUD_SHAPE_NOISE_FILE   "resources/common/noiseShapePacked.tga"
 #define CLOUD_EROSION_NOISE_FILE "resources/common/noiseErosionPacked.tga"
