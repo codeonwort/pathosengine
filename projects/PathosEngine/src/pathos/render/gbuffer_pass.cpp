@@ -1,5 +1,6 @@
 #include "gbuffer_pass.h"
 #include "scene_render_targets.h"
+#include "landscape_rendering.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/scene/static_mesh_component.h"
@@ -44,7 +45,13 @@ namespace pathos {
 		pathos::checkFramebufferStatus(cmdList, fbo, "GBuffer setup is invalid");
 	}
 
-	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, bool hasDepthPrepass) {
+	void GBufferPass::renderGBuffers(
+		RenderCommandList& cmdList,
+		SceneProxy* scene,
+		Camera* camera,
+		bool hasDepthPrepass,
+		LandscapeRendering* landscapeRendering)
+	{
 		SCOPED_DRAW_EVENT(GBufferPass);
 
 		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
@@ -84,83 +91,9 @@ namespace pathos {
 			cmdList.depthMask(GL_TRUE);
 		}
 
-		bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
+		const bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
 
-		// #wip-landscape: Very redundant with static mesh rendering.
-		// Draw landscape
-		{
-			const std::vector<LandscapeProxy*>& proxyList = scene->getLandscapeMeshes();
-			const size_t numProxies = proxyList.size();
-
-			uint32 currentProgramHash = 0;
-			uint32 currentMIID = 0xffffffff;
-
-			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
-				LandscapeProxy* proxy = proxyList[proxyIx];
-				Material* material = proxy->material;
-				MaterialShader* materialShader = material->internal_getMaterialShader();
-
-				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
-				bool bUseWireframeMode = material->bWireframe;
-				currentProgramHash = materialShader->programHash;
-				currentMIID = material->internal_getMaterialInstanceID();
-
-				if (bShouldBindProgram) {
-					SCOPED_DRAW_EVENT(BindMaterialProgram);
-
-					uint32 programName = materialShader->program->getGLName();
-					CHECK(programName != 0 && programName != 0xffffffff);
-					cmdList.useProgram(programName);
-				}
-
-				// Update UBO (per object)
-				{
-					Material::UBO_PerObject uboData;
-					uboData.modelTransform = proxy->modelMatrix;
-					uboData.prevModelTransform = proxy->prevModelMatrix;
-					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
-				}
-
-				// Update UBO (material)
-				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
-					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					material->internal_fillUniformBuffer(uboMemory);
-					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
-				}
-
-				// Bind texture units
-				if (bShouldUpdateMaterialParameters) {
-					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
-						cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
-					}
-				}
-
-				// #todo-renderer: Batching by same state
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-				proxy->geometry->bindFullAttributesVAO(cmdList);
-
-				constexpr uint32 SSBO_BINDING_INDEX = 0;
-				proxy->sectorParameterBuffer->bindAsSSBO(cmdList, SSBO_BINDING_INDEX);
-				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, proxy->indirectDrawArgsBuffer->internal_getGLName());
-
-				cmdList.multiDrawElementsIndirect(
-					GL_TRIANGLES,
-					proxy->geometry->isIndex16Bit() ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-					0, // offset for indirect draw buffer
-					proxy->indirectDrawCount,
-					0 // stride
-				);
-
-				// Unbind buffers
-				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_BINDING_INDEX, 0);
-
-				// #todo-renderer: Batching by same state
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			}
-		}
+		landscapeRendering->renderGBuffers(cmdList, scene, camera, uboPerObject);
 
 		// Draw opaque static meshes
 		{

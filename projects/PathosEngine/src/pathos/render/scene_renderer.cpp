@@ -250,7 +250,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(BasePass);
 			SCOPED_GPU_COUNTER(BasePass);
-			gbufferPass->renderGBuffers(cmdList, scene, camera, bRenderDepthPrepass);
+			gbufferPass->renderGBuffers(cmdList, scene, camera, bRenderDepthPrepass, landscapeRendering.get());
 		}
 
 		if (bRenderGodRay) {

@@ -8,6 +8,7 @@ namespace pathos {
 	class SceneProxy;
 	class Camera;
 	class MeshGeometry;
+	class LandscapeRendering;
 	struct SceneRenderTargets;
 
 	class GBufferPass final {
@@ -20,7 +21,7 @@ namespace pathos {
 
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, bool hasDepthPrepass);
+		void renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, bool hasDepthPrepass, LandscapeRendering* landscapeRendering);
 
 	private:
 		void updateFramebufferAttachments(RenderCommandList& cmdList, SceneRenderTargets* sceneRenderTargets);
