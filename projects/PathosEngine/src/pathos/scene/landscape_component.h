@@ -50,6 +50,7 @@ namespace pathos {
 		// Landscape uses its internal material, so only configure texture parameters.
 		inline void setAlbedoTexture(Texture* texture) { albedoTexture = texture; }
 		inline void setHeightmapTexture(Texture* texture) { heightmapTexture = texture; }
+		inline void setNormalmapTexture(Texture* texture) { normalmapTexture = texture; }
 
 		inline void setGpuDriven(bool enable) { bGpuDriven = enable; }
 
@@ -88,6 +89,7 @@ namespace pathos {
 		uniquePtr<Material> material;
 		Texture* albedoTexture = nullptr;
 		Texture* heightmapTexture = nullptr;
+		Texture* normalmapTexture = nullptr;
 		uniquePtr<Buffer> indirectDrawArgsBuffer;
 		uniquePtr<Buffer> sectorParameterBuffer;
 		matrix4 prevModelMatrix = matrix4(1.0f);

@@ -233,8 +233,10 @@ namespace pathos {
 	void LandscapeComponent::updateMaterial() {
 		auto albedo = albedoTexture != nullptr ? albedoTexture : gEngine->getSystemTexture2DGrey();
 		auto heightmap = heightmapTexture != nullptr ? heightmapTexture : gEngine->getSystemTexture2DBlack();
+		auto normalmap = normalmapTexture != nullptr ? normalmapTexture : gEngine->getSystemTexture2DNormalmap();
 		material->setTextureParameter("albedo", albedo);
 		material->setTextureParameter("heightmap", heightmap);
+		material->setTextureParameter("normalmap", normalmap);
 		material->setConstantParameter("heightmapMultiplier", heightMultiplier);
 		material->setConstantParameter("sectorCountX", countX);
 		material->setConstantParameter("sectorCountY", countY);

@@ -3,9 +3,11 @@
 #define SHADINGMODEL MATERIAL_SHADINGMODEL_DEFAULTLIT
 #define TRANSFER_DRAW_ID
 #define NONTRIVIALDEPTH
+#define OUTPUTWORLDNORMAL
 
 PARAMETER_TEXTURE(0, sampler2D, albedo)
 PARAMETER_TEXTURE(1, sampler2D, heightmap)
+PARAMETER_TEXTURE(2, sampler2D, normalmap)
 PARAMETER_CONSTANT(float, heightmapMultiplier)
 PARAMETER_CONSTANT(int, sectorCountX)
 PARAMETER_CONSTANT(int, sectorCountY)
@@ -109,9 +111,10 @@ MaterialAttributes getMaterialAttributes() {
 		baseColor = vec3(interpolants.texcoord, 0.0);
 	}
 
+	vec3 normal = normalize(texture(normalmap, uv).rgb * 2.0 - vec3(1.0));
+
 	attr.albedo    = baseColor;
-	// #wip-landscape: Provide normalmap or derive from heightmap
-	attr.normal    = vec3(0.0, 0.0, 1.0);
+	attr.normal    = normal;
 	attr.metallic  = 0.0;
 	attr.roughness = 0.9;
 	attr.emissive  = vec3(0.0, 0.0, 0.0);

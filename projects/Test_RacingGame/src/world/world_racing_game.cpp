@@ -19,8 +19,10 @@
 #include "badger/math/random.h"
 
 #define SCENE_DESC_FILE          "resources/racing_game/test_scene.json"
-#define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/everest_albedo.png"
-#define LANDSCAPE_HEIGHT_MAP     "resources/racing_game/everest_height.png"
+// A random place taken from: https://manticorp.github.io/unrealheightmap/index.html
+#define LANDSCAPE_ALBEDO_MAP     "resources/racing_game/korea_albedo.png"
+#define LANDSCAPE_HEIGHT_MAP     "resources/racing_game/korea_height.png"
+#define LANDSCAPE_NORMAL_MAP     "resources/racing_game/korea_normal.png"
 
 // #wip: Proper weather map for volumetric clouds
 //#define CLOUD_WEATHER_MAP_FILE   "resources/racing_game/WeatherMap.png"
@@ -46,7 +48,7 @@
 #define LANDSCAPE_SECTOR_COUNT_X 400
 #define LANDSCAPE_SECTOR_COUNT_Y 400
 #define LANDSCAPE_CULL_DISTANCE  500.0f
-#define HEIGHTMAP_MULTIPLIER     100.0f
+#define HEIGHTMAP_MULTIPLIER     500.0f
 
 const std::vector<AssetReferenceWavefrontOBJ> wavefrontModelRefs = {
 	{
@@ -165,15 +167,19 @@ void World_RacingGame::reloadScene() {
 	}
 
 	constexpr bool sRGB = true, autoDestroyBlob = true;
+	auto albedoBlob = ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP);
 	auto heightMapBlob = ImageUtils::loadImage(LANDSCAPE_HEIGHT_MAP);
-	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(ImageUtils::loadImage(LANDSCAPE_ALBEDO_MAP), 0, sRGB, autoDestroyBlob, "Texture_Landscape_Albedo");
+	auto normalMapBlob = ImageUtils::loadImage(LANDSCAPE_NORMAL_MAP);
+	Texture* albedoTexture = ImageUtils::createTexture2DFromImage(albedoBlob, 0, sRGB, autoDestroyBlob, "Texture_Landscape_Albedo");
 	Texture* heightmapTexture = ImageUtils::createTexture2DFromImage(heightMapBlob, 0, !sRGB, !autoDestroyBlob, "Texture_Landscape_Height");
+	Texture* normalmapTexture = ImageUtils::createTexture2DFromImage(normalMapBlob, 0, !sRGB, autoDestroyBlob, "Texture_Landscape_Normal");
 
 	landscape->getLandscapeComponent()->setGpuDriven(LANDSCAPE_GPU_DRIVEN);
 	landscape->getLandscapeComponent()->setHeightMultiplier(HEIGHTMAP_MULTIPLIER);
 	landscape->getLandscapeComponent()->setCullDistance(LANDSCAPE_CULL_DISTANCE);
 	landscape->getLandscapeComponent()->setAlbedoTexture(albedoTexture);
 	landscape->getLandscapeComponent()->setHeightmapTexture(heightmapTexture);
+	landscape->getLandscapeComponent()->setNormalmapTexture(normalmapTexture);
 	landscape->initializeHeightMap(heightMapBlob);
 	landscape->initializeSectors(LANDSCAPE_SECTOR_SIZE_X, LANDSCAPE_SECTOR_SIZE_Y, LANDSCAPE_SECTOR_COUNT_X, LANDSCAPE_SECTOR_COUNT_Y);
 	landscape->setActorLocation(LANDSCAPE_POSITION);
