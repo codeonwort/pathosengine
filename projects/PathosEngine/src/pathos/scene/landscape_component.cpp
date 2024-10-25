@@ -274,7 +274,7 @@ namespace pathos {
 
 				// Calculate LOD (criteria: distance to camera).
 				vector2 sectorCenterXY = basePositionXY;
-				sectorCenterXY += vector2(((float)sectorX + 0.5f) * sizeX, ((float)sectorY + 0.5f) * sizeY);
+				sectorCenterXY += vector2(((float)sectorX + 0.5f) * sizeX, ((float)sectorY + 0.5f) * -sizeY);
 				vector2 unitOffset = glm::abs((sectorCenterXY - cameraXY) / vector2(sizeX, sizeY));
 				uint32 distanceToCamera = (uint32)(std::max(unitOffset.x, unitOffset.y));
 

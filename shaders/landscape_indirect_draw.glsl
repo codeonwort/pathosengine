@@ -146,7 +146,7 @@ void main() {
 	vec2 cameraXY = ubo.cameraPosition.xz;
 
 	vec2 sectorCenter = basePositionXY;
-	sectorCenter += sectorSize * vec2(fSectorCoord.x + 0.5, fSectorCoord.y + 0.5);
+	sectorCenter += vec2(sectorSize.x, -sectorSize.y) * vec2(fSectorCoord.x + 0.5, fSectorCoord.y + 0.5);
 	vec2 unitOffset = abs((sectorCenter - cameraXY) / sectorSize);
 	uint distanceToCamera = uint(max(unitOffset.x, unitOffset.y));
 
@@ -166,7 +166,6 @@ void main() {
 	}
 
 	// Distance culling
-	// #wip: Bugged?
 	bool bDistanceCulled = distanceToCamera >= ubo.cullDistance;
 
 	bool bCulled = bFrustumCulled || bDistanceCulled;
