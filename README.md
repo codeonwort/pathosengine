@@ -7,7 +7,7 @@ It's architecture follows game engine patterns but it's not meant to be a game e
 
 ### Development Environment
 
-I'm developing in the following environment and won't consider backward compatibility or other OS.
+The project will only compile and run on the following environment:
 
 * GL version: OpenGL 4.6 Core Profile
 * Language: C++17
@@ -26,23 +26,22 @@ I'm developing in the following environment and won't consider backward compatib
 <details open>
   <summary>Collapse</summary>
 
-![AreaLightTest](https://user-images.githubusercontent.com/11644393/191719865-a5db07fa-336b-4d3c-96cf-5b0da60812c5.jpg)
-Area light sources (sphere light and rect light).
-
-![McGuireFireplaceRoom](https://user-images.githubusercontent.com/11644393/191719903-67ba8cf6-887c-40a9-a386-8d32a91323a7.jpg)
-Asynchronous Wavefront OBJ asset loading, local lights with omnidirectional shadow mapping, screen space light shaft, and screen space ambient occlusion.
-
 ![RenderChallenge1](https://user-images.githubusercontent.com/11644393/199586888-a70163b2-5b7e-4dbc-b050-c0da462ca27a.jpg)
-Procedural geometries and textures, volumetric clouds, and post process bloom.
+RenderingChallenge1 world to showcase procedural geometries and textures, volumetric clouds, and bloom post process.
 
 ![RenderingChallenge2](https://user-images.githubusercontent.com/11644393/238012342-56108b01-5fc5-4f8a-8263-a1a538d95417.jpg)
-Procedural geometries and sky.
+RenderingChallenge2 world to showcase procedural geometries and sky.
 
-![GLTF-DamagedHelmet](https://user-images.githubusercontent.com/11644393/199479537-4e5abc6a-7f5a-4236-a84f-8a5ef1296f2f.jpg)
-Asynchronous glTF asset loading, Cook-Torrance BRDF for local illumination, and basic sky IBL for global illumination.
+<img src="https://github.com/user-attachments/assets/3d381473-fa85-4f39-8f94-93a2cd34e9cb" width="32%" />
+<img src="https://github.com/user-attachments/assets/802e0af8-a47d-479f-ab0a-320eee934c95" width="32%" />
+<img src="https://github.com/user-attachments/assets/81f5cf26-1136-4d79-8f61-e6b7cce8f733" width="32%" />
+LightRoom world to showcase omnidirectional shadows and emissive lights.
+
+![WIP-Landscape](https://github.com/user-attachments/assets/1b2f57bf-6a8e-487d-9884-6819baa0c089)
+WIP RacingGame world to showcase large-scale rendering.
 
 ![GLTF-Sponza](https://user-images.githubusercontent.com/11644393/199479551-c4d0a6f8-e705-4570-9b7d-c2a43f785b74.jpg)
-Yet another Sponza scene.
+A toy rendering project always need yet another Sponza scene :)
 
 </details>
 
@@ -59,6 +58,7 @@ Yet another Sponza scene.
 	* Real-time illumination from sky light sources (skybox, panorama, or atmosphere)
     * Real-time indirect illumination from irradiance/radiance probes (WIP)
   * Volumetric clouds
+  * Large-scale landscape (WIP)
   * Post processing
     * God ray (light shaft)
     * Auto exposure
