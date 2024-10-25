@@ -34,6 +34,7 @@
 #include "pathos/render/indirect_lighting.h"
 #include "pathos/render/resolve_unlit.h"
 #include "pathos/render/screen_space_reflection.h"
+#include "pathos/render/landscape_rendering.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
 #include "pathos/render/postprocessing/bloom.h"
@@ -194,6 +195,11 @@ namespace pathos {
 
 			// Update ubo_perFrame
 			updateSceneUniformBuffer(cmdList, scene, camera);
+		}
+
+		{
+			SCOPED_CPU_COUNTER(PreprocessLandscape);
+			landscapeRendering->preprocess(cmdList, scene, camera);
 		}
 
 		if (cvar_frustum_culling.getInt() != 0) {
@@ -787,6 +793,8 @@ namespace pathos {
 	
 	uniquePtr<UniformBuffer>             SceneRenderer::ubo_perFrame;
 
+	uniquePtr<LandscapeRendering>        SceneRenderer::landscapeRendering;
+
 	// G-buffer rendering
 	uniquePtr<DepthPrepass>              SceneRenderer::depthPrepass;
 	uniquePtr<GBufferPass>               SceneRenderer::gbufferPass;
@@ -844,6 +852,11 @@ namespace pathos {
 			sprintf_s(msg, "%s: UBO_PerFrame is bigger than the device's limit (%d > %d)",
 				__FUNCTION__, (int32)sizeof(UBO_PerFrame), uboMaxSize);
 			CHECKF(false, msg);
+		}
+
+		{
+			landscapeRendering = makeUnique<LandscapeRendering>();
+			landscapeRendering->initializeResources(cmdList);
 		}
 
 		{
@@ -937,6 +950,8 @@ namespace pathos {
 		ubo_perFrame.release();
 
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
+
+		RELEASEPASS(landscapeRendering);
 
 		RELEASEPASS(depthPrepass);
 		RELEASEPASS(gbufferPass);

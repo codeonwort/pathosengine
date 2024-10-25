@@ -90,6 +90,7 @@
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
     <ClCompile Include="src\badger\system\cpu.cpp" />
     <ClCompile Include="src\badger\system\thread_pool.cpp" />
+    <ClCompile Include="src\pathos\render\landscape_rendering.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
     <ClCompile Include="src\thirdparty\gl3w.c">
@@ -243,6 +244,7 @@
     <ClInclude Include="src\pathos\render\fullscreen_util.h" />
     <ClInclude Include="src\pathos\render\gbuffer_pass.h" />
     <ClInclude Include="src\pathos\render\image_based_lighting.h" />
+    <ClInclude Include="src\pathos\render\landscape_rendering.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h" />
