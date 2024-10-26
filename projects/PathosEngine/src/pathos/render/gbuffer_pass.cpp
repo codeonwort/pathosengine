@@ -101,6 +101,9 @@ namespace pathos {
 			const size_t numProxies = proxyList.size();
 			uint32 currentProgramHash = 0;
 			uint32 currentMIID = 0xffffffff;
+			bool bCurrentWireframe = false;
+			bool bCurrentReverseWinding = false;
+			bool bCurrentDoubleSided = false;
 			
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
@@ -112,11 +115,17 @@ namespace pathos {
 					continue;
 				}
 
+				// Proxies are sorted by this order. (see sortProxyList())
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
 				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
-				bool bUseWireframeMode = material->bWireframe;
+				bool bShouldUpdateWireframe = bCurrentWireframe != material->bWireframe;
+				bool bShouldUpdateWinding = bCurrentReverseWinding != proxy->renderInternal;
+				bool bShouldUpdateDoubleSided = bCurrentDoubleSided != proxy->doubleSided;
 				currentProgramHash = materialShader->programHash;
 				currentMIID = material->internal_getMaterialInstanceID();
+				bCurrentWireframe = material->bWireframe;
+				bCurrentReverseWinding = proxy->renderInternal;
+				bCurrentDoubleSided = proxy->doubleSided;
 
 				if (bShouldBindProgram) {
 					SCOPED_DRAW_EVENT(BindMaterialProgram);
@@ -148,19 +157,27 @@ namespace pathos {
 					}
 				}
 
-				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided || bUseWireframeMode) cmdList.disable(GL_CULL_FACE);
-				if (proxy->renderInternal) cmdList.frontFace(GL_CW);
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				if (bShouldUpdateWireframe) {
+					cmdList.polygonMode(GL_FRONT_AND_BACK, bCurrentWireframe ? GL_LINE : GL_FILL);
+					if (bCurrentWireframe) cmdList.disable(GL_CULL_FACE);
+					else cmdList.enable(GL_CULL_FACE);
+				}
+				if (bShouldUpdateWinding) {
+					cmdList.frontFace(bCurrentReverseWinding ? GL_CW : GL_CCW);
+				}
+				if (bShouldUpdateDoubleSided) {
+					if (bCurrentDoubleSided) cmdList.disable(GL_CULL_FACE);
+					else cmdList.enable(GL_CULL_FACE);
+				}
 				
 				proxy->geometry->bindFullAttributesVAO(cmdList);
 				proxy->geometry->drawPrimitive(cmdList);
-
-				// #todo-renderer: Batching by same state
-				if (proxy->doubleSided || bUseWireframeMode) cmdList.enable(GL_CULL_FACE);
-				if (proxy->renderInternal) cmdList.frontFace(GL_CCW);
-				if (bUseWireframeMode) cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
+
+			// Restore render state
+			cmdList.enable(GL_CULL_FACE);
+			cmdList.frontFace(GL_CCW);
+			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 
 		// Restore render state

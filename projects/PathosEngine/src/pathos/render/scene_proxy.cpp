@@ -52,20 +52,20 @@ namespace pathos {
 		auto sortProxyList = [](StaticMeshProxyList& v) {
 			std::sort(v.begin(), v.end(),
 				[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
+					// 1. Program
 					const uint32 programA = A->material->internal_getMaterialShader()->programHash;
 					const uint32 programB = B->material->internal_getMaterialShader()->programHash;
-					if (programA != programB) {
-						return programA < programB;
-					}
-					const uint32 midA = A->material->internal_getMaterialInstanceID();
-					const uint32 midB = B->material->internal_getMaterialInstanceID();
-					if (midA != midB) {
-						return midA < midB;
-					}
-					// Solid meshes first
-					const uint32 wireA = (uint32)A->material->bWireframe;
-					const uint32 wireB = (uint32)B->material->bWireframe;
-					return wireA < wireB;
+					if (programA != programB) return programA < programB;
+					// 2. Material instance -> wireframe -> internal -> doubleSided
+					uint64 keyA = (uint64)A->material->internal_getMaterialInstanceID() << 32;
+					uint64 keyB = (uint64)B->material->internal_getMaterialInstanceID() << 32;
+					keyA |= ((uint64)A->material->bWireframe) << 31;
+					keyA |= ((uint64)A->renderInternal) << 30;
+					keyA |= ((uint64)A->doubleSided) << 29;
+					keyB |= ((uint64)B->material->bWireframe) << 31;
+					keyB |= ((uint64)B->renderInternal) << 30;
+					keyB |= ((uint64)B->doubleSided) << 29;
+					return keyA < keyB;
 				}
 			);
 		};
