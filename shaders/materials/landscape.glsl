@@ -112,6 +112,7 @@ MaterialAttributes getMaterialAttributes() {
 	}
 
 	vec3 normal = normalize(texture(normalmap, uv).rgb * 2.0 - vec3(1.0));
+	normal = vec3(normal.x, normal.z, -normal.y); // Considers landscape actor rotation
 
 	attr.albedo    = baseColor;
 	attr.normal    = normal;
