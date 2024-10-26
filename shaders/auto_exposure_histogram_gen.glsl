@@ -51,7 +51,7 @@ void main() {
 
 	sharedHistogram[groupIndex] = 0;
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
 
 	uvec2 texel = gl_GlobalInvocationID.xy;
 	if (texel.x < ubo.inputWidth && texel.y < ubo.inputHeight) {
@@ -60,7 +60,7 @@ void main() {
 		atomicAdd(sharedHistogram[binIndex], 1);
 	}
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
 
 	atomicAdd(bins[groupIndex], sharedHistogram[groupIndex]);
 }

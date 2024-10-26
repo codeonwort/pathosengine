@@ -44,7 +44,14 @@ void main() {
 	float countForBin = float(bins[groupIndex]);
 	sharedHistogram[groupIndex] = countForBin * float(groupIndex); // weight * luminanceLevel
 
-	groupMemoryBarrier();
+	// Maybe I don't understand memory barrier :o
+#if 0
+	// No memoryBarrierShared() is OK? but to be sure...
+	memoryBarrierBuffer();
+#else
+	memoryBarrierBuffer();
+	memoryBarrierShared();
+#endif
 
 	for (uint sampleIx = (NUM_HISTOGRAM_BINS >> 1); sampleIx > 0; sampleIx >>= 1) {
 		if (groupIndex < sampleIx) {
@@ -52,7 +59,7 @@ void main() {
 		}
 	}
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
 
 	if (groupIndex == 0) {
 		float numValidPixels = max(float(ubo.pixelCount) - countForBin, 1.0); // non-black pixel count
