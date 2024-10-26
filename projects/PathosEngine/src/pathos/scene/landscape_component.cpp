@@ -27,6 +27,7 @@ struct LandscapeSectorParameter {
 };
 
 static ConsoleVariable<int32> cvarLandscapeDebugMode("r.landscape.debugMode", 0, "0 = none, 1 = LOD, 2 = UV, 3 = localUV");
+static ConsoleVariable<int32> cvarLandscapeWireframe("r.landscape.wireframe", 0, "0 = disable, 1 = enable");
 
 namespace pathos {
 
@@ -242,6 +243,8 @@ namespace pathos {
 		material->setConstantParameter("sectorCountY", countY);
 		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
 		material->setConstantParameter("debugMode", cvarLandscapeDebugMode.getInt());
+
+		material->bWireframe = cvarLandscapeWireframe.getInt() != 0;
 	}
 
 	uint32 LandscapeComponent::fillIndirectDrawBuffers(SceneProxy* scene) {
