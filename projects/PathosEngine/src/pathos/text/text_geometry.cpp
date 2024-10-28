@@ -17,10 +17,13 @@ namespace pathos {
 		initializeVertexLayout(EVertexAttributes::All);
 	}
 
-	void TextGeometry::configure(
-		RenderCommandList& cmdList,
-		FontTextureCache& cache,
-		const std::wstring& newText)
+	uint32 TextGeometry::getTextWidth(FontTextureCache& cache, const std::wstring& text) const {
+		uint32 width = 0;
+		for (wchar_t x : text) width += cache.getCharWidth(x);
+		return width;
+	}
+
+	void TextGeometry::configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& newText)
 	{
 		// You should not call this function with empty text.
 		// Just skip rendering from higher interface.

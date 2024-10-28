@@ -16,10 +16,10 @@ namespace pathos {
 	public:
 		TextGeometry();
 
-		void configure(
-			RenderCommandList& cmdList,
-			FontTextureCache& cache,
-			const std::wstring& text);
+		uint32 getTextWidth(FontTextureCache& cache, const std::wstring& text) const;
+
+		// Update vertex and index buffers for new text.
+		void configure(RenderCommandList& cmdList, FontTextureCache& cache, const std::wstring& text);
 	
 	};
 

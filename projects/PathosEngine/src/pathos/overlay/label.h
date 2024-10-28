@@ -20,6 +20,8 @@ namespace pathos {
 		void setColor(const vector3& newColor);
 		void setFont(const std::string& tag);
 
+		uint32 getTextWidth() const;
+
 		const std::wstring& getText() const { return text; }
 		std::wstring getText() { return text; }
 

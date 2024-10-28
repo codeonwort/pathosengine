@@ -26,21 +26,21 @@ void TitleWidget::createUI() {
 	startLabel = new pathos::Label;
 	startLabel->setFont(LABEL_FONT);
 	startLabel->setText(L"Start");
-	startLabel->setX(screenWidth / 2.0f);
+	startLabel->setX((screenWidth - (int32)startLabel->getTextWidth()) / 2.0f);
 	startLabel->setY(screenHeight / 2.0f);
 	addChild(startLabel);
 
 	optionsLabel = new pathos::Label;
 	optionsLabel->setFont(LABEL_FONT);
 	optionsLabel->setText(L"Options");
-	optionsLabel->setX(screenWidth / 2.0f);
+	optionsLabel->setX((screenWidth - (int32)optionsLabel->getTextWidth()) / 2.0f);
 	optionsLabel->setY(startLabel->getY() + LABEL_SPACE_Y);
 	addChild(optionsLabel);
 
 	exitLabel = new pathos::Label;
 	exitLabel->setFont(LABEL_FONT);
 	exitLabel->setText(L"Exit");
-	exitLabel->setX(screenWidth / 2.0f);
+	exitLabel->setX((screenWidth - (int32)exitLabel->getTextWidth()) / 2.0f);
 	exitLabel->setY(optionsLabel->getY() + LABEL_SPACE_Y);
 	addChild(exitLabel);
 

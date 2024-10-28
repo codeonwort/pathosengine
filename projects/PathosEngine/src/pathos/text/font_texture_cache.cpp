@@ -86,6 +86,13 @@ namespace pathos {
 		cacheState.unused.clear();
 	}
 
+	uint32 FontTextureCache::getCharWidth(wchar_t x) const {
+		if (FT_Load_Char(face, x, FT_LOAD_BITMAP_METRICS_ONLY | FT_LOAD_NO_SCALE) != 0) {
+			return 0;
+		}
+		return (uint32)(face->glyph->advance.x >> 6);
+	}
+
 	void FontTextureCache::startGetGlyph(RenderCommandList& cmdList)
 	{
 		cmdList.pixelStorei(GL_UNPACK_ALIGNMENT, 1);

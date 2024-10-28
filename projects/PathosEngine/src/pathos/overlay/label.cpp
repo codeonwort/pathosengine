@@ -70,6 +70,10 @@ namespace pathos {
 		CHECK(validDesc);
 	}
 
+	uint32 Label::getTextWidth() const {
+		return geometry->getTextWidth(*fontDesc.cacheTexture, text);
+	}
+
 	void Label::updateTransform(uint32 viewportWidth, uint32 viewportHeight) {
 		transform.identity();
 		transform.prependScale(scaleX, scaleY, 1.0f);

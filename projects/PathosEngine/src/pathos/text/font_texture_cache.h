@@ -62,6 +62,8 @@ namespace pathos {
 		bool init(RenderCommandList& cmdList, const char* filename, uint32 pixelSize);
 		void term();
 
+		uint32 getCharWidth(wchar_t x) const;
+
 		void startGetGlyph(RenderCommandList& cmdList);
 		const GlyphInTexture getGlyph(RenderCommandList& cmdList, wchar_t x);
 		void endGetGlyph(RenderCommandList& cmdList);
