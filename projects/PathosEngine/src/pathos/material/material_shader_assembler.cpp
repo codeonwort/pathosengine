@@ -6,6 +6,7 @@
 #include "pathos/util/log.h"
 
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -47,6 +48,211 @@
 #define KEYWORD_FORWARDSHADING_END        "FORWARDSHADING_END"
 #define KEYWORD_EMBED_GLSL_BEGIN          "EMBED_GLSL_BEGIN"
 #define KEYWORD_EMBED_GLSL_END            "EMBED_GLSL_END"
+
+// TextureParameterDesc, ConstantParameterDesc
+namespace pathos {
+	
+	struct TextureParameterDesc {
+		uint32 lineIx;
+		uint32 binding;
+		std::string samplerType;
+		std::string name;
+
+		std::string toString() const {
+			char buf[256];
+			sprintf_s(buf, "layout (binding = %u) uniform %s %s;",
+				binding, samplerType.c_str(), name.c_str());
+			return std::string(buf);
+		}
+	};
+
+	struct ConstantParameterDesc {
+		uint32 lineIx;
+		std::string datatype;
+		std::string name;
+		uint32 numElements;
+		EMaterialParameterDataType datatypeEnum = EMaterialParameterDataType::Float;
+
+		ConstantParameterDesc(uint32 inLineIx, const std::string& inDatatype, const std::string& inName)
+			: lineIx(inLineIx), datatype(inDatatype), name(inName) {
+			if (datatype == "float" || datatype == "int" || datatype == "uint" || datatype == "bool") {
+				numElements = 1;
+			} else if (datatype == "vec2" || datatype == "ivec2" || datatype == "uvec2" || datatype == "bvec2") {
+				numElements = 2;
+			} else if (datatype == "vec3" || datatype == "ivec3" || datatype == "uvec3" || datatype == "bvec3") {
+				numElements = 3;
+			} else if (datatype == "vec4" || datatype == "ivec4" || datatype == "uvec4" || datatype == "bvec4") {
+				numElements = 4;
+			} else {
+				numElements = 0;
+				CHECK_NO_ENTRY();
+			}
+
+			if (datatype == "float" || datatype == "vec2" || datatype == "vec3" || datatype == "vec4") {
+				datatypeEnum = EMaterialParameterDataType::Float;
+			} else if (datatype == "int" || datatype == "ivec2" || datatype == "ivec3" || datatype == "ivec4") {
+				datatypeEnum = EMaterialParameterDataType::Int;
+			} else if (datatype == "uint" || datatype == "uvec2" || datatype == "uvec3" || datatype == "uvec4") {
+				datatypeEnum = EMaterialParameterDataType::Uint;
+			} else if (datatype == "bool" || datatype == "bvec2" || datatype == "bvec3" || datatype == "bvec4") {
+				datatypeEnum = EMaterialParameterDataType::Bool;
+			}
+		}
+
+		std::string toString() const {
+			char buf[256];
+			sprintf_s(buf, "%s %s;", datatype.c_str(), name.c_str());
+			return std::string(buf);
+		}
+	};
+
+	static void parseMaterialParameters(
+		const std::vector<std::string>& materialLines,
+		std::vector<TextureParameterDesc>& outTextureParams,
+		std::vector<ConstantParameterDesc>& outConstParams)
+	{
+		const int32 totalMaterialLines = (int32)materialLines.size();
+		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
+			const std::string& line = materialLines[lineIx];
+			if (0 == line.find(PARAMETER_TEXTURE)) {
+				uint32 binding = 0xffffffff;
+				char samplerType[16];
+				char textureName[64];
+				int ret = sscanf_s(line.c_str(),
+					"PARAMETER_TEXTURE(%u, %[^,], %[^)])",
+					&binding,
+					samplerType, (unsigned)_countof(samplerType),
+					textureName, (unsigned)_countof(textureName));
+				CHECK(ret == 3);
+
+				TextureParameterDesc desc{ (uint32)lineIx, binding, samplerType, textureName };
+				outTextureParams.emplace_back(desc);
+			} else if (0 == line.find(PARAMETER_CONSTANT)) {
+				char datatype[16];
+				char name[64];
+				// #todo-material-assembler: Support default values?
+				// It would be quite useful but another parsing mess :/
+				int ret = sscanf_s(line.c_str(),
+					"PARAMETER_CONSTANT(%[^,], %[^)])",
+					datatype, (unsigned)_countof(datatype),
+					name, (unsigned)_countof(name));
+				CHECK(ret == 2);
+
+				ConstantParameterDesc desc((uint32)lineIx, datatype, name);
+				outConstParams.emplace_back(desc);
+			}
+		}
+	}
+
+	static void scanPlaceholders(MaterialTemplate& MT, const std::vector<std::string>& materialLines) {
+		// #wip
+	}
+
+	static void assembleUniformBuffer(
+		std::vector<ConstantParameterDesc>& inParameterDescs,
+		std::string& outUniformBuffer,
+		uint32& outUboTotalElements,
+		std::vector<MaterialConstantParameter>& outParameters)
+	{
+		std::stringstream ubo("");
+		uint32 uboTotalElements = 0; // 1 element = 4 bytes
+
+		std::sort(inParameterDescs.begin(), inParameterDescs.end(),
+			[](const ConstantParameterDesc& A, const ConstantParameterDesc& B) -> bool {
+				return A.numElements > B.numElements;
+			}
+		);
+
+		if (inParameterDescs.size() != 0) {
+			ubo << "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
+			int32 uboPaddingId = 0;
+			int32 numScalars = 0;
+			uint32 uboCurrentOffset = 0;
+			// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
+			for (const ConstantParameterDesc& desc : inParameterDescs) {
+				ubo << '\t';
+				ubo << desc.toString();
+
+				MaterialConstantParameter param;
+				param.name = desc.name;
+				param.datatype = desc.datatypeEnum;
+				param.numElements = desc.numElements;
+				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
+				param.offset = uboCurrentOffset;
+				outParameters.emplace_back(param);
+
+				if (desc.numElements == 4) {
+					ubo << '\n';
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 3) {
+					ubo << "\t\tfloat _unused";
+					ubo << std::to_string(uboPaddingId++);
+					ubo << ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 2) {
+					ubo << "\t\tvec2 _unused";
+					ubo << std::to_string(uboPaddingId++);
+					ubo << ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 1) {
+					ubo << '\n';
+					uboTotalElements += 1;
+					uboCurrentOffset += 4;
+				} else {
+					CHECK_NO_ENTRY();
+				}
+				numScalars += (desc.numElements == 1) ? 1 : 0;
+			}
+			switch (numScalars) {
+			case 1:
+				ubo << "\tvec3 _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 3;
+				break;
+			case 2:
+				ubo << "\tvec2 _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 2;
+				break;
+			case 3:
+				ubo << "\tfloat _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 1;
+				break;
+			default:
+				break;
+			}
+			ubo << "} uboMaterial; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
+		}
+
+		outUniformBuffer = ubo.str();
+		outUboTotalElements = uboTotalElements;
+	}
+
+	static void assembleTextureParameters(
+		std::vector<TextureParameterDesc>& inParameterDescs,
+		std::string& outTextureParameters,
+		std::vector<MaterialTextureParameter>& outParameters)
+	{
+		std::stringstream textures("");
+		for (const TextureParameterDesc& desc : inParameterDescs) {
+			textures << desc.toString();
+			textures << '\n';
+
+			MaterialTextureParameter param;
+			param.name    = desc.name;
+			param.binding = desc.binding;
+			outParameters.emplace_back(param);
+		}
+		outTextureParameters = textures.str();
+	}
+}
 
 // MaterialTemplate
 namespace pathos {
@@ -186,62 +392,15 @@ namespace pathos {
 			CHECK(material != nullptr);
 		}
 	}
-
+	
+	// #wip: Need to split this function to support hot reload.
+	// 1. Open material file and read lines.
+	// 2. Parse constant/texture parameters.
+	// 3. Create MT (a MaterialTemplate clone).
+	// 4. Replace placeholders in MT.
+	// 5. Create a MaterialShader.
+	// 6. Init fields of the MaterialShader and compile program.
 	MaterialShader* MaterialShaderAssembler::generateMaterialShader(const char* fullpath, const char* filename) {
-		struct TextureParameterDesc {
-			uint32 lineIx;
-			uint32 binding;
-			std::string samplerType;
-			std::string name;
-
-			std::string toString() const {
-				char buf[256];
-				sprintf_s(buf, "layout (binding = %u) uniform %s %s;",
-					binding, samplerType.c_str(), name.c_str());
-				return std::string(buf);
-			}
-		};
-		struct ConstantParameterDesc {
-			uint32 lineIx;
-			std::string datatype;
-			std::string name;
-			uint32 numElements;
-			EMaterialParameterDataType datatypeEnum = EMaterialParameterDataType::Float;
-
-			ConstantParameterDesc(uint32 inLineIx, const std::string& inDatatype, const std::string& inName)
-				: lineIx(inLineIx), datatype(inDatatype), name(inName)
-			{
-				if (datatype == "float" || datatype == "int" || datatype == "uint" || datatype == "bool") {
-					numElements = 1;
-				} else if (datatype == "vec2" || datatype == "ivec2" || datatype == "uvec2" || datatype == "bvec2") {
-					numElements = 2;
-				} else if (datatype == "vec3" || datatype == "ivec3" || datatype == "uvec3" || datatype == "bvec3") {
-					numElements = 3;
-				} else if (datatype == "vec4" || datatype == "ivec4" || datatype == "uvec4" || datatype == "bvec4") {
-					numElements = 4;
-				} else {
-					numElements = 0;
-					CHECK_NO_ENTRY();
-				}
-
-				if (datatype == "float" || datatype == "vec2" || datatype == "vec3" || datatype == "vec4") {
-					datatypeEnum = EMaterialParameterDataType::Float;
-				} else if (datatype == "int" || datatype == "ivec2" || datatype == "ivec3" || datatype == "ivec4") {
-					datatypeEnum = EMaterialParameterDataType::Int;
-				} else if (datatype == "uint" || datatype == "uvec2" || datatype == "uvec3" || datatype == "uvec4") {
-					datatypeEnum = EMaterialParameterDataType::Uint;
-				} else if (datatype == "bool" || datatype == "bvec2" || datatype == "bvec3" || datatype == "bvec4") {
-					datatypeEnum = EMaterialParameterDataType::Bool;
-				}
-			}
-
-			std::string toString() const {
-				char buf[256];
-				sprintf_s(buf, "%s %s;", datatype.c_str(), name.c_str());
-				return std::string(buf);
-			}
-		}; // End of ConstantParameterDesc
-
 		std::fstream fileStream;
 		fileStream.open(fullpath, std::ios::in);
 		if (fileStream.is_open() == false) {
@@ -263,44 +422,30 @@ namespace pathos {
 			materialLines.emplace_back(line);
 		}
 
-		// Parse parameters
+		auto assembleBlock = [&materialLines](int32 beginIx, int32 endIx) -> std::string {
+			std::stringstream ss("");
+			for (int32 ix = beginIx; ix <= endIx; ++ix) {
+				ss << materialLines[ix];
+				ss << '\n';
+			}
+			return ss.str();
+		};
+
+		// Parse parameter descriptions.
 		const int32 totalMaterialLines = (int32)materialLines.size();
 		std::vector<TextureParameterDesc> textureParams;
 		std::vector<ConstantParameterDesc> constParams;
-		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
-			const std::string& line = materialLines[lineIx];
-			if (line.find(PARAMETER_TEXTURE) == 0) {
-				uint32 binding = 0xffffffff;
-				char samplerType[16];
-				char textureName[64];
-				int ret = sscanf_s(line.c_str(),
-					"PARAMETER_TEXTURE(%u, %[^,], %[^)])",
-					&binding,
-					samplerType, (unsigned)_countof(samplerType),
-					textureName, (unsigned)_countof(textureName));
-				CHECK(ret == 3);
+		parseMaterialParameters(materialLines, textureParams, constParams);
 
-				textureParams.push_back(
-					TextureParameterDesc{ (uint32)lineIx, binding, samplerType, textureName });
-			} else if (line.find(PARAMETER_CONSTANT) == 0) {
-				char datatype[16];
-				char name[64];
-				// #todo-material-assembler: Support default values?
-				// It would be quite useful but another parsing mess :/
-				int ret = sscanf_s(line.c_str(),
-					"PARAMETER_CONSTANT(%[^,], %[^)])",
-					datatype, (unsigned)_countof(datatype),
-					name, (unsigned)_countof(name));
-				CHECK(ret == 2);
-
-				constParams.push_back(
-					ConstantParameterDesc((uint32)lineIx, datatype, name));
-			}
-		}
-
-		// Filled later
 		std::vector<MaterialConstantParameter> materialConstParameters;
 		std::vector<MaterialTextureParameter> materialTextureParameters;
+		// Construct material uniform buffer.
+		std::string uniformBufferString;
+		uint32 uboTotalElements = 0;
+		assembleUniformBuffer(constParams, uniformBufferString, uboTotalElements, materialConstParameters);
+		// Construct texture parameters.
+		std::string texturesString;
+		assembleTextureParameters(textureParams, texturesString, materialTextureParameters);
 
 		// Find definitions
 		int32 materialShadingModelIx = -1;
@@ -362,150 +507,25 @@ namespace pathos {
 		CHECK(bMaterialWellDefined);
 
 		MaterialTemplate MT = materialTemplate->makeClone();
+		bool bEmbmedGlslExists = embedGlslBeginIx >= 0 && embedGlslEndIx >= 0;
+
 		MT.replaceShadingModel(materialLines[materialShadingModelIx]);
-
-		if (bOutputWorldNormal) {
-			MT.replaceOutputWorldNormal("#define OUTPUTWORLDNORMAL 1");
-		} else {
-			MT.replaceOutputWorldNormal("");
-		}
-
-		if (bSkyboxMaterial) {
-			MT.replaceSkyboxMaterial("#define SKYBOXMATERIAL 1");
-		} else {
-			MT.replaceSkyboxMaterial("");
-		}
-
+		MT.replaceOutputWorldNormal(bOutputWorldNormal ? "#define OUTPUTWORLDNORMAL 1" : "");
+		MT.replaceSkyboxMaterial(bSkyboxMaterial ? "#define SKYBOXMATERIAL 1" : "");
 		MT.replaceTransferDrawID(bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
 		MT.replaceTransferInstanceID(bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
-
-		// Construct material uniform buffer.
-		uint32 uboTotalElements = 0; // 1 element = 4 bytes
-		if (constParams.size() == 0) {
-			MT.replaceUBO("");
-		} else {
-			std::sort(constParams.begin(), constParams.end(),
-				[](ConstantParameterDesc& A, ConstantParameterDesc& B) -> bool {
-					return A.numElements > B.numElements;
-				}
-			);
-			std::string ubo = "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
-			int32 uboPaddingId = 0;
-			int32 numScalars = 0;
-			uint32 uboCurrentOffset = 0;
-			// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
-			for (ConstantParameterDesc& desc : constParams) {
-				ubo += '\t';
-				ubo += desc.toString();
-
-				MaterialConstantParameter param;
-				param.name = desc.name;
-				param.datatype = desc.datatypeEnum;
-				param.numElements = desc.numElements;
-				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
-				param.offset = uboCurrentOffset;
-				materialConstParameters.emplace_back(param);
-
-				if (desc.numElements == 4) {
-					ubo += '\n';
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 3) {
-					ubo += "\t\tfloat _unused";
-					ubo += std::to_string(uboPaddingId++);
-					ubo += ";\n";
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 2) {
-					ubo += "\t\tvec2 _unused";
-					ubo += std::to_string(uboPaddingId++);
-					ubo += ";\n";
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 1) {
-					ubo += '\n';
-					uboTotalElements += 1;
-					uboCurrentOffset += 4;
-				} else {
-					CHECK_NO_ENTRY();
-				}
-				numScalars += (desc.numElements == 1) ? 1 : 0;
-			}
-			switch (numScalars) {
-			case 1:
-				ubo += "\tvec3 _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 3;
-				break;
-			case 2:
-				ubo += "\tvec2 _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 2;
-				break;
-			case 3:
-				ubo += "\tfloat _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 1;
-				break;
-			default:
-				break;
-			}
-			ubo += "} uboMaterial; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
-			MT.replaceUBO(ubo);
-		}
-
-		if (textureParams.size() == 0) {
-			MT.replaceTextureParameters("");
-		} else {
-			std::string textures;
-			for (const TextureParameterDesc& desc : textureParams) {
-				textures += desc.toString();
-				textures += '\n';
-
-				MaterialTextureParameter param;
-				param.name = desc.name;
-				param.binding = desc.binding;
-				materialTextureParameters.emplace_back(param);
-			}
-			MT.replaceTextureParameters(textures);
-		}
-
-		std::string vpo;
-		for (int32 ix = materialVPOBeginIx; ix <= materialVPOEndIx; ++ix) {
-			vpo += materialLines[ix];
-			vpo += '\n';
-		}
-		MT.replaceVPO(vpo);
-
-		std::string attrs;
-		for (int32 ix = materialAttrBeginIx; ix <= materialAttrEndIx; ++ix) {
-			attrs += materialLines[ix];
-			attrs += '\n';
-		}
-		MT.replaceAttr(attrs);
-
-		// Material shader contains GLSL code that need to be embeded as is.
-		if (embedGlslBeginIx >= 0 && embedGlslEndIx >= 0) {
-			std::string embed;
-			for (int32 ix = embedGlslBeginIx; ix <= embedGlslEndIx; ++ix) {
-				embed += materialLines[ix];
-				embed += '\n';
-			}
-			MT.replaceEmbedGlsl(embed);
-		} else {
-			MT.replaceEmbedGlsl("");
-		}
+		MT.replaceUBO(uniformBufferString);
+		MT.replaceTextureParameters(texturesString);
+		MT.replaceVPO(assembleBlock(materialVPOBeginIx, materialVPOEndIx));
+		MT.replaceAttr(assembleBlock(materialAttrBeginIx, materialAttrEndIx));
+		MT.replaceEmbedGlsl(bEmbmedGlslExists ? assembleBlock(embedGlslBeginIx, embedGlslEndIx) : "");
 
 		// Parse shading model.
 		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
 		{
 			char shadingModelStr[64];
 			int ret = sscanf_s(materialLines[materialShadingModelIx].c_str(),
-				"#define SHADINGMODEL %s",
-				shadingModelStr, (unsigned)_countof(shadingModelStr));
+				"#define SHADINGMODEL %s", shadingModelStr, (unsigned)_countof(shadingModelStr));
 			CHECK(ret == 1);
 
 			if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_UNLIT")) {
@@ -525,15 +545,8 @@ namespace pathos {
 		if (!bForwardShading) {
 			MT.replaceGetSceneColor("");
 		} else {
-			CHECK(getSceneColorBeginIx != -1
-				&& getSceneColorEndIx != -1
-				&& getSceneColorBeginIx < getSceneColorEndIx);
-			std::string getSceneColor;
-			for (int32 ix = getSceneColorBeginIx; ix <= getSceneColorEndIx; ++ix) {
-				getSceneColor += materialLines[ix];
-				getSceneColor += '\n';
-			}
-			MT.replaceGetSceneColor(getSceneColor);
+			CHECK(getSceneColorBeginIx != -1 && getSceneColorEndIx != -1 && getSceneColorBeginIx < getSceneColorEndIx);
+			MT.replaceGetSceneColor(assembleBlock(getSceneColorBeginIx, getSceneColorEndIx));
 		}
 
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
@@ -542,16 +555,20 @@ namespace pathos {
 		MT.fixupNewlines();
 
 		MaterialShader* shader = new MaterialShader;
-		shader->materialName = std::move(materialName);
-		shader->shadingModel = shadingModel;
+		shader->materialName          = std::move(materialName);
+		shader->shadingModel          = shadingModel;
 		shader->bTrivialDepthOnlyPass = bTrivialDepthOnlyPass;
-		shader->uboTotalBytes = uboTotalElements * 4;
-		shader->constantParameters = std::move(materialConstParameters);
-		shader->textureParameters = std::move(materialTextureParameters);
-		shader->generateShaderProgram(filename, &MT);
+		shader->uboTotalBytes         = uboTotalElements * 4;
+		shader->constantParameters    = std::move(materialConstParameters);
+		shader->textureParameters     = std::move(materialTextureParameters);
+		shader->generateShaderProgram(&MT);
 
 		materialShaderMap[materialNameHash] = shader;
 		return shader;
+	}
+
+	MaterialTemplate MaterialShaderAssembler::generateMaterialTemplate(const char* fullpath, const char* filename) {
+		// #wip
 	}
 
 }

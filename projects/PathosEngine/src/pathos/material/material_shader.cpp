@@ -5,7 +5,7 @@
 
 namespace pathos {
 
-	void MaterialShader::generateShaderProgram(const std::string& filepath, const MaterialTemplate* materialTemplate) {
+	void MaterialShader::generateShaderProgram(const MaterialTemplate* materialTemplate) {
 		std::vector<std::string> sourceVS = materialTemplate->sourceLines;
 		std::vector<std::string> sourceFS = materialTemplate->sourceLines;
 		sourceVS[materialTemplate->lineIx_shaderstage] = "#define VERTEX_SHADER 1\n";

@@ -83,7 +83,11 @@ namespace pathos {
 		// Try to compile shader stages
 		bool allCompiled = true;
 		bool allNotChanged = true;
-		bool checkSourceChanges = !isMaterialProgram; // #todo-material-assembler: Material shaders don't support runtime recompilation yet.
+
+		// #wip: Material shaders don't support runtime recompilation yet.
+		// tryCompile() -> loadSource() -> material shader does not use the source as is...
+		bool checkSourceChanges = !isMaterialProgram;
+
 		for (ShaderStage* shaderStage : shaderStages) {
 			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName, checkSourceChanges);
 			allCompiled = allCompiled && response != ShaderStage::CompileResponse::Failed;
