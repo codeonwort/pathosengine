@@ -2,10 +2,11 @@
 #include "material_shader_assembler.h"
 #include "pathos/material/material.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/util/log.h"
 
 namespace pathos {
 
-	void MaterialShader::generateShaderProgram(const std::string& filepath, const MaterialTemplate* materialTemplate) {
+	void MaterialShader::generateShaderProgram(const MaterialTemplate* materialTemplate, bool isHotReload) {
 		std::vector<std::string> sourceVS = materialTemplate->sourceLines;
 		std::vector<std::string> sourceFS = materialTemplate->sourceLines;
 		sourceVS[materialTemplate->lineIx_shaderstage] = "#define VERTEX_SHADER 1\n";
@@ -14,10 +15,29 @@ namespace pathos {
 		nameFS = materialName + "FS";
 		programHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
 
+		// Don't recompile if shader code was not changed.
+		if (isHotReload && (sourceVS == sourceBackupVS) && (sourceFS == sourceBackupFS)) {
+			return;
+		} else {
+			LOG(LogDebug, "%s: Recompiled the material.", materialName.c_str());
+		}
+
+		// Backup source code
+		sourceBackupVS = sourceVS;
+		sourceBackupFS = sourceFS;
+
 		ShaderStage* VS = new ShaderStage(GL_VERTEX_SHADER, nameVS.c_str());
 		ShaderStage* FS = new ShaderStage(GL_FRAGMENT_SHADER, nameFS.c_str());
 		VS->setSourceCode(nameVS + ".glsl", std::move(sourceVS));
 		FS->setSourceCode(nameFS + ".glsl", std::move(sourceFS));
+
+		ShaderProgram* oldProgram = ShaderDB::get().findProgram(programHash, false);
+		if (oldProgram != nullptr) {
+			ShaderDB::get().unregisterProgram(programHash);
+			ENQUEUE_DEFERRED_RENDER_COMMAND([oldProgram](RenderCommandList& cmdList) {
+				cmdList.registerDeferredCleanup(oldProgram);
+			});
+		}
 
 		constexpr bool bIsMaterialProgram = true;
 		program = new ShaderProgram(materialName.c_str(), programHash, bIsMaterialProgram);

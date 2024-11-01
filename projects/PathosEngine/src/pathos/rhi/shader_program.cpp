@@ -2,6 +2,7 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/material/material_shader_assembler.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 
@@ -25,9 +26,14 @@ namespace pathos {
 		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
 			gEngine->registerConsoleCommand("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
+				// Process material shaders.
+				MaterialShaderAssembler::get().reloadMaterialShaders();
+				// Process non-material shaders.
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
-						program->reload();
+						if (program->isMaterialProgram() == false) {
+							program->reload();
+						}
 					});
 				});
 				FLUSH_RENDER_COMMAND();
@@ -36,12 +42,13 @@ namespace pathos {
 		}
 	} internal_recompileShaders;
 
-	ShaderProgram* ShaderDB::findProgram(uint32 programHash) {
-		CHECK(isInRenderThread());
+	ShaderProgram* ShaderDB::findProgram(uint32 programHash, bool checkCompiled) const {
+		if (checkCompiled) CHECK(isInRenderThread());
+
 		auto it = programMap.find(programHash);
 		if (it != programMap.end()) {
 			ShaderProgram* program = it->second;
-			program->checkFirstLoad();
+			if (checkCompiled) program->checkFirstLoad();
 			return program;
 		}
 		return nullptr;
@@ -54,9 +61,9 @@ namespace pathos {
 	ShaderProgram::ShaderProgram(const char* inDebugName, uint32 inProgramHash, bool inIsMaterialProgram /*= false*/)
 		: debugName(inDebugName)
 		, programHash(inProgramHash)
-		, isMaterialProgram(inIsMaterialProgram)
+		, bIsMaterialProgram(inIsMaterialProgram)
 		, glName(0xffffffff)
-		, firstLoad(true)
+		, bFirstLoad(true)
 		, internal_justInstantiated(true)
 	{
 		ShaderDB::get().registerProgram(inProgramHash, this);
@@ -83,7 +90,9 @@ namespace pathos {
 		// Try to compile shader stages
 		bool allCompiled = true;
 		bool allNotChanged = true;
-		bool checkSourceChanges = !isMaterialProgram; // #todo-material-assembler: Material shaders don't support runtime recompilation yet.
+
+		bool checkSourceChanges = !bIsMaterialProgram;
+
 		for (ShaderStage* shaderStage : shaderStages) {
 			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName, checkSourceChanges);
 			allCompiled = allCompiled && response != ShaderStage::CompileResponse::Failed;
@@ -133,7 +142,7 @@ namespace pathos {
 			if (oldValid) {
 				glDeleteProgram(oldGLName);
 			}
-			if (!firstLoad) {
+			if (!bFirstLoad) {
 				LOG(LogDebug, "%s: Recompiled the shader program.", debugName);
 			}
 		}
@@ -141,9 +150,9 @@ namespace pathos {
 
 	void ShaderProgram::checkFirstLoad()
 	{
-		if (firstLoad) {
+		if (bFirstLoad) {
 			reload();
-			firstLoad = false;
+			bFirstLoad = false;
 		}
 	}
 
@@ -292,17 +301,7 @@ namespace pathos {
 			std::vector<std::string> sourceCodeBackup = sourceCode;
 			loadSource();
 
-			bool sourceChanged = false;
-			if (sourceCode.size() == sourceCodeBackup.size()) {
-				for (size_t i = 0; i < sourceCode.size(); ++i) {
-					if (sourceCode[i] != sourceCodeBackup[i]) {
-						sourceChanged = true;
-						break;
-					}
-				}
-			} else {
-				sourceChanged = true;
-			}
+			bool sourceChanged = sourceCodeBackup != sourceCode;
 			if (sourceChanged == false) {
 #if IGNORE_SAME_SHADERS_ON_RECOMPILE == 0
 				LOG(LogDebug, "%s: Source code is same.", debugName);

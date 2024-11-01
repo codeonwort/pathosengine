@@ -6,6 +6,7 @@
 #include "pathos/util/log.h"
 
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -13,7 +14,7 @@
 #define MATERIAL_FOLDER                   "shaders/materials/"
 #define MATERIAL_TEMPLATE_FILENAME        "_template.glsl"
 
-// Tokens in the template which are filled by the material assembler or material shaders
+// Tokens in the template which are filled by the material assembler or material shaders.
 #define NEED_HEADER                       "$NEED"
 #define NEED_SHADERSTAGE                  "SHADERSTAGE"
 #define NEED_SHADINGMODEL                 "SHADINGMODEL"
@@ -28,11 +29,11 @@
 #define NEED_GETSCENECOLOR                "getSceneColor"
 #define NEED_EMBEDGLSL                    "embedGlsl"
 
-// Macros that are used by material shaders
+// Macros that are used by material shaders.
 #define PARAMETER_CONSTANT                "PARAMETER_CONSTANT"
 #define PARAMETER_TEXTURE                 "PARAMETER_TEXTURE"
 
-// Keywords
+// Keywords declared in material shaders.
 #define KEYWORD_SHADINGMODEL              "#define SHADINGMODEL"
 #define KEYWORD_NONTRIVIALDEPTH           "#define NONTRIVIALDEPTH"
 #define KEYWORD_OUTPUTWORLDNORMAL         "#define OUTPUTWORLDNORMAL"
@@ -47,6 +48,279 @@
 #define KEYWORD_FORWARDSHADING_END        "FORWARDSHADING_END"
 #define KEYWORD_EMBED_GLSL_BEGIN          "EMBED_GLSL_BEGIN"
 #define KEYWORD_EMBED_GLSL_END            "EMBED_GLSL_END"
+
+// TextureParameterDesc, ConstantParameterDesc, PlaceholderDesc
+namespace pathos {
+	
+	struct TextureParameterDesc {
+		uint32 lineIx;
+		uint32 binding;
+		std::string samplerType;
+		std::string name;
+
+		std::string toString() const {
+			char buf[256];
+			sprintf_s(buf, "layout (binding = %u) uniform %s %s;",
+				binding, samplerType.c_str(), name.c_str());
+			return std::string(buf);
+		}
+	};
+
+	struct ConstantParameterDesc {
+		uint32 lineIx;
+		std::string datatype;
+		std::string name;
+		uint32 numElements;
+		EMaterialParameterDataType datatypeEnum = EMaterialParameterDataType::Float;
+
+		ConstantParameterDesc(uint32 inLineIx, const std::string& inDatatype, const std::string& inName)
+			: lineIx(inLineIx), datatype(inDatatype), name(inName) {
+			if (datatype == "float" || datatype == "int" || datatype == "uint" || datatype == "bool") {
+				numElements = 1;
+			} else if (datatype == "vec2" || datatype == "ivec2" || datatype == "uvec2" || datatype == "bvec2") {
+				numElements = 2;
+			} else if (datatype == "vec3" || datatype == "ivec3" || datatype == "uvec3" || datatype == "bvec3") {
+				numElements = 3;
+			} else if (datatype == "vec4" || datatype == "ivec4" || datatype == "uvec4" || datatype == "bvec4") {
+				numElements = 4;
+			} else {
+				numElements = 0;
+				CHECK_NO_ENTRY();
+			}
+
+			if (datatype == "float" || datatype == "vec2" || datatype == "vec3" || datatype == "vec4") {
+				datatypeEnum = EMaterialParameterDataType::Float;
+			} else if (datatype == "int" || datatype == "ivec2" || datatype == "ivec3" || datatype == "ivec4") {
+				datatypeEnum = EMaterialParameterDataType::Int;
+			} else if (datatype == "uint" || datatype == "uvec2" || datatype == "uvec3" || datatype == "uvec4") {
+				datatypeEnum = EMaterialParameterDataType::Uint;
+			} else if (datatype == "bool" || datatype == "bvec2" || datatype == "bvec3" || datatype == "bvec4") {
+				datatypeEnum = EMaterialParameterDataType::Bool;
+			}
+		}
+
+		std::string toString() const {
+			char buf[256];
+			sprintf_s(buf, "%s %s;", datatype.c_str(), name.c_str());
+			return std::string(buf);
+		}
+	};
+
+	struct PlaceholderDesc {
+		int32 materialShadingModelIx = -1;
+		int32 materialVPOBeginIx     = -1; // inclusive
+		int32 materialVPOEndIx       = -1; // inclusive
+		int32 materialAttrBeginIx    = -1; // inclusive
+		int32 materialAttrEndIx      = -1; // inclusive
+		int32 getSceneColorBeginIx   = -1; // inclusive
+		int32 getSceneColorEndIx     = -1; // inclusive
+		int32 embedGlslBeginIx       = -1; // inclusive
+		int32 embedGlslEndIx         = -1; // inclusive
+		bool bTrivialDepthOnlyPass   = true;
+		bool bOutputWorldNormal      = false;
+		bool bSkyboxMaterial         = false;
+		bool bTransferDrawID         = false;
+		bool bTransferInstanceID     = false;
+	};
+
+	static void parseMaterialParameters(
+		const std::vector<std::string>& materialLines,
+		std::vector<TextureParameterDesc>& outTextureParams,
+		std::vector<ConstantParameterDesc>& outConstParams)
+	{
+		const int32 totalMaterialLines = (int32)materialLines.size();
+		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
+			const std::string& line = materialLines[lineIx];
+			if (0 == line.find(PARAMETER_TEXTURE)) {
+				uint32 binding = 0xffffffff;
+				char samplerType[16];
+				char textureName[64];
+				int ret = sscanf_s(line.c_str(),
+					"PARAMETER_TEXTURE(%u, %[^,], %[^)])",
+					&binding,
+					samplerType, (unsigned)_countof(samplerType),
+					textureName, (unsigned)_countof(textureName));
+				CHECK(ret == 3);
+
+				TextureParameterDesc desc{ (uint32)lineIx, binding, samplerType, textureName };
+				outTextureParams.emplace_back(desc);
+			} else if (0 == line.find(PARAMETER_CONSTANT)) {
+				char datatype[16];
+				char name[64];
+				// #todo-material-assembler: Support default values?
+				// It would be quite useful but another parsing mess :/
+				int ret = sscanf_s(line.c_str(),
+					"PARAMETER_CONSTANT(%[^,], %[^)])",
+					datatype, (unsigned)_countof(datatype),
+					name, (unsigned)_countof(name));
+				CHECK(ret == 2);
+
+				ConstantParameterDesc desc((uint32)lineIx, datatype, name);
+				outConstParams.emplace_back(desc);
+			}
+		}
+	}
+
+	static void scanPlaceholders(const std::vector<std::string>& materialLines, PlaceholderDesc& outDesc) {
+		const int32 totalMaterialLines = (int32)materialLines.size();
+		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
+			const std::string& line = materialLines[lineIx];
+			if (0 == line.find(KEYWORD_SHADINGMODEL))              outDesc.materialShadingModelIx = lineIx;
+			else if (0 == line.find(KEYWORD_NONTRIVIALDEPTH))      outDesc.bTrivialDepthOnlyPass  = false;
+			else if (0 == line.find(KEYWORD_OUTPUTWORLDNORMAL))    outDesc.bOutputWorldNormal     = true;
+			else if (0 == line.find(KEYWORD_SKYBOXMATERIAL))       outDesc.bSkyboxMaterial        = true;
+			else if (0 == line.find(KEYWORD_TRANSFER_DRAW_ID))     outDesc.bTransferDrawID        = true;
+			else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) outDesc.bTransferInstanceID    = true;
+			else if (0 == line.find(KEYWORD_VPO_BEGIN))            outDesc.materialVPOBeginIx     = lineIx + 1;
+			else if (0 == line.find(KEYWORD_VPO_END))              outDesc.materialVPOEndIx       = lineIx - 1;
+			else if (0 == line.find(KEYWORD_ATTR_BEGIN))           outDesc.materialAttrBeginIx    = lineIx + 1;
+			else if (0 == line.find(KEYWORD_ATTR_END))             outDesc.materialAttrEndIx      = lineIx - 1;
+			else if (0 == line.find(KEYWORD_FORWARDSHADING_BEGIN)) outDesc.getSceneColorBeginIx   = lineIx + 1;
+			else if (0 == line.find(KEYWORD_FORWARDSHADING_END))   outDesc.getSceneColorEndIx     = lineIx - 1;
+			else if (0 == line.find(KEYWORD_EMBED_GLSL_BEGIN))     outDesc.embedGlslBeginIx       = lineIx + 1;
+			else if (0 == line.find(KEYWORD_EMBED_GLSL_END))       outDesc.embedGlslEndIx         = lineIx - 1;
+		}
+
+		const bool bWellDefined =
+			(outDesc.materialShadingModelIx != -1)
+			&& (outDesc.materialVPOBeginIx != -1)
+			&& (outDesc.materialVPOEndIx != -1)
+			&& (outDesc.materialVPOBeginIx < outDesc.materialVPOEndIx)
+			&& (outDesc.materialAttrBeginIx != -1)
+			&& (outDesc.materialAttrEndIx != -1)
+			&& (outDesc.materialAttrBeginIx < outDesc.materialAttrEndIx)
+			&& (outDesc.getSceneColorBeginIx <= outDesc.getSceneColorEndIx)
+			&& (outDesc.embedGlslBeginIx <= outDesc.embedGlslEndIx);
+		CHECK(bWellDefined);
+	}
+
+	static EMaterialShadingModel parseShadingModel(const std::string& line) {
+		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
+
+		char shadingModelStr[64];
+		int ret = sscanf_s(line.c_str(), "#define SHADINGMODEL %s", shadingModelStr, (unsigned)_countof(shadingModelStr));
+		CHECK(ret == 1);
+
+		if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_UNLIT")) {
+			shadingModel = EMaterialShadingModel::UNLIT;
+		} else if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_DEFAULTLIT")) {
+			shadingModel = EMaterialShadingModel::DEFAULTLIT;
+		} else if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_TRANSLUCENT")) {
+			shadingModel = EMaterialShadingModel::TRANSLUCENT;
+		} else {
+			char msg[256];
+			sprintf_s(msg, "Invalid shading model definition in: %s", shadingModelStr);
+			CHECKF(false, msg);
+		}
+
+		return shadingModel;
+	}
+
+	static void assembleUniformBuffer(
+		std::vector<ConstantParameterDesc>& inParameterDescs,
+		std::string& outUniformBuffer,
+		uint32& outUboTotalElements,
+		std::vector<MaterialConstantParameter>& outParameters)
+	{
+		std::stringstream ubo("");
+		uint32 uboTotalElements = 0; // 1 element = 4 bytes
+
+		std::sort(inParameterDescs.begin(), inParameterDescs.end(),
+			[](const ConstantParameterDesc& A, const ConstantParameterDesc& B) -> bool {
+				return A.numElements > B.numElements;
+			}
+		);
+
+		if (inParameterDescs.size() != 0) {
+			ubo << "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
+			int32 uboPaddingId = 0;
+			int32 numScalars = 0;
+			uint32 uboCurrentOffset = 0;
+			// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
+			for (const ConstantParameterDesc& desc : inParameterDescs) {
+				ubo << '\t';
+				ubo << desc.toString();
+
+				MaterialConstantParameter param;
+				param.name = desc.name;
+				param.datatype = desc.datatypeEnum;
+				param.numElements = desc.numElements;
+				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
+				param.offset = uboCurrentOffset;
+				outParameters.emplace_back(param);
+
+				if (desc.numElements == 4) {
+					ubo << '\n';
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 3) {
+					ubo << "\t\tfloat _unused";
+					ubo << std::to_string(uboPaddingId++);
+					ubo << ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 2) {
+					ubo << "\t\tvec2 _unused";
+					ubo << std::to_string(uboPaddingId++);
+					ubo << ";\n";
+					uboTotalElements += 4;
+					uboCurrentOffset += 16;
+				} else if (desc.numElements == 1) {
+					ubo << '\n';
+					uboTotalElements += 1;
+					uboCurrentOffset += 4;
+				} else {
+					CHECK_NO_ENTRY();
+				}
+				numScalars += (desc.numElements == 1) ? 1 : 0;
+			}
+			switch (numScalars) {
+			case 1:
+				ubo << "\tvec3 _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 3;
+				break;
+			case 2:
+				ubo << "\tvec2 _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 2;
+				break;
+			case 3:
+				ubo << "\tfloat _unused";
+				ubo << std::to_string(uboPaddingId++);
+				ubo << ";\n";
+				uboTotalElements += 1;
+				break;
+			default:
+				break;
+			}
+			ubo << "} uboMaterial; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
+		}
+
+		outUniformBuffer = ubo.str();
+		outUboTotalElements = uboTotalElements;
+	}
+
+	static void assembleTextureParameters(
+		std::vector<TextureParameterDesc>& inParameterDescs,
+		std::string& outTextureParameters,
+		std::vector<MaterialTextureParameter>& outParameters)
+	{
+		std::stringstream textures("");
+		for (const TextureParameterDesc& desc : inParameterDescs) {
+			textures << desc.toString();
+			textures << '\n';
+
+			MaterialTextureParameter param;
+			param.name    = desc.name;
+			param.binding = desc.binding;
+			outParameters.emplace_back(param);
+		}
+		outTextureParameters = textures.str();
+	}
+}
 
 // MaterialTemplate
 namespace pathos {
@@ -182,78 +456,40 @@ namespace pathos {
 			}
 			
 			std::string materialPath = shaderDir + filename;
-			MaterialShader* material = generateMaterialShader(materialPath.c_str(), filename.c_str());
-			CHECK(material != nullptr);
+			MaterialShader* material = new MaterialShader;
+			CompileResponse response = generateMaterialProgram(material, materialPath.c_str(), filename.c_str(), false);
+			CHECK(response != CompileResponse::Failed);
 		}
 	}
 
-	MaterialShader* MaterialShaderAssembler::generateMaterialShader(const char* fullpath, const char* filename) {
-		struct TextureParameterDesc {
-			uint32 lineIx;
-			uint32 binding;
-			std::string samplerType;
-			std::string name;
+	void MaterialShaderAssembler::reloadMaterialShaders() {
+		for (const auto& it : materialShaderMap) {
+			MaterialShader* material = it.second;
+			const char* fullpath = material->sourceFullpath.c_str();
+			const char* filename = material->sourceFilename.c_str();
+			CompileResponse response = generateMaterialProgram(material, fullpath, filename, true);
+			CHECK(response != CompileResponse::Failed);
+		}
+	}
 
-			std::string toString() const {
-				char buf[256];
-				sprintf_s(buf, "layout (binding = %u) uniform %s %s;",
-					binding, samplerType.c_str(), name.c_str());
-				return std::string(buf);
-			}
-		};
-		struct ConstantParameterDesc {
-			uint32 lineIx;
-			std::string datatype;
-			std::string name;
-			uint32 numElements;
-			EMaterialParameterDataType datatypeEnum = EMaterialParameterDataType::Float;
-
-			ConstantParameterDesc(uint32 inLineIx, const std::string& inDatatype, const std::string& inName)
-				: lineIx(inLineIx), datatype(inDatatype), name(inName)
-			{
-				if (datatype == "float" || datatype == "int" || datatype == "uint" || datatype == "bool") {
-					numElements = 1;
-				} else if (datatype == "vec2" || datatype == "ivec2" || datatype == "uvec2" || datatype == "bvec2") {
-					numElements = 2;
-				} else if (datatype == "vec3" || datatype == "ivec3" || datatype == "uvec3" || datatype == "bvec3") {
-					numElements = 3;
-				} else if (datatype == "vec4" || datatype == "ivec4" || datatype == "uvec4" || datatype == "bvec4") {
-					numElements = 4;
-				} else {
-					numElements = 0;
-					CHECK_NO_ENTRY();
-				}
-
-				if (datatype == "float" || datatype == "vec2" || datatype == "vec3" || datatype == "vec4") {
-					datatypeEnum = EMaterialParameterDataType::Float;
-				} else if (datatype == "int" || datatype == "ivec2" || datatype == "ivec3" || datatype == "ivec4") {
-					datatypeEnum = EMaterialParameterDataType::Int;
-				} else if (datatype == "uint" || datatype == "uvec2" || datatype == "uvec3" || datatype == "uvec4") {
-					datatypeEnum = EMaterialParameterDataType::Uint;
-				} else if (datatype == "bool" || datatype == "bvec2" || datatype == "bvec3" || datatype == "bvec4") {
-					datatypeEnum = EMaterialParameterDataType::Bool;
-				}
-			}
-
-			std::string toString() const {
-				char buf[256];
-				sprintf_s(buf, "%s %s;", datatype.c_str(), name.c_str());
-				return std::string(buf);
-			}
-		}; // End of ConstantParameterDesc
+	MaterialShaderAssembler::CompileResponse MaterialShaderAssembler::generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload) {
+		targetMaterial->sourceFullpath = fullpath;
+		targetMaterial->sourceFilename = filename;
 
 		std::fstream fileStream;
 		fileStream.open(fullpath, std::ios::in);
 		if (fileStream.is_open() == false) {
 			LOG(LogError, "[Material] Failed to open: %s", fullpath);
-			return nullptr;
+			return CompileResponse::Failed;
 		}
-
+		
 		std::string materialName = filename;
 		materialName = materialName.substr(0, materialName.find_first_of('.'));
 
 		const uint32 materialNameHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
-		CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
+		if (!isHotReload) {
+			CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
+		}
 
 		// Gather original lines
 		std::vector<std::string> materialLines;
@@ -263,295 +499,92 @@ namespace pathos {
 			materialLines.emplace_back(line);
 		}
 
-		// Parse parameters
+		auto assembleBlock = [&materialLines](int32 beginIx, int32 endIx) -> std::string {
+			std::stringstream ss("");
+			for (int32 ix = beginIx; ix <= endIx; ++ix) {
+				ss << materialLines[ix];
+				ss << '\n';
+			}
+			return ss.str();
+		};
+
+		// Parse parameter descriptions.
 		const int32 totalMaterialLines = (int32)materialLines.size();
 		std::vector<TextureParameterDesc> textureParams;
 		std::vector<ConstantParameterDesc> constParams;
-		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
-			const std::string& line = materialLines[lineIx];
-			if (line.find(PARAMETER_TEXTURE) == 0) {
-				uint32 binding = 0xffffffff;
-				char samplerType[16];
-				char textureName[64];
-				int ret = sscanf_s(line.c_str(),
-					"PARAMETER_TEXTURE(%u, %[^,], %[^)])",
-					&binding,
-					samplerType, (unsigned)_countof(samplerType),
-					textureName, (unsigned)_countof(textureName));
-				CHECK(ret == 3);
+		parseMaterialParameters(materialLines, textureParams, constParams);
 
-				textureParams.push_back(
-					TextureParameterDesc{ (uint32)lineIx, binding, samplerType, textureName });
-			} else if (line.find(PARAMETER_CONSTANT) == 0) {
-				char datatype[16];
-				char name[64];
-				// #todo-material-assembler: Support default values?
-				// It would be quite useful but another parsing mess :/
-				int ret = sscanf_s(line.c_str(),
-					"PARAMETER_CONSTANT(%[^,], %[^)])",
-					datatype, (unsigned)_countof(datatype),
-					name, (unsigned)_countof(name));
-				CHECK(ret == 2);
-
-				constParams.push_back(
-					ConstantParameterDesc((uint32)lineIx, datatype, name));
-			}
-		}
-
-		// Filled later
+		std::string uniformBufferString;
+		uint32 uboTotalElements = 0;
 		std::vector<MaterialConstantParameter> materialConstParameters;
-		std::vector<MaterialTextureParameter> materialTextureParameters;
+		assembleUniformBuffer(constParams, uniformBufferString, uboTotalElements, materialConstParameters);
 
-		// Find definitions
-		int32 materialShadingModelIx = -1;
-		int32 materialVPOBeginIx     = -1; // inclusive
-		int32 materialVPOEndIx       = -1; // inclusive
-		int32 materialAttrBeginIx    = -1; // inclusive
-		int32 materialAttrEndIx      = -1; // inclusive
-		int32 getSceneColorBeginIx   = -1; // inclusive
-		int32 getSceneColorEndIx     = -1; // inclusive
-		int32 embedGlslBeginIx       = -1; // inclusive
-		int32 embedGlslEndIx         = -1; // inclusive
-		bool bTrivialDepthOnlyPass   = true;
-		bool bOutputWorldNormal      = false;
-		bool bSkyboxMaterial         = false;
-		bool bTransferDrawID         = false;
-		bool bTransferInstanceID     = false;
-		for (int32 lineIx = 0; lineIx < totalMaterialLines; ++lineIx) {
-			const std::string& line = materialLines[lineIx];
-			if (0 == line.find(KEYWORD_SHADINGMODEL)) {
-				materialShadingModelIx = lineIx;
-			} else if (0 == line.find(KEYWORD_NONTRIVIALDEPTH)) {
-				bTrivialDepthOnlyPass = false;
-			} else if (0 == line.find(KEYWORD_OUTPUTWORLDNORMAL)) {
-				bOutputWorldNormal = true;
-			} else if (0 == line.find(KEYWORD_SKYBOXMATERIAL)) {
-				bSkyboxMaterial = true;
-			} else if (0 == line.find(KEYWORD_TRANSFER_DRAW_ID)) {
-				bTransferDrawID = true;
-			} else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) {
-				bTransferInstanceID = true;
-			} else if (0 == line.find(KEYWORD_VPO_BEGIN)) {
-				materialVPOBeginIx = lineIx + 1;
-			} else if (0 == line.find(KEYWORD_VPO_END)) {
-				materialVPOEndIx = lineIx - 1;
-			} else if (0 == line.find(KEYWORD_ATTR_BEGIN)) {
-				materialAttrBeginIx = lineIx + 1;
-			} else if (0 == line.find(KEYWORD_ATTR_END)) {
-				materialAttrEndIx = lineIx - 1;
-			} else if (0 == line.find(KEYWORD_FORWARDSHADING_BEGIN)) {
-				getSceneColorBeginIx = lineIx + 1;
-			} else if (0 == line.find(KEYWORD_FORWARDSHADING_END)) {
-				getSceneColorEndIx = lineIx - 1;
-			} else if (0 == line.find(KEYWORD_EMBED_GLSL_BEGIN)) {
-				embedGlslBeginIx = lineIx + 1;
-			} else if (0 == line.find(KEYWORD_EMBED_GLSL_END)) {
-				embedGlslEndIx = lineIx - 1;
+		if (isHotReload && uboTotalElements * 4 != targetMaterial->uboTotalBytes) {
+			LOG(LogError, "[Material] Reject hot reload due to different UBO sizes: %s", filename);
+			return CompileResponse::RejectHotReload;
+		}
+
+		std::vector<MaterialTextureParameter> materialTextureParameters;
+		std::string texturesString;
+		assembleTextureParameters(textureParams, texturesString, materialTextureParameters);
+
+		if (isHotReload) {
+			bool changed = targetMaterial->textureParameters.size() != materialTextureParameters.size();
+			if (!changed) {
+				size_t n = targetMaterial->textureParameters.size();
+				std::vector<uint32> A(n), B(n);
+				for (size_t i = 0; i < n; ++i) {
+					A[i] = targetMaterial->textureParameters[i].binding;
+					B[i] = materialTextureParameters[i].binding;
+				}
+				std::sort(A.begin(), A.end());
+				std::sort(B.begin(), B.end());
+				changed = A != B;
+			}
+			if (changed) {
+				LOG(LogError, "[Material] Reject hot reload due to different texture parameters: %s", filename);
+				return CompileResponse::RejectHotReload;
 			}
 		}
-		const bool bMaterialWellDefined =
-			(materialShadingModelIx != -1)
-			&& (materialVPOBeginIx != -1)
-			&& (materialVPOEndIx != -1)
-			&& (materialVPOBeginIx < materialVPOEndIx)
-			&& (materialAttrBeginIx != -1)
-			&& (materialAttrEndIx != -1)
-			&& (materialAttrBeginIx < materialAttrEndIx)
-			&& (getSceneColorBeginIx <= getSceneColorEndIx)
-			&& (embedGlslBeginIx <= embedGlslEndIx);
-		CHECK(bMaterialWellDefined);
+
+		PlaceholderDesc placeholders;
+		scanPlaceholders(materialLines, placeholders);
+		bool bEmbmedGlslExists = placeholders.embedGlslBeginIx >= 0 && placeholders.embedGlslEndIx >= 0;
+		EMaterialShadingModel shadingModel = parseShadingModel(materialLines[placeholders.materialShadingModelIx]);
+		bool bForwardShading = (shadingModel == EMaterialShadingModel::TRANSLUCENT);
+		bool bForwardShadingBlockExists = (placeholders.getSceneColorBeginIx != -1) && (placeholders.getSceneColorEndIx) != -1 && (placeholders.getSceneColorBeginIx < placeholders.getSceneColorEndIx);
+		CHECK(!bForwardShading || bForwardShadingBlockExists);
 
 		MaterialTemplate MT = materialTemplate->makeClone();
-		MT.replaceShadingModel(materialLines[materialShadingModelIx]);
 
-		if (bOutputWorldNormal) {
-			MT.replaceOutputWorldNormal("#define OUTPUTWORLDNORMAL 1");
-		} else {
-			MT.replaceOutputWorldNormal("");
-		}
-
-		if (bSkyboxMaterial) {
-			MT.replaceSkyboxMaterial("#define SKYBOXMATERIAL 1");
-		} else {
-			MT.replaceSkyboxMaterial("");
-		}
-
-		MT.replaceTransferDrawID(bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
-		MT.replaceTransferInstanceID(bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
-
-		// Construct material uniform buffer.
-		uint32 uboTotalElements = 0; // 1 element = 4 bytes
-		if (constParams.size() == 0) {
-			MT.replaceUBO("");
-		} else {
-			std::sort(constParams.begin(), constParams.end(),
-				[](ConstantParameterDesc& A, ConstantParameterDesc& B) -> bool {
-					return A.numElements > B.numElements;
-				}
-			);
-			std::string ubo = "layout (std140, binding = UBO_BINDING_MATERIAL) uniform UBO_Material {\n";
-			int32 uboPaddingId = 0;
-			int32 numScalars = 0;
-			uint32 uboCurrentOffset = 0;
-			// #todo-material-assembler: More compact packing like (vec3 + float) or (vec2 + vec2).
-			for (ConstantParameterDesc& desc : constParams) {
-				ubo += '\t';
-				ubo += desc.toString();
-
-				MaterialConstantParameter param;
-				param.name = desc.name;
-				param.datatype = desc.datatypeEnum;
-				param.numElements = desc.numElements;
-				param.uvalue[0] = param.uvalue[1] = param.uvalue[2] = param.uvalue[3] = 0;
-				param.offset = uboCurrentOffset;
-				materialConstParameters.emplace_back(param);
-
-				if (desc.numElements == 4) {
-					ubo += '\n';
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 3) {
-					ubo += "\t\tfloat _unused";
-					ubo += std::to_string(uboPaddingId++);
-					ubo += ";\n";
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 2) {
-					ubo += "\t\tvec2 _unused";
-					ubo += std::to_string(uboPaddingId++);
-					ubo += ";\n";
-					uboTotalElements += 4;
-					uboCurrentOffset += 16;
-				} else if (desc.numElements == 1) {
-					ubo += '\n';
-					uboTotalElements += 1;
-					uboCurrentOffset += 4;
-				} else {
-					CHECK_NO_ENTRY();
-				}
-				numScalars += (desc.numElements == 1) ? 1 : 0;
-			}
-			switch (numScalars) {
-			case 1:
-				ubo += "\tvec3 _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 3;
-				break;
-			case 2:
-				ubo += "\tvec2 _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 2;
-				break;
-			case 3:
-				ubo += "\tfloat _unused";
-				ubo += std::to_string(uboPaddingId++);
-				ubo += ";\n";
-				uboTotalElements += 1;
-				break;
-			default:
-				break;
-			}
-			ubo += "} uboMaterial; // Total " + std::to_string(4 * uboTotalElements) + " bytes\n";
-			MT.replaceUBO(ubo);
-		}
-
-		if (textureParams.size() == 0) {
-			MT.replaceTextureParameters("");
-		} else {
-			std::string textures;
-			for (const TextureParameterDesc& desc : textureParams) {
-				textures += desc.toString();
-				textures += '\n';
-
-				MaterialTextureParameter param;
-				param.name = desc.name;
-				param.binding = desc.binding;
-				materialTextureParameters.emplace_back(param);
-			}
-			MT.replaceTextureParameters(textures);
-		}
-
-		std::string vpo;
-		for (int32 ix = materialVPOBeginIx; ix <= materialVPOEndIx; ++ix) {
-			vpo += materialLines[ix];
-			vpo += '\n';
-		}
-		MT.replaceVPO(vpo);
-
-		std::string attrs;
-		for (int32 ix = materialAttrBeginIx; ix <= materialAttrEndIx; ++ix) {
-			attrs += materialLines[ix];
-			attrs += '\n';
-		}
-		MT.replaceAttr(attrs);
-
-		// Material shader contains GLSL code that need to be embeded as is.
-		if (embedGlslBeginIx >= 0 && embedGlslEndIx >= 0) {
-			std::string embed;
-			for (int32 ix = embedGlslBeginIx; ix <= embedGlslEndIx; ++ix) {
-				embed += materialLines[ix];
-				embed += '\n';
-			}
-			MT.replaceEmbedGlsl(embed);
-		} else {
-			MT.replaceEmbedGlsl("");
-		}
-
-		// Parse shading model.
-		EMaterialShadingModel shadingModel = EMaterialShadingModel::NUM_MODELS;
-		{
-			char shadingModelStr[64];
-			int ret = sscanf_s(materialLines[materialShadingModelIx].c_str(),
-				"#define SHADINGMODEL %s",
-				shadingModelStr, (unsigned)_countof(shadingModelStr));
-			CHECK(ret == 1);
-
-			if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_UNLIT")) {
-				shadingModel = EMaterialShadingModel::UNLIT;
-			} else if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_DEFAULTLIT")) {
-				shadingModel = EMaterialShadingModel::DEFAULTLIT;
-			} else if (0 == strcmp(shadingModelStr, "MATERIAL_SHADINGMODEL_TRANSLUCENT")) {
-				shadingModel = EMaterialShadingModel::TRANSLUCENT;
-			} else {
-				char msg[256];
-				sprintf_s(msg, "Invalid shading model definition in: %s", shadingModelStr);
-				CHECKF(false, msg);
-			}
-		}
-
-		bool bForwardShading = (shadingModel == EMaterialShadingModel::TRANSLUCENT);
-		if (!bForwardShading) {
-			MT.replaceGetSceneColor("");
-		} else {
-			CHECK(getSceneColorBeginIx != -1
-				&& getSceneColorEndIx != -1
-				&& getSceneColorBeginIx < getSceneColorEndIx);
-			std::string getSceneColor;
-			for (int32 ix = getSceneColorBeginIx; ix <= getSceneColorEndIx; ++ix) {
-				getSceneColor += materialLines[ix];
-				getSceneColor += '\n';
-			}
-			MT.replaceGetSceneColor(getSceneColor);
-		}
+		MT.replaceShadingModel(materialLines[placeholders.materialShadingModelIx]);
+		MT.replaceOutputWorldNormal(placeholders.bOutputWorldNormal ? "#define OUTPUTWORLDNORMAL 1" : "");
+		MT.replaceSkyboxMaterial(placeholders.bSkyboxMaterial ? "#define SKYBOXMATERIAL 1" : "");
+		MT.replaceTransferDrawID(placeholders.bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
+		MT.replaceTransferInstanceID(placeholders.bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
+		MT.replaceUBO(uniformBufferString);
+		MT.replaceTextureParameters(texturesString);
+		MT.replaceVPO(assembleBlock(placeholders.materialVPOBeginIx, placeholders.materialVPOEndIx));
+		MT.replaceAttr(assembleBlock(placeholders.materialAttrBeginIx, placeholders.materialAttrEndIx));
+		MT.replaceEmbedGlsl(bEmbmedGlslExists ? assembleBlock(placeholders.embedGlslBeginIx, placeholders.embedGlslEndIx) : "");
+		MT.replaceGetSceneColor(bForwardShading ? assembleBlock(placeholders.getSceneColorBeginIx, placeholders.getSceneColorEndIx) : "");
 
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
 		splitNewlines(MT.sourceLines);
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		MaterialShader* shader = new MaterialShader;
-		shader->materialName = std::move(materialName);
-		shader->shadingModel = shadingModel;
-		shader->bTrivialDepthOnlyPass = bTrivialDepthOnlyPass;
-		shader->uboTotalBytes = uboTotalElements * 4;
-		shader->constantParameters = std::move(materialConstParameters);
-		shader->textureParameters = std::move(materialTextureParameters);
-		shader->generateShaderProgram(filename, &MT);
+		targetMaterial->materialName          = std::move(materialName);
+		targetMaterial->shadingModel          = shadingModel;
+		targetMaterial->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
+		targetMaterial->uboTotalBytes         = uboTotalElements * 4;
+		targetMaterial->constantParameters    = std::move(materialConstParameters);
+		targetMaterial->textureParameters     = std::move(materialTextureParameters);
+		targetMaterial->generateShaderProgram(&MT, isHotReload);
 
-		materialShaderMap[materialNameHash] = shader;
-		return shader;
+		materialShaderMap[materialNameHash] = targetMaterial;
+
+		return CompileResponse::Compiled;
 	}
 
 }
