@@ -301,17 +301,7 @@ namespace pathos {
 			std::vector<std::string> sourceCodeBackup = sourceCode;
 			loadSource();
 
-			bool sourceChanged = false;
-			if (sourceCode.size() == sourceCodeBackup.size()) {
-				for (size_t i = 0; i < sourceCode.size(); ++i) {
-					if (sourceCode[i] != sourceCodeBackup[i]) {
-						sourceChanged = true;
-						break;
-					}
-				}
-			} else {
-				sourceChanged = true;
-			}
+			bool sourceChanged = sourceCodeBackup != sourceCode;
 			if (sourceChanged == false) {
 #if IGNORE_SAME_SHADERS_ON_RECOMPILE == 0
 				LOG(LogDebug, "%s: Source code is same.", debugName);

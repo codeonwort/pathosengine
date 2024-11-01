@@ -16,18 +16,7 @@ namespace pathos {
 		programHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
 
 		// Don't recompile if shader code was not changed.
-		auto isSameSource = [](const std::vector<std::string>& A, const std::vector<std::string>& B) -> bool {
-			bool same = true;
-			if (A.size() == B.size()) {
-				for (size_t i = 0; i < A.size(); ++i) {
-					if (A[i] != B[i]) { same = false; break; }
-				}
-			} else {
-				same = false;
-			}
-			return same;
-		};
-		if (isHotReload && isSameSource(sourceVS, sourceBackupVS) && isSameSource(sourceFS, sourceBackupFS)) {
+		if (isHotReload && (sourceVS == sourceBackupVS) && (sourceFS == sourceBackupFS)) {
 			return;
 		} else {
 			LOG(LogDebug, "%s: Recompiled the material.", materialName.c_str());
