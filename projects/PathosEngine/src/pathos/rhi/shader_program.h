@@ -32,7 +32,7 @@ namespace pathos {
 			programMap.erase(programHash);
 		}
 
-		ShaderProgram* findProgram(uint32 programHash);
+		ShaderProgram* findProgram(uint32 programHash, bool checkCompiled) const;
 
 		void forEach(std::function<void(ShaderProgram*)> handler) {
 			for(const auto& item : programMap) {

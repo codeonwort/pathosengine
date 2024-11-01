@@ -104,6 +104,9 @@ namespace pathos {
 
 		void initializeMaterialShaders();
 
+		// Material hot reloading is handled here, instead of in ShaderProgram::reload().
+		void reloadMaterialShaders();
+
 		MaterialShader* findMaterialShaderByName(const char* materialName);
 		MaterialShader* findMaterialShaderByHash(uint32 materialNameHash);
 
@@ -114,8 +117,8 @@ namespace pathos {
 		// Enumerate material files and call generateMaterialShader().
 		void parseAllMaterialShaders();
 
-		// Parse material shader file to generate corresponding shader program.
-		MaterialShader* generateMaterialShader(const char* fullpath, const char* filename);
+		// Generate material program from given file.
+		bool generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload);
 
 	private:
 		MaterialShaderAssembler() = default;

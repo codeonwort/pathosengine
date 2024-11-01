@@ -456,31 +456,40 @@ namespace pathos {
 			}
 			
 			std::string materialPath = shaderDir + filename;
-			MaterialShader* material = generateMaterialShader(materialPath.c_str(), filename.c_str());
-			CHECK(material != nullptr);
+			MaterialShader* material = new MaterialShader;
+			bool bSuccess = generateMaterialProgram(material, materialPath.c_str(), filename.c_str(), false);
+			CHECK(bSuccess);
 		}
 	}
-	
-	// #wip: Need to split this function to support hot reload.
-	// 1. Open material file and read lines.
-	// 2. Parse constant/texture parameters.
-	// 3. Create MT (a MaterialTemplate clone).
-	// 4. Replace placeholders in MT.
-	// 5. Create a MaterialShader.
-	// 6. Init fields of the MaterialShader and compile program.
-	MaterialShader* MaterialShaderAssembler::generateMaterialShader(const char* fullpath, const char* filename) {
+
+	void MaterialShaderAssembler::reloadMaterialShaders() {
+		for (const auto& it : materialShaderMap) {
+			MaterialShader* material = it.second;
+			const char* fullpath = material->sourceFullpath.c_str();
+			const char* filename = material->sourceFilename.c_str();
+			bool bSuccess = generateMaterialProgram(material, fullpath, filename, true);
+			CHECK(bSuccess);
+		}
+	}
+
+	bool MaterialShaderAssembler::generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload) {
+		targetMaterial->sourceFullpath = fullpath;
+		targetMaterial->sourceFilename = filename;
+
 		std::fstream fileStream;
 		fileStream.open(fullpath, std::ios::in);
 		if (fileStream.is_open() == false) {
 			LOG(LogError, "[Material] Failed to open: %s", fullpath);
-			return nullptr;
+			return false;
 		}
-
+		
 		std::string materialName = filename;
 		materialName = materialName.substr(0, materialName.find_first_of('.'));
 
 		const uint32 materialNameHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
-		CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
+		if (!isHotReload) {
+			CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
+		}
 
 		// Gather original lines
 		std::vector<std::string> materialLines;
@@ -520,6 +529,8 @@ namespace pathos {
 		bool bEmbmedGlslExists = placeholders.embedGlslBeginIx >= 0 && placeholders.embedGlslEndIx >= 0;
 		EMaterialShadingModel shadingModel = parseShadingModel(materialLines[placeholders.materialShadingModelIx]);
 		bool bForwardShading = (shadingModel == EMaterialShadingModel::TRANSLUCENT);
+		bool bForwardShadingBlockExists = (placeholders.getSceneColorBeginIx != -1) && (placeholders.getSceneColorEndIx) != -1 && (placeholders.getSceneColorBeginIx < placeholders.getSceneColorEndIx);
+		CHECK(!bForwardShading || bForwardShadingBlockExists);
 
 		MaterialTemplate MT = materialTemplate->makeClone();
 
@@ -533,31 +544,25 @@ namespace pathos {
 		MT.replaceVPO(assembleBlock(placeholders.materialVPOBeginIx, placeholders.materialVPOEndIx));
 		MT.replaceAttr(assembleBlock(placeholders.materialAttrBeginIx, placeholders.materialAttrEndIx));
 		MT.replaceEmbedGlsl(bEmbmedGlslExists ? assembleBlock(placeholders.embedGlslBeginIx, placeholders.embedGlslEndIx) : "");
-		if (!bForwardShading) {
-			MT.replaceGetSceneColor("");
-		} else {
-			int32 beginIx = placeholders.getSceneColorBeginIx;
-			int32 endIx = placeholders.getSceneColorEndIx;
-			CHECK(beginIx != -1 && endIx != -1 && beginIx < endIx);
-			MT.replaceGetSceneColor(assembleBlock(beginIx, endIx));
-		}
+		MT.replaceGetSceneColor(bForwardShading ? assembleBlock(placeholders.getSceneColorBeginIx, placeholders.getSceneColorEndIx) : "");
 
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
 		splitNewlines(MT.sourceLines);
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		MaterialShader* shader = new MaterialShader;
-		shader->materialName          = std::move(materialName);
-		shader->shadingModel          = shadingModel;
-		shader->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
-		shader->uboTotalBytes         = uboTotalElements * 4;
-		shader->constantParameters    = std::move(materialConstParameters);
-		shader->textureParameters     = std::move(materialTextureParameters);
-		shader->generateShaderProgram(&MT);
+		// #wip: If isHotReload == true, should check if layouts of UBO or parameter have changed.
+		targetMaterial->materialName          = std::move(materialName);
+		targetMaterial->shadingModel          = shadingModel;
+		targetMaterial->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
+		targetMaterial->uboTotalBytes         = uboTotalElements * 4;
+		targetMaterial->constantParameters    = std::move(materialConstParameters);
+		targetMaterial->textureParameters     = std::move(materialTextureParameters);
+		targetMaterial->generateShaderProgram(&MT, isHotReload);
 
-		materialShaderMap[materialNameHash] = shader;
-		return shader;
+		materialShaderMap[materialNameHash] = targetMaterial;
+
+		return true;
 	}
 
 }

@@ -2,6 +2,7 @@
 #include "pathos/engine.h"
 #include "pathos/console.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/material/material_shader_assembler.h"
 #include "pathos/util/log.h"
 #include "pathos/util/resource_finder.h"
 
@@ -25,6 +26,8 @@ namespace pathos {
 		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
 			gEngine->registerConsoleCommand("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
+				// #wip: Should reload only changed materials.
+				MaterialShaderAssembler::get().reloadMaterialShaders();
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
 						program->reload();
@@ -36,12 +39,13 @@ namespace pathos {
 		}
 	} internal_recompileShaders;
 
-	ShaderProgram* ShaderDB::findProgram(uint32 programHash) {
-		CHECK(isInRenderThread());
+	ShaderProgram* ShaderDB::findProgram(uint32 programHash, bool checkCompiled) const {
+		if (checkCompiled) CHECK(isInRenderThread());
+
 		auto it = programMap.find(programHash);
 		if (it != programMap.end()) {
 			ShaderProgram* program = it->second;
-			program->checkFirstLoad();
+			if (checkCompiled) program->checkFirstLoad();
 			return program;
 		}
 		return nullptr;

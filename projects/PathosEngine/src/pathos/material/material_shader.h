@@ -43,7 +43,7 @@ namespace pathos {
 		friend class MaterialShaderAssembler;
 
 	public:
-		void generateShaderProgram(const MaterialTemplate* materialTemplate);
+		void generateShaderProgram(const MaterialTemplate* materialTemplate, bool isHotReload);
 
 		// Copy material parameters into Material.
 		void extractMaterialParameters(
@@ -68,6 +68,9 @@ namespace pathos {
 
 		std::string nameVS;
 		std::string nameFS;
+
+		std::string sourceFullpath;
+		std::string sourceFilename;
 
 	private:
 		uint32 lastInstanceID = 0;
