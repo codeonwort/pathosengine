@@ -2,6 +2,7 @@
 #include "material_shader_assembler.h"
 #include "pathos/material/material.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/util/log.h"
 
 namespace pathos {
 
@@ -13,6 +14,28 @@ namespace pathos {
 		nameVS = materialName + "VS";
 		nameFS = materialName + "FS";
 		programHash = COMPILE_TIME_CRC32_STR(materialName.c_str());
+
+		// Don't recompile if shader code was not changed.
+		auto isSameSource = [](const std::vector<std::string>& A, const std::vector<std::string>& B) -> bool {
+			bool same = true;
+			if (A.size() == B.size()) {
+				for (size_t i = 0; i < A.size(); ++i) {
+					if (A[i] != B[i]) { same = false; break; }
+				}
+			} else {
+				same = false;
+			}
+			return same;
+		};
+		if (isHotReload && isSameSource(sourceVS, sourceBackupVS) && isSameSource(sourceFS, sourceBackupFS)) {
+			return;
+		} else {
+			LOG(LogDebug, "%s: Recompiled the material.", materialName.c_str());
+		}
+
+		// Backup source code
+		sourceBackupVS = sourceVS;
+		sourceBackupFS = sourceFS;
 
 		ShaderStage* VS = new ShaderStage(GL_VERTEX_SHADER, nameVS.c_str());
 		ShaderStage* FS = new ShaderStage(GL_FRAGMENT_SHADER, nameFS.c_str());

@@ -71,6 +71,8 @@ namespace pathos {
 
 		std::string sourceFullpath;
 		std::string sourceFilename;
+		std::vector<std::string> sourceBackupVS;
+		std::vector<std::string> sourceBackupFS;
 
 	private:
 		uint32 lastInstanceID = 0;

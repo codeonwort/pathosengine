@@ -58,6 +58,7 @@ namespace pathos {
 		void reload();
 
 		inline bool isValid() const { return glName != 0 && glName != 0xffffffff; }
+		inline bool isMaterialProgram() const { return bIsMaterialProgram; }
 		inline GLuint getGLName() const { return glName; }
 
 	// messy
@@ -73,8 +74,8 @@ namespace pathos {
 
 		std::vector<ShaderStage*> shaderStages;
 
-		bool firstLoad;
-		bool isMaterialProgram;
+		bool bFirstLoad;
+		bool bIsMaterialProgram;
 	};
 
 	// Represents one of VS, GS, TES, TCS, or FS.

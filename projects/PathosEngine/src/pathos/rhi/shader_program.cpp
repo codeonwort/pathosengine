@@ -26,11 +26,14 @@ namespace pathos {
 		static void recompileShaders(OpenGLDevice* device, RenderCommandList& cmdList) {
 			gEngine->registerConsoleCommand("recompile_shaders", [](const std::string& command) -> void {
 				LOG(LogInfo, "Begin reloading shaders...");
-				// #wip: Should reload only changed materials.
+				// Process material shaders.
 				MaterialShaderAssembler::get().reloadMaterialShaders();
+				// Process non-material shaders.
 				ENQUEUE_RENDER_COMMAND([](RenderCommandList& cmdList) {
 					ShaderDB::get().forEach([](ShaderProgram* program) -> void {
-						program->reload();
+						if (program->isMaterialProgram() == false) {
+							program->reload();
+						}
 					});
 				});
 				FLUSH_RENDER_COMMAND();
@@ -58,9 +61,9 @@ namespace pathos {
 	ShaderProgram::ShaderProgram(const char* inDebugName, uint32 inProgramHash, bool inIsMaterialProgram /*= false*/)
 		: debugName(inDebugName)
 		, programHash(inProgramHash)
-		, isMaterialProgram(inIsMaterialProgram)
+		, bIsMaterialProgram(inIsMaterialProgram)
 		, glName(0xffffffff)
-		, firstLoad(true)
+		, bFirstLoad(true)
 		, internal_justInstantiated(true)
 	{
 		ShaderDB::get().registerProgram(inProgramHash, this);
@@ -88,9 +91,7 @@ namespace pathos {
 		bool allCompiled = true;
 		bool allNotChanged = true;
 
-		// #wip: Material shaders don't support runtime recompilation yet.
-		// tryCompile() -> loadSource() -> material shader does not use the source as is...
-		bool checkSourceChanges = !isMaterialProgram;
+		bool checkSourceChanges = !bIsMaterialProgram;
 
 		for (ShaderStage* shaderStage : shaderStages) {
 			ShaderStage::CompileResponse response = shaderStage->tryCompile(debugName, checkSourceChanges);
@@ -141,7 +142,7 @@ namespace pathos {
 			if (oldValid) {
 				glDeleteProgram(oldGLName);
 			}
-			if (!firstLoad) {
+			if (!bFirstLoad) {
 				LOG(LogDebug, "%s: Recompiled the shader program.", debugName);
 			}
 		}
@@ -149,9 +150,9 @@ namespace pathos {
 
 	void ShaderProgram::checkFirstLoad()
 	{
-		if (firstLoad) {
+		if (bFirstLoad) {
 			reload();
-			firstLoad = false;
+			bFirstLoad = false;
 		}
 	}
 
