@@ -98,6 +98,7 @@ namespace pathos {
 
 	// Generates material shaders based on material templates.
 	class MaterialShaderAssembler final {
+		enum class CompileResponse : uint8 { Failed, RejectHotReload, Compiled };
 
 	public:
 		static MaterialShaderAssembler& get();
@@ -118,7 +119,7 @@ namespace pathos {
 		void parseAllMaterialShaders();
 
 		// Generate material program from given file.
-		bool generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload);
+		CompileResponse generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload);
 
 	private:
 		MaterialShaderAssembler() = default;

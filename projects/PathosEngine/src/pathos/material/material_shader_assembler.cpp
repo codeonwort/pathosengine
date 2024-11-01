@@ -457,8 +457,8 @@ namespace pathos {
 			
 			std::string materialPath = shaderDir + filename;
 			MaterialShader* material = new MaterialShader;
-			bool bSuccess = generateMaterialProgram(material, materialPath.c_str(), filename.c_str(), false);
-			CHECK(bSuccess);
+			CompileResponse response = generateMaterialProgram(material, materialPath.c_str(), filename.c_str(), false);
+			CHECK(response != CompileResponse::Failed);
 		}
 	}
 
@@ -467,12 +467,12 @@ namespace pathos {
 			MaterialShader* material = it.second;
 			const char* fullpath = material->sourceFullpath.c_str();
 			const char* filename = material->sourceFilename.c_str();
-			bool bSuccess = generateMaterialProgram(material, fullpath, filename, true);
-			CHECK(bSuccess);
+			CompileResponse response = generateMaterialProgram(material, fullpath, filename, true);
+			CHECK(response != CompileResponse::Failed);
 		}
 	}
 
-	bool MaterialShaderAssembler::generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload) {
+	MaterialShaderAssembler::CompileResponse MaterialShaderAssembler::generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload) {
 		targetMaterial->sourceFullpath = fullpath;
 		targetMaterial->sourceFilename = filename;
 
@@ -480,7 +480,7 @@ namespace pathos {
 		fileStream.open(fullpath, std::ios::in);
 		if (fileStream.is_open() == false) {
 			LOG(LogError, "[Material] Failed to open: %s", fullpath);
-			return false;
+			return CompileResponse::Failed;
 		}
 		
 		std::string materialName = filename;
@@ -514,15 +514,38 @@ namespace pathos {
 		std::vector<ConstantParameterDesc> constParams;
 		parseMaterialParameters(materialLines, textureParams, constParams);
 
-		std::vector<MaterialConstantParameter> materialConstParameters;
-		std::vector<MaterialTextureParameter> materialTextureParameters;
-		// Construct material uniform buffer.
 		std::string uniformBufferString;
 		uint32 uboTotalElements = 0;
+		std::vector<MaterialConstantParameter> materialConstParameters;
 		assembleUniformBuffer(constParams, uniformBufferString, uboTotalElements, materialConstParameters);
-		// Construct texture parameters.
+
+		if (isHotReload && uboTotalElements * 4 != targetMaterial->uboTotalBytes) {
+			LOG(LogError, "[Material] Reject hot reload due to different UBO sizes: %s", filename);
+			return CompileResponse::RejectHotReload;
+		}
+
+		std::vector<MaterialTextureParameter> materialTextureParameters;
 		std::string texturesString;
 		assembleTextureParameters(textureParams, texturesString, materialTextureParameters);
+
+		if (isHotReload) {
+			bool changed = targetMaterial->textureParameters.size() != materialTextureParameters.size();
+			if (!changed) {
+				size_t n = targetMaterial->textureParameters.size();
+				std::vector<uint32> A(n), B(n);
+				for (size_t i = 0; i < n; ++i) {
+					A[i] = targetMaterial->textureParameters[i].binding;
+					B[i] = materialTextureParameters[i].binding;
+				}
+				std::sort(A.begin(), A.end());
+				std::sort(B.begin(), B.end());
+				changed = A != B;
+			}
+			if (changed) {
+				LOG(LogError, "[Material] Reject hot reload due to different texture parameters: %s", filename);
+				return CompileResponse::RejectHotReload;
+			}
+		}
 
 		PlaceholderDesc placeholders;
 		scanPlaceholders(materialLines, placeholders);
@@ -551,7 +574,6 @@ namespace pathos {
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		// #wip: If isHotReload == true, should check if layouts of UBO or parameter have changed.
 		targetMaterial->materialName          = std::move(materialName);
 		targetMaterial->shadingModel          = shadingModel;
 		targetMaterial->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
@@ -562,7 +584,7 @@ namespace pathos {
 
 		materialShaderMap[materialNameHash] = targetMaterial;
 
-		return true;
+		return CompileResponse::Compiled;
 	}
 
 }
