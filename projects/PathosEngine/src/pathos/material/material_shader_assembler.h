@@ -117,8 +117,6 @@ namespace pathos {
 		// Parse material shader file to generate corresponding shader program.
 		MaterialShader* generateMaterialShader(const char* fullpath, const char* filename);
 
-		MaterialTemplate generateMaterialTemplate(const char* fullpath, const char* filename);
-
 	private:
 		MaterialShaderAssembler() = default;
 		~MaterialShaderAssembler();
