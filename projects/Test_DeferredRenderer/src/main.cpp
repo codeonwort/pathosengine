@@ -2,6 +2,7 @@
 #include "world_rc1.h"
 #include "world_rc2.h"
 #include "world_lightroom.h"
+#include "world_physics.h"
 
 #include "pathos/core_minimal.h"
 #include "pathos/gui/gui_window.h"
@@ -14,7 +15,7 @@ const int32 WINDOW_HEIGHT        = 1080;
 const bool  WINDOW_FULLSCREEN    = false;
 
 void changeWorld() {
-	static const int32 numWorlds = 4;
+	static const int32 numWorlds = 5;
 	static int32 worldIndex = 0;
 
 	World* newWorld = nullptr;
@@ -34,6 +35,10 @@ void changeWorld() {
 	case 3:
 		newWorld = new World1;
 		gEngine->getMainWindow()->setTitle("Some Random World");
+		break;
+	case 4:
+		newWorld = new World_Physics;
+		gEngine->getMainWindow()->setTitle("Physics Test");
 		break;
 	default:
 		CHECK_NO_ENTRY();
