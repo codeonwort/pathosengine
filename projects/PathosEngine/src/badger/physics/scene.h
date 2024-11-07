@@ -3,16 +3,18 @@
 #include "shape.h"
 
 namespace badger {
+	namespace physics {
 
-	class Scene {
+		class Scene {
 
-	public:
-		void initialize();
-		void update(float deltaSeconds);
+		public:
+			void initialize();
+			void update(float deltaSeconds);
 
-	private:
-		std::vector<Body> bodies;
+		private:
+			std::vector<Body> bodies;
 
-	};
+		};
 
+	}
 }

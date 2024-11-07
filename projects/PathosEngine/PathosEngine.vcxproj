@@ -87,6 +87,7 @@
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\math\rotator.cpp" />
     <ClCompile Include="src\badger\math\spline.cpp" />
+    <ClCompile Include="src\badger\physics\scene.cpp" />
     <ClCompile Include="src\badger\physics\shape.cpp" />
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
     <ClCompile Include="src\badger\system\cpu.cpp" />
