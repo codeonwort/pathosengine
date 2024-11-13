@@ -429,7 +429,10 @@
     <ClCompile Include="src\badger\physics\shape.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\badger\physics\scene.cpp">
+    <ClCompile Include="src\badger\physics\physics_scene.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\physics_component.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -944,7 +947,10 @@
     <ClInclude Include="src\badger\physics\shape.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="src\badger\physics\scene.h">
+    <ClInclude Include="src\badger\physics\physics_scene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\physics_component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

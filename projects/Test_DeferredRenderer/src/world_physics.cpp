@@ -2,6 +2,7 @@
 
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/static_mesh_actor.h"
+#include "pathos/scene/physics_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/mesh.h"
@@ -17,6 +18,10 @@ void World_Physics::onInitialize() {
 
 	auto sphere = spawnActor<StaticMeshActor>();
 	sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+
+	// #todo-physics: How to allow PhysicsComponent change the transform of its owner?
+	// Currently actor components cannot tick themselves.
+	sphere->registerComponent(new PhysicsComponent);
 
 	auto sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(vector3(1.0f, -1.0f, 0.0f));

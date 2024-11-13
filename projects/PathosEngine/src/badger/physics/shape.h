@@ -1,6 +1,5 @@
 #pragma once
 
-#include "scene.h"
 #include "badger/types/vector_types.h"
 
 #include <glm/gtc/quaternion.hpp>
@@ -38,7 +37,7 @@ namespace badger {
 		};
 
 		class Body {
-			friend class badger::physics::Scene;
+			friend class PhysicsScene;
 
 		public:
 			vector3 getCenterOfMassWorldSpace() const;

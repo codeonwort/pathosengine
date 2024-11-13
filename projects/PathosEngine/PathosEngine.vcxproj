@@ -87,7 +87,7 @@
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\math\rotator.cpp" />
     <ClCompile Include="src\badger\math\spline.cpp" />
-    <ClCompile Include="src\badger\physics\scene.cpp" />
+    <ClCompile Include="src\badger\physics\physics_scene.cpp" />
     <ClCompile Include="src\badger\physics\shape.cpp" />
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
     <ClCompile Include="src\badger\system\cpu.cpp" />
@@ -95,6 +95,7 @@
     <ClCompile Include="src\pathos\render\landscape_rendering.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
+    <ClCompile Include="src\pathos\scene\physics_component.cpp" />
     <ClCompile Include="src\thirdparty\gl3w.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -229,7 +230,7 @@
     <ClInclude Include="src\badger\math\rotator.h" />
     <ClInclude Include="src\badger\math\spline.h" />
     <ClInclude Include="src\badger\math\vector_math.h" />
-    <ClInclude Include="src\badger\physics\scene.h" />
+    <ClInclude Include="src\badger\physics\physics_scene.h" />
     <ClInclude Include="src\badger\physics\shape.h" />
     <ClInclude Include="src\badger\system\mem_alloc.h" />
     <ClInclude Include="src\badger\system\platform.h" />
@@ -259,6 +260,7 @@
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />
     <ClInclude Include="src\pathos\scene\landscape_actor.h" />
     <ClInclude Include="src\pathos\scene\landscape_component.h" />
+    <ClInclude Include="src\pathos\scene\physics_component.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />

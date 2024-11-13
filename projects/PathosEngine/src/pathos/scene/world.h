@@ -1,6 +1,7 @@
 #pragma once
 
 #include "badger/types/noncopyable.h"
+#include "badger/physics/physics_scene.h"
 
 #include "pathos/scene/scene.h"
 #include "pathos/scene/camera.h"
@@ -41,6 +42,7 @@ namespace pathos {
 
 		Scene& getScene() { return scene; }
 		Camera& getCamera() { return camera; }
+		badger::physics::PhysicsScene& getPhysicsScene() { return physicsScene; }
 
 	protected:
 		virtual void onInitialize() {}
@@ -58,12 +60,14 @@ namespace pathos {
 		Scene scene;
 		Camera camera;
 
+		badger::physics::PhysicsScene physicsScene;
+
 		float lastDeltaSeconds = 0.0f;
 
 		std::vector<Actor*> actors;          // Actors in this world
 		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
 
-		InputManager* inputManager;
+		InputManager* inputManager = nullptr;
 	};
 
 }
