@@ -23,6 +23,7 @@ namespace badger {
 			vector3 tmp = position - getCenterOfMassWorldSpace();
 			quat inverseOrient = glm::inverse(orientation);
 			vector3 bodySpace = rotatePoint(tmp, inverseOrient);
+			return bodySpace;
 		}
 
 		vector3 Body::bodySpaceToWorldSpace(const vector3& position) const {
