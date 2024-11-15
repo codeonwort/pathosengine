@@ -60,7 +60,7 @@ vec3 getVertexPositionOffset(VertexShaderInput vsi) {
 	else if (borderFlags.z) { neighborCoords.x += 1; }
 	else if (borderFlags.w) { neighborCoords.y -= 1; fixY = true; }
 	bool currentAtCorner = any(borderFlags.xz) && any(borderFlags.yw);
-	bool neighborExists = all(greaterThanEqual(neighborCoords, ivec2(0, 0)) && lessThan(neighborCoords, ivec2(uboMaterial.sectorCountX, uboMaterial.sectorCountY)));
+	bool neighborExists = all(greaterThanEqual(neighborCoords, ivec2(0, 0))) && all(lessThan(neighborCoords, ivec2(uboMaterial.sectorCountX, uboMaterial.sectorCountY)));
 
 	// Fix T-junction.
 	if (currentAtBorder && !currentAtCorner && neighborExists) {

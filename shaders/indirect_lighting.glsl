@@ -112,7 +112,9 @@ void findIrradianceProbes(vec3 position, IrradianceVolume vol, out ProbeDesc pro
 	vec3 cellSize        = volSize / fNumCells;
 	vec3 localUVW        = (position - vol.minBounds) / volSize;
 	ivec3 firstGridCoord = clamp(ivec3(localUVW * fNumCells), ivec3(0, 0, 0), ivec3(maxGridCoord));
-	bvec3 axisIn         = lessThanEqual(vol.minBounds, position) && lessThan(position, vol.maxBounds);
+	// bvec && bvec is supported only on NVidia GPU? well shit :/
+	//bvec3 axisIn         = lessThanEqual(vol.minBounds, position) && lessThan(position, vol.maxBounds);
+	bvec3 axisIn         = bvec3(vol.minBounds.x <= position.x && position.x < vol.maxBounds.x, vol.minBounds.y <= position.y && position.y < vol.maxBounds.y, vol.minBounds.z <= position.z && position.z < vol.maxBounds.z);
 
 	for (uint i = 0; i < 8; ++i) {
 		uvec3 gridCoordOffset = uvec3(axisIn) * uvec3(i & 1, (i & 3) >> 1, i >> 2);
