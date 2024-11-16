@@ -45,6 +45,7 @@ namespace pathos {
 		actors.clear();
 	}
 
+	// #todo: More efficient tick mechanism...
 	void World::tick(float deltaSeconds) {
 		// Destroy actors that were marked for death
 		for (auto& actor : actorsToDestroy) {
@@ -53,17 +54,32 @@ namespace pathos {
 		}
 		actorsToDestroy.clear();
 
+		// Pre-Physics Component Tick
+		for (auto& actor : actors) {
+			if (!actor->markedForDeath) {
+				actor->tickComponentsPrePhysics(deltaSeconds);
+			}
+		}
+
 		// Physics Tick
 		physicsScene.update(deltaSeconds);
+
+		// Post-Physics Component Tick
+		for (auto& actor : actors) {
+			if (!actor->markedForDeath) {
+				actor->tickComponentsPostPhysics(deltaSeconds);
+			}
+		}
 
 		// Game Tick
 		onTick(deltaSeconds);
 		for (auto& actor : actors) {
 			if (!actor->markedForDeath) {
+				actor->tickComponentsPreActorTick(deltaSeconds);
 				actor->onTick(deltaSeconds);
+				actor->tickComponentsPostActorTick(deltaSeconds);
 			}
 		}
-
 		onPostTick(deltaSeconds);
 
 		lastDeltaSeconds = deltaSeconds;

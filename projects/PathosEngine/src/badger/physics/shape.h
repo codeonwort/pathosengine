@@ -40,6 +40,8 @@ namespace badger {
 			friend class PhysicsScene;
 
 		public:
+			void setShape(Shape* inShape) { shape = inShape; }
+
 			vector3 getCenterOfMassWorldSpace() const;
 			vector3 getCenterOfMassModelSpace() const;
 

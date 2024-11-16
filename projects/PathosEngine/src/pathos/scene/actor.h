@@ -20,7 +20,7 @@ namespace pathos {
 		friend class World;
 
 	protected:
-		Actor() { isInConstructor = true; } // Use Scene::spawnActor()
+		Actor() { isInConstructor = true; } // Used in World::spawnActor()
 	public:
 		virtual ~Actor();
 
@@ -71,12 +71,17 @@ namespace pathos {
 	private:
 		void fixRootComponent();
 
+		void tickComponentsPrePhysics(float deltaSeconds);
+		void tickComponentsPostPhysics(float deltaSeconds);
+		void tickComponentsPreActorTick(float deltaSeconds);
+		void tickComponentsPostActorTick(float deltaSeconds);
+
 		World* owner = nullptr;
 		bool isInConstructor = false;
 		bool markedForDeath = false;
 
 		SceneComponent* rootComponent = nullptr; // Every actor must have a root component
-		std::vector<ActorComponent*> components;
+		std::vector<ActorComponent*> components; // Use registerComponent, unregisterComponent, and createDefaultComponent to add/remove components.
 
 	};
 

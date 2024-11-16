@@ -109,4 +109,36 @@ namespace pathos {
 		}
 	}
 
+	void Actor::tickComponentsPrePhysics(float deltaSeconds) {
+		for (ActorComponent* comp : components) {
+			if (ENUM_HAS_FLAG(comp->tickPhases, ActorComponent::ETickPhase::PrePhysics)) {
+				comp->onPrePhysicsTick(deltaSeconds);
+			}
+		}
+	}
+
+	void Actor::tickComponentsPostPhysics(float deltaSeconds) {
+		for (ActorComponent* comp : components) {
+			if (ENUM_HAS_FLAG(comp->tickPhases, ActorComponent::ETickPhase::PostPhysics)) {
+				comp->onPostPhysicsTick(deltaSeconds);
+			}
+		}
+	}
+
+	void Actor::tickComponentsPreActorTick(float deltaSeconds) {
+		for (ActorComponent* comp : components) {
+			if (ENUM_HAS_FLAG(comp->tickPhases, ActorComponent::ETickPhase::PreActorTick)) {
+				comp->onPreActorTick(deltaSeconds);
+			}
+		}
+	}
+
+	void Actor::tickComponentsPostActorTick(float deltaSeconds) {
+		for (ActorComponent* comp : components) {
+			if (ENUM_HAS_FLAG(comp->tickPhases, ActorComponent::ETickPhase::PostActorTick)) {
+				comp->onPostActorTick(deltaSeconds);
+			}
+		}
+	}
+
 }

@@ -16,6 +16,8 @@ namespace pathos {
 		virtual void onRegister() override;
 		virtual void onUnregister() override;
 
+		virtual void onPostPhysicsTick(float deltaSeconds) override;
+
 	private:
 		badger::physics::Body* body = nullptr;
 

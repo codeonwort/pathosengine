@@ -18,9 +18,6 @@ void World_Physics::onInitialize() {
 
 	auto sphere = spawnActor<StaticMeshActor>();
 	sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
-
-	// #todo-physics: How to allow PhysicsComponent change the transform of its owner?
-	// Currently actor components cannot tick themselves.
 	sphere->registerComponent(new PhysicsComponent);
 
 	auto sun = spawnActor<DirectionalLightActor>();
