@@ -8,12 +8,15 @@
 namespace pathos {
 
 	PhysicsComponent::PhysicsComponent() {
-		setTickPhases(ActorComponent::ETickPhase::PostPhysics);
+		setTickPhases(ActorComponent::ETickPhase::PrePhysics | ActorComponent::ETickPhase::PostPhysics);
 	}
 
 	PhysicsComponent::~PhysicsComponent() {
 		//
 	}
+
+	void PhysicsComponent::setMass(float mass) { invMass = 1.0f / mass; }
+	void PhysicsComponent::setInfiniteMass() { invMass = 0.0f; }
 
 	void PhysicsComponent::onRegister() {
 		auto& physicsScene = getOwner()->getWorld()->getPhysicsScene();
@@ -25,6 +28,11 @@ namespace pathos {
 	void PhysicsComponent::onUnregister() {
 		auto& physicsScene = getOwner()->getWorld()->getPhysicsScene();
 		physicsScene.releaseBody(body);
+	}
+
+	void PhysicsComponent::onPrePhysicsTick(float deltaSeconds) {
+		body->setPosition(getOwner()->getActorLocation());
+		body->setInvMass(invMass);
 	}
 
 	void PhysicsComponent::onPostPhysicsTick(float deltaSeconds) {

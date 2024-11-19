@@ -10,9 +10,15 @@ namespace badger {
 		}
 
 		void PhysicsScene::update(float deltaSeconds) {
-			// #todo-physics: Consider mass
 			for (auto i = 0u; i < bodies.size(); ++i) {
-				bodies[i]->linearVelocity += GRAVITY * deltaSeconds;
+				Body* body = bodies[i];
+
+				// Gravity needs to be an impulse
+				// I = dp, F = dp/dt => dp = F * dt => I = F * dt
+				// F = mgs
+				float mass = 1.0f / body->invMass;
+				vector3 impulseGravity = GRAVITY * mass * deltaSeconds;
+				body->applyImpulseLinear(impulseGravity);
 			}
 
 			for (auto i = 0u; i < bodies.size(); ++i) {

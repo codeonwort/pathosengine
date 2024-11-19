@@ -12,14 +12,21 @@ namespace pathos {
 		PhysicsComponent();
 		~PhysicsComponent();
 
+		void setMass(float mass);
+		void setInfiniteMass();
+
 	protected:
 		virtual void onRegister() override;
 		virtual void onUnregister() override;
 
+		virtual void onPrePhysicsTick(float deltaSeconds) override;
 		virtual void onPostPhysicsTick(float deltaSeconds) override;
 
 	private:
 		badger::physics::Body* body = nullptr;
+
+		// Maintain physics properties here and sync with badger Body.
+		float invMass = 0.0f;
 
 	};
 

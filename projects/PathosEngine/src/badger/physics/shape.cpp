@@ -31,5 +31,16 @@ namespace badger {
 			return worldSpace;
 		}
 
+		void Body::applyImpulseLinear(const vector3& impulse) {
+			if (0.0f == invMass) {
+				return;
+			}
+
+			// p = mv (p: momentum)
+			// dp = m dv = J
+			// dv = J / m
+			linearVelocity += impulse * invMass;
+		}
+
 	}
 }

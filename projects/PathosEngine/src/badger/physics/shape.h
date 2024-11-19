@@ -48,10 +48,16 @@ namespace badger {
 			vector3 worldSpaceToBodySpace(const vector3& position) const;
 			vector3 bodySpaceToWorldSpace(const vector3& position) const;
 
+			inline void setPosition(const vector3& inPosition) { position = inPosition; }
+			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
+
+			void applyImpulseLinear(const vector3& impulse);
+
 		private:
 			vector3 position = vector3(0.0f);
 			quat orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			vector3 linearVelocity = vector3(0.0f);
+			float invMass = 0.0f;
 			Shape* shape = nullptr;
 
 		};
