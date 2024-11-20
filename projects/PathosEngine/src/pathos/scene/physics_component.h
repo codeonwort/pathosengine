@@ -7,6 +7,7 @@
 namespace pathos {
 
 	class PhysicsComponent : public ActorComponent {
+		using EShapeType = badger::physics::Shape::EShapeType;
 
 	public:
 		PhysicsComponent();
@@ -14,6 +15,8 @@ namespace pathos {
 
 		void setMass(float mass);
 		void setInfiniteMass();
+
+		void setShapeSphere(float radius);
 
 	protected:
 		virtual void onRegister() override;
@@ -23,10 +26,16 @@ namespace pathos {
 		virtual void onPostPhysicsTick(float deltaSeconds) override;
 
 	private:
+		void updateShape();
+
 		badger::physics::Body* body = nullptr;
+		badger::physics::Shape* shape = nullptr;
 
 		// Maintain physics properties here and sync with badger Body.
 		float invMass = 0.0f;
+
+		EShapeType shapeType = EShapeType::Sphere;
+		float shapeSphereRadius = 1.0f;
 
 	};
 

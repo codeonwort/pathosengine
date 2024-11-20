@@ -32,6 +32,9 @@ namespace badger {
 
 			EShapeType getType() const override { return EShapeType::Sphere; }
 
+			inline float getRadius() const { return radius; }
+			inline void setRadius(float value) { radius = value; }
+
 		private:
 			float radius;
 		};
@@ -40,7 +43,8 @@ namespace badger {
 			friend class PhysicsScene;
 
 		public:
-			void setShape(Shape* inShape) { shape = inShape; }
+			inline const Shape* getShape() const { return shape; }
+			inline void setShape(Shape* inShape) { shape = inShape; }
 
 			vector3 getCenterOfMassWorldSpace() const;
 			vector3 getCenterOfMassModelSpace() const;
@@ -48,6 +52,7 @@ namespace badger {
 			vector3 worldSpaceToBodySpace(const vector3& position) const;
 			vector3 bodySpaceToWorldSpace(const vector3& position) const;
 
+			inline vector3 getPosition() const { return position; }
 			inline void setPosition(const vector3& inPosition) { position = inPosition; }
 			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
 
