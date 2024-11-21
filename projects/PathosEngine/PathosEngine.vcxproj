@@ -87,6 +87,7 @@
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\math\rotator.cpp" />
     <ClCompile Include="src\badger\math\spline.cpp" />
+    <ClCompile Include="src\badger\physics\collision.cpp" />
     <ClCompile Include="src\badger\physics\physics_scene.cpp" />
     <ClCompile Include="src\badger\physics\shape.cpp" />
     <ClCompile Include="src\badger\system\mem_alloc.cpp" />
@@ -230,6 +231,7 @@
     <ClInclude Include="src\badger\math\rotator.h" />
     <ClInclude Include="src\badger\math\spline.h" />
     <ClInclude Include="src\badger\math\vector_math.h" />
+    <ClInclude Include="src\badger\physics\collision.h" />
     <ClInclude Include="src\badger\physics\physics_scene.h" />
     <ClInclude Include="src\badger\physics\shape.h" />
     <ClInclude Include="src\badger\system\mem_alloc.h" />
