@@ -12,6 +12,13 @@ namespace badger {
 
 			bodyA->setLinearVelocity(vector3(0.0f));
 			bodyB->setLinearVelocity(vector3(0.0f));
+
+			float tA = bodyA->getInvMass() / (bodyA->getInvMass() + bodyB->getInvMass());
+			float tB = bodyB->getInvMass() / (bodyA->getInvMass() + bodyB->getInvMass());
+
+			vector3 ds = contact.surfaceB_WS - contact.surfaceA_WS;
+			bodyA->setPosition(bodyA->getPosition() + ds * tA);
+			bodyB->setPosition(bodyB->getPosition() - ds * tB);
 		}
 
 		void PhysicsScene::initialize() {

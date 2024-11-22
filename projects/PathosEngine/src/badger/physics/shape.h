@@ -54,7 +54,10 @@ namespace badger {
 
 			inline vector3 getPosition() const { return position; }
 			inline void setPosition(const vector3& inPosition) { position = inPosition; }
+
+			inline float getInvMass() const { return invMass; }
 			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
+
 			inline void setLinearVelocity(const vector3& inVeocity) { linearVelocity = inVeocity; }
 
 			void applyImpulseLinear(const vector3& impulse);
