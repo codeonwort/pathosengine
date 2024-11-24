@@ -10,11 +10,26 @@ namespace badger {
 			Body* bodyA = contact.bodyA;
 			Body* bodyB = contact.bodyB;
 
-			bodyA->setLinearVelocity(vector3(0.0f));
-			bodyB->setLinearVelocity(vector3(0.0f));
+			float invMassA = bodyA->getInvMass();
+			float invMassB = bodyB->getInvMass();
+			float elasticityA = bodyA->getElasticity();
+			float elasticityB = bodyB->getElasticity();
 
-			float tA = bodyA->getInvMass() / (bodyA->getInvMass() + bodyB->getInvMass());
-			float tB = bodyB->getInvMass() / (bodyA->getInvMass() + bodyB->getInvMass());
+			// #todo-physics: Approx. elasticity between two bodies
+			float elasticity = elasticityA * elasticityB;
+
+			// Calculate the collision impulse
+			const vector3& n = contact.normal;
+			vector3 vAB = bodyA->getLinearVelocity() - bodyB->getLinearVelocity();
+			float impulseJ = -(1.0f + elasticity) * glm::dot(vAB, n) / (invMassA + invMassB);
+			vector3 vectorImpulseJ = n * impulseJ;
+
+			bodyA->applyImpulseLinear(vectorImpulseJ);
+			bodyB->applyImpulseLinear(-vectorImpulseJ);
+
+			// Move the objects to just outside of each other
+			float tA = invMassA / (invMassA + invMassB);
+			float tB = invMassB / (invMassA + invMassB);
 
 			vector3 ds = contact.surfaceB_WS - contact.surfaceA_WS;
 			bodyA->setPosition(bodyA->getPosition() + ds * tA);

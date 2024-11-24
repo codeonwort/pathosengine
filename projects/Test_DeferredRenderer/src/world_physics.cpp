@@ -32,6 +32,7 @@ void World_Physics::onInitialize() {
 	sphere->setActorLocation(0.0f, 5.0f, 0.0f);
 	auto physComponent = new PhysicsComponent;
 	physComponent->setMass(10.0f);
+	physComponent->setElasticity(0.7f);
 	physComponent->setShapeSphere(SPHERE_RADIUS);
 	sphere->registerComponent(physComponent);
 

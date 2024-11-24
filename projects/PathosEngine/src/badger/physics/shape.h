@@ -58,6 +58,10 @@ namespace badger {
 			inline float getInvMass() const { return invMass; }
 			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
 
+			inline float getElasticity() const { return elasticity; }
+			inline void setElasticity(float value) { elasticity = value; }
+
+			inline vector3 getLinearVelocity() const { return linearVelocity; }
 			inline void setLinearVelocity(const vector3& inVeocity) { linearVelocity = inVeocity; }
 
 			void applyImpulseLinear(const vector3& impulse);
@@ -66,7 +70,9 @@ namespace badger {
 			vector3 position = vector3(0.0f);
 			quat orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			vector3 linearVelocity = vector3(0.0f);
+
 			float invMass = 0.0f;
+			float elasticity = 1.0f;
 			Shape* shape = nullptr;
 
 		};

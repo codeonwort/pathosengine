@@ -14,6 +14,7 @@ namespace pathos {
 		~PhysicsComponent();
 
 		void setMass(float mass);
+		void setElasticity(float elasticity);
 		void setInfiniteMass();
 
 		void setShapeSphere(float radius);
@@ -33,6 +34,7 @@ namespace pathos {
 
 		// Maintain physics properties here and sync with badger Body.
 		float invMass = 0.0f;
+		float elasticity = 1.0f;
 
 		EShapeType shapeType = EShapeType::Sphere;
 		float shapeSphereRadius = 1.0f;
