@@ -65,6 +65,19 @@ namespace badger {
 			return invTensor;
 		}
 
+		void Body::applyImpulse(const vector3& impulsePoint, const vector3& impulse) {
+			if (invMass == 0.0f) return;
+
+			// impulsePoint is the world space location of the application of the impulse.
+			// impulse is the world space direction and magnitude of the impulse.
+			applyImpulseLinear(impulse);
+
+			vector3 position = getCenterOfMassWorldSpace(); // applying impulses must produce torques through the center of mass
+			vector3 r = impulsePoint - position;
+			vector3 dL = glm::cross(r, impulse); // in world space
+			applyImpulseAngular(dL);
+		}
+
 		void Body::applyImpulseLinear(const vector3& impulse) {
 			if (0.0f == invMass) {
 				return;
@@ -87,6 +100,30 @@ namespace badger {
 				angularVelocity = glm::normalize(angularVelocity);
 				angularVelocity *= MAX_ANGULAR_SPEED;
 			}
+		}
+
+		void Body::update(float deltaSeconds) {
+			position += linearVelocity * deltaSeconds;
+
+			vector3 positionCM = getCenterOfMassWorldSpace();
+			vector3 cmToPos = position - positionCM;
+
+			// Total torque is equal to external applied torques + internal torque (precession)
+			// T = T_external + omega x I * omega
+			// T_external = 0 because it was applied in the collision response function
+			// T = Ia = w x I * w
+			// a = I^-1 ( w x I * w)
+			matrix3 orient = glm::toMat3(orientation);
+			matrix3 inertiaTensor = orient * shape->inertiaTensor() * glm::transpose(orient);
+			vector3 alpha = glm::inverse(inertiaTensor) * glm::cross(angularVelocity, inertiaTensor * angularVelocity);
+			angularVelocity += alpha * deltaSeconds;
+
+			// Update orientation
+			vector3 dAngle = angularVelocity * deltaSeconds;
+			quat dq = quat(glm::length(dAngle), dAngle);
+			orientation = glm::normalize(dq * orientation);
+
+			position = positionCM + rotatePoint(cmToPos, dq);
 		}
 
 	} // end of physics (Body)

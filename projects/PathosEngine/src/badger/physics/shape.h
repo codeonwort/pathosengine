@@ -71,8 +71,11 @@ namespace badger {
 			inline vector3 getLinearVelocity() const { return linearVelocity; }
 			inline void setLinearVelocity(const vector3& inVeocity) { linearVelocity = inVeocity; }
 
+			void applyImpulse(const vector3& impulsePoint, const vector3& impulse);
 			void applyImpulseLinear(const vector3& impulse);
 			void applyImpulseAngular(const vector3& impulse);
+
+			void update(float deltaSeconds);
 
 		private:
 			vector3 position = vector3(0.0f);

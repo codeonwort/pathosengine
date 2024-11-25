@@ -70,7 +70,7 @@ namespace badger {
 			}
 
 			for (auto i = 0u; i < bodies.size(); ++i) {
-				bodies[i]->position += bodies[i]->linearVelocity * deltaSeconds;
+				bodies[i]->update(deltaSeconds);
 			}
 		}
 
