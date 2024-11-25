@@ -68,6 +68,9 @@ namespace badger {
 			inline float getElasticity() const { return elasticity; }
 			inline void setElasticity(float value) { elasticity = value; }
 
+			inline float getFriction() const { return friction; }
+			inline void setFriction(float value) { friction = value; }
+
 			inline vector3 getLinearVelocity() const { return linearVelocity; }
 			inline void setLinearVelocity(const vector3& inVeocity) { linearVelocity = inVeocity; }
 
@@ -87,6 +90,7 @@ namespace badger {
 
 			float invMass = 0.0f;
 			float elasticity = 1.0f;
+			float friction = 1.0f;
 			Shape* shape = nullptr;
 
 		};

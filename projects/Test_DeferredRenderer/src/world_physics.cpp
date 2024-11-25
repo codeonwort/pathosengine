@@ -29,10 +29,11 @@ void World_Physics::onInitialize() {
 
 	auto sphere = spawnActor<StaticMeshActor>();
 	sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
-	sphere->setActorLocation(0.0f, 5.0f, 0.0f);
+	sphere->setActorLocation(2.0f, 5.0f, -1.0f);
 	auto physComponent = new PhysicsComponent;
 	physComponent->setMass(10.0f);
-	physComponent->setElasticity(0.7f);
+	physComponent->setElasticity(0.1f);
+	physComponent->setFriction(0.5f);
 	physComponent->setShapeSphere(SPHERE_RADIUS);
 	sphere->registerComponent(physComponent);
 
@@ -41,6 +42,8 @@ void World_Physics::onInitialize() {
 	ground->setActorLocation(0.0f, -GROUND_RADIUS - 10.0f, 0.0f);
 	auto physComponent2 = new PhysicsComponent;
 	physComponent2->setInfiniteMass();
+	physComponent2->setElasticity(1.0f);
+	physComponent2->setFriction(0.5f);
 	physComponent2->setShapeSphere(GROUND_RADIUS);
 	ground->registerComponent(physComponent2);
 

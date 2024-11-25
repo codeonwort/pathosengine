@@ -16,10 +16,9 @@ namespace pathos {
 	}
 
 	void PhysicsComponent::setMass(float mass) { invMass = 1.0f / mass; }
-
-	void PhysicsComponent::setElasticity(float elasticity) { this->elasticity = elasticity; }
-
 	void PhysicsComponent::setInfiniteMass() { invMass = 0.0f; }
+	void PhysicsComponent::setElasticity(float elasticity) { this->elasticity = elasticity; }
+	void PhysicsComponent::setFriction(float friction) { this->friction = friction; }
 
 	void PhysicsComponent::setShapeSphere(float radius) {
 		shapeType = EShapeType::Sphere;
@@ -42,6 +41,7 @@ namespace pathos {
 		body->setPosition(getOwner()->getActorLocation());
 		body->setInvMass(invMass);
 		body->setElasticity(elasticity);
+		body->setFriction(friction);
 	}
 
 	void PhysicsComponent::onPostPhysicsTick(float deltaSeconds) {

@@ -6,6 +6,11 @@ static const vector3 GRAVITY = vector3(0.0f, -9.8f, 0.0f);
 namespace badger {
 	namespace physics {
 
+		static vector3 safeNormalize(const vector3& v) {
+			if (v == vector3(0.0f)) return v;
+			return glm::normalize(v);
+		}
+
 		static void resolveContact(Contact& contact) {
 			Body* bodyA = contact.bodyA;
 			Body* bodyB = contact.bodyB;
@@ -43,10 +48,35 @@ namespace badger {
 			bodyA->applyImpulse(surfaceA, -vectorImpulseJ);
 			bodyB->applyImpulse(surfaceB, vectorImpulseJ);
 
+			// Calculate the impulse caused by friction.
+			const float frictionA = bodyA->getFriction();
+			const float frictionB = bodyB->getFriction();
+			// #todo-physics: Approx. friction between two bodies
+			const float friction = frictionA * frictionB;
+
+			// The normal direction of the velocity w.r.t. the normal of the collision.
+			vector3 velNorm = n * glm::dot(n, vAB);
+			// The tangent direction of the velocity w.r.t. the normal of the collision.
+			vector3 velTan = vAB - velNorm;
+
+			// The tangential velocities relative to the other body.
+			vector3 relVelTan = safeNormalize(velTan);
+
+			const vector3 inertiaA = glm::cross(invWorldInertiaA * glm::cross(ra, relVelTan), ra);
+			const vector3 inertiaB = glm::cross(invWorldInertiaB * glm::cross(rb, relVelTan), rb);
+			const float invInertia = glm::dot(inertiaA + inertiaB, relVelTan);
+
+			// Calculate the tangential impulse for friction.
+			const float reducedMass = 1.0f / (invMassA + invMassB + invInertia);
+			const vector3 impulseFriction = velTan * reducedMass * friction;
+
+			// Apply kinetic friction.
+			bodyA->applyImpulse(surfaceA, -impulseFriction);
+			bodyB->applyImpulse(surfaceB, impulseFriction);
+
 			// Move the objects to just outside of each other.
 			float tA = invMassA / (invMassA + invMassB);
 			float tB = invMassB / (invMassA + invMassB);
-
 			vector3 ds = contact.surfaceB_WS - contact.surfaceA_WS;
 			bodyA->setPosition(bodyA->getPosition() + ds * tA);
 			bodyB->setPosition(bodyB->getPosition() - ds * tB);
