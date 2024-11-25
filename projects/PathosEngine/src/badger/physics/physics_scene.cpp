@@ -10,24 +10,40 @@ namespace badger {
 			Body* bodyA = contact.bodyA;
 			Body* bodyB = contact.bodyB;
 
-			float invMassA = bodyA->getInvMass();
-			float invMassB = bodyB->getInvMass();
-			float elasticityA = bodyA->getElasticity();
-			float elasticityB = bodyB->getElasticity();
+			const vector3 surfaceA = contact.surfaceA_WS;
+			const vector3 surfaceB = contact.surfaceB_WS;
+			const float invMassA = bodyA->getInvMass();
+			const float invMassB = bodyB->getInvMass();
 
+			const float elasticityA = bodyA->getElasticity();
+			const float elasticityB = bodyB->getElasticity();
 			// #todo-physics: Approx. elasticity between two bodies
-			float elasticity = elasticityA * elasticityB;
+			const float elasticity = elasticityA * elasticityB;
 
-			// Calculate the collision impulse
-			const vector3& n = contact.normal;
-			vector3 vAB = bodyA->getLinearVelocity() - bodyB->getLinearVelocity();
-			float impulseJ = -(1.0f + elasticity) * glm::dot(vAB, n) / (invMassA + invMassB);
+			const matrix3 invWorldInertiaA = bodyA->getInverseInertiaTensorWorldSpace();
+			const matrix3 invWorldInertiaB = bodyB->getInverseInertiaTensorWorldSpace();
+
+			const vector3 n = contact.normal;
+			const vector3 ra = surfaceA - bodyA->getCenterOfMassWorldSpace();
+			const vector3 rb = surfaceB - bodyB->getCenterOfMassWorldSpace();
+
+			const vector3 angularJA = glm::cross(invWorldInertiaA * glm::cross(ra, n), ra);
+			const vector3 angularJB = glm::cross(invWorldInertiaB * glm::cross(rb, n), rb);
+			const float angularFactor = glm::dot(angularJA + angularJB, n);
+
+			// World space velocity of the motion and rotation.
+			const vector3 velA = bodyA->getLinearVelocity() + glm::cross(bodyA->getAngularVelocity(), ra);
+			const vector3 velB = bodyB->getLinearVelocity() + glm::cross(bodyB->getAngularVelocity(), rb);
+
+			// Calculate the collision impulse.
+			vector3 vAB = velA - velB;
+			float impulseJ = (1.0f + elasticity) * glm::dot(vAB, n) / (invMassA + invMassB + angularFactor);
 			vector3 vectorImpulseJ = n * impulseJ;
 
-			bodyA->applyImpulseLinear(vectorImpulseJ);
-			bodyB->applyImpulseLinear(-vectorImpulseJ);
+			bodyA->applyImpulse(surfaceA, -vectorImpulseJ);
+			bodyB->applyImpulse(surfaceB, vectorImpulseJ);
 
-			// Move the objects to just outside of each other
+			// Move the objects to just outside of each other.
 			float tA = invMassA / (invMassA + invMassB);
 			float tB = invMassB / (invMassA + invMassB);
 

@@ -71,6 +71,8 @@ namespace badger {
 			inline vector3 getLinearVelocity() const { return linearVelocity; }
 			inline void setLinearVelocity(const vector3& inVeocity) { linearVelocity = inVeocity; }
 
+			inline vector3 getAngularVelocity() const { return angularVelocity; }
+
 			void applyImpulse(const vector3& impulsePoint, const vector3& impulse);
 			void applyImpulseLinear(const vector3& impulse);
 			void applyImpulseAngular(const vector3& impulse);
