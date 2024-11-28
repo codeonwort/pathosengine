@@ -1,6 +1,8 @@
 #include "physics_scene.h"
 #include "collision.h"
 
+#include <algorithm>
+
 static const vector3 GRAVITY = vector3(0.0f, -9.8f, 0.0f);
 
 namespace badger {
@@ -75,11 +77,13 @@ namespace badger {
 			bodyB->applyImpulse(surfaceB, impulseFriction);
 
 			// Move the objects to just outside of each other.
-			float tA = invMassA / (invMassA + invMassB);
-			float tB = invMassB / (invMassA + invMassB);
-			vector3 ds = contact.surfaceB_WS - contact.surfaceA_WS;
-			bodyA->setPosition(bodyA->getPosition() + ds * tA);
-			bodyB->setPosition(bodyB->getPosition() - ds * tB);
+			if (contact.timeOfImpact == 0.0f) {
+				float tA = invMassA / (invMassA + invMassB);
+				float tB = invMassB / (invMassA + invMassB);
+				vector3 ds = contact.surfaceB_WS - contact.surfaceA_WS;
+				bodyA->setPosition(bodyA->getPosition() + ds * tA);
+				bodyB->setPosition(bodyB->getPosition() - ds * tB);
+			}
 		}
 
 		void PhysicsScene::initialize() {
@@ -98,25 +102,58 @@ namespace badger {
 				body->applyImpulseLinear(impulseGravity);
 			}
 
+			std::vector<Contact> contacts;
+			contacts.reserve(bodies.size() * bodies.size());
+
 			// Check for collisions between bodies
-			for (int i = 0; i < bodies.size(); ++i) {
-				for (int j = i + 1; j < bodies.size(); ++j) {
+			for (auto i = 0u; i < bodies.size(); ++i) {
+				for (auto j = i + 1; j < bodies.size(); ++j) {
 					Body* bodyA = bodies[i];
 					Body* bodyB = bodies[j];
 					// Skip body pairs with infinite mass
-					if (bodyA->invMass == 0.0f && bodyB->invMass == 0.0f) {
+					if (bodyA->hasInfiniteMass() && bodyB->hasInfiniteMass()) {
 						continue;
 					}
 					
 					Contact contact;
-					if (intersect(bodyA, bodyB, contact)) {
-						resolveContact(contact);
+					if (intersect(bodyA, bodyB, deltaSeconds, contact)) {
+						contacts.emplace_back(contact);
 					}
 				}
 			}
 
-			for (auto i = 0u; i < bodies.size(); ++i) {
-				bodies[i]->update(deltaSeconds);
+			if (contacts.size() > 1) {
+				auto compareContacts = [](const Contact& a, const Contact& b) {
+					return a.timeOfImpact < b.timeOfImpact;
+				};
+				std::sort(contacts.begin(), contacts.end(), compareContacts);
+			}
+
+			float accumulatedTime = 0.0f;
+			for (auto i = 0u; i < contacts.size(); ++i) {
+				Contact& contact = contacts[i];
+				float dt = contact.timeOfImpact - accumulatedTime;
+
+				Body* bodyA = contact.bodyA;
+				Body* bodyB = contact.bodyB;
+				// Skip body pairs with infinite mass
+				if (bodyA->hasInfiniteMass() && bodyB->hasInfiniteMass()) {
+					continue;
+				}
+
+				for (auto j = 0u; j < bodies.size(); ++j) {
+					bodies[j]->update(dt);
+				}
+
+				resolveContact(contact);
+				accumulatedTime += dt;
+			}
+
+			float timeRemaining = deltaSeconds - accumulatedTime;
+			if (timeRemaining > 0.0f) {
+				for (auto i = 0u; i < bodies.size(); ++i) {
+					bodies[i]->update(timeRemaining);
+				}
 			}
 		}
 

@@ -20,6 +20,11 @@ namespace pathos {
 	void PhysicsComponent::setElasticity(float elasticity) { this->elasticity = elasticity; }
 	void PhysicsComponent::setFriction(float friction) { this->friction = friction; }
 
+	void PhysicsComponent::forceLinearVelocity(const vector3& value) {
+		forcedLinearVelocity = value;
+		bForceLinearVelocity = true;
+	}
+
 	void PhysicsComponent::setShapeSphere(float radius) {
 		shapeType = EShapeType::Sphere;
 		shapeSphereRadius = radius;
@@ -42,6 +47,10 @@ namespace pathos {
 		body->setInvMass(invMass);
 		body->setElasticity(elasticity);
 		body->setFriction(friction);
+		if (bForceLinearVelocity) {
+			bForceLinearVelocity = false;
+			body->setLinearVelocity(forcedLinearVelocity);
+		}
 	}
 
 	void PhysicsComponent::onPostPhysicsTick(float deltaSeconds) {

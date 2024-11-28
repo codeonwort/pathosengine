@@ -18,6 +18,8 @@ namespace pathos {
 		void setElasticity(float elasticity);
 		void setFriction(float friction);
 
+		void forceLinearVelocity(const vector3& value);
+
 		void setShapeSphere(float radius);
 
 	protected:
@@ -37,6 +39,9 @@ namespace pathos {
 		float invMass = 0.0f;
 		float elasticity = 1.0f;
 		float friction = 1.0f;
+
+		vector3 forcedLinearVelocity = vector3(0.0f);
+		bool bForceLinearVelocity = false;
 
 		EShapeType shapeType = EShapeType::Sphere;
 		float shapeSphereRadius = 1.0f;

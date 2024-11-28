@@ -64,6 +64,7 @@ namespace badger {
 
 			inline float getInvMass() const { return invMass; }
 			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
+			inline bool hasInfiniteMass() const { return invMass == 0.0f; }
 
 			inline float getElasticity() const { return elasticity; }
 			inline void setElasticity(float value) { elasticity = value; }

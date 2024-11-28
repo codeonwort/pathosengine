@@ -21,7 +21,7 @@ namespace badger {
 			Body* bodyB;
 		};
 
-		bool intersect(const Body* bodyA, const Body* bodyB, Contact& outContact);
+		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
 
 	}
 }

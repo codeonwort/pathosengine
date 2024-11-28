@@ -27,25 +27,43 @@ void World_Physics::onInitialize() {
 	M_ground->setConstantParameter("roughness", 1.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
-	auto sphere = spawnActor<StaticMeshActor>();
-	sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
-	sphere->setActorLocation(2.0f, 5.0f, -1.0f);
-	auto physComponent = new PhysicsComponent;
-	physComponent->setMass(10.0f);
-	physComponent->setElasticity(0.1f);
-	physComponent->setFriction(0.5f);
-	physComponent->setShapeSphere(SPHERE_RADIUS);
-	sphere->registerComponent(physComponent);
-
-	auto ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new Mesh(G_ground, M_ground));
-	ground->setActorLocation(0.0f, -GROUND_RADIUS - 10.0f, 0.0f);
-	auto physComponent2 = new PhysicsComponent;
-	physComponent2->setInfiniteMass();
-	physComponent2->setElasticity(1.0f);
-	physComponent2->setFriction(0.5f);
-	physComponent2->setShapeSphere(GROUND_RADIUS);
-	ground->registerComponent(physComponent2);
+	// Sphere 1
+	{
+		auto sphere = spawnActor<StaticMeshActor>();
+		sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+		sphere->setActorLocation(2.0f, 5.0f, -1.0f);
+		auto physComponent = new PhysicsComponent;
+		physComponent->setMass(10.0f);
+		physComponent->setElasticity(0.5f);
+		physComponent->setFriction(0.5f);
+		physComponent->setShapeSphere(SPHERE_RADIUS);
+		sphere->registerComponent(physComponent);
+	}
+	// Sphere 2
+	{
+		auto sphere = spawnActor<StaticMeshActor>();
+		sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+		sphere->setActorLocation(-2.0f, 6.0f, -1.0f);
+		auto physComponent = new PhysicsComponent;
+		physComponent->setMass(10.0f);
+		physComponent->setElasticity(0.2f);
+		physComponent->setFriction(0.5f);
+		physComponent->forceLinearVelocity(vector3(0.0f, -50.0f, 0.0f));
+		physComponent->setShapeSphere(SPHERE_RADIUS);
+		sphere->registerComponent(physComponent);
+	}
+	// Ground
+	{
+		auto ground = spawnActor<StaticMeshActor>();
+		ground->setStaticMesh(new Mesh(G_ground, M_ground));
+		ground->setActorLocation(0.0f, -GROUND_RADIUS - 10.0f, 0.0f);
+		auto physComponent2 = new PhysicsComponent;
+		physComponent2->setInfiniteMass();
+		physComponent2->setElasticity(1.0f);
+		physComponent2->setFriction(0.5f);
+		physComponent2->setShapeSphere(GROUND_RADIUS);
+		ground->registerComponent(physComponent2);
+	}
 
 	auto sky = spawnActor<SkyAtmosphereActor>();
 
