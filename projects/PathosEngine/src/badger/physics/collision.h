@@ -21,7 +21,26 @@ namespace badger {
 			Body* bodyB;
 		};
 
+		struct PseudoBody {
+			int32 id;
+			float value;
+			bool isMin;
+		};
+
+		struct CollisionPair {
+			int32 a;
+			int32 b;
+			bool operator == (const CollisionPair& rhs) const {
+				return ((a == rhs.a) && (b == rhs.b)) || ((a == rhs.b) && (b == rhs.a));
+			}
+			bool operator != (const CollisionPair& rhs) const {
+				return !(*this == rhs);
+			}
+		};
+
 		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
+
+		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds);
 
 	}
 }

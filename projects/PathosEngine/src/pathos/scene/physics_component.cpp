@@ -4,11 +4,14 @@
 #include "static_mesh_component.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/material/material.h"
+#include "pathos/console.h"
 
 #include "badger/physics/physics_scene.h"
 #include "badger/physics/shape.h"
 
 namespace pathos {
+
+	static ConsoleVariable<int32> cvarShowPhysicsBodyBounds("physics.showBounds", 1, "Show bounds of physical bodies");
 
 	PhysicsComponent::PhysicsComponent() {
 		setTickPhases(ActorComponent::ETickPhase::PrePhysics | ActorComponent::ETickPhase::PostPhysics);
@@ -72,7 +75,7 @@ namespace pathos {
 		}
 
 		if (shapeType == EShapeType::Sphere) {
-			boundsComponent->setVisibility(true);
+			boundsComponent->setVisibility(cvarShowPhysicsBodyBounds.getInt() != 0);
 			boundsComponent->setScale(shapeSphereRadius);
 		}
 	}

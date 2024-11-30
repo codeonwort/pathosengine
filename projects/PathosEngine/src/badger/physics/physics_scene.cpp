@@ -102,10 +102,29 @@ namespace badger {
 				body->applyImpulseLinear(impulseGravity);
 			}
 
+			// Broad phase
+			std::vector<CollisionPair> collisionPairs;
+			broadPhase(bodies, collisionPairs, deltaSeconds);
+
+			// Narrow phase
 			std::vector<Contact> contacts;
 			contacts.reserve(bodies.size() * bodies.size());
+#if 1
+			for (const CollisionPair& cp : collisionPairs) {
+				Body* bodyA = bodies[cp.a];
+				Body* bodyB = bodies[cp.b];
+				// Skip body pairs with infinite mass
+				if (bodyA->hasInfiniteMass() && bodyB->hasInfiniteMass()) {
+					continue;
+				}
 
-			// Check for collisions between bodies
+				Contact contact;
+				if (intersect(bodyA, bodyB, deltaSeconds, contact)) {
+					contacts.emplace_back(contact);
+				}
+			}
+#else
+			// Brute force ver.
 			for (auto i = 0u; i < bodies.size(); ++i) {
 				for (auto j = i + 1; j < bodies.size(); ++j) {
 					Body* bodyA = bodies[i];
@@ -121,7 +140,9 @@ namespace badger {
 					}
 				}
 			}
+#endif
 
+			// Sort by Time of Impact.
 			if (contacts.size() > 1) {
 				auto compareContacts = [](const Contact& a, const Contact& b) {
 					return a.timeOfImpact < b.timeOfImpact;

@@ -69,6 +69,8 @@ namespace badger {
 			inline vector3 getPosition() const { return position; }
 			inline void setPosition(const vector3& inPosition) { position = inPosition; }
 
+			inline quat getOrientation() const { return orientation; }
+
 			inline float getInvMass() const { return invMass; }
 			inline void setInvMass(float inInvMass) { invMass = inInvMass; }
 			inline bool hasInfiniteMass() const { return invMass == 0.0f; }

@@ -9,16 +9,29 @@
 #include "pathos/mesh/mesh.h"
 #include "pathos/material/material.h"
 
-const float SPHERE_RADIUS = 1.0f;
-const float GROUND_RADIUS = 100.0f;
+#include "badger/math/random.h"
+
+// --------------------------------------------------------
+// Constants
+
+#define BALL_RANDOM_MATERIALS 1
+
+static const vector3 CAMERA_POSITION = vector3(0.0f, 15.0f, 50.0f);
+static const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);
+static const vector3 SUN_DIRECTION   = vector3(1.0f, -1.0f, 0.0f);
+
+static const float   SPHERE_RADIUS   = 2.0f;
+static const float   GROUND_RADIUS   = 100.0f;
 
 void World_Physics::onInitialize() {
 	auto G_sphere = new SphereGeometry(SPHERE_RADIUS, 30);
+#if !BALL_RANDOM_MATERIALS
 	auto M_sphere = Material::createMaterialInstance("solid_color");
 	M_sphere->setConstantParameter("albedo", vector3(0.9f));
 	M_sphere->setConstantParameter("metallic", 0.0f);
 	M_sphere->setConstantParameter("roughness", 1.0f);
 	M_sphere->setConstantParameter("emissive", vector3(0.0f));
+#endif
 
 	auto G_ground = new SphereGeometry(GROUND_RADIUS, 60);
 	auto M_ground = Material::createMaterialInstance("solid_color");
@@ -27,6 +40,36 @@ void World_Physics::onInitialize() {
 	M_ground->setConstantParameter("roughness", 1.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
+#if 1
+	// Spheres
+	for (int32 ix = -8; ix <= 8; ++ix) {
+		for (int32 iz = -8; iz <= 8; ++iz) {
+			float x = 2.2f * (float)ix * SPHERE_RADIUS;
+			float y = 5.0f + Random() * 5.0f;
+			float z = 2.2f * (float)iz * SPHERE_RADIUS;
+			float elasticity = Random();
+			float friction = Random();
+
+#if BALL_RANDOM_MATERIALS
+			auto M_sphere = Material::createMaterialInstance("solid_color");
+			M_sphere->setConstantParameter("albedo", vector3(Random(), Random(), Random()));
+			M_sphere->setConstantParameter("metallic", Random());
+			M_sphere->setConstantParameter("roughness", Random());
+			M_sphere->setConstantParameter("emissive", vector3(0.0f));
+#endif
+
+			auto sphere = spawnActor<StaticMeshActor>();
+			sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+			sphere->setActorLocation(x, y, z);
+			auto physComponent = new PhysicsComponent;
+			physComponent->setMass(10.0f);
+			physComponent->setElasticity(elasticity);
+			physComponent->setFriction(friction);
+			physComponent->setShapeSphere(SPHERE_RADIUS);
+			sphere->registerComponent(physComponent);
+		}
+	}
+#else
 	// Sphere 1
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
@@ -52,25 +95,31 @@ void World_Physics::onInitialize() {
 		physComponent->setShapeSphere(SPHERE_RADIUS);
 		sphere->registerComponent(physComponent);
 	}
+#endif
 	// Ground
-	{
-		auto ground = spawnActor<StaticMeshActor>();
-		ground->setStaticMesh(new Mesh(G_ground, M_ground));
-		ground->setActorLocation(0.0f, -GROUND_RADIUS - 10.0f, 0.0f);
-		auto physComponent2 = new PhysicsComponent;
-		physComponent2->setInfiniteMass();
-		physComponent2->setElasticity(1.0f);
-		physComponent2->setFriction(0.5f);
-		physComponent2->setShapeSphere(GROUND_RADIUS);
-		ground->registerComponent(physComponent2);
+	for (int32 ix = -1; ix <= 1; ++ix) {
+		for (int32 iz = -1; iz <= 1; ++iz) {
+			float x = (float)ix * GROUND_RADIUS;
+			float z = (float)iz * GROUND_RADIUS;
+
+			auto ground = spawnActor<StaticMeshActor>();
+			ground->setStaticMesh(new Mesh(G_ground, M_ground));
+			ground->setActorLocation(x, -GROUND_RADIUS - 10.0f, z);
+			auto physComponent2 = new PhysicsComponent;
+			physComponent2->setInfiniteMass();
+			physComponent2->setElasticity(1.0f);
+			physComponent2->setFriction(0.5f);
+			physComponent2->setShapeSphere(GROUND_RADIUS);
+			ground->registerComponent(physComponent2);
+		}
 	}
 
 	auto sky = spawnActor<SkyAtmosphereActor>();
 
 	auto sun = spawnActor<DirectionalLightActor>();
-	sun->setDirection(vector3(1.0f, -1.0f, 0.0f));
+	sun->setDirection(SUN_DIRECTION);
 
-	getCamera().lookAt(vector3(0.0f, 0.0f, 20.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
+	getCamera().lookAt(CAMERA_POSITION, CAMERA_LOOK_AT, vector3(0.0f, 1.0f, 0.0f));
 }
 
 void World_Physics::onTick(float deltaSeconds) {
