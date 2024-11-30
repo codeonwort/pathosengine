@@ -2,6 +2,7 @@
 
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/aabb.h"
 
 #include "glm/gtc/quaternion.hpp"
 #include "glm/fwd.hpp"
@@ -15,6 +16,9 @@ namespace badger {
 
 		public:
 			enum class EShapeType { Sphere };
+
+			virtual AABB getBounds(const vector3& pos, const quat& orient) const = 0;
+			virtual AABB getBounds() const = 0;
 
 			virtual EShapeType getType() const = 0;
 			virtual matrix3 inertiaTensor() const = 0;
@@ -32,6 +36,9 @@ namespace badger {
 				radius = inRadius;
 				centerOfMass = vector3(0.0f);
 			}
+
+			AABB getBounds(const vector3& pos, const quat& orient) const override;
+			AABB getBounds() const override;
 
 			EShapeType getType() const override { return EShapeType::Sphere; }
 			matrix3 inertiaTensor() const override;

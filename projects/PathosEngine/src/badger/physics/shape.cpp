@@ -10,10 +10,17 @@ static vector3 rotatePoint(const vector3& p, const quat& q) {
 	return vector3(glm::mat4_cast(q) * vector4(p, 1.0f));
 }
 
+// ShapeSphere
 namespace badger {
-	
-	// ShapeSphere
 	namespace physics {
+
+		AABB ShapeSphere::getBounds(const vector3& pos, const quat& orient) const {
+			return AABB::fromMinMax(vector3(-radius) + pos, vector3(radius) + pos);
+		}
+
+		AABB ShapeSphere::getBounds() const {
+			return AABB::fromMinMax(vector3(-radius), vector3(radius));
+		}
 
 		matrix3 ShapeSphere::inertiaTensor() const {
 			matrix3 tensor(0.0f);
@@ -23,9 +30,11 @@ namespace badger {
 			return tensor;
 		}
 
-	} // end of physics (ShapeSphere)
+	}
+}
 
-	// Body
+// Body
+namespace badger {
 	namespace physics {
 
 		vector3 Body::getCenterOfMassWorldSpace() const {
@@ -126,6 +135,5 @@ namespace badger {
 			position = positionCM + rotatePoint(cmToPos, dq);
 		}
 
-	} // end of physics (Body)
-
-} // end of badger
+	}
+}

@@ -21,6 +21,12 @@ struct AABB
 		return (maxBounds - minBounds);
 	}
 
+	inline bool intersects(const AABB& rhs) const {
+		bool b1 = glm::any(glm::lessThan(maxBounds, rhs.minBounds));
+		bool b2 = glm::any(glm::lessThan(rhs.maxBounds, minBounds));
+		return !b1 && !b2;
+	}
+
 	vector3 minBounds;
 	vector3 maxBounds;
 };
