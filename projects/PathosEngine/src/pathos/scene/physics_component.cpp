@@ -1,6 +1,9 @@
 #include "physics_component.h"
 #include "actor.h"
 #include "world.h"
+#include "static_mesh_component.h"
+#include "pathos/mesh/mesh.h"
+#include "pathos/material/material.h"
 
 #include "badger/physics/physics_scene.h"
 #include "badger/physics/shape.h"
@@ -33,12 +36,28 @@ namespace pathos {
 	void PhysicsComponent::onRegister() {
 		auto& physicsScene = getOwner()->getWorld()->getPhysicsScene();
 		body = physicsScene.allocateBody();
+
+		MeshGeometry* G_bounds = gEngine->getSystemGeometryUnitCube();
+		Material* M_bounds = Material::createMaterialInstance("unlit");
+		M_bounds->setConstantParameter("color", vector3(0.1f, 1.0f, 0.1f));
+		M_bounds->bWireframe = true;
+
+		boundsComponent = new StaticMeshComponent;
+		boundsComponent->setStaticMesh(new Mesh(G_bounds, M_bounds));
+		boundsComponent->setVisibility(false);
+		boundsComponent->castsShadow = false;
+		getOwner()->registerComponent(boundsComponent);
+		boundsComponent->setTransformParent(getOwner()->getRootComponent());
 	}
 
 	void PhysicsComponent::onUnregister() {
 		auto& physicsScene = getOwner()->getWorld()->getPhysicsScene();
 		physicsScene.releaseBody(body);
 		if (shape != nullptr) delete shape;
+		if (boundsComponent != nullptr) {
+			getOwner()->unregisterComponent(boundsComponent);
+			delete boundsComponent;
+		}
 	}
 
 	void PhysicsComponent::onPrePhysicsTick(float deltaSeconds) {
@@ -50,6 +69,11 @@ namespace pathos {
 		if (bForceLinearVelocity) {
 			bForceLinearVelocity = false;
 			body->setLinearVelocity(forcedLinearVelocity);
+		}
+
+		if (shapeType == EShapeType::Sphere) {
+			boundsComponent->setVisibility(true);
+			boundsComponent->setScale(shapeSphereRadius);
 		}
 	}
 
