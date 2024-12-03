@@ -14,6 +14,10 @@ static vector3 rotatePoint(const vector3& p, const quat& q) {
 namespace badger {
 	namespace physics {
 
+		vector3 ShapeSphere::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
+			return pos + dir * (radius + bias);
+		}
+
 		AABB ShapeSphere::getBounds(const vector3& pos, const quat& orient) const {
 			return AABB::fromMinMax(vector3(-radius) + pos, vector3(radius) + pos);
 		}
@@ -28,6 +32,111 @@ namespace badger {
 			tensor[1][1] = 2.0f * radius * radius / 5.0f;
 			tensor[2][2] = 2.0f * radius * radius / 5.0f;
 			return tensor;
+		}
+
+	}
+}
+
+// ShapeBox
+namespace badger {
+	namespace physics {
+
+		void ShapeBox::build(const std::vector<vector3>& inPoints) {
+			bounds = AABB::fromMinMax(vector3(0.0f), vector3(0.0f));
+			for (const vector3& pt : inPoints) {
+				bounds.expand(pt);
+			}
+
+			points.clear();
+			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
+
+			centerOfMass = bounds.getCenter();
+		}
+
+		vector3 ShapeBox::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
+			// Find the point in furthest in direction.
+			vector3 maxPt = rotatePoint(points[0], orient) + pos;
+			float maxDist = glm::dot(dir, maxPt);
+			for (auto i = 0u; i < points.size(); ++i) {
+				const vector3 pt = rotatePoint(points[i], orient) + pos;
+				float dist = glm::dot(dir, pt);
+				if (dist > maxDist) {
+					maxDist = dist;
+					maxPt = pt;
+				}
+			}
+			vector3 norm = bias * glm::normalize(dir);
+			return maxPt + norm;
+		}
+
+		AABB ShapeBox::getBounds(const vector3& pos, const quat& orient) const {
+			vector3 corners[8] = {
+				vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z),
+				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z),
+				vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
+				vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.maxBounds.z),
+				vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
+			};
+			AABB bounds = AABB::zero();
+			for (int32 i = 0; i < 8; ++i) {
+				corners[i] = rotatePoint(corners[i], orient) + pos;
+				bounds.expand(corners[i]);
+			}
+			return bounds;
+		}
+
+		AABB ShapeBox::getBounds() const {
+			return bounds;
+		}
+
+		matrix3 ShapeBox::inertiaTensor() const {
+			// Inertia tensor for box centered around zero.
+			float dx = bounds.maxBounds.x - bounds.minBounds.x;
+			float dy = bounds.maxBounds.y - bounds.minBounds.y;
+			float dz = bounds.maxBounds.z - bounds.minBounds.z;
+
+			matrix3 tensor = matrix3(0.0f);
+			tensor[0][0] = (dy * dy + dz * dz) / 12.0f;
+			tensor[1][1] = (dx * dx + dz * dz) / 12.0f;
+			tensor[2][2] = (dx * dx + dy * dy) / 12.0f;
+
+			// Use the Parallel Axis theorem to get the inertia tensor for a box
+			// that is not centered around the origin.
+
+			vector3 cm = bounds.getCenter();
+			vector3 R = vector3(0.0f) - cm; // center of mass to the origin
+			float R2 = glm::dot(R, R);
+			matrix3 patTensor;
+			patTensor[0] = vector3(R2 - R.x * R.x, R.x * R.y, R.x * R.z);
+			patTensor[1] = vector3(R.y * R.x, R2 - R.y * R.y, R.y * R.z);
+			patTensor[2] = vector3(R.z * R.x, R.z * R.y, R2 - R.z * R.z);
+
+			// Add the center of mass tensor and the Parallel Axis theorm tensor together.
+			tensor += patTensor;
+			return tensor;
+		}
+
+		float ShapeBox::fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const {
+			float maxSpeed = 0.0f;
+			for (auto i = 0u; i < points.size(); ++i) {
+				vector3 r = points[i] - centerOfMass;
+				vector3 linearVelocity = glm::cross(angularVelocity, r);
+				float speed = glm::dot(dir, linearVelocity);
+				if (speed > maxSpeed) {
+					maxSpeed = speed;
+				}
+			}
+			return maxSpeed;
 		}
 
 	}

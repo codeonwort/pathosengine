@@ -10,6 +10,9 @@ struct AABB
 	static AABB fromCenterAndHalfSize(const vector3& center, const vector3& halfSize) {
 		return AABB{ center - halfSize, center + halfSize };
 	}
+	static AABB zero() {
+		return AABB{ vector3(0.0f), vector3(0.0f) };
+	}
 
 	inline vector3 getCenter() const {
 		return 0.5f * (minBounds + maxBounds);
@@ -25,6 +28,11 @@ struct AABB
 		bool b1 = glm::any(glm::lessThan(maxBounds, rhs.minBounds));
 		bool b2 = glm::any(glm::lessThan(rhs.maxBounds, minBounds));
 		return !b1 && !b2;
+	}
+
+	inline void expand(const vector3& point) {
+		minBounds = (glm::min)(minBounds, point);
+		maxBounds = (glm::max)(maxBounds, point);
 	}
 
 	vector3 minBounds;

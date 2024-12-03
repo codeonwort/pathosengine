@@ -7,6 +7,8 @@
 #include "glm/gtc/quaternion.hpp"
 #include "glm/fwd.hpp"
 
+#include <vector>
+
 using quat = glm::quat;
 
 namespace badger {
@@ -15,7 +17,14 @@ namespace badger {
 		class Shape {
 
 		public:
-			enum class EShapeType { Sphere };
+			enum class EShapeType { Sphere, Box, Convex };
+
+			virtual void build(const std::vector<vector3>& points) {}
+
+			// - Needed for collision detection between general convex shapes
+			//   and for continuous collision detection between convex shapes.
+			// - 'dir' should be a unit vector.
+			virtual vector3 support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const = 0;
 
 			virtual AABB getBounds(const vector3& pos, const quat& orient) const = 0;
 			virtual AABB getBounds() const = 0;
@@ -23,6 +32,8 @@ namespace badger {
 			virtual EShapeType getType() const = 0;
 			virtual matrix3 inertiaTensor() const = 0;
 			virtual vector3 getCenterOfMass() const { return centerOfMass; }
+
+			virtual float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const { return 0.0f; }
 
 		protected:
 			vector3 centerOfMass = vector3(0.0f);
@@ -36,6 +47,8 @@ namespace badger {
 				radius = inRadius;
 				centerOfMass = vector3(0.0f);
 			}
+			
+			vector3 support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const override;
 
 			AABB getBounds(const vector3& pos, const quat& orient) const override;
 			AABB getBounds() const override;
@@ -48,6 +61,30 @@ namespace badger {
 
 		private:
 			float radius;
+		};
+
+		class ShapeBox : public Shape {
+
+		public:
+			explicit ShapeBox(const std::vector<vector3>& points) {
+				build(points);
+			}
+
+			void build(const std::vector<vector3>& points) override;
+
+			vector3 support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const override;
+
+			AABB getBounds(const vector3& pos, const quat& orient) const override;
+			AABB getBounds() const override;
+
+			EShapeType getType() const override { return EShapeType::Box; }
+			matrix3 inertiaTensor() const override;
+
+			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
+
+		private:
+			std::vector<vector3> points;
+			AABB bounds;
 		};
 
 		class Body {
