@@ -30,7 +30,7 @@ namespace badger {
 			virtual AABB getBounds() const = 0;
 
 			virtual EShapeType getType() const = 0;
-			virtual matrix3 inertiaTensor() const = 0;
+			virtual matrix3 getInertiaTensor() const = 0;
 			virtual vector3 getCenterOfMass() const { return centerOfMass; }
 
 			virtual float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const { return 0.0f; }
@@ -54,7 +54,7 @@ namespace badger {
 			AABB getBounds() const override;
 
 			EShapeType getType() const override { return EShapeType::Sphere; }
-			matrix3 inertiaTensor() const override;
+			matrix3 getInertiaTensor() const override;
 
 			inline float getRadius() const { return radius; }
 			inline void setRadius(float value) { radius = value; }
@@ -78,13 +78,39 @@ namespace badger {
 			AABB getBounds() const override;
 
 			EShapeType getType() const override { return EShapeType::Box; }
-			matrix3 inertiaTensor() const override;
+			matrix3 getInertiaTensor() const override;
 
 			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
 
 		private:
 			std::vector<vector3> points;
 			AABB bounds;
+		};
+
+		class ShapeConvex : public Shape {
+
+		public:
+			explicit ShapeConvex(const std::vector<vector3>& points) {
+				build(points);
+			}
+
+			void build(const std::vector<vector3>& points) override;
+
+			vector3 support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const override;
+
+			AABB getBounds(const vector3& pos, const quat& orient) const override;
+			AABB getBounds() const override;
+
+			EShapeType getType() const override { return EShapeType::Convex; }
+			matrix3 getInertiaTensor() const override;
+
+			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
+
+		private:
+			std::vector<vector3> points;
+			AABB bounds;
+			matrix3 inertiaTensor;
+
 		};
 
 		class Body {

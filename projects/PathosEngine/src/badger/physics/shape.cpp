@@ -1,4 +1,5 @@
 #include "shape.h"
+#include "badger/assertion/assertion.h"
 
 #include "glm/gtx/quaternion.hpp"
 
@@ -8,6 +9,17 @@ static const float MAX_ANGULAR_SPEED = 30.0f;
 // p : position, q : orientation
 static vector3 rotatePoint(const vector3& p, const quat& q) {
 	return vector3(glm::mat4_cast(q) * vector4(p, 1.0f));
+}
+
+static AABB buildAABB(const std::vector<vector3>& points) {
+	CHECK(points.size() > 0);
+	AABB aabb = AABB::fromMinMax(points[0], points[0]);
+	if (points.size() > 1) {
+		for (auto it = points.begin() + 1; it != points.end(); ++it) {
+			aabb.expand(*it);
+		}
+	}
+	return aabb;
 }
 
 // ShapeSphere
@@ -26,7 +38,7 @@ namespace badger {
 			return AABB::fromMinMax(vector3(-radius), vector3(radius));
 		}
 
-		matrix3 ShapeSphere::inertiaTensor() const {
+		matrix3 ShapeSphere::getInertiaTensor() const {
 			matrix3 tensor(0.0f);
 			tensor[0][0] = 2.0f * radius * radius / 5.0f;
 			tensor[1][1] = 2.0f * radius * radius / 5.0f;
@@ -42,10 +54,7 @@ namespace badger {
 	namespace physics {
 
 		void ShapeBox::build(const std::vector<vector3>& inPoints) {
-			bounds = AABB::fromMinMax(vector3(0.0f), vector3(0.0f));
-			for (const vector3& pt : inPoints) {
-				bounds.expand(pt);
-			}
+			bounds = buildAABB(inPoints);
 
 			points.clear();
 			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z));
@@ -77,7 +86,7 @@ namespace badger {
 		}
 
 		AABB ShapeBox::getBounds(const vector3& pos, const quat& orient) const {
-			vector3 corners[8] = {
+			std::vector<vector3> corners = {
 				vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z),
 				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z),
 				vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
@@ -87,19 +96,17 @@ namespace badger {
 				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z),
 				vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
 			};
-			AABB bounds = AABB::zero();
 			for (int32 i = 0; i < 8; ++i) {
 				corners[i] = rotatePoint(corners[i], orient) + pos;
-				bounds.expand(corners[i]);
 			}
-			return bounds;
+			return buildAABB(corners);
 		}
 
 		AABB ShapeBox::getBounds() const {
 			return bounds;
 		}
 
-		matrix3 ShapeBox::inertiaTensor() const {
+		matrix3 ShapeBox::getInertiaTensor() const {
 			// Inertia tensor for box centered around zero.
 			float dx = bounds.maxBounds.x - bounds.minBounds.x;
 			float dy = bounds.maxBounds.y - bounds.minBounds.y;
@@ -142,6 +149,57 @@ namespace badger {
 	}
 }
 
+// ShapeConvex
+namespace badger {
+	namespace physics {
+		
+		void ShapeConvex::build(const std::vector<vector3>& points) {
+			// WIP: p.10
+		}
+
+		vector3 ShapeConvex::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
+
+		}
+
+		AABB ShapeConvex::getBounds(const vector3& pos, const quat& orient) const {
+			std::vector<vector3> corners = {
+				vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z),
+				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z),
+				vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
+				vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.maxBounds.z),
+				vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z),
+				vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z),
+			};
+			for (int32 i = 0; i < 8; ++i) {
+				corners[i] = rotatePoint(corners[i], orient) + pos;
+			}
+			return buildAABB(corners);
+		}
+
+		AABB ShapeConvex::getBounds() const {
+
+		}
+
+		matrix3 ShapeConvex::getInertiaTensor() const {
+
+		}
+
+		float ShapeConvex::fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const {
+			float maxSpeed = 0.0f;
+			for (const vector3& pt : points) {
+				vector3 r = pt - centerOfMass;
+				vector3 linearVelocity = glm::cross(angularVelocity, r);
+				float speed = glm::dot(dir, linearVelocity);
+				if (speed > maxSpeed) maxSpeed = speed;
+			}
+			return maxSpeed;
+		}
+
+	}
+}
+
 // Body
 namespace badger {
 	namespace physics {
@@ -170,13 +228,13 @@ namespace badger {
 		}
 
 		matrix3 Body::getInverseInertiaTensorBodySpace() const {
-			matrix3 tensor = shape->inertiaTensor();
+			matrix3 tensor = shape->getInertiaTensor();
 			matrix3 invTensor = glm::inverse(tensor) * invMass;
 			return invTensor;
 		}
 
 		matrix3 Body::getInverseInertiaTensorWorldSpace() const {
-			matrix3 tensor = shape->inertiaTensor();
+			matrix3 tensor = shape->getInertiaTensor();
 			matrix3 invTensor = glm::inverse(tensor) * invMass;
 			matrix3 orient = glm::toMat3(orientation);
 			invTensor = orient * invTensor * glm::transpose(orient);
@@ -232,7 +290,7 @@ namespace badger {
 			// T = Ia = w x I * w
 			// a = I^-1 ( w x I * w)
 			matrix3 orient = glm::toMat3(orientation);
-			matrix3 inertiaTensor = orient * shape->inertiaTensor() * glm::transpose(orient);
+			matrix3 inertiaTensor = orient * shape->getInertiaTensor() * glm::transpose(orient);
 			vector3 alpha = glm::inverse(inertiaTensor) * glm::cross(angularVelocity, inertiaTensor * angularVelocity);
 			angularVelocity += alpha * deltaSeconds;
 
