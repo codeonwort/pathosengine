@@ -1,4 +1,5 @@
 #include "convex_hull.h"
+#include "aabb.h"
 
 namespace badger {
 
@@ -277,5 +278,108 @@ namespace badger {
 		expandConvexHull(vertices, outHullPoints, outHullTriangles);
 	}
 
+}
+
+namespace badger {
+	
+	static bool isExternal(
+		const std::vector<vector3>& points,
+		const std::vector<ConvexHullTriangle>& triangles,
+		const vector3& pt)
+	{
+		bool bExternal = false;
+		for (const ConvexHullTriangle& tri : triangles) {
+			const vector3& a = points[tri.a];
+			const vector3& b = points[tri.b];
+			const vector3& c = points[tri.c];
+
+			if (distanceFromTriangle(a, b, c, pt) > 0.0f) {
+				bExternal = true;
+				break;
+			}
+		}
+
+		return bExternal;
+	}
+
+	static AABB buildAABB(const std::vector<vector3>& points) {
+		CHECK(points.size() > 0);
+		AABB aabb = AABB::fromMinMax(points[0], points[0]);
+		if (points.size() > 1) {
+			for (auto it = points.begin() + 1; it != points.end(); ++it) {
+				aabb.expand(*it);
+			}
+		}
+		return aabb;
+	}
+
+	vector3 calculateCenterOfMass(
+		const std::vector<vector3>& points,
+		const std::vector<ConvexHullTriangle>& triangles)
+	{
+		const size_t numSamples = 100; // #todo-physics: Hard-coded iteration count.
+
+		AABB bounds = buildAABB(points);
+
+		vector3 cm(0.0f);
+		const float dx = bounds.getSize().x / (float)numSamples;
+		const float dy = bounds.getSize().y / (float)numSamples;
+		const float dz = bounds.getSize().z / (float)numSamples;
+
+		size_t sampleCount = 0;
+		for (float x = bounds.minBounds.x; x < bounds.maxBounds.x; x += dx) {
+			for (float y = bounds.minBounds.y; y < bounds.maxBounds.y; y += dy) {
+				for (float z = bounds.minBounds.z; z < bounds.maxBounds.z; z += dz) {
+					vector3 pt(x, y, z);
+					if (isExternal(points, triangles, pt)) {
+						continue;
+					}
+					cm += pt;
+					sampleCount++;
+				}
+			}
+		}
+		CHECK(sampleCount > 0);
+		cm /= (float)sampleCount;
+		return cm;
+	}
+
+	matrix3 calculateInertiaTensor(
+		const std::vector<vector3>& points,
+		const std::vector<ConvexHullTriangle>& triangles,
+		const vector3& centerOfMass)
+	{
+		const size_t numSamples = 100; // #todo-physics: Hard-coded iteration count.
+
+		AABB bounds = buildAABB(points);
+
+		matrix3 tensor(0.0f);
+		const float dx = bounds.getSize().x / (float)numSamples;
+		const float dy = bounds.getSize().y / (float)numSamples;
+		const float dz = bounds.getSize().z / (float)numSamples;
+
+		size_t sampleCount = 0;
+		for (float x = bounds.minBounds.x; x < bounds.maxBounds.x; x += dx) {
+			for (float y = bounds.minBounds.y; y < bounds.maxBounds.y; y += dy) {
+				for (float z = bounds.minBounds.z; z < bounds.maxBounds.z; z += dz) {
+					vector3 pt(x, y, z);
+					if (isExternal(points, triangles, pt)) {
+						continue;
+					}
+					
+					pt -= centerOfMass;
+
+					tensor[0] += vector3(pt.y * pt.y + pt.z * pt.z, -pt.x * pt.y, -pt.x * pt.z);
+					tensor[1] += vector3(-pt.x * pt.y, pt.z * pt.z + pt.x * pt.x, -pt.y * pt.z);
+					tensor[2] += vector3(-pt.x * pt.z, -pt.y * pt.z, pt.x * pt.x + pt.y * pt.y);
+
+					sampleCount++;
+				}
+			}
+		}
+
+		tensor *= 1.0f / (float)sampleCount;
+		return tensor;
+	}
 
 }

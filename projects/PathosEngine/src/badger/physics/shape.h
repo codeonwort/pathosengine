@@ -66,8 +66,8 @@ namespace badger {
 		class ShapeBox : public Shape {
 
 		public:
-			explicit ShapeBox(const std::vector<vector3>& points) {
-				build(points);
+			explicit ShapeBox(const std::vector<vector3>& inPoints) {
+				build(inPoints);
 			}
 
 			void build(const std::vector<vector3>& points) override;
@@ -107,7 +107,7 @@ namespace badger {
 			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
 
 		private:
-			std::vector<vector3> points;
+			std::vector<vector3> shapePoints;
 			AABB bounds;
 			matrix3 inertiaTensor;
 

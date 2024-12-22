@@ -1,4 +1,5 @@
 #include "shape.h"
+#include "badger/math/convex_hull.h"
 #include "badger/assertion/assertion.h"
 
 #include "glm/gtx/quaternion.hpp"
@@ -154,11 +155,22 @@ namespace badger {
 	namespace physics {
 		
 		void ShapeConvex::build(const std::vector<vector3>& points) {
-			// WIP: p.10
+			shapePoints = points;
+
+			std::vector<vector3> hullPoints;
+			std::vector<ConvexHullTriangle> hullTriangles;
+			buildConvexHull(shapePoints, hullPoints, hullTriangles);
+			shapePoints = hullPoints;
+
+			bounds = buildAABB(shapePoints);
+
+			centerOfMass = calculateCenterOfMass(hullPoints, hullTriangles);
+			inertiaTensor = calculateInertiaTensor(hullPoints, hullTriangles, centerOfMass);
 		}
 
 		vector3 ShapeConvex::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
-
+			// #todo-physics: Not used yet
+			CHECK_NO_ENTRY();
 		}
 
 		AABB ShapeConvex::getBounds(const vector3& pos, const quat& orient) const {
@@ -188,7 +200,7 @@ namespace badger {
 
 		float ShapeConvex::fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const {
 			float maxSpeed = 0.0f;
-			for (const vector3& pt : points) {
+			for (const vector3& pt : shapePoints) {
 				vector3 r = pt - centerOfMass;
 				vector3 linearVelocity = glm::cross(angularVelocity, r);
 				float speed = glm::dot(dir, linearVelocity);

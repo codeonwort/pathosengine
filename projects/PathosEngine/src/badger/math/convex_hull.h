@@ -11,4 +11,13 @@ namespace badger {
 		std::vector<vector3>& outHullPoints,
 		std::vector<ConvexHullTriangle>& outHullTriangles);
 
+	vector3 calculateCenterOfMass(
+		const std::vector<vector3>& points,
+		const std::vector<ConvexHullTriangle>& triangles);
+
+	matrix3 calculateInertiaTensor(
+		const std::vector<vector3>& points,
+		const std::vector<ConvexHullTriangle>& triangles,
+		const vector3& centerOfMass);
+
 }
