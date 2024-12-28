@@ -169,8 +169,9 @@ namespace badger {
 		}
 
 		vector3 ShapeConvex::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
-			// #todo-physics: Not used yet
+			// #todo-physics: Not implemented yet
 			CHECK_NO_ENTRY();
+			return vector3(0.0f);
 		}
 
 		AABB ShapeConvex::getBounds(const vector3& pos, const quat& orient) const {
@@ -188,14 +189,6 @@ namespace badger {
 				corners[i] = rotatePoint(corners[i], orient) + pos;
 			}
 			return buildAABB(corners);
-		}
-
-		AABB ShapeConvex::getBounds() const {
-
-		}
-
-		matrix3 ShapeConvex::getInertiaTensor() const {
-
 		}
 
 		float ShapeConvex::fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const {

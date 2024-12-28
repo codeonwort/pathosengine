@@ -99,10 +99,10 @@ namespace badger {
 			vector3 support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const override;
 
 			AABB getBounds(const vector3& pos, const quat& orient) const override;
-			AABB getBounds() const override;
+			AABB getBounds() const override { return bounds; }
 
 			EShapeType getType() const override { return EShapeType::Convex; }
-			matrix3 getInertiaTensor() const override;
+			matrix3 getInertiaTensor() const override { return inertiaTensor; }
 
 			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
 
