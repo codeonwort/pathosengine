@@ -397,6 +397,9 @@
     <ClInclude Include="src\pathos\util\transform_helper.h" />
     <ClInclude Include="src\pch.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\thirdparty\glm\glm.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
