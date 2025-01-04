@@ -106,6 +106,9 @@
 
 #pragma once
 
+// #todo: Dunno where I am using experimental feature... just define it here.
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <cmath>
 #include <climits>
 #include <cfloat>
