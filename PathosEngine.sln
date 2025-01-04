@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_ModelViewer", "project
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "App_RhythmGame", "projects\App_RhythmGame\App_RhythmGame.vcxproj", "{81400518-E8BD-4D4C-93CE-74D8FE6FB1D1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTest", "projects\UnitTest\UnitTest.vcxproj", "{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -85,6 +87,12 @@ Global
 		{81400518-E8BD-4D4C-93CE-74D8FE6FB1D1}.Release|x64.ActiveCfg = Release|x64
 		{81400518-E8BD-4D4C-93CE-74D8FE6FB1D1}.Release|x64.Build.0 = Release|x64
 		{81400518-E8BD-4D4C-93CE-74D8FE6FB1D1}.Release|x86.ActiveCfg = Release|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Debug|x64.ActiveCfg = Debug|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Debug|x64.Build.0 = Debug|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Debug|x86.ActiveCfg = Debug|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Release|x64.ActiveCfg = Release|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Release|x64.Build.0 = Release|x64
+		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
