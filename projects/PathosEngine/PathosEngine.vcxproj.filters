@@ -965,6 +965,9 @@
     <ClInclude Include="src\badger\math\convex_hull.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="src\badger\math\signed_volume.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\thirdparty\glm\glm.natvis" />

@@ -231,6 +231,7 @@
     <ClInclude Include="src\badger\math\plane.h" />
     <ClInclude Include="src\badger\math\random.h" />
     <ClInclude Include="src\badger\math\rotator.h" />
+    <ClInclude Include="src\badger\math\signed_volume.h" />
     <ClInclude Include="src\badger\math\spline.h" />
     <ClInclude Include="src\badger\math\vector_math.h" />
     <ClInclude Include="src\badger\physics\collision.h" />
