@@ -169,9 +169,21 @@ namespace badger {
 		}
 
 		vector3 ShapeConvex::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
-			// #todo-physics: Not implemented yet
-			CHECK_NO_ENTRY();
-			return vector3(0.0f);
+			// Find the furthest point in direction.
+			vector3 maxPt = rotatePoint(shapePoints[0], orient) + pos;
+			float maxDist = glm::dot(dir, maxPt);
+			for (auto i = 1u; i < shapePoints.size(); ++i) {
+				const vector3 pt = rotatePoint(shapePoints[i], orient) + pos;
+				const float dist = glm::dot(dir, pt);
+				if (dist > maxDist) {
+					maxDist = dist;
+					maxPt = pt;
+				}
+			}
+			vector3 norm = glm::normalize(dir);
+			norm *= bias;
+
+			return maxPt + norm;
 		}
 
 		AABB ShapeConvex::getBounds(const vector3& pos, const quat& orient) const {
