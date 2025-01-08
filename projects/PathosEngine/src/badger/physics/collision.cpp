@@ -1,5 +1,6 @@
 #include "collision.h"
 #include "shape.h"
+#include "badger/math/signed_volume.h"
 
 #include <algorithm>
 
@@ -176,6 +177,153 @@ namespace badger {
 
 		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds) {
 			sweepAndPrune1D(bodies, outPairs, deltaSeconds);
+		}
+
+	}
+}
+
+namespace badger {
+	namespace physics {
+
+		struct SupportPoint {
+			vector3 xyz = vector3(0.0f); // Point on the minkowski sum
+			vector3 ptA = vector3(0.0f); // Point on bodyA
+			vector3 ptB = vector3(0.0f); // Point on bodyB
+		};
+
+		static SupportPoint support(const Body* bodyA, const Body* bodyB, vector3 dir, float bias) {
+			dir = glm::normalize(dir);
+
+			SupportPoint point;
+			point.ptA = bodyA->getShape()->support(dir, bodyA->getPosition(), bodyA->getOrientation(), bias);
+			point.ptB = bodyB->getShape()->support(-dir, bodyB->getPosition(), bodyB->getOrientation(), bias);
+			point.xyz = point.ptA - point.ptB; // Support in the minkowski sum (A + (-B))
+
+			return point;
+		}
+
+		static bool simplexSignedVolumes(SupportPoint* points, int32 n, vector3& outNewDir, vector4& outLambdas) {
+			const float EPSILON = 0.0001f * 0.0001f;
+			outLambdas = vector4(0.0f);
+
+			bool bIntersects = false;
+			switch (n) {
+				case 2: {
+					vector2 lambdas = badger::signedVolume1D(points[0].xyz, points[1].xyz);
+					vector3 v(0.0f);
+					for (int32 i = 0; i < 2; ++i) v += points[i].xyz * lambdas[i];
+					outNewDir = -v;
+					bIntersects = glm::dot(v, v) < EPSILON;
+					outLambdas[0] = lambdas[0];
+					outLambdas[1] = lambdas[1];
+					break;
+				}
+				case 3: {
+					vector3 lambdas = badger::signedVolume2D(points[0].xyz, points[1].xyz, points[2].xyz);
+					vector3 v(0.0f);
+					for (int32 i = 0; i < 3; ++i) v += points[i].xyz * lambdas[i];
+					outNewDir = -v;
+					bIntersects = glm::dot(v, v) < EPSILON;
+					outLambdas[0] = lambdas[0];
+					outLambdas[1] = lambdas[1];
+					outLambdas[2] = lambdas[2];
+					break;
+				}
+				case 4: {
+					vector4 lambdas = badger::signedVolume3D(points[0].xyz, points[1].xyz, points[2].xyz, points[3].xyz);
+					vector3 v(0.0f);
+					for (int32 i = 0; i < 4; ++i) v += points[i].xyz * lambdas[i];
+					outNewDir = -v;
+					bIntersects = glm::dot(v, v) < EPSILON;
+					outLambdas[0] = lambdas[0];
+					outLambdas[1] = lambdas[1];
+					outLambdas[2] = lambdas[2];
+					outLambdas[3] = lambdas[3];
+					break;
+				}
+			}
+
+			return bIntersects;
+		}
+
+		static bool simplexContainsPoint(const SupportPoint simplexPoints[4], const SupportPoint& newPt) {
+			const float PRECISION = 1e-6f;
+			for (int32 i = 0; i < 4; ++i) {
+				vector3 delta = simplexPoints[i].xyz - newPt.xyz;
+				if (glm::dot(delta, delta) < PRECISION * PRECISION) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		static void sortValids(SupportPoint simplexPoints[4], vector4& lambdas) {
+			vector4 validLambdas(0.0f);
+			int32 validCount = 0;
+			SupportPoint validPoints[4];
+			for (int32 i = 0; i < 4; ++i) {
+				if (lambdas[i] != 0.0f) {
+					validPoints[validCount] = simplexPoints[i];
+					validLambdas[validCount] = lambdas[i];
+					validCount++;
+				}
+			}
+
+			for (int32 i = 0; i < 4; ++i) {
+				simplexPoints[i] = validPoints[i];
+				lambdas[i] = validLambdas[i];
+			}
+		}
+
+		static int32 numValids(const vector4& lambdas) {
+			int32 n = 0;
+			for (int32 i = 0; i < 4; ++i) {
+				if (lambdas[i] != 0.0f) n++;
+			}
+			return n;
+		}
+
+		bool intersectGJK(const Body* bodyA, const Body* bodyB) {
+			const vector3 ORIGIN(0.0f);
+
+			int32 numPt = 1;
+			SupportPoint simplexPoints[4];
+			simplexPoints[0] = support(bodyA, bodyB, vector3(1.0f, 1.0f, 1.0f), 0.0f);
+
+			float closestDist = std::numeric_limits<float>::max();
+			bool bContainsOrigin = false;
+			vector3 newDir = -(simplexPoints[0].xyz);
+			do {
+				SupportPoint newPt = support(bodyA, bodyB, newDir, 0.0f);
+				if (simplexContainsPoint(simplexPoints, newPt)) {
+					break;
+				}
+				simplexPoints[numPt] = newPt;
+				numPt++;
+
+				// Origin cannot be in the set, therefore no collision.
+				if (glm::dot(newDir, newPt.xyz - ORIGIN) < 0.0f) {
+					break;
+				}
+
+				vector4 lambdas;
+				bContainsOrigin = simplexSignedVolumes(simplexPoints, numPt, newDir, lambdas);
+				if (bContainsOrigin) {
+					break;
+				}
+
+				float dist = glm::dot(newDir, newDir);
+				if (dist >= closestDist) {
+					break;
+				}
+				closestDist = dist;
+
+				sortValids(simplexPoints, lambdas);
+				numPt = numValids(lambdas);
+				bContainsOrigin = (4 == numPt);
+			} while (!bContainsOrigin);
+
+			return bContainsOrigin;
 		}
 
 	}

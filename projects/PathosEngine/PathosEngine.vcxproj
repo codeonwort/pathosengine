@@ -87,6 +87,7 @@
     <ClCompile Include="src\badger\math\convex_hull.cpp" />
     <ClCompile Include="src\badger\math\random.cpp" />
     <ClCompile Include="src\badger\math\rotator.cpp" />
+    <ClCompile Include="src\badger\math\signed_volume.cpp" />
     <ClCompile Include="src\badger\math\spline.cpp" />
     <ClCompile Include="src\badger\physics\collision.cpp" />
     <ClCompile Include="src\badger\physics\physics_scene.cpp" />

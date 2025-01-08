@@ -2,6 +2,10 @@
 #include "CppUnitTest.h"
 
 #include "badger/math/signed_volume.h"
+#include "badger/physics/collision.h"
+#include "badger/physics/shape.h"
+
+#include <vector>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -126,6 +130,32 @@ namespace UnitTest
 			Assert::IsTrue(vec4Equals(lambdas, vector4(0.290401f, 0.302230f, 0.205651f, 0.201718f)), msg);
 			swprintf_s(msg, L"v = (%f, %f, %f)", v.x, v.y, v.z);
 			Assert::IsTrue(vec3Equals(v, vector3(0.0f, 0.0f, 0.0f)), msg);
+		}
+
+		TEST_METHOD(TestGJK) {
+			std::vector<vector3> pointsA{
+				vector3(-10.0f, -10.0f, 0.0f),
+				vector3(10.0f, -10.0f, 0.0f),
+				vector3(0.0f, 10.0f, 0.0f),
+				vector3(0.0f, 0.0f, 10.0f),
+			};
+			std::vector<vector3> pointsB{
+				vector3(0.0f, 3.0f, 0.0f),
+				vector3(0.0f, 10.0f, 10.0f),
+				vector3(10.0f, 0.0f, 10.0f),
+				vector3(-10.0f, 0.0f, 10.0f),
+			};
+
+			badger::physics::Body* bodyA = new badger::physics::Body;
+			badger::physics::ShapeConvex* shapeA = new badger::physics::ShapeConvex(pointsA);
+			bodyA->setShape(shapeA);
+
+			badger::physics::Body* bodyB = new badger::physics::Body;
+			badger::physics::ShapeConvex* shapeB = new badger::physics::ShapeConvex(pointsB);
+			bodyB->setShape(shapeB);
+
+			bool bIntersect = badger::physics::intersectGJK(bodyA, bodyB);
+			Assert::IsTrue(bIntersect);
 		}
 	};
 }

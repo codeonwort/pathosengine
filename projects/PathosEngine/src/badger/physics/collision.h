@@ -2,6 +2,8 @@
 
 #include "badger/types/vector_types.h"
 
+#include <vector>
+
 namespace badger {
 	namespace physics {
 
@@ -41,6 +43,8 @@ namespace badger {
 		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
 
 		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds);
+
+		bool intersectGJK(const Body* bodyA, const Body* bodyB);
 
 	}
 }
