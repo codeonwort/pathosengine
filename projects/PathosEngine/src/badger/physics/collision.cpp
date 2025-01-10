@@ -1,11 +1,18 @@
 #include "collision.h"
 #include "shape.h"
 #include "badger/math/signed_volume.h"
+#include "badger/math/convex_hull.h"
 
 #include <algorithm>
 
 namespace badger {
 	namespace physics {
+
+		struct PseudoBody {
+			int32 id;
+			float value;
+			bool isMin;
+		};
 
 		static vector3 safeNormalize(const vector3& v) {
 			if (v == vector3(0.0f)) return v;
@@ -324,6 +331,104 @@ namespace badger {
 			} while (!bContainsOrigin);
 
 			return bContainsOrigin;
+		}
+
+	}
+}
+
+namespace badger {
+	namespace physics {
+
+		// Returns barycentricCoords of pt on the triangle (s1, s2, s3).
+		static vector3 barycentricCoordinates(vector3 s1, vector3 s2, vector3 s3, const vector3& pt) {
+			s1 = s1 - pt;
+			s2 = s2 - pt;
+			s3 = s3 - pt;
+
+			vector3 normal = glm::cross(s2 - s1, s3 - s1);
+			vector3 p0 = normal * glm::dot(s1, normal) / glm::dot(normal, normal);
+
+			// Find the axis with the greatest projected area.
+			int32 idx = 0;
+			float maxArea = 0.0f;
+			for (int32 i = 0; i < 3; ++i) {
+				int32 j = (i + 1) % 3;
+				int32 k = (i + 2) % 3;
+
+				vector2 a(s1[j], s1[k]), b(s2[j], s2[k]), c(s3[j], s3[k]);
+				vector2 ab = b - a, ac = c - a;
+
+				float area = ab.x * ac.y - ab.y * ac.x;
+				if (area * area > maxArea * maxArea) {
+					idx = i;
+					maxArea = area;
+				}
+			}
+
+			// Project onto the appropriate axis.
+			int32 x = (idx + 1) % 3;
+			int32 y = (idx + 2) % 3;
+			vector2 s[3] = {
+				vector2(s1[x], s1[y]), vector2(s2[x], s2[y]), vector2(s3[x], s3[y])
+			};
+			vector2 p = vector2(p0[x], p0[y]);
+
+			// Get the sub-areas of the triangles formed from the projected origin and the edges.
+			vector3 areas;
+			for (int32 i = 0; i < 3; ++i) {
+				int32 j = (i + 1) % 3;
+				int32 k = (i + 2) % 3;
+
+				vector2 a = p, b = s[j], c = s[k];
+				vector2 ab = b - a, ac = c - a;
+
+				areas[i] = ab.x * ac.y - ab.y * ac.x;
+			}
+
+			vector3 lambdas = areas / maxArea;
+			if (glm::any(glm::isnan(lambdas)) || glm::any(glm::isinf(lambdas))) {
+				lambdas = vector3(1.0f, 0.0f, 0.0f);
+			}
+			return lambdas;
+		}
+
+		static vector3 normalDirection(const ConvexHullTriangle& tri, const std::vector<SupportPoint>& points) {
+			const vector3& a = points[tri.a].xyz;
+			const vector3& b = points[tri.b].xyz;
+			const vector3& c = points[tri.c].xyz;
+
+			vector3 ab = b - a, ac = c - a;
+			vector3 normal = safeNormalize(glm::cross(ab, ac));
+			return normal;
+		}
+
+		static float signedDistanceToTriangle(const ConvexHullTriangle& tri, const vector3& pt, const std::vector<SupportPoint>& points) {
+			return 0.0f;
+		}
+
+		static int32 closestTriangle(const std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
+			return 0;
+		}
+
+		static bool hasPoint(const vector3& w, const std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
+			return false;
+		}
+
+		static int32 removeTrianglesFacingPoint(const vector3& pt, std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
+			return 0;
+		}
+
+		static void findDanglingEdges(std::vector<Edge>& danglingEdges, const std::vector<ConvexHullTriangle>& triangles) {
+			//
+		}
+
+		// #todo-physics: Stub code for EPA
+		static float expandingPolytopeAlgorithm(
+			const Body* bodyA, const Body* bodyB,
+			float bias, const SupportPoint simplexPoints[4],
+			vector3& ptOnA, vector3& ptOnB)
+		{
+			return 0.0f;
 		}
 
 	}

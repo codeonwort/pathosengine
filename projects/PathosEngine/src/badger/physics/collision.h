@@ -23,12 +23,6 @@ namespace badger {
 			Body* bodyB;
 		};
 
-		struct PseudoBody {
-			int32 id;
-			float value;
-			bool isMin;
-		};
-
 		struct CollisionPair {
 			int32 a;
 			int32 b;
@@ -42,8 +36,10 @@ namespace badger {
 
 		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
 
+		// Find all body pairs that might collide. Needs narrow phase to actually test it.
 		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds);
 
+		// Intersection test between two convex shapes by Gilbert-Johnson-Keerthi algorithm.
 		bool intersectGJK(const Body* bodyA, const Body* bodyB);
 
 	}

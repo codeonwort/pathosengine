@@ -6,6 +6,13 @@ namespace badger {
 
 	struct ConvexHullTriangle { size_t a, b, c; };
 
+	struct Edge {
+		size_t a, b;
+		bool operator==(const Edge& rhs) const {
+			return (a == rhs.a && b == rhs.b) || (a == rhs.b && b == rhs.a);
+		}
+	};
+
 	void buildConvexHull(
 		const std::vector<vector3>& vertices,
 		std::vector<vector3>& outHullPoints,

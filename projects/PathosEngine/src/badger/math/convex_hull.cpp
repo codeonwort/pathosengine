@@ -5,13 +5,6 @@ namespace badger {
 
 	// #todo-physics: It seems lots of util functions here are O(NN) when they can be O(N).
 
-	struct Edge {
-		size_t a, b;
-		bool operator==(const Edge& rhs) const {
-			return (a == rhs.a && b == rhs.b) || (a == rhs.b && b == rhs.a);
-		}
-	};
-
 	static vector3 safeNormalize(const vector3& v) {
 		if (v == vector3(0.0f)) return v;
 		return glm::normalize(v);
