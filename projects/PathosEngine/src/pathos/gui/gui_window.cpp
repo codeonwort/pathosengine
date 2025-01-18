@@ -165,6 +165,8 @@ namespace pathos {
 		LOG(LogInfo, "[ThirdParty] GUI Backend: Freeglut %d.%d.%d", glutMajorVersion, glutMinorVersion, glutPatchVersion);
 		
 		nativeHandle = glutCreateWindow(title.c_str());
+		glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+
 		OpenGLContextManager::initialize();
 
 		if (bFullscreen) {
