@@ -20,14 +20,22 @@ public:
 		dirLight->setColorAndIlluminance(vector3(1.0f, 1.0f, 1.0f), 10.0f);
 
 		auto skyAtmosphere = spawnActor<SkyAtmosphereActor>();
+
+		exitCounter = 0;
 	}
 
-};
+	virtual void onTick(float deltaSeconds) {
+		if (exitCounter >= 500) {
+			gEngine->stop();
+		} else {
+			++exitCounter;
+		}
+	}
 
-void stopEngine() {
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-	gEngine->stop();
-}
+private:
+	uint32 exitCounter = 0;
+
+};
 
 namespace UnitTest {
 
@@ -42,12 +50,8 @@ namespace UnitTest {
 			config.title = "Unit Test";
 			Engine::init(0, nullptr, config);
 
-			std::thread book(stopEngine);
-
 			gEngine->setWorld(new EmptyWorld);
 			gEngine->start();
-
-			book.join();
 
 			Assert::IsTrue(true, L"Failed to reach here");
 		}
