@@ -57,10 +57,6 @@ namespace pathos {
 		auto& physicsScene = getOwner()->getWorld()->getPhysicsScene();
 		physicsScene.releaseBody(body);
 		if (shape != nullptr) delete shape;
-		if (boundsComponent != nullptr) {
-			getOwner()->unregisterComponent(boundsComponent);
-			delete boundsComponent;
-		}
 	}
 
 	void PhysicsComponent::onPrePhysicsTick(float deltaSeconds) {
