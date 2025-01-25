@@ -6,6 +6,7 @@
 #include "pathos/render/image_based_lighting_baker.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/mesh/geometry.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/point_light_component.h"
@@ -65,18 +66,14 @@ namespace pathos {
 namespace pathos {
 
 	DirectLightingPass::DirectLightingPass()
-		: fbo(0xffffffff)
 	{
 	}
 
 	DirectLightingPass::~DirectLightingPass() {
-		CHECK(destroyed);
+		CHECK(bDestroyed);
 	}
 
 	void DirectLightingPass::initializeResources(RenderCommandList& cmdList) {
-		// fullscreen quad
-		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
-		
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
@@ -86,10 +83,10 @@ namespace pathos {
 	}
 
 	void DirectLightingPass::releaseResources(RenderCommandList& cmdList) {
-		if (!destroyed) {
+		if (!bDestroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
 		}
-		destroyed = true;
+		bDestroyed = true;
 	}
 
 	void DirectLightingPass::bindFramebuffer(RenderCommandList& cmdList) {
@@ -104,33 +101,50 @@ namespace pathos {
 		cmdList.clearBufferfv(GL_COLOR, 0, zero);
 	}
 
-	void DirectLightingPass::renderDirectLighting(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera)
+	void DirectLightingPass::renderDirectLighting(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera)
 	{
 		SCOPED_DRAW_EVENT(DirectLighting);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
+		// ----------------------------------------------------------
+		// Common setup
 
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-
-		// Accumulate lighting to sceneColor one by one.
-		{
-			cmdList.disable(GL_DEPTH_TEST);
-			cmdList.enable(GL_BLEND);
-			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
-		}
 		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
 		pathos::checkFramebufferStatus(cmdList, fbo, "[DirectLighting] FBO is invalid");
 
+		// Accumulate lighting to sceneColor one by one.
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.enable(GL_BLEND);
+		cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+
 		GLuint gbuffer_textures[] = { sceneContext.gbufferA, sceneContext.gbufferB, sceneContext.gbufferC };
-		cmdList.bindTextures(0, 3, gbuffer_textures);
+		cmdList.bindTextures(0, _countof(gbuffer_textures), gbuffer_textures);
 		cmdList.bindTextureUnit(5, sceneContext.ssaoMap);
+
+		// ----------------------------------------------------------
+		// Render lighting
+
+		renderDirectionalLights(cmdList, scene);
+		renderLocalLights(cmdList, scene);
+
+		// ----------------------------------------------------------
+		// Cleanup
+
+		cmdList.disable(GL_BLEND);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	}
+
+	void DirectLightingPass::renderDirectionalLights(RenderCommandList& cmdList, SceneProxy* scene) {
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
 		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
-		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
 
 		// Directional lights
 		const auto& dirLights = scene->proxyList_directionalLight;
@@ -159,6 +173,15 @@ namespace pathos {
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
 		}
+
+		cmdList.bindTextureUnit(6, 0);
+	}
+
+	void DirectLightingPass::renderLocalLights(RenderCommandList& cmdList, SceneProxy* scene) {
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+
+		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
 
 		// Point lights
 		const auto& pointLights = scene->proxyList_pointLight;
@@ -218,12 +241,7 @@ namespace pathos {
 			}
 		}
 
-		// Cleanup render states
-		{
-			cmdList.disable(GL_BLEND);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
+		cmdList.bindTextureUnit(7, 0);
 	}
 
 }

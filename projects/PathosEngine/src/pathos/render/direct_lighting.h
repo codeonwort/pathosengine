@@ -1,9 +1,6 @@
 #pragma once
 
 #include "pathos/rhi/uniform_buffer.h"
-#include "pathos/mesh/geometry.h"
-#include "pathos/mesh/geometry_primitive.h"
-#include "pathos/material/material.h"
 
 // Calculate direct lighting (= local illumination) and write to sceneColor.
 
@@ -27,14 +24,15 @@ namespace pathos {
 		void renderDirectLighting(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 	private:
-		GLuint fbo;
+		void renderDirectionalLights(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderLocalLights(RenderCommandList& cmdList, SceneProxy* scene);
+
+		GLuint fbo = 0xffffffff;
 		UniformBuffer uboDirLight;
 		UniformBuffer uboPointLight;
 		UniformBuffer uboRectLight;
 
-		MeshGeometry* fullscreenQuad = nullptr;
-
-		bool destroyed = false;
+		bool bDestroyed = false;
 
 	};
 
