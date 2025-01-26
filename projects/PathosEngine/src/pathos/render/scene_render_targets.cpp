@@ -2,6 +2,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/render/postprocessing/super_res.h"
+#include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/console.h"
 
@@ -336,19 +337,29 @@ namespace pathos {
 		bDestroyed = true;
 	}
 
-	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList) {
-		if (actualCsmCount == csmCount && cascadedShadowMap != 0) {
+	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList, const DirectionalLightProxy* lightProxy) {
+		// Case 1. No directional lights in the scene.
+		if (lightProxy == nullptr) {
+			if (cascadedShadowMap != 0) {
+				cmdList.deleteTextures(1, &cascadedShadowMap);
+				cascadedShadowMap = 0;
+			}
 			return;
 		}
-		actualCsmCount = csmCount;
 
-		if (cascadedShadowMap != 0) {
-			cmdList.deleteTextures(1, &cascadedShadowMap);
-			cascadedShadowMap = 0;
+		// Case 2. No need to reallocate existing resources.
+		if (cachedCsmCount == lightProxy->shadowMapCascadeCount && cachedCsmSize == lightProxy->shadowMapSize && cascadedShadowMap != 0) {
+			return;
 		}
-		if (csmCount > 0) {
+		cachedCsmCount = lightProxy->shadowMapCascadeCount;
+		cachedCsmSize = lightProxy->shadowMapSize;
+
+		// Case 3. Reallocate resources.
+		if (cascadedShadowMap != 0) cmdList.deleteTextures(1, &cascadedShadowMap);
+		if (lightProxy->shadowMapCascadeCount > 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_2D_ARRAY, 1, &cascadedShadowMap);
-			cmdList.textureStorage3D(cascadedShadowMap, 1, GL_DEPTH_COMPONENT32F, csmWidth, csmHeight, csmCount);
+			cmdList.textureStorage3D(cascadedShadowMap, 1, GL_DEPTH_COMPONENT32F,
+				lightProxy->shadowMapSize, lightProxy->shadowMapSize, lightProxy->shadowMapCascadeCount);
 			cmdList.objectLabel(GL_TEXTURE, cascadedShadowMap, -1, "CascadedShadowMap");
 
 			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

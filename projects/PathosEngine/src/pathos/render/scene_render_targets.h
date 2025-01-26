@@ -6,6 +6,7 @@
 namespace pathos {
 
 	class Texture;
+	struct DirectionalLightProxy;
 
 	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
 
@@ -79,11 +80,9 @@ namespace pathos {
 
 		// Cascaded Shadow Maps
 	private:
-		uint32 actualCsmCount = 0;
+		uint32 cachedCsmCount = 0;
+		uint32 cachedCsmSize = 0;
 	public:
-		uint32 csmCount = 4;
-		uint32 csmWidth = 2048;
-		uint32 csmHeight = 2048;
 		GLuint cascadedShadowMap = 0;
 
 		// Omnidirectional Shadow Maps
@@ -148,7 +147,9 @@ namespace pathos {
 
 		void freeSceneTextures(RenderCommandList& cmdList);
 
-		void reallocDirectionalShadowMaps(RenderCommandList& cmdList);
+		// If lightProxy is null, then deallocate relevant resources.
+		void reallocDirectionalShadowMaps(RenderCommandList& cmdList, const DirectionalLightProxy* lightProxy);
+
 		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
 		void reallocSkyIrradianceMap(RenderCommandList& cmdList);

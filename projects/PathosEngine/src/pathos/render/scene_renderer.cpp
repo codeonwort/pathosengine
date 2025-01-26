@@ -696,14 +696,11 @@ namespace pathos {
 		return finalRenderTarget->getGLName();
 	}
 
-	void SceneRenderer::updateSceneUniformBuffer(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera)
-	{
+	void SceneRenderer::updateSceneUniformBuffer(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
 		const matrix4& projMatrix = camera->getProjectionMatrix();
 		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
 		const bool bSunExists = (scene->proxyList_directionalLight.size() > 0);
+		const DirectionalLightProxy sunProxy = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();
 
 		UBO_PerFrame data;
 
@@ -743,34 +740,28 @@ namespace pathos {
 		data.screenResolution.z = 1.0f / data.screenResolution.x;
 		data.screenResolution.w = 1.0f / data.screenResolution.y;
 
-		data.zRange.x = camera->getZNear();
-		data.zRange.y = camera->getZFar();
-		data.zRange.z = camera->getFovYRadians();
-		data.zRange.w = camera->getAspectRatio();
+		data.zRange = vector4(camera->getZNear(), camera->getZFar(), camera->getFovYRadians(), camera->getAspectRatio());
 
 		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
-		for (uint32 i = 0; i < sceneRenderTargets->csmCount; ++i) {
+		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
 			data.sunViewProj[i] = sunShadowMap->getViewProjection(i);
 		}
-		
 		data.shadowmapZFar = sunShadowMap->getShadowMapZFar();
-		data.csmCount = sceneRenderTargets->csmCount;
-
-		for (uint32 i = 0; i < sceneRenderTargets->csmCount; ++i) {
+		data.csmCount = sunProxy.shadowMapCascadeCount;
+		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
 			data.csmDepths[i] = sunShadowMap->getZSlice(i);
 		}
 
 		data.cameraDirectionVS = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
 		data.cameraPositionVS = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
-
 		data.cameraPositionWS = camera->getPosition();
 
 		data.bReverseZ = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1 : 0;
 
 		// Treat the first directional light as Sun.
 		data.sunExists = bSunExists;
-		data.sunLight  = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();
+		data.sunLight  = sunProxy;
 
 		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 

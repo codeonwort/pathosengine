@@ -98,7 +98,7 @@ namespace pathos {
 			proxyList_rectLight[i]->rightVS = dirToVS(proxyList_rectLight[i]->rightVS);
 		}
 		for (size_t i = 0u; i < proxyList_directionalLight.size(); ++i) {
-			proxyList_directionalLight[i]->vsDirection = dirToVS(proxyList_directionalLight[i]->wsDirection);
+			proxyList_directionalLight[i]->directionVS = dirToVS(proxyList_directionalLight[i]->directionWS);
 		}
 	}
 

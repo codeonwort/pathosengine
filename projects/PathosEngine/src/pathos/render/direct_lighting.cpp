@@ -161,7 +161,7 @@ namespace pathos {
 				const DirectionalLightProxy* light = dirLights[lightIx];
 
 				UBO_DirectLighting<DirectionalLightProxy> uboData;
-				uboData.enableShadowing = cvar_enable_shadow.getInt();
+				uboData.enableShadowing = (uint32)((cvar_enable_shadow.getInt() != 0) && (light->bCastShadows != 0));
 				// #todo-light: Support shadow map for secondary directional lights.
 				uboData.haveShadowMap = (lightIx == 0);
 				uboData.csmZFar = badger::max(1.0f, cvarZFar->getFloat());

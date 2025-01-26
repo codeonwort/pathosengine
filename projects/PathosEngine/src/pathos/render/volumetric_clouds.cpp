@@ -210,7 +210,7 @@ namespace pathos {
 				vector3 intensity = scene->proxyList_directionalLight[0]->getIntensity();
 				intensity *= std::max(0.0f, cvar_cloud_sunIntensityScale.getFloat());
 				uboData.sunIntensity = vector4(intensity, 0.0f);
-				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->wsDirection, 0.0f);
+				uboData.sunDirection = vector4(scene->proxyList_directionalLight[0]->directionWS, 0.0f);
 			} else {
 				uboData.sunIntensity = vector4(0.0f);
 				uboData.sunDirection = vector4(0.0f, -1.0f, 0.0f, 0.0f);

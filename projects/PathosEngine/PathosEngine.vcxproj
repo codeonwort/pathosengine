@@ -96,6 +96,7 @@
     <ClCompile Include="src\badger\system\cpu.cpp" />
     <ClCompile Include="src\badger\system\thread_pool.cpp" />
     <ClCompile Include="src\pathos\render\landscape_rendering.cpp" />
+    <ClCompile Include="src\pathos\scene\directional_light_component.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
     <ClCompile Include="src\pathos\scene\physics_component.cpp" />

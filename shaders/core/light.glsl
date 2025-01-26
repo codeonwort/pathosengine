@@ -17,17 +17,20 @@ struct PointLight {
 	vec3  padding0;
 };
 
-// Total 48 bytes
+// Total 64 bytes
 struct DirectionalLight {
 	// 16 bytes
 	vec3  wsDirection;
-	float padding0;
+	uint  bCastShadows;
 	// 16 bytes
 	vec3  intensity;
-	float padding1;
+	uint  shadowMapCascadeCount;
 	// 16 bytes
 	vec3  vsDirection;
-	float padding2;
+	uint  shadowMapSize;
+	// 16 bytes
+	float shadowMapZFar;
+	vec3  _pad0;
 };
 
 // Total 80 bytes

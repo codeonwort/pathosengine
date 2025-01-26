@@ -4,19 +4,35 @@
 
 namespace pathos {
 
+	struct CascadedShaowMapSettings {
+		bool bCastShadows = true;
+		uint32 cascadeCount = 4;
+		uint32 size = 2048; // both width and height
+		float zFar = 500.0f;
+	};
+
+	// Memory layout should match with DirectionalLight in light.hlsl
 	struct DirectionalLightProxy : public SceneComponentProxy {
-		vector3 wsDirection;
-		float   padding0;
+		vector3 directionWS;
+		uint32  bCastShadows;
 		vector3 intensity; // color * illuminance
-		float   padding1;
-		vector3 vsDirection;
-		float   padding2;
+		uint32  shadowMapCascadeCount;
+		vector3 directionVS;
+		uint32  shadowMapSize;
+		float   shadowMapZFar;
+		vector3 _pad0;
 
 		static DirectionalLightProxy createDummy() {
+			CascadedShaowMapSettings defaultShadows{};
 			DirectionalLightProxy dummy;
-			dummy.wsDirection = vector3(0.0f, -1.0f, 0.0f);
-			dummy.intensity   = vector3(0.0f);
-			dummy.vsDirection = vector3(0.0f, -1.0f, 0.0f);
+			dummy.directionWS           = vector3(0.0f, -1.0f, 0.0f);
+			dummy.bCastShadows          = (uint32)defaultShadows.bCastShadows;
+			dummy.intensity             = vector3(0.0f);
+			dummy.shadowMapCascadeCount = defaultShadows.cascadeCount;
+			dummy.directionVS           = vector3(0.0f, -1.0f, 0.0f);
+			dummy.shadowMapSize         = defaultShadows.size;
+			dummy.shadowMapZFar         = defaultShadows.zFar;
+			dummy._pad0                 = vector3(0.0f);
 			return dummy;
 		}
 
@@ -26,29 +42,16 @@ namespace pathos {
 	class DirectionalLightComponent : public SceneComponent {
 
 	public:
-		DirectionalLightComponent()
-			: direction(vector3(0.0f, -1.0f, 0.0f))
-			, color(vector3(1.0f, 1.0f, 1.0f))
-			, illuminance(1.0f)
-		{}
+		DirectionalLightComponent();
 
-		virtual void createRenderProxy(SceneProxy* scene) override {
-			DirectionalLightProxy* proxy = ALLOC_RENDER_PROXY<DirectionalLightProxy>(scene);
-
-			proxy->wsDirection = direction;
-			proxy->padding0    = 0.0f;
-			proxy->intensity   = color * illuminance;
-			proxy->padding1    = 0.0f;
-			proxy->vsDirection = vector3(0.0f); // This is filled later
-			proxy->padding2    = 0.0f;
-
-			scene->proxyList_directionalLight.push_back(proxy);
-		}
+		virtual void createRenderProxy(SceneProxy* scene) override;
 
 	public:
 		vector3 direction;   // From sun to earth
 		vector3 color;       // Luminous efficiency function. Should be clamped to [0, 1]
 		float   illuminance; // Unit: lux (= lm/m^2 = lumen per square meter)
+
+		CascadedShaowMapSettings shadowSettings;
 
 	};
 

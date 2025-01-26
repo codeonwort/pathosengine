@@ -444,6 +444,9 @@
     <ClCompile Include="src\badger\math\signed_volume.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\scene\directional_light_component.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\mesh\geometry.h">

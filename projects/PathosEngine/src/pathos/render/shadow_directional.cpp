@@ -19,10 +19,6 @@ namespace pathos {
 	// Changing it greater than 4 will break the program. ex) see UBO_PerFrame.
 	static const int32 MAX_CASCADE_COUNT = 4;
 
-	// Light frustum could be too large if we use camera's zFar as is.
-	static ConsoleVariable<float> cvar_csm_zFar("r.csm.zFar", 500.0f, "Custom zFar for CSM");
-	static ConsoleVariable<int32> cvar_csm_cascadeCount("r.csm.cascadeCount", MAX_CASCADE_COUNT, "Control the cascade count of shadowmap");
-
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(bDestroyed, "Resource leak");
 	}
@@ -47,21 +43,21 @@ namespace pathos {
 		bDestroyed = true;
 	}
 
-	void DirectionalShadowMap::renderShadowMap(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		const Camera* camera,
-		const UBO_PerFrame& cachedPerFrameUBOData)
-	{
+	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, const UBO_PerFrame& cachedPerFrameUBOData) {
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		static const GLfloat clear_depth_one[] = { 1.0f };
 
-		const uint32 numCascades = sceneContext.csmCount;
-		sceneContext.reallocDirectionalShadowMaps(cmdList);
+		// #todo-light: Only deal with first directional light for now.
+		const DirectionalLightProxy* lightProxy = (scene->proxyList_directionalLight.size() == 0) ? nullptr : scene->proxyList_directionalLight[0];
 
-		if (numCascades == 0) return; // Early exit
+		sceneContext.reallocDirectionalShadowMaps(cmdList, lightProxy);
+		if (lightProxy == nullptr) {
+			return; // Early exit if there is no directional lights in the scene.
+		}
+
+		const uint32 numCascades = lightProxy->shadowMapCascadeCount;
 
 		cmdList.clipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 		cmdList.enable(GL_DEPTH_TEST);
@@ -79,7 +75,7 @@ namespace pathos {
 			cmdList.clearBufferfv(GL_DEPTH, 0, clear_depth_one);
 			pathos::checkFramebufferStatus(cmdList, fbo, "DirectionalShadowMap::renderShadowMap");
 
-			cmdList.viewport(0, 0, sceneContext.csmWidth, sceneContext.csmHeight);
+			cmdList.viewport(0, 0, lightProxy->shadowMapSize, lightProxy->shadowMapSize);
 
 			// Hack uboPerFrame.
 			{
@@ -167,26 +163,20 @@ namespace pathos {
 	}
 
 	float DirectionalShadowMap::getShadowMapZFar() const {
-		return std::max(1.0f, cvar_csm_zFar.getFloat());
+		return zFar;
 	}
 
-	void DirectionalShadowMap::updateUniformBufferData(
-		RenderCommandList& cmdList,
-		const SceneProxy* scene,
-		const Camera* camera)
-	{
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		sceneContext.csmCount = (uint32)badger::clamp(1, cvar_csm_cascadeCount.getInt(), MAX_CASCADE_COUNT);
-		
+	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera) {
 		if (scene->proxyList_directionalLight.size() > 0) {
-			setLightDirection(scene->proxyList_directionalLight[0]->wsDirection);
+			auto lightProxy = scene->proxyList_directionalLight[0];
+
+			zFar = lightProxy->shadowMapZFar;
+			setLightDirection(lightProxy->directionWS);
+			calculateBounds(*camera, lightProxy->shadowMapCascadeCount, lightProxy->shadowMapZFar);
 		}
-		calculateBounds(*camera, sceneContext.csmCount);
 	}
 
-	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades)
-	{
+	void DirectionalShadowMap::calculateBounds(const Camera& camera, uint32 numCascades, float zFar) {
 		viewMatrices.clear();
 		viewProjectionMatrices.clear();
 
@@ -216,7 +206,7 @@ namespace pathos {
 		};
 
 		std::vector<vector3> frustumPlanes;
-		camera.getFrustumVertices(frustumPlanes, numCascades, getShadowMapZFar(), zSlices);
+		camera.getFrustumVertices(frustumPlanes, numCascades, zFar, zSlices);
 		for (uint32 i = 0u; i < numCascades; ++i) {
 			calcBounds(&frustumPlanes[i * 4]);
 		}

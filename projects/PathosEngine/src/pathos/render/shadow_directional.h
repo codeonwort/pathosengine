@@ -25,11 +25,7 @@ namespace pathos {
 
 		void updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera);
 		
-		void renderShadowMap(
-			RenderCommandList& cmdList,
-			SceneProxy* scene,
-			const Camera* camera,
-			const UBO_PerFrame& cachedPerFrameUBOData);
+		void renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, const UBO_PerFrame& cachedPerFrameUBOData);
 
 		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
 
@@ -38,7 +34,7 @@ namespace pathos {
 
 	private:
 		void setLightDirection(const vector3& direction);
-		void calculateBounds(const Camera& camera, uint32 numCascades); // Update viewProjectionMatrices
+		void calculateBounds(const Camera& camera, uint32 numCascades, float zFar); // Update viewProjectionMatrices
 
 	private:
 		bool bDestroyed = false;
@@ -51,7 +47,8 @@ namespace pathos {
 		vector3 lightDirection = vector3(0.0f, -1.0f, 0.0f);
 		std::vector<matrix4> viewMatrices; // Light view matrices
 		std::vector<matrix4> viewProjectionMatrices; // ViewProj matrices that perfectly cover each camera frustum
-		float zSlices[4];
+		float zSlices[4] = { 0.0f, };
+		float zFar = 0.0f;
 	};
 
 }
