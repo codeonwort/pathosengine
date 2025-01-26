@@ -27,14 +27,11 @@ namespace pathos {
 		
 		void renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, const UBO_PerFrame& cachedPerFrameUBOData);
 
-		inline matrix4 getViewProjection(uint32 index) const { return viewProjectionMatrices[index]; }
-
-		float getShadowMapZFar() const;
-		inline float getZSlice(uint32 ix) const { return zSlices[ix]; }
+		inline matrix4 getViewProjection(uint32 lightIndex, uint32 cascadeIndex) const { return lightTransforms[lightIndex].viewProjectionMatrices[cascadeIndex]; }
+		inline float getZSlice(uint32 lightIndex, uint32 cascadeIx) const { return lightTransforms[lightIndex].zSlices[cascadeIx]; }
 
 	private:
-		void setLightDirection(const vector3& direction);
-		void calculateBounds(const Camera& camera, uint32 numCascades, float zFar); // Update viewProjectionMatrices
+		void calculateBounds(size_t lightIx, size_t cascadeIx, const vector3* frustum, const vector3& lightDir);
 
 	private:
 		bool bDestroyed = false;
@@ -44,11 +41,12 @@ namespace pathos {
 		UniformBuffer uboPerObject;
 
 		// light space transform
-		vector3 lightDirection = vector3(0.0f, -1.0f, 0.0f);
-		std::vector<matrix4> viewMatrices; // Light view matrices
-		std::vector<matrix4> viewProjectionMatrices; // ViewProj matrices that perfectly cover each camera frustum
-		float zSlices[4] = { 0.0f, };
-		float zFar = 0.0f;
+		struct LightTransform {
+			std::vector<matrix4> viewMatrices; // Light view matrices
+			std::vector<matrix4> viewProjectionMatrices; // ViewProj matrices that perfectly cover each camera frustum
+			std::vector<float> zSlices;
+		};
+		std::vector<LightTransform> lightTransforms;
 	};
 
 }

@@ -43,7 +43,7 @@ namespace pathos {
 		uint32 enableShadowing;
 		uint32 haveShadowMap;
 		uint32 omniShadowMapIndex;
-		float csmZFar;
+		uint32 _pad0;
 
 		LightProxy lightParameters;
 	};
@@ -144,10 +144,8 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
-		cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMap);
-
-		// Directional lights
 		const auto& dirLights = scene->proxyList_directionalLight;
+
 		if (dirLights.size() > 0) {
 			SCOPED_DRAW_EVENT(DirectionalLight);
 
@@ -160,11 +158,11 @@ namespace pathos {
 			for (size_t lightIx = 0; lightIx < dirLights.size(); ++lightIx) {
 				const DirectionalLightProxy* light = dirLights[lightIx];
 
+				cmdList.bindTextureUnit(6, sceneContext.cascadedShadowMaps[lightIx]);
+
 				UBO_DirectLighting<DirectionalLightProxy> uboData;
 				uboData.enableShadowing = (uint32)((cvar_enable_shadow.getInt() != 0) && (light->bCastShadows != 0));
-				// #todo-light: Support shadow map for secondary directional lights.
-				uboData.haveShadowMap = (lightIx == 0);
-				uboData.csmZFar = badger::max(1.0f, cvarZFar->getFloat());
+				uboData.haveShadowMap   = (uint32)(light->bCastShadows != 0 && lightIx == 0); // #todo-light: shadow_mapping.glsl always uses sun info in uboPerFrame. Need to fix it.
 				uboData.lightParameters = *light;
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);
@@ -174,7 +172,7 @@ namespace pathos {
 			}
 		}
 
-		cmdList.bindTextureUnit(6, 0);
+		cmdList.bindTextureUnit(6, NULL);
 	}
 
 	void DirectLightingPass::renderLocalLights(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -241,7 +239,7 @@ namespace pathos {
 			}
 		}
 
-		cmdList.bindTextureUnit(7, 0);
+		cmdList.bindTextureUnit(7, NULL);
 	}
 
 }

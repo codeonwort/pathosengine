@@ -292,7 +292,8 @@ namespace pathos {
 		releaseViews(ssrPreconvolutionTempViews);
 
 		// #todo-renderer: Implement RT pool and release all automatically.
-#define safe_release(x) if(x != 0) { textures.push_back(x); x = 0; }
+#define safe_release(x) if (x != 0) { textures.push_back(x); x = 0; }
+#define safe_release_array(xs) { for (GLuint x : xs) { textures.push_back(x); } xs.clear(); }
 		safe_release(sceneColor);
 		safe_release(sceneColorHalfRes);
 		safe_release(sceneDepth);
@@ -311,7 +312,7 @@ namespace pathos {
 		safe_release(ssrPreconvolutionTemp);
 		safe_release(volumetricCloudA);
 		safe_release(volumetricCloudB);
-		safe_release(cascadedShadowMap);
+		safe_release_array(cascadedShadowMaps);
 		safe_release(omniShadowMaps);
 		safe_release(localSpecularIBLs);
 		safe_release(skyIrradianceMap);
@@ -337,37 +338,57 @@ namespace pathos {
 		bDestroyed = true;
 	}
 
-	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList, const DirectionalLightProxy* lightProxy) {
-		// Case 1. No directional lights in the scene.
-		if (lightProxy == nullptr) {
-			if (cascadedShadowMap != 0) {
-				cmdList.deleteTextures(1, &cascadedShadowMap);
-				cascadedShadowMap = 0;
+	void SceneRenderTargets::reallocDirectionalShadowMaps(RenderCommandList& cmdList, const std::vector<DirectionalLightProxy*>& lightProxyList) {
+		// Throw away all shadow maps. Maybe need to change if I'm gonna keep static shadow maps.
+		if (cascadedShadowMaps.size() != lightProxyList.size()) {
+			for (size_t i = 0u; i < cascadedShadowMaps.size(); ++i) {
+				if (cascadedShadowMaps[i] != 0) {
+					cmdList.deleteTextures(1, &cascadedShadowMaps[i]);
+				}
 			}
+			const size_t numLights = lightProxyList.size();
+			cascadedShadowMaps.resize(numLights, 0);
+			cachedCsmCounts.resize(numLights, 0u);
+			cachedCsmSizes.resize(numLights, 0u);
+		}
+
+		// No directional lights in the scene.
+		if (lightProxyList.size() == 0) {
 			return;
 		}
 
-		// Case 2. No need to reallocate existing resources.
-		if (cachedCsmCount == lightProxy->shadowMapCascadeCount && cachedCsmSize == lightProxy->shadowMapSize && cascadedShadowMap != 0) {
-			return;
-		}
-		cachedCsmCount = lightProxy->shadowMapCascadeCount;
-		cachedCsmSize = lightProxy->shadowMapSize;
+		for (size_t i = 0u; i < lightProxyList.size(); ++i) {
+			const DirectionalLightProxy* light = lightProxyList[i];
 
-		// Case 3. Reallocate resources.
-		if (cascadedShadowMap != 0) cmdList.deleteTextures(1, &cascadedShadowMap);
-		if (lightProxy->shadowMapCascadeCount > 0) {
-			gRenderDevice->createTextures(GL_TEXTURE_2D_ARRAY, 1, &cascadedShadowMap);
-			cmdList.textureStorage3D(cascadedShadowMap, 1, GL_DEPTH_COMPONENT32F,
-				lightProxy->shadowMapSize, lightProxy->shadowMapSize, lightProxy->shadowMapCascadeCount);
-			cmdList.objectLabel(GL_TEXTURE, cascadedShadowMap, -1, "CascadedShadowMap");
+			if (cascadedShadowMaps[i] != 0 && cachedCsmCounts[i] == light->shadowMapCascadeCount && cachedCsmSizes[i] == light->shadowMapSize) {
+				// No need to reallocate for current light.
+				continue;
+			}
 
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			cmdList.textureParameteri(cascadedShadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			cachedCsmCounts[i] = light->shadowMapCascadeCount;
+			cachedCsmSizes[i] = light->shadowMapSize;
+			if (cascadedShadowMaps[i] != 0) {
+				cmdList.deleteTextures(1, &cascadedShadowMaps[i]);
+				cascadedShadowMaps[i] = 0;
+			}
+
+			if (light->bCastShadows == false) {
+				continue;
+			}
+
+			gRenderDevice->createTextures(GL_TEXTURE_2D_ARRAY, 1, &cascadedShadowMaps[i]);
+			cmdList.textureStorage3D(cascadedShadowMaps[i], 1, GL_DEPTH_COMPONENT32F, light->shadowMapSize, light->shadowMapSize, light->shadowMapCascadeCount);
+
+			char texName[256];
+			sprintf_s(texName, "CascadedShadowMap_%u", (uint32)i);
+			cmdList.objectLabel(GL_TEXTURE, cascadedShadowMaps[i], -1, texName);
+
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			cmdList.textureParameteri(cascadedShadowMaps[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
 	}
 

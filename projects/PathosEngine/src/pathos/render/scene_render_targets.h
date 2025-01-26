@@ -80,10 +80,10 @@ namespace pathos {
 
 		// Cascaded Shadow Maps
 	private:
-		uint32 cachedCsmCount = 0;
-		uint32 cachedCsmSize = 0;
+		std::vector<uint32> cachedCsmCounts;
+		std::vector<uint32> cachedCsmSizes;
 	public:
-		GLuint cascadedShadowMap = 0;
+		std::vector<GLuint> cascadedShadowMaps; // Array of tex2darray, length = # of directional lights, element is 0 if non shadow casting light.
 
 		// Omnidirectional Shadow Maps
 		uint32 omniShadowMapLayerCount = 0;
@@ -148,7 +148,7 @@ namespace pathos {
 		void freeSceneTextures(RenderCommandList& cmdList);
 
 		// If lightProxy is null, then deallocate relevant resources.
-		void reallocDirectionalShadowMaps(RenderCommandList& cmdList, const DirectionalLightProxy* lightProxy);
+		void reallocDirectionalShadowMaps(RenderCommandList& cmdList, const std::vector<DirectionalLightProxy*>& lightProxyList);
 
 		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
