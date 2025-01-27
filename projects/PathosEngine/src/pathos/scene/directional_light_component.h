@@ -5,10 +5,13 @@
 namespace pathos {
 
 	struct CascadedShaowMapSettings {
-		bool bCastShadows = true;
+		// Changing it greater than 4 will break the program. ex) see UBO_PerFrame.
+		static constexpr uint32 MAX_CASCADE_COUNT = 4u;
+
+		bool   bCastShadows = true;
 		uint32 cascadeCount = 4;
-		uint32 size = 2048; // both width and height
-		float zFar = 500.0f;
+		uint32 size         = 2048;   // Both width and height.
+		float  zFar         = 500.0f; // Light frustum could be too large if we use camera's zFar as is.
 	};
 
 	// Memory layout should match with DirectionalLight in light.hlsl
@@ -19,8 +22,13 @@ namespace pathos {
 		uint32  shadowMapCascadeCount;
 		vector3 directionVS;
 		uint32  shadowMapSize;
-		float   shadowMapZFar;
 		vector3 _pad0;
+		float   shadowMapZFar;
+		// For shadowmap sampling. They make the uniform buffer for DirectionalLight bloated
+		// but there's rarely two or more directional lights so it's OK I guess?
+		matrix4 lightViewMatrices[CascadedShaowMapSettings::MAX_CASCADE_COUNT]; // 64 * 4 bytes
+		matrix4 lightViewProjMatrices[CascadedShaowMapSettings::MAX_CASCADE_COUNT]; // 64 * 4 bytes
+		vector4 csmZSlices;
 
 		static DirectionalLightProxy createDummy() {
 			CascadedShaowMapSettings defaultShadows{};
@@ -32,7 +40,6 @@ namespace pathos {
 			dummy.directionVS           = vector3(0.0f, -1.0f, 0.0f);
 			dummy.shadowMapSize         = defaultShadows.size;
 			dummy.shadowMapZFar         = defaultShadows.zFar;
-			dummy._pad0                 = vector3(0.0f);
 			return dummy;
 		}
 
@@ -45,6 +52,9 @@ namespace pathos {
 		DirectionalLightComponent();
 
 		virtual void createRenderProxy(SceneProxy* scene) override;
+
+	private:
+		void calculateLightFrustumBounds(size_t cascadeIx, const vector3* frustum, DirectionalLightProxy* outProxy);
 
 	public:
 		vector3 direction;   // From sun to earth

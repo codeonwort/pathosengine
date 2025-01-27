@@ -16,9 +16,6 @@
 
 namespace pathos {
 
-	// Changing it greater than 4 will break the program. ex) see UBO_PerFrame.
-	static const int32 MAX_CASCADE_COUNT = 4;
-
 	DirectionalShadowMap::~DirectionalShadowMap() {
 		CHECKF(bDestroyed, "Resource leak");
 	}
@@ -75,7 +72,6 @@ namespace pathos {
 				continue;
 			}
 
-			const LightTransform& lightTransform = lightTransforms[lightIx];
 			const uint32 numCascades = lightProxy->shadowMapCascadeCount;
 
 			uint32 currentProgramHash = 0;
@@ -94,8 +90,8 @@ namespace pathos {
 				// Hack uboPerFrame.
 				{
 					UBO_PerFrame uboData = cachedPerFrameUBOData;
-					uboData.view = lightTransform.viewMatrices[cascadeIx];
-					uboData.viewProj = lightTransform.viewProjectionMatrices[cascadeIx];
+					uboData.view = lightProxy->lightViewMatrices[cascadeIx];
+					uboData.viewProj = lightProxy->lightViewProjMatrices[cascadeIx];
 					uboData.temporalJitter = vector4(0.0f);
 
 					uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, &uboData);
@@ -175,56 +171,6 @@ namespace pathos {
 		// #todo-renderer: Although it reverts the UBO properly, The debug name in RenderDoc appears as "UBO_PerFrame_CSM".
 		// Revert uboPerFrame.
 		uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, (void*)&cachedPerFrameUBOData);
-	}
-
-	void DirectionalShadowMap::updateUniformBufferData(RenderCommandList& cmdList, const SceneProxy* scene, const Camera* camera) {
-		const size_t numLights = scene->proxyList_directionalLight.size();
-		lightTransforms.resize(numLights);
-
-		for (size_t lightIx = 0u; lightIx < numLights; ++lightIx) {
-			const DirectionalLightProxy* lightProxy = scene->proxyList_directionalLight[lightIx];
-			const uint32 csmCount = lightProxy->shadowMapCascadeCount;
-			const float zFar = lightProxy->shadowMapZFar;
-
-			if (lightProxy->bCastShadows) {
-				lightTransforms[lightIx].viewMatrices.resize(csmCount);
-				lightTransforms[lightIx].viewProjectionMatrices.resize(csmCount);
-				lightTransforms[lightIx].zSlices.resize(csmCount);
-
-				std::vector<vector3> frustumPlanes;
-				camera->getFrustumVertices(frustumPlanes, csmCount, zFar, lightTransforms[lightIx].zSlices.data());
-				for (uint32 cascadeIx = 0u; cascadeIx < csmCount; ++cascadeIx) {
-					calculateBounds(lightIx, cascadeIx, &(frustumPlanes[cascadeIx * 4]), lightProxy->directionWS);
-				}
-			} else {
-				lightTransforms[lightIx].viewMatrices.clear();
-				lightTransforms[lightIx].viewProjectionMatrices.clear();
-				lightTransforms[lightIx].zSlices.clear();
-			}
-		}
-	}
-
-	void DirectionalShadowMap::calculateBounds(size_t lightIx, size_t cascadeIx, const vector3* frustum, const vector3& L_forward) {
-		vector3 L_up, L_right;
-		badger::calculateOrthonormalBasis(L_forward, L_up, L_right);
-
-		vector3 center(0.0f);
-		for (int32 i = 0; i < 8; ++i) center += frustum[i];
-		center *= 0.125f;
-
-		vector3 lengths(0.0f);
-		for (int32 i = 0; i < 8; ++i) {
-			vector3 delta = frustum[i] - center;
-			lengths.x = badger::max(lengths.x, std::abs(glm::dot(delta, L_right)));
-			lengths.y = badger::max(lengths.y, std::abs(glm::dot(delta, L_up)));
-			lengths.z = badger::max(lengths.z, std::abs(glm::dot(delta, L_forward)));
-		}
-
-		matrix4 lightView = glm::lookAt(center, center + L_forward, L_up);
-		matrix4 projection = glm::ortho(-lengths.x, lengths.x, -lengths.y, lengths.y, -lengths.z, lengths.z);
-
-		lightTransforms[lightIx].viewMatrices[cascadeIx] = lightView;
-		lightTransforms[lightIx].viewProjectionMatrices[cascadeIx] = projection * lightView;
 	}
 
 }

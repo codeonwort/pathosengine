@@ -17,7 +17,7 @@ struct PointLight {
 	vec3  padding0;
 };
 
-// Total 64 bytes
+// Total 592 bytes
 struct DirectionalLight {
 	// 16 bytes
 	vec3  wsDirection;
@@ -29,8 +29,12 @@ struct DirectionalLight {
 	vec3  vsDirection;
 	uint  shadowMapSize;
 	// 16 bytes
-	float shadowMapZFar;
 	vec3  _pad0;
+	float shadowMapZFar;
+	// 528 = (64 * 4) + (64 * 4) + 16 bytes
+	mat4x4 lightViewMatrices[4];
+	mat4x4 lightViewProjMatrices[4];
+	vec4   csmZSlices;
 };
 
 // Total 80 bytes

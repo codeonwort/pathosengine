@@ -16,29 +16,30 @@
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
 layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
+	
 	mat4x4 viewTransform;
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
 	mat4x4 viewProjTransform;
 	mat4x4 projTransform;
 	mat4x4 inverseProjTransform;
-
+	
 	mat4x4 prevViewTransform;
 	mat4x4 prevInverseViewTransform;
 	mat4x4 prevViewProjTransform;
 
-	vec4 projParams;
-	vec4 temporalJitter;    // For TAA
-	vec4 screenResolution;  // (w, h, 1/w, 1/h)
-	vec4 zRange;            // (near, far, fovYHalf_radians, aspectRatio(w/h))
-	vec4 time;              // (currentTime, deltaSeconds, ?, ?)
+	vec4   projParams;
+	vec4   temporalJitter;    // For TAA
+	vec4   screenResolution;  // (w, h, 1/w, 1/h)
+	vec4   zRange;            // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4   time;              // (currentTime, deltaSeconds, ?, ?)
 
 	mat4x4 sunViewProjection[4];
 	float  shadowmapZFar;
 	uint   csmCount;
 	float  _pad0;
 	float  _pad1;
-	vec4 csmDepths;
+	vec4   csmDepths;
 	
 	vec3 cameraDirectionVS; // View space
 	uint bReverseZ;
@@ -49,7 +50,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	vec3 cameraPositionWS;  // World space
 	uint sunExists;
 
-	DirectionalLight sunLight;
+	DirectionalLight sunLight; // Store first directional light in per frame UBO for atmosphere, clouds, ...
 } uboPerFrame;
 
 float getWorldTime() { return uboPerFrame.time.x; }

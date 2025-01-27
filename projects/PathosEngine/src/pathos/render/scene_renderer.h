@@ -28,7 +28,7 @@ namespace pathos {
 		matrix4               prevInverseView;
 		matrix4               prevViewProj;
 
-		vector4               projParams;
+		vector4               projParams;        // (1 / proj[0][0], 1 / proj[1][1], 0, 0) // I dunno why I have this?
 		vector4               temporalJitter;    // (x, y, ?, ?)
 		vector4               screenResolution;  // (w, h, 1/w, 1/h)
 		vector4               zRange;            // (zNear, zFar, fovYHalf_radians, aspectRatio(w/h))

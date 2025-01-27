@@ -162,7 +162,7 @@ namespace pathos {
 
 				UBO_DirectLighting<DirectionalLightProxy> uboData;
 				uboData.enableShadowing = (uint32)((cvar_enable_shadow.getInt() != 0) && (light->bCastShadows != 0));
-				uboData.haveShadowMap   = (uint32)(light->bCastShadows != 0 && lightIx == 0); // #todo-light: shadow_mapping.glsl always uses sun info in uboPerFrame. Need to fix it.
+				uboData.haveShadowMap   = light->bCastShadows;
 				uboData.lightParameters = *light;
 
 				uboDirLight.update(cmdList, UBO_DirectLighting<DirectionalLightProxy>::BINDING_SLOT, &uboData);

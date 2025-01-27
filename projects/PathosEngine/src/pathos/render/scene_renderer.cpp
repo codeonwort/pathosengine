@@ -191,7 +191,6 @@ namespace pathos {
 
 			// These should be updated before updateSceneUniformBuffer
 			scene->createViewDependentRenderProxy(camera->getViewMatrix());
-			sunShadowMap->updateUniformBufferData(cmdList, scene, camera);
 
 			// Update ubo_perFrame
 			updateSceneUniformBuffer(cmdList, scene, camera);
@@ -745,12 +744,12 @@ namespace pathos {
 		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
 		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
-			data.sunViewProj[i] = sunShadowMap->getViewProjection(0, i);
+			data.sunViewProj[i] = sunProxy.lightViewProjMatrices[i];
 		}
 		data.shadowmapZFar = sunProxy.shadowMapZFar;
 		data.csmCount = sunProxy.shadowMapCascadeCount;
 		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
-			data.csmDepths[i] = sunShadowMap->getZSlice(0, i);
+			data.csmDepths[i] = sunProxy.csmZSlices[i];
 		}
 
 		data.cameraDirectionVS = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));

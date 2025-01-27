@@ -59,15 +59,14 @@ bool haveShadowMap()              { return ubo.haveShadowMap != 0; }
 LIGHT_STRUCT getLightParameters() { return ubo.lightParameters; }
 
 #if LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL
-float getShadowingByDirectionalLight(GBufferData gbufferData) {
-	ShadowQuery query;
-	query.vPos    = gbufferData.vs_coords;
-	query.zFar    = getLightParameters().shadowMapZFar;
-	query.wPos    = gbufferData.ws_coords;
-	query.vNormal = gbufferData.normal;
-	query.wNormal = gbufferData.ws_normal;
+float getShadowingByDirectionalLight(GBufferData gbufferData, DirectionalLight light) {
+	CsmShadowQuery query;
+	query.vPos      = gbufferData.vs_coords;
+	query.wPos      = gbufferData.ws_coords;
+	query.vNormal   = gbufferData.normal;
+	query.wNormal   = gbufferData.ws_normal;
 	
-	return getShadowingFactor(csm, query);
+	return getDirLightShadowingFactor(csm, query, light);
 }
 #endif
 
@@ -229,7 +228,7 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 	radiance = light.intensity;
 
 	if (bEnableShadowMap) {
-		radiance *= getShadowingByDirectionalLight(gbufferData);
+		radiance *= getShadowingByDirectionalLight(gbufferData, light);
 	}
 #endif // LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL
 
@@ -366,7 +365,7 @@ void main() {
 
 // shadow_mapping.glsl
 #if DEBUG_CSM_ID && (LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL)
-	radiance = vec3(getShadowingByDirectionalLight(gbufferData));
+	radiance = vec3(getShadowingByDirectionalLight(gbufferData, uboPerFrame.sunLight));
 #endif
 
 	// #todo-light: Sometimes radiance is NaN.
