@@ -701,6 +701,12 @@ namespace pathos {
 		const bool bSunExists = (scene->proxyList_directionalLight.size() > 0);
 		const DirectionalLightProxy sunProxy = bSunExists ? *(scene->proxyList_directionalLight[0]) : DirectionalLightProxy::createDummy();
 
+		auto buildResolution = [](uint32 w, uint32 h) -> vector4 {
+			return vector4((float)w, (float)h, 1.0f / (float)w, 1.0f / (float)h);
+		};
+
+		// ----------------------------------------------------------------
+
 		UBO_PerFrame data;
 
 		data.view         = camera->getViewMatrix();
@@ -711,56 +717,39 @@ namespace pathos {
 		data.inverseProj  = glm::inverse(projMatrix);
 
 		if (frameCounter != 0) {
-			data.prevView = prevView;
+			data.prevView        = prevView;
 			data.prevInverseView = prevInverseView;
-			data.prevViewProj = prevViewProj;
+			data.prevViewProj    = prevViewProj;
 		} else {
-			data.prevView = data.view;
+			data.prevView        = data.view;
 			data.prevInverseView = data.inverseView;
-			data.prevViewProj = data.viewProj;
+			data.prevViewProj    = data.viewProj;
 		}
 
-		data.projParams  = vector4(1.0f / projMatrix[0][0], 1.0f / projMatrix[1][1], 0.0f, 0.0f);
-
+		float tempJitterX = 0.0f, tempJitterY = 0.0f;
 		if (bMainScene && getAntiAliasingMethod() == EAntiAliasingMethod::TAA) {
 			uint32 jitterIx = (scene->frameNumber) % JITTER_SEQ_LENGTH;
 			float K = getTemporalJitterMultiplier();
 			// It reduces the effectiveness of TAA, but also relax jittering when super resolution is enabled.
 			K /= getSuperResolutionScaleFactor();
-			data.temporalJitter.x = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets->sceneWidth;
-			data.temporalJitter.y = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets->sceneHeight;
-			data.temporalJitter.z = data.temporalJitter.w = 0.0f;
-		} else {
-			data.temporalJitter = vector4(0.0f);
+			tempJitterX = K * temporalJitterSequenceX[jitterIx] / (float)sceneRenderTargets->sceneWidth;
+			tempJitterY = K * temporalJitterSequenceY[jitterIx] / (float)sceneRenderTargets->sceneHeight;
 		}
-
-		data.screenResolution.x = (float)sceneRenderTargets->sceneWidth;
-		data.screenResolution.y = (float)sceneRenderTargets->sceneHeight;
-		data.screenResolution.z = 1.0f / data.screenResolution.x;
-		data.screenResolution.w = 1.0f / data.screenResolution.y;
-
-		data.zRange = vector4(camera->getZNear(), camera->getZFar(), camera->getFovYRadians(), camera->getAspectRatio());
-
-		data.time = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
-
-		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
-			data.sunViewProj[i] = sunProxy.lightViewProjMatrices[i];
-		}
-		data.shadowmapZFar = sunProxy.shadowMapZFar;
-		data.csmCount = sunProxy.shadowMapCascadeCount;
-		for (uint32 i = 0; i < sunProxy.shadowMapCascadeCount; ++i) {
-			data.csmDepths[i] = sunProxy.csmZSlices[i];
-		}
+		data.temporalJitter    = vector4(tempJitterX, tempJitterY, 0.0f, 0.0f);
+		data.screenResolution  = buildResolution(sceneRenderTargets->sceneWidth, sceneRenderTargets->sceneHeight);
+		data.projParams        = vector4(camera->getZNear(), camera->getZFar(), camera->getFovYRadians(), camera->getAspectRatio());
+		data.time              = vector4(gEngine->getWorldTime(), scene->deltaSeconds, 0.0f, 0.0f);
 
 		data.cameraDirectionVS = vector3(camera->getViewMatrix() * vector4(camera->getEyeVector(), 0.0f));
-		data.cameraPositionVS = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
-		data.cameraPositionWS = camera->getPosition();
+		data.bReverseZ         = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1 : 0;
 
-		data.bReverseZ = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? 1 : 0;
+		data.cameraPositionVS  = vector3(camera->getViewMatrix() * vector4(camera->getPosition(), 1.0f));
+		data.__pad0            = 0.0f;
 
-		// Treat the first directional light as Sun.
-		data.sunExists = bSunExists;
-		data.sunLight  = sunProxy;
+		data.cameraPositionWS  = camera->getPosition();
+		data.sunExists         = bSunExists; // Treat the first directional light as Sun.
+
+		data.sunLight          = sunProxy;
 
 		ubo_perFrame->update(cmdList, UBO_PerFrame::BINDING_POINT, &data);
 

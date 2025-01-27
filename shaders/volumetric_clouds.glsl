@@ -138,8 +138,8 @@ float getCloudCurliness() { return uboCloud.cloudCurliness; }
 vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
 vec3 getSunDirection() { return uboCloud.sunDirection.xyz; }
 
-float getFOV() { return uboPerFrame.zRange.z; }
-float getAspectRatioWH() { return uboPerFrame.zRange.w; }
+float getFOV() { return uboPerFrame.projParams.z; }
+float getAspectRatioWH() { return uboPerFrame.projParams.w; }
 
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
 	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);

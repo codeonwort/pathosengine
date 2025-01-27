@@ -16,7 +16,6 @@
 // #todo: Rename parameters to clarify view space and world space values.
 // Position components of camera and lights are in view space
 layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
-	
 	mat4x4 viewTransform;
 	mat4x4 inverseViewTransform;
 	mat3x3 viewTransform3x3;
@@ -28,24 +27,16 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 	mat4x4 prevInverseViewTransform;
 	mat4x4 prevViewProjTransform;
 
-	vec4   projParams;
 	vec4   temporalJitter;    // For TAA
 	vec4   screenResolution;  // (w, h, 1/w, 1/h)
-	vec4   zRange;            // (near, far, fovYHalf_radians, aspectRatio(w/h))
+	vec4   projParams;        // (near, far, fovYHalf_radians, aspectRatio(w/h))
 	vec4   time;              // (currentTime, deltaSeconds, ?, ?)
-
-	mat4x4 sunViewProjection[4];
-	float  shadowmapZFar;
-	uint   csmCount;
-	float  _pad0;
-	float  _pad1;
-	vec4   csmDepths;
 	
 	vec3 cameraDirectionVS; // View space
 	uint bReverseZ;
 
 	vec3 cameraPositionVS;  // View space
-	float _pad2;
+	float _pad3;
 
 	vec3 cameraPositionWS;  // World space
 	uint sunExists;
@@ -55,7 +46,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 float getWorldTime() { return uboPerFrame.time.x; }
 float getDeltaSeconds() { return uboPerFrame.time.y; }
-float getAspectRatio() { return uboPerFrame.zRange.w; }
+float getAspectRatio() { return uboPerFrame.projParams.w; }
 
 vec3 getWorldPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {
 	//float z = sceneDepth * 2.0 - 1.0; // Use this if not Reverse-Z
@@ -92,7 +83,7 @@ vec3 getViewPositionFromWorldPosition(vec3 wPos) {
 // zNear is mapped to 0.0, zFar is mapped to 1.0
 float sceneDepthToLinearDepth(vec2 screenUV, float sceneDepth) {
 	vec3 vPos = getViewPositionFromSceneDepth(screenUV, sceneDepth);
-	float linearDepth = (-vPos.z - uboPerFrame.zRange.x) / (uboPerFrame.zRange.y - uboPerFrame.zRange.x);
+	float linearDepth = (-vPos.z - uboPerFrame.projParams.x) / (uboPerFrame.projParams.y - uboPerFrame.projParams.x);
 	return linearDepth;
 }
 

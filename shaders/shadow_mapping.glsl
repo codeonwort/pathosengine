@@ -29,7 +29,7 @@ struct OmniShadowQuery {
 
 float getDirLightShadowingFactor(sampler2DArrayShadow csm, CsmShadowQuery query, DirectionalLight light) {
 	vec3 vSun = light.vsDirection;
-	float zNear = uboPerFrame.zRange.x; // zNear is same as that of primary view. (no reason, just same)
+	float zNear = uboPerFrame.projParams.x; // zNear is same as that of primary view. (no reason, just same)
 	//float linearZ = (-query.vPos.z - zNear) / (light.shadowMapZFar - zNear);
 	float linearZ = -query.vPos.z;
 

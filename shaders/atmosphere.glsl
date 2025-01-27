@@ -296,7 +296,7 @@ vec3 getViewDirectionWS(vec2 uv) {
     P.xy *= ubo.screenFlip;
     if (ubo.renderToCubemap == 0) {
         P.x *= uboPerFrame.screenResolution.x / uboPerFrame.screenResolution.y;
-        P.z = -(1.0 / tan(uboPerFrame.zRange.z * 0.5));
+        P.z = -(1.0 / tan(uboPerFrame.projParams.z * 0.5));
     }
 	P = normalize(P);
 

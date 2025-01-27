@@ -65,11 +65,12 @@ void main() {
 		float fps = 144.0;
 		outColor = vec4(abs(texture2D(velocityMap, screenUV).rg) * fps, 0.0, 1.0);
 	} else if (viewmode == VIEWMODE_CSMLAYER) {
+		DirectionalLight sun = uboPerFrame.sunLight;
 		// Green = near, blue = far, red = out of range
-		float zNear = uboPerFrame.zRange.x;
-		float zFar = uboPerFrame.shadowmapZFar;
+		float zNear = uboPerFrame.projParams.x;
+		float zFar = sun.shadowMapZFar;
 		float currZ = gbufferData.vs_coords.z;
-		float numCascades = float(uboPerFrame.csmCount);
+		float numCascades = float(sun.shadowMapCascadeCount);
 		float linearZ = (-currZ - zNear) / (zFar - zNear);
 		if (linearZ < 1.0 && gbufferData.material_id != 0) {
 			float k = float(int(linearZ * numCascades)) / numCascades;
