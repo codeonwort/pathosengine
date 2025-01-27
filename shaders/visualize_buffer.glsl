@@ -69,12 +69,16 @@ void main() {
 		// Green = near, blue = far, red = out of range
 		float zNear = uboPerFrame.projParams.x;
 		float zFar = sun.shadowMapZFar;
-		float currZ = gbufferData.vs_coords.z;
-		float numCascades = float(sun.shadowMapCascadeCount);
-		float linearZ = (-currZ - zNear) / (zFar - zNear);
-		if (linearZ < 1.0 && gbufferData.material_id != 0) {
-			float k = float(int(linearZ * numCascades)) / numCascades;
-			//outColor = vec4(k, k, k, 1.0);
+		float linearZ = -gbufferData.vs_coords.z;
+		float csmCount = float(sun.shadowMapCascadeCount);
+		float csmZSlices[4];
+		for (uint i = 0; i < csmCount; ++i) csmZSlices[i] = sun.csmZSlices[i];
+		uint csmLayer = 0;
+		for (; csmLayer < csmCount; ++csmLayer) {
+			if (linearZ < csmZSlices[csmLayer]) break;
+		}
+		if (gbufferData.material_id != 0) {
+			float k = min(1.0, float(csmLayer) / csmCount);
 			outColor = vec4(mix(vec3(0, 1, 0), vec3(0, 0, 1), k), 1.0);
 		} else {
 			outColor = vec4(1.0, 0.0, 0.0, 1.0);
