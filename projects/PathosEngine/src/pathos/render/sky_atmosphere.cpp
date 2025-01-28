@@ -51,14 +51,14 @@ namespace pathos {
 	public:
 		PASTransmittanceFS() : ShaderStage(GL_FRAGMENT_SHADER, "PASTransmittanceFS") {
 			addDefine("PRECOMPUTE_TRANSMITTANCE", 1);
-			setFilepath("atmosphere_precompute.glsl");
+			setFilepath("sky/atmosphere_precompute.glsl");
 		}
 	};
 
 	class AtmosphericScatteringFS : public ShaderStage {
 	public:
 		AtmosphericScatteringFS() : ShaderStage(GL_FRAGMENT_SHADER, "AtmosphericScatteringFS") {
-			setFilepath("atmosphere.glsl");
+			setFilepath("sky/atmosphere.glsl");
 		}
 	};
 

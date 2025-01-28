@@ -84,7 +84,7 @@ namespace pathos {
 	class VolumetricCloudCS : public ShaderStage {
 	public:
 		VolumetricCloudCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudCS") {
-			setFilepath("volumetric_clouds.glsl");
+			setFilepath("sky/volumetric_clouds.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud, VolumetricCloudCS);
@@ -92,7 +92,7 @@ namespace pathos {
 	class VolumetricCloudPostFS : public ShaderStage {
 	public:
 		VolumetricCloudPostFS() : ShaderStage(GL_FRAGMENT_SHADER, "VolumetricCloudPostFS") {
-			setFilepath("volumetric_clouds_post.glsl");
+			setFilepath("sky/volumetric_clouds_post.glsl");
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_VolumetricCloudPost, FullscreenVS, VolumetricCloudPostFS);

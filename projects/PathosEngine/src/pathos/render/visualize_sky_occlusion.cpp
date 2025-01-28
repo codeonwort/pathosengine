@@ -27,7 +27,7 @@ namespace pathos {
 	class VisualizeSkyOcclusionFS : public ShaderStage {
 	public:
 		VisualizeSkyOcclusionFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeSkyOcclusionFS") {
-			setFilepath("visualize_sky_occlusion.glsl");
+			setFilepath("debugging/visualize_sky_occlusion.glsl");
 		}
 	};
 

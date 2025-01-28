@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -19,8 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="atmosphere.glsl" />
-    <None Include="atmosphere_precompute.glsl" />
+    <None Include="sky\atmosphere.glsl" />
+    <None Include="sky\atmosphere_precompute.glsl" />
+    <None Include="debugging\visualize_buffer.glsl" />
+    <None Include="debugging\visualize_light_probe.glsl" />
+    <None Include="debugging\visualize_sky_occlusion.glsl" />
     <None Include="postprocess\auto_exposure_scene_avg.glsl" />
     <None Include="postprocess\auto_exposure_histogram_avg.glsl" />
     <None Include="postprocess\auto_exposure_histogram_gen.glsl" />
@@ -41,15 +36,15 @@
     <None Include="postprocess\depth_of_field.glsl" />
     <None Include="diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
-    <None Include="fsr1_wrapper_common.glsl" />
-    <None Include="fsr1_wrapper_easu.glsl" />
-    <None Include="fsr1_wrapper_rcas.glsl" />
+    <None Include="fsr1\fsr1_wrapper_common.glsl" />
+    <None Include="fsr1\fsr1_wrapper_easu.glsl" />
+    <None Include="fsr1\fsr1_wrapper_rcas.glsl" />
     <None Include="fullscreen_quad.glsl" />
     <None Include="postprocess\fxaa_wrapper.glsl" />
     <None Include="geom_common.glsl" />
-    <None Include="god_ray_fs.glsl" />
-    <None Include="god_ray_post.glsl" />
-    <None Include="god_ray_silhouette.glsl" />
+    <None Include="godray\god_ray_fs.glsl" />
+    <None Include="godray\god_ray_post.glsl" />
+    <None Include="godray\god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="indirect_lighting.glsl" />
     <None Include="landscape_indirect_draw.glsl" />
@@ -75,8 +70,8 @@
     <None Include="reflection_probe_filtering.glsl" />
     <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
-    <None Include="skybox.glsl" />
-    <None Include="sky_panorama.glsl" />
+    <None Include="sky\skybox.glsl" />
+    <None Include="sky\sky_panorama.glsl" />
     <None Include="specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />
     <None Include="ssao_blur.glsl" />
@@ -85,15 +80,12 @@
     <None Include="ssr_preconvolution.glsl" />
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
-    <None Include="starfield.glsl" />
+    <None Include="sky\starfield.glsl" />
     <None Include="postprocess\temporal_anti_aliasing.glsl" />
     <None Include="postprocess\tone_mapping.glsl" />
-    <None Include="two_pass_gaussian_blur.glsl" />
-    <None Include="visualize_buffer.glsl" />
-    <None Include="visualize_light_probe.glsl" />
-    <None Include="visualize_sky_occlusion.glsl" />
-    <None Include="volumetric_clouds.glsl" />
-    <None Include="volumetric_clouds_post.glsl" />
+    <None Include="godray\two_pass_gaussian_blur.glsl" />
+    <None Include="sky\volumetric_clouds.glsl" />
+    <None Include="sky\volumetric_clouds_post.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -102,19 +94,6 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -133,12 +112,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -154,28 +127,6 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

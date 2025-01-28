@@ -15,8 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="atmosphere.glsl" />
-    <None Include="atmosphere_precompute.glsl" />
+    <None Include="sky\atmosphere.glsl" />
+    <None Include="sky\atmosphere_precompute.glsl" />
     <None Include="postprocess\bloom_setup.glsl" />
     <None Include="core\brdf.glsl" />
     <None Include="copy_texture.fs.glsl" />
@@ -28,24 +28,23 @@
     <None Include="equirectangular_to_cube.glsl" />
     <None Include="fullscreen_quad.glsl" />
     <None Include="postprocess\fxaa_wrapper.glsl" />
-    <None Include="god_ray_fs.glsl" />
-    <None Include="god_ray_silhouette.glsl" />
+    <None Include="godray\god_ray_fs.glsl" />
+    <None Include="godray\god_ray_silhouette.glsl" />
     <None Include="fxaa\nvidia_fxaa.glsl" />
     <None Include="omni_shadow_map.glsl" />
     <None Include="overlay\overlay_standard.glsl" />
     <None Include="overlay\overlay_text.glsl" />
     <None Include="postprocess\dof_prefix_sum.glsl" />
     <None Include="shadow_mapping.glsl" />
-    <None Include="sky_panorama.glsl" />
-    <None Include="skybox.glsl" />
+    <None Include="sky\sky_panorama.glsl" />
+    <None Include="sky\skybox.glsl" />
     <None Include="specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />
     <None Include="ssao_downscale.glsl" />
-    <None Include="starfield.glsl" />
+    <None Include="sky\starfield.glsl" />
     <None Include="postprocess\tone_mapping.glsl" />
-    <None Include="two_pass_gaussian_blur.glsl" />
-    <None Include="visualize_buffer.glsl" />
-    <None Include="volumetric_clouds.glsl" />
+    <None Include="godray\two_pass_gaussian_blur.glsl" />
+    <None Include="sky\volumetric_clouds.glsl" />
     <None Include="core\common.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="indirect_lighting.glsl" />
@@ -66,29 +65,30 @@
     <None Include="resolve_unlit.glsl" />
     <None Include="materials\texture_viewer.glsl" />
     <None Include="materials\translucent_color.glsl" />
-    <None Include="fsr1_wrapper_easu.glsl" />
-    <None Include="fsr1_wrapper_rcas.glsl" />
-    <None Include="fsr1_wrapper_common.glsl" />
+    <None Include="fsr1\fsr1_wrapper_easu.glsl" />
+    <None Include="fsr1\fsr1_wrapper_rcas.glsl" />
+    <None Include="fsr1\fsr1_wrapper_common.glsl" />
     <None Include="materials\gltf_opaque.glsl" />
     <None Include="postprocess\temporal_anti_aliasing.glsl" />
     <None Include="geom_common.glsl" />
-    <None Include="visualize_light_probe.glsl" />
     <None Include="clear_texture.glsl" />
     <None Include="overlay\overlay_image.glsl" />
     <None Include="postprocess\auto_exposure_scene_avg.glsl" />
-    <None Include="volumetric_clouds_post.glsl" />
-    <None Include="god_ray_post.glsl" />
+    <None Include="sky\volumetric_clouds_post.glsl" />
+    <None Include="godray\god_ray_post.glsl" />
     <None Include="postprocess\auto_exposure_histogram_avg.glsl" />
     <None Include="postprocess\auto_exposure_histogram_gen.glsl" />
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
     <None Include="core\image_based_lighting.glsl" />
-    <None Include="visualize_sky_occlusion.glsl" />
     <None Include="reflection_probe_downsample.glsl" />
     <None Include="reflection_probe_filtering.glsl" />
     <None Include="reflection_probe_coeffs_const_32.glsl" />
     <None Include="materials\landscape.glsl" />
     <None Include="landscape_indirect_draw.glsl" />
     <None Include="core\indirect_draw.glsl" />
+    <None Include="debugging\visualize_buffer.glsl" />
+    <None Include="debugging\visualize_light_probe.glsl" />
+    <None Include="debugging\visualize_sky_occlusion.glsl" />
   </ItemGroup>
 </Project>

@@ -40,7 +40,7 @@ namespace pathos {
 		VisualizeLightProbeVS() : ShaderStage(GL_VERTEX_SHADER, "VisualizeLightProbeVS")
 		{
 			addDefine("VERTEX_SHADER", 1);
-			setFilepath("visualize_light_probe.glsl");
+			setFilepath("debugging/visualize_light_probe.glsl");
 		}
 	};
 
@@ -49,7 +49,7 @@ namespace pathos {
 		VisualizeLightProbeFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeLightProbeFS")
 		{
 			addDefine("FRAGMENT_SHADER", 1);
-			setFilepath("visualize_light_probe.glsl");
+			setFilepath("debugging/visualize_light_probe.glsl");
 		}
 	};
 

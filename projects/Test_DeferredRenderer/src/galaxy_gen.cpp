@@ -15,7 +15,7 @@ class StarfieldFS : public ShaderStage {
 public:
 	StarfieldFS() : ShaderStage(GL_FRAGMENT_SHADER, "StarfieldFS")
 	{
-		setFilepath("starfield.glsl");
+		setFilepath("sky/starfield.glsl");
 	}
 };
 

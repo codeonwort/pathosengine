@@ -54,7 +54,7 @@ namespace pathos {
 		FSR1_EASU() : ShaderStage(GL_COMPUTE_SHADER, "FSR1_EASU") {
 			const int32 fp16Criteria = checkFP16Support();
 			addDefine("FP16_CRITERIA", fp16Criteria);
-			setFilepath("fsr1_wrapper_easu.glsl");
+			setFilepath("fsr1/fsr1_wrapper_easu.glsl");
 		}
 	};
 
@@ -63,7 +63,7 @@ namespace pathos {
 		FSR1_RCAS() : ShaderStage(GL_COMPUTE_SHADER, "FSR1_RCAS") {
 			const int32 fp16Criteria = checkFP16Support();
 			addDefine("FP16_CRITERIA", fp16Criteria);
-			setFilepath("fsr1_wrapper_rcas.glsl");
+			setFilepath("fsr1/fsr1_wrapper_rcas.glsl");
 		}
 	};
 

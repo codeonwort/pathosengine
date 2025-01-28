@@ -29,7 +29,7 @@ namespace pathos {
 			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 				addDefine("REVERSE_Z", 1);
 			}
-			setFilepath("sky_panorama.glsl");
+			setFilepath("sky/sky_panorama.glsl");
 		}
 	};
 
@@ -37,7 +37,7 @@ namespace pathos {
 	public:
 		PanoramaSkyFS() : ShaderStage(GL_FRAGMENT_SHADER, "PanoramaSkyVS") {
 			addDefine("FRAGMENT_SHADER", 1);
-			setFilepath("sky_panorama.glsl");
+			setFilepath("sky/sky_panorama.glsl");
 		}
 	};
 

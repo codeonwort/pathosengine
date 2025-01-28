@@ -34,7 +34,7 @@ namespace pathos {
 	public:
 		GodRaySilhouetteVS() : ShaderStage(GL_VERTEX_SHADER, "GodRaySilhouetteVS") {
 			addDefine("VERTEX_SHADER 1");
-			setFilepath("god_ray_silhouette.glsl");
+			setFilepath("godray/god_ray_silhouette.glsl");
 		}
 	};
 
@@ -42,7 +42,7 @@ namespace pathos {
 	public:
 		GodRaySilhouetteFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRaySilhouetteFS") {
 			addDefine("FRAGMENT_SHADER 1");
-			setFilepath("god_ray_silhouette.glsl");
+			setFilepath("godray/god_ray_silhouette.glsl");
 		}
 	};
 
@@ -58,7 +58,7 @@ namespace pathos {
 	class GodRayLightScatteringFS : public ShaderStage {
 	public:
 		GodRayLightScatteringFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayLightScatteringFS") {
-			setFilepath("god_ray_fs.glsl");
+			setFilepath("godray/god_ray_fs.glsl");
 		};
 	};
 
@@ -71,7 +71,7 @@ namespace pathos {
 			}
 			addDefine("KERNEL_SIZE", 5);
 			//addDefine("TONAL_WEIGHT", 1);
-			setFilepath("two_pass_gaussian_blur.glsl");
+			setFilepath("godray/two_pass_gaussian_blur.glsl");
 		}
 	};
 
@@ -83,7 +83,7 @@ namespace pathos {
 	class GodRayPostFS : public ShaderStage {
 	public:
 		GodRayPostFS() : ShaderStage(GL_FRAGMENT_SHADER, "GodRayPostFS") {
-			setFilepath("god_ray_post.glsl");
+			setFilepath("godray/god_ray_post.glsl");
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_GodRayPost, FullscreenVS, GodRayPostFS);

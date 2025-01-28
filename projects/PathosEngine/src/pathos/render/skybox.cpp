@@ -24,7 +24,7 @@ namespace pathos {
 			if (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) {
 				addDefine("REVERSE_Z", 1);
 			}
-			setFilepath("skybox.glsl");
+			setFilepath("sky/skybox.glsl");
 		}
 	};
 
@@ -32,7 +32,7 @@ namespace pathos {
 	public:
 		SkyboxFS() : ShaderStage(GL_FRAGMENT_SHADER, "SkyboxFS") {
 			addDefine("FRAGMENT_SHADER", 1);
-			setFilepath("skybox.glsl");
+			setFilepath("sky/skybox.glsl");
 		}
 	};
 

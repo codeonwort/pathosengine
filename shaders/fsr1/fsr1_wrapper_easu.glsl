@@ -1,7 +1,7 @@
 #version 460 core
 
 //?#define FP16_CRITERIA 0
-#include "fsr1_wrapper_common.glsl"
+#include "fsr1/fsr1_wrapper_common.glsl"
 
 #define A_GPU 1
 #define A_GLSL 1
