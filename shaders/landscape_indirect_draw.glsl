@@ -1,5 +1,7 @@
 #version 460 core
 
+#include "core/indirect_draw.glsl"
+
 // Fill indirect draw args buffer for landscape indirect draw.
 
 // --------------------------------------------------------
@@ -17,14 +19,6 @@ struct SectorParameter {
 	float offsetY;
 	uint  lod;
 	float _pad0;
-};
-
-struct DrawElementsIndirectCommand {
-	uint count;
-	uint instanceCount;
-	uint firstIndex;
-	int  baseVertex;
-	uint baseInstance;
 };
 
 struct AABB {

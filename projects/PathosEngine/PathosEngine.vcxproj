@@ -262,6 +262,7 @@
     <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\rhi\gl_live_objects.h" />
+    <ClInclude Include="src\pathos\rhi\indirect_draw.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />

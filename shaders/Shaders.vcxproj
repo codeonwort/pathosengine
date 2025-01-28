@@ -32,6 +32,7 @@
     <None Include="core\common.glsl" />
     <None Include="copy_texture.fs.glsl" />
     <None Include="core\image_based_lighting.glsl" />
+    <None Include="core\indirect_draw.glsl" />
     <None Include="core\light.glsl" />
     <None Include="core\transform.glsl" />
     <None Include="deferred_common.glsl" />

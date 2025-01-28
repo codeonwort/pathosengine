@@ -1,4 +1,5 @@
 #include "landscape_component.h"
+#include "pathos/rhi/indirect_draw.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/material/material.h"
@@ -8,15 +9,6 @@
 #include "badger/types/half_float.h"
 #include "badger/math/minmax.h"
 #include "badger/math/hit_test.h"
-
-// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
-struct DrawElementsIndirectCommand {
-	uint32  count;
-	uint32  instanceCount;
-	uint32  firstIndex;
-	int32   baseVertex;
-	uint32  baseInstance;
-};
 
 struct LandscapeSectorParameter {
 	vector4 uvBounds;
