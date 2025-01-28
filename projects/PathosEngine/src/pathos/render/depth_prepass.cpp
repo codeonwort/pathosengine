@@ -13,6 +13,9 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
+// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread.
+// Same for shadowmap pass.
+
 namespace pathos {
 
 	void DepthPrepass::initializeResources(RenderCommandList& cmdList)

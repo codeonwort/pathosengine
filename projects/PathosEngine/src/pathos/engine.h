@@ -149,6 +149,10 @@ namespace pathos {
 			const std::vector<std::string>& inGpuCounterNames,
 			const std::vector<float>& inGpuCounterTimes);
 
+		void internal_updateBasePassCullStat_renderThread(uint32 totalDrawcall, uint32 culledDrawcall);
+		inline uint32 internal_getLastBasePassTotalDrawcall() const { return lastBasePassTotalDrawcall; }
+		inline uint32 internal_getLastBasePassCulledDrawcall() const { return lastBasePassCulledDrawcall; }
+
 		void internal_getLastGPUCounters(
 			std::vector<std::string>& outGpuCounterNames,
 			std::vector<float>& outGpuCounterTimes);
@@ -223,9 +227,11 @@ namespace pathos {
 	private:
 		RenderThread* renderThread = nullptr;
 
-		// Render thread will fill in these
+		// Stats that are filled by render thread.
 		float elapsed_renderThread = 0.0f;
 		float elapsed_gpu = 0.0f;
+		uint32 lastBasePassTotalDrawcall = 0;
+		uint32 lastBasePassCulledDrawcall = 0;
 		std::vector<std::string> lastGpuCounterNames;
 		std::vector<float> lastGpuCounterTimes;
 		std::mutex gpuQueryMutex;

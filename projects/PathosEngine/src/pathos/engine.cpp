@@ -322,6 +322,11 @@ namespace pathos {
 		lastGpuCounterTimes = inGpuCounterTimes;
 	}
 
+	void Engine::internal_updateBasePassCullStat_renderThread(uint32 totalDrawcall, uint32 culledDrawcall) {
+		lastBasePassTotalDrawcall = totalDrawcall;
+		lastBasePassCulledDrawcall = culledDrawcall;
+	}
+
 	// Read config line by line and add to the console window.
 	void Engine::readConfigFile(const char* configFilename, std::vector<std::string>& outEffectiveLines)
 	{

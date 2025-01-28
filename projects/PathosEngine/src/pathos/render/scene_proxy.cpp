@@ -106,7 +106,6 @@ namespace pathos {
 		Frustum3D frustum;
 		camera.getFrustumPlanes(frustum);
 
-		// #todo-frustum-culling: Stat command for culling status
 		int32 totalCount = 0;
 		int32 culledCount = 0;
 		const bool bIgnoreFarPlane = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse);
@@ -128,6 +127,8 @@ namespace pathos {
 
 		checkProxyList(proxyList_staticMeshOpaque);
 		checkProxyList(proxyList_staticMeshTranslucent);
+
+		gEngine->internal_updateBasePassCullStat_renderThread(totalCount, culledCount);
 	}
 
 	void SceneProxy::addStaticMeshProxy(StaticMeshProxy* proxy) {
