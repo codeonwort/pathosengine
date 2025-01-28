@@ -217,7 +217,7 @@ namespace pathos {
 		if (bRenderDepthPrepass) {
 			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
-			depthPrepass->renderPreDepth(cmdList, scene, camera, landscapeRendering.get());
+			depthPrepass->renderPreDepth(cmdList, scene, landscapeRendering.get());
 		}
 
 		// #todo-light-probe: Don't need to render this per scene proxy,
@@ -249,7 +249,7 @@ namespace pathos {
 		{
 			SCOPED_CPU_COUNTER(BasePass);
 			SCOPED_GPU_COUNTER(BasePass);
-			gbufferPass->renderGBuffers(cmdList, scene, camera, bRenderDepthPrepass, landscapeRendering.get());
+			gbufferPass->renderGBuffers(cmdList, scene, bRenderDepthPrepass, landscapeRendering.get());
 		}
 
 		if (bRenderGodRay) {

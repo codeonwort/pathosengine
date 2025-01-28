@@ -6,7 +6,6 @@ namespace pathos {
 
 	class SceneProxy;
 	class Camera;
-	class MeshGeometry;
 	struct SceneRenderTargets;
 
 	// Used by SceneRenderer for various landscape processing.
@@ -26,7 +25,7 @@ namespace pathos {
 		void preprocess(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 
 		// Call at depth prepass and gbuffer pass, after framebuffer setup is finished, but before doing mesh rendering.
-		void renderLandscape(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, UniformBuffer& uboPerObject, bool isDepthPrepass);
+		void renderLandscape(RenderCommandList& cmdList, SceneProxy* scene, UniformBuffer& uboPerObject, bool isDepthPrepass);
 
 	private:
 		UniformBuffer uboLandscapeCulling;

@@ -99,13 +99,7 @@ namespace pathos {
 		}
 	}
 
-	void LandscapeRendering::renderLandscape(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera,
-		UniformBuffer& uboPerObject,
-		bool isDepthPrepass)
-	{
+	void LandscapeRendering::renderLandscape(RenderCommandList& cmdList, SceneProxy* scene, UniformBuffer& uboPerObject, bool isDepthPrepass) {
 		SCOPED_DRAW_EVENT(RenderLandscape);
 
 		const std::vector<LandscapeProxy*>& proxyList = scene->getLandscapeMeshes();

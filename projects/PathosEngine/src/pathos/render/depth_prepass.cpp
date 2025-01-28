@@ -13,30 +13,22 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
-// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread.
-// Same for shadowmap pass.
+// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread. Same for shadowmap pass.
 
 namespace pathos {
 
-	void DepthPrepass::initializeResources(RenderCommandList& cmdList)
-	{
+	void DepthPrepass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
 		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_DepthPrepass");
 	}
 
-	void DepthPrepass::releaseResources(RenderCommandList& cmdList)
-	{
+	void DepthPrepass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 	}
 
-	void DepthPrepass::renderPreDepth(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera,
-		LandscapeRendering* landscapeRendering)
-	{
+	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, LandscapeRendering* landscapeRendering) {
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -62,7 +54,7 @@ namespace pathos {
 
 		const bool bEnableFrustumCulling = cvarFrustum->getInt() != 0;
 
-		landscapeRendering->renderLandscape(cmdList, scene, camera, uboPerObject, true);
+		landscapeRendering->renderLandscape(cmdList, scene, uboPerObject, true);
 
 		// Draw opaque static meshes.
 		{

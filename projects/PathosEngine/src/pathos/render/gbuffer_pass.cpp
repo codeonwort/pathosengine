@@ -45,13 +45,7 @@ namespace pathos {
 		pathos::checkFramebufferStatus(cmdList, fbo, "GBuffer setup is invalid");
 	}
 
-	void GBufferPass::renderGBuffers(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera,
-		bool hasDepthPrepass,
-		LandscapeRendering* landscapeRendering)
-	{
+	void GBufferPass::renderGBuffers(RenderCommandList& cmdList, SceneProxy* scene, bool hasDepthPrepass, LandscapeRendering* landscapeRendering) {
 		SCOPED_DRAW_EVENT(GBufferPass);
 
 		constexpr bool bReverseZ = pathos::getReverseZPolicy() == EReverseZPolicy::Reverse;
@@ -93,7 +87,7 @@ namespace pathos {
 
 		const bool bEnableFrustumCulling = cvarFrustumCulling->getInt() != 0;
 
-		landscapeRendering->renderLandscape(cmdList, scene, camera, uboPerObject, false);
+		landscapeRendering->renderLandscape(cmdList, scene, uboPerObject, false);
 
 		// Draw opaque static meshes
 		{
