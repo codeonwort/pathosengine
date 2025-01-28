@@ -18,7 +18,7 @@ namespace pathos {
 	class DOF_PrefixSum : public ShaderStage {
 	public:
 		DOF_PrefixSum() : ShaderStage(GL_COMPUTE_SHADER, "DOF_PrefixSum") {
-			setFilepath("prefix_sum.glsl");
+			setFilepath("postprocess/dof_prefix_sum.glsl");
 
 			int32 maxBucketSize = gRenderDevice->getCapabilities().glMaxComputeWorkGroupSize[0];
 			addDefine("BUCKET_SIZE", maxBucketSize);
@@ -34,7 +34,7 @@ namespace pathos {
 	class DOF_BlurFS : public ShaderStage {
 	public:
 		DOF_BlurFS() : ShaderStage(GL_FRAGMENT_SHADER, "DOF_BlurFS") {
-			setFilepath("depth_of_field.glsl");
+			setFilepath("postprocess/depth_of_field.glsl");
 		}
 	};
 

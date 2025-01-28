@@ -25,7 +25,7 @@ namespace pathos {
 	public:
 		BloomSetupFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomSetupFS")
 		{
-			setFilepath("bloom_setup.glsl");
+			setFilepath("postprocess/bloom_setup.glsl");
 		}
 	};
 

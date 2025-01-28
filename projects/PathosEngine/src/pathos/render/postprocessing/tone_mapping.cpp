@@ -19,7 +19,7 @@ namespace pathos {
 	public:
 		ToneMappingFS() : ShaderStage(GL_FRAGMENT_SHADER, "ToneMappingFS") {
 			addDefine("TONE_MAPPER", ToneMapper);
-			setFilepath("tone_mapping.glsl");
+			setFilepath("postprocess/tone_mapping.glsl");
 		}
 	};
 

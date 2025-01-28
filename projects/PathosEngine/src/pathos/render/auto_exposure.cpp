@@ -20,7 +20,7 @@ namespace pathos {
 	class AutoExposure_AverageLuminanceFS : public ShaderStage {
 	public:
 		AutoExposure_AverageLuminanceFS() : ShaderStage(GL_FRAGMENT_SHADER, "AutoExposure_AverageLuminanceFS") {
-			setFilepath("auto_exposure_scene_avg.glsl");
+			setFilepath("postprocess/auto_exposure_scene_avg.glsl");
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_AutoExposure_AverageLuminance, FullscreenVS, AutoExposure_AverageLuminanceFS);
@@ -37,7 +37,7 @@ namespace pathos {
 	class AutoExposure_HistogramGenCS : public ShaderStage {
 	public:
 		AutoExposure_HistogramGenCS() : ShaderStage(GL_COMPUTE_SHADER, "AutoExposure_HistogramGenCS") {
-			setFilepath("auto_exposure_histogram_gen.glsl");
+			setFilepath("postprocess/auto_exposure_histogram_gen.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_AutoExposure_HistogramGen, AutoExposure_HistogramGenCS);
@@ -55,7 +55,7 @@ namespace pathos {
 	class AutoExposure_HistogramAvgCS : public ShaderStage {
 	public:
 		AutoExposure_HistogramAvgCS() : ShaderStage(GL_COMPUTE_SHADER, "AutoExposure_HistogramAvgCS") {
-			setFilepath("auto_exposure_histogram_avg.glsl");
+			setFilepath("postprocess/auto_exposure_histogram_avg.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_AutoExposure_HistogramAvg, AutoExposure_HistogramAvgCS);

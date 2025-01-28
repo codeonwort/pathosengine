@@ -15,7 +15,7 @@ namespace pathos {
 	class BloomDownsampleFS : public ShaderStage {
 	public:
 		BloomDownsampleFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomDownsampleFS") {
-			setFilepath("bloom_downsample.glsl");
+			setFilepath("postprocess/bloom_downsample.glsl");
 		}
 	};
 
@@ -28,7 +28,7 @@ namespace pathos {
 	class BloomUpsampleFS : public ShaderStage {
 	public:
 		BloomUpsampleFS() : ShaderStage(GL_FRAGMENT_SHADER, "BloomUpsampleFS") {
-			setFilepath("bloom_upsample.glsl");
+			setFilepath("postprocess/bloom_upsample.glsl");
 		}
 	};
 

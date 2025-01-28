@@ -22,7 +22,7 @@ namespace pathos {
 	class TemporalAntiAliasingFS : public ShaderStage {
 	public:
 		TemporalAntiAliasingFS() : ShaderStage(GL_FRAGMENT_SHADER, "TemporalAntiAliasingFS") {
-			setFilepath("temporal_anti_aliasing.glsl");
+			setFilepath("postprocess/temporal_anti_aliasing.glsl");
 		}
 	};
 

@@ -21,12 +21,12 @@
   <ItemGroup>
     <None Include="atmosphere.glsl" />
     <None Include="atmosphere_precompute.glsl" />
-    <None Include="auto_exposure_scene_avg.glsl" />
-    <None Include="auto_exposure_histogram_avg.glsl" />
-    <None Include="auto_exposure_histogram_gen.glsl" />
-    <None Include="bloom_downsample.glsl" />
-    <None Include="bloom_setup.glsl" />
-    <None Include="bloom_upsample.glsl" />
+    <None Include="postprocess\auto_exposure_scene_avg.glsl" />
+    <None Include="postprocess\auto_exposure_histogram_avg.glsl" />
+    <None Include="postprocess\auto_exposure_histogram_gen.glsl" />
+    <None Include="postprocess\bloom_downsample.glsl" />
+    <None Include="postprocess\bloom_setup.glsl" />
+    <None Include="postprocess\bloom_upsample.glsl" />
     <None Include="core\brdf.glsl" />
     <None Include="clear_texture.glsl" />
     <None Include="core\common.glsl" />
@@ -38,14 +38,14 @@
     <None Include="deferred_common.glsl" />
     <None Include="deferred_common_fs.glsl" />
     <None Include="direct_lighting.glsl" />
-    <None Include="depth_of_field.glsl" />
+    <None Include="postprocess\depth_of_field.glsl" />
     <None Include="diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
     <None Include="fsr1_wrapper_common.glsl" />
     <None Include="fsr1_wrapper_easu.glsl" />
     <None Include="fsr1_wrapper_rcas.glsl" />
     <None Include="fullscreen_quad.glsl" />
-    <None Include="fxaa_wrapper.glsl" />
+    <None Include="postprocess\fxaa_wrapper.glsl" />
     <None Include="geom_common.glsl" />
     <None Include="god_ray_fs.glsl" />
     <None Include="god_ray_post.glsl" />
@@ -69,7 +69,7 @@
     <None Include="overlay\overlay_image.glsl" />
     <None Include="overlay\overlay_standard.glsl" />
     <None Include="overlay\overlay_text.glsl" />
-    <None Include="prefix_sum.glsl" />
+    <None Include="postprocess\dof_prefix_sum.glsl" />
     <None Include="reflection_probe_coeffs_const_32.glsl" />
     <None Include="reflection_probe_downsample.glsl" />
     <None Include="reflection_probe_filtering.glsl" />
@@ -86,8 +86,8 @@
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
     <None Include="starfield.glsl" />
-    <None Include="temporal_anti_aliasing.glsl" />
-    <None Include="tone_mapping.glsl" />
+    <None Include="postprocess\temporal_anti_aliasing.glsl" />
+    <None Include="postprocess\tone_mapping.glsl" />
     <None Include="two_pass_gaussian_blur.glsl" />
     <None Include="visualize_buffer.glsl" />
     <None Include="visualize_light_probe.glsl" />
