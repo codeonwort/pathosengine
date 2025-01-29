@@ -19,6 +19,7 @@ namespace pathos {
 				&& lineIx_skyboxmaterial       != -1 // Optional
 				&& lineIx_transferdrawid       != -1 // Optional
 				&& lineIx_transferinstanceid   != -1 // Optional
+				&& lineIx_indirectdrawmode     != -1 // Optional
 				&& lineIx_ubo                  != -1
 				&& lineIx_textureParams        != -1
 				&& lineIx_getVPO               != -1
@@ -60,6 +61,9 @@ namespace pathos {
 		void replaceTransferInstanceID(const std::string& defineTransferInstanceID) {
 			sourceLines[lineIx_transferinstanceid] = defineTransferInstanceID;
 		}
+		void replaceIndirectDrawMode(const std::string& indirectDrawMode) {
+			sourceLines[lineIx_indirectdrawmode] = indirectDrawMode;
+		}
 		void replaceUBO(const std::string& defineUBO) {
 			sourceLines[lineIx_ubo] = defineUBO;
 		}
@@ -87,6 +91,7 @@ namespace pathos {
 		int32 lineIx_skyboxmaterial        = -1;
 		int32 lineIx_transferdrawid        = -1;
 		int32 lineIx_transferinstanceid    = -1;
+		int32 lineIx_indirectdrawmode      = -1;
 		int32 lineIx_ubo                   = -1;
 		int32 lineIx_textureParams         = -1;
 		int32 lineIx_getVPO                = -1;

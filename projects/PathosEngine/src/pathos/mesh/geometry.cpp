@@ -58,6 +58,12 @@ namespace pathos {
 
 	bool MeshGeometry::isIndex16Bit() const { return indexDatatype == GL_UNSIGNED_SHORT; }
 
+	bool MeshGeometry::shareSamePositionBufferPool(MeshGeometry* other) const {
+		return positionBuffer.bufferPool == other->positionBuffer.bufferPool;
+	}
+
+	uint64 MeshGeometry::getFirstVertex() const { return positionBuffer.offset / 12; } // 12 bytes = 3 floats
+
 	void MeshGeometry::updatePositionData(const GLfloat* data, uint32 length) {
 		CHECK(ENUM_HAS_FLAG(vertexAttributes, EVertexAttributes::Position));
 		CHECKF(length % 3 == 0, "Invalid length");

@@ -22,6 +22,7 @@
 #define NEED_SKYBOXMATERIAL               "SKYBOXMATERIAL"
 #define NEED_TRANSFERDRAWID               "TRANSFER_DRAW_ID"
 #define NEED_TRANSFERINSTANCEID           "TRANSFER_INSTANCE_ID"
+#define NEED_INDIRECT_DRAW_MODE           "INDIRECT_DRAW_MODE"
 #define NEED_UBO                          "UBO_Material"
 #define NEED_TEXTUREPARAMETERS            "TEXTURE_PARAMETERS"
 #define NEED_VPO                          "getVertexPositionOffset"
@@ -40,6 +41,7 @@
 #define KEYWORD_SKYBOXMATERIAL            "#define SKYBOXMATERIAL"
 #define KEYWORD_TRANSFER_DRAW_ID          "#define TRANSFER_DRAW_ID"
 #define KEYWORD_TRANSFER_INSTANCE_ID      "#define TRANSFER_INSTANCE_ID"
+#define KEYWORD_USE_INDIRECT_DRAW         "#define USE_INDIRECT_DRAW"
 #define KEYWORD_VPO_BEGIN                 "VPO_BEGIN"
 #define KEYWORD_VPO_END                   "VPO_END"
 #define KEYWORD_ATTR_BEGIN                "ATTR_BEGIN"
@@ -121,6 +123,7 @@ namespace pathos {
 		bool bSkyboxMaterial         = false;
 		bool bTransferDrawID         = false;
 		bool bTransferInstanceID     = false;
+		bool bUseIndirectDraw        = false;
 	};
 
 	static void parseMaterialParameters(
@@ -171,6 +174,7 @@ namespace pathos {
 			else if (0 == line.find(KEYWORD_SKYBOXMATERIAL))       outDesc.bSkyboxMaterial        = true;
 			else if (0 == line.find(KEYWORD_TRANSFER_DRAW_ID))     outDesc.bTransferDrawID        = true;
 			else if (0 == line.find(KEYWORD_TRANSFER_INSTANCE_ID)) outDesc.bTransferInstanceID    = true;
+			else if (0 == line.find(KEYWORD_USE_INDIRECT_DRAW))    outDesc.bUseIndirectDraw       = true;
 			else if (0 == line.find(KEYWORD_VPO_BEGIN))            outDesc.materialVPOBeginIx     = lineIx + 1;
 			else if (0 == line.find(KEYWORD_VPO_END))              outDesc.materialVPOEndIx       = lineIx - 1;
 			else if (0 == line.find(KEYWORD_ATTR_BEGIN))           outDesc.materialAttrBeginIx    = lineIx + 1;
@@ -336,6 +340,7 @@ namespace pathos {
 			{ NEED_SKYBOXMATERIAL       , &MT.lineIx_skyboxmaterial       },
 			{ NEED_TRANSFERDRAWID       , &MT.lineIx_transferdrawid       },
 			{ NEED_TRANSFERINSTANCEID   , &MT.lineIx_transferinstanceid   },
+			{ NEED_INDIRECT_DRAW_MODE   , &MT.lineIx_indirectdrawmode     },
 			{ NEED_UBO                  , &MT.lineIx_ubo                  },
 			{ NEED_TEXTUREPARAMETERS    , &MT.lineIx_textureParams        },
 			{ NEED_VPO                  , &MT.lineIx_getVPO               },
@@ -562,6 +567,7 @@ namespace pathos {
 		MT.replaceSkyboxMaterial(placeholders.bSkyboxMaterial ? "#define SKYBOXMATERIAL 1" : "");
 		MT.replaceTransferDrawID(placeholders.bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
 		MT.replaceTransferInstanceID(placeholders.bTransferInstanceID ? "#define TRANSFER_INSTANCE_ID 1" : "");
+		MT.replaceIndirectDrawMode(placeholders.bUseIndirectDraw ? "#define INDIRECT_DRAW_MODE 1" : "");
 		MT.replaceUBO(uniformBufferString);
 		MT.replaceTextureParameters(texturesString);
 		MT.replaceVPO(assembleBlock(placeholders.materialVPOBeginIx, placeholders.materialVPOEndIx));

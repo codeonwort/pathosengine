@@ -34,19 +34,40 @@ $NEED SHADINGMODEL
 // - Define interpolants.drawID and assign gl_DrawID.
 // [TRANSFER_INSTANCE_ID]
 // - Define interpolants.instanceID and assign gl_InstanceID.
+// [INDIRECT_DRAW_MODE]
+// - Material will be rendered by indirect draw (e.g., glMultiDrawElementsIndirect).
+// - Model transforms are read from a SSBO, not UBO_PerObject.
 
 $NEED OUTPUTWORLDNORMAL
 $NEED SKYBOXMATERIAL
 $NEED TRANSFER_DRAW_ID
 $NEED TRANSFER_INSTANCE_ID
+$NEED INDIRECT_DRAW_MODE
+
+#if INDIRECT_DRAW_MODE
+	#if !defined(TRANSFER_DRAW_ID)
+		#error "If a material defines USE_INDIRECT_DRAW, it should also define TRANSFER_DRAW_ID"
+	#endif
+#endif
 
 #define FORWARD_SHADING (SKYBOXMATERIAL || SHADINGMODEL == MATERIAL_SHADINGMODEL_TRANSLUCENT)
 
+#if INDIRECT_DRAW_MODE
+struct ModelTransforms { mat4 modelTransform; mat4 prevModelTransform; };
+layout (std140, binding = UBO_BINDING_OBJECT) readonly buffer SSBO_PerObject {
+	ModelTransforms modelTransformBuffer[];
+};
+mat4 getModelTransform(uint drawID) { return modelTransformBuffer[drawID].modelTransform; }
+mat4 getPrevModelTransform(uint drawID) { return modelTransformBuffer[drawID].prevModelTransform; }
+#else
 // 128 bytes
 layout (std140, binding = UBO_BINDING_OBJECT) uniform UBO_PerObject {
 	mat4 modelTransform;
 	mat4 prevModelTransform;
 } uboPerObject;
+mat4 getModelTransform() { return uboPerObject.modelTransform; }
+mat4 getPrevModelTransform() { return uboPerObject.prevModelTransform; }
+#endif
 
 // The assembler will generate a UBO from PARAMETER_CONSTANT definitions.
 $NEED UBO_Material
@@ -145,8 +166,7 @@ struct VertexShaderInput {
 };
 
 // All inputs in local space of the object
-vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap) {
-	mat3 model = mat3(uboPerObject.modelTransform);
+vec3 applyNormalMap(vec3 n, vec4 t, vec3 b, vec3 normalmap, mat3 model) {
 	model = inverse(transpose(model)); // Cannot assure uniform scaling.
 	if (t.w == 0.0) {
 		return model * normalize(n);
@@ -187,12 +207,18 @@ layout (location = 3) in vec4 inTangent;
 layout (location = 4) in vec3 inBitangent;
 
 void main_staticMesh() {
-	mat4 model = uboPerObject.modelTransform;
+#if INDIRECT_DRAW_MODE
+	mat4 model = getModelTransform(gl_DrawID);
+	mat4 prevModel = getPrevModelTransform(gl_DrawID);
+#else
+	mat4 model = getModelTransform();
+	mat4 prevModel = getPrevModelTransform();
+#endif
 	mat4 view = uboPerFrame.viewTransform;
 	mat4 proj_view = uboPerFrame.viewProjTransform;
 
 	vec4 positionWS = model * vec4(inPosition, 1.0);
-	vec4 prevPositionWS = uboPerObject.prevModelTransform * vec4(inPosition, 1.0);
+	vec4 prevPositionWS = prevModel * vec4(inPosition, 1.0);
 
 	VertexShaderInput vsi;
 	vsi.position  = inPosition;
@@ -233,7 +259,13 @@ void main_staticMesh() {
 void main_skybox() {
 	interpolants.normal = inPosition;
 	
-	gl_Position = uboPerObject.modelTransform * vec4(inPosition, 1.0);
+#if INDIRECT_DRAW_MODE
+	mat4 model = getModelTransform(gl_DrawID);
+#else
+	mat4 model = getModelTransform();
+#endif
+
+	gl_Position = model * vec4(inPosition, 1.0);
 
 	if (uboPerFrame.bReverseZ == 1) {
 		gl_Position.z = 0.0;
@@ -269,11 +301,17 @@ void main() {
 	#if OUTPUTWORLDNORMAL
 		vec3 worldNormal = attr.normal;
 	#else
+		#if INDIRECT_DRAW_MODE
+		mat3 modelMatrix = mat3(getModelTransform(interpolants.drawID));
+		#else
+		mat3 modelMatrix = mat3(getModelTransform());
+		#endif
 		vec3 worldNormal = applyNormalMap(
 			interpolants.normal,
 			interpolants.tangent,
 			interpolants.bitangent,
-			attr.normal);
+			attr.normal,
+			modelMatrix);
 	#endif
 	vec3 normalVS = (uboPerFrame.viewTransform * vec4(worldNormal, 0.0)).xyz;
 #endif

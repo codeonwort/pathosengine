@@ -54,6 +54,7 @@ namespace pathos {
 	private:
 		static class MeshGeometry* fullscreenQuad;
 		static uniquePtr<class Material> fallbackMaterial;
+		static uniquePtr<class Material> indirectDrawDummyMaterial;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
 		static uniquePtr<UniformBuffer> ubo_perFrame;

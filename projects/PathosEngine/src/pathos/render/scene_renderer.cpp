@@ -184,6 +184,9 @@ namespace pathos {
 			fallbackMaterial->setConstantParameter("roughness", 0.0f);
 			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
 		}
+		if (indirectDrawDummyMaterial.get() == nullptr) {
+			indirectDrawDummyMaterial = uniquePtr<Material>(Material::createMaterialInstance("indirect_draw_dummy"));
+		}
 
 		// #todo-multiview
 		{
@@ -217,7 +220,7 @@ namespace pathos {
 		if (bRenderDepthPrepass) {
 			SCOPED_CPU_COUNTER(RenderPreDepth);
 			SCOPED_GPU_COUNTER(RenderPreDepth);
-			depthPrepass->renderPreDepth(cmdList, scene, landscapeRendering.get());
+			depthPrepass->renderPreDepth(cmdList, scene, indirectDrawDummyMaterial.get(), landscapeRendering.get());
 		}
 
 		// #todo-light-probe: Don't need to render this per scene proxy,
@@ -767,6 +770,7 @@ namespace pathos {
 namespace pathos {
 	
 	uniquePtr<Material>                  SceneRenderer::fallbackMaterial;
+	uniquePtr<Material>                  SceneRenderer::indirectDrawDummyMaterial;
 	MeshGeometry*                        SceneRenderer::fullscreenQuad;
 	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	
@@ -923,10 +927,11 @@ namespace pathos {
 	}
 
 	void SceneRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fallbackMaterial.release();
+		fallbackMaterial.reset();
+		indirectDrawDummyMaterial.reset();
 		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
 
-		ubo_perFrame.release();
+		ubo_perFrame.reset();
 
 #define RELEASEPASS(pass) { pass->releaseResources(cmdList); pass.reset(); }
 

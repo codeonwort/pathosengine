@@ -90,5 +90,6 @@
     <None Include="debugging\visualize_buffer.glsl" />
     <None Include="debugging\visualize_light_probe.glsl" />
     <None Include="debugging\visualize_sky_occlusion.glsl" />
+    <None Include="materials\indirect_draw_dummy.glsl" />
   </ItemGroup>
 </Project>

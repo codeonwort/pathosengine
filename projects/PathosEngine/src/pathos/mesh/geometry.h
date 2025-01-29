@@ -66,6 +66,9 @@ namespace pathos {
 		bool isIndex16Bit() const;
 		inline const AABB& getLocalBounds() const { return localBounds; }
 
+		bool shareSamePositionBufferPool(MeshGeometry* other) const;
+		uint64 getFirstVertex() const;
+
 		bool bCalculateLocalBounds = true;
 
 	// API for render thread

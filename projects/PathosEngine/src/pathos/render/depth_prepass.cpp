@@ -5,6 +5,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/indirect_draw.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
@@ -13,7 +14,9 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
-// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread. Same for shadowmap pass.
+// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread.
+// Prototype works, let's improve it. Same for shadowmap pass.
+#define MERGE_TRIVIAL_DRAW_CALLS 1
 
 namespace pathos {
 
@@ -26,9 +29,11 @@ namespace pathos {
 
 	void DepthPrepass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
+		indirectDrawBuffer.reset();
+		modelTransformBuffer.reset();
 	}
 
-	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, LandscapeRendering* landscapeRendering) {
+	void DepthPrepass::renderPreDepth(RenderCommandList& cmdList, SceneProxy* scene, Material* indirectDrawDummyMaterial, LandscapeRendering* landscapeRendering) {
 		SCOPED_DRAW_EVENT(DepthPrepass);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -56,6 +61,86 @@ namespace pathos {
 
 		landscapeRendering->renderLandscape(cmdList, scene, uboPerObject, true);
 
+		// Draw every trivial opque static meshes at once.
+		std::vector<bool> drawcallMergeFlags(scene->getOpaqueStaticMeshes().size(), false);
+#if MERGE_TRIVIAL_DRAW_CALLS
+		{
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
+			const size_t numProxies = proxyList.size();
+			const uint32 maxDrawcalls = (uint32)numProxies;
+
+			// #todo-depth-prepass: The first geometry that the engine creates.
+			// This is just for acquiring a VAO that specifies zero offset for position buffer pool.
+			// Maybe need to implement gRenderDevice->getPositionOnlyVAO() ?
+			MeshGeometry* defaultGeometry = gEngine->getSystemGeometryUnitPlane();
+
+			reallocateIndirectDrawBuffers(cmdList, maxDrawcalls);
+			std::vector<DrawElementsIndirectCommand> drawCommands;
+			std::vector<Material::UBO_PerObject> modelTransforms;
+			drawCommands.reserve(maxDrawcalls);
+			modelTransforms.reserve(maxDrawcalls);
+
+			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+				StaticMeshProxy* proxy = proxyList[proxyIx];
+				Material* material = proxy->material;
+				MaterialShader* materialShader = material->internal_getMaterialShader();
+
+				// Early out
+				if (bEnableFrustumCulling && !proxy->bInFrustum) {
+					continue;
+				}
+
+				bool bTrivial = materialShader->bTrivialDepthOnlyPass
+					&& material->bWireframe == false
+					&& proxy->renderInternal == false
+					&& proxy->doubleSided == false
+					&& proxy->geometry->isIndex16Bit() == false
+					&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry);
+
+				if (bTrivial) {
+					drawcallMergeFlags[proxyIx] = true;
+
+					DrawElementsIndirectCommand cmd{
+						proxy->geometry->getIndexCount(),
+						1, // instanceCount
+						proxy->geometry->getFirstIndex(),
+						(int32)proxy->geometry->getFirstVertex(), // baseVertex
+						0, // baseInstance
+					};
+					drawCommands.emplace_back(cmd);
+
+					Material::UBO_PerObject transforms;
+					transforms.modelTransform = proxy->modelMatrix;
+					transforms.prevModelTransform = proxy->prevModelMatrix;
+					modelTransforms.emplace_back(transforms);
+				}
+			}
+
+			const uint32 mergedCalls = (uint32)drawCommands.size();
+			if (mergedCalls > 0) {
+				indirectDrawBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(DrawElementsIndirectCommand) * mergedCalls, drawCommands.data());
+				modelTransformBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(Material::UBO_PerObject) * mergedCalls, modelTransforms.data());
+
+				cmdList.useProgram(indirectDrawDummyMaterial->internal_getMaterialShader()->program->getGLName());
+				
+				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, modelTransformBuffer->internal_getGLName());
+				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer->internal_getGLName());
+				defaultGeometry->bindPositionOnlyVAO(cmdList);
+
+				cmdList.multiDrawElementsIndirect(
+					GL_TRIANGLES,
+					GL_UNSIGNED_INT, // 32-bit index
+					0, // offset for indirect draw buffer
+					mergedCalls,
+					0 // stride
+				);
+
+				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, 0);
+				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+			}
+		}
+#endif
+
 		// Draw opaque static meshes.
 		{
 			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
@@ -70,6 +155,11 @@ namespace pathos {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
 				Material* material = proxy->material;
 				MaterialShader* materialShader = material->internal_getMaterialShader();
+
+				// Drawcall for this proxy was auto-merged in the above block.
+				if (drawcallMergeFlags[proxyIx]) {
+					continue;
+				}
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -145,6 +235,36 @@ namespace pathos {
 			cmdList.enable(GL_CULL_FACE);
 			cmdList.frontFace(GL_CCW);
 			cmdList.polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+	}
+
+	void DepthPrepass::reallocateIndirectDrawBuffers(RenderCommandList& cmdList, uint32 maxDrawcalls) {
+		auto getCount = [](Buffer* buffer, uint32 stride) -> uint32 {
+			if (buffer == nullptr) return 0;
+			return buffer->getCreateParams().bufferSize / stride;
+		};
+
+		if (maxDrawcalls > getCount(indirectDrawBuffer.get(), sizeof(DrawElementsIndirectCommand))) {
+			BufferCreateParams createParams{
+				EBufferUsage::CpuWrite,
+				sizeof(DrawElementsIndirectCommand) * maxDrawcalls,
+				nullptr, // initialData
+				"Buffer_DepthPrepass_IndirectDrawArgs",
+			};
+			indirectDrawBuffer.reset();
+			indirectDrawBuffer = makeUnique<Buffer>(createParams);
+			indirectDrawBuffer->createGPUResource_renderThread(cmdList);
+		}
+		if (maxDrawcalls > getCount(modelTransformBuffer.get(), sizeof(Material::UBO_PerObject))) {
+			BufferCreateParams createParams{
+				EBufferUsage::CpuWrite,
+				sizeof(Material::UBO_PerObject) * maxDrawcalls,
+				nullptr, // initialData
+				"Buffer_DepthPrepass_ModelTransforms",
+			};
+			modelTransformBuffer.reset();
+			modelTransformBuffer = makeUnique<Buffer>(createParams);
+			modelTransformBuffer->createGPUResource_renderThread(cmdList);
 		}
 	}
 
