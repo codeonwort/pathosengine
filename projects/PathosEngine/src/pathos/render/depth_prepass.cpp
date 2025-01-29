@@ -14,7 +14,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
-// #todo-depth-prepass: Merge trivial drawcalls to not stall render thread.
+// #todo-indirect-draw: Merge trivial drawcalls to not stall render thread.
 // Prototype works, let's improve it. Same for shadowmap pass.
 #define MERGE_TRIVIAL_DRAW_CALLS 1
 
@@ -62,14 +62,13 @@ namespace pathos {
 		landscapeRendering->renderLandscape(cmdList, scene, uboPerObject, true);
 
 		// Draw every trivial opque static meshes at once.
-		std::vector<bool> drawcallMergeFlags(scene->getOpaqueStaticMeshes().size(), false);
 #if MERGE_TRIVIAL_DRAW_CALLS
 		{
-			const std::vector<StaticMeshProxy*>& proxyList = scene->getOpaqueStaticMeshes();
+			const std::vector<StaticMeshProxy*>& proxyList = scene->getTrivialDepthOnlyStaticMeshes();
 			const size_t numProxies = proxyList.size();
 			const uint32 maxDrawcalls = (uint32)numProxies;
 
-			// #todo-depth-prepass: The first geometry that the engine creates.
+			// #todo-indirect-draw: The first geometry that the engine creates.
 			// This is just for acquiring a VAO that specifies zero offset for position buffer pool.
 			// Maybe need to implement gRenderDevice->getPositionOnlyVAO() ?
 			MeshGeometry* defaultGeometry = gEngine->getSystemGeometryUnitPlane();
@@ -90,30 +89,19 @@ namespace pathos {
 					continue;
 				}
 
-				bool bTrivial = materialShader->bTrivialDepthOnlyPass
-					&& material->bWireframe == false
-					&& proxy->renderInternal == false
-					&& proxy->doubleSided == false
-					&& proxy->geometry->isIndex16Bit() == false
-					&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry);
+				DrawElementsIndirectCommand cmd{
+					proxy->geometry->getIndexCount(),
+					1, // instanceCount
+					proxy->geometry->getFirstIndex(),
+					(int32)proxy->geometry->getFirstVertex(), // baseVertex
+					0, // baseInstance
+				};
+				drawCommands.emplace_back(cmd);
 
-				if (bTrivial) {
-					drawcallMergeFlags[proxyIx] = true;
-
-					DrawElementsIndirectCommand cmd{
-						proxy->geometry->getIndexCount(),
-						1, // instanceCount
-						proxy->geometry->getFirstIndex(),
-						(int32)proxy->geometry->getFirstVertex(), // baseVertex
-						0, // baseInstance
-					};
-					drawCommands.emplace_back(cmd);
-
-					Material::UBO_PerObject transforms;
-					transforms.modelTransform = proxy->modelMatrix;
-					transforms.prevModelTransform = proxy->prevModelMatrix;
-					modelTransforms.emplace_back(transforms);
-				}
+				Material::UBO_PerObject transforms;
+				transforms.modelTransform = proxy->modelMatrix;
+				transforms.prevModelTransform = proxy->prevModelMatrix;
+				modelTransforms.emplace_back(transforms);
 			}
 
 			const uint32 mergedCalls = (uint32)drawCommands.size();
@@ -156,10 +144,12 @@ namespace pathos {
 				Material* material = proxy->material;
 				MaterialShader* materialShader = material->internal_getMaterialShader();
 
+#if MERGE_TRIVIAL_DRAW_CALLS
 				// Drawcall for this proxy was auto-merged in the above block.
-				if (drawcallMergeFlags[proxyIx]) {
+				if (proxy->bTrivialDepthOnly) {
 					continue;
 				}
+#endif
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {

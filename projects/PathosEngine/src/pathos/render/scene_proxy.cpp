@@ -1,8 +1,9 @@
 #include "scene_proxy.h"
 #include "pathos/engine_policy.h"
+#include "pathos/rhi/shader_program.h"
+#include "pathos/mesh/geometry.h"
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
-#include "pathos/rhi/shader_program.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/landscape_component.h"
 #include "pathos/scene/point_light_component.h"
@@ -39,6 +40,7 @@ namespace pathos {
 		proxyList_shadowMesh.clear();
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
+		proxyList_staticMeshTrivialDepthOnly.clear();
 		proxyList_landscape.clear();
 		proxyList_reflectionProbe.clear();
 		proxyList_irradianceVolume.clear();
@@ -127,6 +129,8 @@ namespace pathos {
 
 		checkProxyList(proxyList_staticMeshOpaque);
 		checkProxyList(proxyList_staticMeshTranslucent);
+		// Already flagged when checking proxyList_staticMeshOpaque.
+		//checkProxyList(proxyList_staticMeshTrivialDepthOnly);
 
 		gEngine->internal_updateBasePassCullStat_renderThread(totalCount, culledCount);
 	}
@@ -141,6 +145,18 @@ namespace pathos {
 			proxyList_staticMeshTranslucent.push_back(proxy);
 		} else {
 			proxyList_staticMeshOpaque.push_back(proxy);
+
+			MaterialShader* materialShader = proxy->material->internal_getMaterialShader();
+			bool bTrivial = materialShader->bTrivialDepthOnlyPass
+				&& proxy->material->bWireframe == false
+				&& proxy->renderInternal == false
+				&& proxy->doubleSided == false
+				&& proxy->geometry->isIndex16Bit() == false;
+				//&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry); // #todo-indirect-draw
+			if (bTrivial) {
+				proxy->bTrivialDepthOnly = true;
+				proxyList_staticMeshTrivialDepthOnly.push_back(proxy);
+			}
 		}
 	}
 

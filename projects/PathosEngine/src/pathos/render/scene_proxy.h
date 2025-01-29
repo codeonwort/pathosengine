@@ -76,6 +76,7 @@ namespace pathos {
 		void addStaticMeshProxy(struct StaticMeshProxy* proxy);
 		const StaticMeshProxyList& getOpaqueStaticMeshes() const { return proxyList_staticMeshOpaque; }
 		const StaticMeshProxyList& getTranslucentStaticMeshes() const { return proxyList_staticMeshTranslucent; }
+		const StaticMeshProxyList& getTrivialDepthOnlyStaticMeshes() const { return proxyList_staticMeshTrivialDepthOnly; }
 
 		void addShadowMeshProxy(struct ShadowMeshProxy* proxy);
 
@@ -119,6 +120,10 @@ namespace pathos {
 		StaticMeshProxyList                        proxyList_staticMeshOpaque;
 		StaticMeshProxyList                        proxyList_staticMeshTranslucent;
 
+		// #todo-indirect-draw: Ultimately wanna merge every drawcall groups but let's start with the easiest one.
+		// Subset of proxyList_staticMeshOpaque whose depth-only drawcalls can be merged.
+		StaticMeshProxyList                        proxyList_staticMeshTrivialDepthOnly;
+
 		// Landscape
 		LandscapeProxyList                         proxyList_landscape;
 		
@@ -128,8 +133,7 @@ namespace pathos {
 		struct SkyAtmosphereProxy*                 skyAtmosphere = nullptr;
 		struct VolumetricCloudProxy*               cloud = nullptr;
 
-		// #todo-godray: Wrap with GodRayProxy class.
-		//               These are filled by Scene::createRenderProxy() for now.
+		// #todo-godray: Wrap with GodRayProxy class. These are filled by Scene::createRenderProxy() for now.
 		StaticMeshProxyList                        godRayMeshes;
 		vector3                                    godRayLocation = vector3(0.0f);
 		vector3                                    godRayColor = vector3(1.0f, 0.5f, 0.0f);

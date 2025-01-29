@@ -22,6 +22,8 @@ namespace pathos {
 
 		// Derived in render thread
 		bool bInFrustum = true;
+		// Derived in SceneProxy::addStaticMeshProxy()
+		bool bTrivialDepthOnly = false;
 	};
 
 	struct ShadowMeshProxy : public SceneComponentProxy {
