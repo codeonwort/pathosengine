@@ -108,14 +108,15 @@ namespace pathos {
 	}
 
 	OpenGLDevice::~OpenGLDevice() {
-		positionBufferPool->releaseGPUResource();
-		varyingBufferPool->releaseGPUResource();
-		indexBufferPool->releaseGPUResource();
+		bool bAllDestroyed = positionBufferPool == nullptr
+			&& varyingBufferPool == nullptr
+			&& indexBufferPool == nullptr
+			&& positionOnlyVAO == 0;
+		CHECK(bAllDestroyed);
 		delete gGLLiveObjects;
 	}
 
-	bool OpenGLDevice::initialize()
-	{
+	bool OpenGLDevice::initialize() {
 		if (gl3wInit()) {
 			LOG(LogError, "[RenderDevice] Failed to initialize GL3W");
 			return false;
@@ -164,7 +165,36 @@ namespace pathos {
 		indexBufferPool = new BufferPool;
 		indexBufferPool->createGPUResource(cvarIndexBufferPoolSize.getInt(), 4, "GIndexBufferPool");
 
+		// Hard-coded version of createVAOHelper() in geometry.cpp
+		{
+			immediate_command_list->flushAllCommands();
+
+			const GLuint vbuf = positionBufferPool->internal_getGLName();
+			const GLuint ibuf = indexBufferPool->internal_getGLName();
+			createVertexArrays(1, &positionOnlyVAO);
+			objectLabel(GL_VERTEX_ARRAY, positionOnlyVAO, -1, "VAO_global_positionOnly");
+			glVertexArrayVertexBuffer(positionOnlyVAO, 0, vbuf, 0, 3 * sizeof(GL_FLOAT));
+			glEnableVertexArrayAttrib(positionOnlyVAO, 0);
+			glVertexArrayAttribFormat(positionOnlyVAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
+			glVertexArrayAttribBinding(positionOnlyVAO, 0, 0);
+			glVertexArrayElementBuffer(positionOnlyVAO, ibuf);
+		}
+
 		return true;
+	}
+
+	void OpenGLDevice::destroyGlobalResources() {
+		positionBufferPool->releaseGPUResource();
+		varyingBufferPool->releaseGPUResource();
+		indexBufferPool->releaseGPUResource();
+		if (positionOnlyVAO != 0) {
+			deleteVertexArrays(1, &positionOnlyVAO);
+		}
+
+		positionBufferPool = nullptr;
+		varyingBufferPool = nullptr;
+		indexBufferPool = nullptr;
+		positionOnlyVAO = 0;
 	}
 
 	void OpenGLDevice::memreport(int64& outTotalBufferMemory, int64& outTotalTextureMemory) {

@@ -63,6 +63,8 @@ namespace pathos {
 
 		bool initialize();
 
+		void destroyGlobalResources();
+
 		void memreport(int64& outTotalBufferMemory, int64& outTotalTextureMemory);
 		void reportLiveObjects();
 
@@ -109,6 +111,7 @@ namespace pathos {
 		inline BufferPool* getPositionBufferPool() const { return positionBufferPool; }
 		inline BufferPool* getVaryingBufferPool() const { return varyingBufferPool; }
 		inline BufferPool* getIndexBufferPool() const { return indexBufferPool; }
+		inline GLuint getPositionOnlyVAO() const { return positionOnlyVAO; }
 
 	private:
 		void queryCapabilities();
@@ -125,6 +128,7 @@ namespace pathos {
 		BufferPool* positionBufferPool = nullptr; // Global position-only vertex buffer pool
 		BufferPool* varyingBufferPool = nullptr; // Global non-position vertex buffer pool (normal, texcoord, ...)
 		BufferPool* indexBufferPool = nullptr; // Global index buffer pool
+		GLuint positionOnlyVAO = 0; // Global position-only vertex array object for indirect draw
 	};
 
 	extern OpenGLDevice* gRenderDevice;

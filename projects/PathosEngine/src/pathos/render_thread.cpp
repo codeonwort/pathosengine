@@ -317,6 +317,8 @@ namespace pathos {
 			bool bDestroyed = renderThread->destroyOpenGL();
 			CHECKF(bDestroyed, "OpenGL not destroyed properly");
 
+			gRenderDevice->destroyGlobalResources();
+
 			glFlush();
 			OpenGLContextManager::returnContext();
 		}

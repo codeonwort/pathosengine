@@ -67,10 +67,7 @@ namespace pathos {
 			const size_t numProxies = proxyList.size();
 			const uint32 maxDrawcalls = (uint32)numProxies;
 
-			// #todo-indirect-draw: The first geometry that the engine creates.
-			// This is just for acquiring a VAO that specifies zero offset for position buffer pool.
-			// Maybe need to implement gRenderDevice->getPositionOnlyVAO() ?
-			MeshGeometry* defaultGeometry = gEngine->getSystemGeometryUnitPlane();
+			const GLuint gPositionOnlyVAO = gRenderDevice->getPositionOnlyVAO();
 
 			reallocateIndirectDrawBuffers(cmdList, maxDrawcalls);
 			std::vector<DrawElementsIndirectCommand> drawCommands;
@@ -112,7 +109,7 @@ namespace pathos {
 				
 				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, modelTransformBuffer->internal_getGLName());
 				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer->internal_getGLName());
-				defaultGeometry->bindPositionOnlyVAO(cmdList);
+				cmdList.bindVertexArray(gPositionOnlyVAO);
 
 				cmdList.multiDrawElementsIndirect(
 					GL_TRIANGLES,
@@ -124,6 +121,7 @@ namespace pathos {
 
 				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, 0);
 				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+				cmdList.bindVertexArray(0);
 			}
 		}
 #endif
