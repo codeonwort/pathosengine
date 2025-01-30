@@ -58,8 +58,9 @@ namespace pathos {
 
 	bool MeshGeometry::isIndex16Bit() const { return indexDatatype == GL_UNSIGNED_SHORT; }
 
-	bool MeshGeometry::shareSamePositionBufferPool(MeshGeometry* other) const {
-		return positionBuffer.bufferPool == other->positionBuffer.bufferPool;
+	bool MeshGeometry::isUsingPositionBufferPool() const {
+		// As of now always using global position buffer pool.
+		return positionBuffer.bufferPool == gRenderDevice->getPositionBufferPool();
 	}
 
 	uint64 MeshGeometry::getFirstVertex() const { return positionBuffer.offset / 12; } // 12 bytes = 3 floats

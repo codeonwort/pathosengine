@@ -152,8 +152,8 @@ namespace pathos {
 				&& proxy->material->bWireframe == false
 				&& proxy->renderInternal == false
 				&& proxy->doubleSided == false
-				&& proxy->geometry->isIndex16Bit() == false;
-				//&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry); // #todo-indirect-draw
+				&& proxy->geometry->isIndex16Bit() == false
+				&& proxy->geometry->isUsingPositionBufferPool();
 			if (bTrivial) {
 				proxy->bTrivialDepthOnly = true;
 				proxyList_staticMeshTrivialDepthOnly.push_back(proxy);
@@ -173,8 +173,8 @@ namespace pathos {
 			&& proxy->material->bWireframe == false
 			&& proxy->renderInternal == false
 			&& proxy->doubleSided == false
-			&& proxy->geometry->isIndex16Bit() == false;
-			//&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry); // #todo-indirect-draw
+			&& proxy->geometry->isIndex16Bit() == false
+			&& proxy->geometry->isUsingPositionBufferPool();
 		if (bTrivial) {
 			proxy->bTrivialDepthOnly = true;
 			proxyList_shadowMeshTrivial.push_back(proxy);

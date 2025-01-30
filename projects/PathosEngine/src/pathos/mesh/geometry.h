@@ -61,13 +61,13 @@ namespace pathos {
 		void calculateLocalBounds();
 
 		inline vector3 getPosition(uint32 index) const { return positionData[index]; }
+		inline const AABB& getLocalBounds() const { return localBounds; }
+
+		bool isUsingPositionBufferPool() const;
+		uint64 getFirstVertex() const;
 		uint32 getIndexCount() const;
 		uint32 getFirstIndex() const;
 		bool isIndex16Bit() const;
-		inline const AABB& getLocalBounds() const { return localBounds; }
-
-		bool shareSamePositionBufferPool(MeshGeometry* other) const;
-		uint64 getFirstVertex() const;
 
 		bool bCalculateLocalBounds = true;
 
