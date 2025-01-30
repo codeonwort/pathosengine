@@ -24,18 +24,26 @@ namespace pathos {
 	public:
 		// Determines surface normal direction.
 		enum class Direction { X = 0, Y = 1, Z = 2 };
+		struct Input {
+			float width;
+			float height;
+			uint32 gridX = 1; // number of cells in x-axis
+			uint32 gridY = 1; // number of cells in y-axis
+			PlaneGeometry::Direction direction = PlaneGeometry::Direction::Z;
+			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default;
+		};
+		struct Output {
+			std::vector<float> positions;
+			std::vector<float> texcoords;
+			std::vector<float> normals;
+			std::vector<uint32> indices;
+		};
 
-		// NOTE: CalculateTangentBasis flag in options is ignored.
-		static void generate(
-			float width, float height,
-			uint32 gridX, uint32 gridY,
-			PlaneGeometry::Direction direction,
-			EPrimitiveInitOptions options,
-			std::vector<float>& outPositions,
-			std::vector<float>& outUVs,
-			std::vector<float>& outNormals,
-			std::vector<uint32>& outIndices);
+		// NOTE: CalculateTangentBasis flag in input.options is ignored.
+		static void generate(const Input& input, Output& output);
 
+		PlaneGeometry(const Input& input); // #todo-refactoring: Use this
+		// For backward compatibility
 		PlaneGeometry(
 			float width, float height,
 			uint32 gridX = 1, uint32 gridY = 1,

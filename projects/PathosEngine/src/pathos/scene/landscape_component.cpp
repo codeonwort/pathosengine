@@ -23,7 +23,7 @@ static ConsoleVariable<int32> cvarLandscapeWireframe("r.landscape.wireframe", 0,
 
 namespace pathos {
 
-	static const int32 LANDSCAPE_BASE_DIVISIONS = 16;
+	static const uint32 LANDSCAPE_BASE_DIVISIONS = 16u;
 	static const float LANDSCAPE_BASE_CULL_DISTANCE = 500.0f;
 
 	LandscapeComponent::LandscapeComponent() {
@@ -49,33 +49,32 @@ namespace pathos {
 			uint32 baseVertex = 0;
 			uint32 baseIndex = 0;
 
-			for (int32 divs = LANDSCAPE_BASE_DIVISIONS; divs > 0; divs /= 2) {
-				std::vector<float> tempPositions, tempUVs, tempNormals;
-				std::vector<uint32> tempIndices;
-				PlaneGeometry::generate(
-					sizeX, sizeY, divs, divs,
-					PlaneGeometry::Direction::Z, EPrimitiveInitOptions::Default,
-					tempPositions, tempUVs, tempNormals, tempIndices);
+			for (uint32 divs = LANDSCAPE_BASE_DIVISIONS; divs > 0; divs /= 2) {
+				PlaneGeometry::Input geomInput{
+					sizeX, sizeY, divs, divs, PlaneGeometry::Direction::Z, EPrimitiveInitOptions::Default
+				};
+				PlaneGeometry::Output geomOutput;
+				PlaneGeometry::generate(geomInput, geomOutput);
 
 				// Place first vertex at origin
-				for (size_t i = 0; i < tempPositions.size(); i += 3) {
-					tempPositions[i + 0] += 0.5f * sizeX;
-					tempPositions[i + 1] += 0.5f * sizeY;
+				for (size_t i = 0; i < geomOutput.positions.size(); i += 3) {
+					geomOutput.positions[i + 0] += 0.5f * sizeX;
+					geomOutput.positions[i + 1] += 0.5f * sizeY;
 				}
 
-				positions.insert(positions.end(), tempPositions.begin(), tempPositions.end());
-				uvs.insert(uvs.end(), tempUVs.begin(), tempUVs.end());
-				normals.insert(normals.end(), tempNormals.begin(), tempNormals.end());
+				positions.insert(positions.end(), geomOutput.positions.begin(), geomOutput.positions.end());
+				uvs.insert(uvs.end(), geomOutput.texcoords.begin(), geomOutput.texcoords.end());
+				normals.insert(normals.end(), geomOutput.normals.begin(), geomOutput.normals.end());
 
-				for (uint32& ix : tempIndices) ix += baseVertex;
-				indices.insert(indices.end(), tempIndices.begin(), tempIndices.end());
+				for (uint32& ix : geomOutput.indices) ix += baseVertex;
+				indices.insert(indices.end(), geomOutput.indices.begin(), geomOutput.indices.end());
 
-				numVertices.push_back((uint32)(tempPositions.size() / 3));
-				numIndices.push_back((uint32)tempIndices.size());
+				numVertices.push_back((uint32)(geomOutput.positions.size() / 3));
+				numIndices.push_back((uint32)geomOutput.indices.size());
 				indexOffsets.push_back(baseIndex);
 
-				baseVertex += (uint32)(tempPositions.size() / 3);
-				baseIndex += (uint32)tempIndices.size();
+				baseVertex += (uint32)(geomOutput.positions.size() / 3);
+				baseIndex += (uint32)geomOutput.indices.size();
 			}
 
 			geometry = makeUnique<MeshGeometry>();
@@ -233,7 +232,7 @@ namespace pathos {
 		material->setConstantParameter("heightmapMultiplier", heightMultiplier);
 		material->setConstantParameter("sectorCountX", countX);
 		material->setConstantParameter("sectorCountY", countY);
-		material->setConstantParameter("baseDivisions", LANDSCAPE_BASE_DIVISIONS);
+		material->setConstantParameter("baseDivisions", (int32)LANDSCAPE_BASE_DIVISIONS);
 		material->setConstantParameter("debugMode", cvarLandscapeDebugMode.getInt());
 
 		material->bWireframe = cvarLandscapeWireframe.getInt() != 0;

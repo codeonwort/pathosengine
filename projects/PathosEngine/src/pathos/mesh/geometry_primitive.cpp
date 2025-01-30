@@ -28,16 +28,18 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// PlaneGeometry
-	void PlaneGeometry::generate(
-		float width, float height,
-		uint32 gridX, uint32 gridY,
-		PlaneGeometry::Direction direction,
-		EPrimitiveInitOptions options,
-		std::vector<float>& outPositions,
-		std::vector<float>& outUVs,
-		std::vector<float>& outNormals,
-		std::vector<uint32>& outIndices)
-	{
+	void PlaneGeometry::generate(const Input& input, Output& output) {
+		float width = input.width;
+		float height = input.height;
+		uint32 gridX = input.gridX;
+		uint32 gridY = input.gridY;
+		PlaneGeometry::Direction direction = input.direction;
+		EPrimitiveInitOptions options = input.options;
+		std::vector<float>& outPositions = output.positions;
+		std::vector<float>& outUVs = output.texcoords;
+		std::vector<float>& outNormals = output.normals;
+		std::vector<uint32>& outIndices = output.indices;
+
 		const uint32 numVertices = (gridX + 1) * (gridY + 1);
 		const float segW = width / gridX, segH = height / gridY;
 		const float x0 = -0.5f * width, y0 = -0.5f * height;
@@ -110,15 +112,14 @@ namespace pathos {
 		}
 	}
 
+	PlaneGeometry::PlaneGeometry(const Input& input)
+		: PlaneGeometry(input.width, input.height, input.gridX, input.gridY, input.direction, input.options)
+	{}
+
 	PlaneGeometry::PlaneGeometry(
-		float inWidth, float inHeight,
-		uint32 inGridX, uint32 inGridY,
-		PlaneGeometry::Direction direction,
-		EPrimitiveInitOptions options)
-		: width(inWidth)
-		, height(inHeight)
-		, gridX(inGridX)
-		, gridY(inGridY)
+		float inWidth, float inHeight, uint32 inGridX, uint32 inGridY,
+		PlaneGeometry::Direction direction, EPrimitiveInitOptions options)
+		: width(inWidth), height(inHeight), gridX(inGridX), gridY(inGridY)
 	{
 		initializeVertexLayout(toVertexAttributes(options));
 		buildGeometry(direction, options);
@@ -128,17 +129,17 @@ namespace pathos {
 	}
 
 	void PlaneGeometry::buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options) {
-		std::vector<GLfloat> positions, uvs, normals;
-		std::vector<GLuint> indices;
-		PlaneGeometry::generate(width, height, gridX, gridY, direction, options, positions, uvs, normals, indices);
+		Input input{ width, height, gridX, gridY, direction, options };
+		Output output;
+		PlaneGeometry::generate(input, output);
 
 		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
 		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
 
-		updatePositionData(positions.data(), (uint32)positions.size());
-		if (bCalculateUV) updateUVData(uvs.data(), (uint32)uvs.size());
-		if (bCalculateNormal) updateNormalData(normals.data(), (uint32)normals.size());
-		updateIndexData(indices.data(), (uint32)indices.size());
+		updatePositionData(output.positions.data(), (uint32)output.positions.size());
+		if (bCalculateUV) updateUVData(output.texcoords.data(), (uint32)output.texcoords.size());
+		if (bCalculateNormal) updateNormalData(output.normals.data(), (uint32)output.normals.size());
+		updateIndexData(output.indices.data(), (uint32)output.indices.size());
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
