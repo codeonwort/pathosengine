@@ -2,6 +2,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/indirect_draw.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/mesh/mesh.h"
 #include "pathos/scene/static_mesh_component.h"
@@ -13,6 +14,9 @@
 #include "badger/types/matrix_types.h"
 #include "badger/math/minmax.h"
 #include "badger/math/vector_math.h"
+
+// #todo-indirect-draw: Merge trivial drawcalls for CSM.
+#define MERGE_TRIVIAL_DRAW_CALLS 1
 
 namespace pathos {
 
@@ -32,11 +36,13 @@ namespace pathos {
 	void DirectionalShadowMap::releaseResources(RenderCommandList& cmdList) {
 		if (!bDestroyed) {
 			gRenderDevice->deleteFramebuffers(1, &fbo);
+			indirectDrawBuffer.reset();
+			modelTransformBuffer.reset();
 		}
 		bDestroyed = true;
 	}
 
-	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, const UBO_PerFrame& cachedPerFrameUBOData) {
+	void DirectionalShadowMap::renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, Material* indirectDrawDummyMaterial, const UBO_PerFrame& cachedPerFrameUBOData) {
 		SCOPED_DRAW_EVENT(CascadedShadowMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -97,9 +103,83 @@ namespace pathos {
 					uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, &uboData);
 				}
 
-				for (ShadowMeshProxy* proxy : scene->proxyList_shadowMesh) {
+#if MERGE_TRIVIAL_DRAW_CALLS
+				{
+					const ShadowMeshProxyList& proxyList = scene->getTrivialShadowMeshes();
+					const size_t numProxies = proxyList.size();
+					const uint32 maxDrawcalls = (uint32)numProxies;
+					
+					// #todo-indirect-draw: The first geometry that the engine creates.
+					// This is just for acquiring a VAO that specifies zero offset for position buffer pool.
+					// Maybe need to implement gRenderDevice->getPositionOnlyVAO() ?
+					MeshGeometry* defaultGeometry = gEngine->getSystemGeometryUnitPlane();
+
+					reallocateIndirectDrawBuffers(cmdList, maxDrawcalls);
+					std::vector<DrawElementsIndirectCommand> drawCommands;
+					std::vector<Material::UBO_PerObject> modelTransforms;
+					drawCommands.reserve(maxDrawcalls);
+					modelTransforms.reserve(maxDrawcalls);
+
+					for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
+						ShadowMeshProxy* proxy = proxyList[proxyIx];
+						Material* material = proxy->material;
+						MaterialShader* materialShader = material->internal_getMaterialShader();
+
+						// #todo-frustum-culling: Frustum culling for CSM
+						//if (bEnableFrustumCulling && !proxy->bInFrustum) {
+						//	continue;
+						//}
+
+						DrawElementsIndirectCommand cmd{
+							proxy->geometry->getIndexCount(),
+							1, // instanceCount
+							proxy->geometry->getFirstIndex(),
+							(int32)proxy->geometry->getFirstVertex(), // baseVertex
+							0, // baseInstance
+						};
+						drawCommands.emplace_back(cmd);
+
+						Material::UBO_PerObject transforms;
+						transforms.modelTransform = proxy->modelMatrix;
+						transforms.prevModelTransform = proxy->modelMatrix; // Doesn't matter
+						modelTransforms.emplace_back(transforms);
+					}
+
+					const uint32 mergedCalls = (uint32)drawCommands.size();
+					if (mergedCalls > 0) {
+						indirectDrawBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(DrawElementsIndirectCommand) * mergedCalls, drawCommands.data());
+						modelTransformBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(Material::UBO_PerObject) * mergedCalls, modelTransforms.data());
+
+						cmdList.useProgram(indirectDrawDummyMaterial->internal_getMaterialShader()->program->getGLName());
+
+						cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, modelTransformBuffer->internal_getGLName());
+						cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer->internal_getGLName());
+						defaultGeometry->bindPositionOnlyVAO(cmdList);
+
+						cmdList.multiDrawElementsIndirect(
+							GL_TRIANGLES,
+							GL_UNSIGNED_INT, // 32-bit index
+							0, // offset for indirect draw buffer
+							mergedCalls,
+							0 // stride
+						);
+
+						cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, 0);
+						cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+					}
+				}
+#endif
+
+				for (ShadowMeshProxy* proxy : scene->getShadowMeshes()) {
 					Material* material = proxy->material;
 					MaterialShader* materialShader = material->internal_getMaterialShader();
+
+#if MERGE_TRIVIAL_DRAW_CALLS
+					// Drawcall for this proxy was auto-merged in the above block.
+					if (proxy->bTrivialDepthOnly) {
+						continue;
+					}
+#endif
 
 					// #todo-frustum-culling: Frustum culling for CSM
 					// ...
@@ -171,6 +251,36 @@ namespace pathos {
 		// #todo-renderer: Although it reverts the UBO properly, The debug name in RenderDoc appears as "UBO_PerFrame_CSM".
 		// Revert uboPerFrame.
 		uboPerFrame.update(cmdList, UBO_PerFrame::BINDING_POINT, (void*)&cachedPerFrameUBOData);
+	}
+
+	void DirectionalShadowMap::reallocateIndirectDrawBuffers(RenderCommandList& cmdList, uint32 maxDrawcalls) {
+		auto getCount = [](Buffer* buffer, uint32 stride) -> uint32 {
+			if (buffer == nullptr) return 0;
+			return buffer->getCreateParams().bufferSize / stride;
+		};
+
+		if (maxDrawcalls > getCount(indirectDrawBuffer.get(), sizeof(DrawElementsIndirectCommand))) {
+			BufferCreateParams createParams{
+				EBufferUsage::CpuWrite,
+				sizeof(DrawElementsIndirectCommand) * maxDrawcalls,
+				nullptr, // initialData
+				"Buffer_CSM_IndirectDrawArgs",
+			};
+			indirectDrawBuffer.reset();
+			indirectDrawBuffer = makeUnique<Buffer>(createParams);
+			indirectDrawBuffer->createGPUResource_renderThread(cmdList);
+		}
+		if (maxDrawcalls > getCount(modelTransformBuffer.get(), sizeof(Material::UBO_PerObject))) {
+			BufferCreateParams createParams{
+				EBufferUsage::CpuWrite,
+				sizeof(Material::UBO_PerObject) * maxDrawcalls,
+				nullptr, // initialData
+				"Buffer_CSM_ModelTransforms",
+			};
+			modelTransformBuffer.reset();
+			modelTransformBuffer = makeUnique<Buffer>(createParams);
+			modelTransformBuffer->createGPUResource_renderThread(cmdList);
+		}
 	}
 
 }

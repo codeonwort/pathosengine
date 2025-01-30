@@ -231,7 +231,7 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(RenderCascadedShadowMap);
 			SCOPED_GPU_COUNTER(RenderCascadedShadowMap);
 			// #todo-performance: This is incredibly slow in debug build
-			sunShadowMap->renderShadowMap(cmdList, scene, camera, cachedPerFrameUBOData);
+			sunShadowMap->renderShadowMap(cmdList, scene, camera, indirectDrawDummyMaterial.get(), cachedPerFrameUBOData);
 		}
 
 		// #todo-light-probe: Don't need to render this per scene proxy,

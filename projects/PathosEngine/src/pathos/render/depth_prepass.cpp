@@ -15,7 +15,6 @@
 #include "pathos/console.h"
 
 // #todo-indirect-draw: Merge trivial drawcalls to not stall render thread.
-// Prototype works, let's improve it. Same for shadowmap pass.
 #define MERGE_TRIVIAL_DRAW_CALLS 1
 
 namespace pathos {

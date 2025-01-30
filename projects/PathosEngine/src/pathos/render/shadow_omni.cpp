@@ -142,7 +142,7 @@ namespace pathos {
 				uboData.viewproj = viewproj;
 				uboData.lightPositionAndZFar = vector4(light->worldPosition, zFar);
 
-				for (ShadowMeshProxy* batch : scene->proxyList_shadowMesh) {
+				for (ShadowMeshProxy* batch : scene->getShadowMeshes()) {
 					totalDrawcall++;
 					bool bInFrustum = badger::hitTest::AABB_frustum(batch->worldBounds, shadowFrustum);
 					if (!bInFrustum) {

@@ -46,9 +46,8 @@ namespace pathos {
 		prevModelMatrix = getLocalMatrix();
 	}
 
-	AABB StaticMeshComponent::getWorldBounds() const
-	{
-		AABB total = AABB::fromMinMax(vector3(0.0f), vector3(0.0f));
+	AABB StaticMeshComponent::getWorldBounds() const {
+		AABB total = AABB::fromMinMax(vector3(FLT_MAX), vector3(-FLT_MAX));
 		auto& geoms = mesh->getGeometries();
 		if (geoms.size() > 0) {
 			total = badger::calculateWorldBounds(geoms[0]->getLocalBounds(), getLocalMatrix());

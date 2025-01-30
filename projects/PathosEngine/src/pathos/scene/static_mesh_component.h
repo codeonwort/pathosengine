@@ -33,6 +33,8 @@ namespace pathos {
 		AABB worldBounds;
 		uint32 doubleSided : 1;
 		uint32 renderInternal : 1;
+
+		bool bTrivialDepthOnly = false;
 	};
 
 	class StaticMeshComponent : public SceneComponent {

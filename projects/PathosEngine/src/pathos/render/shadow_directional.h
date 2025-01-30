@@ -13,6 +13,8 @@
 
 namespace pathos {
 
+	class Material;
+
 	// Generates shadow maps for directional lights (usually Sun).
 	class DirectionalShadowMap final : public Noncopyable {
 
@@ -20,9 +22,13 @@ namespace pathos {
 		virtual ~DirectionalShadowMap();
 
 		void initializeResources(RenderCommandList& cmdList);
+
 		void releaseResources(RenderCommandList& cmdList);
 		
-		void renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, const UBO_PerFrame& cachedPerFrameUBOData);
+		void renderShadowMap(RenderCommandList& cmdList, SceneProxy* scene, const Camera* camera, Material* indirectDrawDummyMaterial, const UBO_PerFrame& cachedPerFrameUBOData);
+
+	private:
+		void reallocateIndirectDrawBuffers(RenderCommandList& cmdList, uint32 maxDrawcalls);
 
 	private:
 		bool bDestroyed = false;
@@ -30,6 +36,10 @@ namespace pathos {
 		GLuint fbo = 0xffffffff;
 		UniformBuffer uboPerFrame;
 		UniformBuffer uboPerObject;
+
+		uniquePtr<Buffer> indirectDrawBuffer;
+		uniquePtr<Buffer> modelTransformBuffer;
+
 	};
 
 }

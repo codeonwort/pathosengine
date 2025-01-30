@@ -22,6 +22,7 @@ namespace pathos {
 	class Buffer;
 	class DirectionalLightComponent;
 
+	using ShadowMeshProxyList = std::vector<struct ShadowMeshProxy*>;
 	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
 	using LandscapeProxyList = std::vector<struct LandscapeProxy*>;
 
@@ -79,6 +80,8 @@ namespace pathos {
 		const StaticMeshProxyList& getTrivialDepthOnlyStaticMeshes() const { return proxyList_staticMeshTrivialDepthOnly; }
 
 		void addShadowMeshProxy(struct ShadowMeshProxy* proxy);
+		const ShadowMeshProxyList& getShadowMeshes() const { return proxyList_shadowMesh; }
+		const ShadowMeshProxyList& getTrivialShadowMeshes() const { return proxyList_shadowMeshTrivial; }
 
 		void addLandscapeProxy(struct LandscapeProxy* proxy);
 		const LandscapeProxyList& getLandscapeMeshes() const { return proxyList_landscape; }
@@ -114,13 +117,15 @@ namespace pathos {
 		std::vector<struct RectLightProxy*>        proxyList_rectLight;
 
 		// Shadowmap rendering
-		std::vector<struct ShadowMeshProxy*>       proxyList_shadowMesh;
+		ShadowMeshProxyList                        proxyList_shadowMesh;
 
 		// Standard mesh proxies
 		StaticMeshProxyList                        proxyList_staticMeshOpaque;
 		StaticMeshProxyList                        proxyList_staticMeshTranslucent;
 
 		// #todo-indirect-draw: Ultimately wanna merge every drawcall groups but let's start with the easiest one.
+		// Subset of proxyList_shadowMesh whose drawcalls can be merged.
+		ShadowMeshProxyList                        proxyList_shadowMeshTrivial;
 		// Subset of proxyList_staticMeshOpaque whose depth-only drawcalls can be merged.
 		StaticMeshProxyList                        proxyList_staticMeshTrivialDepthOnly;
 

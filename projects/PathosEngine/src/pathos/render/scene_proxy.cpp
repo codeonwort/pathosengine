@@ -40,6 +40,7 @@ namespace pathos {
 		proxyList_shadowMesh.clear();
 		proxyList_staticMeshOpaque.clear();
 		proxyList_staticMeshTranslucent.clear();
+		proxyList_shadowMeshTrivial.clear();
 		proxyList_staticMeshTrivialDepthOnly.clear();
 		proxyList_landscape.clear();
 		proxyList_reflectionProbe.clear();
@@ -166,6 +167,18 @@ namespace pathos {
 		}
 
 		proxyList_shadowMesh.push_back(proxy);
+
+		MaterialShader* materialShader = proxy->material->internal_getMaterialShader();
+		bool bTrivial = materialShader->bTrivialDepthOnlyPass
+			&& proxy->material->bWireframe == false
+			&& proxy->renderInternal == false
+			&& proxy->doubleSided == false
+			&& proxy->geometry->isIndex16Bit() == false;
+			//&& proxy->geometry->shareSamePositionBufferPool(defaultGeometry); // #todo-indirect-draw
+		if (bTrivial) {
+			proxy->bTrivialDepthOnly = true;
+			proxyList_shadowMeshTrivial.push_back(proxy);
+		}
 	}
 
 	void SceneProxy::addLandscapeProxy(LandscapeProxy* proxy) {
