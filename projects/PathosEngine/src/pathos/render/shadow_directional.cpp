@@ -80,9 +80,6 @@ namespace pathos {
 
 			const uint32 numCascades = lightProxy->shadowMapCascadeCount;
 
-			uint32 currentProgramHash = 0;
-			uint32 currentMIID = 0xffffffff;
-
 			cmdList.bindFramebuffer(GL_FRAMEBUFFER, fbo);
 			cmdList.viewport(0, 0, lightProxy->shadowMapSize, lightProxy->shadowMapSize);
 
@@ -119,8 +116,6 @@ namespace pathos {
 
 					for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 						ShadowMeshProxy* proxy = proxyList[proxyIx];
-						Material* material = proxy->material;
-						MaterialShader* materialShader = material->internal_getMaterialShader();
 
 						// #todo-frustum-culling: Frustum culling for CSM
 						//if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -167,6 +162,9 @@ namespace pathos {
 					}
 				}
 #endif
+
+				uint32 currentProgramHash = 0;
+				uint32 currentMIID = 0xffffffff;
 
 				for (ShadowMeshProxy* proxy : scene->getShadowMeshes()) {
 					Material* material = proxy->material;
