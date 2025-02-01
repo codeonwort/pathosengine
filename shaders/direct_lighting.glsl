@@ -29,10 +29,10 @@ in VS_OUT {
 } fs_in;
 
 layout (std140, binding = 1) uniform UBO_DirectLighting {
-	uint enableShadowing;
-	uint haveShadowMap;
-	int omniShadowMapIndex;
-	uint _pad0;
+	uint         enableShadowing;
+	uint         haveShadowMap;
+	int          omniShadowMapIndex;
+	uint         _pad0;
 
 	LIGHT_STRUCT lightParameters;
 } ubo;
@@ -271,7 +271,7 @@ vec3 getIncomingRadiance(GBufferData gbufferData, vec3 V) {
 
 // Diffuse  : Perfect lambertian
 // Specular : Generalized microfacet
-vec3 CookTorranceBRDF(GBufferData gbufferData) {
+vec3 CookTorranceBRDF(GBufferData gbufferData, vec2 screenUV) {
 	// NOTE: All vectors are in view space.
 	vec3 N = gbufferData.normal;                // Surface normal
 	vec3 V = getOutgoingDirection(gbufferData); // Wo
@@ -339,18 +339,18 @@ vec3 CookTorranceBRDF(GBufferData gbufferData) {
 	vec3 Lo = (diffuseTerm + specularTerm) * Li * NdotL;
 	
 	// #todo-light: SSAO is being sampled per each light unnecessarily
-	float ssao = texture2D(ssaoMap, fs_in.screenUV).r;
+	float ssao = texture2D(ssaoMap, screenUV).r;
 	vec3 finalRadiance = Lo * localAO * ssao;
 
 	return finalRadiance;
 }
 
-vec3 getLocalIllumination(GBufferData gbufferData) {
+vec3 getLocalIllumination(GBufferData gbufferData, vec2 screenUV) {
 	uint shadingModel = gbufferData.material_id;
 
 	vec3 result = vec3(0.0, 0.0, 0.0);
 	if (shadingModel == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
-		result = CookTorranceBRDF(gbufferData);
+		result = CookTorranceBRDF(gbufferData, screenUV);
 	} else {
 		discard;
 	}
@@ -358,10 +358,14 @@ vec3 getLocalIllumination(GBufferData gbufferData) {
 }
 
 void main() {
-	GBufferData gbufferData;
-	unpackGBuffer(ivec2(gl_FragCoord.xy), gbuf0, gbuf1, gbuf2, gbufferData);
+	ivec2 texel = ivec2(gl_FragCoord.xy);
+	// Don't use fs_in.screenUV because viewports for point lights don't cover the entire screen.
+	vec2 screenUV = (vec2(texel) + vec2(0.5)) * uboPerFrame.screenResolution.zw;
 
-	vec3 radiance = getLocalIllumination(gbufferData);
+	GBufferData gbufferData;
+	unpackGBuffer(texel, gbuf0, gbuf1, gbuf2, gbufferData);
+
+	vec3 radiance = getLocalIllumination(gbufferData, screenUV);
 
 // shadow_mapping.glsl
 #if DEBUG_CSM_ID && (LIGHT_SOURCE_TYPE == LIGHT_SOURCE_DIRECTIONAL)

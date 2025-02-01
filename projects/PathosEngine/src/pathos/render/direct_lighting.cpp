@@ -15,6 +15,7 @@
 #include "pathos/util/engine_util.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
+#include "pathos/engine_policy.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
@@ -40,10 +41,10 @@ namespace pathos {
 
 		static const uint32 BINDING_SLOT = 1;
 
-		uint32 enableShadowing;
-		uint32 haveShadowMap;
-		uint32 omniShadowMapIndex;
-		uint32 _pad0;
+		uint32     enableShadowing;
+		uint32     haveShadowMap;
+		uint32     omniShadowMapIndex;
+		uint32     _pad0;
 
 		LightProxy lightParameters;
 	};
@@ -60,6 +61,24 @@ namespace pathos {
 	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Directional, FullscreenVS, DirectLightingFS<ELightSourceType::Directional>);
 	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Point, FullscreenVS, DirectLightingFS<ELightSourceType::Point>);
 	DEFINE_SHADER_PROGRAM2(Program_DirectLighting_Rect, FullscreenVS, DirectLightingFS<ELightSourceType::Rect>);
+
+	static AABB getPointLightClipSpaceBounds(const vector3& centerVS, float radius, const matrix4& proj) {
+		// Get clip space bounds.
+		vector3 minCS(1.0f, 1.0f, 1.0f), maxCS(-1.0f, -1.0f, -1.0f);
+		for (uint32 i = 0; i < 8; ++i) {
+			float signX = (i & 1)        ? 1.0f : -1.0f;
+			float signY = ((i >> 1) & 1) ? 1.0f : -1.0f;
+			float signZ = ((i >> 2) & 1) ? 1.0f : -1.0f;
+			vector3 v = centerVS + (radius * vector3(signX, signY, signZ));
+			vector4 cs = proj * vector4(v, 1.0f);
+			cs /= cs.w;
+			v = vector3(cs);
+			minCS = glm::min(minCS, v);
+			maxCS = glm::max(maxCS, v);
+		}
+		AABB bounds = AABB::fromMinMax(minCS, maxCS);
+		return bounds;
+	}
 
 }
 
@@ -110,8 +129,6 @@ namespace pathos {
 
 		// ----------------------------------------------------------
 		// Common setup
-
-		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
@@ -135,6 +152,7 @@ namespace pathos {
 		// ----------------------------------------------------------
 		// Cleanup
 
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 		cmdList.disable(GL_BLEND);
 		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -145,6 +163,8 @@ namespace pathos {
 		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		const auto& dirLights = scene->proxyList_directionalLight;
+
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		if (dirLights.size() > 0) {
 			SCOPED_DRAW_EVENT(DirectionalLight);
@@ -181,6 +201,8 @@ namespace pathos {
 
 		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
 
+		const matrix4 projMatrix = scene->camera.getProjectionMatrix();
+
 		// Point lights
 		const auto& pointLights = scene->proxyList_pointLight;
 		uint32 omniShadowMapIndex = 0;
@@ -189,9 +211,32 @@ namespace pathos {
 
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Point);
 			cmdList.useProgram(program.getGLName());
+			
+			// NDC Z range is [0, 1] if Reverse-Z, otherwise [-1, 1].
+			float ndcMinZ = (pathos::getReverseZPolicy() == EReverseZPolicy::Reverse) ? -1.0f : 0.0f;
 
 			for (size_t lightIx = 0; lightIx < pointLights.size(); ++lightIx) {
 				const PointLightProxy* light = pointLights[lightIx];
+
+				AABB bounds = getPointLightClipSpaceBounds(light->viewPosition, light->attenuationRadius, projMatrix);
+				// Clip space to UV.
+				vector2 minUV = 0.5f + 0.5f * vector2(bounds.minBounds);
+				vector2 maxUV = 0.5f + 0.5f * vector2(bounds.maxBounds);
+				bool bOutZ = bounds.minBounds.z > 1.0f || bounds.maxBounds.z < ndcMinZ;
+				if (bOutZ || minUV.x > 1.0f || minUV.y > 1.0f || maxUV.x < 0.0f || maxUV.y < 0.0f) {
+					// Current point light is out of screen.
+					continue;
+				}
+				minUV = glm::max(vector2(0.0f), minUV);
+				maxUV = glm::min(vector2(1.0f), maxUV);
+				
+				// Local lights usually do not cover the entire screen, so adjust the viewport.
+				int32 viewportX = (int32)std::floor(minUV.x * sceneContext.sceneWidth);
+				int32 viewportY = (int32)std::floor(minUV.y * sceneContext.sceneHeight);
+				cmdList.viewport(
+					viewportX, viewportY,
+					(int32)std::ceil((maxUV.x - minUV.x) * sceneContext.sceneWidth),
+					(int32)std::ceil((maxUV.y - minUV.y) * sceneContext.sceneHeight));
 
 				UBO_DirectLighting<PointLightProxy> uboData;
 				uboData.enableShadowing = cvar_enable_shadow.getInt();
@@ -204,8 +249,6 @@ namespace pathos {
 
 				uboPointLight.update(cmdList, UBO_DirectLighting<PointLightProxy>::BINDING_SLOT, &uboData);
 
-				// #todo-light: Local lights usually do not cover the entire viewport.
-				// Need to adjust raster region in vertex shader.
 				fullscreenQuad->bindFullAttributesVAO(cmdList);
 				fullscreenQuad->drawPrimitive(cmdList);
 			}
@@ -219,6 +262,8 @@ namespace pathos {
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DirectLighting_Rect);
 			cmdList.useProgram(program.getGLName());
 
+			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
 			for (size_t lightIx = 0; lightIx < rectLights.size(); ++lightIx) {
 				const RectLightProxy* light = rectLights[lightIx];
 
@@ -227,7 +272,6 @@ namespace pathos {
 				// #todo-light: No shadowmap for rect light yet.
 				uboData.haveShadowMap = false;
 				//uboData.haveShadowMap = light->castsShadow;
-
 				uboData.lightParameters = *light;
 
 				uboRectLight.update(cmdList, UBO_DirectLighting<RectLightProxy>::BINDING_SLOT, &uboData);
