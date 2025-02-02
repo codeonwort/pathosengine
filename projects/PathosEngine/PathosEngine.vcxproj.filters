@@ -1,981 +1,929 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
+    <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="헤더 파일">
+    <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="리소스 파일">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="소스 파일\pathos">
-      <UniqueIdentifier>{e8f39d8a-e17a-4b5e-8398-9f18b0a8abf1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\mesh">
-      <UniqueIdentifier>{0666ea24-91fe-446b-bfba-0222f4e0e955}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos">
-      <UniqueIdentifier>{281e8758-2fd6-4a3f-98bb-17af64974817}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\mesh">
-      <UniqueIdentifier>{2cc8bbb1-3b75-4702-a403-8777e7a6fa72}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\wrapper">
-      <UniqueIdentifier>{9717dca7-4a98-4c09-8ec8-326854a81a8a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\wrapper">
-      <UniqueIdentifier>{82521f94-7fc0-4251-8435-6cd81cf5eeb4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\light">
-      <UniqueIdentifier>{5ed993e0-3fce-4d4c-aacb-48b1bdc4bab9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\light">
-      <UniqueIdentifier>{e3d39b6b-7590-4650-b0b1-89abd09f5556}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\camera">
-      <UniqueIdentifier>{a5fdc0f4-bddf-494b-9e3a-8884ac992e3a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\camera">
-      <UniqueIdentifier>{ca7a8573-3b22-43c4-b011-d832fd243f88}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\loader">
-      <UniqueIdentifier>{312565b7-550c-44d7-ac47-94682dcf88f7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\loader">
-      <UniqueIdentifier>{2f70ce44-9931-4dff-a6d5-52139338860d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="헤더 파일\pathos\render">
-      <UniqueIdentifier>{bf5aac87-21b4-4fe3-905c-cff751d2a9bb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\pathos\render">
-      <UniqueIdentifier>{f4874087-6128-48cd-bc03-bf59c6277b96}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\pathos\engine.cpp">
-      <Filter>소스 파일\pathos</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\mesh\geometry.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\mesh\mesh.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\util\transform_helper.cpp">
-      <Filter>소스 파일\pathos\wrapper</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\scene\camera.cpp">
-      <Filter>소스 파일\pathos\camera</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\loader\image_loader.cpp">
-      <Filter>소스 파일\pathos\loader</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\loader\objloader.cpp">
-      <Filter>소스 파일\pathos\loader</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\text\text_geometry.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\material\material.cpp">
-      <Filter>소스 파일\pathos\mesh</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\scene_renderer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\direct_lighting.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\text\font_mgr.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\text\font_texture_cache.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\render_overlay.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\display_object.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\rectangle.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\overlay\overlaypass_base.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\overlay\overlaypass_standard.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\resource_finder.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\brush.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\label.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\overlay\overlaypass_text.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\console.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\shadow_directional.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thirdparty\gl3w.c">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_buffer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\skybox.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\sky_panorama.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\renderdoc_integration.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\log.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\file_system.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\string_conversion.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\render_device.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\system\mem_alloc.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\render_command_list.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\scene_render_targets.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\gl_debug_group.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\post_process.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\bloom.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\depth_of_field.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\god_ray.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\tone_mapping.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\ssao.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\math\random.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\forward\translucency_rendering.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\gui\gui_window.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\mesh\model_transform.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\input\input_manager.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\input\input_system.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\asset_streamer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\system\thread_pool.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\shader_program.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\actor_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\scene.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\scene_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\static_mesh_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\assertion\assertion.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\scene_capture_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\render_target.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\math\rotator.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\world.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\input\xinput_manager.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\bloom_setup.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\shadow_omni.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\texture.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\depth_prepass.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\math\spline.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thirdparty\tinygltf.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thirdparty\tinyobjloader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\spline_loader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\cpu_profiler.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\system\cpu.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\scene_loader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\scene_desc_parser.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\debug_overlay.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\text\text_actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\text\text_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\engine_util.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render_thread.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\scene_proxy.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\gl_context_manager.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\engine_thread.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\indirect_lighting.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\engine_policy.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\screen_space_reflection.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pch.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\display_object_proxy.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\material\material_shader_assembler.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\material\material_shader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\resolve_unlit.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\super_res_fsr1.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\super_res.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\loader\gltf_loader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing_taa.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\postprocessing\anti_aliasing.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\volumetric_clouds.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\skybox_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\skybox_actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\sky_panorama_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\reflection_probe_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\reflection_probe_actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\irradiance_volume_actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\os_util.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\fullscreen_util.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\sync_event.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\overlay\button.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\overlay\overlaypass_image.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\gbuffer_pass.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\gl_live_objects.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\buffer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\malloc_emulator.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\auto_exposure.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\visualize_sky_occlusion.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\landscape_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\landscape_rendering.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\physics\shape.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\physics\physics_scene.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\physics_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\physics\collision.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\math\convex_hull.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\badger\math\signed_volume.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\directional_light_component.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\scene\camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\loader\image_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\loader\objloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\mesh\geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\material\material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\mesh\mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\util\transform_helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\pathos\mesh\geometry.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\mesh\mesh.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\engine.h">
-      <Filter>헤더 파일\pathos</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\util\transform_helper.h">
-      <Filter>헤더 파일\pathos\wrapper</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\scene\camera.h">
-      <Filter>헤더 파일\pathos\camera</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\loader\image_loader.h">
-      <Filter>헤더 파일\pathos\loader</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\loader\objloader.h">
-      <Filter>헤더 파일\pathos\loader</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\mesh\render.h">
-      <Filter>헤더 파일\pathos\render</Filter>
-    </ClInclude>
     <ClInclude Include="src\pathos\text\text_geometry.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\material\material.h">
-      <Filter>헤더 파일\pathos\mesh</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\material\material_id.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\geometry_primitive.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_renderer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\direct_lighting.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\font_mgr.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\font_texture_cache.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\display_object.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\render_overlay.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\rectangle.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_base.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_standard.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\resource_finder.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\brush.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\color_conversion.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\label.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_text.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\console.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\log.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\shadow_directional.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\renderer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\core_minimal.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\visualize_buffer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\uniform_buffer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render_minimal.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\skybox.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\sky_panorama.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\renderdoc_integration.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\gl_debug_group.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\geometry_procedural.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\file_system.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\string_conversion.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\render_device.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\render_commands.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\render_command_list.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\system\mem_alloc.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\int_types.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\assertion\assertion.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\render_commands.generated.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\render_command_list.generated.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_render_targets.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\bloom.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\post_process.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\depth_of_field.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\god_ray.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\tone_mapping.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_fxaa.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\engine_version.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\ssao.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\random.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\forward\translucency_rendering.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\ssr.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\gui\gui_window.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\model_transform.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\system\stopwatch.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\input\input_manager.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\input\input_constants.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\string_hash.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\input\input_system.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\asset_streamer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\system\thread_pool.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\image_based_lighting_baker.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\shader_program.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\actor_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\scene.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\scene_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\point_light_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\engine_util.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\point_light_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\directional_light_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\directional_light_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\vector_types.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\static_mesh_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\matrix_types.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\static_mesh_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\noncopyable.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\scene_capture_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\scene_render_settings.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\render_target.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\engine_thread.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\rotator.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\minmax.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\world.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\input\xinput_manager.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\bloom_setup.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\shadow_omni.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\texture.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\depth_prepass.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\spline.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\spline_loader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\cpu_profiler.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\system\cpu.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\system\platform.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\scene_loader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\scene_desc_parser.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\sky_atmosphere.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\debug_overlay.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\text_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\text\text_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render_thread.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\scene_proxy.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\gl_context_manager.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\buffer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\indirect_lighting.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\engine_policy.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\screen_space_reflection.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pch.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\display_object_proxy.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\aabb.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\plane.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\hit_test.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\smart_pointer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\rect_light_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\rect_light_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\material\material_shader_assembler.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\material\material_shader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\resolve_unlit.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\super_res_fsr1.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\super_res.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\gl_handles.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\loader\gltf_loader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\postprocessing\anti_aliasing_taa.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\volumetric_clouds.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\volumetric_cloud_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\volumetric_cloud_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\skybox_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\skybox_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_panorama_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_panorama_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_atmosphere_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\sky_atmosphere_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\vector_math.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\reflection_probe_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\reflection_probe_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\visualize_light_probe.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\os_util.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\constants.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\half_float.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\fullscreen_util.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\sync_event.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\overlay\button.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\gbuffer_pass.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\gl_live_objects.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\image_data.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\types\enum.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\util\malloc_emulator.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\auto_exposure.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\image_based_lighting.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\landscape_actor.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\landscape_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\landscape_rendering.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\physics\shape.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\physics\physics_scene.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\scene\physics_component.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\physics\collision.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\convex_hull.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\badger\math\signed_volume.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\indirect_draw.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\scene\camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\loader\image_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\loader\objloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\util\transform_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\material\material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\mesh\mesh.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -374,8 +374,6 @@
     <ClInclude Include="src\pathos\mesh\geometry_primitive.h" />
     <ClInclude Include="src\pathos\mesh\mesh.h" />
     <ClInclude Include="src\pathos\mesh\render.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_shadowcubemap.h" />
-    <ClInclude Include="src\pathos\render\forward\renderpass_shadowtexture.h" />
     <ClInclude Include="src\pathos\render\god_ray.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_base.h" />
