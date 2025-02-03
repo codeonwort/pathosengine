@@ -403,29 +403,89 @@ namespace badger {
 		}
 
 		static float signedDistanceToTriangle(const ConvexHullTriangle& tri, const vector3& pt, const std::vector<SupportPoint>& points) {
-			return 0.0f;
+			const vector3 normal = normalDirection(tri, points);
+			const vector3& a = points[tri.a].xyz;
+			const vector3 a2pt = pt - a;
+			const float dist = glm::dot(normal, a2pt);
+			return dist;
 		}
 
 		static int32 closestTriangle(const std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
-			return 0;
+			float minDistSq = FLT_MAX;
+			int32 idx = -1, n = (int32)triangles.size();
+			for (int32 i = 0; i < n; ++i) {
+				const ConvexHullTriangle& tri = triangles[i];
+				float dist = signedDistanceToTriangle(tri, vector3(0.0f), points);
+				float distSq = dist * dist;
+				if (distSq < minDistSq) {
+					idx = i;
+					minDistSq = distSq;
+				}
+			}
+			return idx;
 		}
 
 		static bool hasPoint(const vector3& w, const std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
+			const float epsilons = 0.001f * 0.001f;
+			vector3 delta;
+
+			for (size_t i = 0u; i < triangles.size(); ++i) {
+				const ConvexHullTriangle& tri = triangles[i];
+				delta = w - points[tri.a].xyz;
+				if (glm::dot(delta, delta) < epsilons) return true;
+				delta = w - points[tri.b].xyz;
+				if (glm::dot(delta, delta) < epsilons) return true;
+				delta = w - points[tri.c].xyz;
+				if (glm::dot(delta, delta) < epsilons) return true;
+			}
 			return false;
 		}
 
 		static int32 removeTrianglesFacingPoint(const vector3& pt, std::vector<ConvexHullTriangle>& triangles, const std::vector<SupportPoint>& points) {
-			return 0;
+			int32 numRemoved = 0;
+			for (size_t i = 0u; i < triangles.size(); ++i) {
+				const ConvexHullTriangle& tri = triangles[i];
+				float dist = signedDistanceToTriangle(tri, pt, points);
+				if (dist > 0.0f) {
+					// This triangle faces the point. Remove it.
+					triangles.erase(triangles.begin() + i);
+					--i;
+					++numRemoved;
+				}
+			}
+			return numRemoved;
 		}
 
 		static void findDanglingEdges(std::vector<Edge>& danglingEdges, const std::vector<ConvexHullTriangle>& triangles) {
-			//
+			danglingEdges.clear();
+
+			for (size_t i = 0u; i < triangles.size(); ++i) {
+				const ConvexHullTriangle& tri = triangles[i];
+
+				Edge edges[3] = { { tri.a, tri.b }, {tri.b, tri.c}, {tri.c, tri.a} };
+				int32 counts[3] = { 0, 0, 0 };
+				for (size_t j = 0u; j < triangles.size(); ++j) {
+					if (j == i) continue;
+					const ConvexHullTriangle& tri2 = triangles[j];
+					Edge edges2[3] = { {tri2.a, tri2.b}, {tri2.b, tri2.c}, {tri2.c, tri2.a} };
+					for (int32 k = 0; k < 3; ++k) {
+						if (edges[k] == edges2[0]) counts[k] += 1;
+						if (edges[k] == edges2[1]) counts[k] += 1;
+						if (edges[k] == edges2[2]) counts[k] += 1;
+					}
+				}
+				// An edge that isn't shared is dangling.
+				for (int32 k = 0; k < 3; ++k) {
+					if (0 == counts[k]) {
+						danglingEdges.push_back(edges[k]);
+					}
+				}
+			}
 		}
 
 		// #todo-physics: Stub code for EPA
 		static float expandingPolytopeAlgorithm(
-			const Body* bodyA, const Body* bodyB,
-			float bias, const SupportPoint simplexPoints[4],
+			const Body* bodyA, const Body* bodyB, float bias, const SupportPoint simplexPoints[4],
 			vector3& ptOnA, vector3& ptOnB)
 		{
 			return 0.0f;
