@@ -42,5 +42,8 @@ namespace badger {
 		// Intersection test between two convex shapes by Gilbert-Johnson-Keerthi algorithm.
 		bool intersectGJK(const Body* bodyA, const Body* bodyB);
 
+		// A variant that also writes the contact points to ptOnA and ptOnB.
+		bool intersectGJK(const Body* bodyA, const Body* bodyB, float bias, vector3& ptOnA, vector3& ptOnB);
+
 	}
 }
