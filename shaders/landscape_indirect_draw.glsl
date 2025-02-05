@@ -13,6 +13,8 @@
 #error BUCKET_SIZE is not defined.
 #endif
 
+#define FLT_MAX (3.402823466e+38F)
+
 struct SectorParameter {
 	vec4  uvBounds;
 	float offsetX;
@@ -65,6 +67,10 @@ layout (std430, binding = 1) writeonly buffer SSBO_DrawArgsBuffer {
 	DrawElementsIndirectCommand outCommands[];
 };
 
+layout (std140, binding = 2) writeonly buffer SSBO_DrawCounterBuffer {
+	uint outDrawCounter;
+};
+
 // --------------------------------------------------------
 // Program
 
@@ -79,8 +85,6 @@ vec4 getSectorUVBounds(uvec2 sectorCoord) {
 	float cy = float(ubo.sectorCountY);
 	return vec4(x / cx, y / cy, (x + 1.0) / cx, (y + 1.0) / cy);
 }
-
-#define FLT_MAX (3.402823466e+38F)
 
 AABB calculateWorldBounds(vec3 localMin, vec3 localMax, mat4x4 localToWorld) {
 	vec3 vs[8];
@@ -164,19 +168,23 @@ void main() {
 
 	bool bCulled = bFrustumCulled || bDistanceCulled;
 
-	// Output
-	outSectors[ix] = SectorParameter(
-		uvBounds,                      // uvBounds
-		sectorSize.x * fSectorCoord.x, // offsetX
-		sectorSize.y * fSectorCoord.y, // offsetY
-		LOD,                           // lod
-		0.0                            // _pad0
-	);
-	outCommands[ix] = DrawElementsIndirectCommand(
-		ubo.indexCountPerLOD[LOD], // count
-		bCulled ? 0 : 1,           // instanceCount
-		ubo.firstIndexPerLOD[LOD], // firstIndex
-		0,                         // baseVertex
-		0                          // baseInstance
-	);
+	if (!bCulled) {
+		uint drawIx = atomicAdd(outDrawCounter, 1);
+
+		// Output
+		outSectors[drawIx] = SectorParameter(
+			uvBounds,                      // uvBounds
+			sectorSize.x * fSectorCoord.x, // offsetX
+			sectorSize.y * fSectorCoord.y, // offsetY
+			LOD,                           // lod
+			0.0                            // _pad0
+		);
+		outCommands[drawIx] = DrawElementsIndirectCommand(
+			ubo.indexCountPerLOD[LOD], // count
+			1,                         // instanceCount
+			ubo.firstIndexPerLOD[LOD], // firstIndex
+			0,                         // baseVertex
+			0                          // baseInstance
+		);
+	}
 }

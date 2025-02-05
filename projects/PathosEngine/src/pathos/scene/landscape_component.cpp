@@ -33,6 +33,7 @@ namespace pathos {
 
 	LandscapeComponent::~LandscapeComponent() {
 		indirectDrawArgsBuffer.reset();
+		indirectDrawCountBuffer.reset();
 		sectorParameterBuffer.reset();
 		geometry.reset();
 		material.reset();
@@ -96,6 +97,16 @@ namespace pathos {
 			indirectDrawArgsBuffer.reset();
 			indirectDrawArgsBuffer = makeUnique<Buffer>(bufferCreateParams);
 			indirectDrawArgsBuffer->createGPUResource();
+		}
+		{
+			BufferCreateParams bufferParams{
+				EBufferUsage::CpuWrite,
+				sizeof(uint32),
+				nullptr,
+				"Buffer_LandscapeIndirectDrawCount"
+			};
+			indirectDrawCountBuffer = makeUnique<Buffer>(bufferParams);
+			indirectDrawCountBuffer->createGPUResource();
 		}
 		{
 			BufferCreateParams bufferCreateParams{
@@ -176,7 +187,9 @@ namespace pathos {
 	void LandscapeComponent::createRenderProxy(SceneProxy* scene) {
 		const bool bValid = sizeX > 0.0f && sizeY > 0.0f && countX > 0 && countY > 0
 			&& geometry != nullptr && material != nullptr
-			&& sectorParameterBuffer != nullptr && indirectDrawArgsBuffer != nullptr;
+			&& sectorParameterBuffer != nullptr
+			&& indirectDrawArgsBuffer != nullptr
+			&& indirectDrawCountBuffer != nullptr;
 		if (!bValid) {
 			return;
 		}
@@ -195,6 +208,7 @@ namespace pathos {
 		LandscapeProxy* proxy = ALLOC_RENDER_PROXY<LandscapeProxy>(scene);
 
 		proxy->indirectDrawArgsBuffer  = indirectDrawArgsBuffer.get();
+		proxy->indirectDrawCountBuffer = indirectDrawCountBuffer.get();
 		proxy->sectorParameterBuffer   = sectorParameterBuffer.get();
 		proxy->geometry                = geometry.get();
 		proxy->material                = material.get();
@@ -299,6 +313,7 @@ namespace pathos {
 		}
 
 		indirectDrawArgsBuffer->writeToGPU(0, sizeof(DrawElementsIndirectCommand) * visibleSectors, drawCommands.data());
+		indirectDrawCountBuffer->writeToGPU(0, sizeof(uint32), &visibleSectors);
 		sectorParameterBuffer->writeToGPU(0, sizeof(LandscapeSectorParameter) * visibleSectors, sectorParams.data());
 
 		return visibleSectors;

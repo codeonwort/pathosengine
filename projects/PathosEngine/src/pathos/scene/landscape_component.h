@@ -16,6 +16,7 @@ namespace pathos {
 
 	struct LandscapeProxy : public SceneComponentProxy {
 		Buffer*       indirectDrawArgsBuffer;
+		Buffer*       indirectDrawCountBuffer;
 		Buffer*       sectorParameterBuffer;
 		MeshGeometry* geometry;
 		Material*     material;
@@ -90,7 +91,8 @@ namespace pathos {
 		Texture* albedoTexture = nullptr;
 		Texture* heightmapTexture = nullptr;
 		Texture* normalmapTexture = nullptr;
-		uniquePtr<Buffer> indirectDrawArgsBuffer;
+		uniquePtr<Buffer> indirectDrawArgsBuffer; // indirect draw commands
+		uniquePtr<Buffer> indirectDrawCountBuffer; // indirect draw count (single element)
 		uniquePtr<Buffer> sectorParameterBuffer;
 		matrix4 prevModelMatrix = matrix4(1.0f);
 

@@ -75,27 +75,33 @@ namespace pathos {
 				if (proxy->bGpuDriven == false) continue;
 
 				UBO_LandscapeCulling uboData;
-				uboData.cameraFrustum = cameraFrustum;
-				uboData.localToWorld = proxy->modelMatrix;
+				uboData.cameraFrustum    = cameraFrustum;
+				uboData.localToWorld     = proxy->modelMatrix;
 				uboData.indexCountPerLOD = proxy->indexCountPerLOD;
 				uboData.firstIndexPerLOD = proxy->firstIndexPerLOD;
-				uboData.actorPosition = proxy->actorPosition;
-				uboData.sectorSizeX = proxy->sectorSizeX;
-				uboData.cameraPosition = camera->getPosition();
-				uboData.sectorSizeY = proxy->sectorSizeY;
-				uboData.sectorCountX = proxy->sectorCountX;
-				uboData.sectorCountY = proxy->sectorCountY;
-				uboData.cullDistance = proxy->cullDistance;
+				uboData.actorPosition    = proxy->actorPosition;
+				uboData.sectorSizeX      = proxy->sectorSizeX;
+				uboData.cameraPosition   = camera->getPosition();
+				uboData.sectorSizeY      = proxy->sectorSizeY;
+				uboData.sectorCountX     = proxy->sectorCountX;
+				uboData.sectorCountY     = proxy->sectorCountY;
+				uboData.cullDistance     = proxy->cullDistance;
 				uboData.heightMultiplier = proxy->heightMultiplier;
 
 				uboLandscapeCulling.update(cmdList, UBO_LandscapeCulling::BINDING_POINT, &uboData);
 
+				uint32 ZERO = 0;
+				proxy->indirectDrawCountBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(uint32), (void*)&ZERO);
+
 				proxy->sectorParameterBuffer->bindAsSSBO(cmdList, 0);
 				proxy->indirectDrawArgsBuffer->bindAsSSBO(cmdList, 1);
+				proxy->indirectDrawCountBuffer->bindAsSSBO(cmdList, 2);
 
 				uint32 groupSize = (proxy->indirectDrawCount + LandscapeCullingCS::BUCKET_SIZE - 1) / LandscapeCullingCS::BUCKET_SIZE;
 				cmdList.dispatchCompute(groupSize, 1, 1);
 			}
+
+			cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		}
 	}
 
@@ -160,17 +166,20 @@ namespace pathos {
 			constexpr uint32 SSBO_BINDING_INDEX = 0;
 			proxy->sectorParameterBuffer->bindAsSSBO(cmdList, SSBO_BINDING_INDEX);
 			cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, proxy->indirectDrawArgsBuffer->internal_getGLName());
+			cmdList.bindBuffer(GL_PARAMETER_BUFFER, proxy->indirectDrawCountBuffer->internal_getGLName());
 
-			cmdList.multiDrawElementsIndirect(
+			cmdList.multiDrawElementsIndirectCount(
 				GL_TRIANGLES,
 				proxy->geometry->isIndex16Bit() ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
-				0, // offset for indirect draw buffer
-				proxy->indirectDrawCount,
+				0, // offset for indirect draw args buffer
+				0, // offset for indirect draw count buffer
+				proxy->indirectDrawCount, // max draw count
 				0 // stride
 			);
 
 			// Unbind buffers
 			cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+			cmdList.bindBuffer(GL_PARAMETER_BUFFER, 0);
 			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_BINDING_INDEX, 0);
 
 			// #todo-renderer: Batching by same state

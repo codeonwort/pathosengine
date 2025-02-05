@@ -4,9 +4,9 @@
 
 namespace pathos {
 
+	class Buffer;
 	class SceneProxy;
 	class Camera;
-	struct SceneRenderTargets;
 
 	// Used by SceneRenderer for various landscape processing.
 	// Actual rendering logic might be spread across render passes. (e.g., GBufferPass)
