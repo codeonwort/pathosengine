@@ -45,5 +45,7 @@ namespace badger {
 		// A variant that also writes the contact points to ptOnA and ptOnB.
 		bool intersectGJK(const Body* bodyA, const Body* bodyB, float bias, vector3& ptOnA, vector3& ptOnB);
 
+		bool intersect(Body* bodyA, Body* bodyB, Contact& outContact);
+
 	}
 }

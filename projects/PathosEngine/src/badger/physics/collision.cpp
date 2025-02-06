@@ -86,6 +86,22 @@ namespace badger {
 			return true;
 		}
 
+		static bool sphereSphereStatic(
+			const ShapeSphere* sphereA, const ShapeSphere* sphereB,
+			const vector3& posA, const vector3& posB,
+			vector3& ptOnA, vector3& ptOnB)
+		{
+			const vector3 ab = posB - posA;
+			vector3 norm = safeNormalize(ab);
+
+			ptOnA = posA + norm * sphereA->getRadius();
+			ptOnB = posB - norm * sphereB->getRadius();
+
+			const float radiusAB = sphereA->getRadius() + sphereB->getRadius();
+			const float lengthSq = glm::dot(ab, ab);
+			return lengthSq <= (radiusAB * radiusAB);
+		}
+
 		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact) {
 			outContact.bodyA = bodyA;
 			outContact.bodyB = bodyB;
@@ -692,6 +708,109 @@ namespace badger {
 			// Find the closest face on the CSO.
 			expandingPolytopeAlgorithm(bodyA, bodyB, bias, simplexPoints, ptOnA, ptOnB);
 			return true;
+		}
+
+		// Assumes no intersection.
+		void closestPointGJK(const Body* bodyA, const Body* bodyB, vector3& ptOnA, vector3& ptOnB) {
+			const vector3 ORIGIN(0.0f);
+
+			float closestDist = std::numeric_limits<float>::max();
+			const float bias = 0.0f;
+
+			int32 numPt = 1;
+			SupportPoint simplexPoints[4];
+			simplexPoints[0] = support(bodyA, bodyB, vector3(1.0f), bias);
+
+			vector4 lambdas(1.0f, 0.0f, 0.0f, 0.0f);
+			vector3 newDir = -(simplexPoints[0].xyz);
+
+			do {
+				SupportPoint newPt = support(bodyA, bodyB, newDir, bias);
+
+				if (simplexContainsPoint(simplexPoints, newPt)) {
+					break;
+				}
+
+				simplexPoints[numPt] = newPt;
+				++numPt;
+
+				simplexSignedVolumes(simplexPoints, numPt, newDir, lambdas);
+				sortValids(simplexPoints, lambdas);
+				numPt = numValids(lambdas);
+
+				float dist = glm::dot(newDir, newDir);
+				if (dist >= closestDist) {
+					break;
+				}
+				closestDist = dist;
+			} while (numPt < 4);
+
+			ptOnA = vector3(0.0f);
+			ptOnB = vector3(0.0f);
+			for (int32 i = 0; i < 4; ++i) {
+				ptOnA += simplexPoints[i].ptA * lambdas[i];
+				ptOnB += simplexPoints[i].ptB * lambdas[i];
+			}
+		}
+
+		bool intersect(Body* bodyA, Body* bodyB, Contact& outContact) {
+			outContact.bodyA = bodyA;
+			outContact.bodyB = bodyB;
+			outContact.timeOfImpact = 0.0f;
+
+			vector3 posA = bodyA->getPosition();
+			vector3 posB = bodyB->getPosition();
+
+			if (bodyA->getShape()->getType() == Shape::EShapeType::Sphere && bodyB->getShape()->getType() == Shape::EShapeType::Sphere) {
+				const ShapeSphere* sphereA = (const ShapeSphere*)bodyA->getShape();
+				const ShapeSphere* sphereB = (const ShapeSphere*)bodyB->getShape();
+
+				if (sphereSphereStatic(sphereA, sphereB, posA, posB, outContact.surfaceA_WS, outContact.surfaceB_WS)) {
+					outContact.surfaceA_LS = bodyA->worldSpaceToBodySpace(outContact.surfaceA_WS);
+					outContact.surfaceB_LS = bodyB->worldSpaceToBodySpace(outContact.surfaceB_WS);
+
+					outContact.normal = safeNormalize(posA - posB);
+
+					vector3 ab = posB - posA;
+					float r = glm::length(ab) - (sphereA->getRadius() + sphereB->getRadius());
+
+					outContact.separationDistance = r;
+					return true;
+				}
+			} else {
+				vector3 ptOnA, ptOnB;
+				const float bias = 0.001f;
+				if (intersectGJK(bodyA, bodyB, bias, ptOnA, ptOnB)) {
+					vector3 normal = safeNormalize(ptOnB - ptOnA);
+					
+					ptOnA -= normal * bias;
+					ptOnB += normal * bias;
+
+					outContact.normal = normal;
+					outContact.surfaceA_WS = ptOnA;
+					outContact.surfaceB_WS = ptOnB;
+					outContact.surfaceA_LS = bodyA->worldSpaceToBodySpace(outContact.surfaceA_WS);
+					outContact.surfaceB_LS = bodyB->worldSpaceToBodySpace(outContact.surfaceB_WS);
+
+					vector3 ab = posB - posA;
+					float r = glm::length(ptOnA - ptOnB);
+
+					outContact.separationDistance = -r;
+					return true;
+				}
+
+				closestPointGJK(bodyA, bodyB, ptOnA, ptOnB);
+				outContact.surfaceA_WS = ptOnA;
+				outContact.surfaceB_WS = ptOnB;
+				outContact.surfaceA_LS = bodyA->worldSpaceToBodySpace(outContact.surfaceA_WS);
+				outContact.surfaceB_LS = bodyB->worldSpaceToBodySpace(outContact.surfaceB_WS);
+
+				vector3 ab = posB - posA;
+				float r = glm::length(ptOnA - ptOnB);
+				outContact.separationDistance = r;
+			}
+
+			return false;
 		}
 
 	}
