@@ -33,7 +33,7 @@ namespace pathos {
 		bool load(const char* filename, unsigned int flags, bool invertWinding = false);
 		bool unload();
 
-		inline Mesh* getMesh() const { return mesh; }
+		inline StaticMesh* getMesh() const { return mesh; }
 
 	protected:
 		void loadNodes();
@@ -51,7 +51,7 @@ namespace pathos {
 
 	private:
 		const aiScene* scene = nullptr;
-		Mesh* mesh = nullptr;
+		StaticMesh* mesh = nullptr;
 		Node* root = nullptr;
 
 		std::string materialDir;

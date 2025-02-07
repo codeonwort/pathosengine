@@ -30,7 +30,7 @@ LightningActor::LightningActor()
 	sphereMaterial->setConstantParameter("roughness", 0.0f);
 	sphereMaterial->setConstantParameter("metallic", 0.0f);
 	sphereMaterial->setConstantParameter("emissive", vector3(30.0f, 30.0f, 30.0f));
-	sphereComponent->setStaticMesh(new Mesh(sphereGeometry, sphereMaterial));
+	sphereComponent->setStaticMesh(new StaticMesh(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);
 }
@@ -69,7 +69,7 @@ LightningParticleComponent::LightningParticleComponent()
 	M->setConstantParameter("billboardWidth", LIGHTNING_PARTICLE_THICKNESS);
 	M->setConstantParameter("warpAngle", 15.0f + 30.0f * Random());
 
-	setStaticMesh(new Mesh(G, M));
+	setStaticMesh(new StaticMesh(G, M));
 	getStaticMesh()->doubleSided = true;
 }
 

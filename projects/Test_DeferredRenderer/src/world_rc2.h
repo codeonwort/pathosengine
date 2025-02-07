@@ -13,7 +13,7 @@ namespace pathos {
 	class StaticMeshComponent;
 	class MeshGeometry;
 	class Material;
-	class Mesh;
+	class StaticMesh;
 }
 class PlayerController;
 
@@ -30,7 +30,7 @@ public:
 private:
 	std::vector<MeshGeometry*> geometries;
 	std::vector<Material*> materials;
-	std::vector<Mesh*> staticMeshAssets;
+	std::vector<StaticMesh*> staticMeshAssets;
 	std::vector<StaticMeshComponent*> staticMeshComponents;
 };
 

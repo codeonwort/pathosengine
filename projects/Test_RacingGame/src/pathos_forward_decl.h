@@ -10,7 +10,7 @@ namespace pathos {
 	class DirectionalLightActor;
 	class PointLightActor;
 	class StaticMeshActor;
-	class Mesh;
+	class StaticMesh;
 	class Texture;
 	class OBJLoader;
 }

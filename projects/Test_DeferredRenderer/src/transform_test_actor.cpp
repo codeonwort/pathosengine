@@ -23,7 +23,7 @@ TransformTestActor::TransformTestActor()
 	Material* rootM = Material::createMaterialInstance("solid_color");
 	rootM->copyParametersFrom(M_base);
 	rootM->setConstantParameter("roughness", 0.35f);
-	root->setStaticMesh(new Mesh(rootG, rootM));
+	root->setStaticMesh(new StaticMesh(rootG, rootM));
 
 	MeshGeometry* starG = new CubeGeometry(vector3(0.1f, 0.1f, 0.1f));
 	Material* starM = Material::createMaterialInstance("solid_color");
@@ -43,7 +43,7 @@ TransformTestActor::TransformTestActor()
 		float angle = (2.0f * 3.141592f) * (float)i / numStars;
 		star->setLocation(vector3(radius * std::cos(angle), height, radius * std::sin(angle)));
 
-		star->setStaticMesh(new Mesh(starG, starM));
+		star->setStaticMesh(new StaticMesh(starG, starM));
 	}
 
 	for (int32 i = 0; i < numStars; ++i) {
@@ -51,7 +51,7 @@ TransformTestActor::TransformTestActor()
 		moon->setTransformParent(stars[i]);
 		moons.push_back(moon);
 	
-		moon->setStaticMesh(new Mesh(moonG, moonM));
+		moon->setStaticMesh(new StaticMesh(moonG, moonM));
 	}
 }
 

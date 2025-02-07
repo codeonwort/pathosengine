@@ -12,7 +12,7 @@ namespace pathos {
 	using Materials = std::vector<Material*>;
 
 	// mesh asset = geometries + materials
-	class Mesh {
+	class StaticMesh {
 
 	public:
 		// #todo-static-mesh: Move to StaticMeshComponent
@@ -20,8 +20,8 @@ namespace pathos {
 		bool renderInternal = false;
 
 	public:
-		Mesh(MeshGeometry* geometry = nullptr, Material* material = nullptr);
-		virtual ~Mesh();
+		StaticMesh(MeshGeometry* geometry = nullptr, Material* material = nullptr);
+		virtual ~StaticMesh();
 
 		void add(MeshGeometry* geometry, Material* material);
 

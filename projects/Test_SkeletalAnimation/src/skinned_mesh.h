@@ -20,7 +20,7 @@ namespace pathos {
 		aiNode* ai;
 	};
 
-	class SkinnedMesh : public Mesh {
+	class SkinnedMesh : public StaticMesh {
 
 	public:
 		SkinnedMesh();

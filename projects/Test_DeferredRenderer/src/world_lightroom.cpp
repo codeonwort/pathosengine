@@ -212,7 +212,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			vector3 lightCenter = leafMarkers[j].center + (0.1f * RandomInUnitSphere()) + (leafMarkers[j].radius * RandomInUnitSphere());
 
 			auto sphere = spawnActor<StaticMeshActor>();
-			sphere->setStaticMesh(new Mesh(G_leafLight, M_leafLight));
+			sphere->setStaticMesh(new StaticMesh(G_leafLight, M_leafLight));
 			sphere->setActorLocation(lightCenter);
 			sphere->setActorScale(lightRange);
 			sphere->getStaticMeshComponent()->castsShadow = false;

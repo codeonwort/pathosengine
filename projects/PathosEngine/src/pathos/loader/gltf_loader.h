@@ -15,7 +15,7 @@ namespace pathos {
 
 	class Texture;
 	class Material;
-	class Mesh;
+	class StaticMesh;
 	class MeshGeometry;
 	class Actor;
 	class SceneComponent;
@@ -23,7 +23,7 @@ namespace pathos {
 
 	struct GLTFModelDesc {
 		std::string name;
-		Mesh* mesh = nullptr;
+		StaticMesh* mesh = nullptr;
 		int32 lightIndex = -1;
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
@@ -134,7 +134,7 @@ namespace pathos {
 		std::vector<GLTFPendingLight> pendingLights;
 
 		std::vector<Material*> materials;
-		std::vector<Mesh*> meshes;
+		std::vector<StaticMesh*> meshes;
 
 		Material* fallbackMaterial = nullptr;
 		std::vector<GLTFModelDesc> finalModels;

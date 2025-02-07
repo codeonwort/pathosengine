@@ -6,7 +6,7 @@
 
 namespace pathos {
 
-	class Mesh;
+	class StaticMesh;
 	class StaticMeshComponent;
 
 	class PhysicsComponent : public ActorComponent {
@@ -39,7 +39,7 @@ namespace pathos {
 		badger::physics::Shape* shape = nullptr;
 
 		StaticMeshComponent* boundsComponent = nullptr;
-		Mesh* boundsMesh = nullptr;
+		StaticMesh* boundsMesh = nullptr;
 
 		// Maintain physics properties here and sync with badger Body.
 		float invMass = 0.0f;

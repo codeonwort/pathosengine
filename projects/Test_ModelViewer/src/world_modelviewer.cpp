@@ -169,7 +169,7 @@ void World_ModelViewer::onInitialize() {
 		M->setConstantParameter("metallicOverride", 1.0f);
 		M->setConstantParameter("roughnessOverride", 0.2f);
 		dummyBox = spawnActor<StaticMeshActor>();
-		dummyBox->setStaticMesh(new Mesh(G, M));
+		dummyBox->setStaticMesh(new StaticMesh(G, M));
 
 		//auto dummyBox2 = spawnActor<StaticMeshActor>();
 		//dummyBox2->setStaticMesh(new Mesh(G, M));
@@ -369,7 +369,7 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		return;
 	}
 	
-	Mesh* newModelMesh = loader->craftMeshFromAllShapes(true);
+	StaticMesh* newModelMesh = loader->craftMeshFromAllShapes(true);
 	StaticMeshActor* newActor = spawnActor<StaticMeshActor>();
 	newActor->setStaticMesh(newModelMesh);
 

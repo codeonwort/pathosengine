@@ -5,7 +5,7 @@
 
 namespace pathos {
 
-	class Mesh;
+	class StaticMesh;
 
 	class StaticMeshActor : public Actor {
 
@@ -16,12 +16,12 @@ namespace pathos {
 			setAsRootComponent(meshComponent);
 		}
 
-		void setStaticMesh(Mesh* inMesh) {
+		void setStaticMesh(StaticMesh* inMesh) {
 			meshComponent->setStaticMesh(inMesh);
 		}
 
 		inline StaticMeshComponent* getStaticMeshComponent() const { return meshComponent; }
-		inline Mesh* getStaticMesh() const { return meshComponent->getStaticMesh(); }
+		inline StaticMesh* getStaticMesh() const { return meshComponent->getStaticMesh(); }
 
 	private:
 		StaticMeshComponent* meshComponent;

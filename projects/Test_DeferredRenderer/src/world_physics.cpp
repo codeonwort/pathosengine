@@ -59,7 +59,7 @@ void World_Physics::onInitialize() {
 #endif
 
 			auto sphere = spawnActor<StaticMeshActor>();
-			sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+			sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
 			sphere->setActorLocation(x, y, z);
 			auto physComponent = new PhysicsComponent;
 			physComponent->setMass(10.0f);
@@ -73,7 +73,7 @@ void World_Physics::onInitialize() {
 	// Sphere 1
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
 		sphere->setActorLocation(2.0f, 5.0f, -1.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -85,7 +85,7 @@ void World_Physics::onInitialize() {
 	// Sphere 2
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new Mesh(G_sphere, M_sphere));
+		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
 		sphere->setActorLocation(-2.0f, 6.0f, -1.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -103,7 +103,7 @@ void World_Physics::onInitialize() {
 			float z = (float)iz * GROUND_RADIUS;
 
 			auto ground = spawnActor<StaticMeshActor>();
-			ground->setStaticMesh(new Mesh(G_ground, M_ground));
+			ground->setStaticMesh(new StaticMesh(G_ground, M_ground));
 			ground->setActorLocation(x, -GROUND_RADIUS - 10.0f, z);
 			auto physComponent2 = new PhysicsComponent;
 			physComponent2->setInfiniteMass();

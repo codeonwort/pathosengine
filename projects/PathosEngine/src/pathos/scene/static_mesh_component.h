@@ -6,7 +6,7 @@
 
 namespace pathos {
 
-	class Mesh;
+	class StaticMesh;
 	class MeshGeometry;
 	class Material;
 
@@ -43,8 +43,8 @@ namespace pathos {
 	public:
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
-		inline Mesh* getStaticMesh() const { return mesh; }
-		inline void setStaticMesh(Mesh* inMesh) { mesh = inMesh; }
+		inline StaticMesh* getStaticMesh() const { return mesh; }
+		inline void setStaticMesh(StaticMesh* inMesh) { mesh = inMesh; }
 
 		AABB getWorldBounds() const;
 
@@ -56,7 +56,7 @@ namespace pathos {
 		bool castsShadow = true;
 
 	private:
-		Mesh* mesh = nullptr;
+		StaticMesh* mesh = nullptr;
 		matrix4 prevModelMatrix;
 
 	};

@@ -104,7 +104,7 @@ void World_RacingGame::prepareAssets() {
 
 	auto G_sphere = new SphereGeometry(1.0f, 30);
 
-	carDummyMesh = makeShared<Mesh>(G_sphere, M_color);
+	carDummyMesh = makeShared<StaticMesh>(G_sphere, M_color);
 
 	// Volumetric Clouds
 	auto calcVolumeSize = [](const ImageBlob* imageBlob) -> vector3ui {
@@ -206,10 +206,10 @@ void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	}
 
 	if (assetIndex == 0) {
-		carMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes(true));
+		carMesh = sharedPtr<StaticMesh>(loader->craftMeshFromAllShapes(true));
 		setupScene();
 	} else if (assetIndex == 1) {
-		treeMesh = sharedPtr<Mesh>(loader->craftMeshFromAllShapes());
+		treeMesh = sharedPtr<StaticMesh>(loader->craftMeshFromAllShapes());
 		treeMesh->doubleSided = true;
 		setupScene();
 	}

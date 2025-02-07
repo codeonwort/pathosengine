@@ -152,13 +152,13 @@ void World2::setupScene()
 	// Actors
 
 	ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new Mesh(geom_plane, material_ground));
+	ground->setStaticMesh(new StaticMesh(geom_plane, material_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->getStaticMesh()->doubleSided = true;
 
 	godRaySourceMesh = spawnActor<StaticMeshActor>();
-	godRaySourceMesh->setStaticMesh(new Mesh(geom_sphere, material_color));
+	godRaySourceMesh->setStaticMesh(new StaticMesh(geom_sphere, material_color));
 	godRaySourceMesh->setActorLocation(vector3(0.0f, 100.0f, -500.0f));
 
 	alertText1 = spawnActor<TextMeshActor>();

@@ -391,7 +391,7 @@ namespace pathos {
 		// For each mesh
 		for (size_t meshIx = 0; meshIx < tinyModel->meshes.size(); ++meshIx) {
 			const tinygltf::Mesh& tinyMesh = tinyModel->meshes[meshIx];
-			Mesh* mesh = new Mesh;
+			StaticMesh* mesh = new StaticMesh;
 
 			// For each mesh section
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {

@@ -360,7 +360,7 @@ RingActor::RingActor()
 	M->setConstantParameter("roughness", 1.0f);
 	M->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
-	setStaticMesh(new Mesh(G, M));
+	setStaticMesh(new StaticMesh(G, M));
 }
 
 void RingActor::buildRing(

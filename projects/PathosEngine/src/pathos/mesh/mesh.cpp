@@ -2,7 +2,7 @@
 
 namespace pathos {
 
-	Mesh::Mesh(MeshGeometry* geom, Material* mat)
+	StaticMesh::StaticMesh(MeshGeometry* geom, Material* mat)
 		: doubleSided(false)
 	{
 		bool bothNull = geom == nullptr && mat == nullptr;
@@ -18,18 +18,18 @@ namespace pathos {
 		}
 	}
 
-	Mesh::~Mesh() {
+	StaticMesh::~StaticMesh() {
 		for (auto geom : geometries) if(geom != nullptr) delete geom;
 	}
 
-	void Mesh::add(MeshGeometry* G, Material* M) {
+	void StaticMesh::add(MeshGeometry* G, Material* M) {
 		CHECK(G != nullptr && M != nullptr);
 
 		geometries.push_back(G);
 		materials.push_back(M);
 	}
 
-	const Geometries& Mesh::getGeometries() { return geometries; }
-	const Materials& Mesh::getMaterials() { return materials; }
+	const Geometries& StaticMesh::getGeometries() { return geometries; }
+	const Materials& StaticMesh::getMaterials() { return materials; }
 
 }

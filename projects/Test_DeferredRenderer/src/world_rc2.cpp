@@ -195,7 +195,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 		material->setConstantParameter("emissive", emissive);
 		materials.push_back(material);
 
-		Mesh* staticMesh = new Mesh(geometry, material);
+		StaticMesh* staticMesh = new StaticMesh(geometry, material);
 		staticMeshAssets.push_back(staticMesh);
 
 		smc->setStaticMesh(staticMesh);
