@@ -10,7 +10,7 @@
 #include "pathos/scene/sky_atmosphere_actor.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"

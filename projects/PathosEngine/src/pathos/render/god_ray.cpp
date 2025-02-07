@@ -8,7 +8,7 @@
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/material/material.h"
 #include "pathos/mesh/geometry.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/console.h"
 #include "pathos/util/log.h"

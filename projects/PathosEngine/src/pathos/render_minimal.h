@@ -14,7 +14,7 @@
 #include "pathos/scene/point_light_actor.h"
 #include "pathos/scene/point_light_component.h"
 
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 
 #include "pathos/material/material.h"

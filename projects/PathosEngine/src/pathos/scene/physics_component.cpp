@@ -2,7 +2,7 @@
 #include "actor.h"
 #include "world.h"
 #include "static_mesh_component.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/material/material.h"
 #include "pathos/console.h"
 

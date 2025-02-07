@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "badger/types/vector_types.h"
 
 #include "glm/gtx/quaternion.hpp"

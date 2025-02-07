@@ -1,5 +1,5 @@
 #include "csm_debugger.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/scene/camera.h"
 #include "pathos/console.h"
 

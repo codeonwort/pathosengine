@@ -6,7 +6,7 @@
 #include "pathos/scene/physics_component.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/material/material.h"
 
 #include "badger/math/random.h"

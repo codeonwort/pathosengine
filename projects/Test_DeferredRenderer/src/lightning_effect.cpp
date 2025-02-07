@@ -1,7 +1,7 @@
 #include "lightning_effect.h"
 
 #include "pathos/rhi/texture.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/static_mesh_component.h"

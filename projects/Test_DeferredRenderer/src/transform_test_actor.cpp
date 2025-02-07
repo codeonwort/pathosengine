@@ -2,7 +2,7 @@
 
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 
 static const float height = 0.4f;
 static const float radius = 0.5f;

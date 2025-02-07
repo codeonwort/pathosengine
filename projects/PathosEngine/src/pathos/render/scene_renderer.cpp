@@ -51,7 +51,7 @@
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/point_light_component.h"
 #include "pathos/scene/static_mesh_component.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"

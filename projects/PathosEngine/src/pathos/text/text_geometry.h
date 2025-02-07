@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/scene/scene_component.h"
 #include "pathos/text/font_texture_cache.h"
 #include "pathos/rhi/render_command_list.h"

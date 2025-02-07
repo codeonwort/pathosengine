@@ -1,5 +1,5 @@
 #include "static_mesh_component.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/render/scene_proxy.h"
 
 #include "badger/math/hit_test.h"

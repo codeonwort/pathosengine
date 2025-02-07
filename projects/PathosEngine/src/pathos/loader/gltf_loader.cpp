@@ -3,7 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/material/material.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/point_light_component.h"

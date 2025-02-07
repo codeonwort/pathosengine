@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "static_mesh.h"
 
 namespace pathos {
 

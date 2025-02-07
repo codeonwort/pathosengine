@@ -4,7 +4,7 @@
 #include "pathos/rhi/texture.h"
 #include "pathos/rhi/indirect_draw.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/util/log.h"

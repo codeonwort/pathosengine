@@ -2,7 +2,7 @@
 
 #include "tiny_obj_loader.h"
 #include "pathos/loader/image_loader.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 
 #include <vector>
 #include <string>

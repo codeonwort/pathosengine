@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"

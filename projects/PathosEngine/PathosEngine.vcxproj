@@ -149,7 +149,7 @@
     <ClCompile Include="src\pathos\mesh\geometry.cpp" />
     <ClCompile Include="src\pathos\material\material.cpp" />
     <ClCompile Include="src\pathos\mesh\geometry_primitive.cpp" />
-    <ClCompile Include="src\pathos\mesh\mesh.cpp" />
+    <ClCompile Include="src\pathos\mesh\static_mesh.cpp" />
     <ClCompile Include="src\pathos\overlay\brush.cpp" />
     <ClCompile Include="src\pathos\overlay\display_object.cpp" />
     <ClCompile Include="src\pathos\overlay\display_object_proxy.cpp" />
@@ -372,7 +372,7 @@
     <ClInclude Include="src\pathos\material\material.h" />
     <ClInclude Include="src\pathos\material\material_id.h" />
     <ClInclude Include="src\pathos\mesh\geometry_primitive.h" />
-    <ClInclude Include="src\pathos\mesh\mesh.h" />
+    <ClInclude Include="src\pathos\mesh\static_mesh.h" />
     <ClInclude Include="src\pathos\mesh\render.h" />
     <ClInclude Include="src\pathos\render\god_ray.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass.h" />

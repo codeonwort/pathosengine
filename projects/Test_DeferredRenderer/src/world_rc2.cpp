@@ -5,7 +5,7 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/mesh/mesh.h"
+#include "pathos/mesh/static_mesh.h"
 #include "pathos/material/material.h"
 
 #include "badger/math/random.h"

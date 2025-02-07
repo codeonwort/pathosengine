@@ -221,9 +221,6 @@
     <ClCompile Include="src\pathos\loader\scene_desc_parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="src\pathos\debug_overlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -389,13 +386,16 @@
     <ClCompile Include="src\pathos\material\material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\mesh\mesh.cpp">
+    <ClCompile Include="src\pathos\mesh\static_mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\util\transform_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
@@ -922,7 +922,7 @@
     <ClInclude Include="src\pathos\material\material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\mesh\mesh.h">
+    <ClInclude Include="src\pathos\mesh\static_mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
