@@ -574,7 +574,7 @@ namespace pathos {
 						LOG(LogDebug, "[GLTF] Fallback material ref: mesh=%u prim=%u", meshIx, primIx);
 					}
 
-					mesh->add(geometry, material);
+					mesh->addSection(0, geometry, material);
 				} else {
 					LOG(LogError, "[GLTF] Primitive type is not supported: mode=%d, indices=%d", tinyPrim.mode, tinyPrim.indices);
 				}

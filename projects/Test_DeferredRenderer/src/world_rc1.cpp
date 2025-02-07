@@ -312,7 +312,10 @@ void World_RC1::setupScene()
 		rings.push_back(ring);
 
 		ring->setActorLocation(0.0f, Y_OFFSET, 0.0f);
-		ring->getStaticMesh()->setMaterial(0, material_ring);
+
+		// #todo-lod
+		const uint32 LOD = 0;
+		ring->getStaticMesh()->getLOD(LOD).setMaterial(0, material_ring);
 	}
 
 	for (uint32 i = 0; i < NUM_LIGHTNING_PARTICLES; ++i) {

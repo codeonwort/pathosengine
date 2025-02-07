@@ -120,6 +120,9 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 	uint32 totalLightProbe = 0;
 
 	for (size_t i = 0; i < loader->numModels(); ++i) {
+		// #todo-lod
+		const uint32 LOD = 0;
+
 		const auto& modelDesc = loader->getModel(i);
 		if (modelDesc.name == "PointLight") {
 			PointLightComponent* light = static_cast<PointLightComponent*>(components[i]);
@@ -133,11 +136,11 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		} else if (modelDesc.name.find("RectLightMarker") != std::string::npos) {
 			// #todo-gltf: Wanna place rect light but I can't align rotation.
 			auto smc = static_cast<StaticMeshComponent*>(components[i]);
-			smc->getStaticMesh()->setMaterial(0, M_rectLight);
+			smc->getStaticMesh()->getLOD(LOD).setMaterial(0, M_rectLight);
 			smc->castsShadow = false;
 		} else if (modelDesc.name.find("Fracture") != std::string::npos) {
 			auto smc = static_cast<StaticMeshComponent*>(components[i]);
-			smc->getStaticMesh()->setMaterial(0, M_fracture);
+			smc->getStaticMesh()->getLOD(LOD).setMaterial(0, M_fracture);
 			smc->castsShadow = false;
 			fractures.push_back(smc);
 			vector3 pos = components[i]->getLocation();

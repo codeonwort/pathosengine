@@ -47,6 +47,10 @@ namespace pathos {
 		updateGlobalTransform();
 		updateBoneTransform();
 
+		// #todo-lod
+		const uint32 LOD = 0;
+		const auto& geometries = getLOD(LOD).geometries;
+
 		uint32_t geomIndex = 0;
 		for (const auto G : geometries) {
 			const auto& positions = initialPositionsMapping[geomIndex];

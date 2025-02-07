@@ -198,7 +198,7 @@ namespace pathos {
 			}
 
 			// add GM pair to the mesh
-			pathosMesh->add(G, M);
+			pathosMesh->addSection(0, G, M);
 
 			// set initial positions
 			std::vector<float> pos;

@@ -12,8 +12,11 @@ namespace pathos {
 			return;
 		}
 
-		Geometries geoms = mesh->getGeometries();
-		Materials materials = mesh->getMaterials();
+		// #todo-lod: Select mesh LOD
+		const uint32 LOD = 0;
+		const Geometries& geoms = mesh->getLOD(LOD).geometries;
+		const Materials& materials = mesh->getLOD(LOD).materials;
+
 		const uint32 numSections = static_cast<uint32>(geoms.size());
 
 		if (castsShadow) {
@@ -47,8 +50,11 @@ namespace pathos {
 	}
 
 	AABB StaticMeshComponent::getWorldBounds() const {
+		// #todo-lod
+		const uint32 LOD = 0;
+
 		AABB total = AABB::fromMinMax(vector3(FLT_MAX), vector3(-FLT_MAX));
-		auto& geoms = mesh->getGeometries();
+		const auto& geoms = mesh->getLOD(LOD).geometries;
 		if (geoms.size() > 0) {
 			total = badger::calculateWorldBounds(geoms[0]->getLocalBounds(), getLocalMatrix());
 			for (size_t i = 1; i < geoms.size(); ++i) {
@@ -64,8 +70,11 @@ namespace pathos {
 			return;
 		}
 
-		Geometries geoms = mesh->getGeometries();
-		Materials materials = mesh->getMaterials();
+		// #todo-lod
+		const uint32 LOD = 0;
+		const Geometries& geoms = mesh->getLOD(LOD).geometries;
+		const Materials& materials = mesh->getLOD(LOD).materials;
+
 		const uint32 numSections = static_cast<uint32>(geoms.size());
 
 		for (size_t i = 0u; i < numSections; ++i) {

@@ -19,14 +19,14 @@ CSMDebugger::CSMDebugger() {
 	Material* M = Material::createMaterialInstance("unlit");
 	M->setConstantParameter("color", vector3(0.7f));
 	M->bWireframe = true;
-	getStaticMesh()->add(G, M);
+	getStaticMesh()->addSection(0, G, M);
 
 	// For bounds of light view projections
 	G2 = new ProceduralGeometry;
 	Material* M2 = Material::createMaterialInstance("unlit");
 	M2->setConstantParameter("color", vector3(0.7f, 0.0f, 0.0f));
 	M2->bWireframe = true;
-	getStaticMesh()->add(G2, M2);
+	getStaticMesh()->addSection(0, G2, M2);
 }
 
 void CSMDebugger::drawCameraFrustum(const Camera& camera, const vector3& sunDirection) {

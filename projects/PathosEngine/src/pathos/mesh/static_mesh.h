@@ -11,7 +11,14 @@ namespace pathos {
 	using Geometries = std::vector<MeshGeometry*>;
 	using Materials = std::vector<Material*>;
 
-	// mesh asset = geometries + materials
+	struct StaticMeshLOD {
+		Geometries geometries;
+		Materials materials;
+
+		void setMaterial(int32 index, Material* M) { materials[index] = M; }
+	};
+
+	// static mesh asset = geometries + materials
 	class StaticMesh {
 
 	public:
@@ -23,16 +30,13 @@ namespace pathos {
 		StaticMesh(MeshGeometry* geometry = nullptr, Material* material = nullptr);
 		virtual ~StaticMesh();
 
-		void add(MeshGeometry* geometry, Material* material);
+		void addSection(uint32 lod, MeshGeometry* geometry, Material* material);
 
-		const Geometries& getGeometries();
-		const Materials& getMaterials();
-
-		void setMaterial(int32 index, Material* M) { materials[index] = M; }
+		inline StaticMeshLOD& getLOD(uint32 lod) { return lodArray[lod]; }
+		inline const StaticMeshLOD& getLOD(uint32 lod) const { return lodArray[lod]; }
 
 	protected:
-		Geometries geometries;
-		Materials materials;
+		std::vector<StaticMeshLOD> lodArray;
 
 	};
 

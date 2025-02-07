@@ -465,7 +465,7 @@ namespace pathos {
 				}
 				geom->calculateTangentBasis();
 
-				mesh->add(geom, getMaterial(materialID));
+				mesh->addSection(0, geom, getMaterial(materialID));
 			}
 		} else {
 			for (uint32 i = from; i <= to; ++i) {
@@ -492,7 +492,7 @@ namespace pathos {
 					}
 					geom->calculateTangentBasis();
 
-					mesh->add(geom, getMaterial(materialID));
+					mesh->addSection(0, geom, getMaterial(materialID));
 				}
 			}
 		}
