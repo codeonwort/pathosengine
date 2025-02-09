@@ -69,6 +69,9 @@ namespace badger {
 			explicit ShapeBox(const std::vector<vector3>& inPoints) {
 				build(inPoints);
 			}
+			explicit ShapeBox(const vector3& extents) {
+				buildSub(AABB::fromCenterAndHalfSize(vector3(0.0f), 0.5f * extents));
+			}
 
 			void build(const std::vector<vector3>& points) override;
 
@@ -83,6 +86,8 @@ namespace badger {
 			float fastestLinearSpeed(const vector3& angularVelocity, const vector3& dir) const override;
 
 		private:
+			void buildSub(const AABB& aabb);
+
 			std::vector<vector3> points;
 			AABB bounds;
 		};

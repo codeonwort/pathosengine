@@ -34,6 +34,13 @@ namespace pathos {
 	void PhysicsComponent::setShapeSphere(float radius) {
 		shapeType = EShapeType::Sphere;
 		shapeSphereRadius = radius;
+		bRecreateShape = true;
+	}
+
+	void PhysicsComponent::setShapeBox(const vector3& extents) {
+		shapeType = EShapeType::Box;
+		shapeBoxExtents = extents;
+		bRecreateShape = true;
 	}
 
 	void PhysicsComponent::onRegister() {
@@ -73,25 +80,37 @@ namespace pathos {
 		if (shapeType == EShapeType::Sphere) {
 			boundsComponent->setVisibility(cvarShowPhysicsBodyBounds.getInt() != 0);
 			boundsComponent->setScale(shapeSphereRadius);
+		} else if (shapeType == EShapeType::Box) {
+			boundsComponent->setVisibility(cvarShowPhysicsBodyBounds.getInt() != 0);
+			boundsComponent->setScale(0.5f * shapeBoxExtents);
 		}
 	}
 
 	void PhysicsComponent::onPostPhysicsTick(float deltaSeconds) {
+		vector3 dir(glm::mat4_cast(body->getOrientation()) * vector4(1.0f, 0.0f, 0.0f, 0.0f));
+		Rotator rot = Rotator::directionToYawPitch(dir);
+
 		getOwner()->setActorLocation(body->getCenterOfMassWorldSpace());
+		getOwner()->setActorRotation(rot);
 	}
 
 	void PhysicsComponent::updateShape() {
+		if (bRecreateShape) {
+			bRecreateShape = false;
+			if (shape != nullptr) {
+				delete shape;
+				shape = nullptr;
+			}
+		}
 		if (shape == nullptr) {
 			if (shapeType == EShapeType::Sphere) {
 				shape = new badger::physics::ShapeSphere(shapeSphereRadius);
+			} else if (shapeType == EShapeType::Box) {
+				shape = new badger::physics::ShapeBox(shapeBoxExtents);
 			} else {
 				CHECK_NO_ENTRY();
 			}
 			body->setShape(shape);
-		} else {
-			if (shapeType == EShapeType::Sphere) {
-				((badger::physics::ShapeSphere*)shape)->setRadius(shapeSphereRadius);
-			}
 		}
 	}
 

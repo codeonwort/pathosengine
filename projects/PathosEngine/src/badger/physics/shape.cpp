@@ -55,19 +55,8 @@ namespace badger {
 	namespace physics {
 
 		void ShapeBox::build(const std::vector<vector3>& inPoints) {
-			bounds = buildAABB(inPoints);
-
-			points.clear();
-			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z));
-			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z));
-			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
-			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
-			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
-			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
-			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
-			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
-
-			centerOfMass = bounds.getCenter();
+			AABB aabb = buildAABB(inPoints);
+			buildSub(aabb);
 		}
 
 		vector3 ShapeBox::support(const vector3& dir, const vector3& pos, const quat& orient, float bias) const {
@@ -145,6 +134,22 @@ namespace badger {
 				}
 			}
 			return maxSpeed;
+		}
+
+		void ShapeBox::buildSub(const AABB& aabb) {
+			bounds = aabb;
+
+			points.clear();
+			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.minBounds.x, bounds.maxBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.minBounds.y, bounds.maxBounds.z));
+			points.push_back(vector3(bounds.maxBounds.x, bounds.maxBounds.y, bounds.minBounds.z));
+
+			centerOfMass = bounds.getCenter();
 		}
 
 	}

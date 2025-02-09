@@ -24,6 +24,7 @@ namespace pathos {
 		void forceLinearVelocity(const vector3& value);
 
 		void setShapeSphere(float radius);
+		void setShapeBox(const vector3& extents);
 
 	protected:
 		virtual void onRegister() override;
@@ -50,7 +51,9 @@ namespace pathos {
 		bool bForceLinearVelocity = false;
 
 		EShapeType shapeType = EShapeType::Sphere;
+		bool bRecreateShape = false;
 		float shapeSphereRadius = 1.0f;
+		vector3 shapeBoxExtents = vector3(1.0f);
 
 	};
 

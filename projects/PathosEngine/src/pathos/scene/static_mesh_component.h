@@ -56,6 +56,7 @@ namespace pathos {
 		bool castsShadow = true;
 
 	private:
+		// #todo: Need to release StaticMesh so that it releases Geometry and Material instances.
 		StaticMesh* mesh = nullptr;
 		matrix4 prevModelMatrix;
 
