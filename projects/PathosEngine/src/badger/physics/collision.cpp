@@ -6,6 +6,10 @@
 
 #include <algorithm>
 
+// #todo-physics: Hard coded iterations
+#define CONSERVATIVE_ADVANCE_MAX_ITER 10
+
+// Broad phase
 namespace badger {
 	namespace physics {
 
@@ -102,46 +106,6 @@ namespace badger {
 			return lengthSq <= (radiusAB * radiusAB);
 		}
 
-		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact) {
-			outContact.bodyA = bodyA;
-			outContact.bodyB = bodyB;
-
-			if (bodyA->getShape()->getType() == Shape::EShapeType::Sphere && bodyB->getShape()->getType() == Shape::EShapeType::Sphere) {
-				const ShapeSphere* sphereA = (const ShapeSphere*)bodyA->getShape();
-				const ShapeSphere* sphereB = (const ShapeSphere*)bodyB->getShape();
-
-				vector3 posA = bodyA->getPosition();
-				vector3 velA = bodyA->getLinearVelocity();
-				vector3 posB = bodyB->getPosition();
-				vector3 velB = bodyB->getLinearVelocity();
-
-				if (sphereSphereDynamic(sphereA, sphereB, posA, posB, velA, velB, dt,
-					outContact.surfaceA_WS, outContact.surfaceB_WS, outContact.timeOfImpact))
-				{
-					// Step bodies forward to get local space collision points
-					bodyA->update(outContact.timeOfImpact);
-					bodyB->update(outContact.timeOfImpact);
-
-					outContact.surfaceA_LS = bodyA->worldSpaceToBodySpace(outContact.surfaceA_WS);
-					outContact.surfaceB_LS = bodyB->worldSpaceToBodySpace(outContact.surfaceB_WS);
-
-					outContact.normal = safeNormalize(bodyA->getPosition() - bodyB->getPosition());
-
-					// Unwind time step
-					bodyA->update(-outContact.timeOfImpact);
-					bodyB->update(-outContact.timeOfImpact);
-
-					vector3 ab = bodyB->getPosition() - bodyA->getPosition();
-					float r = glm::length(ab) - (sphereA->getRadius() + sphereB->getRadius());
-
-					outContact.separationDistance = r;
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 		static void sortBodyBounds(std::vector<Body*>& bodies, std::vector<PseudoBody>& sortedArray, float deltaSeconds) {
 			auto compareSAP = [](const PseudoBody& a, const PseudoBody& b) {
 				return a.value < b.value;
@@ -202,7 +166,6 @@ namespace badger {
 		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds) {
 			sweepAndPrune1D(bodies, outPairs, deltaSeconds);
 		}
-
 	}
 }
 
@@ -753,6 +716,66 @@ namespace badger {
 			}
 		}
 
+	}
+}
+
+// Intersection test
+namespace badger {
+	namespace physics {
+
+		static bool conservativeAdvance(Body* bodyA, Body* bodyB, float dt, Contact& outContact) {
+			outContact.bodyA = bodyA;
+			outContact.bodyB = bodyB;
+
+			float toi = 0.0f;
+			int32 numIters = 0;
+
+			// Advance the positions of the bodies until they touch or there's no time left.
+			while (dt > 0.0f) {
+				bool bIntersects = intersect(bodyA, bodyB, outContact);
+				if (bIntersects) {
+					outContact.timeOfImpact = toi;
+					bodyA->update(-toi);
+					bodyB->update(-toi);
+					return true;
+				}
+
+				++numIters;
+				if (numIters > CONSERVATIVE_ADVANCE_MAX_ITER) {
+					// If bodies rotate very quickly but don't translate,
+					// time advance will be very small and iteration will be too long.
+					break;
+				}
+
+				vector3 ab = safeNormalize(outContact.surfaceB_WS - outContact.surfaceA_WS);
+
+				vector3 relVel = bodyA->getLinearVelocity() - bodyB->getLinearVelocity();
+				float orthoSpeed = glm::dot(relVel, ab);
+
+				float angularSpeedA = bodyA->getShape()->fastestLinearSpeed(bodyA->getAngularVelocity(), ab);
+				float angularSpeedB = bodyB->getShape()->fastestLinearSpeed(bodyB->getAngularVelocity(), -ab);
+				orthoSpeed += angularSpeedA + angularSpeedB;
+				if (orthoSpeed <= 0.0f) {
+					break;
+				}
+
+				float advance = outContact.separationDistance / orthoSpeed;
+				if (advance > dt) {
+					break;
+				}
+
+				dt -= advance;
+				toi += advance;
+				bodyA->update(advance);
+				bodyB->update(advance);
+			}
+
+			// Unwind the clock.
+			bodyA->update(-toi);
+			bodyB->update(-toi);
+			return false;
+		}
+
 		bool intersect(Body* bodyA, Body* bodyB, Contact& outContact) {
 			outContact.bodyA = bodyA;
 			outContact.bodyB = bodyB;
@@ -782,7 +805,7 @@ namespace badger {
 				const float bias = 0.001f;
 				if (intersectGJK(bodyA, bodyB, bias, ptOnA, ptOnB)) {
 					vector3 normal = safeNormalize(ptOnB - ptOnA);
-					
+
 					ptOnA -= normal * bias;
 					ptOnB += normal * bias;
 
@@ -808,6 +831,49 @@ namespace badger {
 				vector3 ab = posB - posA;
 				float r = glm::length(ptOnA - ptOnB);
 				outContact.separationDistance = r;
+			}
+
+			return false;
+		}
+
+		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact) {
+			outContact.bodyA = bodyA;
+			outContact.bodyB = bodyB;
+
+			if (bodyA->getShape()->getType() == Shape::EShapeType::Sphere && bodyB->getShape()->getType() == Shape::EShapeType::Sphere) {
+				const ShapeSphere* sphereA = (const ShapeSphere*)bodyA->getShape();
+				const ShapeSphere* sphereB = (const ShapeSphere*)bodyB->getShape();
+
+				vector3 posA = bodyA->getPosition();
+				vector3 velA = bodyA->getLinearVelocity();
+				vector3 posB = bodyB->getPosition();
+				vector3 velB = bodyB->getLinearVelocity();
+
+				if (sphereSphereDynamic(sphereA, sphereB, posA, posB, velA, velB, dt,
+					outContact.surfaceA_WS, outContact.surfaceB_WS, outContact.timeOfImpact)) {
+					// Step bodies forward to get local space collision points
+					bodyA->update(outContact.timeOfImpact);
+					bodyB->update(outContact.timeOfImpact);
+
+					outContact.surfaceA_LS = bodyA->worldSpaceToBodySpace(outContact.surfaceA_WS);
+					outContact.surfaceB_LS = bodyB->worldSpaceToBodySpace(outContact.surfaceB_WS);
+
+					outContact.normal = safeNormalize(bodyA->getPosition() - bodyB->getPosition());
+
+					// Unwind time step
+					bodyA->update(-outContact.timeOfImpact);
+					bodyB->update(-outContact.timeOfImpact);
+
+					vector3 ab = bodyB->getPosition() - bodyA->getPosition();
+					float r = glm::length(ab) - (sphereA->getRadius() + sphereB->getRadius());
+
+					outContact.separationDistance = r;
+					return true;
+				}
+			} else {
+				// Use GJK to perform conservative advance.
+				bool bResult = conservativeAdvance(bodyA, bodyB, dt, outContact);
+				return bResult;
 			}
 
 			return false;

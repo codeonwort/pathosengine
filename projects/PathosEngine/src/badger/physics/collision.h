@@ -34,8 +34,6 @@ namespace badger {
 			}
 		};
 
-		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
-
 		// Find all body pairs that might collide. Needs narrow phase to actually test it.
 		void broadPhase(std::vector<Body*>& bodies, std::vector<CollisionPair>& outPairs, float deltaSeconds);
 
@@ -46,6 +44,8 @@ namespace badger {
 		bool intersectGJK(const Body* bodyA, const Body* bodyB, float bias, vector3& ptOnA, vector3& ptOnB);
 
 		bool intersect(Body* bodyA, Body* bodyB, Contact& outContact);
+
+		bool intersect(Body* bodyA, Body* bodyB, float dt, Contact& outContact);
 
 	}
 }
