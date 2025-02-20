@@ -14,17 +14,20 @@
 // --------------------------------------------------------
 // Constants
 
-#define BALL_RANDOM_MATERIALS 1
+#define MANY_BALLS            0
+#define BALL_RANDOM_MATERIALS 0
 
 static const vector3 CAMERA_POSITION = vector3(0.0f, 15.0f, 50.0f);
 static const vector3 CAMERA_LOOK_AT  = vector3(0.0f, 0.0f, 0.0f);
 static const vector3 SUN_DIRECTION   = vector3(1.0f, -1.0f, 0.0f);
 
 static const float   SPHERE_RADIUS   = 2.0f;
+static const vector3 BOX_EXTENTS     = 10.0f * vector3(1.0f, 1.0f, 0.5f);
 static const float   GROUND_RADIUS   = 100.0f;
 
 void World_Physics::onInitialize() {
 	auto G_sphere = new SphereGeometry(SPHERE_RADIUS, 30);
+	auto G_box = new CubeGeometry(0.5f * BOX_EXTENTS);
 #if !BALL_RANDOM_MATERIALS
 	auto M_sphere = Material::createMaterialInstance("solid_color");
 	M_sphere->setConstantParameter("albedo", vector3(0.9f));
@@ -40,7 +43,7 @@ void World_Physics::onInitialize() {
 	M_ground->setConstantParameter("roughness", 1.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 
-#if 1
+#if MANY_BALLS
 	// Spheres
 	for (int32 ix = -8; ix <= 8; ++ix) {
 		for (int32 iz = -8; iz <= 8; ++iz) {
@@ -73,20 +76,21 @@ void World_Physics::onInitialize() {
 	// Sphere 1
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
+		sphere->setStaticMesh(new StaticMesh(G_box, M_sphere));
 		sphere->setActorLocation(2.0f, 5.0f, -1.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
-		physComponent->setElasticity(0.5f);
-		physComponent->setFriction(0.5f);
-		physComponent->setShapeSphere(SPHERE_RADIUS);
+		physComponent->setElasticity(0.9f);
+		physComponent->setFriction(0.1f);
+		//physComponent->setShapeSphere(SPHERE_RADIUS);
+		physComponent->setShapeBox(BOX_EXTENTS);
 		sphere->registerComponent(physComponent);
 	}
 	// Sphere 2
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
 		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
-		sphere->setActorLocation(-2.0f, 6.0f, -1.0f);
+		sphere->setActorLocation(-2.0f, 6.0f, -5.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
 		physComponent->setElasticity(0.2f);
