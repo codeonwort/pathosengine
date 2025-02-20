@@ -87,7 +87,8 @@ namespace pathos {
 	}
 
 	void PhysicsComponent::onPostPhysicsTick(float deltaSeconds) {
-		vector3 dir(glm::mat4_cast(body->getOrientation()) * vector4(1.0f, 0.0f, 0.0f, 0.0f));
+		glm::quat orientation = body->getOrientation();
+		vector3 dir(orientation.x, orientation.y, orientation.z);
 		Rotator rot = Rotator::directionToYawPitch(dir);
 
 		getOwner()->setActorLocation(body->getCenterOfMassWorldSpace());

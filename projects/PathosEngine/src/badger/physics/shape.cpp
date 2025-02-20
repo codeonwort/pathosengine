@@ -9,7 +9,8 @@ static const float MAX_ANGULAR_SPEED = 30.0f;
 
 // p : position, q : orientation
 static vector3 rotatePoint(const vector3& p, const quat& q) {
-	return vector3(glm::mat4_cast(q) * vector4(p, 1.0f));
+	return q * p; // GLM's operator*(quat, vec) is rotation.
+	//return vector3(glm::mat4_cast(q) * vector4(p, 1.0f));
 }
 
 static AABB buildAABB(const std::vector<vector3>& points) {
