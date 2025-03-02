@@ -21,6 +21,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "App_RhythmGame", "projects\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTest", "projects\UnitTest\UnitTest.vcxproj", "{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_Physics", "projects\Test_Physics\Test_Physics.vcxproj", "{9DC17058-0C8A-4777-B3E8-09CBB4652F55}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E} = {F1C0D08F-97A0-4B71-BC64-66F86CFCBB4E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -59,6 +64,10 @@ Global
 		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Debug|x64.Build.0 = Debug|x64
 		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Release|x64.ActiveCfg = Release|x64
 		{283FEDF8-8F1F-4156-9B16-4E4E2E0D4EFE}.Release|x64.Build.0 = Release|x64
+		{9DC17058-0C8A-4777-B3E8-09CBB4652F55}.Debug|x64.ActiveCfg = Debug|x64
+		{9DC17058-0C8A-4777-B3E8-09CBB4652F55}.Debug|x64.Build.0 = Debug|x64
+		{9DC17058-0C8A-4777-B3E8-09CBB4652F55}.Release|x64.ActiveCfg = Release|x64
+		{9DC17058-0C8A-4777-B3E8-09CBB4652F55}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
