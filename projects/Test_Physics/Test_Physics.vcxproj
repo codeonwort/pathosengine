@@ -79,9 +79,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\player_controller.cpp" />
     <ClCompile Include="src\world_gjk.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\player_controller.h" />
     <ClInclude Include="src\world_gjk.h" />
   </ItemGroup>
   <ItemGroup>
