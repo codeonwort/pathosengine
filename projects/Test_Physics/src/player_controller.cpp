@@ -22,7 +22,6 @@ void PlayerController::onTick(float deltaSeconds) {
 
 	float deltaRight   = input->getAxis("moveRight") * moveRight;
 	float deltaForward = input->getAxis("moveForward") * moveForward;
-	float deltaUp      = input->getAxis("moveUp") * moveUp;
 
 	if (target != nullptr) {
 		vector3 pos = target->getActorLocation();

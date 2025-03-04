@@ -176,7 +176,7 @@ namespace badger {
 
 		// Find all triangles that face this point.
 		std::vector<size_t> facingTriangles;
-		for (size_t i = inoutHullTriangles.size() - 1; i >= 0; --i) {
+		for (int32 i = (int32)(inoutHullTriangles.size() - 1); i >= 0; --i) {
 			const ConvexHullTriangle& tri = inoutHullTriangles[i];
 			const vector3& a = inoutHullPoints[tri.a];
 			const vector3& b = inoutHullPoints[tri.b];

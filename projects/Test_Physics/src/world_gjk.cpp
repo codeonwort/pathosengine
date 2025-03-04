@@ -3,6 +3,7 @@
 
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/mesh/geometry_procedural.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
@@ -15,6 +16,8 @@
 #define SUN_COLOR       vector3(1.0f, 1.0f, 1.0f)
 #define SUN_ILLUMINANCE 2.5f
 
+#define COMPLEX_SHAPE   1
+
 void World_GJK::onInitialize() {
 	getCamera().lookAt(CAMERA_ORIGIN, CAMERA_LOOKAT, vector3(0.0f, 1.0f, 0.0f));
 
@@ -24,7 +27,31 @@ void World_GJK::onInitialize() {
 
 	auto sky = spawnActor<SkyAtmosphereActor>();
 
-	MeshGeometry* boxGeometry = new CubeGeometry(vector3(1.0f));
+#if COMPLEX_SHAPE
+	ProceduralGeometry* geometry = new ProceduralGeometry;
+	std::vector<vector3> vertices = {
+		vector3(-1.0f, 0.0f, 0.0f),
+		vector3(1.0f, 0.0f, 0.0f),
+		vector3(0.0f, 1.0f, 0.0f),
+		vector3(0.0f, 0.0f, 1.0f),
+	};
+	{
+		uint32 indices[] = {
+			0, 1, 2,
+			0, 1, 3,
+			1, 2, 3,
+			2, 0, 3,
+		};
+		for (uint32 i = 0; i < _countof(indices); i += 3) {
+			geometry->addTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+		}
+		geometry->upload();
+		geometry->calculateNormals();
+		geometry->calculateTangentBasis();
+	}
+#else
+	MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
+#endif
 
 	materialNoHit = Material::createMaterialInstance("solid_color");
 	materialNoHit->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -38,8 +65,8 @@ void World_GJK::onInitialize() {
 	materialOnHit->setConstantParameter("roughness", 1.0f);
 	materialOnHit->setConstantParameter("emissive", vector3(0.0f));
 
-	StaticMesh* meshA = new StaticMesh(boxGeometry, materialNoHit);
-	StaticMesh* meshB = new StaticMesh(boxGeometry, materialNoHit);
+	StaticMesh* meshA = new StaticMesh(geometry, materialNoHit);
+	StaticMesh* meshB = new StaticMesh(geometry, materialNoHit);
 
 	modelA = spawnActor<StaticMeshActor>();
 	modelB = spawnActor<StaticMeshActor>();
@@ -50,8 +77,13 @@ void World_GJK::onInitialize() {
 	modelB->setStaticMesh(meshB);
 	modelB->setActorLocation(vector3(2.0f, 0.0f, 0.0f));
 
+#if COMPLEX_SHAPE
+	bodyA.setShape(new badger::physics::ShapeConvex(vertices));
+	bodyB.setShape(new badger::physics::ShapeConvex(vertices));
+#else
 	bodyA.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
 	bodyB.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
+#endif
 
 	controller = spawnActor<PlayerController>();
 	controller->setControlTarget(modelA);
