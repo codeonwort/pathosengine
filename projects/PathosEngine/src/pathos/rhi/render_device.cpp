@@ -129,7 +129,6 @@ namespace pathos {
 		checkExtensions();
 		queryCapabilities();
 
-		// #todo-renderthread: Wanna unify command lists
 		// Create command lists
 		early_command_list = makeUnique<RenderCommandList>("early");
 		immediate_command_list = makeUnique<RenderCommandList>("immediate");

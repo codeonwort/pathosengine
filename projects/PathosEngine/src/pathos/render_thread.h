@@ -33,10 +33,6 @@ namespace pathos {
 		// Launches the render thread.
 		void run();
 
-		// #todo-renderthread: I forgot why I declared this
-		// Signal fence when GPU has completed commands.
-		//void signalFence(uint64 value);
-
 		void takeScreenshot() { bScreenshotReserved = true; }
 
 		// NOTE: Blocking operation.
