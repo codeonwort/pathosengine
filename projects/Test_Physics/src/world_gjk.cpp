@@ -72,7 +72,7 @@ void World_GJK::onInitialize() {
 	modelB = spawnActor<StaticMeshActor>();
 
 	modelA->setStaticMesh(meshA);
-	modelA->setActorLocation(vector3(-2.0f, 0.0f, 0.0f));
+	modelA->setActorLocation(vector3(-2.0f, 0.5f, 0.0f));
 
 	modelB->setStaticMesh(meshB);
 	modelB->setActorLocation(vector3(2.0f, 0.0f, 0.0f));
@@ -84,6 +84,19 @@ void World_GJK::onInitialize() {
 	bodyA.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
 	bodyB.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
 #endif
+
+	{
+		auto arrowG = new CubeGeometry(vector3(1.0f, 0.05f, 0.05f));
+		auto arrowM = Material::createMaterialInstance("solid_color");
+		arrowM->setConstantParameter("albedo", vector3(0.9f, 0.0f, 0.0f));
+		arrowM->setConstantParameter("metallic", 0.0f);
+		arrowM->setConstantParameter("roughness", 1.0f);
+		arrowM->setConstantParameter("emissive", vector3(0.0f));
+		auto arrowMesh = new StaticMesh(arrowG, arrowM);
+
+		arrow = spawnActor<StaticMeshActor>();
+		arrow->setStaticMesh(arrowMesh);
+	}
 
 	controller = spawnActor<PlayerController>();
 	controller->setControlTarget(modelA);
@@ -99,4 +112,13 @@ void World_GJK::onTick(float deltaSeconds) {
 	Material* material = hit ? materialOnHit : materialNoHit;
 	modelA->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
 	modelB->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
+
+	if (hit) {
+		Rotator rot = Rotator::directionToYawPitch(contact.normal);
+		arrow->setActorLocation(contact.surfaceA_WS);
+		arrow->setActorRotation(rot);
+		arrow->getStaticMeshComponent()->setVisibility(true);
+	} else {
+		arrow->getStaticMeshComponent()->setVisibility(false);
+	}
 }

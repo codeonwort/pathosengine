@@ -25,6 +25,7 @@ private:
 
 	StaticMeshActor* modelA = nullptr;
 	StaticMeshActor* modelB = nullptr;
+	StaticMeshActor* arrow = nullptr;
 
 	badger::physics::Body bodyA;
 	badger::physics::Body bodyB;
