@@ -8,7 +8,7 @@
 #include "pathos/gui/gui_window.h"
 #include "pathos/util/log.h"
 
-// #todo: Query available display resolutions from OS.
+// #todo-racing-game: Query available display resolutions from OS.
 static const int32 RESOLUTION_PRESETS[][2] = {
 	{ 1024, 768 },
 	{ 1600, 900 },

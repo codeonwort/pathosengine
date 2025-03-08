@@ -40,9 +40,10 @@ namespace pathos {
 		void setScale(float inUniformScale);
 		void setScale(const vector3& inScale);
 		inline vector3 getScale() const { return transform.getScale(); }
-
-		// NOTE: Only components in the same actor are valid as children.
-		//       Also this relationship is only for transform hierarchy.
+		
+		// NOTE: Only components in the same actor are valid.
+		// Also this relationship is only for transform hierarchy.
+		// Deleting parent component does not automatically delete this component.
 		void setTransformParent(SceneComponent* parent);
 		void unsetTransformParent();
 		inline SceneComponent* getTransformParent() const { return transformParent; }
@@ -60,11 +61,9 @@ namespace pathos {
 		ModelTransform transform;
 		bool visible = true;
 
-		// For transform hierarchy.
-		matrix4 accumulatedTransform;
-		// #todo: Should I always accumulate root's transform
-		//        even if root is not the transform parent?
-		SceneComponent* transformParent = nullptr;
+		// Transform hierarchy
+		matrix4 accumulatedTransform = matrix4(1.0f);
+		SceneComponent* transformParent = nullptr; // Root is not transform parent by default.
 		std::vector<SceneComponent*> transformChildren;
 	};
 

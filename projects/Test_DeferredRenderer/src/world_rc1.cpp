@@ -356,7 +356,7 @@ RingActor::RingActor()
 {
 	G = new ProceduralGeometry;
 	
-	// #todo: This is overriden. No use.
+	// Overriden later by World_RC1::setupScene().
 	M = Material::createMaterialInstance("solid_color");
 	M->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	M->setConstantParameter("metallic", 0.0f);
