@@ -96,6 +96,7 @@
     <ClCompile Include="src\badger\system\cpu.cpp" />
     <ClCompile Include="src\badger\system\thread_pool.cpp" />
     <ClCompile Include="src\pathos\render\landscape_rendering.cpp" />
+    <ClCompile Include="src\pathos\rhi\sampler.cpp" />
     <ClCompile Include="src\pathos\scene\directional_light_component.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
@@ -263,6 +264,7 @@
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\rhi\gl_live_objects.h" />
     <ClInclude Include="src\pathos\rhi\indirect_draw.h" />
+    <ClInclude Include="src\pathos\rhi\sampler.h" />
     <ClInclude Include="src\pathos\scene\actor.h" />
     <ClInclude Include="src\pathos\scene\actor_component.h" />
     <ClInclude Include="src\pathos\scene\irradiance_volume_actor.h" />

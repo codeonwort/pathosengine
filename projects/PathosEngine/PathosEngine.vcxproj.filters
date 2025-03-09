@@ -401,6 +401,9 @@
     <ClCompile Include="src\pathos\render\sky_atmosphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\rhi\sampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\text\text_geometry.h">
@@ -923,6 +926,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\mesh\static_mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pathos\rhi\sampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

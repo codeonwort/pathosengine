@@ -9,6 +9,7 @@
 namespace pathos {
 
 	class SceneProxy;
+	class Sampler;
 
 	class VolumetricCloudPass : public Noncopyable {
 
@@ -34,7 +35,7 @@ namespace pathos {
 		uint32 renderTargetHeight = 0;
 		UniformBuffer ubo;
 
-		GLuint cloudNoiseSampler = 0;
+		Sampler* cloudNoiseSampler = nullptr;
 
 		GLuint fboPost = 0xffffffff;
 

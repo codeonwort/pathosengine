@@ -16,6 +16,7 @@
 #include "pathos/util/log.h"
 
 #include "badger/math/minmax.h"
+#include "../rhi/sampler.h"
 
 namespace pathos {
 
@@ -146,13 +147,11 @@ namespace pathos {
 			}
 		}
 
-		gRenderDevice->createSamplers(1, &cloudNoiseSampler);
-		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		cmdList.samplerParameteri(cloudNoiseSampler, GL_TEXTURE_WRAP_R, GL_REPEAT);
-		cmdList.objectLabel(GL_SAMPLER, cloudNoiseSampler, -1, "Sampler_CloudNoise");
+		SamplerCreateParams samplerDesc{};
+		samplerDesc.MIN_FILTER = GL_LINEAR;
+		samplerDesc.MAG_FILTER = GL_LINEAR;
+		cloudNoiseSampler = new Sampler(samplerDesc, "Sampler_CloudNoise");
+		cloudNoiseSampler->createGPUResource_renderThread(cmdList);
 
 		gRenderDevice->createFramebuffers(1, &fboPost);
 		cmdList.namedFramebufferDrawBuffer(fboPost, GL_COLOR_ATTACHMENT0);
@@ -160,7 +159,8 @@ namespace pathos {
 
 	void VolumetricCloudPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteTextures(1, &texSTBN);
-		gRenderDevice->deleteSamplers(1, &cloudNoiseSampler);
+		cloudNoiseSampler->releaseGPUResource_renderThread(cmdList);
+		delete cloudNoiseSampler;
 
 		gRenderDevice->deleteFramebuffers(1, &fboPost);
 	}
@@ -239,8 +239,8 @@ namespace pathos {
 		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
 		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 
-		cmdList.bindSampler(2, cloudNoiseSampler);
-		cmdList.bindSampler(3, cloudNoiseSampler);
+		cmdList.bindSampler(2, cloudNoiseSampler->internal_getGLName());
+		cmdList.bindSampler(3, cloudNoiseSampler->internal_getGLName());
 
 		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
 		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);

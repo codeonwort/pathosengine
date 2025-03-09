@@ -71,6 +71,7 @@ namespace pathos {
 		void registerDeferredCleanup(void* dynamicMemory);
 		void registerDeferredBufferCleanup(GLuint buffer);
 		void registerDeferredTextureCleanup(GLuint texture);
+		void registerDeferredSamplerCleanup(GLuint sampler);
 
 		// Free all memory that came from registerDeferredCleanup().
 		void performDeferredCleanup();
@@ -113,6 +114,7 @@ namespace pathos {
 		std::vector<void*> deferredMemoryCleanups;
 		std::vector<GLuint> deferredBufferCleanups;
 		std::vector<GLuint> deferredTextureCleanups;
+		std::vector<GLuint> deferredSamplerCleanups;
 
 	public:
 		#include "render_command_list.generated.h"

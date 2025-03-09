@@ -100,6 +100,11 @@ namespace pathos {
 		deferredTextureCleanups.push_back(texture);
 	}
 
+	void RenderCommandList::registerDeferredSamplerCleanup(GLuint sampler) {
+		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
+		deferredSamplerCleanups.push_back(sampler);
+	}
+
 	void RenderCommandList::performDeferredCleanup() {
 		std::lock_guard<std::mutex> lockGuard(deferredCleanupLock);
 		for (void* memory : deferredMemoryCleanups) delete memory;
@@ -108,6 +113,8 @@ namespace pathos {
 		deferredBufferCleanups.clear();
 		gRenderDevice->deleteTextures((GLsizei)deferredTextureCleanups.size(), deferredTextureCleanups.data());
 		deferredTextureCleanups.clear();
+		gRenderDevice->deleteSamplers((GLsizei)deferredSamplerCleanups.size(), deferredSamplerCleanups.data());
+		deferredSamplerCleanups.clear();
 	}
 
 	RenderCommandBase* RenderCommandList::getNextPacket()
