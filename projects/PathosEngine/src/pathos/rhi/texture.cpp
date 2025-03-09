@@ -88,7 +88,8 @@ namespace pathos {
 			cmdList.textureStorage3D(
 				glTexture, actualMipLevels, createParams.glStorageFormat,
 				createParams.width, createParams.height, createParams.depth);
-			if (createParams.imageBlobs.size() > 0) {
+			const uint32 numBlobs = (uint32)createParams.imageBlobs.size();
+			if (numBlobs == 1) {
 				auto blob = createParams.imageBlobs[0];
 				cmdList.textureSubImage3D(
 					glTexture,
@@ -96,6 +97,18 @@ namespace pathos {
 					0, 0, 0, // offset
 					createParams.width, createParams.height, createParams.depth, // size
 					blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
+			} else if (numBlobs == createParams.depth) {
+				for (uint32 i = 0; i < numBlobs; ++i) {
+					auto blob = createParams.imageBlobs[i];
+					cmdList.textureSubImage3D(
+						glTexture,
+						0, // LOD
+						0, 0, i, // offset
+						createParams.width, createParams.height, 1, // size
+						blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
+				}
+			} else if (numBlobs > 0) {
+				CHECKF(0, "Blob count should be 1 or depth");
 			}
 		} else {
 			CHECKF(0, "WIP: Unhandled glDimension");

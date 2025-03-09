@@ -26,6 +26,7 @@ namespace pathos {
 		void renderVolumetricCloudPost(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
+		void initializeSTBN(RenderCommandList& cmdList);
 		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);
 
 		bool isPassEnabled(const SceneProxy* scene) const;
@@ -40,7 +41,8 @@ namespace pathos {
 		GLuint fboPost = 0xffffffff;
 
 		// https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/
-		GLuint texSTBN = 0;
+		Texture* stbnTexture = nullptr;
+		Sampler* stbnSampler = nullptr;
 		bool bHasValidResources = false;
 	};
 
