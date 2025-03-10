@@ -10,19 +10,18 @@
 
 namespace pathos {
 
-	static constexpr uint32 LOAD_INFO_STACK_SIZE = 4 * 1024; // 4 KB
 	static constexpr uint32 OBJ_POOL_SIZE = 32;
 	static constexpr uint32 GLTF_POOL_SIZE = 4;
 
-	void internal_loadWavefrontOBJ(const WorkItemParam* param)
-	{
+	void internal_loadWavefrontOBJ(const WorkItemParam* param) {
 		SCOPED_CPU_COUNTER(AsyncLoad_WavefrontOBJ);
 
 		AssetLoadInfoBase_WavefrontOBJ* arg = (AssetLoadInfoBase_WavefrontOBJ*)param->arg;
 		AssetStreamer* streamer = arg->streamer;
 
-		OBJLoader* loader = streamer->objLoaderAllocator.alloc();
-		CHECK(loader);
+		streamer->internal_unregisterLoadInfo(arg);
+
+		OBJLoader* loader = streamer->internal_allocateOBJLoader();
 
 		arg->loader = loader;
 		loader->setMaterialOverrides(std::move(arg->materialOverrides));
@@ -32,9 +31,7 @@ namespace pathos {
 			LOG(LogError, "[AssetStreamer] Failed to load OBJ: %s", arg->filepath);
 		}
 		// Enqueue anyway. You should check loader->isValid() in the callback.
-		streamer->mutex_loadedOBJs.lock();
-		streamer->loadedOBJs.push_back(arg);
-		streamer->mutex_loadedOBJs.unlock();
+		streamer->internal_onLoaded_WavefrontOBJ(arg);
 	}
 
 	void internal_loadGLTF(const WorkItemParam* param)
@@ -44,8 +41,9 @@ namespace pathos {
 		AssetLoadInfoBase_GLTF* arg = (AssetLoadInfoBase_GLTF*)param->arg;
 		AssetStreamer* streamer = arg->streamer;
 
-		GLTFLoader* loader = streamer->gltfLoaderAllocator.alloc();
-		CHECK(loader);
+		streamer->internal_unregisterLoadInfo(arg);
+
+		GLTFLoader* loader = streamer->internal_allocateGLTFLoader();
 
 		arg->loader = loader;
 		bool bLoaded = loader->loadASCII(arg->filepath.c_str());
@@ -54,26 +52,24 @@ namespace pathos {
 			LOG(LogError, "[AssetStreamer] Failed to load GLTF: %s", arg->filepath.c_str());
 		}
 		// Enqueue anyway. You should check loader->isValid() in the callback.
-		streamer->mutex_loadedGLTFs.lock();
-		streamer->loadedGLTFs.push_back(arg);
-		streamer->mutex_loadedGLTFs.unlock();
+		streamer->internal_onLoaded_GLTF(arg);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	AssetStreamer::AssetStreamer()
-		: loadInfoAllocator(StackAllocator(LOAD_INFO_STACK_SIZE))
-		, objLoaderAllocator(PoolAllocator<OBJLoader>(OBJ_POOL_SIZE))
+		: objLoaderAllocator(PoolAllocator<OBJLoader>(OBJ_POOL_SIZE))
 		, gltfLoaderAllocator(PoolAllocator<GLTFLoader>(GLTF_POOL_SIZE))
 	{
 	}
 
-	AssetStreamer::~AssetStreamer()
-	{
+	AssetStreamer::~AssetStreamer() {
+		for (auto info : loadInfoList) {
+			delete info;
+		}
 	}
 
-	void AssetStreamer::initialize(uint32 numWorkerThreads)
-	{
+	void AssetStreamer::initialize(uint32 numWorkerThreads) {
 		threadPool.Start(numWorkerThreads);
 		for (uint32 i = 0; i < numWorkerThreads; ++i) {
 			std::stringstream ss;
@@ -84,8 +80,7 @@ namespace pathos {
 		}
 	}
 
-	void AssetStreamer::destroy()
-	{
+	void AssetStreamer::destroy() {
 		threadPool.Stop();
 		LOG(LogInfo, "[AssetStreamer] Destroy asset streamer");
 	}
@@ -94,11 +89,10 @@ namespace pathos {
 		threadPool.WakeAllWorkers();
 	}
 
-	void AssetStreamer::enqueueWavefrontOBJ(const char* inFilepath, const char* inMtlDir, WavefrontOBJHandler handler, uint64 payload)
-	{
+	void AssetStreamer::enqueueWavefrontOBJ(const char* inFilepath, const char* inMtlDir, WavefrontOBJHandler handler, uint64 payload) {
 		using LoadInfoType = AssetLoadInfo_WavefrontOBJ<AssetLoadInfoBase::DummyType>;
-		LoadInfoType* arg = reinterpret_cast<LoadInfoType*>(loadInfoAllocator.alloc(sizeof(LoadInfoType)));
-		CHECKF(arg, "Out of memory for asset streamer load info");
+		LoadInfoType* arg = new LoadInfoType;
+		loadInfoList.push_back(arg);
 		
 		arg->streamer = this;
 		arg->filepath = inFilepath;
@@ -116,8 +110,8 @@ namespace pathos {
 
 	void AssetStreamer::enqueueGLTF(const char* inFilepath, GLTFHandler handler, uint64 payload) {
 		using LoadInfoType = AssetLoadInfo_GLTF<AssetLoadInfoBase::DummyType>;
-		LoadInfoType* arg = reinterpret_cast<LoadInfoType*>(loadInfoAllocator.alloc(sizeof(LoadInfoType)));
-		CHECKF(arg != nullptr, "Out of memory for asset streamer load info");
+		LoadInfoType* arg = new LoadInfoType;
+		loadInfoList.push_back(arg);
 
 		arg->streamer = this;
 		arg->filepath = inFilepath;
@@ -131,8 +125,7 @@ namespace pathos {
 		threadPool.AddWorkSafe(work);
 	}
 
-	void AssetStreamer::flushLoadedAssets()
-	{
+	void AssetStreamer::flushLoadedAssets() {
 		CHECK(!isInRenderThread());
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> tempLoadedOBJs;
 		std::vector<AssetLoadInfoBase_GLTF*> tempLoadedGLTFs;
@@ -146,6 +139,7 @@ namespace pathos {
 
 			for (AssetLoadInfoBase_WavefrontOBJ* assetInfo : tempLoadedOBJs) {
 				assetInfo->invokeHandler();
+				delete assetInfo;
 			}
 		}
 		{
@@ -156,8 +150,37 @@ namespace pathos {
 
 			for (AssetLoadInfoBase_GLTF* assetInfo : tempLoadedGLTFs) {
 				assetInfo->invokeHandler();
+				delete assetInfo;
 			}
 		}
+	}
+
+	pathos::OBJLoader* AssetStreamer::internal_allocateOBJLoader() {
+		auto loader = objLoaderAllocator.alloc();
+		CHECK(loader != nullptr);
+		return loader;
+	}
+
+	pathos::GLTFLoader* AssetStreamer::internal_allocateGLTFLoader() {
+		auto loader = gltfLoaderAllocator.alloc();
+		CHECK(loader != nullptr);
+		return loader;
+	}
+
+	void AssetStreamer::internal_onLoaded_WavefrontOBJ(AssetLoadInfoBase_WavefrontOBJ* info) {
+		mutex_loadedOBJs.lock();
+		loadedOBJs.push_back(info);
+		mutex_loadedOBJs.unlock();
+	}
+
+	void AssetStreamer::internal_onLoaded_GLTF(AssetLoadInfoBase_GLTF* info) {
+		mutex_loadedGLTFs.lock();
+		loadedGLTFs.push_back(info);
+		mutex_loadedGLTFs.unlock();
+	}
+
+	void AssetStreamer::internal_unregisterLoadInfo(AssetLoadInfoBase* info) {
+		loadInfoList.remove(info);
 	}
 
 }
