@@ -34,6 +34,7 @@ namespace pathos {
 			case FIF_BMP:
 			case FIF_JPEG:
 			case FIF_PNG:
+			case FIF_DDS:
 				{
 					switch (bpp) {
 						case 8:  outStorageFormat = GL_R8;      outPixelFormat = GL_RED;  outDataType = GL_UNSIGNED_BYTE;  break;
@@ -88,7 +89,6 @@ namespace pathos {
 			case FIF_CUT:
 			case FIF_XBM:
 			case FIF_XPM:
-			case FIF_DDS:
 			case FIF_GIF:
 			case FIF_FAXG3:
 			case FIF_SGI:
