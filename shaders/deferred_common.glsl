@@ -46,6 +46,7 @@ layout (std140, binding = SLOT_UBO_PER_FRAME) uniform UBO_PerFrame {
 
 float getWorldTime() { return uboPerFrame.time.x; }
 float getDeltaSeconds() { return uboPerFrame.time.y; }
+float getFOV() { return uboPerFrame.projParams.z; }
 float getAspectRatio() { return uboPerFrame.projParams.w; }
 
 vec3 getWorldPositionFromSceneDepth(vec2 screenUV, float sceneDepth) {

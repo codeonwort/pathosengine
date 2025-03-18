@@ -96,6 +96,7 @@
     <ClCompile Include="TestExecutable.cpp" />
     <ClCompile Include="TestSignedVolume.cpp" />
     <ClCompile Include="TestCamera.cpp" />
+    <ClCompile Include="TestTransform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

@@ -146,7 +146,7 @@ vec3 traceScene(vec3 dir) {
 	
 	const float baseX = 0.0;
 	const float baseZ = 0.2;
-	float zFactor = 0.7 * abs(baseZ - dir.z);
+	float zFactor = 0.7 * abs(baseZ - dir.y);
 	float xFactor = 0.2 * max(0.0, baseX - dir.x);
 
 	float galaxydust = smoothstep(0.1, 0.2, (1.0 / (23.0 * zFactor)) * dustFbm(dir * 62.0, 3.0) * xFactor);

@@ -7,7 +7,7 @@
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 vec2 CubeToEquirectangular(vec3 v) {
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= vec2(0.1591, 0.3183); // inverse atan
+    uv *= vec2(0.1591, 0.3183); // (1 / 2pi, 1 / pi)
     uv += 0.5;
     return uv;
 }
@@ -15,12 +15,8 @@ vec2 CubeToEquirectangular(vec3 v) {
 // Maps a 2D uv coordinate to a 3D unit direction vector.
 vec3 EquirectangularToCube(vec2 uv) {
 	uv -= 0.5;
-	uv *= vec2(2.0 * PI, PI);
-
-	// x = cos(u) * cos(v)
-	// y = sin(u) * cos(v)
-	// z = sin(v)
-	return vec3(cos(uv.y) * cos(uv.x), cos(uv.y) * sin(uv.x), sin(uv.y));
+	uv *= vec2(TWO_PI, PI);
+	return vec3(cos(uv.y) * cos(uv.x), sin(uv.y), cos(uv.y) * sin(uv.x));
 }
 
 // Ray Tracing Gems
