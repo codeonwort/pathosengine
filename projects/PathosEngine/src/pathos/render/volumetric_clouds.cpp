@@ -1,6 +1,7 @@
 #include "volumetric_clouds.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/sampler.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
@@ -8,6 +9,7 @@
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/volumetric_cloud_component.h"
 #include "pathos/scene/directional_light_component.h"
+#include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
 // For NVidia STBN
@@ -16,17 +18,20 @@
 #include "pathos/util/log.h"
 
 #include "badger/math/minmax.h"
-#include "../rhi/sampler.h"
 
 namespace pathos {
 
 	static constexpr GLenum PF_volumetricCloud = GL_RGBA16F;
 
+	static ConsoleVariable<int32> cvar_enable_volClouds("r.cloud.enable", 1, "[0/1] Toggle volumetric clouds");
 	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
+
+	static ConsoleVariable<int32> cvar_cloud_panorama("r.cloud.panorama", 0, "[0/1] Toggle volumetric clouds panorama mode");
+	static ConsoleVariable<int32> cvar_cloud_panoramaWidth("r.cloud.panoramaWidth", 4096, "Panorama texture width");
+	static ConsoleVariable<int32> cvar_cloud_panoramaHeight("r.cloud.panoramaHeight", 2048, "Panorama texture height");
 
 	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
 	// But without a good GUI it's rather convenient to control them with cvars.
-	static ConsoleVariable<int32> cvar_enable_volClouds("r.cloud.enable", 1, "[0/1] Toggle volumetric clouds");
 	static ConsoleVariable<float> cvar_cloud_earthRadius("r.cloud.earthRadius", (float)6.36e6, "Earth radius (in meters)");
 	static ConsoleVariable<float> cvar_cloud_minY("r.cloud.minY", 1000.0f, "Cloud layer's min height from ground (in meters)");
 	static ConsoleVariable<float> cvar_cloud_maxY("r.cloud.maxY", 6000.0f, "Cloud layer's max height from ground (in meters)");
@@ -82,13 +87,25 @@ namespace pathos {
 		uint32 frameCounter;
 	};
 
+	struct UBO_VolumetricCloudPost {
+		static constexpr uint32 BINDING_POINT = 1;
+
+		uint32 bPanorama;
+		float  zFarPlane;
+		uint32 _pad1;
+		uint32 _pad2;
+	};
+
+	template<bool bPanorama>
 	class VolumetricCloudCS : public ShaderStage {
 	public:
 		VolumetricCloudCS() : ShaderStage(GL_COMPUTE_SHADER, "VolumetricCloudCS") {
+			addDefine("RENDER_PANORAMA", (uint32)bPanorama);
 			setFilepath("sky/volumetric_clouds.glsl");
 		}
 	};
-	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud, VolumetricCloudCS);
+	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud_Screen, VolumetricCloudCS<false>);
+	DEFINE_COMPUTE_PROGRAM(Program_VolumetricCloud_Panorama, VolumetricCloudCS<true>);
 
 	class VolumetricCloudPostFS : public ShaderStage {
 	public:
@@ -103,7 +120,8 @@ namespace pathos {
 namespace pathos {
 
 	void VolumetricCloudPass::initializeResources(RenderCommandList& cmdList) {
-		ubo.init<UBO_VolumetricCloud>();
+		ubo.init<UBO_VolumetricCloud>("UBO_VolumetricCloud");
+		uboPost.init<UBO_VolumetricCloudPost>("UBO_VolumetricCloudPost");
 
 		initializeSTBN(cmdList);
 
@@ -132,31 +150,37 @@ namespace pathos {
 	void VolumetricCloudPass::renderVolumetricCloud(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(VolumetricCloud);
 
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloud);
-
-		const uint32 sceneWidth = sceneContext.sceneWidth;
-		const uint32 sceneHeight = sceneContext.sceneHeight;
 		const bool bRenderClouds = isPassEnabled(scene);
+		const bool bPanorama = cvar_cloud_panorama.getInt() != 0;
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		GLuint program = 0;
+		if (bPanorama) {
+			program = FIND_SHADER_PROGRAM(Program_VolumetricCloud_Panorama).getGLName();
+		} else {
+			program = FIND_SHADER_PROGRAM(Program_VolumetricCloud_Screen).getGLName();
+		}
 
 		float resolutionScale = glm::clamp(cvar_cloud_resolution.getFloat(), 0.1f, 1.0f);
-		recreateRenderTarget(cmdList, sceneWidth, sceneHeight, resolutionScale);
+		recreateRenderTarget(cmdList, sceneContext.sceneWidth, sceneContext.sceneHeight, resolutionScale, bPanorama);
 
 		if (!bRenderClouds) {
 			float clearValues[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			pathos::clearTexture2D(
 				cmdList,
 				sceneContext.getVolumetricCloud(scene->frameNumber),
-				(uint32)(resolutionScale * sceneWidth),
-				(uint32)(resolutionScale * sceneHeight),
+				renderTargetWidth,
+				renderTargetHeight,
 				EClearTextureFormat::RGBA16f,
 				clearValues);
 			return;
 		}
 
-		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
+		if (!bPanorama) {
+			cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
+		}
 
-		cmdList.useProgram(program.getGLName());
+		cmdList.useProgram(program);
 
 		UBO_VolumetricCloud uboData;
 		{
@@ -207,8 +231,8 @@ namespace pathos {
 		cmdList.bindSampler(3, cloudNoiseSampler->internal_getGLName());
 		cmdList.bindSampler(4, stbnSampler->internal_getGLName());
 
-		GLuint workGroupsX = (GLuint)ceilf((float)(resolutionScale * sceneWidth) / 16.0f);
-		GLuint workGroupsY = (GLuint)ceilf((float)(resolutionScale * sceneHeight) / 16.0f);
+		GLuint workGroupsX = (GLuint)ceilf((float)(renderTargetWidth) / 16.0f);
+		GLuint workGroupsY = (GLuint)ceilf((float)(renderTargetHeight) / 16.0f);
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -225,6 +249,8 @@ namespace pathos {
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloudPost);
 			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
+			const bool bPanorama = cvar_cloud_panorama.getInt() != 0;
+
 			cmdList.useProgram(program.getGLName());
 
 			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboPost);
@@ -239,7 +265,16 @@ namespace pathos {
 
 			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
+			// Bind shader parameters
+			UBO_VolumetricCloudPost uboData;
+			{
+				uboData.bPanorama = (uint32)bPanorama;
+				uboData.zFarPlane = pathos::getDeviceFarDepth();
+			}
+			uboPost.update(cmdList, UBO_VolumetricCloudPost::BINDING_POINT, &uboData);
+
 			cmdList.bindTextureUnit(0, sceneContext.getVolumetricCloud(scene->frameNumber));
+			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
 			fullscreenQuad->drawPrimitive(cmdList);
@@ -303,14 +338,14 @@ namespace pathos {
 		}
 	}
 
-	void VolumetricCloudPass::recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float inResolutionScale)
+	void VolumetricCloudPass::recreateRenderTarget(RenderCommandList& cmdList, uint32 inScreenWidth, uint32 inScreenHeight, float inResolutionScale, bool bPanorama)
 	{
-		CHECKF(inWidth != 0 && inHeight != 0, "Invalid size for cloud render target");
+		CHECKF(inScreenWidth != 0 && inScreenHeight != 0, "Invalid size for cloud render target");
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		const uint32 targetWidth = (uint32)(inWidth * inResolutionScale);
-		const uint32 targetHeight = (uint32)(inHeight * inResolutionScale);
+		const uint32 targetWidth = bPanorama ? (uint32)cvar_cloud_panoramaWidth.getInt() : (uint32)(inScreenWidth * inResolutionScale);
+		const uint32 targetHeight = bPanorama ? (uint32)cvar_cloud_panoramaHeight.getInt() : (uint32)(inScreenHeight * inResolutionScale);
 
 		CHECK(targetWidth != 0 && targetHeight != 0);
 

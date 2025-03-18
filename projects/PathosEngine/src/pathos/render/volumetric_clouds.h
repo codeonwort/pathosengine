@@ -27,7 +27,7 @@ namespace pathos {
 
 	private:
 		void initializeSTBN(RenderCommandList& cmdList);
-		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale);
+		void recreateRenderTarget(RenderCommandList& cmdList, uint32 inWidth, uint32 inHeight, float resolutionScale, bool bPanorama);
 
 		bool isPassEnabled(const SceneProxy* scene) const;
 
@@ -35,6 +35,7 @@ namespace pathos {
 		uint32 renderTargetWidth = 0;
 		uint32 renderTargetHeight = 0;
 		UniformBuffer ubo;
+		UniformBuffer uboPost;
 
 		Sampler* cloudNoiseSampler = nullptr;
 

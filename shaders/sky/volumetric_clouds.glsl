@@ -1,6 +1,7 @@
 #version 460 core
 
 #include "core/common.glsl"
+#include "core/transform.glsl"
 #include "geom_common.glsl"
 #include "deferred_common.glsl"
 
@@ -14,6 +15,10 @@
 
 // ------------------------------------------------------------
 // Tuning
+
+#ifndef RENDER_PANORAMA
+	#error Should define RENDER_PANORAMA as 0 or 1
+#endif
 
 // 0: noiseShape.tga and noiseErosion.tga
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
@@ -43,17 +48,17 @@
 // ------------------------------------------------------------
 // Debugging
 
-#define DEBUG_MODE            0 // Set to one of the values below for visualization
-#define DEBUG_MODE_WEATHER    1 // Cloud coverage in weather texture
-#define DEBUG_MODE_NO_NOISE   2 // Raymarching result without applying cloud noises (should look blocky)
-#define DEBUG_MODE_NO_EROSION 3 // Apply shape noise, but no erosion noise
+#define DEBUG_MODE                   0 // Set to one of the values below for visualization
+#define DEBUG_MODE_WEATHER           1 // Cloud coverage in weather texture
+#define DEBUG_MODE_NO_NOISE          2 // Raymarching result without applying cloud noises (should look blocky)
+#define DEBUG_MODE_NO_EROSION        3 // Apply shape noise, but no erosion noise
 
 // Replace luminance with transparency (which is 1.0 - transmittance)
-#define DEBUG_TRANSPARENCY    0
+#define DEBUG_TRANSPARENCY           0
 // Check if volume lighting resulted in NaN or minus values.
-#define DEBUG_BAD_LIGHTING    0
+#define DEBUG_BAD_LIGHTING           0
 // Check actual number of iterations.
-#define DEBUG_NUM_ITERATIONS  0
+#define DEBUG_NUM_ITERATIONS         0
 
 // ------------------------------------------------------------
 // Input
@@ -137,9 +142,6 @@ float getErosionNoiseScale() { return uboCloud.erosionNoiseScale; }
 float getCloudCurliness() { return uboCloud.cloudCurliness; }
 vec3 getSunIntensity() { return uboCloud.sunIntensity.xyz; }
 vec3 getSunDirection() { return uboCloud.sunDirection.xyz; }
-
-float getFOV() { return uboPerFrame.projParams.z; }
-float getAspectRatioWH() { return uboPerFrame.projParams.w; }
 
 float remap(float x, float oldMin, float oldMax, float newMin, float newMax) {
 	return newMin + (newMax - newMin) * (x - oldMin) / (oldMax - oldMin);
@@ -414,11 +416,13 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 			break;
 		}
 
+#if !RENDER_PANORAMA
 		// Stop raymarching if there is an occluder.
 		vec3 currentPosVS = getViewPositionFromWorldPosition(currentPos);
 		if (currentPosVS.z < occluderPosVS.z) {
 			break;
 		}
+#endif
 
 #if DEBUG_MODE == DEBUG_MODE_WEATHER
 		return vec4(vec3(sampleWeather(currentPos).cloudCoverage), 0.0);
@@ -569,7 +573,7 @@ vec4 traceScene(Ray camera, vec3 sunDir, vec2 uv, float stbn) {
 
 vec3 getViewDirection(vec2 uv) {
 	vec3 P = vec3(2.0 * uv - 1.0, 0.0);
-	P.x *= getAspectRatioWH();
+	P.x *= getAspectRatio();
 	P.z = -(1.0 / tan(getFOV() * 0.5));
 	P = normalize(P);
 	
@@ -589,7 +593,7 @@ vec2 getPrevScreenUV(vec2 currentUV) {
 #if 1
 	float zOnPlane = -(1.0 / tan(getFOV() * 0.5));
 	P.xy *= zOnPlane / P.z;
-	P.x /= getAspectRatioWH();
+	P.x /= getAspectRatio();
 	return 0.5 * (P.xy + vec2(1.0));
 #else
 	// I don't remember where I got this from?
@@ -597,7 +601,7 @@ vec2 getPrevScreenUV(vec2 currentUV) {
 	float b = P.y;
 	float c = P.z;
 	float z = -(1.0 / tan(getFOV() * 0.5));
-	float k = 1.0 / getAspectRatioWH();
+	float k = 1.0 / getAspectRatio();
 	float m = z * sqrt(1.0 - c*c) / (c * sqrt(a*a + b*b));
 	float u = 0.5 * (1.0 + a*m*k);
 	float v = 0.5 * (1.0 + b*m);
@@ -605,7 +609,7 @@ vec2 getPrevScreenUV(vec2 currentUV) {
 #endif
 }
 
-void main() {
+void mainScreen() {
 	ivec2 sceneSize = imageSize(outRenderTarget);
 	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
 
@@ -664,4 +668,57 @@ void main() {
 	outResult.xyz = min(outResult.xyz, vec3(65535.0));
 
 	imageStore(outRenderTarget, currentTexel, outResult);
+}
+
+void mainPanorama() {
+	ivec2 sceneSize = imageSize(outRenderTarget);
+	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
+
+	if (any(greaterThanEqual(currentTexel, sceneSize))) {
+		return;
+	}
+
+	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1, 1)); // [0.0, 1.0]
+	vec3 viewDir = EquirectangularToCube(uv);
+
+	// NOTE: GL_REPEAT has no effect to texelFetch()
+	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
+	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
+
+	if (uboCloud.bTemporalReprojection != 0) {
+		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
+		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+			vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
+			imageStore(outRenderTarget, currentTexel, prevResult);
+			return;
+		}
+	}
+
+	Ray cameraRay;
+	cameraRay.origin = uboPerFrame.cameraPositionWS;
+	cameraRay.direction = viewDir;
+
+	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.
+	// This constant is empirical and needs to be adaptive to cloud layer min/max heights.
+	float layerD = 15.0;
+	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= layerD
+		|| abs(cameraRay.origin.y - getCloudLayerMax()) <= layerD) {
+		cameraRay.origin.y += layerD;
+	}
+
+	vec3 sunDir = getSunDirection();
+
+	// (x, y, z) = luminance, w = transmittance
+	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
+	outResult.xyz = min(outResult.xyz, vec3(65535.0));
+
+	imageStore(outRenderTarget, currentTexel, outResult);
+}
+
+void main() {
+#if RENDER_PANORAMA
+	mainPanorama();
+#else
+	mainScreen();
+#endif
 }
