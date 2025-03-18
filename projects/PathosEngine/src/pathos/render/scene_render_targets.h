@@ -74,7 +74,7 @@ namespace pathos {
 		std::vector<GLuint> ssrPreconvolutionViews;
 		std::vector<GLuint> ssrPreconvolutionTempViews;
 
-		// Volumetric Clouds
+		// Volumetric Clouds (only volumetricCloudA is used if panorama mode)
 		GLuint volumetricCloudA = 0; // Prev and current, rotated
 		GLuint volumetricCloudB = 0; // Prev and current, rotated
 

@@ -20,6 +20,9 @@
 	#error Should define RENDER_PANORAMA as 0 or 1
 #endif
 
+#define WORK_GROUP_SIZE_X            16
+#define WORK_GROUP_SIZE_Y            16
+
 // 0: noiseShape.tga and noiseErosion.tga
 // 1: noiseShapePacked.tga and noiseErosionPacked.tga
 #define PACKED_NOISE_TEXTURES        1
@@ -89,9 +92,10 @@ layout (std140, binding = 1) uniform UBO_VolumetricCloud {
 
 	int   bTemporalReprojection;
 	uint  frameCounter;
+	float panoramaCameraY;
 } uboCloud;
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = WORK_GROUP_SIZE_X, local_size_y = WORK_GROUP_SIZE_Y) in;
 
 layout (binding = 0) uniform sampler2D inSceneDepth;
 layout (binding = 1) uniform sampler2D inWeatherMap;
@@ -121,6 +125,13 @@ const uint bayerPattern[16u] = uint[]
 	12, 4, 14, 6,
 	3, 11, 1, 9,
 	15, 7, 13, 5
+);
+const ivec2 bayerOffset[16u] = ivec2[]
+(
+	ivec2(0, 0), ivec2(0, 2), ivec2(2, 0), ivec2(2, 2),
+	ivec2(0, 3), ivec2(0, 1), ivec2(2, 3), ivec2(2, 1),
+	ivec2(3, 0), ivec2(3, 2), ivec2(1, 0), ivec2(1, 2),
+	ivec2(3, 3), ivec2(3, 1), ivec2(1, 3), ivec2(1, 1)
 );
 
 // ------------------------------------------------------------
@@ -609,6 +620,23 @@ vec2 getPrevScreenUV(vec2 currentUV) {
 #endif
 }
 
+float sampleSTBN(ivec2 texel) {
+	// NOTE: GL_REPEAT has no effect to texelFetch()
+	ivec3 stbnPos = ivec3(texel.x % 128, texel.y % 128, uboCloud.frameCounter % 64);
+	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
+	return stbn;
+}
+
+vec3 relaxCameraOrigin(vec3 pos) {
+	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.
+	// This constant is empirical and needs to be adaptive to cloud layer min/max heights.
+	const float layerD = 15.0;
+	if (abs(pos.y - getCloudLayerMin()) <= layerD || abs(pos.y - getCloudLayerMax()) <= layerD) {
+		pos.y += layerD;
+	}
+	return pos;
+}
+
 void mainScreen() {
 	ivec2 sceneSize = imageSize(outRenderTarget);
 	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
@@ -618,10 +646,8 @@ void mainScreen() {
 	}
 	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1,1)); // [0.0, 1.0]
 	vec3 viewDir = getViewDirection(uv);
-
-	// NOTE: GL_REPEAT has no effect to texelFetch()
-	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
-	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
+	vec3 sunDir = getSunDirection();
+	float stbn = sampleSTBN(currentTexel);
 
 	if (uboCloud.bTemporalReprojection != 0) {
 #define REPROJECTION_METHOD 1
@@ -629,7 +655,7 @@ void mainScreen() {
 		vec2 REPROJECTION_FETCH_OFFSET = vec2(0.5) / sceneSize;
 		const float REPROJECTION_INVALID_ANGLE = -1.0;//cos(0.0174533); // 1 degrees
 		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+		if (bayerIndex != bayerPattern[uboCloud.frameCounter & 15]) {
 			vec2 prevUV = getPrevScreenUV(uv);
 			if (0.0 <= prevUV.x && prevUV.x < 1.0 && 0.0 <= prevUV.y && prevUV.y < 1.0) {
 				ivec2 prevTexel = ivec2(prevUV * vec2(sceneSize));
@@ -641,7 +667,7 @@ void mainScreen() {
 		// Reference quality for static camera
 #elif REPROJECTION_METHOD == 2
 		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
+		if (bayerIndex != bayerPattern[uboCloud.frameCounter & 15]) {
 			vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
 			imageStore(outRenderTarget, currentTexel, prevResult);
 			return;
@@ -650,19 +676,9 @@ void mainScreen() {
 	}
 
 	Ray cameraRay;
-	cameraRay.origin = uboPerFrame.cameraPositionWS;
+	cameraRay.origin = relaxCameraOrigin(uboPerFrame.cameraPositionWS);
 	cameraRay.direction = viewDir;
-
-	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.
-	// This constant is empirical and needs to be adaptive to cloud layer min/max heights.
-	float layerD = 15.0;
-	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= layerD
-		|| abs(cameraRay.origin.y - getCloudLayerMax()) <= layerD) {
-		cameraRay.origin.y += layerD;
-	}
 	
-	vec3 sunDir = getSunDirection();
-
 	// (x, y, z) = luminance, w = transmittance
 	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
 	outResult.xyz = min(outResult.xyz, vec3(65535.0));
@@ -670,49 +686,33 @@ void mainScreen() {
 	imageStore(outRenderTarget, currentTexel, outResult);
 }
 
+// Each frame renders 1/16 of total pixels.
 void mainPanorama() {
 	ivec2 sceneSize = imageSize(outRenderTarget);
-	ivec2 currentTexel = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 offset = bayerOffset[uboCloud.frameCounter & 15];
+	ivec2 texel = ivec2(gl_GlobalInvocationID.xy) * 4 + offset;
 
-	if (any(greaterThanEqual(currentTexel, sceneSize))) {
+	if (any(greaterThanEqual(texel, sceneSize))) {
 		return;
 	}
 
-	vec2 uv = vec2(currentTexel) / vec2(sceneSize - ivec2(1, 1)); // [0.0, 1.0]
+	vec2 uv = vec2(texel) / vec2(sceneSize - ivec2(1, 1)); // [0.0, 1.0]
 	vec3 viewDir = EquirectangularToCube(uv);
+	vec3 sunDir = getSunDirection();
+	float stbn = sampleSTBN(texel);
 
-	// NOTE: GL_REPEAT has no effect to texelFetch()
-	ivec3 stbnPos = ivec3(currentTexel.x % 128, currentTexel.y % 128, uboCloud.frameCounter % 64);
-	float stbn = texelFetch(inSTBN, stbnPos, 0).x;
-
-	if (uboCloud.bTemporalReprojection != 0) {
-		uint bayerIndex = (gl_GlobalInvocationID.y % 4) * 4 + (gl_GlobalInvocationID.x % 4);
-		if (bayerIndex != bayerPattern[uboCloud.frameCounter % 16]) {
-			vec4 prevResult = texelFetch(inReprojectionHistory, currentTexel, 0);
-			imageStore(outRenderTarget, currentTexel, prevResult);
-			return;
-		}
-	}
+	vec3 cameraPos = uboPerFrame.cameraPositionWS;
+	cameraPos.y = uboCloud.panoramaCameraY;
 
 	Ray cameraRay;
-	cameraRay.origin = uboPerFrame.cameraPositionWS;
+	cameraRay.origin = relaxCameraOrigin(cameraPos);
 	cameraRay.direction = viewDir;
-
-	// #todo-cloud: Raymarching will be broken if the camera is too close to the interfaces of cloud layers.
-	// This constant is empirical and needs to be adaptive to cloud layer min/max heights.
-	float layerD = 15.0;
-	if (abs(cameraRay.origin.y - getCloudLayerMin()) <= layerD
-		|| abs(cameraRay.origin.y - getCloudLayerMax()) <= layerD) {
-		cameraRay.origin.y += layerD;
-	}
-
-	vec3 sunDir = getSunDirection();
 
 	// (x, y, z) = luminance, w = transmittance
 	vec4 outResult = traceScene(cameraRay, sunDir, uv, stbn);
 	outResult.xyz = min(outResult.xyz, vec3(65535.0));
 
-	imageStore(outRenderTarget, currentTexel, outResult);
+	imageStore(outRenderTarget, texel, outResult);
 }
 
 void main() {

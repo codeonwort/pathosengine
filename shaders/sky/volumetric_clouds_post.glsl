@@ -46,6 +46,7 @@ void main() {
 	vec3 dir = getViewDirection(screenUV);
 	vec2 panoramaUV = CubeToEquirectangular(dir);
 
+	// Well... could make shader permutation like volumetric_clouds.glsl but this shader is fairly simple.
 	bool bPanorama = (uboCloudPost.bPanorama != 0);
 
 	float deviceZ = texelFetch(sceneDepth, ivec2(gl_FragCoord.xy), 0).r;

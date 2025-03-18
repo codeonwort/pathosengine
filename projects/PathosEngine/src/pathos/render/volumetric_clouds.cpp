@@ -24,11 +24,12 @@ namespace pathos {
 	static constexpr GLenum PF_volumetricCloud = GL_RGBA16F;
 
 	static ConsoleVariable<int32> cvar_enable_volClouds("r.cloud.enable", 1, "[0/1] Toggle volumetric clouds");
-	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize");
+	static ConsoleVariable<float> cvar_cloud_resolution("r.cloud.resolution", 0.5f, "Resolution scale of cloud texture relative to screenSize (no effect if panorama mode)");
 
 	static ConsoleVariable<int32> cvar_cloud_panorama("r.cloud.panorama", 0, "[0/1] Toggle volumetric clouds panorama mode");
-	static ConsoleVariable<int32> cvar_cloud_panoramaWidth("r.cloud.panoramaWidth", 4096, "Panorama texture width");
-	static ConsoleVariable<int32> cvar_cloud_panoramaHeight("r.cloud.panoramaHeight", 2048, "Panorama texture height");
+	static ConsoleVariable<int32> cvar_cloud_panoramaWidth("r.cloud.panoramaWidth", 2048, "Panorama texture width");
+	static ConsoleVariable<int32> cvar_cloud_panoramaHeight("r.cloud.panoramaHeight", 1024, "Panorama texture height");
+	static ConsoleVariable<float> cvar_cloud_panoramaCameraY("r.cloud.panoramaCameraY", 0.0f, "Panorama mode uses fixed camera altitude");
 
 	// #todo-cloud: Expose these cvars in VolumetricCloudComponent
 	// But without a good GUI it's rather convenient to control them with cvars.
@@ -85,6 +86,7 @@ namespace pathos {
 
 		int32 bTemporalReprojection;
 		uint32 frameCounter;
+		float panoramaCameraY;
 	};
 
 	struct UBO_VolumetricCloudPost {
@@ -216,23 +218,29 @@ namespace pathos {
 
 			uboData.bTemporalReprojection = (0 != cvar_cloud_temporalReprojection.getInt());
 			uboData.frameCounter = scene->frameNumber;
+			uboData.panoramaCameraY = cvar_cloud_panoramaCameraY.getFloat();
 		}
 		ubo.update(cmdList, UBO_VolumetricCloud::BINDING_POINT, &uboData);
+
+		const GLuint prevCloudTexture = sceneContext.getPrevVolumetricCloud(bPanorama ? 0 : scene->frameNumber);
+		const GLuint currCloudTexture = sceneContext.getVolumetricCloud(bPanorama ? 0 : scene->frameNumber);
 
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
 		cmdList.bindTextureUnit(1, scene->cloud->weatherTexture->internal_getGLName());
 		cmdList.bindTextureUnit(2, scene->cloud->shapeNoise->internal_getGLName());
 		cmdList.bindTextureUnit(3, scene->cloud->erosionNoise->internal_getGLName());
 		cmdList.bindTextureUnit(4, stbnTexture->internal_getGLName());
-		cmdList.bindTextureUnit(5, sceneContext.getPrevVolumetricCloud(scene->frameNumber));
-		cmdList.bindImageTexture(6, sceneContext.getVolumetricCloud(scene->frameNumber), 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
+		cmdList.bindTextureUnit(5, prevCloudTexture);
+		cmdList.bindImageTexture(6, currCloudTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, PF_volumetricCloud);
 
 		cmdList.bindSampler(2, cloudNoiseSampler->internal_getGLName());
 		cmdList.bindSampler(3, cloudNoiseSampler->internal_getGLName());
 		cmdList.bindSampler(4, stbnSampler->internal_getGLName());
 
-		GLuint workGroupsX = (GLuint)ceilf((float)(renderTargetWidth) / 16.0f);
-		GLuint workGroupsY = (GLuint)ceilf((float)(renderTargetHeight) / 16.0f);
+		const uint32 totalDispatchX = bPanorama ? (renderTargetWidth + 3) / 4 : renderTargetWidth;
+		const uint32 totalDispatchY = bPanorama ? (renderTargetHeight + 3) / 4 : renderTargetHeight;
+		const GLuint workGroupsX = (totalDispatchX + 15) / 16;
+		const GLuint workGroupsY = (totalDispatchY + 15) / 16;
 		cmdList.dispatchCompute(workGroupsX, workGroupsY, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -273,7 +281,9 @@ namespace pathos {
 			}
 			uboPost.update(cmdList, UBO_VolumetricCloudPost::BINDING_POINT, &uboData);
 
-			cmdList.bindTextureUnit(0, sceneContext.getVolumetricCloud(scene->frameNumber));
+			const GLuint currCloudTexture = sceneContext.getVolumetricCloud(bPanorama ? 0 : scene->frameNumber);
+
+			cmdList.bindTextureUnit(0, currCloudTexture);
 			cmdList.bindTextureUnit(1, sceneContext.sceneDepth);
 
 			fullscreenQuad->bindFullAttributesVAO(cmdList);
