@@ -330,6 +330,7 @@ namespace pathos {
 namespace pathos {
 
 	void MaterialTemplate::updatePlaceholderIx() {
+		// Find $NEED lines
 		MaterialTemplate& MT = *this;
 		const std::string NEED(NEED_HEADER);
 		const int32 totalLines = (int32)MT.sourceLines.size();
@@ -393,10 +394,28 @@ namespace pathos {
 		return instance;
 	}
 
+	pathos::MaterialTemplate* MaterialShaderAssembler::loadMaterialTemplateFromFile() {
+		std::string templatePathRel = MATERIAL_FOLDER;
+		templatePathRel += MATERIAL_TEMPLATE_FILENAME;
+
+		MaterialTemplate* MT = new MaterialTemplate;
+
+		// #todo-material-assembler: Parse includes when loading the template.
+		// Then how to parse includes in material shaders?
+		std::vector<std::string> emptyDefines;
+		std::vector<std::string> includeHistory;
+		ShaderStage::loadSourceInternal(templatePathRel, emptyDefines, 0, includeHistory, MT->sourceLines);
+		splitNewlines(MT->sourceLines);
+
+		MT->updatePlaceholderIx();
+
+		return MT;
+	}
+
 	MaterialShaderAssembler::~MaterialShaderAssembler() {
-		if (materialTemplate != nullptr) {
-			delete materialTemplate;
-			materialTemplate = nullptr;
+		if (prototypeMT != nullptr) {
+			delete prototypeMT;
+			prototypeMT = nullptr;
 		}
 	}
 
@@ -427,24 +446,7 @@ namespace pathos {
 		if (bTemplateLoaded) {
 			return;
 		}
-
-		std::string templatePathRel = MATERIAL_FOLDER;
-		templatePathRel += MATERIAL_TEMPLATE_FILENAME;
-
-		materialTemplate = new MaterialTemplate;
-		MaterialTemplate& MT = *materialTemplate;
-
-		// #todo-material-assembler: Parse includes when loading the template.
-		// Then how to parse includes in material shaders?
-		std::vector<std::string> emptyDefines;
-		std::vector<std::string> includeHistory;
-		ShaderStage::loadSourceInternal(templatePathRel, emptyDefines, 0, includeHistory, MT.sourceLines);
-		splitNewlines(MT.sourceLines);
-
-		// Find $NEED lines
-		const std::string NEED(NEED_HEADER);
-		MT.updatePlaceholderIx();
-
+		prototypeMT = loadMaterialTemplateFromFile();
 		bTemplateLoaded = true;
 	}
 
@@ -480,13 +482,6 @@ namespace pathos {
 	MaterialShaderAssembler::CompileResponse MaterialShaderAssembler::generateMaterialProgram(MaterialShader* targetMaterial, const char* fullpath, const char* filename, bool isHotReload) {
 		targetMaterial->sourceFullpath = fullpath;
 		targetMaterial->sourceFilename = filename;
-
-		std::fstream fileStream;
-		fileStream.open(fullpath, std::ios::in);
-		if (fileStream.is_open() == false) {
-			LOG(LogError, "[Material] Failed to open: %s", fullpath);
-			return CompileResponse::Failed;
-		}
 		
 		std::string materialName = filename;
 		materialName = materialName.substr(0, materialName.find_first_of('.'));
@@ -496,50 +491,100 @@ namespace pathos {
 			CHECKF(materialShaderMap.find(materialNameHash) == materialShaderMap.end(), "Material name conflict");
 		}
 
+		HotReloadContext hotReloadCtx;
+		hotReloadCtx.bHotReload = isHotReload;
+		hotReloadCtx.uboTotalBytes = targetMaterial->uboTotalBytes;
+		hotReloadCtx.textureParameters = &(targetMaterial->textureParameters);
+
+		ParserOutput parserOutput;
+		parseMaterialProgram(&parserOutput, prototypeMT, hotReloadCtx, fullpath);
+
+		if (parserOutput.status == ParserStatus::FileNotFound) {
+			LOG(LogError, "[Material] Failed to open: %s", fullpath);
+			return CompileResponse::Failed;
+		}
+		if (parserOutput.status == ParserStatus::CannotHotReloadUBO) {
+			LOG(LogError, "[Material] Reject hot reload due to different UBO sizes: %s", filename);
+			return CompileResponse::RejectHotReload;
+		}
+		if (parserOutput.status == ParserStatus::CannotHotReloadTextures) {
+			LOG(LogError, "[Material] Reject hot reload due to different texture parameters: %s", filename);
+			return CompileResponse::RejectHotReload;
+		}
+		CHECK(parserOutput.status == ParserStatus::Success);
+
+		targetMaterial->materialName          = std::move(materialName);
+		targetMaterial->shadingModel          = parserOutput.shadingModel;
+		targetMaterial->bTrivialDepthOnlyPass = parserOutput.bTrivialDepthOnlyPass;
+		targetMaterial->uboTotalBytes         = parserOutput.uboTotalElements * 4;
+		targetMaterial->constantParameters    = std::move(parserOutput.materialConstParameters);
+		targetMaterial->textureParameters     = std::move(parserOutput.materialTextureParameters);
+		targetMaterial->generateShaderProgram(&(parserOutput.MT), isHotReload);
+
+		materialShaderMap[materialNameHash] = targetMaterial;
+
+		return CompileResponse::Compiled;
+	}
+
+	void MaterialShaderAssembler::parseMaterialProgram(ParserOutput* outResult, const MaterialTemplate* prototypeMT, const HotReloadContext& hotReloadCtx, const char* fullpath) {
+		// Try to open the file.
+		std::fstream fileStream;
+		fileStream.open(fullpath, std::ios::in);
+		if (fileStream.is_open() == false) {
+			outResult->status = ParserStatus::FileNotFound;
+			return;
+		}
+
+		uint32& uboTotalElements = outResult->uboTotalElements;
+		std::vector<MaterialConstantParameter>& materialConstParameters = outResult->materialConstParameters;
+		std::vector<MaterialTextureParameter>& materialTextureParameters = outResult->materialTextureParameters;
+
 		// Gather original lines
-		std::vector<std::string> materialLines;
+		std::vector<std::string> originalLines;
 		while (fileStream) {
 			std::string line;
 			std::getline(fileStream, line);
-			materialLines.emplace_back(line);
+			originalLines.emplace_back(line);
 		}
 
-		auto assembleBlock = [&materialLines](int32 beginIx, int32 endIx) -> std::string {
+		auto assembleBlock = [&originalLines](int32 beginIx, int32 endIx) -> std::string {
 			std::stringstream ss("");
 			for (int32 ix = beginIx; ix <= endIx; ++ix) {
-				ss << materialLines[ix];
+				ss << originalLines[ix];
 				ss << '\n';
 			}
 			return ss.str();
 		};
 
 		// Parse parameter descriptions.
-		const int32 totalMaterialLines = (int32)materialLines.size();
-		std::vector<TextureParameterDesc> textureParams;
-		std::vector<ConstantParameterDesc> constParams;
-		parseMaterialParameters(materialLines, textureParams, constParams);
+		const int32 totalSourceLines = (int32)originalLines.size();
+		std::vector<TextureParameterDesc> textureParamDescs;
+		std::vector<ConstantParameterDesc> constParamDescs;
+		parseMaterialParameters(originalLines, textureParamDescs, constParamDescs);
 
+		// Assemble an UBO from constant parameter descs.
 		std::string uniformBufferString;
-		uint32 uboTotalElements = 0;
-		std::vector<MaterialConstantParameter> materialConstParameters;
-		assembleUniformBuffer(constParams, uniformBufferString, uboTotalElements, materialConstParameters);
+		uboTotalElements = 0;
+		assembleUniformBuffer(constParamDescs, uniformBufferString, uboTotalElements, materialConstParameters);
 
-		if (isHotReload && uboTotalElements * 4 != targetMaterial->uboTotalBytes) {
-			LOG(LogError, "[Material] Reject hot reload due to different UBO sizes: %s", filename);
-			return CompileResponse::RejectHotReload;
+		// Check if UBO can be hot reloaded.
+		if (hotReloadCtx.bHotReload && uboTotalElements * 4 != hotReloadCtx.uboTotalBytes) {
+			outResult->status = ParserStatus::CannotHotReloadUBO;
+			return;
 		}
 
-		std::vector<MaterialTextureParameter> materialTextureParameters;
+		// Assemble texture parameters from texture parameter descs.
 		std::string texturesString;
-		assembleTextureParameters(textureParams, texturesString, materialTextureParameters);
+		assembleTextureParameters(textureParamDescs, texturesString, materialTextureParameters);
 
-		if (isHotReload) {
-			bool changed = targetMaterial->textureParameters.size() != materialTextureParameters.size();
+		// Check if texture parameters can be hot reloaded.
+		if (hotReloadCtx.bHotReload) {
+			bool changed = hotReloadCtx.textureParameters->size() != materialTextureParameters.size();
 			if (!changed) {
-				size_t n = targetMaterial->textureParameters.size();
+				size_t n = hotReloadCtx.textureParameters->size();
 				std::vector<uint32> A(n), B(n);
 				for (size_t i = 0; i < n; ++i) {
-					A[i] = targetMaterial->textureParameters[i].binding;
+					A[i] = (*(hotReloadCtx.textureParameters))[i].binding;
 					B[i] = materialTextureParameters[i].binding;
 				}
 				std::sort(A.begin(), A.end());
@@ -547,22 +592,24 @@ namespace pathos {
 				changed = A != B;
 			}
 			if (changed) {
-				LOG(LogError, "[Material] Reject hot reload due to different texture parameters: %s", filename);
-				return CompileResponse::RejectHotReload;
+				outResult->status = ParserStatus::CannotHotReloadTextures;
+				return;
 			}
 		}
 
 		PlaceholderDesc placeholders;
-		scanPlaceholders(materialLines, placeholders);
+		scanPlaceholders(originalLines, placeholders);
 		bool bEmbmedGlslExists = placeholders.embedGlslBeginIx >= 0 && placeholders.embedGlslEndIx >= 0;
-		EMaterialShadingModel shadingModel = parseShadingModel(materialLines[placeholders.materialShadingModelIx]);
-		bool bForwardShading = (shadingModel == EMaterialShadingModel::TRANSLUCENT);
-		bool bForwardShadingBlockExists = (placeholders.getSceneColorBeginIx != -1) && (placeholders.getSceneColorEndIx) != -1 && (placeholders.getSceneColorBeginIx < placeholders.getSceneColorEndIx);
-		CHECK(!bForwardShading || bForwardShadingBlockExists);
+		outResult->shadingModel = parseShadingModel(originalLines[placeholders.materialShadingModelIx]);
+		outResult->bForwardShading = (outResult->shadingModel == EMaterialShadingModel::TRANSLUCENT);
+		outResult->bForwardShadingBlockExists = (placeholders.getSceneColorBeginIx != -1) && (placeholders.getSceneColorEndIx) != -1 && (placeholders.getSceneColorBeginIx < placeholders.getSceneColorEndIx);
+		outResult->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
+		CHECK(!outResult->bForwardShading || outResult->bForwardShadingBlockExists);
 
-		MaterialTemplate MT = materialTemplate->makeClone();
+		outResult->MT = prototypeMT->makeClone();
+		MaterialTemplate& MT = outResult->MT;
 
-		MT.replaceShadingModel(materialLines[placeholders.materialShadingModelIx]);
+		MT.replaceShadingModel(originalLines[placeholders.materialShadingModelIx]);
 		MT.replaceOutputWorldNormal(placeholders.bOutputWorldNormal ? "#define OUTPUTWORLDNORMAL 1" : "");
 		MT.replaceSkyboxMaterial(placeholders.bSkyboxMaterial ? "#define SKYBOXMATERIAL 1" : "");
 		MT.replaceTransferDrawID(placeholders.bTransferDrawID ? "#define TRANSFER_DRAW_ID 1" : "");
@@ -573,24 +620,14 @@ namespace pathos {
 		MT.replaceVPO(assembleBlock(placeholders.materialVPOBeginIx, placeholders.materialVPOEndIx));
 		MT.replaceAttr(assembleBlock(placeholders.materialAttrBeginIx, placeholders.materialAttrEndIx));
 		MT.replaceEmbedGlsl(bEmbmedGlslExists ? assembleBlock(placeholders.embedGlslBeginIx, placeholders.embedGlslEndIx) : "");
-		MT.replaceGetSceneColor(bForwardShading ? assembleBlock(placeholders.getSceneColorBeginIx, placeholders.getSceneColorEndIx) : "");
+		MT.replaceGetSceneColor(outResult->bForwardShading ? assembleBlock(placeholders.getSceneColorBeginIx, placeholders.getSceneColorEndIx) : "");
 
 		// Split newlines again (oneliner long UBOs cause strange shader compilation error).
 		splitNewlines(MT.sourceLines);
 		MT.updatePlaceholderIx();
 		MT.fixupNewlines();
 
-		targetMaterial->materialName          = std::move(materialName);
-		targetMaterial->shadingModel          = shadingModel;
-		targetMaterial->bTrivialDepthOnlyPass = placeholders.bTrivialDepthOnlyPass;
-		targetMaterial->uboTotalBytes         = uboTotalElements * 4;
-		targetMaterial->constantParameters    = std::move(materialConstParameters);
-		targetMaterial->textureParameters     = std::move(materialTextureParameters);
-		targetMaterial->generateShaderProgram(&MT, isHotReload);
-
-		materialShaderMap[materialNameHash] = targetMaterial;
-
-		return CompileResponse::Compiled;
+		outResult->status = ParserStatus::Success;
 	}
 
 }

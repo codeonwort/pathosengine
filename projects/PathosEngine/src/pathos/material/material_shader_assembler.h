@@ -1,5 +1,8 @@
 #pragma once
 
+#include "material_id.h"
+#include "material_parameter.h"
+
 #include "badger/types/int_types.h"
 #include <vector>
 #include <string>
@@ -39,7 +42,7 @@ namespace pathos {
 			}
 		}
 
-		MaterialTemplate makeClone() {
+		MaterialTemplate makeClone() const {
 			return *this;
 		}
 
@@ -104,9 +107,35 @@ namespace pathos {
 	// Generates material shaders based on material templates.
 	class MaterialShaderAssembler final {
 		enum class CompileResponse : uint8 { Failed, RejectHotReload, Compiled };
+		enum class ParserStatus : uint8 { FileNotFound, CannotHotReloadUBO, CannotHotReloadTextures, Success };
+		struct HotReloadContext {
+			bool bHotReload = false;
+			uint32 uboTotalBytes = 0;
+			std::vector<MaterialTextureParameter>* textureParameters = nullptr; // Should not be null if bHotReload == true
+		};
+		struct ParserOutput {
+			ParserStatus status;
+			// Source lines
+			MaterialTemplate MT;
+			// Characteristics
+			EMaterialShadingModel shadingModel;
+			bool bForwardShading;
+			bool bForwardShadingBlockExists;
+			bool bTrivialDepthOnlyPass;
+			// Shader parameters
+			uint32 uboTotalElements;
+			std::vector<MaterialConstantParameter> materialConstParameters;
+			std::vector<MaterialTextureParameter> materialTextureParameters;
+		};
 
 	public:
 		static MaterialShaderAssembler& get();
+		static MaterialTemplate* loadMaterialTemplateFromFile();
+		// @param outResult     The result. Check outResult->status to see if it succeeded.
+		// @param prototypeMT   A material template returned by loadMaterialTemplateFromFile()
+		// @param hotReloadCtx  If hot-reloading, provide this context
+		// @param fullpath      Shader full filepath (e.g., "C:/Workspace/Pathos/shaders/materials/gltf_opaque.glsl")
+		static void parseMaterialProgram(ParserOutput* outResult, const MaterialTemplate* prototypeMT, const HotReloadContext& hotReloadCtx, const char* fullpath);
 
 		void initializeMaterialShaders();
 
@@ -117,7 +146,7 @@ namespace pathos {
 		MaterialShader* findMaterialShaderByHash(uint32 materialNameHash);
 
 	private:
-		// Load material template files.
+		// Load material template file.
 		void loadMaterialTemplate();
 
 		// Enumerate material files and call generateMaterialShader().
@@ -130,7 +159,7 @@ namespace pathos {
 		MaterialShaderAssembler() = default;
 		~MaterialShaderAssembler();
 
-		MaterialTemplate* materialTemplate = nullptr;
+		MaterialTemplate* prototypeMT = nullptr;
 		bool bTemplateLoaded = false;
 
 		std::map<uint32, MaterialShader*> materialShaderMap;

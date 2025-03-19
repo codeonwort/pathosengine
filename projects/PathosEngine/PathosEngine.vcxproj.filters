@@ -931,6 +931,9 @@
     <ClInclude Include="src\pathos\rhi\sampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\material\material_parameter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\thirdparty\glm\glm.natvis" />

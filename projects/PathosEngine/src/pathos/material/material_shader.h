@@ -3,6 +3,7 @@
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/rhi/uniform_buffer.h"
 #include "pathos/material/material_id.h"
+#include "pathos/material/material_parameter.h"
 
 #include "badger/types/vector_types.h"
 #include <vector>
@@ -13,31 +14,6 @@ namespace pathos {
 	struct MaterialTemplate;
 	class ShaderProgram;
 	class Texture;
-
-	enum class EMaterialParameterDataType : uint32 {
-		Float,
-		Int,
-		Uint,
-		Bool
-	};
-
-	struct MaterialConstantParameter {
-		std::string name;
-		EMaterialParameterDataType datatype;
-		uint32 numElements;
-		union {
-			float fvalue[4];
-			int32 ivalue[4];
-			uint32 uvalue[4];
-			bool bvalue[4];
-		};
-		uint32 offset; // in UBO
-	};
-	struct MaterialTextureParameter {
-		std::string name;
-		uint32 binding;
-		Texture* texture = nullptr;
-	};
 
 	class MaterialShader {
 		friend class MaterialShaderAssembler;

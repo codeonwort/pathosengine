@@ -252,6 +252,7 @@
     <ClInclude Include="src\badger\types\noncopyable.h" />
     <ClInclude Include="src\badger\types\string_hash.h" />
     <ClInclude Include="src\badger\types\vector_types.h" />
+    <ClInclude Include="src\pathos\material\material_parameter.h" />
     <ClInclude Include="src\pathos\overlay\button.h" />
     <ClInclude Include="src\pathos\render\auto_exposure.h" />
     <ClInclude Include="src\pathos\render\fullscreen_util.h" />
