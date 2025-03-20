@@ -8,6 +8,38 @@
 #include <string>
 #include <map>
 
+// Intermediate data for MaterialShaderAssembler
+namespace pathos {
+	namespace material {
+
+		struct TextureParameterDesc {
+			uint32 lineIx;
+			uint32 binding;
+			std::string samplerType;
+			std::string name;
+
+			std::string toString() const;
+		};
+
+		struct ConstantParameterDesc {
+			uint32 lineIx;
+			std::string datatype;
+			std::string name;
+			uint32 numElements;
+			EMaterialParameterDataType datatypeEnum = EMaterialParameterDataType::Float;
+
+			ConstantParameterDesc(uint32 inLineIx, const std::string& inDatatype, const std::string& inName);
+
+			std::string toString() const;
+		};
+
+		void parseMaterialParameters(
+			const std::vector<std::string>& materialLines,
+			std::vector<TextureParameterDesc>& outTextureParams,
+			std::vector<ConstantParameterDesc>& outConstParams);
+	}
+}
+
 namespace pathos {
 
 	class MaterialShader;
