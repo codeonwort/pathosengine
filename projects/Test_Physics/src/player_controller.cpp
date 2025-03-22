@@ -26,6 +26,7 @@ void PlayerController::onTick(float deltaSeconds) {
 	if (target != nullptr) {
 		vector3 pos = target->getActorLocation();
 		pos.x += deltaRight;
+		pos.y += deltaForward;
 		target->setActorLocation(pos);
 	}
 }

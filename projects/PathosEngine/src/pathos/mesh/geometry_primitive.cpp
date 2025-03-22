@@ -272,28 +272,25 @@ namespace pathos {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// SphereGeometry
-	SphereGeometry::SphereGeometry(
-		float inRadius,
-		uint32 inDivision,
-		EPrimitiveInitOptions options)
-		: radius(inRadius)
-		, division(inDivision)
-	{
-		initializeVertexLayout(toVertexAttributes(options));
-		buildGeometry();
-		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
-			calculateTangentBasis();
-		}
-	}
 
-	void SphereGeometry::buildGeometry() {
-		uint32 numVertices = division * division;
-		uint32 numTriangles = division * (division - 1) * 2;
+	void SphereGeometry::generate(const Input& input, Output& output) {
+		float radius = input.radius;
+		uint32 division = input.subdivision;
+		EPrimitiveInitOptions options = input.options;
+		std::vector<float>& outPositions = output.positions;
+		std::vector<float>& outUVs = output.texcoords;
+		std::vector<float>& outNormals = output.normals;
+		std::vector<uint32>& outIndices = output.indices;
 
-		std::vector<GLfloat> positions(numVertices * 3);
-		std::vector<GLfloat> uvs(numVertices * 2);
-		std::vector<GLfloat> normals(numVertices * 3);
-		std::vector<GLuint> indices(numTriangles * 3);
+		const uint32 numVertices = division * division;
+		const uint32 numTriangles = division * (division - 1) * 2;
+		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
+
+		outPositions.resize(numVertices * 3);
+		if (bCalculateUV) outUVs.resize(numVertices * 2);
+		if (bCalculateNormal) outNormals.resize(numVertices * 3);
+		outIndices.resize(numTriangles * 3);
 
 		float pi = atan(1.f) * 4.f;
 		float pi_2 = pi * .5f, pi2 = pi + pi;
@@ -309,41 +306,68 @@ namespace pathos {
 				y = cos(phi) * sin(theta);
 				z = sin(phi);
 
-				positions[size_t(3 * k + 0)] = radius * x;
-				positions[size_t(3 * k + 1)] = radius * y;
-				positions[size_t(3 * k + 2)] = radius * z;
+				outPositions[size_t(3 * k + 0)] = radius * x;
+				outPositions[size_t(3 * k + 1)] = radius * y;
+				outPositions[size_t(3 * k + 2)] = radius * z;
 
-				normals[size_t(3 * k + 0)] = x;
-				normals[size_t(3 * k + 1)] = y;
-				normals[size_t(3 * k + 2)] = z;
+				if (bCalculateNormal) {
+					outNormals[size_t(3 * k + 0)] = x;
+					outNormals[size_t(3 * k + 1)] = y;
+					outNormals[size_t(3 * k + 2)] = z;
+				}
+				if (bCalculateUV) {
+					outUVs[size_t(2 * k + 0)] = theta / pi2;
+					outUVs[size_t(2 * k + 1)] = (phi + pi_2) / pi;
+				}
 
-				uvs[size_t(2 * k + 0)] = theta / pi2;
-				uvs[size_t(2 * k + 1)] = (phi + pi_2) / pi;
 				if (i != division - 1) {
 					if (j != division - 1) {
-						indices[size_t(6 * k + 0)] = k;
-						indices[size_t(6 * k + 1)] = k + division;
-						indices[size_t(6 * k + 2)] = k + division + 1;
-						indices[size_t(6 * k + 3)] = k;
-						indices[size_t(6 * k + 4)] = k + division + 1;
-						indices[size_t(6 * k + 5)] = k + 1;
+						outIndices[size_t(6 * k + 0)] = k;
+						outIndices[size_t(6 * k + 1)] = k + division;
+						outIndices[size_t(6 * k + 2)] = k + division + 1;
+						outIndices[size_t(6 * k + 3)] = k;
+						outIndices[size_t(6 * k + 4)] = k + division + 1;
+						outIndices[size_t(6 * k + 5)] = k + 1;
 					} else {
-						indices[size_t(6 * k + 0)] = k;
-						indices[size_t(6 * k + 1)] = k + division;
-						indices[size_t(6 * k + 2)] = k + 1;
-						indices[size_t(6 * k + 3)] = k;
-						indices[size_t(6 * k + 4)] = k + 1;
-						indices[size_t(6 * k + 5)] = k + 1 - division;
+						outIndices[size_t(6 * k + 0)] = k;
+						outIndices[size_t(6 * k + 1)] = k + division;
+						outIndices[size_t(6 * k + 2)] = k + 1;
+						outIndices[size_t(6 * k + 3)] = k;
+						outIndices[size_t(6 * k + 4)] = k + 1;
+						outIndices[size_t(6 * k + 5)] = k + 1 - division;
 					}
 				}
 				k++;
 			}
 		}
+	}
 
-		updatePositionData(positions.data(), (uint32)positions.size());
-		updateUVData(uvs.data(), (uint32)uvs.size());
-		updateNormalData(normals.data(), (uint32)normals.size());
-		updateIndexData(indices.data(), (uint32)indices.size());
+	SphereGeometry::SphereGeometry(const Input& input)
+		: SphereGeometry(input.radius, input.subdivision, input.options) {
+	}
+
+	SphereGeometry::SphereGeometry(float inRadius, uint32 inDivision, EPrimitiveInitOptions options)
+		: radius(inRadius) , division(inDivision)
+	{
+		initializeVertexLayout(toVertexAttributes(options));
+		buildGeometry(options);
+		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
+			calculateTangentBasis();
+		}
+	}
+
+	void SphereGeometry::buildGeometry(EPrimitiveInitOptions options) {
+		Input input{ radius, division };
+		Output output;
+		SphereGeometry::generate(input, output);
+
+		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
+
+		updatePositionData(output.positions.data(), (uint32)output.positions.size());
+		if (bCalculateUV) updateUVData(output.texcoords.data(), (uint32)output.texcoords.size());
+		if (bCalculateNormal) updateNormalData(output.normals.data(), (uint32)output.normals.size());
+		updateIndexData(output.indices.data(), (uint32)output.indices.size());
 	}
 
 }

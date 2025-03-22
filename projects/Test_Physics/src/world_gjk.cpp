@@ -10,13 +10,13 @@
 
 #include "badger/physics/collision.h"
 
-#define CAMERA_ORIGIN   vector3(0.0f, 2.0f, 10.0f)
+#define CAMERA_ORIGIN   vector3(0.0f, 2.0f, 7.0f)
 #define CAMERA_LOOKAT   vector3(0.0f, 0.0f, 0.0f)
 #define SUN_DIRECTION   glm::normalize(vector3(0.0f, -1.0f, -1.0f))
 #define SUN_COLOR       vector3(1.0f, 1.0f, 1.0f)
 #define SUN_ILLUMINANCE 2.5f
 
-#define COMPLEX_SHAPE   1
+#define COMPLEX_SHAPE   0
 
 void World_GJK::onInitialize() {
 	getCamera().lookAt(CAMERA_ORIGIN, CAMERA_LOOKAT, vector3(0.0f, 1.0f, 0.0f));
@@ -50,7 +50,16 @@ void World_GJK::onInitialize() {
 		geometry->calculateTangentBasis();
 	}
 #else
-	MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
+	//MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
+	MeshGeometry* geometry = new SphereGeometry(1.0f, 6);
+	SphereGeometry::Output geomOutput;
+	SphereGeometry::generate({ 1.0f, 6 }, geomOutput);
+	std::vector<vector3> geomVertices(geomOutput.positions.size() / 3);
+	for (size_t i = 0; i < geomVertices.size(); ++i) {
+		geomVertices[i].x = geomOutput.positions[i * 3 + 0];
+		geomVertices[i].y = geomOutput.positions[i * 3 + 1];
+		geomVertices[i].z = geomOutput.positions[i * 3 + 2];
+	}
 #endif
 
 	materialNoHit = Material::createMaterialInstance("solid_color");
@@ -59,11 +68,15 @@ void World_GJK::onInitialize() {
 	materialNoHit->setConstantParameter("roughness", 1.0f);
 	materialNoHit->setConstantParameter("emissive", vector3(0.0f));
 
-	materialOnHit = Material::createMaterialInstance("solid_color");
-	materialOnHit->setConstantParameter("albedo", vector3(0.9f, 0.2f, 0.2f));
-	materialOnHit->setConstantParameter("metallic", 0.0f);
+	materialOnHit = Material::createMaterialInstance("translucent_color");
+	materialOnHit->setConstantParameter("albedo", vector3(0.3f, 0.3f, 0.3f));
 	materialOnHit->setConstantParameter("roughness", 1.0f);
-	materialOnHit->setConstantParameter("emissive", vector3(0.0f));
+	materialOnHit->setConstantParameter("transmittance", vector3(0.8f));
+	//materialOnHit = Material::createMaterialInstance("solid_color");
+	//materialOnHit->setConstantParameter("albedo", vector3(0.9f, 0.2f, 0.2f));
+	//materialOnHit->setConstantParameter("metallic", 0.0f);
+	//materialOnHit->setConstantParameter("roughness", 1.0f);
+	//materialOnHit->setConstantParameter("emissive", vector3(0.0f));
 
 	StaticMesh* meshA = new StaticMesh(geometry, materialNoHit);
 	StaticMesh* meshB = new StaticMesh(geometry, materialNoHit);
@@ -72,7 +85,7 @@ void World_GJK::onInitialize() {
 	modelB = spawnActor<StaticMeshActor>();
 
 	modelA->setStaticMesh(meshA);
-	modelA->setActorLocation(vector3(-2.0f, 0.5f, 0.0f));
+	modelA->setActorLocation(vector3(-2.0f, 0.5f, 0.2f));
 
 	modelB->setStaticMesh(meshB);
 	modelB->setActorLocation(vector3(2.0f, 0.0f, 0.0f));
@@ -81,8 +94,8 @@ void World_GJK::onInitialize() {
 	bodyA.setShape(new badger::physics::ShapeConvex(vertices));
 	bodyB.setShape(new badger::physics::ShapeConvex(vertices));
 #else
-	bodyA.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
-	bodyB.setShape(new badger::physics::ShapeBox(vector3(2.0f)));
+	bodyA.setShape(new badger::physics::ShapeConvex(geomVertices));
+	bodyB.setShape(new badger::physics::ShapeConvex(geomVertices));
 #endif
 
 	{

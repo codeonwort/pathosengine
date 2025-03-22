@@ -50,6 +50,7 @@ namespace pathos {
 			PlaneGeometry::Direction direction = PlaneGeometry::Direction::Z,
 			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
 
+	private:
 		void buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options);
 
 	private:
@@ -58,12 +59,15 @@ namespace pathos {
 	};
 
 	class CubeGeometry : public MeshGeometry {
+
 	public:
 		CubeGeometry(
 			const vector3& halfSize,
 			bool smoothing = false,
 			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
+
 		void buildGeometry(bool smoothing);
+
 	private:
 		void buildGeometry_smoothing();
 		void buildGeometry_noSmoothing();
@@ -71,9 +75,29 @@ namespace pathos {
 	};
 
 	class SphereGeometry : public MeshGeometry {
+
 	public:
+		struct Input {
+			float radius;
+			uint32 subdivision = 20;
+			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default;
+		};
+		struct Output {
+			std::vector<float> positions;
+			std::vector<float> texcoords;
+			std::vector<float> normals;
+			std::vector<uint32> indices;
+		};
+		// NOTE: CalculateTangentBasis flag in input.options is ignored.
+		static void generate(const Input& input, Output& output);
+
+		SphereGeometry(const Input& input); // #todo-refactoring: Use this
+		// For backward compatibility
 		SphereGeometry(float radius, uint32 division = 20, EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-		void buildGeometry();
+
+	private:
+		void buildGeometry(EPrimitiveInitOptions options);
+
 	private:
 		float radius;
 		uint32 division;
