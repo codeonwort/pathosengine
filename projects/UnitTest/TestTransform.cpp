@@ -96,9 +96,9 @@ namespace UnitTest
 			vector3 v(1.0f, 0.0f, 0.0f);
 			v = vector3(M * vector4(v, 0.0f));
 
-			Assert::AreEqual(v.x, dir.x, 1e-6f, L"x mismatch");
-			Assert::AreEqual(v.y, dir.y, 1e-6f, L"y mismatch");
-			Assert::AreEqual(v.z, dir.z, 1e-6f, L"z mismatch");
+			Assert::AreEqual(dir.x, v.x, 1e-6f, L"x mismatch");
+			Assert::AreEqual(dir.y, v.y, 1e-6f, L"y mismatch");
+			Assert::AreEqual(dir.z, v.z, 1e-6f, L"z mismatch");
 		}
 	};
 }

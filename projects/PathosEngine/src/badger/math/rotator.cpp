@@ -16,15 +16,17 @@ Rotator Rotator::directionToYawPitch(const vector3& dir)
 	float pitch = asinf(dir.y / mag);
 	float planeRightX = sin(yaw);
 	float planeRightY = -cos(yaw);
-	float roll = asin(up.x * planeRightX + up.z * planeRightY);
+	float roll = asin(up.x * planeRightX + up.y * planeRightY);
 	if (up.y < 0.0f) roll = (roll < 0.0f ? -1.0f : 1.0f) * glm::pi<float>() - roll;
-	return Rotator(glm::degrees(yaw), glm::degrees(pitch), glm::degrees(roll), RotatorConvention::YXZ);
+	return Rotator(glm::degrees(yaw), glm::degrees(pitch), glm::degrees(roll), RotatorConvention::YawPitchRoll);
 }
 
 matrix4 Rotator::toMatrix() const {
-	if (convention == RotatorConvention::YXZ) {
-		return glm::eulerAngleYXZ(glm::radians(yaw), glm::radians(pitch), glm::radians(roll));
-	} else if (convention == RotatorConvention::ZYX) {
+	if (convention == RotatorConvention::YawPitchRoll) {
+		return glm::eulerAngleZXY(glm::radians(roll), glm::radians(pitch), glm::radians(yaw));
+	} else if (convention == RotatorConvention::RollYawPitch) {
+		return glm::eulerAngleXYZ(glm::radians(pitch), glm::radians(yaw), glm::radians(roll));
+	} else if (convention == RotatorConvention::PitchYawRoll) {
 		return glm::eulerAngleZYX(glm::radians(roll), glm::radians(yaw), glm::radians(pitch));
 	}
 	CHECK_NO_ENTRY();

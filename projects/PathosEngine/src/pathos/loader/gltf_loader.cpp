@@ -96,12 +96,12 @@ namespace pathos {
 			if (tinyNode.rotation.size() >= 4) {
 				// GLTF rotation is (x, y, z, w) but glm::quat is (w, x, y, z)
 				glm::quat q((float)tinyNode.rotation[3], (float)tinyNode.rotation[0], (float)tinyNode.rotation[1], (float)tinyNode.rotation[2]);
-				vector3 rot = glm::eulerAngles(q); // Maps to ZYX rotation ( why not documented :/ )
+				vector3 rot = glm::eulerAngles(q); // Rotate by pitch first, then yaw, then roll ( why not documented :/ )
 
 				desc.rotation.pitch = glm::degrees(rot.x);
 				desc.rotation.yaw = glm::degrees(rot.y);
 				desc.rotation.roll = glm::degrees(rot.z);
-				desc.rotation.convention = RotatorConvention::ZYX;
+				desc.rotation.convention = RotatorConvention::PitchYawRoll;
 			}
 			if (tinyNode.matrix.size() >= 16) {
 				// #todo-gltf: Parse matrix

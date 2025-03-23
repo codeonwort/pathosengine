@@ -5,8 +5,9 @@
 
 // Rotation order
 enum class RotatorConvention {
-	YXZ, // yaw -> pitch -> roll
-	ZYX, // roll -> yaw -> pitch
+	YawPitchRoll, // (rollMatrix * pitchMatrix * yawMatrix * direction)
+	RollYawPitch, // (pitchMatrix * yawMatrix * rollMatrix * direction)
+	PitchYawRoll, // (rollMatrix * yawMatrix * pitchMatrix * direction)
 };
 
 // Yaw-pitch-roll
@@ -18,10 +19,10 @@ struct Rotator {
 		: yaw(0.0f)
 		, pitch(0.0f)
 		, roll(0.0f)
-		, convention(RotatorConvention::YXZ)
+		, convention(RotatorConvention::YawPitchRoll)
 	{}
 
-	Rotator(float inYaw, float inPitch, float inRoll, RotatorConvention inConvention = RotatorConvention::YXZ)
+	Rotator(float inYaw, float inPitch, float inRoll, RotatorConvention inConvention = RotatorConvention::YawPitchRoll)
 		: yaw(inYaw)
 		, pitch(inPitch)
 		, roll(inRoll)
