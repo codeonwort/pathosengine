@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 
+#include "badger/math/rotator.h"
 #include <math.h>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -69,6 +70,35 @@ namespace UnitTest
 			fn(vec2(0.3, 0.6));
 			fn(vec2(0.8, 0.7));
 			fn(vec2(0.2, 0.9));
+		}
+
+		TEST_METHOD(TestRotatorToMatrix)
+		{
+			vector3 dir(1.0f, 0.0f, 0.0f);
+			Rotator rot;
+			rot.yaw = rot.pitch = 0.0f;
+			rot.roll = -90.0f;
+
+			matrix4 M = rot.toMatrix();
+			vector3 dir2 = vector3(M * vector4(dir, 0.0f));
+
+			Assert::AreEqual(0.0f, dir2.x, 1e-6f);
+			Assert::AreEqual(-1.0f, dir2.y, 1e-6f);
+			Assert::AreEqual(0.0f, dir2.z, 1e-6f);
+		}
+
+		TEST_METHOD(TestDirectionToYawPitch)
+		{
+			vector3 dir(0.0f, -1.0f, 0.0f);
+			Rotator rot = Rotator::directionToYawPitch(dir);
+
+			matrix4 M = rot.toMatrix();
+			vector3 v(1.0f, 0.0f, 0.0f);
+			v = vector3(M * vector4(v, 0.0f));
+
+			Assert::AreEqual(v.x, dir.x, 1e-6f, L"x mismatch");
+			Assert::AreEqual(v.y, dir.y, 1e-6f, L"y mismatch");
+			Assert::AreEqual(v.z, dir.z, 1e-6f, L"z mismatch");
 		}
 	};
 }
