@@ -26,7 +26,7 @@ static const vector3 BOX_EXTENTS     = 10.0f * vector3(1.0f, 1.0f, 0.5f);
 static const float   GROUND_RADIUS   = 100.0f;
 
 void World_Physics::onInitialize() {
-	auto G_sphere = new SphereGeometry(SPHERE_RADIUS, 30);
+	auto G_sphere = new SphereGeometry(SphereGeometry::Input{ SPHERE_RADIUS, 30 });
 	auto G_box = new CubeGeometry(0.5f * BOX_EXTENTS);
 #if !BALL_RANDOM_MATERIALS
 	auto M_sphere = Material::createMaterialInstance("solid_color");
@@ -36,7 +36,7 @@ void World_Physics::onInitialize() {
 	M_sphere->setConstantParameter("emissive", vector3(0.0f));
 #endif
 
-	auto G_ground = new SphereGeometry(GROUND_RADIUS, 60);
+	auto G_ground = new SphereGeometry(SphereGeometry::Input{ GROUND_RADIUS, 60 });
 	auto M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.9f));
 	M_ground->setConstantParameter("metallic", 0.0f);

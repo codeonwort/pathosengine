@@ -169,8 +169,8 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Create geometries
 
-	auto geom_sphere_big = new SphereGeometry(0.15f, 30);
-	auto geom_sphere = new SphereGeometry(0.05f, 30);
+	auto geom_sphere_big = new SphereGeometry(SphereGeometry::Input{ 0.15f, 30 });
+	auto geom_sphere = new SphereGeometry(SphereGeometry::Input{ 0.05f, 30 });
 	auto geom_sceneCapture = new PlaneGeometry(PlaneGeometry::Input{ 1.0f, 1.0f });
 	auto geom_ground = new PlaneGeometry(PlaneGeometry::Input{ 100.0f, 100.0f, 4, 4 });
 	auto geom_cube = new CubeGeometry(vector3(0.05f));

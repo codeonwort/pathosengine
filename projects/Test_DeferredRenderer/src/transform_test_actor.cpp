@@ -19,7 +19,7 @@ TransformTestActor::TransformTestActor()
 	M_base->setConstantParameter("roughness", 0.9f);
 	M_base->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
-	MeshGeometry* rootG = new SphereGeometry(0.1f);
+	MeshGeometry* rootG = new SphereGeometry(SphereGeometry::Input{ 0.1f });
 	Material* rootM = Material::createMaterialInstance("solid_color");
 	rootM->copyParametersFrom(M_base);
 	rootM->setConstantParameter("roughness", 0.35f);

@@ -51,7 +51,7 @@ void World_GJK::onInitialize() {
 	}
 #else
 	//MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
-	MeshGeometry* geometry = new SphereGeometry(1.0f, 6);
+	MeshGeometry* geometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 6 });
 	SphereGeometry::Output geomOutput;
 	SphereGeometry::generate({ 1.0f, 6 }, geomOutput);
 	std::vector<vector3> geomVertices(geomOutput.positions.size() / 3);

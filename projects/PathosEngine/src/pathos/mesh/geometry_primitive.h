@@ -78,16 +78,7 @@ namespace pathos {
 		// NOTE: CalculateTangentBasis flag in input.options is ignored.
 		static void generate(const Input& input, Output& output);
 
-		SphereGeometry(const Input& input); // #todo-refactoring: Use this
-		// For backward compatibility
-		SphereGeometry(float radius, uint32 division = 20, EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-
-	private:
-		void buildGeometry(EPrimitiveInitOptions options);
-
-	private:
-		float radius;
-		uint32 division;
+		SphereGeometry(const Input& input);
 	};
 
 }

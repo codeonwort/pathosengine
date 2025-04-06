@@ -109,7 +109,7 @@ void World_LightRoomOld::setupScene() {
 	const float boxHalfSize = 0.1f;
 
 	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
-	MeshGeometry* G_ball = new SphereGeometry(boxHalfSize);
+	MeshGeometry* G_ball = new SphereGeometry(SphereGeometry::Input{ boxHalfSize });
 
 	Material* M_box = Material::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -144,7 +144,7 @@ void World_LightRoomOld::setupScene() {
 	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
 	pointLight0->setAttenuationRadius(0.7f);
 
-	MeshGeometry* G_pointLightGizmo = new SphereGeometry(1.0f);
+	MeshGeometry* G_pointLightGizmo = new SphereGeometry(SphereGeometry::Input{ 1.0f });
 	Material* M_pointLightGizmo = Material::createMaterialInstance("solid_color");
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);

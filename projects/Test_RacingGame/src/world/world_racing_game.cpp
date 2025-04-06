@@ -102,7 +102,7 @@ void World_RacingGame::prepareAssets() {
 	M_color->setConstantParameter("roughness", 0.2f);
 	M_color->setConstantParameter("emissive", vector3(0.0f));
 
-	auto G_sphere = new SphereGeometry(1.0f, 30);
+	auto G_sphere = new SphereGeometry(SphereGeometry::Input{ 1.0f, 30 });
 
 	carDummyMesh = makeShared<StaticMesh>(G_sphere, M_color);
 

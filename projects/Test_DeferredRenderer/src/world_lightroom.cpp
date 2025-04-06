@@ -184,7 +184,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		M_leafLight->setConstantParameter("roughness", 1.0f);
 		M_leafLight->setConstantParameter("emissive", vector3(100.0f, 60.0f, 30.0f));
 
-		auto G_leafLight = new SphereGeometry(1.0f, 20);
+		auto G_leafLight = new SphereGeometry(SphereGeometry::Input{ 1.0f, 20 });
 
 		float totalLeafWeight = 0.0f;
 		size_t numMarkers = leafMarkers.size();

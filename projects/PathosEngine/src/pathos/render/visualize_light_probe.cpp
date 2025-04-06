@@ -64,7 +64,7 @@ namespace pathos {
 
 	void VisualizeLightProbePass::initializeResources(RenderCommandList& cmdList) {
 		auto attribs = EPrimitiveInitOptions::CalculatePosition | EPrimitiveInitOptions::CalculateUV | EPrimitiveInitOptions::CalculateNormal;
-		sphereGeom = new SphereGeometry(1.0f, 20, attribs);
+		sphereGeom = new SphereGeometry(SphereGeometry::Input{ 1.0f, 20, attribs });
 		gRenderDevice->createFramebuffers(1, &fbo);
 		ubo.init<UBO_VisualizeLightProbe>("UBO_VisualizeLightProbe");
 	}

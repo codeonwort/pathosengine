@@ -331,32 +331,23 @@ namespace pathos {
 		}
 	}
 
-	SphereGeometry::SphereGeometry(const Input& input)
-		: SphereGeometry(input.radius, input.subdivision, input.options) {
-	}
-
-	SphereGeometry::SphereGeometry(float inRadius, uint32 inDivision, EPrimitiveInitOptions options)
-		: radius(inRadius) , division(inDivision)
-	{
-		initializeVertexLayout(toVertexAttributes(options));
-		buildGeometry(options);
-		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
-			calculateTangentBasis();
-		}
-	}
-
-	void SphereGeometry::buildGeometry(EPrimitiveInitOptions options) {
-		Input input{ radius, division };
+	SphereGeometry::SphereGeometry(const Input& input) {
 		Output output;
 		SphereGeometry::generate(input, output);
 
-		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
-		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
+		const bool bCalculateUV = ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateNormal);
+
+		initializeVertexLayout(toVertexAttributes(input.options));
 
 		updatePositionData(output.positions.data(), (uint32)output.positions.size());
 		if (bCalculateUV) updateUVData(output.texcoords.data(), (uint32)output.texcoords.size());
 		if (bCalculateNormal) updateNormalData(output.normals.data(), (uint32)output.normals.size());
 		updateIndexData(output.indices.data(), (uint32)output.indices.size());
+
+		if (ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateTangentBasis)) {
+			calculateTangentBasis();
+		}
 	}
 
 }
