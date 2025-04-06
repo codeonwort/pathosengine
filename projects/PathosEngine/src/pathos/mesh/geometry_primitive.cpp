@@ -112,34 +112,23 @@ namespace pathos {
 		}
 	}
 
-	PlaneGeometry::PlaneGeometry(const Input& input)
-		: PlaneGeometry(input.width, input.height, input.gridX, input.gridY, input.direction, input.options)
-	{}
-
-	PlaneGeometry::PlaneGeometry(
-		float inWidth, float inHeight, uint32 inGridX, uint32 inGridY,
-		PlaneGeometry::Direction direction, EPrimitiveInitOptions options)
-		: width(inWidth), height(inHeight), gridX(inGridX), gridY(inGridY)
-	{
-		initializeVertexLayout(toVertexAttributes(options));
-		buildGeometry(direction, options);
-		if (ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateTangentBasis)) {
-			calculateTangentBasis();
-		}
-	}
-
-	void PlaneGeometry::buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options) {
-		Input input{ width, height, gridX, gridY, direction, options };
+	PlaneGeometry::PlaneGeometry(const Input& input){
 		Output output;
 		PlaneGeometry::generate(input, output);
 
-		const bool bCalculateUV = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateUV);
-		const bool bCalculateNormal = ENUM_HAS_FLAG(options, EPrimitiveInitOptions::CalculateNormal);
+		const bool bCalculateUV = ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateUV);
+		const bool bCalculateNormal = ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateNormal);
+
+		initializeVertexLayout(toVertexAttributes(input.options));
 
 		updatePositionData(output.positions.data(), (uint32)output.positions.size());
 		if (bCalculateUV) updateUVData(output.texcoords.data(), (uint32)output.texcoords.size());
 		if (bCalculateNormal) updateNormalData(output.normals.data(), (uint32)output.normals.size());
 		updateIndexData(output.indices.data(), (uint32)output.indices.size());
+
+		if (ENUM_HAS_FLAG(input.options, EPrimitiveInitOptions::CalculateTangentBasis)) {
+			calculateTangentBasis();
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////

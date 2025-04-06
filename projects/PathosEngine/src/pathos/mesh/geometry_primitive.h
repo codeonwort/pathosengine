@@ -42,20 +42,7 @@ namespace pathos {
 		// NOTE: CalculateTangentBasis flag in input.options is ignored.
 		static void generate(const Input& input, Output& output);
 
-		PlaneGeometry(const Input& input); // #todo-refactoring: Use this
-		// For backward compatibility
-		PlaneGeometry(
-			float width, float height,
-			uint32 gridX = 1, uint32 gridY = 1,
-			PlaneGeometry::Direction direction = PlaneGeometry::Direction::Z,
-			EPrimitiveInitOptions options = EPrimitiveInitOptions::Default);
-
-	private:
-		void buildGeometry(PlaneGeometry::Direction direction, EPrimitiveInitOptions options);
-
-	private:
-		float width, height;
-		uint32 gridX, gridY;
+		PlaneGeometry(const Input& input);
 	};
 
 	class CubeGeometry : public MeshGeometry {

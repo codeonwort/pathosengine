@@ -146,7 +146,7 @@ void World2::setupScene()
 	// Geometries
 
 	auto geom_sphere = new SphereGeometry(5.0f, 30);
-	auto geom_plane = new PlaneGeometry(100.0f, 100.0f);
+	auto geom_plane = new PlaneGeometry(PlaneGeometry::Input{ 100.0f, 100.0f });
 
 	//---------------------------------------------------------------------------------------
 	// Actors

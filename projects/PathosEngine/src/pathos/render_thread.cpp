@@ -436,7 +436,7 @@ namespace pathos {
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
-		gEngine->geometry_unitPlane = new PlaneGeometry(2.0f, 2.0f);
+		gEngine->geometry_unitPlane = new PlaneGeometry(PlaneGeometry::Input{ 2.0f, 2.0f });
 		gEngine->geometry_unitCube = new CubeGeometry(vector3(1.0f));
 
 		TextureCreateParams textureCreateParams[6] = {

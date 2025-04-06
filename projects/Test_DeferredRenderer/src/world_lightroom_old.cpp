@@ -67,7 +67,7 @@ void World_LightRoomOld::setupScene() {
 	// --------------------------------------------------------
 	// Ground & walls
 
-	MeshGeometry* G_ground = new PlaneGeometry(10.0f, 10.0f, 10, 10);
+	MeshGeometry* G_ground = new PlaneGeometry(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
 
 #if 1
 	Material* M_ground = Material::createMaterialInstance("solid_color");
@@ -164,10 +164,13 @@ void World_LightRoomOld::setupScene() {
 	rectLight0->setColorAndIntensity(RECT_LIGHT_COLOR, RECT_LIGHT_INTENSITY);
 	rectLight0->setAttenuationRadius(3.0f);
 
-	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(
+	PlaneGeometry::Input rectLightGizmoInput{
 		rectLight0->getLightComponent()->width,
 		rectLight0->getLightComponent()->height,
-		1, 1, PlaneGeometry::Direction::X);
+		1, 1, PlaneGeometry::Direction::X
+	};
+	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(rectLightGizmoInput);
+
 	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
 	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
 	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
