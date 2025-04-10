@@ -186,7 +186,7 @@ namespace pathos {
 				bakeDesc.depthTarget = RT_depthAtlas;
 				bakeDesc.viewportSize = tileSize;
 				bakeDesc.viewportOffset = viewportOffset;
-				LightProbeBaker::bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
+				LightProbeBaker::get().bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
 			}
 		);
 	}

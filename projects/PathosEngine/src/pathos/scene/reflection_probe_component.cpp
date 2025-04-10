@@ -99,7 +99,7 @@ namespace pathos {
 		uint32 numMips = radianceCubemap->getNumMips();
 		ENQUEUE_RENDER_COMMAND(
 			[srcCubemap, dstCubemap, numMips](RenderCommandList& cmdList) {
-				LightProbeBaker::bakeReflectionProbe_renderThread(cmdList, srcCubemap, dstCubemap);
+				LightProbeBaker::get().bakeReflectionProbe_renderThread(cmdList, srcCubemap, dstCubemap);
 			}
 		);
 	}

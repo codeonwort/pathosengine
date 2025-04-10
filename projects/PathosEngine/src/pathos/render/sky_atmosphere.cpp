@@ -204,7 +204,7 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		LightProbeBaker::bakeSkyIrradianceMap_renderThread(
+		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
 			cmdList,
 			cubemapTexture,
 			sceneContext.skyIrradianceMap,
@@ -217,7 +217,7 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, TO_CUBEMAP_SIZE);
 
-		LightProbeBaker::bakeSpecularIBL_renderThread(
+		LightProbeBaker::get().bakeSpecularIBL_renderThread(
 			cmdList,
 			cubemapTexture,
 			TO_CUBEMAP_SIZE,
