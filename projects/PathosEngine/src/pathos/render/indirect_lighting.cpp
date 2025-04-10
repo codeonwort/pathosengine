@@ -10,7 +10,7 @@
 #include "pathos/render/render_target.h"
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/render/image_based_lighting.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"

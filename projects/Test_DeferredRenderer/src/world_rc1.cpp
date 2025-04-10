@@ -4,7 +4,7 @@
 #include "lightning_effect.h"
 
 #include "pathos/rhi/texture.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"

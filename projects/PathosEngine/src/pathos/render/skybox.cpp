@@ -4,7 +4,7 @@
 #include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry_primitive.h"

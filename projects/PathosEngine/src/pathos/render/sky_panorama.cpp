@@ -4,7 +4,7 @@
 #include "pathos/rhi/gl_debug_group.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/scene/sky_panorama_component.h"
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"

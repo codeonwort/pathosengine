@@ -2,7 +2,7 @@
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/render_target.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 
 namespace pathos {
 	const uint32 reflectionProbeCubemapSize = 128; // #todo-light-probe: Cubemap size is forced to 128.

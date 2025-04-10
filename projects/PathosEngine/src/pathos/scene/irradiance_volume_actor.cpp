@@ -4,7 +4,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/image_based_lighting.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 

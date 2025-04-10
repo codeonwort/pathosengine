@@ -1,4 +1,4 @@
-#include "image_based_lighting_baker.h"
+#include "light_probe_baker.h"
 
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/shader_program.h"
