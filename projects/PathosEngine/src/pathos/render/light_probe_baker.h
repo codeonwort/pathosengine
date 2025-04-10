@@ -20,7 +20,7 @@ namespace pathos {
 	};
 
 	// Utility for Image Based Lighting.
-	class ImageBasedLightingBaker {
+	class LightProbeBaker {
 
 	public:
 		/// <summary>

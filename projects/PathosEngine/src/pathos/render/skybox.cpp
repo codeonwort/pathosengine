@@ -207,7 +207,7 @@ namespace pathos {
 		GLuint targetCubemap = sceneContext.skyIrradianceMap;
 		uint32 targetSize = pathos::SKY_IRRADIANCE_MAP_SIZE;
 
-		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+		LightProbeBaker::bakeSkyIrradianceMap_renderThread(
 			cmdList,
 			inputCubemap,
 			targetCubemap,
@@ -222,7 +222,7 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
 
-		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+		LightProbeBaker::bakeSpecularIBL_renderThread(
 			cmdList,
 			inputCubemap,
 			targetCubemapSize,

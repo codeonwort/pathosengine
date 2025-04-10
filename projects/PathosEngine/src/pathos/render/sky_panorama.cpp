@@ -115,7 +115,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(PanoramaToSkybox);
 
 		GLuint panoramaTexture = scene->panoramaSky->texture->internal_getGLName();
-		ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
+		LightProbeBaker::projectPanoramaToCubemap_renderThread(
 			cmdList,
 			panoramaTexture,
 			cubemapTexture,
@@ -127,7 +127,7 @@ namespace pathos {
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 
-		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
+		LightProbeBaker::bakeSkyIrradianceMap_renderThread(
 			cmdList,
 			cubemapTexture,
 			sceneContext.skyIrradianceMap,
@@ -142,7 +142,7 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
 
-		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+		LightProbeBaker::bakeSpecularIBL_renderThread(
 			cmdList,
 			cubemapTexture,
 			targetCubemapSize,

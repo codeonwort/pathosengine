@@ -176,7 +176,7 @@ namespace pathos {
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(4, sceneContext.getSkyIrradianceMapWithFallback());
 		cmdList.bindTextureUnit(5, sceneContext.getSkyPrefilterMapWithFallback());
-		cmdList.bindTextureUnit(6, ImageBasedLightingBaker::getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(6, LightProbeBaker::getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);
