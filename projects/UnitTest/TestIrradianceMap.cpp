@@ -137,9 +137,9 @@ namespace UnitTest
 						// Looks like if skybox is a constant, then (skyConstant / color) ~= 2 * PI
 						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z);
 
-						imageData[p + 0] = std::max(0, int32(color.r * 255.0f)) & 0xFF;
-						imageData[p + 1] = std::max(0, int32(color.g * 255.0f)) & 0xFF;
-						imageData[p + 2] = std::max(0, int32(color.b * 255.0f)) & 0xFF;
+						imageData[p + 0] = std::min(0xFF, std::max(0, int32(color.r * 255.0f)));
+						imageData[p + 1] = std::min(0xFF, std::max(0, int32(color.g * 255.0f)));
+						imageData[p + 2] = std::min(0xFF, std::max(0, int32(color.b * 255.0f)));
 						p += 3;
 					}
 				}
@@ -148,7 +148,6 @@ namespace UnitTest
 				screenshotPath += "sh_output_";
 				screenshotPath += std::to_string(face);
 				screenshotPath += ".png";
-				// #wip: face 4 looks weird?
 				ImageUtils::saveRGB8ImageAsPNG(width, height, imageData.data(), screenshotPath.data());
 			}
 		}
