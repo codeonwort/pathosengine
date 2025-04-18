@@ -94,6 +94,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TestExecutable.cpp" />
+    <ClCompile Include="TestIrradianceMap.cpp" />
     <ClCompile Include="TestMaterialShader.cpp" />
     <ClCompile Include="TestSignedVolume.cpp" />
     <ClCompile Include="TestCamera.cpp" />
