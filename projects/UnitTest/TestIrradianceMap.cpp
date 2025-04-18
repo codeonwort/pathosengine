@@ -11,40 +11,69 @@ using namespace pathos;
 
 // "An Efficient Representation for Irradiance Environment Maps" by Ravi Ramamoorthi and Pat Hanrahan.
 namespace sh {
+	const float PI = 3.14159265359f;
+	const float TWO_PI = 6.28318530718f;
+	const float HALF_PI = 1.57079632679489661923f;
+
 	struct Skybox {
+		bool bIsConstant;
+		vector3 constantColor;
+		int32 cubemapSize;
 		std::vector<ImageBlob*> imageData;
 
-		vector3 sample(const vector3& dir) const {
-			return 10.0f * (0.5f * (dir + vector3(1.0f)));
-			//return vector3(0.18f);
+		Skybox(const vector3& inConstantColor, uint32 inCubemapSize) {
+			bIsConstant = true;
+			constantColor = inConstantColor;
+			cubemapSize = inCubemapSize;
 		}
+		Skybox(const std::vector<ImageBlob*>& inImageData) {
+			bIsConstant = false;
+			constantColor = vector3(0.0f);
+			imageData = inImageData;
+			cubemapSize = imageData[0]->width;
+		}
+
+		int32 getCubemapSize() const { return cubemapSize; }
+
+		//vector3 sample(const vector3& dir) const {
+		//	return 10.0f * (0.5f * (dir + vector3(1.0f)));
+		//}
+		vector3 texelFetch(int32 face, int32 x, int32 y) const {
+			if (bIsConstant) return constantColor;
+
+			ImageBlob* blob = imageData[face];
+			const uint8* bytes = blob->rawBytes;
+			bytes += (blob->bpp / 8) * ((y * blob->width) + x);
+			uint8 r = bytes[0];
+			uint8 g = bytes[1];
+			uint8 b = bytes[2];
+			return vector3(r, g, b) / 255.0f;
+		};
 	};
+
 	struct SHBuffer {
 		std::vector<vector3> Ls;
 	};
 
 	SHBuffer prefilter(const Skybox& skybox) {
-		const float PI = 3.14159265359f;
-		const float TWO_PI = 6.28318530718f;
-		const float HALF_PI = 1.57079632679489661923f;
-
 		SHBuffer buf;
 
-		auto Y00 = [](float theta, float phi, const vector3& dir) { return 0.282095f; };
-		auto Y1_1 = [](float theta, float phi, const vector3& dir) { return 0.488603f * dir.y; };
-		auto Y10 = [](float theta, float phi, const vector3& dir) { return 0.488603f * dir.z; };
-		auto Y11 = [](float theta, float phi, const vector3& dir) { return 0.488603f * dir.x; };
-		auto Y2_2 = [](float theta, float phi, const vector3& dir) { return 1.092548f * dir.x * dir.y; };
-		auto Y2_1 = [](float theta, float phi, const vector3& dir) { return 1.092548f * dir.y * dir.z; };
-		auto Y20 = [](float theta, float phi, const vector3& dir) { return 0.315392f * (3.0f * dir.z * dir.z - 1.0f); };
-		auto Y21 = [](float theta, float phi, const vector3& dir) { return 1.092548f * dir.x * dir.z; };
-		auto Y22 = [](float theta, float phi, const vector3& dir) { return 0.546274f * (dir.x * dir.x - dir.y * dir.y); };
-		std::function<float(float,float,const vector3&)> Ys[] = { Y00, Y1_1, Y10, Y11, Y2_2, Y2_1, Y20, Y21, Y22 };
+		auto Y00 = [](const vector3& dir) { return 0.282095f; };
+		auto Y1_1 = [](const vector3& dir) { return 0.488603f * dir.y; };
+		auto Y10 = [](const vector3& dir) { return 0.488603f * dir.z; };
+		auto Y11 = [](const vector3& dir) { return 0.488603f * dir.x; };
+		auto Y2_2 = [](const vector3& dir) { return 1.092548f * dir.x * dir.y; };
+		auto Y2_1 = [](const vector3& dir) { return 1.092548f * dir.y * dir.z; };
+		auto Y20 = [](const vector3& dir) { return 0.315392f * (3.0f * dir.z * dir.z - 1.0f); };
+		auto Y21 = [](const vector3& dir) { return 1.092548f * dir.x * dir.z; };
+		auto Y22 = [](const vector3& dir) { return 0.546274f * (dir.x * dir.x - dir.y * dir.y); };
+		std::function<float(const vector3&)> Ys[] = { Y00, Y1_1, Y10, Y11, Y2_2, Y2_1, Y20, Y21, Y22 };
 
+#if 0
 		float sampleDelta = 0.05f;
-		uint32 nrSamples = 0;
 		for (uint32 i = 0; i < 9; ++i) {
 			vector3 L(0.0f);
+			uint32 nrSamples = 0;
 			// #wip: Integrate for every texel, not some random float delta
 			for (float phi = 0.0f; phi < TWO_PI; phi += sampleDelta) {
 				for (float theta = 0.0f; theta < PI; theta += sampleDelta) {
@@ -52,12 +81,50 @@ namespace sh {
 					float cosTheta = cos(theta);
 					vector3 dir(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 
-					L += skybox.sample(dir) * Ys[i](phi, theta, dir) * sinTheta;
+					L += skybox.sample(dir) * Ys[i](dir) * sinTheta;
 					nrSamples++;
 				}
 			}
 			buf.Ls.push_back(L / float(nrSamples));
 		}
+#else
+		for (uint32 i = 0; i < 9; ++i) {
+			vector3 L(0.0f);
+			uint32 nrSamples = 0;
+			float wSum = 0.0f;
+			for (int32 face = 0; face < 6; ++face) {
+				const int32 width = skybox.getCubemapSize();
+				const int32 height = skybox.getCubemapSize();
+				for (int32 y = 0; y < height; ++y) {
+					for (int32 x = 0; x < width; ++x) {
+						const float u = 2.0f * ((float)x / width) - 1.0f;
+						const float v = 2.0f * ((float)y / height) - 1.0f;
+
+						const float tmp = 1.0f + u * u + v * v;
+						const float w = 4.0f / (tmp * sqrtf(tmp));
+
+						vector3 dir;
+						if (face == 0) dir = normalize(vector3(1, u, v));
+						else if (face == 1) dir = normalize(vector3(-1, u, v));
+						else if (face == 2) dir = normalize(vector3(u, 1, v));
+						else if (face == 3) dir = normalize(vector3(u, -1, v));
+						else if (face == 4) dir = normalize(vector3(u, v, 1));
+						else if (face == 5) dir = normalize(vector3(u, v, -1));
+
+						float cosTheta = dir.z;
+						float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
+
+						L += w * skybox.texelFetch(face, x, y) * Ys[i](dir);
+						wSum += w;
+						nrSamples++;
+					}
+				}
+			}
+			L *= 4.0f * sh::PI / wSum;
+			//L /= float(nrSamples);
+			buf.Ls.push_back(L);
+		}
+#endif
 		return buf;
 	}
 
@@ -91,7 +158,64 @@ namespace UnitTest
 	TEST_CLASS(TestIrradianceMap)
 	{
 	public:
-		TEST_METHOD(TestIntegration)
+		TEST_METHOD(FurnaceTest) {
+			const vector3 SKY_COLOR(0.18f);
+
+			sh::Skybox skybox{ SKY_COLOR, 128 };
+			sh::SHBuffer shBuffer = sh::prefilter(skybox);
+
+			ResourceFinder::get().add("../");
+			ResourceFinder::get().add("../../");
+
+			std::string screenshotDir = pathos::getSolutionDir() + "/log/test_dump/";
+			pathos::createDirectory(screenshotDir.c_str());
+
+			uint32 numInvalid = 0;
+			const float eps = 0.03f; // 3 percent
+
+			const int32 width = 128;
+			const int32 height = 128;
+			for (uint32 face = 0; face < 6; ++face) {
+				std::vector<uint8> imageData(width * height * 3);
+				size_t p = 0;
+				for (int32 y = 0; y < height; ++y) {
+					for (int32 x = 0; x < width; ++x) {
+						const float u = 2.0f * ((float)x / width) - 1.0f;
+						const float v = 2.0f * ((float)y / height) - 1.0f;
+
+						vector3 dir;
+						if (face == 0) dir = normalize(vector3(u, v, 1));
+						else if (face == 1) dir = normalize(vector3(u, v, -1));
+						else if (face == 2) dir = normalize(vector3(1, u, v));
+						else if (face == 3) dir = normalize(vector3(-1, u, v));
+						else if (face == 4) dir = normalize(vector3(u, 1, v));
+						else if (face == 5) dir = normalize(vector3(u, -1, v));
+
+						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z); // irradiance
+						//float ratio = SKY_COLOR.x / color.x;
+						float ratio = color.x / SKY_COLOR.x;
+						if (std::abs(ratio - sh::PI) > eps) {
+							float diff = std::abs(ratio - sh::PI);
+							numInvalid += 1;
+						}
+
+						imageData[p + 0] = std::min(0xFF, std::max(0, int32(color.r * 255.0f)));
+						imageData[p + 1] = std::min(0xFF, std::max(0, int32(color.g * 255.0f)));
+						imageData[p + 2] = std::min(0xFF, std::max(0, int32(color.b * 255.0f)));
+						p += 3;
+					}
+				}
+
+				std::string screenshotPath = screenshotDir;
+				screenshotPath += "sh_furnace_output_";
+				screenshotPath += std::to_string(face);
+				screenshotPath += ".png";
+				ImageUtils::saveRGB8ImageAsPNG(width, height, imageData.data(), screenshotPath.data());
+			}
+			Assert::IsTrue(numInvalid == 0, L"Furnace test has failed");
+		}
+
+		TEST_METHOD(SkyboxImage)
 		{
 			ResourceFinder::get().add("../");
 			ResourceFinder::get().add("../../");
@@ -100,12 +224,12 @@ namespace UnitTest
 			ResourceFinder::get().add("../../resources_external/");
 
 			std::array<const char*, 6> cubeImgName = {
-				"resources/skybox/placeholder/cubemap_right.jpg",
-				"resources/skybox/placeholder/cubemap_left.jpg",
-				"resources/skybox/placeholder/cubemap_top.jpg",
-				"resources/skybox/placeholder/cubemap_bottom.jpg",
-				"resources/skybox/placeholder/cubemap_front.jpg",
-				"resources/skybox/placeholder/cubemap_back.jpg"
+				"resources/skybox/cubemap1/pos_x.jpg",
+				"resources/skybox/cubemap1/neg_x.jpg",
+				"resources/skybox/cubemap1/pos_y.jpg",
+				"resources/skybox/cubemap1/neg_y.jpg",
+				"resources/skybox/cubemap1/pos_z.jpg",
+				"resources/skybox/cubemap1/neg_z.jpg"
 			};
 			auto cubeImages = ImageUtils::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL);
 
@@ -126,15 +250,14 @@ namespace UnitTest
 						const float v = 2.0f * ((float)y / height) - 1.0f;
 
 						vector3 dir;
-						if (face == 0) dir = normalize(vector3(u, v, 1));
-						else if (face == 1) dir = normalize(vector3(u, v, -1));
-						else if (face == 2) dir = normalize(vector3(1, u, v));
-						else if (face == 3) dir = normalize(vector3(-1, u, v));
-						else if (face == 4) dir = normalize(vector3(u, 1, v));
-						else if (face == 5) dir = normalize(vector3(u, -1, v));
+						if (face == 0) dir = normalize(vector3(1, u, v));
+						else if (face == 1) dir = normalize(vector3(-1, u, v));
+						else if (face == 2) dir = normalize(vector3(u, 1, v));
+						else if (face == 3) dir = normalize(vector3(u, -1, v));
+						else if (face == 4) dir = normalize(vector3(u, v, 1));
+						else if (face == 5) dir = normalize(vector3(u, v, -1));
 
 						// #wip: How to assert the result?
-						// Looks like if skybox is a constant, then (skyConstant / color) ~= 2 * PI
 						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z);
 
 						imageData[p + 0] = std::min(0xFF, std::max(0, int32(color.r * 255.0f)));
