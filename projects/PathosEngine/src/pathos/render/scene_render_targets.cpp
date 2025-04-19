@@ -1,6 +1,7 @@
 #include "scene_render_targets.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/render/postprocessing/super_res.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/reflection_probe_component.h"
@@ -141,6 +142,7 @@ namespace pathos {
 				reallocTexture2D(luminanceFromHistogram, GL_R32F, 1, 1, 1, "luminanceFromHistogram");
 			}
 		}
+		allocateSkyResources(cmdList);
 
 		//////////////////////////////////////////////////////////////////////////
 		// Before super resolution
@@ -335,6 +337,8 @@ namespace pathos {
 
 		gRenderDevice->deleteTextures((GLsizei)textures.size(), textures.data());
 
+		releaseSkyResources(cmdList);
+
 		bDestroyed = true;
 	}
 
@@ -485,6 +489,31 @@ namespace pathos {
 
 	uint32 SceneRenderTargets::getSkyPrefilterMapMipCount() const {
 		return (skyPrefilteredMap != 0) ? skyPrefilterMapMipCount : 1;
+	}
+
+	void SceneRenderTargets::allocateSkyResources(RenderCommandList& cmdList) {
+		if (skyDiffuseSH == nullptr) {
+			BufferCreateParams desc{ EBufferUsage::CpuWrite, sizeof(float) * 4 * 9, nullptr, "Buffer_SkyDiffuseSH" };
+			skyDiffuseSH = new Buffer(desc);
+			skyDiffuseSH->createGPUResource_renderThread(cmdList);
+		}
+		if (skyDiffuseSource == nullptr) {
+			auto desc = TextureCreateParams::cubemap(128, GL_RGBA16F, 1);
+			desc.debugName = "Texture_SkyDiffuseSource";
+			skyDiffuseSource = new Texture(desc);
+			skyDiffuseSource->createGPUResource_renderThread(cmdList);
+		}
+	}
+
+	void SceneRenderTargets::releaseSkyResources(RenderCommandList& cmdList) {
+		if (skyDiffuseSH != nullptr) {
+			delete skyDiffuseSH;
+			skyDiffuseSH = nullptr;
+		}
+		if (skyDiffuseSource != nullptr) {
+			delete skyDiffuseSource;
+			skyDiffuseSource = nullptr;
+		}
 	}
 
 }

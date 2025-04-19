@@ -5,6 +5,7 @@
 
 namespace pathos {
 
+	class Buffer;
 	class Texture;
 	struct DirectionalLightProxy;
 
@@ -97,6 +98,9 @@ namespace pathos {
 		uint32 skyPrefilterMapMipCount = 1;
 		uint32 skyPrefilterMapSize = 0;
 
+		Buffer* skyDiffuseSH = nullptr;
+		Texture* skyDiffuseSource = nullptr;
+
 		// Deferred Shading
 		bool useGBuffer = true;
 		GLuint gbufferA = 0;
@@ -166,6 +170,9 @@ namespace pathos {
 			return (frameCounter % 2 == 0) ? volumetricCloudB : volumetricCloudA;
 		}
 
+	private:
+		void allocateSkyResources(RenderCommandList& cmdList);
+		void releaseSkyResources(RenderCommandList& cmdList);
 	};
 
 }

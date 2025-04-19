@@ -23,6 +23,10 @@ namespace pathos {
 		inline bool isStorageValid() const {
 			return width > 0 && height > 0 && depth > 0 && glDimension != 0 && glStorageFormat != 0;
 		}
+
+		static TextureCreateParams cubemap(uint32 size, GLenum glStorageFormat, uint32 mipLevels = 1) {
+			return TextureCreateParams{ size, size,1, mipLevels, GL_TEXTURE_CUBE_MAP, glStorageFormat };
+		}
 	};
 
 	// Wrapper for GPU texture resource.

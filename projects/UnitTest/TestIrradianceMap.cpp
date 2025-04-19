@@ -71,7 +71,6 @@ namespace sh {
 
 		for (uint32 i = 0; i < 9; ++i) {
 			vector3 L(0.0f);
-			uint32 nrSamples = 0;
 			float wSum = 0.0f;
 			for (int32 face = 0; face < 6; ++face) {
 				const int32 width = skybox.getCubemapSize();
@@ -92,12 +91,8 @@ namespace sh {
 						else if (face == 4) dir = normalize(vector3(u, v, 1));
 						else if (face == 5) dir = normalize(vector3(u, v, -1));
 
-						float cosTheta = dir.z;
-						float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
-
 						L += w * skybox.texelFetch(face, x, y) * Ys[i](dir);
 						wSum += w;
-						nrSamples++;
 					}
 				}
 			}
