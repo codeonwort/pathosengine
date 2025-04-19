@@ -69,25 +69,6 @@ namespace sh {
 		auto Y22 = [](const vector3& dir) { return 0.546274f * (dir.x * dir.x - dir.y * dir.y); };
 		std::function<float(const vector3&)> Ys[] = { Y00, Y1_1, Y10, Y11, Y2_2, Y2_1, Y20, Y21, Y22 };
 
-#if 0
-		float sampleDelta = 0.05f;
-		for (uint32 i = 0; i < 9; ++i) {
-			vector3 L(0.0f);
-			uint32 nrSamples = 0;
-			// #wip: Integrate for every texel, not some random float delta
-			for (float phi = 0.0f; phi < TWO_PI; phi += sampleDelta) {
-				for (float theta = 0.0f; theta < PI; theta += sampleDelta) {
-					float sinTheta = sin(theta);
-					float cosTheta = cos(theta);
-					vector3 dir(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-
-					L += skybox.sample(dir) * Ys[i](dir) * sinTheta;
-					nrSamples++;
-				}
-			}
-			buf.Ls.push_back(L / float(nrSamples));
-		}
-#else
 		for (uint32 i = 0; i < 9; ++i) {
 			vector3 L(0.0f);
 			uint32 nrSamples = 0;
@@ -121,10 +102,9 @@ namespace sh {
 				}
 			}
 			L *= 4.0f * sh::PI / wSum;
-			//L /= float(nrSamples);
 			buf.Ls.push_back(L);
 		}
-#endif
+
 		return buf;
 	}
 
@@ -164,12 +144,6 @@ namespace UnitTest
 			sh::Skybox skybox{ SKY_COLOR, 128 };
 			sh::SHBuffer shBuffer = sh::prefilter(skybox);
 
-			ResourceFinder::get().add("../");
-			ResourceFinder::get().add("../../");
-
-			std::string screenshotDir = pathos::getSolutionDir() + "/log/test_dump/";
-			pathos::createDirectory(screenshotDir.c_str());
-
 			uint32 numInvalid = 0;
 			const float eps = 0.03f; // 3 percent
 
@@ -192,7 +166,6 @@ namespace UnitTest
 						else if (face == 5) dir = normalize(vector3(u, -1, v));
 
 						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z); // irradiance
-						//float ratio = SKY_COLOR.x / color.x;
 						float ratio = color.x / SKY_COLOR.x;
 						if (std::abs(ratio - sh::PI) > eps) {
 							float diff = std::abs(ratio - sh::PI);
@@ -205,13 +178,8 @@ namespace UnitTest
 						p += 3;
 					}
 				}
-
-				std::string screenshotPath = screenshotDir;
-				screenshotPath += "sh_furnace_output_";
-				screenshotPath += std::to_string(face);
-				screenshotPath += ".png";
-				ImageUtils::saveRGB8ImageAsPNG(width, height, imageData.data(), screenshotPath.data());
 			}
+
 			Assert::IsTrue(numInvalid == 0, L"Furnace test has failed");
 		}
 
@@ -231,7 +199,9 @@ namespace UnitTest
 				"resources/skybox/cubemap1/pos_z.jpg",
 				"resources/skybox/cubemap1/neg_z.jpg"
 			};
-			auto cubeImages = ImageUtils::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL);
+			auto rescale = ImageUtils::RescaleDesc::downscaleOnly(256, 256, ImageUtils::ERescaleFilter::Bilinear);
+			//auto rescale = ImageUtils::RescaleDesc::noScale();
+			auto cubeImages = ImageUtils::loadCubemapImages(cubeImgName, ECubemapImagePreference::HLSL, rescale);
 
 			sh::Skybox skybox{ cubeImages };
 			sh::SHBuffer shBuffer = sh::prefilter(skybox);
@@ -257,8 +227,8 @@ namespace UnitTest
 						else if (face == 4) dir = normalize(vector3(u, v, 1));
 						else if (face == 5) dir = normalize(vector3(u, v, -1));
 
-						// #wip: How to assert the result?
-						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z);
+						// Too bright to output as SDR image, let's divide by PI.
+						vector3 color = evaluate(shBuffer, dir.x, dir.y, dir.z) / sh::PI;
 
 						imageData[p + 0] = std::min(0xFF, std::max(0, int32(color.r * 255.0f)));
 						imageData[p + 1] = std::min(0xFF, std::max(0, int32(color.g * 255.0f)));
@@ -267,6 +237,7 @@ namespace UnitTest
 					}
 				}
 
+				// I don't have reference data to compare. At least let's output the result as image.
 				std::string screenshotPath = screenshotDir;
 				screenshotPath += "sh_output_";
 				screenshotPath += std::to_string(face);
