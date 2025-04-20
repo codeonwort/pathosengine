@@ -22,8 +22,8 @@ namespace pathos {
 	private:
 		void renderSkyboxToScreen(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderSkyMaterialToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
-		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene, GLuint inputCubemap);
-		void renderSkyPreftilerMap(RenderCommandList& cmdList, SceneProxy* scene, GLuint inputCubemap);
+		void renderSkyDiffuseSH(RenderCommandList& cmdList);
+		void renderSkyPreftilerMap(RenderCommandList& cmdList);
 
 		GLuint fbo = 0xffffffff;
 		GLuint fboCube = 0xffffffff;
@@ -31,8 +31,8 @@ namespace pathos {
 		MeshGeometry* cubeGeometry = nullptr;
 		matrix4 cubeTransforms[6];
 
-		GLuint scratchCubemapTexture = 0;
-		uint32 scratchCubemapSize = 0;
+		Texture* reflectionCubemap = nullptr;
+		Texture* ambientCubemap = nullptr;
 
 		UniformBuffer ubo;
 		UniformBuffer uboPerObject;

@@ -10,7 +10,7 @@
 #include "pathos/render/render_target.h"
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/render/image_based_lighting.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/scene/camera.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
@@ -161,6 +161,7 @@ namespace pathos {
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
+		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, 4);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;
@@ -174,9 +175,8 @@ namespace pathos {
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
-		cmdList.bindTextureUnit(4, sceneContext.getSkyIrradianceMapWithFallback());
 		cmdList.bindTextureUnit(5, sceneContext.getSkyPrefilterMapWithFallback());
-		cmdList.bindTextureUnit(6, ImageBasedLightingBaker::getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(6, LightProbeBaker::get().getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
 		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
 		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);

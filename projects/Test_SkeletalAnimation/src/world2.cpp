@@ -12,7 +12,7 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/text/text_actor.h"
 #include "pathos/loader/asset_streamer.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 
 #include <time.h>
 

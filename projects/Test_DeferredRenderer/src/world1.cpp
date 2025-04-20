@@ -5,7 +5,7 @@
 #include "pathos/core_minimal.h"
 #include "pathos/render_minimal.h"
 
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/render/render_target.h"
 #include "pathos/scene/scene_capture_component.h"
 #include "pathos/loader/asset_streamer.h"

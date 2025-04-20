@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="compute_diffuse_sh.glsl" />
+    <None Include="core\diffuse_sh.glsl" />
     <None Include="materials\indirect_draw_dummy.glsl" />
     <None Include="sky\atmosphere.glsl" />
     <None Include="sky\atmosphere_precompute.glsl" />
@@ -71,6 +73,8 @@
     <None Include="reflection_probe_filtering.glsl" />
     <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
+    <None Include="sky\blit_cubemap.glsl" />
+    <None Include="sky\copy_cubemap.glsl" />
     <None Include="sky\skybox.glsl" />
     <None Include="sky\sky_panorama.glsl" />
     <None Include="specular_ibl.glsl" />

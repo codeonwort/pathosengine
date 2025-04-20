@@ -146,7 +146,7 @@
     <ClCompile Include="src\badger\system\thread_pool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\image_based_lighting_baker.cpp">
+    <ClCompile Include="src\pathos\render\light_probe_baker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\rhi\shader_program.cpp">
@@ -595,7 +595,7 @@
     <ClInclude Include="src\badger\system\thread_pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\image_based_lighting_baker.h">
+    <ClInclude Include="src\pathos\render\light_probe_baker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\rhi\shader_program.h">
@@ -932,6 +932,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\material\material_parameter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\badger\math\bits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

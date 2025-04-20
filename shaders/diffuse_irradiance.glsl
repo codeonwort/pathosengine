@@ -2,6 +2,8 @@
 
 #include "core/common.glsl"
 
+// #todo: Refactor all legacy code that uses this shader to use compute_diffuse_sh.glsl.
+
 // https://learnopengl.com/PBR/IBL/Diffuse-irradiance
 
 ////////////////////////////////////////////////////////////

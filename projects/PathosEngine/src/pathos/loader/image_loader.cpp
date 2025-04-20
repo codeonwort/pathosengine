@@ -117,7 +117,7 @@ namespace pathos {
 
 namespace pathos {
 
-	ImageBlob* ImageUtils::loadImage(const char* inFilename, bool flipHorizontal /*= false*/, bool flipVertical /*= false*/) {
+	ImageBlob* ImageUtils::loadImage(const char* inFilename, bool flipHorizontal /*= false*/, bool flipVertical /*= false*/, const RescaleDesc& rescaleDesc /*= RescaleDesc::noScale()*/) {
 		std::string path = ResourceFinder::get().find(inFilename);
 		if (path.size() == 0) {
 			LOG(LogError, "[ImageUtils::loadImage] Can't find file: %s", inFilename);
@@ -152,6 +152,24 @@ namespace pathos {
 				FreeImage_Unload(oldDib);
 			}
 		}
+		// Rescale if requested.
+		if (rescaleDesc.op != ERescaleOp::None)
+		{
+			CHECK(rescaleDesc.targetWidth > 0 && rescaleDesc.targetHeight > 0);
+			const int32 width = FreeImage_GetWidth(dib);
+			const int32 height = FreeImage_GetHeight(dib);
+
+			const bool bShouldScale = (rescaleDesc.op == ERescaleOp::Always)
+				|| (rescaleDesc.op == ERescaleOp::DownscaleOnly && (width > rescaleDesc.targetWidth || height > rescaleDesc.targetHeight))
+				|| (rescaleDesc.op == ERescaleOp::UpscaleOnly && (width < rescaleDesc.targetWidth || height < rescaleDesc.targetHeight));
+
+			if (bShouldScale) {
+				FIBITMAP* oldDib = dib;
+				FREE_IMAGE_FILTER filter = (FREE_IMAGE_FILTER)rescaleDesc.filter; // Assumes enums have the same layout.
+				dib = FreeImage_Rescale(dib, rescaleDesc.targetWidth, rescaleDesc.targetHeight, filter);
+				FreeImage_Unload(oldDib);
+			}
+		}
 		const BYTE* rawData = FreeImage_GetBits(dib);
 		const unsigned int width = FreeImage_GetWidth(dib);
 		const unsigned int height = FreeImage_GetHeight(dib);
@@ -170,14 +188,14 @@ namespace pathos {
 		return blob;
 	}
 
-	std::vector<ImageBlob*> ImageUtils::loadCubemapImages(const std::array<const char*, 6>& inFilenames, ECubemapImagePreference preference) {
+	std::vector<ImageBlob*> ImageUtils::loadCubemapImages(const std::array<const char*, 6>& inFilenames, ECubemapImagePreference preference, const RescaleDesc& rescaleDesc /*= RescaleDesc::noScale()*/) {
 		std::vector<ImageBlob*> images(6, nullptr);
 		const int32 glslOrder[6] = { 0, 1, 2, 3, 5, 4 };
 		for (int32 i = 0; i < 6; ++i) {
 			bool flipH = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
 			bool flipV = preference == ECubemapImagePreference::HLSL && (i != 2 && i != 3);
 			int32 j = preference == ECubemapImagePreference::HLSL ? glslOrder[i] : i;
-			images[i] = ImageUtils::loadImage(inFilenames[j], flipH, flipV);
+			images[i] = ImageUtils::loadImage(inFilenames[j], flipH, flipV, rescaleDesc);
 		}
 		return images;
 	}

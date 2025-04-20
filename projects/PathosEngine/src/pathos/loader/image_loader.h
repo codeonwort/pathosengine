@@ -29,22 +29,38 @@ namespace pathos {
 	class ImageUtils {
 
 	public:
+		enum class ERescaleOp { None, DownscaleOnly, UpscaleOnly, Always };
+		enum class ERescaleFilter : uint32 { Box = 0, Bicubic = 1, Bilinear = 2, BSpline = 3, CatmullRom = 4, Lanczos3 = 5 };
+		struct RescaleDesc {
+			int32 targetWidth = -1;
+			int32 targetHeight = -1;
+			ERescaleOp op = ERescaleOp::None;
+			ERescaleFilter filter = ERescaleFilter::Bilinear;
+
+			static RescaleDesc noScale() { return RescaleDesc{ -1,-1,ERescaleOp::None }; }
+			static RescaleDesc downscaleOnly(int32 w, int32 h, ERescaleFilter f = ERescaleFilter::Bilinear) { return RescaleDesc{ w,h,ERescaleOp::DownscaleOnly,f }; }
+			static RescaleDesc upscaleOnly(int32 w, int32 h, ERescaleFilter f = ERescaleFilter::CatmullRom) { return RescaleDesc{ w,h,ERescaleOp::UpscaleOnly,f }; }
+			static RescaleDesc always(int32 w, int32 h, ERescaleFilter f = ERescaleFilter::CatmullRom) { return RescaleDesc{ w,h,ERescaleOp::Always,f }; }
+		};
+
 		/// <summary>
 		/// Load image data from an image file.
 		/// </summary>
 		/// <param name="inFilename">Absolute path, or relative path recognized by ResourceFinder.</param>
 		/// <param name="flipHorizontal">Flip the image data horizontally. Might be needed if the image does not follow GLSL convention.</param>
 		/// <param name="flipVertical">Flip the image data vertically. Might be needed if the image does not follow GLSL convention.</param>
+		/// <param name="rescaleDesc">Determines image rescaling strategy.</param>
 		/// <returns>A wrapper struct for the image data. Null if loading has failed.</returns>
-		static ImageBlob* loadImage(const char* inFilename, bool flipHorizontal = false, bool flipVertical = false);
+		static ImageBlob* loadImage(const char* inFilename, bool flipHorizontal = false, bool flipVertical = false, const RescaleDesc& rescaleDesc = RescaleDesc::noScale());
 
 		/// <summary>
 		/// Load cubemap image data from 6 image files.
 		/// </summary>
 		/// <param name="inFilenames">Absolute paths or relative paths recognized by ResourceFinder.</param>
 		/// <param name="preference">Hint for convention of image orders and orientations.</param>
+		/// <param name="rescaleDesc">Determines image rescaling strategy.</param>
 		/// <returns>Image data array for cubemap faces. An element is null if the corresponding face has failed to load.</returns>
-		static std::vector<ImageBlob*> loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference);
+		static std::vector<ImageBlob*> loadCubemapImages(const std::array<const char*,6>& inFilenames, ECubemapImagePreference preference, const RescaleDesc& rescaleDesc = RescaleDesc::noScale());
 
 		/// <summary>
 		/// Create a 2D texture from an image blob.

@@ -2,13 +2,15 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/gl_debug_group.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/scene/sky_panorama_component.h"
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
+#include "badger/math/bits.h"
 #include <string>
 
 namespace pathos {
@@ -52,16 +54,22 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_PanoramaSky");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		const uint32 cubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTexture);
-		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, cubemapSize, cubemapSize);
+		const uint32 reflectionCubeSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
+		const uint32 ambientCubeSize = pathos::SKY_AMBIENT_CUBEMAP_SIZE;
+
+		const uint32 mipLevels = 1 + badger::ctz(reflectionCubeSize) - badger::ctz(ambientCubeSize);
+		reflectionCubemap = new Texture(TextureCreateParams::cubemap(reflectionCubeSize, GL_RGBA16F, mipLevels));
+		reflectionCubemap->createGPUResource_renderThread(cmdList);
+		ambientCubemap = new Texture(TextureCreateParams::cubemap(ambientCubeSize, GL_RGBA16F, 1));
+		ambientCubemap->createGPUResource_renderThread(cmdList);
 
 		ubo.init<UBO_PanoramaSky>("UBO_PanoramaSky");
 	}
 
 	void PanoramaSkyPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
-		gRenderDevice->deleteTextures(1, &cubemapTexture);
+		delete reflectionCubemap;
+		delete ambientCubemap;
 	}
 
 	void PanoramaSkyPass::renderPanoramaSky(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -70,8 +78,8 @@ namespace pathos {
 		renderToScreen(cmdList, scene);
 		if (scene->panoramaSky->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
-			renderSkyIrradianceMap(cmdList, scene);
-			renderSkyPrefilterMap(cmdList, scene);
+			renderSkyDiffuseSH(cmdList);
+			renderSkyPrefilterMap(cmdList);
 		}
 	}
 
@@ -115,26 +123,25 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(PanoramaToSkybox);
 
 		GLuint panoramaTexture = scene->panoramaSky->texture->internal_getGLName();
-		ImageBasedLightingBaker::projectPanoramaToCubemap_renderThread(
+		LightProbeBaker::get().projectPanoramaToCubemap_renderThread(
 			cmdList,
 			panoramaTexture,
-			cubemapTexture,
-			pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE);
+			reflectionCubemap->internal_getGLName(),
+			reflectionCubemap->getCreateParams().width);
+
+		// Copy specular cubemap to ambient cubemap for diffuse SH.
+		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
+		int32 copyMip = badger::ctz(reflectionCubemap->getCreateParams().width) - badger::ctz(ambientCubemap->getCreateParams().width);
+		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
 	}
 
-	void PanoramaSkyPass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
-
+	void PanoramaSkyPass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		ImageBasedLightingBaker::bakeSkyIrradianceMap_renderThread(
-			cmdList,
-			cubemapTexture,
-			sceneContext.skyIrradianceMap,
-			pathos::SKY_IRRADIANCE_MAP_SIZE);
+		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
-	void PanoramaSkyPass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {
+	void PanoramaSkyPass::renderSkyPrefilterMap(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
 		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
@@ -142,9 +149,9 @@ namespace pathos {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
 
-		ImageBasedLightingBaker::bakeSpecularIBL_renderThread(
+		LightProbeBaker::get().bakeSpecularIBL_renderThread(
 			cmdList,
-			cubemapTexture,
+			reflectionCubemap->internal_getGLName(),
 			targetCubemapSize,
 			sceneContext.skyPrefilterMapMipCount,
 			sceneContext.skyPrefilteredMap);

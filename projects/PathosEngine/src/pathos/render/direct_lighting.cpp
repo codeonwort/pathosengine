@@ -3,7 +3,7 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/fullscreen_util.h"
-#include "pathos/render/image_based_lighting_baker.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/mesh/geometry.h"

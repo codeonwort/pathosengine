@@ -9,6 +9,11 @@
 
 namespace pathos {
 
+	class OpenGLDevice;
+	class MeshGeometry;
+	class Texture;
+	class Buffer;
+
 	enum class EIrradianceMapEncoding : uint32 { Cubemap, OctahedralNormalVector };
 
 	struct IrradianceMapBakeDesc {
@@ -20,9 +25,21 @@ namespace pathos {
 	};
 
 	// Utility for Image Based Lighting.
-	class ImageBasedLightingBaker {
+	class LightProbeBaker {
 
 	public:
+		static LightProbeBaker& get();
+		static void static_initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+		static void static_destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+
+	public:
+		LightProbeBaker();
+
+		void initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+		void destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+
+		void bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH);
+
 		/// <summary>
 		/// Generate irradiance cubemap from radiance capture cubemap.
 		/// </summary>
@@ -30,7 +47,7 @@ namespace pathos {
 		/// <param name="inputRadianceCubemap">Input radiance cubemap</param>
 		/// <param name="inputDepthCubemap">Input depth cubemap</param>
 		/// <param name="bakeDesc">Baking options</param>
-		static void bakeDiffuseIBL_renderThread(
+		void bakeDiffuseIBL_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputRadianceCubemap,
 			GLuint inputDepthCubemap,
@@ -44,12 +61,32 @@ namespace pathos {
 		/// <param name="outputTextureSize">Output cubemap size</param>
 		/// <param name="numMips">The number of mips to render</param>
 		/// <param name="outputTexture">Output cubemap</param>
-		static void bakeSpecularIBL_renderThread(
+		void bakeSpecularIBL_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
 			uint32 outputTextureSize,
 			uint32 numMips,
 			GLuint outputTexture);
+
+		/// <summary>
+		/// Copy between cubemaps. input texture's target mip and output texture's target mip should have the same size.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="input">Input cubemap</param>
+		/// <param name="output">Output cubemap</param>
+		/// <param name="inputMip">Input texture's mip as copy source</param>
+		/// <param name="outputMip">Output texture's mip as destination</param>
+		void copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip = 0, uint32 outputMip = 0);
+
+		/// <summary>
+		/// Blit a mip of input cubemap to a mip of output cubemap. Can be different sizes.
+		/// </summary>
+		/// <param name="cmdList"></param>
+		/// <param name="input"></param>
+		/// <param name="output"></param>
+		/// <param name="inputMip"></param>
+		/// <param name="outputMip"></param>
+		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip);
 
 		/// <summary>
 		/// Render the given equirectangular (panorama) texture to the cubemap texture.
@@ -58,24 +95,11 @@ namespace pathos {
 		/// <param name="inputTexture">Input panorama texture2D</param>
 		/// <param name="outputTexture">Output textureCube</param>
 		/// <param name="outputTextureSize">Output texture size</param>
-		static void projectPanoramaToCubemap_renderThread(
+		void projectPanoramaToCubemap_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
 			GLuint outputTexture,
 			uint32 outputTextureSize);
-
-		/// <summary>
-		/// Similar to bakeDiffuseIBL_renderThread(), but only for sky lighting.
-		/// </summary>
-		/// <param name="cmdList">Render command list</param>
-		/// <param name="inputSkyCubemap">Sky cubemap from which irradiance will be integrated</param>
-		/// <param name="targetCubemap">Target cubemap to store sky irradiance map</param>
-		/// <param name="targetSize">The size of target cubemap</param>
-		static void bakeSkyIrradianceMap_renderThread(
-			RenderCommandList& cmdList,
-			GLuint inputSkyCubemap,
-			GLuint targetCubemap,
-			uint32 targetSize);
 
 		/// <summary>
 		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
@@ -84,27 +108,24 @@ namespace pathos {
 		/// <param name="cmdList">Render command list</param>
 		/// <param name="srcCubemap">Radiance-captured cubemap. Should have size of 128 and mip count of 7.</param>
 		/// <param name="dstCubemap">Cubemap that will store the filtering result. Should have size of 128 and mip count of 7.</param>
-		static void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
+		void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
 
 		// -----------------------------------------------------------------------
 
 		// Default BRDF integration map of 512 size
-		static GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
+		GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
 
-		static GLuint bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList);
-
-		static void internal_createIrradianceBakerResources(class OpenGLDevice* renderDevice, RenderCommandList& cmdList);
-		static void internal_destroyIrradianceBakerResources(class OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+		GLuint bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList);
 
 	private:
-		static GLuint dummyVAO;
-		static GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
-		static GLuint dummyFBO_2color; // Dummy FBO for two color attachments
-		static class MeshGeometry* fullscreenQuad;
-		static class MeshGeometry* dummyCube;
-		static matrix4 cubeTransforms[6];
+		GLuint dummyVAO;
+		GLuint dummyFBO; // Dummy FBO for render to a 2D texture or one face of a cubemap
+		GLuint dummyFBO_2color; // Dummy FBO for two color attachments
+		MeshGeometry* fullscreenQuad;
+		MeshGeometry* dummyCube;
+		matrix4 cubeTransforms[6];
 
-		static GLuint internal_BRDFIntegrationMap;
+		GLuint internal_BRDFIntegrationMap;
 
 	};
 

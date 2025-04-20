@@ -297,17 +297,13 @@ namespace pathos {
 			// Sometimes sky lighting is invalidated due to, for instance, world transition.
 			// Clear current sky lighting textures and let sky passes update them.
 			if (scene->bInvalidateSkyLighting) {
-				float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				if (sceneRenderTargets->skyIrradianceMap != 0) {
-					pathos::clearTextureCube(
-						cmdList,
-						sceneRenderTargets->skyIrradianceMap,
-						pathos::SKY_IRRADIANCE_MAP_SIZE,
-						0, // start mip level
-						1, // mip count to clear
-						EClearTextureFormat::RGBA16f,
-						clearValues);
+				if (sceneRenderTargets->skyDiffuseSH != nullptr) {
+					vector4 clearBuf[9];
+					for (int32 i = 0; i < 9; ++i) clearBuf[i] = vector4(0.0f);
+					sceneRenderTargets->skyDiffuseSH->writeToGPU_renderThread(cmdList, 0, sizeof(clearBuf), clearBuf);
 				}
+
+				float clearValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 				if (sceneRenderTargets->skyPrefilteredMap != 0) {
 					pathos::clearTextureCube(
 						cmdList,
