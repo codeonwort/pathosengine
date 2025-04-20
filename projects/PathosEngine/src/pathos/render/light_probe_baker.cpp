@@ -3,6 +3,8 @@
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/util/engine_util.h"
 #include "pathos/util/engine_thread.h"
@@ -79,6 +81,15 @@ namespace pathos {
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, FullscreenVS, BRDFIntegrationMapFS);
+
+	class DiffuseSHGenCS : public ShaderStage {
+	public:
+		DiffuseSHGenCS() : ShaderStage(GL_COMPUTE_SHADER, "DiffuseSHGenCS") {
+			addDefine("COMPUTE_SHADER", 1);
+			setFilepath("diffuse_irradiance.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_DiffuseSH, DiffuseSHGenCS);
 
 }
 
@@ -162,6 +173,24 @@ namespace pathos {
 		// Just cleanup references as they are owned by gEngine.
 		fullscreenQuad = nullptr;
 		dummyCube = nullptr;
+	}
+
+	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
+		const uint32 cubemapSize = inCubemap->getCreateParams().width;
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DiffuseSH);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.uniform1i(1, (int32)cubemapSize);
+		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
+		outSH->bindAsSSBO(cmdList, 2);
+
+		cmdList.dispatchCompute(1, 1, 1);
+
+		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		cmdList.bindTextureUnit(0, 0);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
 	}
 
 	void LightProbeBaker::projectPanoramaToCubemap_renderThread(

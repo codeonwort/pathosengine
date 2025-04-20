@@ -11,6 +11,8 @@ namespace pathos {
 
 	class OpenGLDevice;
 	class MeshGeometry;
+	class Texture;
+	class Buffer;
 
 	enum class EIrradianceMapEncoding : uint32 { Cubemap, OctahedralNormalVector };
 
@@ -35,6 +37,8 @@ namespace pathos {
 
 		void initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 		void destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
+
+		void bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH);
 
 		/// <summary>
 		/// Generate irradiance cubemap from radiance capture cubemap.

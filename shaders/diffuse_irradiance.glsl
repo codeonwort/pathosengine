@@ -9,7 +9,7 @@
 
 #if COMPUTE_SHADER
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 6) in;
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout (location = 1) uniform int cubemapSize;
 
@@ -19,7 +19,7 @@ struct SHBuffer {
     vec4 Ls[9]; // w not used
 };
 
-layout (std140, binding = 0) writeonly buffer {
+layout (std140, binding = 2) writeonly buffer Buffer_SH {
 	SHBuffer outSH;
 };
 
@@ -33,18 +33,6 @@ float Y20  (vec3 dir) { return 0.315392f * (3.0f * dir.z * dir.z - 1.0f); };
 float Y21  (vec3 dir) { return 1.092548f * dir.x * dir.z; };
 float Y22  (vec3 dir) { return 0.546274f * (dir.x * dir.x - dir.y * dir.y); };
 
-float Y(int i, vec3 dir) {
-    if (i == 0) return Y00(dir);
-    else if (i == 1) return Y1_1(dir);
-    else if (i == 2) return Y10(dir);
-    else if (i == 3) return Y11(dir);
-    else if (i == 4) return Y2_2(dir);
-    else if (i == 5) return Y2_1(dir);
-    else if (i == 6) return Y20(dir);
-    else if (i == 7) return Y2_1(dir);
-    else if (i == 8) return Y22(dir);
-}
-
 vec3 getDir(int face, float u, float v) {
     if (face == 0) return normalize(vec3(1, u, v));
     else if (face == 1) return normalize(vec3(-1, u, v));
@@ -55,8 +43,9 @@ vec3 getDir(int face, float u, float v) {
     return vec3(0);
 }
 
-void prefilter(int i) {
-    vec3 L(0);
+void prefilter() {
+    vec3 scratch[9];
+    for (int i = 0; i < 9; i++) scratch[i] = vec3(0);
     float wSum = 0.0;
 
     for (int face = 0; face < 6; face++) {
@@ -68,15 +57,27 @@ void prefilter(int i) {
                 float w = 4.0 / (tmp * sqrt(tmp));
 
                 vec3 dir = getDir(face, u, v);
+                vec3 sky = w * textureLod(inCubemap, dir, 0).xyz;
 
-                L += w * textureLod(inCubemap, dir, 0).xyz * Y(i, dir);
+                scratch[0] += sky * Y00(dir);
+                scratch[1] += sky * Y1_1(dir);
+                scratch[2] += sky * Y10(dir);
+                scratch[3] += sky * Y11(dir);
+                scratch[4] += sky * Y2_2(dir);
+                scratch[5] += sky * Y2_1(dir);
+                scratch[6] += sky * Y20(dir);
+                scratch[7] += sky * Y21(dir);
+                scratch[8] += sky * Y22(dir);
+
                 wSum += w;
             }
         }
     }
-    L *= 4.0 * PI / wSum;
 
-    outSH.Ls[i] = vec4(L, 0);
+    float norm = 4.0 * PI / wSum;
+    for (int i = 0; i < 9; i++) {
+        outSH.Ls[i] = vec4(scratch[i] * norm, 0);
+    }
 }
 
 vec3 evaluateSH(SHBuffer shBuffer, vec3 dir) {
@@ -96,7 +97,11 @@ vec3 evaluateSH(SHBuffer shBuffer, vec3 dir) {
     const vec3 L21  = shBuffer.Ls[7].xyz;
     const vec3 L22  = shBuffer.Ls[8].xyz;
 
-    vec3 E(0.0f);
+    float x = dir.x;
+    float y = dir.y;
+    float z = dir.z;
+
+    vec3 E = vec3(0.0f);
     E += c1 * L22 * (x * x - y * y) + c3 * L20 * z * z + c4 * L00 - c5 * L20;
     E += 2 * c1 * (L2_2 * x * y + L21 * x * z + L2_1 * y * z);
     E += 2 * c2 * (L11 * x + L1_1 * y + L10 * z);
@@ -104,9 +109,7 @@ vec3 evaluateSH(SHBuffer shBuffer, vec3 dir) {
 }
 
 void main() {
-    for (int i = 0; i < 9; i++) {
-        prefilter(i);
-    }
+    prefilter();
 }
 
 #endif // COMPUTE_SHADER

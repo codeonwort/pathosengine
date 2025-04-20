@@ -30,7 +30,7 @@ namespace pathos {
 		void renderTransmittanceLUT(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad); // Called only once
 
 		GLuint fbo = 0xffffffff;
-		GLuint cubemapTexture = 0;
+		Texture* cubemapTexture = nullptr;
 		UniformBuffer ubo;
 		GLuint vao;
 		Texture* transmittanceLUT = nullptr;

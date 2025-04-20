@@ -20,7 +20,7 @@ namespace pathos {
 
 	static constexpr uint32 LUT_WIDTH = 64;
 	static constexpr uint32 LUT_HEIGHT = 256;
-	static constexpr uint32 TO_CUBEMAP_SIZE = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
+	static constexpr uint32 TO_CUBEMAP_SIZE = 128; // #wip: Separate diffuse and specular sources
 
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -74,8 +74,9 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_SkyAtmosphere");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTexture);
-		cmdList.textureStorage2D(cubemapTexture, 1, GL_RGBA16F, TO_CUBEMAP_SIZE, TO_CUBEMAP_SIZE);
+		TextureCreateParams cubemapDesc = TextureCreateParams::cubemap(TO_CUBEMAP_SIZE, GL_RGBA16F, 1);
+		cubemapTexture = new Texture(cubemapDesc);
+		cubemapTexture->createGPUResource_renderThread(cmdList);
 
 		ubo.init<UBO_Atmosphere>("UBO_SkyAtmosphere");
 		gRenderDevice->createVertexArrays(1, &vao);
@@ -83,7 +84,7 @@ namespace pathos {
 
 	void SkyAtmospherePass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
-		gRenderDevice->deleteTextures(1, &cubemapTexture);
+		delete cubemapTexture;
 		gRenderDevice->deleteVertexArrays(1, &vao);
 		if (transmittanceLUT) delete transmittanceLUT;
 	}
@@ -97,6 +98,12 @@ namespace pathos {
 			renderToCubemap(cmdList, scene);
 			renderSkyIrradianceMap(cmdList, scene);
 			renderSkyPrefilterMap(cmdList, scene);
+		} else {
+			// #wip: Test new diffuse SH
+			SCOPED_DRAW_EVENT(SkyDiffuseSH);
+			renderToCubemap(cmdList, scene);
+			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+			LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, cubemapTexture, sceneContext.skyDiffuseSH);
 		}
 	}
 
@@ -192,7 +199,7 @@ namespace pathos {
 			uboData.customViewInv   = glm::inverse(tempCamera.getViewMatrix());
 			ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
-			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTexture, 0, i);
+			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTexture->internal_getGLName(), 0, i);
 			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}
 
@@ -206,7 +213,7 @@ namespace pathos {
 
 		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
 			cmdList,
-			cubemapTexture,
+			cubemapTexture->internal_getGLName(),
 			sceneContext.skyIrradianceMap,
 			pathos::SKY_IRRADIANCE_MAP_SIZE);
 	}
@@ -219,7 +226,7 @@ namespace pathos {
 
 		LightProbeBaker::get().bakeSpecularIBL_renderThread(
 			cmdList,
-			cubemapTexture,
+			cubemapTexture->internal_getGLName(),
 			TO_CUBEMAP_SIZE,
 			sceneContext.skyPrefilterMapMipCount,
 			sceneContext.skyPrefilteredMap);
@@ -242,7 +249,7 @@ namespace pathos {
 		createParams.debugName       = "Texture_TransmittanceLUT";
 
 		transmittanceLUT = new Texture(createParams);
-		transmittanceLUT->createGPUResource();
+		transmittanceLUT->createGPUResource_renderThread(cmdList);
 
 		const GLuint lut = transmittanceLUT->internal_getGLName();
 
