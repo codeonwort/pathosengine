@@ -291,7 +291,7 @@ namespace pathos {
 
 		{
 			SCOPED_CPU_COUNTER(SkyLighting);
-			SCOPED_GPU_COUNTER(SkyLighting);
+			//SCOPED_GPU_COUNTER(SkyLighting); // #wip: Temp disable GPU counter for SkyLighting
 			SCOPED_DRAW_EVENT(SkyLighting);
 
 			// Sometimes sky lighting is invalidated due to, for instance, world transition.

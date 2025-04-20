@@ -184,7 +184,8 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
 		outSH->bindAsSSBO(cmdList, 2);
 
-		cmdList.dispatchCompute(1, 1, 1);
+		uint32 groupSize = (cubemapSize + 7) / 8;
+		cmdList.dispatchCompute(groupSize, groupSize, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

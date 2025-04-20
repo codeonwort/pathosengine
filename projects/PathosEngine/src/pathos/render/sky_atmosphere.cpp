@@ -103,7 +103,10 @@ namespace pathos {
 			SCOPED_DRAW_EVENT(SkyDiffuseSH);
 			renderToCubemap(cmdList, scene);
 			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-			LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, cubemapTexture, sceneContext.skyDiffuseSH);
+			{
+				SCOPED_GPU_COUNTER(SkyDiffuseSH);
+				LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, cubemapTexture, sceneContext.skyDiffuseSH);
+			}
 		}
 	}
 

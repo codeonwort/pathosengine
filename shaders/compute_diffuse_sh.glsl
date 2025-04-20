@@ -7,6 +7,9 @@
 // --------------------------------------------------------
 // Definitions
 
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8
+
 struct SHBuffer {
     vec4 Ls[9]; // w not used
 };
@@ -14,7 +17,7 @@ struct SHBuffer {
 // --------------------------------------------------------
 // Layout
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 6) in;
+layout (local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z = 6) in;
 
 layout (location = 1) uniform int cubemapSize;
 
@@ -24,7 +27,10 @@ layout (std140, binding = 2) writeonly buffer Buffer_SH {
 	SHBuffer outSH;
 };
 
-shared vec3 s_faceL[6][9];
+shared vec3 s_perFaceL[6][9];
+shared float s_perFaceWeight[6];
+shared vec3 s_sliceL[GROUP_SIZE_Y][GROUP_SIZE_X][9];
+shared float s_weight[6][GROUP_SIZE_Y][GROUP_SIZE_X];
 
 // --------------------------------------------------------
 // Shader
@@ -49,13 +55,13 @@ vec3 getDir(uint face, float u, float v) {
     return vec3(0);
 }
 
-void prefilter(uint face) {
+void prefilter(uint face, uint x0, uint y0) {
     vec3 scratch[9];
     for (int i = 0; i < 9; i++) scratch[i] = vec3(0);
     float wSum = 0.0;
 
-    for (int y = 0; y < cubemapSize; y++) {
-        for (int x = 0; x < cubemapSize; x++) {
+    for (uint y = y0; y < cubemapSize; y += GROUP_SIZE_Y) {
+        for (uint x = x0; x < cubemapSize; x += GROUP_SIZE_X) {
             float u = 2.0 * (float(x) / float(cubemapSize)) - 1.0;
             float v = 2.0 * (float(y) / float(cubemapSize)) - 1.0;
             float tmp = 1.0 + u * u + v * v;
@@ -78,9 +84,9 @@ void prefilter(uint face) {
         }
     }
 
-    float norm = 4.0 * PI / wSum;
     for (int i = 0; i < 9; i++) {
-        s_faceL[face][i] = scratch[i] * norm;
+        s_sliceL[y0][x0][i] = scratch[i];
+        s_weight[face][y0][x0] = wSum;
     }
 }
 
@@ -113,27 +119,67 @@ vec3 evaluateSH(SHBuffer shBuffer, vec3 dir) {
 }
 
 void main() {
-    const uint face = gl_LocalInvocationID.z;
+    uvec3 tid = gl_LocalInvocationID.xyz;
+    const uint face = tid.z;
 
+    s_perFaceWeight[face] = 0.0;
     for (int i = 0; i < 9; i++) {
-        s_faceL[face][i] = vec3(0);
+        s_perFaceL[face][i] = vec3(0);
+        s_sliceL[tid.y][tid.x][i] = vec3(0);
+        s_weight[face][tid.y][tid.x] = 0.0;
     }
     memoryBarrierShared();
 
-    prefilter(face);
+    prefilter(face, tid.x, tid.y);
     memoryBarrierShared();
 
-    if (gl_LocalInvocationID.x == 0) {
+    // Collect per-face data.
+    if (tid.xy == uvec2(0, 0)) {
+        vec3 scratch[9];
+        for (int i = 0; i < 9; i++) scratch[i] = vec3(0);
+        float wSum = 0.0;
+
+        for (uint y = 0; y < GROUP_SIZE_Y; y++) {
+            for (uint x = 0; x < GROUP_SIZE_X; x++) {
+                scratch[0] += s_sliceL[y][x][0];
+                scratch[1] += s_sliceL[y][x][1];
+                scratch[2] += s_sliceL[y][x][2];
+                scratch[3] += s_sliceL[y][x][3];
+                scratch[4] += s_sliceL[y][x][4];
+                scratch[5] += s_sliceL[y][x][5];
+                scratch[6] += s_sliceL[y][x][6];
+                scratch[7] += s_sliceL[y][x][7];
+                scratch[8] += s_sliceL[y][x][8];
+
+                wSum += s_weight[face][y][x];
+            }
+        }
+        s_perFaceWeight[face] = wSum;
+        for (int i = 0; i < 9; i++) s_perFaceL[face][i] = scratch[i];
+    }
+    memoryBarrierShared();
+
+    if (tid == uvec3(0, 0, 0)) {
+        float wSum = 0.0;
+        wSum += s_perFaceWeight[0];
+        wSum += s_perFaceWeight[1];
+        wSum += s_perFaceWeight[2];
+        wSum += s_perFaceWeight[3];
+        wSum += s_perFaceWeight[4];
+        wSum += s_perFaceWeight[5];
+
+        float norm = 4.0 * PI / wSum;
+
         for (int i = 0; i < 9; i++) {
             vec3 L = vec3(0);
-            L += s_faceL[0][i];
-            L += s_faceL[1][i];
-            L += s_faceL[2][i];
-            L += s_faceL[3][i];
-            L += s_faceL[4][i];
-            L += s_faceL[5][i];
+            L += s_perFaceL[0][i];
+            L += s_perFaceL[1][i];
+            L += s_perFaceL[2][i];
+            L += s_perFaceL[3][i];
+            L += s_perFaceL[4][i];
+            L += s_perFaceL[5][i];
 
-            outSH.Ls[i] = vec4(L, 0);
+            outSH.Ls[i] = vec4(L, 0) * norm;
         }
     }
 }
