@@ -13,6 +13,36 @@
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
+// Count leading zeros
+// https://stackoverflow.com/questions/23856596/how-to-count-leading-zeros-in-a-32-bit-unsigned-integer
+static int32 clz(uint32 x) {
+	static const char debruijn32[32] = {
+		0, 31, 9, 30, 3, 8, 13, 29, 2, 5, 7, 21, 12, 24, 28, 19,
+		1, 10, 4, 14, 6, 22, 25, 20, 11, 15, 23, 26, 16, 27, 17, 18
+	};
+	if (!x) return 32;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x++;
+	return debruijn32[x * 0x076be629 >> 27];
+}
+// Count trailing zeros
+// https://stackoverflow.com/questions/45221914/how-do-you-efficiently-count-the-trailing-zero-bits-in-a-number
+static int32 ctz(unsigned x) {
+	int32 n;
+
+	if (x == 0) return 32;
+	n = 1;
+	if ((x & 0x0000FFFF) == 0) { n = n + 16; x = x >> 16; }
+	if ((x & 0x000000FF) == 0) { n = n + 8; x = x >> 8; }
+	if ((x & 0x0000000F) == 0) { n = n + 4; x = x >> 4; }
+	if ((x & 0x00000003) == 0) { n = n + 2; x = x >> 2; }
+	return n - (x & 1);
+}
+
 // Precomputed Atmospheric Scattering
 namespace pathos {
 
@@ -20,7 +50,8 @@ namespace pathos {
 
 	static constexpr uint32 LUT_WIDTH = 64;
 	static constexpr uint32 LUT_HEIGHT = 256;
-	static constexpr uint32 TO_CUBEMAP_SIZE = 128; // #wip: Separate diffuse and specular sources
+	static constexpr uint32 REFLECTION_CUBEMAP_SIZE = 512;
+	static constexpr uint32 AMBIENT_CUBEMAP_SIZE = 128;
 
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -74,9 +105,13 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_SkyAtmosphere");
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
-		TextureCreateParams cubemapDesc = TextureCreateParams::cubemap(TO_CUBEMAP_SIZE, GL_RGBA16F, 1);
-		cubemapTexture = new Texture(cubemapDesc);
-		cubemapTexture->createGPUResource_renderThread(cmdList);
+		// To copy to ambientCubemap.
+		const uint32 mipLevels = 1 + ctz(REFLECTION_CUBEMAP_SIZE) - ctz(AMBIENT_CUBEMAP_SIZE);
+		reflectionCubemap = new Texture(TextureCreateParams::cubemap(REFLECTION_CUBEMAP_SIZE, GL_RGBA16F, mipLevels));
+		reflectionCubemap->createGPUResource_renderThread(cmdList);
+
+		ambientCubemap = new Texture(TextureCreateParams::cubemap(AMBIENT_CUBEMAP_SIZE, GL_RGBA16F, 1));
+		ambientCubemap->createGPUResource_renderThread(cmdList);
 
 		ubo.init<UBO_Atmosphere>("UBO_SkyAtmosphere");
 		gRenderDevice->createVertexArrays(1, &vao);
@@ -84,9 +119,11 @@ namespace pathos {
 
 	void SkyAtmospherePass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
-		delete cubemapTexture;
+		delete reflectionCubemap;
+		delete ambientCubemap;
 		gRenderDevice->deleteVertexArrays(1, &vao);
 		if (transmittanceLUT) delete transmittanceLUT;
+		ubo.safeDestroy();
 	}
 
 	void SkyAtmospherePass::renderSkyAtmosphere(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera, MeshGeometry* fullscreenQuad) {
@@ -105,7 +142,7 @@ namespace pathos {
 			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 			{
 				SCOPED_GPU_COUNTER(SkyDiffuseSH);
-				LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, cubemapTexture, sceneContext.skyDiffuseSH);
+				LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 			}
 		}
 	}
@@ -178,12 +215,14 @@ namespace pathos {
 		}
 		float sunDiskSize = cvar_sunDisk.getFloat();
 
+		// Render specular cubemap.
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_AtmosphericScattering);
 		cmdList.useProgram(program.getGLName());
 
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.viewport(0, 0, TO_CUBEMAP_SIZE, TO_CUBEMAP_SIZE);
+		cmdList.viewport(0, 0, REFLECTION_CUBEMAP_SIZE, REFLECTION_CUBEMAP_SIZE);
 
 		cmdList.bindTextureUnit(0, transmittanceLUT->internal_getGLName());
 		cmdList.bindVertexArray(vao);
@@ -198,15 +237,20 @@ namespace pathos {
 			uboData.screenFlip.x    = flipScreenXY ? -1.0f : 1.0f;
 			uboData.screenFlip.y    = flipScreenXY ? -1.0f : 1.0f;
 			uboData.renderToCubemap = 1;
-			uboData.cubemapSize     = (float)TO_CUBEMAP_SIZE;
+			uboData.cubemapSize     = (float)REFLECTION_CUBEMAP_SIZE;
 			uboData.customViewInv   = glm::inverse(tempCamera.getViewMatrix());
 			ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
-			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTexture->internal_getGLName(), 0, i);
+			cmdList.namedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, reflectionCubemap->internal_getGLName(), 0, i);
 			cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}
 
 		cmdList.bindVertexArray(0);
+
+		// Copy specular cubemap to ambient cubemap for diffuse SH.
+		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
+		int32 copyLOD = ctz(REFLECTION_CUBEMAP_SIZE) - ctz(AMBIENT_CUBEMAP_SIZE);
+		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyLOD, 0);
 	}
 
 	void SkyAtmospherePass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
@@ -216,7 +260,7 @@ namespace pathos {
 
 		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
 			cmdList,
-			cubemapTexture->internal_getGLName(),
+			reflectionCubemap->internal_getGLName(),
 			sceneContext.skyIrradianceMap,
 			pathos::SKY_IRRADIANCE_MAP_SIZE);
 	}
@@ -225,12 +269,12 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SkyAtmosphereToPrefilterMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		sceneContext.reallocSkyPrefilterMap(cmdList, TO_CUBEMAP_SIZE);
+		sceneContext.reallocSkyPrefilterMap(cmdList, REFLECTION_CUBEMAP_SIZE);
 
 		LightProbeBaker::get().bakeSpecularIBL_renderThread(
 			cmdList,
-			cubemapTexture->internal_getGLName(),
-			TO_CUBEMAP_SIZE,
+			reflectionCubemap->internal_getGLName(),
+			REFLECTION_CUBEMAP_SIZE,
 			sceneContext.skyPrefilterMapMipCount,
 			sceneContext.skyPrefilteredMap);
 	}

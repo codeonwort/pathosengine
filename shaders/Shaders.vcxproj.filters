@@ -93,5 +93,6 @@
     <None Include="materials\indirect_draw_dummy.glsl" />
     <None Include="compute_diffuse_sh.glsl" />
     <None Include="core\diffuse_sh.glsl" />
+    <None Include="sky\copy_cubemap.glsl" />
   </ItemGroup>
 </Project>

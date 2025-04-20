@@ -90,6 +90,14 @@ namespace pathos {
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_DiffuseSH, DiffuseSHGenCS);
 
+	class CopyCubemapCS : public ShaderStage {
+	public:
+		CopyCubemapCS() : ShaderStage(GL_COMPUTE_SHADER, "CopyCubemapCS") {
+			setFilepath("sky/copy_cubemap.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_CopyCubemap, CopyCubemapCS);
+
 }
 
 namespace pathos {
@@ -421,6 +429,29 @@ namespace pathos {
 
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
+	}
+
+	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputLOD /*= 0*/, uint32 outputLOD /*= 0*/) {
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
+		cmdList.useProgram(program.getGLName());
+
+		const auto& inputDesc = input->getCreateParams();
+		const auto& outputDesc = output->getCreateParams();
+		CHECK(inputDesc.glDimension == GL_TEXTURE_CUBE_MAP && outputDesc.glDimension == GL_TEXTURE_CUBE_MAP);
+		CHECK((inputDesc.width >> inputLOD) == (outputDesc.width >> outputLOD));
+
+		const GLuint mipSize = (inputDesc.width >> inputLOD);
+
+		cmdList.uniform1ui(1, mipSize);
+
+		const GLint layer = 0; // Don't care if layere = GL_TRUE
+		cmdList.bindImageTexture(0, input->internal_getGLName(), inputLOD, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(1, output->internal_getGLName(), outputLOD, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
+
+		const uint32 groupSize = (mipSize + 7) / 8;
+		cmdList.dispatchCompute(groupSize, groupSize, 1);
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
 	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {

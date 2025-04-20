@@ -69,6 +69,16 @@ namespace pathos {
 			GLuint outputTexture);
 
 		/// <summary>
+		/// Copy between cubemaps. input texture's target mip and output texture's target mip should have the same size.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="input">Input cubemap</param>
+		/// <param name="output">Output cubemap</param>
+		/// <param name="inputMip">Input texture's mip as copy source</param>
+		/// <param name="outputMip">Output texture's mip as destination</param>
+		void copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip = 0, uint32 outputMip = 0);
+
+		/// <summary>
 		/// Render the given equirectangular (panorama) texture to the cubemap texture.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>
