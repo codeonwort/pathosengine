@@ -132,9 +132,6 @@ namespace pathos {
 			if (localSpecularIBLs == 0) {
 				reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
 			}
-			if (skyIrradianceMap == 0) {
-				reallocSkyIrradianceMap(cmdList);
-			}
 			// One of sky passes will invoke reallocSkyPrefilterMap()
 
 			// Auto exposure (histogram)
@@ -317,7 +314,6 @@ namespace pathos {
 		safe_release_array(cascadedShadowMaps);
 		safe_release(omniShadowMaps);
 		safe_release(localSpecularIBLs);
-		safe_release(skyIrradianceMap);
 		safe_release(skyPrefilteredMap);
 		safe_release(gbufferA);
 		safe_release(gbufferB);
@@ -448,15 +444,6 @@ namespace pathos {
 		cmdList.objectLabel(GL_TEXTURE, gbufferC, -1, "gbufferC");
 	}
 
-	void SceneRenderTargets::reallocSkyIrradianceMap(RenderCommandList& cmdList) {
-		if (skyIrradianceMap != 0) {
-			cmdList.deleteTextures(1, &skyIrradianceMap);
-		}
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyIrradianceMap);
-		cmdList.textureStorage2D(skyIrradianceMap, 1, GL_RGBA16F, SKY_IRRADIANCE_MAP_SIZE, SKY_IRRADIANCE_MAP_SIZE);
-		cmdList.objectLabel(GL_TEXTURE, skyIrradianceMap, -1, "SkyIrradianceMap");
-	}
-
 	void SceneRenderTargets::reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize) {
 		CHECKF(cubemapSize > 0, "cubemapSize is zero");
 		if (skyPrefilteredMap != 0 && skyPrefilterMapSize != cubemapSize) {
@@ -477,10 +464,6 @@ namespace pathos {
 				cubemapSize);
 			cmdList.objectLabel(GL_TEXTURE, skyPrefilteredMap, -1, "Texture_SkyPrefilterMap");
 		}
-	}
-
-	GLuint SceneRenderTargets::getSkyIrradianceMapWithFallback() const {
-		return (skyIrradianceMap != 0) ? skyIrradianceMap : gEngine->getSystemTextureCubeBlack()->internal_getGLName();
 	}
 
 	GLuint SceneRenderTargets::getSkyPrefilterMapWithFallback() const {

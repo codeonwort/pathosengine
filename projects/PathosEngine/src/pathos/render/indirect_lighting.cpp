@@ -175,7 +175,6 @@ namespace pathos {
 
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
-		cmdList.bindTextureUnit(4, sceneContext.getSkyIrradianceMapWithFallback());
 		cmdList.bindTextureUnit(5, sceneContext.getSkyPrefilterMapWithFallback());
 		cmdList.bindTextureUnit(6, LightProbeBaker::get().getBRDFIntegrationMap_512());
 		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);

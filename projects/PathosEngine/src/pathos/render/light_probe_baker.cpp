@@ -335,18 +335,6 @@ namespace pathos {
 		}
 	}
 
-	void LightProbeBaker::bakeSkyIrradianceMap_renderThread(RenderCommandList& cmdList, GLuint inputSkyCubemap, GLuint targetCubemap, uint32 targetSize)
-	{
-		CHECK(isInRenderThread());
-		
-		IrradianceMapBakeDesc bakeDesc;
-		bakeDesc.encoding     = EIrradianceMapEncoding::Cubemap;
-		bakeDesc.renderTarget = targetCubemap;
-		bakeDesc.depthTarget  = 0;
-		bakeDesc.viewportSize = targetSize;
-		bakeDiffuseIBL_renderThread(cmdList, inputSkyCubemap, 0, bakeDesc);
-	}
-
 	void LightProbeBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeReflectionProbe);

@@ -218,20 +218,9 @@ namespace pathos {
 	}
 
 	void SkyboxPass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
-#if 0 // #wip: Remove this
-		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
-
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		GLuint targetCubemap = sceneContext.skyIrradianceMap;
-		uint32 targetSize = pathos::SKY_IRRADIANCE_MAP_SIZE;
-
-		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(cmdList, inputCubemap, targetCubemap, targetSize);
-#else
 		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
-#endif
 	}
 
 	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList) {

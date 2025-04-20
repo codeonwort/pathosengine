@@ -136,21 +136,9 @@ namespace pathos {
 	}
 
 	void PanoramaSkyPass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
-#if 0 // #wip: Remove this
-		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
-
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
-			cmdList,
-			cubemapTexture,
-			sceneContext.skyIrradianceMap,
-			pathos::SKY_IRRADIANCE_MAP_SIZE);
-#else
-		SCOPED_DRAW_EVENT(PanoramaSkyToDiffuseSH);
+		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
-#endif
 	}
 
 	void PanoramaSkyPass::renderSkyPrefilterMap(RenderCommandList& cmdList) {

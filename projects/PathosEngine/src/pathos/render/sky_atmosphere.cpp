@@ -105,7 +105,6 @@ namespace pathos {
 		renderToScreen(cmdList, scene, camera);
 		if (scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
-			//renderSkyIrradianceMap(cmdList, scene); // #wip: Remove this
 			renderSkyDiffuseSH(cmdList);
 			renderSkyPrefilterMap(cmdList, scene);
 		}
@@ -215,18 +214,6 @@ namespace pathos {
 		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
 		int32 copyMip = badger::ctz(REFLECTION_CUBEMAP_SIZE) - badger::ctz(AMBIENT_CUBEMAP_SIZE);
 		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
-	}
-
-	void SkyAtmospherePass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(SkyAtmosphereToIrradianceMap);
-
-		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-
-		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
-			cmdList,
-			reflectionCubemap->internal_getGLName(),
-			sceneContext.skyIrradianceMap,
-			pathos::SKY_IRRADIANCE_MAP_SIZE);
 	}
 
 	void SkyAtmospherePass::renderSkyDiffuseSH(RenderCommandList& cmdList) {

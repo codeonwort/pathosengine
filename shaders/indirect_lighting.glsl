@@ -57,7 +57,6 @@ layout (binding = 0) uniform usampler2D       gbufferA;
 layout (binding = 1) uniform sampler2D        gbufferB;
 layout (binding = 2) uniform usampler2D       gbufferC;
 layout (binding = 3) uniform sampler2D        ssaoMap;
-layout (binding = 4) uniform samplerCube      skyIrradianceProbe;     // Sky diffuse IBL
 layout (binding = 5) uniform samplerCube      skyReflectionProbe;     // Sky specular IBL
 layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
 layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Prefiltered local specular IBLs
@@ -92,7 +91,6 @@ bool isPositionInBounds(vec3 position, vec3 minBounds, vec3 maxBounds) {
 }
 
 vec3 evaluateSkyDiffuse(vec3 dir) {
-	//return texture(skyIrradianceProbe, dir).xyz;
 	return evaluateSH(ssboSkyDiffuseSH.shBuffer, dir);
 }
 

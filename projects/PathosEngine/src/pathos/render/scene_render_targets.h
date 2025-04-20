@@ -10,7 +10,6 @@ namespace pathos {
 	struct DirectionalLightProxy;
 
 	constexpr uint32 SKY_AMBIENT_CUBEMAP_SIZE = 128; // Size of source cubemap of sky diffuse SH.
-	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32; // #wip: Remove this
 
 	// For sky atmosphere and panorama sky. Skybox will use the size of its source cubemap.
 	constexpr uint32 SKY_PREFILTER_MAP_DEFAULT_SIZE = 512;
@@ -94,7 +93,6 @@ namespace pathos {
 
 		// Indirect Lighting
 		GLuint localSpecularIBLs = 0;        // Cubemap array for local reflection probes
-		GLuint skyIrradianceMap = 0;         // Cubemap for sky indirect diffuse #wip: Remove this
 		GLuint skyPrefilteredMap = 0;        // Cubemap for sky indirect specular
 		uint32 skyPrefilterMapMipCount = 1;
 		uint32 skyPrefilterMapSize = 0;
@@ -155,10 +153,8 @@ namespace pathos {
 
 		void reallocOmniShadowMaps(RenderCommandList& cmdList, uint32 numPointLights, uint32 shadowMapSize);
 		void reallocGBuffers(RenderCommandList& cmdList, bool bResolutionChanged);
-		void reallocSkyIrradianceMap(RenderCommandList& cmdList); // #wip: Remove this
 		void reallocSkyPrefilterMap(RenderCommandList& cmdList, uint32 cubemapSize);
 
-		GLuint getSkyIrradianceMapWithFallback() const; // #wip: Remove this
 		GLuint getSkyPrefilterMapWithFallback() const;
 		uint32 getSkyPrefilterMapMipCount() const;
 
