@@ -227,6 +227,7 @@
   <ItemGroup>
     <ClInclude Include="src\badger\assertion\assertion.h" />
     <ClInclude Include="src\badger\math\aabb.h" />
+    <ClInclude Include="src\badger\math\bits.h" />
     <ClInclude Include="src\badger\math\constants.h" />
     <ClInclude Include="src\badger\math\convex_hull.h" />
     <ClInclude Include="src\badger\math\hit_test.h" />

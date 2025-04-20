@@ -73,6 +73,7 @@
     <None Include="reflection_probe_filtering.glsl" />
     <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
+    <None Include="sky\blit_cubemap.glsl" />
     <None Include="sky\copy_cubemap.glsl" />
     <None Include="sky\skybox.glsl" />
     <None Include="sky\sky_panorama.glsl" />

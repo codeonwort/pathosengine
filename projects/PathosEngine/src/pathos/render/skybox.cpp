@@ -13,6 +13,7 @@
 
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
+#include "badger/math/bits.h"
 #include <string>
 
 namespace pathos {
@@ -61,9 +62,15 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fboCube, -1, "FBO_SkyMaterialToCube");
 		cmdList.namedFramebufferDrawBuffer(fboCube, GL_COLOR_ATTACHMENT0);
 
-		scratchCubemapSize = pathos::SKY_PREFILTER_MAP_MIN_SIZE;
-		gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &scratchCubemapTexture);
-		cmdList.textureStorage2D(scratchCubemapTexture, 1, GL_RGBA16F, scratchCubemapSize, scratchCubemapSize);
+		const uint32 reflectionCubeSize = pathos::SKY_PREFILTER_MAP_MIN_SIZE;
+		const uint32 ambientCubeSize = pathos::SKY_AMBIENT_CUBEMAP_SIZE;
+
+		const uint32 mipLevels = 1 + badger::ctz(reflectionCubeSize) - badger::ctz(ambientCubeSize);
+		reflectionCubemap = new Texture(TextureCreateParams::cubemap(reflectionCubeSize, GL_RGBA16F, mipLevels));
+		reflectionCubemap->createGPUResource_renderThread(cmdList);
+
+		ambientCubemap = new Texture(TextureCreateParams::cubemap(ambientCubeSize, GL_RGBA16F, 1));
+		ambientCubemap->createGPUResource_renderThread(cmdList);
 
 		matrix4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 		matrix4 captureViews[] =
@@ -86,22 +93,30 @@ namespace pathos {
 	void SkyboxPass::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		gRenderDevice->deleteFramebuffers(1, &fboCube);
-		gRenderDevice->deleteTextures(1, &scratchCubemapTexture);
+		delete reflectionCubemap;
+		delete ambientCubemap;
 	}
 
 	void SkyboxPass::renderSkybox(RenderCommandList& cmdList, SceneProxy* scene) {
 		SCOPED_DRAW_EVENT(Skybox);
+		SkyboxProxy* skyboxProxy = scene->skybox;
 
 		renderSkyboxToScreen(cmdList, scene);
-		if (scene->skybox->bLightingDirty) {
-			Texture* skyboxTexture = scene->skybox->texture;
-			GLuint inputCubemap = skyboxTexture ? skyboxTexture->internal_getGLName() : 0;
-			if (scene->skybox->bUseCubemapTexture == false) {
+		if (skyboxProxy->bLightingDirty) {
+			Texture* skyboxTexture = skyboxProxy->texture;
+
+			if (skyboxProxy->bUseCubemapTexture) {
+				LightProbeBaker::get().blitCubemap_renderThread(cmdList, skyboxTexture, reflectionCubemap, 0, 0);
+			} else {
 				renderSkyMaterialToCubemap(cmdList, scene);
-				inputCubemap = scratchCubemapTexture;
 			}
-			renderSkyIrradianceMap(cmdList, scene, inputCubemap);
-			renderSkyPreftilerMap(cmdList, scene, inputCubemap);
+			// Copy specular cubemap to ambient cubemap for diffuse SH.
+			cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
+			int32 copyMip = badger::ctz(reflectionCubemap->getCreateParams().width) - badger::ctz(ambientCubemap->getCreateParams().width);
+			LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
+
+			renderSkyDiffuseSH(cmdList);
+			renderSkyPreftilerMap(cmdList);
 		}
 	}
 
@@ -179,14 +194,17 @@ namespace pathos {
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboCube);
 
-		cmdList.viewport(0, 0, scratchCubemapSize, scratchCubemapSize);
+		const TextureCreateParams& cubeDesc = reflectionCubemap->getCreateParams();
+		const GLuint cubeName = reflectionCubemap->internal_getGLName();
+
+		cmdList.viewport(0, 0, cubeDesc.width, cubeDesc.width);
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_FRONT);
 
 		cubeGeometry->bindPositionOnlyVAO(cmdList);
 
 		for (int32 i = 0; i < 6; ++i) {
-			cmdList.namedFramebufferTextureLayer(fboCube, GL_COLOR_ATTACHMENT0, scratchCubemapTexture, 0, i);
+			cmdList.namedFramebufferTextureLayer(fboCube, GL_COLOR_ATTACHMENT0, cubeName, 0, i);
 
 			// Hack UBO_PerObject
 			Material::UBO_PerObject uboData{ cubeTransforms[i], cubeTransforms[i] };
@@ -199,7 +217,8 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void SkyboxPass::renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene, GLuint inputCubemap) {
+	void SkyboxPass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
+#if 0 // #wip: Remove this
 		SCOPED_DRAW_EVENT(SkyboxToIrradianceMap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -207,14 +226,15 @@ namespace pathos {
 		GLuint targetCubemap = sceneContext.skyIrradianceMap;
 		uint32 targetSize = pathos::SKY_IRRADIANCE_MAP_SIZE;
 
-		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(
-			cmdList,
-			inputCubemap,
-			targetCubemap,
-			targetSize);
+		LightProbeBaker::get().bakeSkyIrradianceMap_renderThread(cmdList, inputCubemap, targetCubemap, targetSize);
+#else
+		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
+#endif
 	}
 
-	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList, SceneProxy* scene, GLuint inputCubemap) {
+	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
 		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
@@ -224,7 +244,7 @@ namespace pathos {
 
 		LightProbeBaker::get().bakeSpecularIBL_renderThread(
 			cmdList,
-			inputCubemap,
+			reflectionCubemap->internal_getGLName(),
 			targetCubemapSize,
 			sceneContext.skyPrefilterMapMipCount,
 			sceneContext.skyPrefilteredMap);

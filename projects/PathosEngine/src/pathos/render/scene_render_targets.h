@@ -9,7 +9,8 @@ namespace pathos {
 	class Texture;
 	struct DirectionalLightProxy;
 
-	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32;
+	constexpr uint32 SKY_AMBIENT_CUBEMAP_SIZE = 128; // Size of source cubemap of sky diffuse SH.
+	constexpr uint32 SKY_IRRADIANCE_MAP_SIZE = 32; // #wip: Remove this
 
 	// For sky atmosphere and panorama sky. Skybox will use the size of its source cubemap.
 	constexpr uint32 SKY_PREFILTER_MAP_DEFAULT_SIZE = 512;

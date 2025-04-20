@@ -98,6 +98,22 @@ namespace pathos {
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_CopyCubemap, CopyCubemapCS);
 
+	class BlitCubemapVS : public ShaderStage {
+	public:
+		BlitCubemapVS() : ShaderStage(GL_VERTEX_SHADER, "BlitCubemapVS") {
+			addDefine("VERTEX_SHADER", 1);
+			setFilepath("sky/blit_cubemap.glsl");
+		}
+	};
+	class BlitCubemapFS : public ShaderStage {
+	public:
+		BlitCubemapFS() : ShaderStage(GL_FRAGMENT_SHADER, "BlitCubemapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("sky/blit_cubemap.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_BlitCubemap, BlitCubemapVS, BlitCubemapFS);
+
 }
 
 namespace pathos {
@@ -427,27 +443,63 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputLOD /*= 0*/, uint32 outputLOD /*= 0*/) {
+	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
+		SCOPED_DRAW_EVENT(CopyCubemap);
+
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
 		cmdList.useProgram(program.getGLName());
 
 		const auto& inputDesc = input->getCreateParams();
 		const auto& outputDesc = output->getCreateParams();
 		CHECK(inputDesc.glDimension == GL_TEXTURE_CUBE_MAP && outputDesc.glDimension == GL_TEXTURE_CUBE_MAP);
-		CHECK((inputDesc.width >> inputLOD) == (outputDesc.width >> outputLOD));
+		CHECK((inputDesc.width >> inputMip) == (outputDesc.width >> outputMip));
 
-		const GLuint mipSize = (inputDesc.width >> inputLOD);
+		const GLuint mipSize = (inputDesc.width >> inputMip);
 
 		cmdList.uniform1ui(1, mipSize);
 
 		const GLint layer = 0; // Don't care if layere = GL_TRUE
-		cmdList.bindImageTexture(0, input->internal_getGLName(), inputLOD, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
-		cmdList.bindImageTexture(1, output->internal_getGLName(), outputLOD, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
 
 		const uint32 groupSize = (mipSize + 7) / 8;
 		cmdList.dispatchCompute(groupSize, groupSize, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
+
+	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip) {
+		SCOPED_DRAW_EVENT(BlitCubemap);
+
+		const GLuint outputSize = output->getCreateParams().width >> outputMip;
+
+		cmdList.viewport(0, 0, outputSize, outputSize);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BlitCubemap);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.uniform1f(1, (float)inputMip);
+		cmdList.bindTextureUnit(0, input->internal_getGLName());
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, dummyFBO);
+
+		dummyCube->bindPositionOnlyVAO(cmdList);
+
+		for (int32 i = 0; i < 6; ++i) {
+			const matrix4& viewproj = cubeTransforms[i];
+
+			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, output->internal_getGLName(), outputMip, i);
+			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
+
+			dummyCube->drawPrimitive(cmdList);
+		}
+
+		dummyCube->unbindVAO(cmdList);
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
 	}
 
 	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {

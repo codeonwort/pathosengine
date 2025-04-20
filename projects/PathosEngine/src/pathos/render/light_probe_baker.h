@@ -79,6 +79,16 @@ namespace pathos {
 		void copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip = 0, uint32 outputMip = 0);
 
 		/// <summary>
+		/// Blit a mip of input cubemap to a mip of output cubemap. Can be different sizes.
+		/// </summary>
+		/// <param name="cmdList"></param>
+		/// <param name="input"></param>
+		/// <param name="output"></param>
+		/// <param name="inputMip"></param>
+		/// <param name="outputMip"></param>
+		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip);
+
+		/// <summary>
 		/// Render the given equirectangular (panorama) texture to the cubemap texture.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>

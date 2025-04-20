@@ -94,5 +94,6 @@
     <None Include="compute_diffuse_sh.glsl" />
     <None Include="core\diffuse_sh.glsl" />
     <None Include="sky\copy_cubemap.glsl" />
+    <None Include="sky\blit_cubemap.glsl" />
   </ItemGroup>
 </Project>
