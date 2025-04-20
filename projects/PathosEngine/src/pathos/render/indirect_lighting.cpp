@@ -161,6 +161,7 @@ namespace pathos {
 		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
+		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, 4);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;

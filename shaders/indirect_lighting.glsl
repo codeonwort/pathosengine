@@ -3,6 +3,7 @@
 #include "core/common.glsl"
 #include "core/brdf.glsl"
 #include "core/image_based_lighting.glsl"
+#include "core/diffuse_sh.glsl"
 #include "deferred_common.glsl"
 
 // #todo-light-probe: Finish indirect lighting shader
@@ -48,6 +49,10 @@ layout (std140, binding = 3) readonly buffer SSBO_ReflectionProbe {
 	ReflectionProbe reflectionProbeInfo[];
 } ssbo1;
 
+layout (std140, binding = 4) readonly buffer SSBO_SkyDiffuseSH {
+	SHBuffer shBuffer;
+} ssboSkyDiffuseSH;
+
 layout (binding = 0) uniform usampler2D       gbufferA;
 layout (binding = 1) uniform sampler2D        gbufferB;
 layout (binding = 2) uniform usampler2D       gbufferC;
@@ -84,6 +89,11 @@ void getExtendedBounds(IrradianceVolume vol, out vec3 minBounds, out vec3 maxBou
 
 bool isPositionInBounds(vec3 position, vec3 minBounds, vec3 maxBounds) {
 	return all(lessThanEqual(minBounds, position)) && all(lessThan(position, maxBounds));
+}
+
+vec3 evaluateSkyDiffuse(vec3 dir) {
+	//return texture(skyIrradianceProbe, dir).xyz;
+	return evaluateSH(ssboSkyDiffuseSH.shBuffer, dir);
 }
 
 // See scene.cpp
@@ -154,7 +164,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 
 	// If not in an irradiance volume, just return sky lighting.
 	if (irradianceVolumeIndex == -1) {
-		return ubo.skyLightBoost * texture(skyIrradianceProbe, surfaceNormalWS).rgb;
+		return ubo.skyLightBoost * evaluateSkyDiffuse(surfaceNormalWS);
 	}
 
 	const IrradianceVolume vol = ssbo0.irradianceVolumeInfo[irradianceVolumeIndex];
@@ -207,7 +217,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 			skyOcclusion += samples[i].w * weights[i] / totalWeights;
 		}
 		skyOcclusion = min(1, skyOcclusion);
-		irradiance = ubo.skyLightBoost * skyOcclusion * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+		irradiance = ubo.skyLightBoost * skyOcclusion * evaluateSkyDiffuse(surfaceNormalWS);
 	} else {
 		for (uint i = 0; i < 8; ++i) {
 			irradiance += samples[i].xyz * weights[i] / totalWeights;
@@ -230,7 +240,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		float C1  = mix(C10, C11, ratio.y);
 		float C   = mix(C0, C1, ratio.z); // skyOcclusion
 
-		irradiance = ubo.skyLightBoost * C * texture(skyIrradianceProbe, surfaceNormalWS).xyz;
+		irradiance = ubo.skyLightBoost * C * evaluateSkyDiffuse(surfaceNormalWS);
 	} else {
 		vec3 C00 = mix(samples[0].xyz, samples[1].xyz, ratio.x);
 		vec3 C01 = mix(samples[2].xyz, samples[3].xyz, ratio.x);
