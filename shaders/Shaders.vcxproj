@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="compute_diffuse_sh.glsl" />
     <None Include="materials\indirect_draw_dummy.glsl" />
     <None Include="sky\atmosphere.glsl" />
     <None Include="sky\atmosphere_precompute.glsl" />

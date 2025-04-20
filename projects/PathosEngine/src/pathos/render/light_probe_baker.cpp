@@ -85,8 +85,7 @@ namespace pathos {
 	class DiffuseSHGenCS : public ShaderStage {
 	public:
 		DiffuseSHGenCS() : ShaderStage(GL_COMPUTE_SHADER, "DiffuseSHGenCS") {
-			addDefine("COMPUTE_SHADER", 1);
-			setFilepath("diffuse_irradiance.glsl");
+			setFilepath("compute_diffuse_sh.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_DiffuseSH, DiffuseSHGenCS);
