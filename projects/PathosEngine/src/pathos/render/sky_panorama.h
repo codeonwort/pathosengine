@@ -8,6 +8,7 @@
 namespace pathos {
 
 	class SceneProxy;
+	class Texture;
 
 	class PanoramaSkyPass : public Noncopyable {
 		
@@ -20,12 +21,13 @@ namespace pathos {
 	private:
 		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
-		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
-		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderSkyDiffuseSH(RenderCommandList& cmdList);
+		void renderSkyPrefilterMap(RenderCommandList& cmdList);
 
 		GLuint fbo = 0xffffffff;
-		GLuint cubemapTexture = 0;
 		UniformBuffer ubo;
+		Texture* reflectionCubemap = nullptr;
+		Texture* ambientCubemap = nullptr;
 
 	};
 

@@ -497,22 +497,12 @@ namespace pathos {
 			skyDiffuseSH = new Buffer(desc);
 			skyDiffuseSH->createGPUResource_renderThread(cmdList);
 		}
-		if (skyDiffuseSource == nullptr) {
-			auto desc = TextureCreateParams::cubemap(128, GL_RGBA16F, 1);
-			desc.debugName = "Texture_SkyDiffuseSource";
-			skyDiffuseSource = new Texture(desc);
-			skyDiffuseSource->createGPUResource_renderThread(cmdList);
-		}
 	}
 
 	void SceneRenderTargets::releaseSkyResources(RenderCommandList& cmdList) {
 		if (skyDiffuseSH != nullptr) {
 			delete skyDiffuseSH;
 			skyDiffuseSH = nullptr;
-		}
-		if (skyDiffuseSource != nullptr) {
-			delete skyDiffuseSource;
-			skyDiffuseSource = nullptr;
 		}
 	}
 
