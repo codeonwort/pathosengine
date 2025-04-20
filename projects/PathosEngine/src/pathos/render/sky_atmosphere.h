@@ -25,7 +25,10 @@ namespace pathos {
 	private:
 		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
 		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
-		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene);
+
+		void renderSkyIrradianceMap(RenderCommandList& cmdList, SceneProxy* scene); // #wip: Delete this
+		void renderSkyDiffuseSH(RenderCommandList& cmdList);
+
 		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
 		void renderTransmittanceLUT(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad); // Called only once
 

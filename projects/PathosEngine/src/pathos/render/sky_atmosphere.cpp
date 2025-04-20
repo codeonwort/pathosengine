@@ -133,17 +133,9 @@ namespace pathos {
 		renderToScreen(cmdList, scene, camera);
 		if (scene->skyAtmosphere->bLightingDirty) {
 			renderToCubemap(cmdList, scene);
-			renderSkyIrradianceMap(cmdList, scene);
+			//renderSkyIrradianceMap(cmdList, scene); // #wip: Remove this
+			renderSkyDiffuseSH(cmdList);
 			renderSkyPrefilterMap(cmdList, scene);
-		} else {
-			// #wip: Test new diffuse SH
-			SCOPED_DRAW_EVENT(SkyDiffuseSH);
-			renderToCubemap(cmdList, scene);
-			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-			{
-				SCOPED_GPU_COUNTER(SkyDiffuseSH);
-				LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
-			}
 		}
 	}
 
@@ -263,6 +255,12 @@ namespace pathos {
 			reflectionCubemap->internal_getGLName(),
 			sceneContext.skyIrradianceMap,
 			pathos::SKY_IRRADIANCE_MAP_SIZE);
+	}
+
+	void SkyAtmospherePass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(SkyDiffuseSH);
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
 	void SkyAtmospherePass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {

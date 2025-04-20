@@ -91,6 +91,7 @@ namespace pathos {
 			GLuint outputTexture,
 			uint32 outputTextureSize);
 
+		// #wip: Delete this
 		/// <summary>
 		/// Similar to bakeDiffuseIBL_renderThread(), but only for sky lighting.
 		/// </summary>
@@ -98,11 +99,7 @@ namespace pathos {
 		/// <param name="inputSkyCubemap">Sky cubemap from which irradiance will be integrated</param>
 		/// <param name="targetCubemap">Target cubemap to store sky irradiance map</param>
 		/// <param name="targetSize">The size of target cubemap</param>
-		void bakeSkyIrradianceMap_renderThread(
-			RenderCommandList& cmdList,
-			GLuint inputSkyCubemap,
-			GLuint targetCubemap,
-			uint32 targetSize);
+		void bakeSkyIrradianceMap_renderThread(RenderCommandList& cmdList, GLuint inputSkyCubemap, GLuint targetCubemap, uint32 targetSize);
 
 		/// <summary>
 		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.

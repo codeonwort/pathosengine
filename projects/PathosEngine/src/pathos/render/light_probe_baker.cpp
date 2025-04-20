@@ -319,11 +319,7 @@ namespace pathos {
 		}
 	}
 
-	void LightProbeBaker::bakeSkyIrradianceMap_renderThread(
-		RenderCommandList& cmdList,
-		GLuint inputSkyCubemap,
-		GLuint targetCubemap,
-		uint32 targetSize)
+	void LightProbeBaker::bakeSkyIrradianceMap_renderThread(RenderCommandList& cmdList, GLuint inputSkyCubemap, GLuint targetCubemap, uint32 targetSize)
 	{
 		CHECK(isInRenderThread());
 		
