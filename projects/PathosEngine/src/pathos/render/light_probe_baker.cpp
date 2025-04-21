@@ -210,6 +210,7 @@ namespace pathos {
 
 		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
+		// #wip: Still have barrier bug? :/
 		uint32 groupSize = (cubemapSize + 7) / 8;
 		cmdList.dispatchCompute(groupSize, groupSize, 1);
 

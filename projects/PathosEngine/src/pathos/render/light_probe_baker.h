@@ -42,6 +42,7 @@ namespace pathos {
 
 		/// <summary>
 		/// Generate irradiance cubemap from radiance capture cubemap.
+		/// NOTE: This is very expensive. Use bakeDiffuseSH_renderThread() if possible.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>
 		/// <param name="inputRadianceCubemap">Input radiance cubemap</param>
@@ -55,6 +56,7 @@ namespace pathos {
 
 		/// <summary>
 		/// Render specular IBL cubemap from radiance capture cubemap.
+		/// NOTE: This is very expensive. Use bakeReflectionProbe_renderThread() if possible.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>
 		/// <param name="inputTexture">Input radiance cubemap</param>
