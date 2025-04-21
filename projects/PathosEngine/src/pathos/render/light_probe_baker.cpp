@@ -208,6 +208,9 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
 		outSH->bindAsSSBO(cmdList, 2);
 
+		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		// #wip: Sky lighting flickers due to diffuse SH shader (world_rc1), maybe barrier bug
 		uint32 groupSize = (cubemapSize + 7) / 8;
 		cmdList.dispatchCompute(groupSize, groupSize, 1);
 
@@ -458,6 +461,8 @@ namespace pathos {
 		const GLint layer = 0; // Don't care if layere = GL_TRUE
 		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
 		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 		const uint32 groupSize = (mipSize + 7) / 8;
 		cmdList.dispatchCompute(groupSize, groupSize, 1);

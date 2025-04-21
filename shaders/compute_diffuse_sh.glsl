@@ -80,11 +80,12 @@ void prefilter(uint face, uint x0, uint y0) {
             wSum += w;
         }
     }
-
+    
     for (int i = 0; i < 9; i++) {
         s_sliceL[y0][x0][i] = scratch[i];
         s_weight[face][y0][x0] = wSum;
     }
+    memoryBarrierShared();
 }
 
 void main() {
@@ -100,7 +101,6 @@ void main() {
     memoryBarrierShared();
 
     prefilter(face, tid.x, tid.y);
-    memoryBarrierShared();
 
     // Collect per-face data.
     if (tid.xy == uvec2(0, 0)) {
@@ -123,10 +123,12 @@ void main() {
                 wSum += s_weight[face][y][x];
             }
         }
+        memoryBarrierShared();
+
         s_perFaceWeight[face] = wSum;
         for (int i = 0; i < 9; i++) s_perFaceL[face][i] = scratch[i];
+        memoryBarrierShared();
     }
-    memoryBarrierShared();
 
     if (tid == uvec3(0, 0, 0)) {
         float wSum = 0.0;

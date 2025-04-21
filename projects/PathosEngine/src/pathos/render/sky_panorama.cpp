@@ -78,7 +78,6 @@ namespace pathos {
 
 		renderToScreen(cmdList, scene);
 
-		// #wip: Sky lighting flickers? (world_rc1)
 		if (scene->panoramaSky->bLightingDirty) {
 			const ESkyLightingUpdateMode mode = scene->panoramaSky->lightingMode;
 			const ESkyLightingUpdatePhase phase = scene->panoramaSky->lightingPhase;
