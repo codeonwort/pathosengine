@@ -13,4 +13,12 @@ namespace pathos {
 		return (ESkyLightingUpdateMode)value;
 	}
 
+	pathos::ESkyLightingUpdatePhase getNextSkyLightingUpdatePhase(ESkyLightingUpdatePhase current) {
+		current = (ESkyLightingUpdatePhase)((uint32)current + 1);
+		if (current == ESkyLightingUpdatePhase::MAX) {
+			current = (ESkyLightingUpdatePhase)0;
+		}
+		return current;
+	}
+
 }

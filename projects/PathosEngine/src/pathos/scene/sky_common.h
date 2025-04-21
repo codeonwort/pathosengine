@@ -23,4 +23,6 @@ namespace pathos {
 
 	ESkyLightingUpdateMode getSkyLightingUpdateMethod();
 
+	ESkyLightingUpdatePhase getNextSkyLightingUpdatePhase(ESkyLightingUpdatePhase current);
+
 }

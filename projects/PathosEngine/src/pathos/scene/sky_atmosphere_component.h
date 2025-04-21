@@ -24,16 +24,6 @@ namespace pathos {
 				return;
 			}
 
-			if (scene->sceneProxySource == SceneProxySource::MainScene) {
-				vector3 sunIntensity = sun->illuminance * sun->color;
-				float intensityDelta = glm::length(sun->illuminance - lastSunIntensity);
-				float cosTheta = glm::dot(sun->direction, lastSunDirectionWS);
-				if (intensityDelta > 0.1f || cosTheta < 0.99f) {
-					lastSunIntensity = sunIntensity;
-					lastSunDirectionWS = sun->direction;
-				}
-			}
-
 			const ESkyLightingUpdateMode updateMode = getSkyLightingUpdateMethod();
 
 			SkyAtmosphereProxy* proxy = ALLOC_RENDER_PROXY<SkyAtmosphereProxy>(scene);
@@ -42,19 +32,13 @@ namespace pathos {
 			proxy->lightingPhase  = lightingUpdatePhase;
 
 			if (updateMode == ESkyLightingUpdateMode::Progressive) {
-				lightingUpdatePhase = (ESkyLightingUpdatePhase)((uint32)lightingUpdatePhase + 1);
-				if (lightingUpdatePhase == ESkyLightingUpdatePhase::MAX) {
-					lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
-				}
+				lightingUpdatePhase = getNextSkyLightingUpdatePhase(lightingUpdatePhase);
 			}
 
 			scene->skyAtmosphere = proxy;
 		}
 
 	private:
-		vector3 lastSunIntensity   = vector3(0.0f);
-		vector3 lastSunDirectionWS = vector3(0.0f);
-
 		ESkyLightingUpdatePhase lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
 
 	};
