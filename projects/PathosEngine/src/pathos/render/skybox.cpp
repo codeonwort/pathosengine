@@ -62,7 +62,7 @@ namespace pathos {
 		cmdList.objectLabel(GL_FRAMEBUFFER, fboCube, -1, "FBO_SkyMaterialToCube");
 		cmdList.namedFramebufferDrawBuffer(fboCube, GL_COLOR_ATTACHMENT0);
 
-		const uint32 reflectionCubeSize = pathos::SKY_PREFILTER_MAP_MIN_SIZE;
+		const uint32 reflectionCubeSize = pathos::SKY_PREFILTER_MAP_SIZE;
 		const uint32 ambientCubeSize = pathos::SKY_AMBIENT_CUBEMAP_SIZE;
 
 		const uint32 mipLevels = 1 + badger::ctz(reflectionCubeSize) - badger::ctz(ambientCubeSize);
@@ -226,7 +226,7 @@ namespace pathos {
 	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
-		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_DEFAULT_SIZE;
+		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_SIZE;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);

@@ -7,7 +7,7 @@ namespace pathos {
 
 	static ConsoleVariable<int32> cvar_skyLightingUpdateMode("r.skyLightingUpdateMode", 1, "0 = disable, 1 = progressive, 2 = every frame");
 	
-	ESkyLightingUpdateMode getSkyLightingUpdateMethod() {
+	ESkyLightingUpdateMode getSkyLightingUpdateMode() {
 		int32 value = cvar_skyLightingUpdateMode.getInt();
 		value = badger::clamp(0, value, 2);
 		return (ESkyLightingUpdateMode)value;

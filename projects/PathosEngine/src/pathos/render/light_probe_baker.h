@@ -95,11 +95,15 @@ namespace pathos {
 		/// <param name="inputTexture">Input panorama texture2D</param>
 		/// <param name="outputTexture">Output textureCube</param>
 		/// <param name="outputTextureSize">Output texture size</param>
+		/// <param name="faceBegin">First face of output texture to project. Inclusive.</param>
+		/// <param name="faceEnd">Last face of output texture to project. Inclusive.</param>
 		void projectPanoramaToCubemap_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
 			GLuint outputTexture,
-			uint32 outputTextureSize);
+			uint32 outputTextureSize,
+			int32 faceBegin,
+			int32 faceEnd);
 
 		/// <summary>
 		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.

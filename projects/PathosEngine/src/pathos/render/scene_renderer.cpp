@@ -310,7 +310,7 @@ namespace pathos {
 						sceneRenderTargets->skyPrefilteredMap,
 						sceneRenderTargets->skyPrefilterMapSize,
 						0, // start mip level
-						pathos::SKY_PREFILTER_MAP_MAX_NUM_MIPS, // mip count to clear
+						pathos::SKY_PREFILTER_MAP_MIP_COUNT, // mip count to clear
 						EClearTextureFormat::RGBA16f,
 						clearValues);
 				}

@@ -24,14 +24,15 @@ namespace pathos {
 				return;
 			}
 
-			const ESkyLightingUpdateMode updateMode = getSkyLightingUpdateMethod();
+			const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+			const ESkyLightingUpdateMode updateMode = getSkyLightingUpdateMode();
 
 			SkyAtmosphereProxy* proxy = ALLOC_RENDER_PROXY<SkyAtmosphereProxy>(scene);
-			proxy->bLightingDirty = updateMode != ESkyLightingUpdateMode::Disabled;
+			proxy->bLightingDirty = bMainScene && (updateMode != ESkyLightingUpdateMode::Disabled);
 			proxy->lightingMode   = updateMode;
 			proxy->lightingPhase  = lightingUpdatePhase;
 
-			if (updateMode == ESkyLightingUpdateMode::Progressive) {
+			if (bMainScene && updateMode == ESkyLightingUpdateMode::Progressive) {
 				lightingUpdatePhase = getNextSkyLightingUpdatePhase(lightingUpdatePhase);
 			}
 

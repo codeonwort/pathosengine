@@ -9,12 +9,9 @@ namespace pathos {
 	class Texture;
 	struct DirectionalLightProxy;
 
-	constexpr uint32 SKY_AMBIENT_CUBEMAP_SIZE = 128; // Size of source cubemap of sky diffuse SH.
-
-	// For sky atmosphere and panorama sky. Skybox will use the size of its source cubemap.
-	constexpr uint32 SKY_PREFILTER_MAP_DEFAULT_SIZE = 512;
-	constexpr uint32 SKY_PREFILTER_MAP_MIN_SIZE = 128;
-	constexpr uint32 SKY_PREFILTER_MAP_MAX_NUM_MIPS = 5;
+	constexpr uint32 SKY_AMBIENT_CUBEMAP_SIZE    = 64;  // Size of source cubemap of sky diffuse SH.
+	constexpr uint32 SKY_PREFILTER_MAP_SIZE      = 128; // #note: Do not change this. LightProbeBaker::bakeReflectionProbe_renderThread() requires this specific value.
+	constexpr uint32 SKY_PREFILTER_MAP_MIP_COUNT = 7;   // #note: Do not change this. LightProbeBaker::bakeReflectionProbe_renderThread() requires this specific value.
 	
 	// Textures for scene rendering
 	// #todo-renderer: render target pool for temporary textures

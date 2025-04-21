@@ -21,7 +21,7 @@ namespace pathos {
 		EveryFrame     = 2,
 	};
 
-	ESkyLightingUpdateMode getSkyLightingUpdateMethod();
+	ESkyLightingUpdateMode getSkyLightingUpdateMode();
 
 	ESkyLightingUpdatePhase getNextSkyLightingUpdatePhase(ESkyLightingUpdatePhase current);
 

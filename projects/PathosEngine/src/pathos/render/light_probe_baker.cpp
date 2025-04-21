@@ -221,7 +221,9 @@ namespace pathos {
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
 		GLuint outputTexture,
-		uint32 outputTextureSize)
+		uint32 outputTextureSize,
+		int32 faceBegin,
+		int32 faceEnd)
 	{
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(PanoramaToCubemap);
@@ -238,7 +240,7 @@ namespace pathos {
 
 		dummyCube->bindPositionOnlyVAO(cmdList);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			const matrix4& viewproj = cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, outputTexture, 0, i);
@@ -358,12 +360,15 @@ namespace pathos {
 				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
 				cmdList.bindTextureUnit(0, srcCubemap);
 				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+
 				cmdList.dispatchCompute(numGroups, numGroups, 6);
 
 				inputCubemapSize = targetCubemapSize;
 			}
 			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
 		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 		// Pass 2. Filtering
 		{
@@ -377,8 +382,11 @@ namespace pathos {
 			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
 				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
 			}
+
 			cmdList.dispatchCompute(numGroups, 6, 1);
 		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
 	void LightProbeBaker::bakeSpecularIBL_renderThread(
