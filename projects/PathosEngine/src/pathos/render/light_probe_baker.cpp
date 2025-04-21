@@ -431,6 +431,7 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
+	// #todo-rhi: Too slow? 0.3 ms for 128x128 cubemaps?
 	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
 		SCOPED_DRAW_EVENT(CopyCubemap);
 

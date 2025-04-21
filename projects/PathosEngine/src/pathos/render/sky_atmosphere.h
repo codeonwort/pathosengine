@@ -24,9 +24,10 @@ namespace pathos {
 
 	private:
 		void renderToScreen(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
-		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene);
-		void renderSkyDiffuseSH(RenderCommandList& cmdList);
-		void renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene, int32 faceBegin, int32 faceEnd); // faceBegin/End are inclusive
+		void generateCubemapMips(RenderCommandList& cmdList);
+		void computeDiffuseSH(RenderCommandList& cmdList);
+		void filterSpecular(RenderCommandList& cmdList);
 		void renderTransmittanceLUT(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad); // Called only once
 
 		GLuint fbo = 0xffffffff;

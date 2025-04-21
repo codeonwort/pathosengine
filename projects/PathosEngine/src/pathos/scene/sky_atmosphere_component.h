@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sky_common.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/scene/scene_component.h"
 #include "pathos/scene/directional_light_component.h"
@@ -10,6 +11,8 @@ namespace pathos {
 
 	struct SkyAtmosphereProxy : SceneComponentProxy {
 		bool bLightingDirty;
+		ESkyLightingUpdateMode lightingMode;
+		ESkyLightingUpdatePhase lightingPhase;
 	};
 
 	class SkyAtmosphereComponent : public SceneComponent {
@@ -21,7 +24,6 @@ namespace pathos {
 				return;
 			}
 
-			bool bLightingDirty = false;
 			if (scene->sceneProxySource == SceneProxySource::MainScene) {
 				vector3 sunIntensity = sun->illuminance * sun->color;
 				float intensityDelta = glm::length(sun->illuminance - lastSunIntensity);
@@ -29,12 +31,22 @@ namespace pathos {
 				if (intensityDelta > 0.1f || cosTheta < 0.99f) {
 					lastSunIntensity = sunIntensity;
 					lastSunDirectionWS = sun->direction;
-					bLightingDirty = true;
 				}
 			}
 
+			const ESkyLightingUpdateMode updateMode = getSkyLightingUpdateMethod();
+
 			SkyAtmosphereProxy* proxy = ALLOC_RENDER_PROXY<SkyAtmosphereProxy>(scene);
-			proxy->bLightingDirty = bLightingDirty;
+			proxy->bLightingDirty = updateMode != ESkyLightingUpdateMode::Disabled;
+			proxy->lightingMode   = updateMode;
+			proxy->lightingPhase  = lightingUpdatePhase;
+
+			if (updateMode == ESkyLightingUpdateMode::Progressive) {
+				lightingUpdatePhase = (ESkyLightingUpdatePhase)((uint32)lightingUpdatePhase + 1);
+				if (lightingUpdatePhase == ESkyLightingUpdatePhase::MAX) {
+					lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
+				}
+			}
 
 			scene->skyAtmosphere = proxy;
 		}
@@ -42,6 +54,8 @@ namespace pathos {
 	private:
 		vector3 lastSunIntensity   = vector3(0.0f);
 		vector3 lastSunDirectionWS = vector3(0.0f);
+
+		ESkyLightingUpdatePhase lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
 
 	};
 
