@@ -465,7 +465,7 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip) {
+	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin, int32 faceEnd) {
 		SCOPED_DRAW_EVENT(BlitCubemap);
 
 		const GLuint outputSize = output->getCreateParams().width >> outputMip;
@@ -484,7 +484,7 @@ namespace pathos {
 
 		dummyCube->bindPositionOnlyVAO(cmdList);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			const matrix4& viewproj = cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, output->internal_getGLName(), outputMip, i);

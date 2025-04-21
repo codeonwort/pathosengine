@@ -65,7 +65,7 @@ namespace pathos {
 		const uint32 reflectionCubeSize = pathos::SKY_PREFILTER_MAP_SIZE;
 		const uint32 ambientCubeSize = pathos::SKY_AMBIENT_CUBEMAP_SIZE;
 
-		const uint32 mipLevels = 1 + badger::ctz(reflectionCubeSize) - badger::ctz(ambientCubeSize);
+		const uint32 mipLevels = pathos::SKY_PREFILTER_MAP_MIP_COUNT;
 		reflectionCubemap = new Texture(TextureCreateParams::cubemap(reflectionCubeSize, GL_RGBA16F, mipLevels));
 		reflectionCubemap->createGPUResource_renderThread(cmdList);
 
@@ -102,21 +102,26 @@ namespace pathos {
 		SkyboxProxy* skyboxProxy = scene->skybox;
 
 		renderSkyboxToScreen(cmdList, scene);
+
 		if (skyboxProxy->bLightingDirty) {
-			Texture* skyboxTexture = skyboxProxy->texture;
-
-			if (skyboxProxy->bUseCubemapTexture) {
-				LightProbeBaker::get().blitCubemap_renderThread(cmdList, skyboxTexture, reflectionCubemap, 0, 0);
-			} else {
-				renderSkyMaterialToCubemap(cmdList, scene);
+			const ESkyLightingUpdateMode mode = skyboxProxy->lightingMode;
+			const ESkyLightingUpdatePhase phase = skyboxProxy->lightingPhase;
+			if (mode == ESkyLightingUpdateMode::EveryFrame) {
+				renderToCubemap(cmdList, scene, 0, 5);
+				generateCubemapMips(cmdList);
+				computeDiffuseSH(cmdList);
+				filterSpecular(cmdList);
+			} else if (mode == ESkyLightingUpdateMode::Progressive) {
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosX) renderToCubemap(cmdList, scene, 0, 0);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegX) renderToCubemap(cmdList, scene, 1, 1);
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosY) renderToCubemap(cmdList, scene, 2, 2);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegY) renderToCubemap(cmdList, scene, 3, 3);
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosZ) renderToCubemap(cmdList, scene, 4, 4);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegZ) renderToCubemap(cmdList, scene, 5, 5);
+				if (phase == ESkyLightingUpdatePhase::GenerateMips) generateCubemapMips(cmdList);
+				if (phase == ESkyLightingUpdatePhase::DiffuseSH) computeDiffuseSH(cmdList);
+				if (phase == ESkyLightingUpdatePhase::SpecularFilter) filterSpecular(cmdList);
 			}
-			// Copy specular cubemap to ambient cubemap for diffuse SH.
-			cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
-			int32 copyMip = badger::ctz(reflectionCubemap->getCreateParams().width) - badger::ctz(ambientCubemap->getCreateParams().width);
-			LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
-
-			renderSkyDiffuseSH(cmdList);
-			renderSkyPreftilerMap(cmdList);
 		}
 	}
 
@@ -186,7 +191,20 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void SkyboxPass::renderSkyMaterialToCubemap(RenderCommandList& cmdList, SceneProxy* scene) {
+	void SkyboxPass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene, int32 faceBegin, int32 faceEnd) {
+		SCOPED_DRAW_EVENT(SkyboxToCubemap);
+
+		SkyboxProxy* skyboxProxy = scene->skybox;
+		Texture* skyboxTexture = skyboxProxy->texture;
+
+		if (skyboxProxy->bUseCubemapTexture) {
+			LightProbeBaker::get().blitCubemap_renderThread(cmdList, skyboxTexture, reflectionCubemap, 0, 0, faceBegin, faceEnd);
+		} else {
+			renderSkyMaterialToCubemap(cmdList, scene, faceBegin, faceEnd);
+		}
+	}
+
+	void SkyboxPass::renderSkyMaterialToCubemap(RenderCommandList& cmdList, SceneProxy* scene, int32 faceBegin, int32 faceEnd) {
 		SCOPED_DRAW_EVENT(SkyMaterialToCubemap);
 
 		GLuint programName = scene->skybox->skyboxMaterial->internal_getMaterialShader()->program->getGLName();
@@ -203,7 +221,7 @@ namespace pathos {
 
 		cubeGeometry->bindPositionOnlyVAO(cmdList);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			cmdList.namedFramebufferTextureLayer(fboCube, GL_COLOR_ATTACHMENT0, cubeName, 0, i);
 
 			// Hack UBO_PerObject
@@ -217,26 +235,27 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void SkyboxPass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
+	void SkyboxPass::generateCubemapMips(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(SkyboxMips);
+
+		// Copy specular cubemap to ambient cubemap for diffuse SH.
+		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
+		int32 copyMip = badger::ctz(reflectionCubemap->getCreateParams().width) - badger::ctz(ambientCubemap->getCreateParams().width);
+		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
+	}
+
+	void SkyboxPass::computeDiffuseSH(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
-	void SkyboxPass::renderSkyPreftilerMap(RenderCommandList& cmdList) {
+	void SkyboxPass::filterSpecular(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToPrefilterMap);
 
-		constexpr uint32 targetCubemapSize = pathos::SKY_PREFILTER_MAP_SIZE;
-
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		sceneContext.reallocSkyPrefilterMap(cmdList, targetCubemapSize);
-
-		LightProbeBaker::get().bakeSpecularIBL_renderThread(
-			cmdList,
-			reflectionCubemap->internal_getGLName(),
-			targetCubemapSize,
-			sceneContext.skyPrefilterMapMipCount,
-			sceneContext.skyPrefilteredMap);
+		sceneContext.reallocSkyPrefilterMap(cmdList, pathos::SKY_PREFILTER_MAP_SIZE);
+		LightProbeBaker::get().bakeReflectionProbe_renderThread(cmdList, reflectionCubemap->internal_getGLName(), sceneContext.skyPrefilteredMap);
 	}
 
 }

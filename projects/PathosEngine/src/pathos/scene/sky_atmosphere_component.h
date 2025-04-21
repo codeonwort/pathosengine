@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sky_common.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/scene/scene_component.h"
+#include "pathos/scene/sky_common.h"
 #include "pathos/scene/directional_light_component.h"
 
 #include "badger/types/vector_types.h"

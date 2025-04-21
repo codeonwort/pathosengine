@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/scene/scene_component.h"
+#include "pathos/scene/sky_common.h"
 #include "pathos/mesh/geometry_primitive.h"
 
 namespace pathos {
@@ -9,13 +10,15 @@ namespace pathos {
 	class Material;
 
 	struct SkyboxProxy : SceneComponentProxy {
-		CubeGeometry*    cube;
-		Texture*         texture;
-		float            textureLod;
-		float            intensityMultiplier;
-		Material*        skyboxMaterial;
-		bool             bUseCubemapTexture;
-		bool             bLightingDirty;
+		CubeGeometry*           cube;
+		Texture*                texture;
+		float                   textureLod;
+		float                   intensityMultiplier;
+		Material*               skyboxMaterial;
+		bool                    bUseCubemapTexture;
+		bool                    bLightingDirty;
+		ESkyLightingUpdateMode  lightingMode;
+		ESkyLightingUpdatePhase lightingPhase;
 	};
 
 	class SkyboxComponent : public SceneComponent {
@@ -47,7 +50,7 @@ namespace pathos {
 
 		Material* skyboxMaterial = nullptr;
 
-		bool bLightingDirty = false;
+		ESkyLightingUpdatePhase lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
 	};
 
 }

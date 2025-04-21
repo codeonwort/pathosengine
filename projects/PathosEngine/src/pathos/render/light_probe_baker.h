@@ -86,7 +86,9 @@ namespace pathos {
 		/// <param name="output"></param>
 		/// <param name="inputMip"></param>
 		/// <param name="outputMip"></param>
-		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip);
+		/// <param name="faceBegin"></param>
+		/// <param name="faceEnd"></param>
+		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin = 0, int32 faceEnd = 5);
 
 		/// <summary>
 		/// Render the given equirectangular (panorama) texture to the cubemap texture.

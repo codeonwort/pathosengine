@@ -15,7 +15,6 @@ namespace pathos {
 	void SkyboxComponent::setCubemapTexture(Texture* inTexture) {
 		if (cubemapTexture != inTexture) {
 			cubemapTexture = inTexture;
-			bLightingDirty = true;
 		}
 		if (cubeGeometry == nullptr) {
 			cubeGeometry = new CubeGeometry(vector3(1.0f));
@@ -24,18 +23,15 @@ namespace pathos {
 
 	void SkyboxComponent::setCubemapLOD(float inLOD) {
 		cubemapLod = badger::max(0.0f, inLOD);
-		bLightingDirty = true;
 	}
 
 	void SkyboxComponent::setIntensityMultiplier(float inMultiplier) {
 		intensityMultiplier = inMultiplier;
-		bLightingDirty = true;
 	}
 
 	void SkyboxComponent::setSkyboxMaterial(Material* inMaterial) {
 		if (skyboxMaterial != inMaterial) {
 			skyboxMaterial = inMaterial;
-			bLightingDirty = true;
 		}
 		if (cubeGeometry == nullptr) {
 			cubeGeometry = new CubeGeometry(vector3(1.0f));
@@ -55,6 +51,7 @@ namespace pathos {
 		}
 
 		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const ESkyLightingUpdateMode lightingUpdateMode = getSkyLightingUpdateMode();
 
 		SkyboxProxy* proxy = ALLOC_RENDER_PROXY<SkyboxProxy>(scene);
 		proxy->cube                = cubeGeometry;
@@ -63,10 +60,12 @@ namespace pathos {
 		proxy->intensityMultiplier = intensityMultiplier;
 		proxy->skyboxMaterial      = skyboxMaterial;
 		proxy->bUseCubemapTexture  = bUseCubemapTexture;
-		proxy->bLightingDirty      = bLightingDirty && bMainScene;
+		proxy->bLightingDirty      = bMainScene && (lightingUpdateMode != ESkyLightingUpdateMode::Disabled);
+		proxy->lightingMode        = lightingUpdateMode;
+		proxy->lightingPhase       = lightingUpdatePhase;
 
-		if (bMainScene) {
-			bLightingDirty = false;
+		if (bMainScene && lightingUpdateMode == ESkyLightingUpdateMode::Progressive) {
+			lightingUpdatePhase = getNextSkyLightingUpdatePhase(lightingUpdatePhase);
 		}
 
 		scene->skybox = proxy;
