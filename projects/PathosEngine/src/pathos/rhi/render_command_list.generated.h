@@ -6336,7 +6336,11 @@ void bindBuffersBase(
 	packet->target = target;
 	packet->first = first;
 	packet->count = count;
-	packet->buffers = storeParameter(count * sizeof(GLuint), buffers);
+	if (buffers != nullptr) {
+		packet->buffers = storeParameter(count * sizeof(GLuint), buffers);
+	} else {
+		packet->buffers = nullptr;
+	}
 }
 void bindBuffersRange(
 	GLenum target,
