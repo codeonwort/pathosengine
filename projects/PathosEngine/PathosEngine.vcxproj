@@ -101,6 +101,7 @@
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp" />
     <ClCompile Include="src\pathos\scene\landscape_component.cpp" />
     <ClCompile Include="src\pathos\scene\physics_component.cpp" />
+    <ClCompile Include="src\pathos\scene\sky_common.cpp" />
     <ClCompile Include="src\thirdparty\gl3w.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -276,6 +277,7 @@
     <ClInclude Include="src\pathos\scene\reflection_probe_actor.h" />
     <ClInclude Include="src\pathos\scene\reflection_probe_component.h" />
     <ClInclude Include="src\pathos\scene\scene_component.h" />
+    <ClInclude Include="src\pathos\scene\sky_common.h" />
     <ClInclude Include="src\pathos\scene\world.h" />
     <ClInclude Include="src\pathos\scene\camera.h" />
     <ClInclude Include="src\pathos\console.h" />

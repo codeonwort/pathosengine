@@ -4,6 +4,7 @@
 #include "pathos/rhi/texture.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/scene_component.h"
+#include "pathos/scene/sky_common.h"
 
 namespace pathos {
 
@@ -39,6 +40,8 @@ namespace pathos {
 		MeshGeometry* sphere;
 		Texture* texture;
 		bool bLightingDirty;
+		ESkyLightingUpdateMode lightingMode;
+		ESkyLightingUpdatePhase lightingPhase;
 	};
 
 	class PanoramaSkyComponent : public SceneComponent {
@@ -47,8 +50,6 @@ namespace pathos {
 		~PanoramaSkyComponent();
 
 		// Pass a panorama-style texture (i.e., equirectangular map).
-		// Sky lighting is marked as dirty and will be updated automatically.
-		// NOTE: The update happens even if the same Texture instance is set.
 		void setTexture(Texture* texture);
 
 		inline bool hasValidResources() const {
@@ -61,8 +62,7 @@ namespace pathos {
 	private:
 		Texture* texture = nullptr;
 		MeshGeometry* sphere = nullptr;
-
-		bool bLightingDirty = false;
+		ESkyLightingUpdatePhase lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
 	};
 
 }

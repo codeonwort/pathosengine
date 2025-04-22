@@ -5,6 +5,7 @@
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/scene/camera.h"
+#include "pathos/scene/sky_common.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/sky_atmosphere_component.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -22,8 +23,6 @@ namespace pathos {
 
 	static constexpr uint32 LUT_WIDTH = 64;
 	static constexpr uint32 LUT_HEIGHT = 256;
-	static constexpr uint32 REFLECTION_CUBEMAP_SIZE = 512;
-	static constexpr uint32 AMBIENT_CUBEMAP_SIZE = 128;
 
 	struct UBO_Atmosphere {
 		static constexpr uint32 BINDING_POINT = 1;
@@ -78,11 +77,10 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
 
 		// To copy to ambientCubemap.
-		const uint32 mipLevels = 1 + badger::ctz(REFLECTION_CUBEMAP_SIZE) - badger::ctz(AMBIENT_CUBEMAP_SIZE);
-		reflectionCubemap = new Texture(TextureCreateParams::cubemap(REFLECTION_CUBEMAP_SIZE, GL_RGBA16F, mipLevels));
+		reflectionCubemap = new Texture(TextureCreateParams::cubemap(pathos::SKY_PREFILTER_MAP_SIZE, GL_RGBA16F, pathos::SKY_PREFILTER_MAP_MIP_COUNT));
 		reflectionCubemap->createGPUResource_renderThread(cmdList);
 
-		ambientCubemap = new Texture(TextureCreateParams::cubemap(AMBIENT_CUBEMAP_SIZE, GL_RGBA16F, 1));
+		ambientCubemap = new Texture(TextureCreateParams::cubemap(pathos::SKY_AMBIENT_CUBEMAP_SIZE, GL_RGBA16F, 1));
 		ambientCubemap->createGPUResource_renderThread(cmdList);
 
 		ubo.init<UBO_Atmosphere>("UBO_SkyAtmosphere");
@@ -102,11 +100,27 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SkyAtmosphere);
 
 		renderTransmittanceLUT(cmdList, fullscreenQuad);
-		renderToScreen(cmdList, scene, camera);
+		renderToScreen(cmdList, scene, camera); // #todo-sky: Too slow (2.23027 ms for 1920x1080)
+
 		if (scene->skyAtmosphere->bLightingDirty) {
-			renderToCubemap(cmdList, scene);
-			renderSkyDiffuseSH(cmdList);
-			renderSkyPrefilterMap(cmdList, scene);
+			const ESkyLightingUpdateMode mode = scene->skyAtmosphere->lightingMode;
+			const ESkyLightingUpdatePhase phase = scene->skyAtmosphere->lightingPhase;
+			if (mode == ESkyLightingUpdateMode::EveryFrame) {
+				renderToCubemap(cmdList, scene, 0, 5);
+				generateCubemapMips(cmdList);
+				computeDiffuseSH(cmdList);
+				filterSpecular(cmdList);
+			} else if (mode == ESkyLightingUpdateMode::Progressive) {
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosX) renderToCubemap(cmdList, scene, 0, 0);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegX) renderToCubemap(cmdList, scene, 1, 1);
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosY) renderToCubemap(cmdList, scene, 2, 2);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegY) renderToCubemap(cmdList, scene, 3, 3);
+				if (phase == ESkyLightingUpdatePhase::RenderFacePosZ) renderToCubemap(cmdList, scene, 4, 4);
+				if (phase == ESkyLightingUpdatePhase::RenderFaceNegZ) renderToCubemap(cmdList, scene, 5, 5);
+				if (phase == ESkyLightingUpdatePhase::GenerateMips) generateCubemapMips(cmdList);
+				if (phase == ESkyLightingUpdatePhase::DiffuseSH) computeDiffuseSH(cmdList);
+				if (phase == ESkyLightingUpdatePhase::SpecularFilter) filterSpecular(cmdList);
+			}
 		}
 	}
 
@@ -148,7 +162,7 @@ namespace pathos {
 		cmdList.bindVertexArray(0);
 	}
 
-	void SkyAtmospherePass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene) {
+	void SkyAtmospherePass::renderToCubemap(RenderCommandList& cmdList, SceneProxy* scene, int32 faceBegin, int32 faceEnd) {
 		SCOPED_DRAW_EVENT(SkyAtmosphereToCubemap);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -185,12 +199,12 @@ namespace pathos {
 
 		cmdList.disable(GL_DEPTH_TEST);
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.viewport(0, 0, REFLECTION_CUBEMAP_SIZE, REFLECTION_CUBEMAP_SIZE);
+		cmdList.viewport(0, 0, pathos::SKY_PREFILTER_MAP_SIZE, pathos::SKY_PREFILTER_MAP_SIZE);
 
 		cmdList.bindTextureUnit(0, transmittanceLUT->internal_getGLName());
 		cmdList.bindVertexArray(vao);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			tempCamera.lookAt(vector3(0.0f), lookAtOffsets[i], upVectors[i]);
 			bool flipScreenXY = (i != 2 && i != 3);
 
@@ -200,7 +214,7 @@ namespace pathos {
 			uboData.screenFlip.x    = flipScreenXY ? -1.0f : 1.0f;
 			uboData.screenFlip.y    = flipScreenXY ? -1.0f : 1.0f;
 			uboData.renderToCubemap = 1;
-			uboData.cubemapSize     = (float)REFLECTION_CUBEMAP_SIZE;
+			uboData.cubemapSize     = (float)pathos::SKY_PREFILTER_MAP_SIZE;
 			uboData.customViewInv   = glm::inverse(tempCamera.getViewMatrix());
 			ubo.update(cmdList, UBO_Atmosphere::BINDING_POINT, &uboData);
 
@@ -209,31 +223,31 @@ namespace pathos {
 		}
 
 		cmdList.bindVertexArray(0);
+	}
+
+	void SkyAtmospherePass::generateCubemapMips(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(SkyAtmosphereMips);
+
+		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
 
 		// Copy specular cubemap to ambient cubemap for diffuse SH.
-		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
-		int32 copyMip = badger::ctz(REFLECTION_CUBEMAP_SIZE) - badger::ctz(AMBIENT_CUBEMAP_SIZE);
+		int32 copyMip = badger::ctz(pathos::SKY_PREFILTER_MAP_SIZE) - badger::ctz(pathos::SKY_AMBIENT_CUBEMAP_SIZE);
 		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
 	}
 
-	void SkyAtmospherePass::renderSkyDiffuseSH(RenderCommandList& cmdList) {
+	void SkyAtmospherePass::computeDiffuseSH(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyDiffuseSH);
+
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
-	void SkyAtmospherePass::renderSkyPrefilterMap(RenderCommandList& cmdList, SceneProxy* scene) {
-		SCOPED_DRAW_EVENT(SkyAtmosphereToPrefilterMap);
+	void SkyAtmospherePass::filterSpecular(RenderCommandList& cmdList) {
+		SCOPED_DRAW_EVENT(SkyPrefilterSpecular);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		sceneContext.reallocSkyPrefilterMap(cmdList, REFLECTION_CUBEMAP_SIZE);
-
-		LightProbeBaker::get().bakeSpecularIBL_renderThread(
-			cmdList,
-			reflectionCubemap->internal_getGLName(),
-			REFLECTION_CUBEMAP_SIZE,
-			sceneContext.skyPrefilterMapMipCount,
-			sceneContext.skyPrefilteredMap);
+		sceneContext.reallocSkyPrefilterMap(cmdList, pathos::SKY_PREFILTER_MAP_SIZE);
+		LightProbeBaker::get().bakeReflectionProbe_renderThread(cmdList, reflectionCubemap->internal_getGLName(), sceneContext.skyPrefilteredMap);
 	}
 
 	void SkyAtmospherePass::renderTransmittanceLUT(RenderCommandList& cmdList, MeshGeometry* fullscreenQuad) {

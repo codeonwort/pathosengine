@@ -3,6 +3,7 @@
 #version 460 core
 
 #include "deferred_common.glsl"
+#include "core/diffuse_sh.glsl"
 
 // Should match with 'r.viewmode'
 #define VIEWMODE_SCENEDEPTH  1
@@ -15,6 +16,7 @@
 #define VIEWMODE_SSR         8
 #define VIEWMODE_VELOCITY    9
 #define VIEWMODE_CSMLAYER    10
+#define VIEWMODE_SKY_SH      11
 
 in VS_OUT {
 	vec2 screenUV;
@@ -23,6 +25,10 @@ in VS_OUT {
 layout (std140, binding = 1) uniform UBO_VisualizeBuffer {
 	int viewmode;
 } ubo;
+
+layout (std140, binding = 2) readonly buffer SSBO_SkyDiffuseSH {
+	SHBuffer shBuffer;
+} ssboSkyDiffuseSH;
 
 layout (binding = 0) uniform sampler2D sceneDepth;
 layout (binding = 1) uniform usampler2D gbuf0;
@@ -83,5 +89,9 @@ void main() {
 		} else {
 			outColor = vec4(1.0, 0.0, 0.0, 1.0);
 		}
+	} else if (viewmode == VIEWMODE_SKY_SH) {
+		vec3 dir = gbufferData.ws_normal;
+		vec3 color = evaluateSH(ssboSkyDiffuseSH.shBuffer, dir);
+		outColor = vec4(color, 1);
 	}
 }

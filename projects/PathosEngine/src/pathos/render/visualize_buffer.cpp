@@ -5,9 +5,13 @@
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/scene/camera.h"
 
 namespace pathos {
+
+	constexpr uint32 UBO_BINDING_POINT    = 1;
+	constexpr uint32 SKY_SH_BINDING_POINT = 2;
 
 	struct UBO_VisualizeBuffer {
 		int32 viewmode;
@@ -29,7 +33,7 @@ namespace pathos {
 	static ConsoleVariable<int32> cvar_viewmode("r.viewmode", 0,
 		"0 = disable visualization, 1 = sceneDepth, 2 = albedo, 3 = worldNormal,\
 		 4 = metallic, 5 = roughness, 6 = emissive, 7 = ssao, 8 = ssr, 9 = velocity,\
-		 10 = CSM layer");
+		 10 = CSM layer, 11 = sky diffuse SH");
 
 	VisualizeBufferPass::VisualizeBufferPass()
 		: dummyVAO(0)
@@ -39,7 +43,7 @@ namespace pathos {
 
 	void VisualizeBufferPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createVertexArrays(1, &dummyVAO);
-		ubo.init<UBO_VisualizeBuffer>();
+		ubo.init<UBO_VisualizeBuffer>("UBO_VisualizeBuffer");
 	}
 
 	void VisualizeBufferPass::releaseResources(RenderCommandList& cmdList) {
@@ -59,7 +63,7 @@ namespace pathos {
 
 		UBO_VisualizeBuffer uboData;
 		uboData.viewmode = cvar_viewmode.getInt();
-		ubo.update(cmdList, 1, &uboData);
+		ubo.update(cmdList, UBO_BINDING_POINT, &uboData);
 
 		cmdList.textureParameteri(sceneContext.sceneDepth, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
@@ -69,6 +73,8 @@ namespace pathos {
 		cmdList.disable(GL_DEPTH_TEST);
 
 		cmdList.bindVertexArray(dummyVAO);
+
+		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, SKY_SH_BINDING_POINT);
 
 		// Bind buffers as SRVs
 		cmdList.bindTextureUnit(0, sceneContext.sceneDepth);
@@ -82,7 +88,7 @@ namespace pathos {
 		cmdList.drawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		cmdList.bindVertexArray(0);
-		cmdList.bindTextureUnit(0, 0);
+		cmdList.bindTextures(0, 7, nullptr);
 	}
 
 }

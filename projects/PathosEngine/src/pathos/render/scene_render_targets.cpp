@@ -451,8 +451,8 @@ namespace pathos {
 			skyPrefilteredMap = 0;
 		}
 
-		skyPrefilterMapMipCount = calcCubemapNumMips(cubemapSize, SKY_PREFILTER_MAP_MIN_SIZE);
-		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFILTER_MAP_MAX_NUM_MIPS);
+		skyPrefilterMapMipCount = calcCubemapNumMips(cubemapSize, SKY_PREFILTER_MAP_SIZE);
+		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFILTER_MAP_MIP_COUNT);
 		skyPrefilterMapSize = cubemapSize;
 		if (skyPrefilteredMap == 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyPrefilteredMap);

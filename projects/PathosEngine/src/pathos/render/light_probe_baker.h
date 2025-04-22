@@ -42,6 +42,7 @@ namespace pathos {
 
 		/// <summary>
 		/// Generate irradiance cubemap from radiance capture cubemap.
+		/// NOTE: This is very expensive. Use bakeDiffuseSH_renderThread() if possible.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>
 		/// <param name="inputRadianceCubemap">Input radiance cubemap</param>
@@ -55,6 +56,7 @@ namespace pathos {
 
 		/// <summary>
 		/// Render specular IBL cubemap from radiance capture cubemap.
+		/// NOTE: This is very expensive. Use bakeReflectionProbe_renderThread() if possible.
 		/// </summary>
 		/// <param name="cmdList">Render command list</param>
 		/// <param name="inputTexture">Input radiance cubemap</param>
@@ -86,7 +88,9 @@ namespace pathos {
 		/// <param name="output"></param>
 		/// <param name="inputMip"></param>
 		/// <param name="outputMip"></param>
-		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip);
+		/// <param name="faceBegin"></param>
+		/// <param name="faceEnd"></param>
+		void blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin = 0, int32 faceEnd = 5);
 
 		/// <summary>
 		/// Render the given equirectangular (panorama) texture to the cubemap texture.
@@ -95,11 +99,15 @@ namespace pathos {
 		/// <param name="inputTexture">Input panorama texture2D</param>
 		/// <param name="outputTexture">Output textureCube</param>
 		/// <param name="outputTextureSize">Output texture size</param>
+		/// <param name="faceBegin">First face of output texture to project. Inclusive.</param>
+		/// <param name="faceEnd">Last face of output texture to project. Inclusive.</param>
 		void projectPanoramaToCubemap_renderThread(
 			RenderCommandList& cmdList,
 			GLuint inputTexture,
 			GLuint outputTexture,
-			uint32 outputTextureSize);
+			uint32 outputTextureSize,
+			int32 faceBegin,
+			int32 faceEnd);
 
 		/// <summary>
 		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.

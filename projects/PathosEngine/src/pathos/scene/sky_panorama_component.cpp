@@ -142,7 +142,6 @@ namespace pathos {
 		if (sphere == nullptr) {
 			sphere = new IcosahedronGeometry(0);
 		}
-		bLightingDirty = true;
 	}
 
 	void PanoramaSkyComponent::createRenderProxy(SceneProxy* scene) {
@@ -151,15 +150,18 @@ namespace pathos {
 			return;
 		}
 
-		bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const bool bMainScene = (scene->sceneProxySource == SceneProxySource::MainScene);
+		const ESkyLightingUpdateMode lightingUpdateMode = getSkyLightingUpdateMode();
 
 		PanoramaSkyProxy* proxy = ALLOC_RENDER_PROXY<PanoramaSkyProxy>(scene);
 		proxy->sphere = sphere;
 		proxy->texture = texture;
-		proxy->bLightingDirty = bLightingDirty && bMainScene;
+		proxy->bLightingDirty = bMainScene;
+		proxy->lightingMode = lightingUpdateMode;
+		proxy->lightingPhase = lightingUpdatePhase;
 
-		if (bMainScene) {
-			bLightingDirty = false;
+		if (bMainScene && lightingUpdateMode == ESkyLightingUpdateMode::Progressive) {
+			lightingUpdatePhase = getNextSkyLightingUpdatePhase(lightingUpdatePhase);
 		}
 
 		scene->panoramaSky = proxy;

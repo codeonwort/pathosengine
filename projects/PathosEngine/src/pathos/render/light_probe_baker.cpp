@@ -199,6 +199,9 @@ namespace pathos {
 	}
 
 	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeDiffuseSH);
+		
 		const uint32 cubemapSize = inCubemap->getCreateParams().width;
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DiffuseSH);
@@ -208,8 +211,9 @@ namespace pathos {
 		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
 		outSH->bindAsSSBO(cmdList, 2);
 
-		uint32 groupSize = (cubemapSize + 7) / 8;
-		cmdList.dispatchCompute(groupSize, groupSize, 1);
+		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		cmdList.dispatchCompute(1, 1, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -221,7 +225,9 @@ namespace pathos {
 		RenderCommandList& cmdList,
 		GLuint inputTexture,
 		GLuint outputTexture,
-		uint32 outputTextureSize)
+		uint32 outputTextureSize,
+		int32 faceBegin,
+		int32 faceEnd)
 	{
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(PanoramaToCubemap);
@@ -238,7 +244,7 @@ namespace pathos {
 
 		dummyCube->bindPositionOnlyVAO(cmdList);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			const matrix4& viewproj = cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, outputTexture, 0, i);
@@ -358,12 +364,15 @@ namespace pathos {
 				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
 				cmdList.bindTextureUnit(0, srcCubemap);
 				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+
 				cmdList.dispatchCompute(numGroups, numGroups, 6);
 
 				inputCubemapSize = targetCubemapSize;
 			}
 			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
 		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 		// Pass 2. Filtering
 		{
@@ -377,8 +386,11 @@ namespace pathos {
 			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
 				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
 			}
+
 			cmdList.dispatchCompute(numGroups, 6, 1);
 		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
 	void LightProbeBaker::bakeSpecularIBL_renderThread(
@@ -431,7 +443,9 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
+	// #todo-rhi: Too slow? 0.3 ms for 128x128 cubemaps?
 	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
+		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(CopyCubemap);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
@@ -448,7 +462,9 @@ namespace pathos {
 
 		const GLint layer = 0; // Don't care if layere = GL_TRUE
 		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
-		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, outputDesc.glStorageFormat);
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 		const uint32 groupSize = (mipSize + 7) / 8;
 		cmdList.dispatchCompute(groupSize, groupSize, 1);
@@ -456,7 +472,8 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip) {
+	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin, int32 faceEnd) {
+		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BlitCubemap);
 
 		const GLuint outputSize = output->getCreateParams().width >> outputMip;
@@ -475,7 +492,7 @@ namespace pathos {
 
 		dummyCube->bindPositionOnlyVAO(cmdList);
 
-		for (int32 i = 0; i < 6; ++i) {
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
 			const matrix4& viewproj = cubeTransforms[i];
 
 			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, output->internal_getGLName(), outputMip, i);
@@ -492,7 +509,6 @@ namespace pathos {
 
 	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
 		CHECK(isInRenderThread());
-
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
 		GLuint brdfLUT = 0;

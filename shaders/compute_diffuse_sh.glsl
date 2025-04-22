@@ -8,8 +8,9 @@
 // --------------------------------------------------------
 // Definitions
 
-#define GROUP_SIZE_X 8
-#define GROUP_SIZE_Y 8
+// 8x8 is too big for shared memory
+#define GROUP_SIZE_X 4
+#define GROUP_SIZE_Y 4
 
 // --------------------------------------------------------
 // Layout
@@ -26,7 +27,7 @@ layout (std140, binding = 2) writeonly buffer Buffer_SH {
 
 shared vec3 s_perFaceL[6][9];
 shared float s_perFaceWeight[6];
-shared vec3 s_sliceL[GROUP_SIZE_Y][GROUP_SIZE_X][9];
+shared vec3 s_sliceL[6][GROUP_SIZE_Y][GROUP_SIZE_X][9];
 shared float s_weight[6][GROUP_SIZE_Y][GROUP_SIZE_X];
 
 // --------------------------------------------------------
@@ -80,11 +81,13 @@ void prefilter(uint face, uint x0, uint y0) {
             wSum += w;
         }
     }
-
+    
     for (int i = 0; i < 9; i++) {
-        s_sliceL[y0][x0][i] = scratch[i];
+        s_sliceL[face][y0][x0][i] = scratch[i];
         s_weight[face][y0][x0] = wSum;
     }
+    memoryBarrierShared();
+    barrier();
 }
 
 void main() {
@@ -94,13 +97,13 @@ void main() {
     s_perFaceWeight[face] = 0.0;
     for (int i = 0; i < 9; i++) {
         s_perFaceL[face][i] = vec3(0);
-        s_sliceL[tid.y][tid.x][i] = vec3(0);
+        s_sliceL[face][tid.y][tid.x][i] = vec3(0);
         s_weight[face][tid.y][tid.x] = 0.0;
     }
     memoryBarrierShared();
+    barrier();
 
     prefilter(face, tid.x, tid.y);
-    memoryBarrierShared();
 
     // Collect per-face data.
     if (tid.xy == uvec2(0, 0)) {
@@ -110,23 +113,27 @@ void main() {
 
         for (uint y = 0; y < GROUP_SIZE_Y; y++) {
             for (uint x = 0; x < GROUP_SIZE_X; x++) {
-                scratch[0] += s_sliceL[y][x][0];
-                scratch[1] += s_sliceL[y][x][1];
-                scratch[2] += s_sliceL[y][x][2];
-                scratch[3] += s_sliceL[y][x][3];
-                scratch[4] += s_sliceL[y][x][4];
-                scratch[5] += s_sliceL[y][x][5];
-                scratch[6] += s_sliceL[y][x][6];
-                scratch[7] += s_sliceL[y][x][7];
-                scratch[8] += s_sliceL[y][x][8];
+                scratch[0] += s_sliceL[face][y][x][0];
+                scratch[1] += s_sliceL[face][y][x][1];
+                scratch[2] += s_sliceL[face][y][x][2];
+                scratch[3] += s_sliceL[face][y][x][3];
+                scratch[4] += s_sliceL[face][y][x][4];
+                scratch[5] += s_sliceL[face][y][x][5];
+                scratch[6] += s_sliceL[face][y][x][6];
+                scratch[7] += s_sliceL[face][y][x][7];
+                scratch[8] += s_sliceL[face][y][x][8];
 
                 wSum += s_weight[face][y][x];
             }
         }
+        memoryBarrierShared();
+        barrier();
+
         s_perFaceWeight[face] = wSum;
         for (int i = 0; i < 9; i++) s_perFaceL[face][i] = scratch[i];
+        memoryBarrierShared();
+        barrier();
     }
-    memoryBarrierShared();
 
     if (tid == uvec3(0, 0, 0)) {
         float wSum = 0.0;
