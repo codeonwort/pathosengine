@@ -228,8 +228,9 @@ namespace pathos {
 	void SkyAtmospherePass::generateCubemapMips(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyAtmosphereMips);
 
-		// Copy specular cubemap to ambient cubemap for diffuse SH.
 		cmdList.generateTextureMipmap(reflectionCubemap->internal_getGLName());
+
+		// Copy specular cubemap to ambient cubemap for diffuse SH.
 		int32 copyMip = badger::ctz(pathos::SKY_PREFILTER_MAP_SIZE) - badger::ctz(pathos::SKY_AMBIENT_CUBEMAP_SIZE);
 		LightProbeBaker::get().copyCubemap_renderThread(cmdList, reflectionCubemap, ambientCubemap, copyMip, 0);
 	}

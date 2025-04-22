@@ -199,6 +199,9 @@ namespace pathos {
 	}
 
 	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeDiffuseSH);
+		
 		const uint32 cubemapSize = inCubemap->getCreateParams().width;
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DiffuseSH);
@@ -210,9 +213,7 @@ namespace pathos {
 
 		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-		// #wip: Still have barrier bug? :/
-		uint32 groupSize = (cubemapSize + 7) / 8;
-		cmdList.dispatchCompute(groupSize, groupSize, 1);
+		cmdList.dispatchCompute(1, 1, 1);
 
 		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -444,6 +445,7 @@ namespace pathos {
 
 	// #todo-rhi: Too slow? 0.3 ms for 128x128 cubemaps?
 	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
+		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(CopyCubemap);
 
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
@@ -460,7 +462,7 @@ namespace pathos {
 
 		const GLint layer = 0; // Don't care if layere = GL_TRUE
 		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
-		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, outputDesc.glStorageFormat);
 
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -471,6 +473,7 @@ namespace pathos {
 	}
 
 	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin, int32 faceEnd) {
+		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BlitCubemap);
 
 		const GLuint outputSize = output->getCreateParams().width >> outputMip;
@@ -506,7 +509,6 @@ namespace pathos {
 
 	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
 		CHECK(isInRenderThread());
-
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
 		GLuint brdfLUT = 0;
