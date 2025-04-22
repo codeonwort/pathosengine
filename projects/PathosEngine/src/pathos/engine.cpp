@@ -401,11 +401,18 @@ namespace pathos {
 		::strftime(timeBuffer, sizeof(timeBuffer), "GPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
 		filepath += std::string(timeBuffer);
 
+		size_t maxNameLen = 0;
+		for (const auto& name : lastGpuCounterNames) {
+			if (name.size() > maxNameLen) maxNameLen = name.size();
+		}
+
 		std::fstream fs(filepath, std::fstream::out);
 		if (fs.is_open()) {
 			uint32 n = (uint32)lastGpuCounterNames.size();
 			for (uint32 i = 0; i < n; ++i) {
-				fs << lastGpuCounterNames[i] << ": " << lastGpuCounterTimes[i] << " ms" << std::endl;
+				fs << lastGpuCounterNames[i];
+				for (size_t space = 0; space <= maxNameLen - lastGpuCounterNames[i].size(); ++space) fs << ' ';
+				fs << ": " << lastGpuCounterTimes[i] << " ms" << std::endl;
 			}
 			fs.close();
 		}

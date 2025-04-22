@@ -121,7 +121,7 @@ namespace pathos {
 		// -----------------------------------------------------------------------
 
 		// Default BRDF integration map of 512 size
-		GLuint getBRDFIntegrationMap_512() { return internal_BRDFIntegrationMap; }
+		GLuint getBRDFIntegrationMap_512() { return bdfIntegrationMap; }
 
 		GLuint bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList);
 
@@ -133,7 +133,7 @@ namespace pathos {
 		MeshGeometry* dummyCube;
 		matrix4 cubeTransforms[6];
 
-		GLuint internal_BRDFIntegrationMap;
+		GLuint bdfIntegrationMap;
 
 	};
 

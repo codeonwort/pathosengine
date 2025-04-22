@@ -144,7 +144,7 @@ namespace pathos {
 	}
 
 	LightProbeBaker::LightProbeBaker() {
-		internal_BRDFIntegrationMap = 0xffffffff;
+		bdfIntegrationMap = 0xffffffff;
 		dummyVAO = 0;
 		dummyFBO = 0;
 		dummyFBO_2color = 0;
@@ -184,15 +184,15 @@ namespace pathos {
 		dummyCube = gEngine->getSystemGeometryUnitCube();
 
 		// BRDF integration map
-		internal_BRDFIntegrationMap = bakeBRDFIntegrationMap_renderThread(512, cmdList);
-		cmdList.objectLabel(GL_TEXTURE, internal_BRDFIntegrationMap, -1, "BRDF integration map");
+		bdfIntegrationMap = bakeBRDFIntegrationMap_renderThread(512, cmdList);
+		cmdList.objectLabel(GL_TEXTURE, bdfIntegrationMap, -1, "BRDF integration map");
 	}
 
 	void LightProbeBaker::destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		gRenderDevice->deleteVertexArrays(1, &dummyVAO);
 		gRenderDevice->deleteFramebuffers(1, &dummyFBO);
 		gRenderDevice->deleteFramebuffers(1, &dummyFBO_2color);
-		gRenderDevice->deleteTextures(1, &internal_BRDFIntegrationMap);
+		gRenderDevice->deleteTextures(1, &bdfIntegrationMap);
 		// Just cleanup references as they are owned by gEngine.
 		fullscreenQuad = nullptr;
 		dummyCube = nullptr;
@@ -201,6 +201,7 @@ namespace pathos {
 	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeDiffuseSH);
+		//SCOPED_GPU_COUNTER(BakeDiffuseSH); // #todo-gpu-counter: Support nested gpu counters
 		
 		const uint32 cubemapSize = inCubemap->getCreateParams().width;
 
@@ -268,6 +269,7 @@ namespace pathos {
 		CHECK(isInRenderThread());
 		CHECK(bakeDesc.encoding == EIrradianceMapEncoding::Cubemap || bakeDesc.encoding == EIrradianceMapEncoding::OctahedralNormalVector);
 		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
+		SCOPED_GPU_COUNTER(BakeDiffuseIBL);
 
 		const bool bBakeCubemap = (bakeDesc.encoding == EIrradianceMapEncoding::Cubemap);
 		GLuint fbo = bBakeCubemap ? dummyFBO : dummyFBO_2color;
@@ -344,6 +346,7 @@ namespace pathos {
 	void LightProbeBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeReflectionProbe);
+		//SCOPED_GPU_COUNTER(BakeReflectionProbe); // #todo-gpu-counter: Support nested gpu counters
 
 		const uint32 BASE_SIZE = 128;
 		const uint32 MIP_COUNT = 7;
@@ -402,6 +405,7 @@ namespace pathos {
 	{
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
+		SCOPED_GPU_COUNTER(BakeSpecularIBL);
 
 		constexpr GLint uniform_transform = 0;
 		constexpr GLint uniform_roughness = 1;
