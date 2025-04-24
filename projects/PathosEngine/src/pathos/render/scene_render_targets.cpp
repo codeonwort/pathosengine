@@ -10,15 +10,6 @@
 #include "badger/assertion/assertion.h"
 #include "badger/math/minmax.h"
 
-static uint32 calcCubemapNumMips(uint32 defaultSize, uint32 minSize) {
-	uint32 num = 1;
-	while (defaultSize >= minSize) {
-		defaultSize /= 2;
-		num += 1;
-	}
-	return num;
-}
-
 static uint32 calcTexture2DMaxMipCount(uint32 width, uint32 height) {
 	return (uint32)(1 + std::floor(std::log2(std::max(width, height))));
 }
@@ -451,8 +442,7 @@ namespace pathos {
 			skyPrefilteredMap = 0;
 		}
 
-		skyPrefilterMapMipCount = calcCubemapNumMips(cubemapSize, SKY_PREFILTER_MAP_SIZE);
-		skyPrefilterMapMipCount = std::min(skyPrefilterMapMipCount, SKY_PREFILTER_MAP_MIP_COUNT);
+		skyPrefilterMapMipCount = SKY_PREFILTER_MAP_MIP_COUNT;
 		skyPrefilterMapSize = cubemapSize;
 		if (skyPrefilteredMap == 0) {
 			gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, &skyPrefilteredMap);
