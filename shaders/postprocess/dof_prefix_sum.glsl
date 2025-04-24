@@ -43,8 +43,8 @@ void main() {
 	shared_data[P0.x] = i0;
 	shared_data[P1.x] = i1;
 
+	groupMemoryBarrier();
 	barrier();
-	memoryBarrierShared();
 
 	for (step = 0; step < steps ; step++) {
 		mask = (1 << step) - 1;
@@ -53,8 +53,8 @@ void main() {
 
 		shared_data[wr_id] += shared_data[rd_id];
 
+		groupMemoryBarrier();
 		barrier();
-		memoryBarrierShared();
 	}
 
 	vec3 prevRunResult = vec3(0.0);

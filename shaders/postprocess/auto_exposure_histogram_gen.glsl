@@ -51,17 +51,8 @@ void main() {
 
 	sharedHistogram[groupIndex] = 0;
 
-	// #todo-exposure: I don't see what's wrong here but maybe it's bugged?
-	// using memoryBarrier() results in darker exposure, which implies
-	// memoryBarrierShared() might causing data hazard, because well memoryBarrier()
-	// can't be more wrong than memoryBarrierShared() so probably memoryBarrierShared()
-	// is wrong here. But what memory op in the world is non-shared access here? :/
-	// Accessing gl_LocalInvocationIndex? But if so it varies per lane so shouldn't matter?
-#if 1
-	memoryBarrierShared();
-#else
-	memoryBarrier();
-#endif
+	groupMemoryBarrier();
+	barrier();
 
 	uvec2 texel = gl_GlobalInvocationID.xy;
 	if (texel.x < ubo.inputWidth && texel.y < ubo.inputHeight) {
@@ -70,7 +61,8 @@ void main() {
 		atomicAdd(sharedHistogram[binIndex], 1);
 	}
 
-	memoryBarrierShared();
+	groupMemoryBarrier();
+	barrier();
 
 	atomicAdd(bins[groupIndex], sharedHistogram[groupIndex]);
 }

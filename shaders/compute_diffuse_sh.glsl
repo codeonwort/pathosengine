@@ -86,7 +86,7 @@ void prefilter(uint face, uint x0, uint y0) {
         s_sliceL[face][y0][x0][i] = scratch[i];
         s_weight[face][y0][x0] = wSum;
     }
-    memoryBarrierShared();
+    groupMemoryBarrier();
     barrier();
 }
 
@@ -100,7 +100,7 @@ void main() {
         s_sliceL[face][tid.y][tid.x][i] = vec3(0);
         s_weight[face][tid.y][tid.x] = 0.0;
     }
-    memoryBarrierShared();
+    groupMemoryBarrier();
     barrier();
 
     prefilter(face, tid.x, tid.y);
@@ -126,12 +126,12 @@ void main() {
                 wSum += s_weight[face][y][x];
             }
         }
-        memoryBarrierShared();
+        groupMemoryBarrier();
         barrier();
 
         s_perFaceWeight[face] = wSum;
         for (int i = 0; i < 9; i++) s_perFaceL[face][i] = scratch[i];
-        memoryBarrierShared();
+        groupMemoryBarrier();
         barrier();
     }
 

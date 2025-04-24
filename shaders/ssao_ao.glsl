@@ -77,6 +77,8 @@ vec4 fetchNeighbor(ivec2 currentTexel, ivec2 neighborTexel) {
 	} else {
 		neighbor = imageLoad(halfNormalAndDepth, neighborTexel);
 	}
+	groupMemoryBarrier();
+	barrier();
 #else
 	neighbor = imageLoad(halfNormalAndDepth, neighborTexel);
 #endif
@@ -87,6 +89,8 @@ vec4 fetchNeighbor(ivec2 currentTexel, ivec2 neighborTexel) {
 float computeAO(ivec2 texel, vec2 uv) {
 #if USE_SHARED_SAMPLES
 	vec4 normalAndDepth = shared_samples[gl_LocalInvocationIndex];
+	groupMemoryBarrier();
+	barrier();
 #else
 	vec4 normalAndDepth = imageLoad(halfNormalAndDepth, texel.xy);
 #endif
@@ -137,11 +141,9 @@ void main() {
 #if USE_SHARED_SAMPLES
 	// Init shared variable
 	shared_samples[gl_LocalInvocationIndex] = imageLoad(halfNormalAndDepth, currentTexel.xy);
+	
+	groupMemoryBarrier();
 	barrier();
-
-	// memoryBarrierShared is not necessary according to
-	// https://stackoverflow.com/questions/39393560/glsl-memorybarriershared-usefulness
-	// memoryBarrierShared();
 #endif
 
 	float ao = computeAO(currentTexel, uv);
