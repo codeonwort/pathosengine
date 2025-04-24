@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/gl_debug_group.h"
 #include "pathos/rhi/render_command_list.h"
 #include "pathos/smart_pointer.h"
 #include "pathos/input/input_system.h"
@@ -146,8 +147,7 @@ namespace pathos {
 		void internal_updateGPUQuery_renderThread(
 			float inElapsedRenderThread,
 			float inElapsedGpu,
-			const std::vector<std::string>& inGpuCounterNames,
-			const std::vector<float>& inGpuCounterTimes);
+			const GpuCounterResult& inGpuCounterResult);
 
 		void internal_updateBasePassCullStat_renderThread(uint32 totalDrawcall, uint32 culledDrawcall);
 		inline uint32 internal_getLastBasePassTotalDrawcall() const { return lastBasePassTotalDrawcall; }
@@ -232,8 +232,7 @@ namespace pathos {
 		float elapsed_gpu = 0.0f;
 		uint32 lastBasePassTotalDrawcall = 0;
 		uint32 lastBasePassCulledDrawcall = 0;
-		std::vector<std::string> lastGpuCounterNames;
-		std::vector<float> lastGpuCounterTimes;
+		GpuCounterResult lastGpuCounterResult;
 		std::mutex gpuQueryMutex;
 
 		// System geometry

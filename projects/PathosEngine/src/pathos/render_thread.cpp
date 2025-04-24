@@ -236,10 +236,8 @@ namespace pathos {
 			renderThread->elapsed_gpu = (float)gpu_elapsed_ns / 1000000.0f;
 
 			// Get GPU profile for current frame.
-			const uint32 numGpuCounters = ScopedGpuCounter::flushQueries(
-				&immediateContext,
-				renderThread->lastGpuCounterNames,
-				renderThread->lastGpuCounterTimes);
+			GpuCounterResult gpuCounterResult = ScopedGpuCounter::flushQueries(&immediateContext);
+			renderThread->lastGpuCounterResult = std::move(gpuCounterResult);
 
 			// Clear render resources for current frame.
 			std::vector<Fence*> fencesToSignal;
@@ -265,8 +263,7 @@ namespace pathos {
 				gEngine->internal_updateGPUQuery_renderThread(
 					renderThread->elapsed_renderThread,
 					renderThread->elapsed_gpu,
-					renderThread->lastGpuCounterNames,
-					renderThread->lastGpuCounterTimes);
+					renderThread->lastGpuCounterResult);
 			}
 
 			{

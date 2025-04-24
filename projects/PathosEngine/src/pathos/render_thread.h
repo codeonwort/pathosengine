@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/rhi/gl_debug_group.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/int_types.h"
@@ -113,8 +114,7 @@ namespace pathos {
 	private:
 		GLuint                            gpuTimerQuery = 0;
 		float                             elapsed_gpu = 0.0f; // in milliseconds
-		std::vector<std::string>          lastGpuCounterNames;
-		std::vector<float>                lastGpuCounterTimes;
+		GpuCounterResult                  lastGpuCounterResult;
 	};
 
 }

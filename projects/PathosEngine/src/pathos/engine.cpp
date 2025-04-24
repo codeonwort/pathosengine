@@ -311,15 +311,13 @@ namespace pathos {
 	void Engine::internal_updateGPUQuery_renderThread(
 		float inElapsedRenderThread,
 		float inElapsedGpu,
-		const std::vector<std::string>& inGpuCounterNames,
-		const std::vector<float>& inGpuCounterTimes)
+		const GpuCounterResult& inGpuCounterResult)
 	{
 		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
 
 		elapsed_renderThread = inElapsedRenderThread;
 		elapsed_gpu = inElapsedGpu;
-		lastGpuCounterNames = inGpuCounterNames;
-		lastGpuCounterTimes = inGpuCounterTimes;
+		lastGpuCounterResult = inGpuCounterResult;
 	}
 
 	void Engine::internal_updateBasePassCullStat_renderThread(uint32 totalDrawcall, uint32 culledDrawcall) {
@@ -401,18 +399,26 @@ namespace pathos {
 		::strftime(timeBuffer, sizeof(timeBuffer), "GPUProfile-%Y-%m-%d-%H-%M-%S.txt", &localTm);
 		filepath += std::string(timeBuffer);
 
-		size_t maxNameLen = 0;
-		for (const auto& name : lastGpuCounterNames) {
-			if (name.size() > maxNameLen) maxNameLen = name.size();
+		const auto& counterNames = lastGpuCounterResult.counterNames;
+		const auto& counterTimes = lastGpuCounterResult.elapsedMilliseconds;
+		const auto& indentLevels = lastGpuCounterResult.indentLevels;
+
+		int32 maxNameLen = 0;
+		for (size_t i = 0; i <lastGpuCounterResult.numCounters; ++i)
+		{
+			int32 paddedLen = (int32)counterNames[i].size() + indentLevels[i];
+			if (paddedLen > maxNameLen) maxNameLen = paddedLen;
 		}
 
 		std::fstream fs(filepath, std::fstream::out);
 		if (fs.is_open()) {
-			uint32 n = (uint32)lastGpuCounterNames.size();
+			uint32 n = (uint32)lastGpuCounterResult.numCounters;
 			for (uint32 i = 0; i < n; ++i) {
-				fs << lastGpuCounterNames[i];
-				for (size_t space = 0; space <= maxNameLen - lastGpuCounterNames[i].size(); ++space) fs << ' ';
-				fs << ": " << lastGpuCounterTimes[i] << " ms" << std::endl;
+				for (int32 space = 0; space < indentLevels[i]; ++space) fs << ' ';
+				fs << counterNames[i];
+				int32 postSpace = maxNameLen - (int32)counterNames[i].size() - (int32)indentLevels[i];
+				for (size_t space = 0; space <= postSpace; ++space) fs << ' ';
+				fs << ": " << counterTimes[i] << " ms" << std::endl;
 			}
 			fs.close();
 		}
@@ -427,8 +433,8 @@ namespace pathos {
 		std::vector<float>& outGpuCounterTimes)
 	{
 		std::lock_guard<std::mutex> lockGuard(gpuQueryMutex);
-		outGpuCounterNames = lastGpuCounterNames;
-		outGpuCounterTimes = lastGpuCounterTimes;
+		outGpuCounterNames = lastGpuCounterResult.counterNames;
+		outGpuCounterTimes = lastGpuCounterResult.elapsedMilliseconds;
 	}
 
 	void Engine::setWorld(World* inWorld) {

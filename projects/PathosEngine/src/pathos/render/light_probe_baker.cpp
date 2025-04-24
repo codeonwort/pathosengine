@@ -201,7 +201,7 @@ namespace pathos {
 	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeDiffuseSH);
-		//SCOPED_GPU_COUNTER(BakeDiffuseSH); // #todo-gpu-counter: Support nested gpu counters
+		SCOPED_GPU_COUNTER(BakeDiffuseSH);
 		
 		const uint32 cubemapSize = inCubemap->getCreateParams().width;
 
@@ -346,7 +346,7 @@ namespace pathos {
 	void LightProbeBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeReflectionProbe);
-		//SCOPED_GPU_COUNTER(BakeReflectionProbe); // #todo-gpu-counter: Support nested gpu counters
+		SCOPED_GPU_COUNTER(BakeReflectionProbe);
 
 		const uint32 BASE_SIZE = 128;
 		const uint32 MIP_COUNT = 7;

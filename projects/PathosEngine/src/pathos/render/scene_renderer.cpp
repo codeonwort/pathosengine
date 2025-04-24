@@ -147,6 +147,7 @@ namespace pathos {
 		scene = inScene;
 		camera = inCamera;
 
+		SCOPED_GPU_COUNTER(SceneRenderer);
 		CHECK(sceneRenderSettings.isValid());
 
 		const bool bEnableResolutionScaling = (scene->sceneProxySource == SceneProxySource::MainScene);
@@ -408,7 +409,6 @@ namespace pathos {
 		}
 		else
 		{
-			// #todo-rhi: Support nested gpu counters
 			SCOPED_CPU_COUNTER(PostProcessing);
 			SCOPED_GPU_COUNTER(PostProcessing);
 
@@ -453,6 +453,7 @@ namespace pathos {
 			if (bNeedsHalfResSceneColor) {
 				SCOPED_CPU_COUNTER(SceneColorDownsample);
 				SCOPED_DRAW_EVENT(SceneColorDownsample);
+				SCOPED_GPU_COUNTER(SceneColorDownsample);
 				copyTexture(cmdList, sceneRenderTargets->sceneColor, sceneRenderTargets->sceneColorHalfRes,
 					sceneRenderTargets->sceneWidth / 2, sceneRenderTargets->sceneHeight / 2);
 			}
@@ -460,6 +461,7 @@ namespace pathos {
 			// Post Process: Bloom
 			if (isPPEnabled(EPostProcessOrder::Bloom)) {
 				SCOPED_CPU_COUNTER(Bloom);
+				SCOPED_GPU_COUNTER(Bloom);
 
 				bloomSetup->setInput(EPostProcessInput::PPI_0, sceneRenderTargets->sceneColorHalfRes);
 				bloomSetup->setOutput(EPostProcessOutput::PPO_0, sceneRenderTargets->sceneBloomSetup);
@@ -472,6 +474,7 @@ namespace pathos {
 			// Post Process: Tone Mapping
 			{
 				SCOPED_CPU_COUNTER(ToneMapping);
+				SCOPED_GPU_COUNTER(ToneMapping);
 
 				const bool isFinalPP = isPPFinal(EPostProcessOrder::ToneMapping);
 				const float exposureOverride = cvar_exposure_override.getFloat();
@@ -510,6 +513,7 @@ namespace pathos {
 				case EAntiAliasingMethod::FXAA:
 				{
 					SCOPED_CPU_COUNTER(FXAA);
+					SCOPED_GPU_COUNTER(FXAA);
 
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
@@ -524,6 +528,7 @@ namespace pathos {
 				case EAntiAliasingMethod::TAA:
 				{
 					SCOPED_CPU_COUNTER(TAA);
+					SCOPED_GPU_COUNTER(TAA);
 
 					const bool isFinalPP = isPPFinal(EPostProcessOrder::AntiAliasing);
 					const GLuint aaRenderTarget = isFinalPP ? sceneRenderTargets->sceneFinal : sceneRenderTargets->sceneColorAA;
@@ -557,6 +562,7 @@ namespace pathos {
 			// NOTE: Should run after tone mapping and before any noise-introducing PPs.
 			if (isPPEnabled(EPostProcessOrder::SuperResolution)) {
 				SCOPED_CPU_COUNTER(SuperResolution);
+				SCOPED_GPU_COUNTER(SuperResolution);
 
 				switch (superResMethod) {
 				case ESuperResolutionMethod::FSR1:
@@ -592,6 +598,7 @@ namespace pathos {
 			// Post Process: Depth of Field
 			if (isPPEnabled(EPostProcessOrder::DepthOfField)) {
 				SCOPED_CPU_COUNTER(DepthOfField);
+				SCOPED_GPU_COUNTER(DepthOfField);
 
 				const GLuint dofInput = sceneRenderTargets->sceneColorDoFInput;
 				const GLuint dofRenderTarget = sceneRenderTargets->sceneFinal;
