@@ -298,6 +298,9 @@ namespace pathos {
 			// Sometimes sky lighting is invalidated due to, for instance, world transition.
 			// Clear current sky lighting textures and let sky passes update them.
 			if (scene->bInvalidateSkyLighting) {
+				SCOPED_GPU_COUNTER(ClearSkyLighting);
+				SCOPED_DRAW_EVENT(ClearSkyLighting);
+
 				if (sceneRenderTargets->skyDiffuseSH != nullptr) {
 					vector4 clearBuf[9];
 					for (int32 i = 0; i < 9; ++i) clearBuf[i] = vector4(0.0f);
@@ -396,6 +399,7 @@ namespace pathos {
 		if (sceneRenderSettings.enablePostProcess == false)
 		{
 			SCOPED_DRAW_EVENT(BlitToFinalTarget);
+			SCOPED_GPU_COUNTER(BlitToFinalTarget);
 
 			copyTexture(cmdList, sceneRenderTargets->sceneColor, getFinalRenderTarget(),
 				sceneRenderTargets->unscaledSceneWidth, sceneRenderTargets->unscaledSceneHeight);
@@ -932,7 +936,7 @@ namespace pathos {
 	void SceneRenderer::internal_destroyGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
 		fallbackMaterial.reset();
 		indirectDrawDummyMaterial.reset();
-		gRenderDevice->deleteBuffers(1, &copyTextureFBO);
+		gRenderDevice->deleteFramebuffers(1, &copyTextureFBO);
 
 		ubo_perFrame.reset();
 
