@@ -78,12 +78,12 @@ namespace pathos {
 	void IrradianceVolumeActor::internal_createRenderProxy(SceneProxy* scene) const {
 		if (hasLightingData()) {
 			IrradianceVolumeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceVolumeProxy>(scene);
-			proxy->minBounds = minBounds;
+			proxy->minBounds             = minBounds;
 			proxy->irradianceTileFirstID = irradianceTileFirstID;
-			proxy->maxBounds = maxBounds;
-			proxy->numProbes = numProbes();
-			proxy->gridSize = gridSize;
-			proxy->captureRadius = captureRadius;
+			proxy->maxBounds             = maxBounds;
+			proxy->numProbes             = numProbes();
+			proxy->gridSize              = gridSize;
+			proxy->captureRadius         = captureRadius;
 
 			scene->proxyList_irradianceVolume.push_back(proxy);
 		}

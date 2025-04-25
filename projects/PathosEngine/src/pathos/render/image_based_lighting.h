@@ -9,6 +9,10 @@
 
 namespace pathos {
 
+	class Buffer;
+	class RenderTarget2D;
+	class SceneProxy;
+
 	const RenderTargetFormat IRRADIANCE_PROBE_FORMAT = RenderTargetFormat::RGBA16F;
 	const RenderTargetFormat DEPTH_PROBE_FORMAT      = RenderTargetFormat::R16F;
 
@@ -36,6 +40,48 @@ namespace pathos {
 		uint32 tileCountY = 0;
 
 		uint32 totalTileCount() const { return tileCountX * tileCountY; }
+	};
+
+	// Manages light probe data in a Scene.
+	class LightProbeScene {
+	public:
+		LightProbeScene();
+
+		void initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc);
+		void initializeIrradianceProbeAtlas();
+
+		// @return First tile ID.
+		uint32 allocateIrradianceTiles(uint32 numRequiredTiles);
+
+		// Only successful if exactly [firstTileID,lastTileID] was allocated
+		// by allocateIrradianceTiles().
+		bool freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID);
+
+		void getIrradianceTileTexelOffset(uint32 tileID, uint32& outX, uint32& outY) const;
+
+		// outBounds = (u0, v0, u1, v1)
+		void getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const;
+
+		GLuint getIrradianceProbeAtlasTexture() const;
+		GLuint getDepthProbeAtlasTexture() const;
+		inline const IrradianceProbeAtlasDesc& getIrradianceProbeAtlasDesc() const { return irradianceProbeAtlasDesc; }
+
+		void createSceneProxy(SceneProxy* sceneProxy, bool isLightProbeRendering);
+
+	private:
+		struct IrradianceTileRange {
+			uint32 begin, end; // Both inclusive
+			bool operator==(const IrradianceTileRange& other) const {
+				return begin == other.begin && end == other.end;
+			}
+		};
+
+		std::vector<IrradianceTileRange> irradianceTileAllocs;
+		IrradianceProbeAtlasDesc         irradianceProbeAtlasDesc;
+		uniquePtr<RenderTarget2D>        irradianceProbeAtlas;
+		uniquePtr<RenderTarget2D>        depthProbeAtlas;
+		uniquePtr<Buffer>                irradianceVolumeBuffer;
+		uniquePtr<Buffer>                reflectionProbeBuffer;
 	};
 
 }

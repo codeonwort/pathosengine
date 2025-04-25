@@ -407,6 +407,9 @@
     <ClCompile Include="src\pathos\scene\sky_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\pathos\render\image_based_lighting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pathos\text\text_geometry.h">

@@ -50,6 +50,7 @@ namespace pathos {
 
 		// -----------------------------------------------------------------------
 		// Light Probe API
+		// #todo-refactoring: Mostly for IrradianceVolumeActor. Do I need them? Access LightProbeScene directly?
 
 		void initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc);
 
@@ -70,7 +71,7 @@ namespace pathos {
 		GLuint getIrradianceProbeAtlasTexture() const;
 		GLuint getDepthProbeAtlasTexture() const;
 
-		inline const IrradianceProbeAtlasDesc& getIrradianceProbeAtlasDesc() const { return irradianceProbeAtlasDesc; }
+		inline const IrradianceProbeAtlasDesc& getIrradianceProbeAtlasDesc() const { return lightProbeScene.getIrradianceProbeAtlasDesc(); }
 
 	private:
 		void registerIrradianceVolume(IrradianceVolumeActor* actor);
@@ -78,35 +79,18 @@ namespace pathos {
 		void registerReflectionProbe(ReflectionProbeActor* actor);
 		void unregisterReflectionProbe(ReflectionProbeActor* actor);
 
-		void initializeIrradianceProbeAtlas();
-
 	// #todo-godray: Cleanup this mess
 	public:
-		StaticMeshComponent* godRaySource = nullptr;
-		vector3 godRayColor = vector3(1.0f, 0.5f, 0.0f);
-		float godRayIntensity = 1.0f;
+		StaticMeshComponent* godRaySource    = nullptr;
+		vector3              godRayColor     = vector3(1.0f, 0.5f, 0.0f);
+		float                godRayIntensity = 1.0f;
 
 	private:
-		World* owner = nullptr;
-		std::vector<ReflectionProbeActor*> reflectionProbes; // Actors spawned in the owner world
+		World*                              owner = nullptr;
+		std::vector<ReflectionProbeActor*>  reflectionProbes; // Actors spawned in the owner world
 		std::vector<IrradianceVolumeActor*> irradianceVolumes; // Actors spawned in the owner world
-
-		bool bInvalidateSkyLighting = false;
-
-		IrradianceProbeAtlasDesc irradianceProbeAtlasDesc;
-		struct IrradianceTileRange {
-			uint32 begin, end; // Both inclusive
-			bool operator==(const IrradianceTileRange& other) const {
-				return begin == other.begin && end == other.end;
-			}
-		};
-		std::vector<IrradianceTileRange> irradianceTileAllocs;
-
-		uniquePtr<RenderTarget2D> irradianceProbeAtlas;
-		uniquePtr<RenderTarget2D> depthProbeAtlas;
-		uniquePtr<Buffer> irradianceVolumeBuffer;
-		uniquePtr<Buffer> reflectionProbeBuffer;
-
+		LightProbeScene                     lightProbeScene;
+		bool                                bInvalidateSkyLighting = false;
 	};
 
 }
