@@ -1,5 +1,9 @@
 //?#version 460 core
 
+// #todo-rhi: Align 16 bytes or use float array?
+// 1. vec4 * 9 = 144 bytes, throw away all w channels. (Both std140 and std430 works)
+// 2. float[28] = 112 bytes, only last element is unused. (Only std430 works)
+// glslang disassembly is shorter for option 1, but not sure if it's also more performant.
 struct SHBuffer {
     vec4 Ls[9]; // w not used
 };
