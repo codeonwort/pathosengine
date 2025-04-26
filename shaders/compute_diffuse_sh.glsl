@@ -17,21 +17,26 @@
 
 layout (local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z = 6) in;
 
-layout (location = 1) uniform int cubemapSize;
+layout (location = 1) uniform uint cubemapSize;
+layout (location = 2) uniform uint shIndex;
 
 layout (binding = 0) uniform samplerCube inCubemap;
 
 layout (std140, binding = 2) writeonly buffer Buffer_SH {
-	SHBuffer outSH;
+	SHBuffer outSH[];
 };
 
-shared vec3 s_perFaceL[6][9];
+shared vec4 s_perFaceL[6][9];
 shared float s_perFaceWeight[6];
-shared vec3 s_sliceL[6][GROUP_SIZE_Y][GROUP_SIZE_X][9];
+shared vec4 s_sliceL[6][GROUP_SIZE_Y][GROUP_SIZE_X][9];
 shared float s_weight[6][GROUP_SIZE_Y][GROUP_SIZE_X];
 
 // --------------------------------------------------------
 // Shader
+
+uint CUBEMAP_SIZE() { return cubemapSize; }
+uint SH_INDEX() { return shIndex; }
+vec4 SAMPLE_CUBEMAP_FUNCTION(vec3 dir) { return textureLod(inCubemap, dir, 0); }
 
 float Y00  (vec3 dir) { return 0.282095f; };
 float Y1_1 (vec3 dir) { return 0.488603f * dir.y; };
@@ -54,29 +59,30 @@ vec3 getDir(uint face, float u, float v) {
 }
 
 void prefilter(uint face, uint x0, uint y0) {
-    vec3 scratch[9];
-    for (int i = 0; i < 9; i++) scratch[i] = vec3(0);
+    vec4 scratch[9];
+    for (int i = 0; i < 9; i++) scratch[i] = vec4(0);
     float wSum = 0.0;
 
-    for (uint y = y0; y < cubemapSize; y += GROUP_SIZE_Y) {
-        for (uint x = x0; x < cubemapSize; x += GROUP_SIZE_X) {
-            float u = 2.0 * (float(x) / float(cubemapSize)) - 1.0;
-            float v = 2.0 * (float(y) / float(cubemapSize)) - 1.0;
+    uint size = CUBEMAP_SIZE();
+    for (uint y = y0; y < size; y += GROUP_SIZE_Y) {
+        for (uint x = x0; x < size; x += GROUP_SIZE_X) {
+            float u = 2.0 * (float(x) / float(size)) - 1.0;
+            float v = 2.0 * (float(y) / float(size)) - 1.0;
             float tmp = 1.0 + u * u + v * v;
             float w = 4.0 / (tmp * sqrt(tmp));
 
             vec3 dir = getDir(face, u, v);
-            vec3 sky = w * textureLod(inCubemap, dir, 0).xyz;
+            vec4 color = w * SAMPLE_CUBEMAP_FUNCTION(dir);
 
-            scratch[0] += sky * Y00(dir);
-            scratch[1] += sky * Y1_1(dir);
-            scratch[2] += sky * Y10(dir);
-            scratch[3] += sky * Y11(dir);
-            scratch[4] += sky * Y2_2(dir);
-            scratch[5] += sky * Y2_1(dir);
-            scratch[6] += sky * Y20(dir);
-            scratch[7] += sky * Y21(dir);
-            scratch[8] += sky * Y22(dir);
+            scratch[0] += color * Y00(dir);
+            scratch[1] += color * Y1_1(dir);
+            scratch[2] += color * Y10(dir);
+            scratch[3] += color * Y11(dir);
+            scratch[4] += color * Y2_2(dir);
+            scratch[5] += color * Y2_1(dir);
+            scratch[6] += color * Y20(dir);
+            scratch[7] += color * Y21(dir);
+            scratch[8] += color * Y22(dir);
 
             wSum += w;
         }
@@ -96,8 +102,8 @@ void main() {
 
     s_perFaceWeight[face] = 0.0;
     for (int i = 0; i < 9; i++) {
-        s_perFaceL[face][i] = vec3(0);
-        s_sliceL[face][tid.y][tid.x][i] = vec3(0);
+        s_perFaceL[face][i] = vec4(0);
+        s_sliceL[face][tid.y][tid.x][i] = vec4(0);
         s_weight[face][tid.y][tid.x] = 0.0;
     }
     groupMemoryBarrier();
@@ -107,8 +113,8 @@ void main() {
 
     // Collect per-face data.
     if (tid.xy == uvec2(0, 0)) {
-        vec3 scratch[9];
-        for (int i = 0; i < 9; i++) scratch[i] = vec3(0);
+        vec4 scratch[9];
+        for (int i = 0; i < 9; i++) scratch[i] = vec4(0);
         float wSum = 0.0;
 
         for (uint y = 0; y < GROUP_SIZE_Y; y++) {
@@ -147,7 +153,7 @@ void main() {
         float norm = 4.0 * PI / wSum;
 
         for (int i = 0; i < 9; i++) {
-            vec3 L = vec3(0);
+            vec4 L = vec4(0);
             L += s_perFaceL[0][i];
             L += s_perFaceL[1][i];
             L += s_perFaceL[2][i];
@@ -155,7 +161,7 @@ void main() {
             L += s_perFaceL[4][i];
             L += s_perFaceL[5][i];
 
-            outSH.Ls[i] = vec4(L, 0) * norm;
+            outSH[SH_INDEX()].Ls[i] = L * norm;
         }
     }
 }

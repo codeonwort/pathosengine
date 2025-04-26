@@ -38,7 +38,16 @@ namespace pathos {
 		void initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 		void destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
-		void bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH);
+		void bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH, uint32 shIndex = 0);
+
+		/// <summary>
+		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
+		/// Therefore sky specular IBLs still use old impl.
+		/// </summary>
+		/// <param name="cmdList">Render command list</param>
+		/// <param name="srcCubemap">Radiance-captured cubemap. Should have size of 128 and mip count of 7.</param>
+		/// <param name="dstCubemap">Cubemap that will store the filtering result. Should have size of 128 and mip count of 7.</param>
+		void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
 
 		/// <summary>
 		/// Generate irradiance cubemap from radiance capture cubemap.
@@ -108,15 +117,6 @@ namespace pathos {
 			uint32 outputTextureSize,
 			int32 faceBegin,
 			int32 faceEnd);
-
-		/// <summary>
-		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
-		/// Therefore sky specular IBLs still use old impl.
-		/// </summary>
-		/// <param name="cmdList">Render command list</param>
-		/// <param name="srcCubemap">Radiance-captured cubemap. Should have size of 128 and mip count of 7.</param>
-		/// <param name="dstCubemap">Cubemap that will store the filtering result. Should have size of 128 and mip count of 7.</param>
-		void bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap);
 
 		// -----------------------------------------------------------------------
 

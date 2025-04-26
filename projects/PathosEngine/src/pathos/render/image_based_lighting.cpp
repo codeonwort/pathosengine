@@ -23,7 +23,7 @@ namespace pathos {
 		irradianceProbeAtlasDesc = desc;
 	}
 
-	void LightProbeScene::initializeIrradianceProbeAtlas() {
+	void LightProbeScene::createIrradianceProbeAtlas() {
 		if (irradianceProbeAtlas == nullptr) {
 			if (cvar_irradianceProbeAtlas_tileSize.getInt() > 0) irradianceProbeAtlasDesc.tileSize = cvar_irradianceProbeAtlas_tileSize.getInt();
 			if (cvar_irradianceProbeAtlas_tileCountX.getInt() > 0) irradianceProbeAtlasDesc.tileCountX = cvar_irradianceProbeAtlas_tileCountX.getInt();
@@ -41,20 +41,29 @@ namespace pathos {
 			depthProbeAtlas->respecTexture(atlasWidth, atlasHeight, pathos::DEPTH_PROBE_FORMAT, "Texture_DepthProbeAtlas");
 			depthProbeAtlas->immediateUpdateResource();
 		}
+		if (irradianceSHBuffer == nullptr) {
+			const uint32 tileCountX = irradianceProbeAtlasDesc.tileCountX;
+			const uint32 tileCountY = irradianceProbeAtlasDesc.tileCountY;
+			const uint32 maxProbes = (tileCountX * tileCountY + 5) / 6;
+			const uint32 stride = sizeof(float) * 4 * 9;
+
+			BufferCreateParams desc{ EBufferUsage::CpuWrite, stride * maxProbes, nullptr, "Buffer_IrradianceSH" };
+			irradianceSHBuffer = makeUnique<Buffer>(desc);
+			irradianceSHBuffer->createGPUResource();
+		}
 	}
 
 	IrradianceProbeID LightProbeScene::allocateIrradianceTiles(uint32 numRequiredTiles) {
 		if (irradianceProbeAtlas == nullptr) {
 			IrradianceProbeID probeID;
 			probeID.firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
-			probeID.shIndex = 0xffffffff;
+			probeID.firstShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 			return probeID;
 		}
 
 		uint32 shIndex = 0;
 		uint32 beginID = 0, endID = numRequiredTiles - 1;
 		for (size_t i = 0; i < irradianceTileAllocs.size(); ++i) {
-			shIndex = (uint32)i;
 			const IrradianceTileRange& allocRange = irradianceTileAllocs[i];
 			if (beginID <= allocRange.end && allocRange.begin <= endID) {
 				beginID = allocRange.end + 1;
@@ -67,7 +76,7 @@ namespace pathos {
 			irradianceTileAllocs.push_back(IrradianceTileRange{ beginID, endID });
 			IrradianceProbeID probeID;
 			probeID.firstTileID = beginID;
-			probeID.shIndex = shIndex;
+			probeID.firstShIndex = beginID;
 			return probeID;
 		}
 
@@ -83,7 +92,7 @@ namespace pathos {
 		}
 		IrradianceProbeID probeID;
 		probeID.firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
-		probeID.shIndex = 0xffffffff;
+		probeID.firstShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 		return probeID;
 	}
 

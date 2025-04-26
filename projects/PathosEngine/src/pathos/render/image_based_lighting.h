@@ -44,7 +44,7 @@ namespace pathos {
 
 	struct IrradianceProbeID {
 		uint32 firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
-		uint32 shIndex = 0xffffffff;
+		uint32 firstShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 
 		inline bool isValid() const { return firstTileID != IrradianceProbeAtlasDesc::INVALID_TILE_ID; }
 	};
@@ -55,7 +55,7 @@ namespace pathos {
 		LightProbeScene();
 
 		void initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc);
-		void initializeIrradianceProbeAtlas();
+		void createIrradianceProbeAtlas();
 
 		// @return First tile ID.
 		IrradianceProbeID allocateIrradianceTiles(uint32 numRequiredTiles);
@@ -89,6 +89,7 @@ namespace pathos {
 		uniquePtr<RenderTarget2D>        depthProbeAtlas;
 		uniquePtr<Buffer>                irradianceVolumeBuffer;
 		uniquePtr<Buffer>                reflectionProbeBuffer;
+		uniquePtr<Buffer>                irradianceSHBuffer;
 	};
 
 }

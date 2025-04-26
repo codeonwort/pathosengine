@@ -198,7 +198,7 @@ namespace pathos {
 		dummyCube = nullptr;
 	}
 
-	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
+	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH, uint32 shIndex) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeDiffuseSH);
 		SCOPED_GPU_COUNTER(BakeDiffuseSH);
@@ -208,7 +208,9 @@ namespace pathos {
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DiffuseSH);
 		cmdList.useProgram(program.getGLName());
 
-		cmdList.uniform1i(1, (int32)cubemapSize);
+		cmdList.uniform1ui(1, cubemapSize);
+		cmdList.uniform1ui(2, shIndex);
+
 		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
 		outSH->bindAsSSBO(cmdList, 2);
 
