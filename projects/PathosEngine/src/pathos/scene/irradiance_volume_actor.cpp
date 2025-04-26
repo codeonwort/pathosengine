@@ -166,8 +166,8 @@ namespace pathos {
 
 	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex) {
 		Scene& currentScene = getWorld()->getScene();
-		GLuint inputRadianceTexture = radianceCubemap->getGLTexture();
-		GLuint inputDepthTexture = depthCubemap->getGLTexture();
+		GLuint inputRadianceTexture = radianceCubemap->getGLTextureName();
+		GLuint inputDepthTexture = depthCubemap->getGLTextureName();
 		GLuint RT_atlas = currentScene.getIrradianceProbeAtlasTexture();
 		GLuint RT_depthAtlas = currentScene.getDepthProbeAtlasTexture();
 

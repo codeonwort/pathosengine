@@ -116,9 +116,6 @@ namespace pathos {
 		}
 
 		destroyResource();
-
-		width = inWidth;
-		height = inHeight;
 		format = inFormat;
 
 		TextureCreateParams createParams;
@@ -149,8 +146,16 @@ namespace pathos {
 		return renderTargetView.get();
 	}
 
+	uint32 RenderTarget2D::getWidth() const {
+		return texture->getCreateParams().width;
+	}
+
+	uint32 RenderTarget2D::getHeight() const {
+		return texture->getCreateParams().height;
+	}
+
 	bool RenderTarget2D::isTextureValid() const {
-		return (texture != nullptr && texture->isCreated() && width != 0 && height != 0);
+		return texture != nullptr && texture->isCreated();
 	}
 
 	bool RenderTarget2D::isColorFormat() const {
@@ -190,34 +195,31 @@ namespace pathos {
 		}
 
 		destroyResources();
-
-		width = inWidth;
 		format = inFormat;
 
 		const GLenum glFormat = RENDER_TARGET_FORMAT_TO_GL_FORMAT(format);
-		
-		uint32 fullMips = (uint32)(floor(log2(width)) + 1);
-		numMips = (inNumMips == 0) ? fullMips : std::min(inNumMips, fullMips);
+		uint32 fullMips = (uint32)(floor(log2(inWidth)) + 1);
+		uint32 numMips = (inNumMips == 0) ? fullMips : std::min(inNumMips, fullMips);
 
-		GLuint* texturePtr = &glTextureObject;
+		TextureCreateParams createParams = TextureCreateParams::cubemap(inWidth, glFormat, numMips);
+		if (inDebugName != nullptr) createParams.debugName = inDebugName;
+
+		texture = new Texture(createParams);
+
+		Texture* texturePtr = texture;
 		GLuint* textureViewsPtr = glTextureViews;
 		std::string debugName = inDebugName ? inDebugName : std::string();
-		ENQUEUE_RENDER_COMMAND(
-			[texturePtr, textureViewsPtr, glFormat, inWidth, numMips = this->numMips, debugName](RenderCommandList& cmdList) {
-				// Cubemap texture
-				gRenderDevice->createTextures(GL_TEXTURE_CUBE_MAP, 1, texturePtr);
-				if (debugName.size() > 0) {
-					gRenderDevice->objectLabel(GL_TEXTURE, *texturePtr, -1, debugName.c_str());
-				}
 
-				cmdList.textureStorage2D(*texturePtr, numMips, glFormat, inWidth, inWidth);
+		ENQUEUE_RENDER_COMMAND(
+			[texturePtr, textureViewsPtr, debugName](RenderCommandList& cmdList) {
+				texturePtr->createGPUResource_renderThread(cmdList);
 
 				// Texture views
 				gRenderDevice->genTextures(6, textureViewsPtr);
 				for (uint32 i = 0; i < 6; ++i) {
 					GLuint view = textureViewsPtr[i];
 					cmdList.textureView(
-						view, GL_TEXTURE_2D, *texturePtr, glFormat,
+						view, GL_TEXTURE_2D, texturePtr->internal_getGLName(), texturePtr->getCreateParams().glStorageFormat,
 						0, 1, // LOD0
 						i, 1  // layer[i]
 					);
@@ -226,15 +228,6 @@ namespace pathos {
 						cmdList.objectLabel(GL_TEXTURE, view, -1, viewName.c_str());
 					}
 				}
-
-				// #todo-light-probe: Fill initial data with zero?
-				//for (int32 i = 0; i < 6; i++) {
-				//	uint8* data = nullptr;
-				//	cmdList.textureSubImage3D(*texturePtr, 0,
-				//		0, 0, i,
-				//		inWidth, inWidth, 1,
-				//		glFormat, GL_UNSIGNED_BYTE, data);
-				//}
 			}
 		);
 	}
@@ -243,18 +236,17 @@ namespace pathos {
 		FLUSH_RENDER_COMMAND();
 	}
 
-	void RenderTargetCube::destroyResources()
-	{
-		if (glTextureObject != 0) {
-			GLuint texturePtr = glTextureObject;
+	void RenderTargetCube::destroyResources() {
+		if (texture != nullptr) {
+			delete texture;
+			texture = nullptr;
+
 			GLuint* textureViewsPtr = glTextureViews;
 			ENQUEUE_DEFERRED_RENDER_COMMAND(
-				[texturePtr, textureViewsPtr](RenderCommandList& cmdList) {
-					gRenderDevice->deleteTextures(1, &texturePtr);
+				[textureViewsPtr](RenderCommandList& cmdList) {
 					gRenderDevice->deleteTextures(6, textureViewsPtr);
 				}
 			);
-			glTextureObject = 0;
 			::memset(glTextureViews, 0, 6 * sizeof(GLuint));
 		}
 	}
@@ -264,8 +256,20 @@ namespace pathos {
 		return renderTargetViews[faceIndex].get();
 	}
 
+	uint32 RenderTargetCube::getWidth() const {
+		return texture->getCreateParams().width;
+	}
+
+	uint32 RenderTargetCube::getNumMips() const {
+		return texture->getCreateParams().mipLevels;
+	}
+
+	GLuint RenderTargetCube::getGLTextureName() const {
+		return texture->internal_getGLName();
+	}
+
 	bool RenderTargetCube::isTextureValid() const {
-		return (glTextureObject != 0 && width != 0);
+		return texture != nullptr && texture->isCreated();
 	}
 
 	bool RenderTargetCube::isColorFormat() const {

@@ -93,8 +93,8 @@ namespace pathos {
 	}
 
 	void ReflectionProbeComponent::bakeIBL() {
-		GLuint srcCubemap = radianceCubemap->getGLTexture();
-		GLuint dstCubemap = specularIBL->getGLTexture();
+		GLuint srcCubemap = radianceCubemap->getGLTextureName();
+		GLuint dstCubemap = specularIBL->getGLTextureName();
 		if (srcCubemap == 0 || specularIBL == 0) return;
 		uint32 numMips = radianceCubemap->getNumMips();
 		ENQUEUE_RENDER_COMMAND(

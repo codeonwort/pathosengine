@@ -6,6 +6,10 @@
 #include "badger/types/int_types.h"
 #include "badger/assertion/assertion.h"
 
+// Render target = wrapper for texture + texture view.
+// We now have generic Texture class, but render target is still convenient
+// when texture view is required, especially for cubemaps.
+
 namespace pathos {
 
 	class Texture;
@@ -79,19 +83,16 @@ namespace pathos {
 
 		RenderTargetView* getRenderTargetView() const;
 
-		inline uint32 getWidth() const { return width; }
-		inline uint32 getHeight() const { return height; }
-
 		inline Texture* getInternalTexture() const { return texture; }
 
+		uint32 getWidth() const;
+		uint32 getHeight() const;
 		bool isTextureValid() const;
 		bool isColorFormat() const;
 		bool isDepthFormat() const;
 
 	private:
 		Texture* texture = nullptr;
-		uint32 width = 0;
-		uint32 height = 0;
 		RenderTargetFormat format = RenderTargetFormat::RGBA16F;
 		uniquePtr<RenderTargetView> renderTargetView;
 
@@ -116,22 +117,20 @@ namespace pathos {
 		void destroyResources();
 
 		RenderTargetView* getRenderTargetView(uint32 faceIndex) const;
-
-		inline uint32 getWidth() const { return width; }
-		inline uint32 getNumMips() const { return numMips; }
-
-		inline GLuint getGLTexture() const { return glTextureObject; }
 		inline GLuint getGLTextureView(uint32 faceIndex) { return glTextureViews[faceIndex]; }
 
+		inline Texture* getInternalTexture() const { return texture; }
+		GLuint getGLTextureName() const;
+
+		uint32 getWidth() const;
+		uint32 getNumMips() const;
 		bool isTextureValid() const;
 		bool isColorFormat() const;
 		bool isDepthFormat() const;
 
 	private:
-		GLuint glTextureObject = 0;
+		Texture* texture = nullptr;
 		GLuint glTextureViews[6] = { 0, };
-		uint32 width = 0;
-		uint32 numMips = 0;
 		RenderTargetFormat format = RenderTargetFormat::RGBA16F;
 		uniquePtr<RenderTargetView> renderTargetViews[6];
 

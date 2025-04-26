@@ -113,7 +113,7 @@ namespace pathos {
 					continue;
 				}
 
-				GLuint cubemap = proxy->specularIBL->getGLTexture();
+				GLuint cubemap = proxy->specularIBL->getGLTextureName();
 				GLuint size = reflectionProbeCubemapSize;
 				for (int32 mip = 0; mip < (int32)pathos::reflectionProbeNumMips; ++mip) {
 					cmdList.copyImageSubData(
