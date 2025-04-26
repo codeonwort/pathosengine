@@ -42,6 +42,13 @@ namespace pathos {
 		uint32 totalTileCount() const { return tileCountX * tileCountY; }
 	};
 
+	struct IrradianceProbeID {
+		uint32 firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		uint32 shIndex = 0xffffffff;
+
+		inline bool isValid() const { return firstTileID != IrradianceProbeAtlasDesc::INVALID_TILE_ID; }
+	};
+
 	// Manages light probe data in a Scene.
 	class LightProbeScene {
 	public:
@@ -51,7 +58,7 @@ namespace pathos {
 		void initializeIrradianceProbeAtlas();
 
 		// @return First tile ID.
-		uint32 allocateIrradianceTiles(uint32 numRequiredTiles);
+		IrradianceProbeID allocateIrradianceTiles(uint32 numRequiredTiles);
 
 		// Only successful if exactly [firstTileID,lastTileID] was allocated
 		// by allocateIrradianceTiles().

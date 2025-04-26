@@ -32,10 +32,7 @@ namespace pathos {
 		// @param minBounds Volume's min bounds (also this actor's world location).
 		// @param maxBounds Volume's max bounds.
 		// @param probeGrid The number of probes to place in X/Y/Z axes.
-		void initializeVolume(
-			const vector3& minBounds,
-			const vector3& maxBounds,
-			const vector3ui& probeGrid);
+		void initializeVolume(const vector3& minBounds, const vector3& maxBounds, const vector3ui& probeGrid);
 
 		// Update probes in this volume. Each probe needs 7 steps to be fully processed.
 		// If there are N probes, this volume needs ((N * 7) / numSteps) frames to be fully updated.
@@ -47,10 +44,7 @@ namespace pathos {
 
 		inline uint32 numProbes() const { return gridSize.x * gridSize.y * gridSize.z; }
 
-		inline bool hasLightingData() const {
-			return bVolumeInitialized
-				&& (irradianceTileFirstID != IrradianceProbeAtlasDesc::INVALID_TILE_ID);
-		}
+		inline bool hasLightingData() const { return bVolumeInitialized && probeID.isValid(); }
 
 	private:
 		vector3 getProbeLocationByIndex(uint32 probeIndex) const;
@@ -62,11 +56,11 @@ namespace pathos {
 		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex, uint32 tileSize);
 		RenderTargetCube* getDepthCubemapForProbe(uint32 probeIndex, uint32 tileSize);
 
-		vector3 minBounds = vector3(0.0f);
-		vector3 maxBounds = vector3(0.0f);
-		vector3ui gridSize = vector3ui(0, 0, 0); // #note: For each axis (cell count = grid size - 1)
-		bool bVolumeInitialized = false;
-
+	private:
+		vector3                     minBounds = vector3(0.0f);
+		vector3                     maxBounds = vector3(0.0f);
+		vector3ui                   gridSize = vector3ui(0, 0, 0); // #note: For each axis (cell count = grid size - 1)
+		bool                        bVolumeInitialized = false;
 #if SEPARATE_RADIANCE_CUBEMAPS
 		std::vector<uniquePtr<RenderTargetCube>> radianceCubemaps;
 		std::vector<uniquePtr<RenderTargetCube>> depthCubemaps;
@@ -74,12 +68,10 @@ namespace pathos {
 		uniquePtr<RenderTargetCube> singleRadianceCubemap;
 		uniquePtr<RenderTargetCube> singleDepthCubemap;
 #endif
-
-		float captureRadius = 0.0f;
-		uint32 currentUpdateIndex = 0; // Index of probe to update [0, totalProbeCount-1]
-		uint32 currentUpdatePhase = 0; // 0~5: capture cube face, 6: integrate
-
-		uint32 irradianceTileFirstID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		float                       captureRadius = 0.0f;
+		uint32                      currentUpdateIndex = 0; // Index of probe to update [0, totalProbeCount-1]
+		uint32                      currentUpdatePhase = 0; // 0~5: capture cube face, 6: integrate
+		IrradianceProbeID           probeID;
 	};
 
 }

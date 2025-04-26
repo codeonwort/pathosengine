@@ -60,29 +60,6 @@ namespace pathos {
 		lightProbeScene.initializeIrradianceProbeAtlasDesc(desc);
 	}
 
-	uint32 Scene::allocateIrradianceTiles(uint32 numRequiredTiles) {
-		return lightProbeScene.allocateIrradianceTiles(numRequiredTiles);
-	}
-
-	bool Scene::freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID) {
-		return lightProbeScene.freeIrradianceTiles(firstTileID, lastTileID);
-	}
-
-	void Scene::getIrradianceTileTexelOffset(uint32 tileID, uint32& outX, uint32& outY) const {
-		lightProbeScene.getIrradianceTileTexelOffset(tileID, outX, outY);
-	}
-
-	void Scene::getIrradianceTileBounds(uint32 tileID, vector4& outBounds) const {
-		lightProbeScene.getIrradianceTileBounds(tileID, outBounds);
-	}
-
-	GLuint Scene::getIrradianceProbeAtlasTexture() const {
-		return lightProbeScene.getIrradianceProbeAtlasTexture();
-	}
-	GLuint Scene::getDepthProbeAtlasTexture() const {
-		return lightProbeScene.getDepthProbeAtlasTexture();
-	}
-
 	void Scene::registerIrradianceVolume(IrradianceVolumeActor* actor) {
 		irradianceVolumes.push_back(actor);
 	}

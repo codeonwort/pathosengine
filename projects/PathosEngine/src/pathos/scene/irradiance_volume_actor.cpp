@@ -43,16 +43,18 @@ namespace pathos {
 
 	void IrradianceVolumeActor::updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numSteps) {
 		Scene& currentScene = getWorld()->getScene();
-		if (irradianceTileFirstID == IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
-			irradianceTileFirstID = currentScene.allocateIrradianceTiles(numProbes());
-			if (irradianceTileFirstID == IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
+		LightProbeScene& lightProbeScene = currentScene.getLightProbeScene();
+
+		if (probeID.isValid() == false) {
+			probeID = lightProbeScene.allocateIrradianceTiles(numProbes());
+			if (probeID.isValid() == false) {
 				LOG(LogWarning, "[IrradianceVolume] Failed to allocate irradiance tiles");
 				return;
 			}
 		}
 
 		uint32 probeIndex = currentUpdateIndex;
-		uint32 tileSize = currentScene.getIrradianceProbeAtlasDesc().tileSize;
+		uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
 		RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex, tileSize);
 		RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex, tileSize);
 
@@ -79,7 +81,7 @@ namespace pathos {
 		if (hasLightingData()) {
 			IrradianceVolumeProxy* proxy = ALLOC_RENDER_PROXY<IrradianceVolumeProxy>(scene);
 			proxy->minBounds             = minBounds;
-			proxy->irradianceTileFirstID = irradianceTileFirstID;
+			proxy->irradianceTileFirstID = probeID.firstTileID;
 			proxy->maxBounds             = maxBounds;
 			proxy->numProbes             = numProbes();
 			proxy->gridSize              = gridSize;
@@ -94,14 +96,17 @@ namespace pathos {
 	}
 
 	void IrradianceVolumeActor::onDestroy() {
-		if (irradianceTileFirstID != IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
-			uint32 lastID = irradianceTileFirstID + numProbes() - 1;
-			bool bFreed = getWorld()->getScene().freeIrradianceTiles(irradianceTileFirstID, lastID);
+		Scene& currentScene = getWorld()->getScene();
+		LightProbeScene& lightProbeScene = currentScene.getLightProbeScene();
+
+		if (probeID.isValid()) {
+			uint32 lastID = probeID.firstTileID + numProbes() - 1;
+			bool bFreed = lightProbeScene.freeIrradianceTiles(probeID.firstTileID, lastID);
 			if (!bFreed) {
 				LOG(LogError, "%s: Failed to free irradiance tiles", __FUNCTION__);
 			}
 		}
-		getWorld()->getScene().unregisterIrradianceVolume(this);
+		currentScene.unregisterIrradianceVolume(this);
 	}
 
 	vector3 IrradianceVolumeActor::getProbeLocationByIndex(uint32 probeIndex) const {
@@ -166,17 +171,19 @@ namespace pathos {
 
 	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex) {
 		Scene& currentScene = getWorld()->getScene();
+		LightProbeScene& lightProbeScene = currentScene.getLightProbeScene();
+
 		GLuint inputRadianceTexture = radianceCubemap->getGLTextureName();
 		GLuint inputDepthTexture = depthCubemap->getGLTextureName();
-		GLuint RT_atlas = currentScene.getIrradianceProbeAtlasTexture();
-		GLuint RT_depthAtlas = currentScene.getDepthProbeAtlasTexture();
+		GLuint RT_atlas = lightProbeScene.getIrradianceProbeAtlasTexture();
+		GLuint RT_depthAtlas = lightProbeScene.getDepthProbeAtlasTexture();
 
-		uint32 tileID = irradianceTileFirstID + probeIndex;
-		uint32 tileSize = currentScene.getIrradianceProbeAtlasDesc().tileSize;
+		uint32 tileID = probeID.firstTileID + probeIndex;
+		uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
 		vector2ui viewportOffset;
 		vector4 tileBounds;
-		currentScene.getIrradianceTileTexelOffset(tileID, viewportOffset.x, viewportOffset.y);
-		currentScene.getIrradianceTileBounds(tileID, tileBounds);
+		lightProbeScene.getIrradianceTileTexelOffset(tileID, viewportOffset.x, viewportOffset.y);
+		lightProbeScene.getIrradianceTileBounds(tileID, tileBounds);
 
 		ENQUEUE_RENDER_COMMAND(
 			[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset, tileSize](RenderCommandList& cmdList) {

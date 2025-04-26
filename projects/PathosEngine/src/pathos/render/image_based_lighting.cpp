@@ -43,12 +43,19 @@ namespace pathos {
 		}
 	}
 
-	uint32 LightProbeScene::allocateIrradianceTiles(uint32 numRequiredTiles) {
+	IrradianceProbeID LightProbeScene::allocateIrradianceTiles(uint32 numRequiredTiles) {
 		if (irradianceProbeAtlas == nullptr) {
-			return IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+			IrradianceProbeID probeID;
+			probeID.firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+			probeID.shIndex = 0xffffffff;
+			return probeID;
 		}
+
+		uint32 shIndex = 0;
 		uint32 beginID = 0, endID = numRequiredTiles - 1;
-		for (const auto& allocRange : irradianceTileAllocs) {
+		for (size_t i = 0; i < irradianceTileAllocs.size(); ++i) {
+			shIndex = (uint32)i;
+			const IrradianceTileRange& allocRange = irradianceTileAllocs[i];
 			if (beginID <= allocRange.end && allocRange.begin <= endID) {
 				beginID = allocRange.end + 1;
 				endID = beginID + numRequiredTiles - 1;
@@ -58,7 +65,10 @@ namespace pathos {
 		}
 		if (endID < irradianceProbeAtlasDesc.totalTileCount()) {
 			irradianceTileAllocs.push_back(IrradianceTileRange{ beginID, endID });
-			return beginID;
+			IrradianceProbeID probeID;
+			probeID.firstTileID = beginID;
+			probeID.shIndex = shIndex;
+			return probeID;
 		}
 
 		// Failed to allocate tiles. Find out the reason.
@@ -71,7 +81,10 @@ namespace pathos {
 		} else {
 			LOG(LogWarning, "%s: Fragmentation. Required: %u, remaining: %u but remaining tiles are not contiguous", __FUNCTION__, numRequiredTiles, remainingTiles);
 		}
-		return IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		IrradianceProbeID probeID;
+		probeID.firstTileID = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		probeID.shIndex = 0xffffffff;
+		return probeID;
 	}
 
 	bool LightProbeScene::freeIrradianceTiles(uint32 firstTileID, uint32 lastTileID) {

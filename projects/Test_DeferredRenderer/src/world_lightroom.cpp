@@ -171,7 +171,8 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		}
 	}
 
-	const uint32 lightProbeLimit = getScene().getIrradianceProbeAtlasDesc().totalTileCount();
+	LightProbeScene& lightProbeScene = getScene().getLightProbeScene();
+	const uint32 lightProbeLimit = lightProbeScene.getIrradianceProbeAtlasDesc().totalTileCount();
 	LOG(LogDebug, "Total light probe: %u, limit: %u", totalLightProbe, lightProbeLimit);
 
 	// Spawn leaf lights
