@@ -10,6 +10,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #define IGNORE_SAME_SHADERS_ON_RECOMPILE 1
 
@@ -211,6 +212,7 @@ namespace pathos {
 		std::vector<std::string>& outSourceCode)
 	{
 		std::string fullFilepath = ResourceFinder::get().find(filepath);
+		std::filesystem::path currentDir = std::filesystem::path(fullFilepath).parent_path();
 
 		if (fullFilepath.size() == 0) {
 			LOG(LogError, "[%s]: Couldn't find file: %s", __FUNCTION__, filepath);
@@ -282,10 +284,22 @@ namespace pathos {
 			size_t quote_end = include_line.find('"', quote_start + 1);
 			CHECK(quote_start != std::string::npos && quote_end != std::string::npos);
 
-			std::string include_file = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
-			if (std::find(includeHistory.begin(), includeHistory.end(), include_file) == includeHistory.end()) {
-				includeHistory.push_back(include_file);
-				ShaderStage::loadSourceInternal(include_file, defines, recursionDepth + 1, includeHistory, outSourceCode);
+			std::string includeRel = include_line.substr(quote_start + 1, quote_end - quote_start - 1);
+
+			std::filesystem::path relPath = currentDir;
+			relPath.append(includeRel);
+			std::string includeFull;
+			if (std::filesystem::exists(relPath)) {
+				includeFull = std::filesystem::canonical(relPath).string();
+			} else {
+				includeFull = ResourceFinder::get().find(includeRel);
+			}
+
+			if (includeFull.size() == 0) {
+				LOG(LogError, "Couldn't open %s in %s", includeRel.c_str(), fullFilepath.c_str());
+			} else if (std::find(includeHistory.begin(), includeHistory.end(), includeFull) == includeHistory.end()) {
+				includeHistory.push_back(includeFull);
+				ShaderStage::loadSourceInternal(includeFull, defines, recursionDepth + 1, includeHistory, outSourceCode);
 			}
 
 			fullCode = fullCode.substr(include_end + 1);

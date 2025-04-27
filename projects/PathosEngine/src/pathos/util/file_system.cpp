@@ -13,9 +13,13 @@
 
 namespace pathos {
 
-	std::string getAbsolutePath(const char* targetDir) {
-		if (std::filesystem::exists(targetDir)) {
-			return std::filesystem::absolute(targetDir).string();
+	std::string getAbsolutePath(const char* targetPath) {
+		if (std::filesystem::exists(targetPath)) {
+			auto path = std::filesystem::canonical(targetPath);
+			if (std::filesystem::is_directory(targetPath)) {
+				return path.string() + "/";
+			}
+			return path.string();
 		}
 		return "";
 	}

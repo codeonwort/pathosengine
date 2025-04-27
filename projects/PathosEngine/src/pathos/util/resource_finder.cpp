@@ -34,7 +34,7 @@ namespace pathos {
 		for (const auto& dir : directories) {
 			auto fullpath = dir + subpath;
 			if (fileExists(fullpath)) {
-				return fullpath;
+				return pathos::getAbsolutePath(fullpath.c_str());
 			}
 		}
 		LOG(LogError, "%s: not found: %s", __FUNCTION__, subpath.data());
