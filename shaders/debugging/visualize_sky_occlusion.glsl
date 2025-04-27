@@ -1,9 +1,9 @@
 #version 460 core
 
-#include "core/common.glsl"
-#include "core/diffuse_sh.glsl"
-#include "core/image_based_lighting.glsl"
-#include "deferred_common.glsl"
+#include "../core/common.glsl"
+#include "../core/diffuse_sh.glsl"
+#include "../core/image_based_lighting.glsl"
+#include "../deferred_common.glsl"
 
 // #todo-skyocclusion: Hard cut between grid cells
 #define COSINE_WEIGHTED_INTERPOLATION    1

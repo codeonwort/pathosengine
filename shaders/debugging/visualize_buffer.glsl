@@ -2,8 +2,8 @@
 
 #version 460 core
 
-#include "deferred_common.glsl"
-#include "core/diffuse_sh.glsl"
+#include "../deferred_common.glsl"
+#include "../core/diffuse_sh.glsl"
 
 // Should match with 'r.viewmode'
 #define VIEWMODE_SCENEDEPTH  1
