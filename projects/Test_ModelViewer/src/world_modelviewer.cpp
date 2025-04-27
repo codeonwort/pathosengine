@@ -496,7 +496,7 @@ bool World_ModelViewer::toggleProbeGI() {
 	auto cvarUpdateIndirectSpecular = findCVar("r.lightProbe.updateSpecularPerFrame");
 	auto cvarIndirectLighting       = findCVar("r.indirectLighting");
 	if (bEnableProbeGI) {
-		setCVarInt(cvarUpdateIndirectDiffuse,  6);
+		setCVarInt(cvarUpdateIndirectDiffuse,  1);
 		setCVarInt(cvarUpdateIndirectSpecular, 1);
 		setCVarInt(cvarIndirectLighting,       1);
 	} else {

@@ -41,7 +41,7 @@ namespace pathos {
 		bVolumeInitialized = true;
 	}
 
-	void IrradianceVolumeActor::updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numSteps) {
+	void IrradianceVolumeActor::updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numUpdates) {
 		Scene& currentScene = getWorld()->getScene();
 		LightProbeScene& lightProbeScene = currentScene.getLightProbeScene();
 
@@ -53,27 +53,19 @@ namespace pathos {
 			}
 		}
 
-		uint32 probeIndex = currentUpdateIndex;
-		uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
-		RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex, tileSize);
-		RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex, tileSize);
+		const uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
 
-		for (int32 i = 0; i < numSteps; ++i) {
-			if (currentUpdatePhase <= 5) {
-				uint32 faceIndex = currentUpdatePhase;
-				captureFace(radianceCubemap, depthCubemap, probeIndex, faceIndex);
-			} else {
-				bakeIrradiance(radianceCubemap, depthCubemap, probeIndex);
-			}
+		for (int32 i = 0; i < numUpdates; ++i) {
+			uint32 probeIndex = currentUpdateIndex;
+			RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex, tileSize);
+			RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex, tileSize);
 
-			currentUpdatePhase += 1;
-			if (currentUpdatePhase == 7) {
-				currentUpdateIndex += 1;
-				currentUpdatePhase = 0;
-				if (currentUpdateIndex >= numProbes()) {
-					currentUpdateIndex = 0;
-				}
+			for (uint32 face = 0; face < 6; ++face) {
+				captureFace(radianceCubemap, depthCubemap, probeIndex, face);
 			}
+			bakeIrradiance(radianceCubemap, depthCubemap, probeIndex);
+
+			currentUpdateIndex = (currentUpdateIndex + 1) % numProbes();
 		}
 	}
 

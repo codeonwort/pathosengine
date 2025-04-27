@@ -6,6 +6,7 @@
 #include "pathos/render/image_based_lighting.h"
 #include "pathos/smart_pointer.h"
 
+// #todo-light-probe: Some probes are rendered incorrectly if this is not enabled.
 // Enable if wanna debug all cubemaps in GPU debugger
 #define SEPARATE_RADIANCE_CUBEMAPS 0
 
@@ -36,8 +37,8 @@ namespace pathos {
 
 		// Update probes in this volume. Each probe needs 7 steps to be fully processed.
 		// If there are N probes, this volume needs ((N * 7) / numSteps) frames to be fully updated.
-		// @param numSteps The number of update steps to perform.
-		void updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numSteps);
+		// @param numUpdates The number of probes to update.
+		void updateProbes(const IrradianceProbeAtlasDesc& atlasDesc, int32 numProbes);
 
 		// #todo-light-probe: Use ActorComponent::createRenderProxy() instead
 		void internal_createRenderProxy(SceneProxy* sceneProxy) const;

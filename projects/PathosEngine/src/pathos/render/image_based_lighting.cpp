@@ -61,7 +61,6 @@ namespace pathos {
 			return probeID;
 		}
 
-		uint32 shIndex = 0;
 		uint32 beginID = 0, endID = numRequiredTiles - 1;
 		for (size_t i = 0; i < irradianceTileAllocs.size(); ++i) {
 			const IrradianceTileRange& allocRange = irradianceTileAllocs[i];

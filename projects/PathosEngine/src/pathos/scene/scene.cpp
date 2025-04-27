@@ -21,7 +21,7 @@
 namespace pathos {
 
 	static ConsoleVariable<int32> cvar_numReflectionProbeUpdates("r.lightProbe.updateSpecularPerFrame", 1, "Number of reflection probes to update per frame");
-	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.lightProbe.updateDiffusePerFrame", 6, "Number of irradiance probes to update per frame");
+	static ConsoleVariable<int32> cvar_numIrradianceProbeUpdates("r.lightProbe.updateDiffusePerFrame", 1, "Number of irradiance probes to update per frame");
 
 	Scene::Scene() {}
 
