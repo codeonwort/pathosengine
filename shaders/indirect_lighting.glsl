@@ -91,7 +91,7 @@ bool isPositionInBounds(vec3 position, vec3 minBounds, vec3 maxBounds) {
 }
 
 vec3 evaluateSkyDiffuse(vec3 dir) {
-	return evaluateSH(ssboSkyDiffuseSH.shBuffer, dir);
+	return evaluateSH(ssboSkyDiffuseSH.shBuffer, dir).xyz;
 }
 
 // See scene.cpp

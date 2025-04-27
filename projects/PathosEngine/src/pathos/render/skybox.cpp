@@ -248,7 +248,7 @@ namespace pathos {
 	void SkyboxPass::computeDiffuseSH(RenderCommandList& cmdList) {
 		SCOPED_DRAW_EVENT(SkyboxToDiffuseSH);
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
+		LightProbeBaker::get().bakeSkyDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
 	void SkyboxPass::filterSpecular(RenderCommandList& cmdList) {

@@ -82,13 +82,16 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, FullscreenVS, BRDFIntegrationMapFS);
 
+	template<int CubemapType>
 	class DiffuseSHGenCS : public ShaderStage {
 	public:
 		DiffuseSHGenCS() : ShaderStage(GL_COMPUTE_SHADER, "DiffuseSHGenCS") {
+			addDefine("CUBEMAP_TYPE", CubemapType);
 			setFilepath("compute_diffuse_sh.glsl");
 		}
 	};
-	DEFINE_COMPUTE_PROGRAM(Program_DiffuseSH, DiffuseSHGenCS);
+	DEFINE_COMPUTE_PROGRAM(Program_SkyDiffuseSH, DiffuseSHGenCS<0>);
+	DEFINE_COMPUTE_PROGRAM(Program_LightProbeSH, DiffuseSHGenCS<1>);
 
 	class CopyCubemapCS : public ShaderStage {
 	public:
@@ -198,20 +201,51 @@ namespace pathos {
 		dummyCube = nullptr;
 	}
 
-	void LightProbeBaker::bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH, uint32 shIndex) {
+	void LightProbeBaker::bakeSkyDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH) {
 		CHECK(isInRenderThread());
-		SCOPED_DRAW_EVENT(BakeDiffuseSH);
-		SCOPED_GPU_COUNTER(BakeDiffuseSH);
+		CHECK(inCubemap->getCreateParams().glDimension == GL_TEXTURE_CUBE_MAP);
+		SCOPED_DRAW_EVENT(BakeSkyDiffuseSH);
+		SCOPED_GPU_COUNTER(BakeSkyDiffuseSH);
 		
 		const uint32 cubemapSize = inCubemap->getCreateParams().width;
 
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_DiffuseSH);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_SkyDiffuseSH);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.uniform1ui(1, cubemapSize);
+		cmdList.uniform1ui(2, 0 /*shIndex*/);
+
+		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
+		outSH->bindAsSSBO(cmdList, 2);
+
+		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		cmdList.dispatchCompute(1, 1, 1);
+
+		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		cmdList.bindTextureUnit(0, 0);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+	}
+
+	void LightProbeBaker::bakeLightProbeSH_renderThread(RenderCommandList& cmdList, Texture* inColorCubemap, Texture* inDepthCubemap, Buffer* outSH, uint32 shIndex /*= 0*/) {
+		CHECK(isInRenderThread());
+		CHECK(inColorCubemap->getCreateParams().glDimension == GL_TEXTURE_CUBE_MAP);
+		CHECK(inDepthCubemap->getCreateParams().glDimension == GL_TEXTURE_CUBE_MAP);
+		CHECK(inColorCubemap->getCreateParams().width == inDepthCubemap->getCreateParams().width);
+		SCOPED_DRAW_EVENT(BakeLightProbeSH);
+		SCOPED_GPU_COUNTER(BakeLightProbeSH);
+
+		const uint32 cubemapSize = inColorCubemap->getCreateParams().width;
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_LightProbeSH);
 		cmdList.useProgram(program.getGLName());
 
 		cmdList.uniform1ui(1, cubemapSize);
 		cmdList.uniform1ui(2, shIndex);
 
-		cmdList.bindTextureUnit(0, inCubemap->internal_getGLName());
+		cmdList.bindTextureUnit(0, inColorCubemap->internal_getGLName());
+		cmdList.bindTextureUnit(1, inDepthCubemap->internal_getGLName());
 		outSH->bindAsSSBO(cmdList, 2);
 
 		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);

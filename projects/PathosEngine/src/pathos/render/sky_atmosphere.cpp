@@ -239,7 +239,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SkyDiffuseSH);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		LightProbeBaker::get().bakeDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
+		LightProbeBaker::get().bakeSkyDiffuseSH_renderThread(cmdList, ambientCubemap, sceneContext.skyDiffuseSH);
 	}
 
 	void SkyAtmospherePass::filterSpecular(RenderCommandList& cmdList) {

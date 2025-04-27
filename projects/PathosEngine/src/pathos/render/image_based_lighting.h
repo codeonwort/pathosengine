@@ -73,6 +73,8 @@ namespace pathos {
 		GLuint getDepthProbeAtlasTexture() const;
 		inline const IrradianceProbeAtlasDesc& getIrradianceProbeAtlasDesc() const { return irradianceProbeAtlasDesc; }
 
+		Buffer* getIrradianceSHBuffer() const;
+
 		void createSceneProxy(SceneProxy* sceneProxy, bool isLightProbeRendering);
 
 	private:

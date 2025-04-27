@@ -91,7 +91,7 @@ void main() {
 		}
 	} else if (viewmode == VIEWMODE_SKY_SH) {
 		vec3 dir = gbufferData.ws_normal;
-		vec3 color = evaluateSH(ssboSkyDiffuseSH.shBuffer, dir);
+		vec3 color = evaluateSH(ssboSkyDiffuseSH.shBuffer, dir).xyz;
 		outColor = vec4(color, 1);
 	}
 }

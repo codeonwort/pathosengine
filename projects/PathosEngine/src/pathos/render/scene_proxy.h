@@ -155,6 +155,7 @@ namespace pathos {
 		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
 		GLuint                                     irradianceVolumeBuffer = 0;
 		GLuint                                     reflectionProbeBuffer = 0;
+		Buffer*                                    irradianceSHBuffer = nullptr;
 
 	private:
 		DirectionalLightComponent*                 tempSunComponent = nullptr;

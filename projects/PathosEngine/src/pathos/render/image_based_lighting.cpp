@@ -134,6 +134,10 @@ namespace pathos {
 		return depthProbeAtlas->getInternalTexture()->internal_getGLName();
 	}
 
+	Buffer* LightProbeScene::getIrradianceSHBuffer() const {
+		return irradianceSHBuffer.get();
+	}
+
 	void LightProbeScene::createSceneProxy(SceneProxy* proxy, bool isLightProbeRendering) {
 		if (irradianceProbeAtlas != nullptr) {
 			proxy->irradianceAtlas       = irradianceProbeAtlas->getInternalTexture()->internal_getGLName();
@@ -142,6 +146,9 @@ namespace pathos {
 			proxy->irradianceAtlasHeight = (float)irradianceProbeAtlas->getHeight();
 			proxy->irradianceTileCountX  = irradianceProbeAtlasDesc.tileCountX;
 			proxy->irradianceTileSize    = irradianceProbeAtlasDesc.tileSize;
+		}
+		if (irradianceSHBuffer != nullptr) {
+			proxy->irradianceSHBuffer = irradianceSHBuffer.get();
 		}
 
 		// Update irradiance volume buffer.

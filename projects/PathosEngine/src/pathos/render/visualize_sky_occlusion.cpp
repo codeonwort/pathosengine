@@ -23,6 +23,7 @@ namespace pathos {
 	};
 
 	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2; // Irradiance volumes
+	static constexpr uint32 SSBO_IrradianceSH_BINDING_SLOT = 3; // Irradiance SH buffer
 
 	class VisualizeSkyOcclusionFS : public ShaderStage {
 	public:
@@ -89,6 +90,7 @@ namespace pathos {
 		// Bind buffers
 		ubo.update(cmdList, UBO_VisualizeSkyOcclusion::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_IrradianceSH_BINDING_SLOT);
 
 		// Bind textures
 		cmdList.bindTextureUnit(0, sceneContext.gbufferA);

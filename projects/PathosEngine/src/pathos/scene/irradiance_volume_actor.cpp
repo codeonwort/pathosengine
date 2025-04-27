@@ -196,6 +196,14 @@ namespace pathos {
 				LightProbeBaker::get().bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
 			}
 		);
+
+		auto colorCube = radianceCubemap->getInternalTexture();
+		auto depthCube = depthCubemap->getInternalTexture();
+		auto shBuffer = lightProbeScene.getIrradianceSHBuffer();
+		auto shIndex = probeID.firstShIndex + probeIndex;
+		ENQUEUE_RENDER_COMMAND([colorCube, depthCube, shBuffer, shIndex](RenderCommandList& cmdList) {
+			LightProbeBaker::get().bakeLightProbeSH_renderThread(cmdList, colorCube, depthCube, shBuffer, shIndex);
+		});
 	}
 
 	RenderTargetCube* IrradianceVolumeActor::getRadianceCubemapForProbe(uint32 probeIndex, uint32 tileSize) {

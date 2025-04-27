@@ -1,6 +1,7 @@
 #version 460 core
 
 #include "core/common.glsl"
+#include "core/diffuse_sh.glsl"
 #include "core/image_based_lighting.glsl"
 #include "deferred_common.glsl"
 
@@ -28,6 +29,10 @@ layout (std140, binding = 1) uniform UBO_VisualizeSkyOcclusion {
 layout (std140, binding = 2) buffer SSBO {
 	IrradianceVolume irradianceVolumeInfo[];
 } ssbo;
+
+layout (std140, binding = 3) buffer SSBO_SHBuffer {
+	SHBuffer shBuffer[];
+};
 
 layout (binding = 0) uniform usampler2D gbufferA;
 layout (binding = 1) uniform sampler2D  gbufferB;
@@ -79,6 +84,17 @@ vec4 getIrradianceTileBounds(uint tileID) {
 	bounds.z = -dx + (texel.x + ubo.irradianceTileSize) / ubo.irradianceAtlasWidth;
 	bounds.w = -dy + (texel.y + ubo.irradianceTileSize) / ubo.irradianceAtlasHeight;
 	return bounds;
+}
+
+float sampleProbe(ProbeDesc probe, vec3 surfaceNormal) {
+#if 0
+	vec4 uvBounds  = getIrradianceTileBounds(probe.tileIx);
+	vec2 encodedUV = ONVEncode(surfaceNormal);
+	vec2 atlasUV   = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
+	return textureLod(irradianceProbeAtlas, atlasUV, 0).w;
+#else
+	return evaluateSH(shBuffer[probe.tileIx], surfaceNormal).w;
+#endif
 }
 
 // If the position is in extended bounds, some probes are duplicated.
@@ -146,9 +162,7 @@ float sampleSkyOcclusion(GBufferData gbufferData) {
 		vec3 probeToSurface = normalize(surfacePosition - probe.center);
 
 		// Sample irradiance probe
-		vec2 encodedUV = ONVEncode(surfaceNormal);
-		vec2 atlasUV   = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
-		samples[i]     = textureLod(irradianceProbeAtlas, atlasUV, 0).w;
+		samples[i] = sampleProbe(probe, surfaceNormal);
 
 		// Calculate probe weight
 		weights[i] = max(0.0, dot(surfaceNormal, -probeToSurface));

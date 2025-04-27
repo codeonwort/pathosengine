@@ -12,6 +12,18 @@
 #define GROUP_SIZE_X 4
 #define GROUP_SIZE_Y 4
 
+#define CUBEMAP_TYPE_SKYBOX      0
+#define CUBEMAP_TYPE_LIGHT_PROBE 1
+//?#define CUBEMAP_TYPE CUBEMAP_TYPE_SKYBOX
+
+#if CUBEMAP_TYPE == CUBEMAP_TYPE_SKYBOX
+    #define CUBEMAP_ELEMENT vec3
+#elif CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
+    #define CUBEMAP_ELEMENT vec4
+#else
+    #error "CUBEMAP_TYPE was not defined"
+#endif
+
 // --------------------------------------------------------
 // Layout
 
@@ -20,23 +32,47 @@ layout (local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z =
 layout (location = 1) uniform uint cubemapSize;
 layout (location = 2) uniform uint shIndex;
 
-layout (binding = 0) uniform samplerCube inCubemap;
+layout (binding = 0) uniform samplerCube inColorCubemap;
+#if CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
+layout (binding = 1) uniform samplerCube inDepthCubemap;
+#endif
 
 layout (std140, binding = 2) writeonly buffer Buffer_SH {
 	SHBuffer outSH[];
 };
 
-shared vec4 s_perFaceL[6][9];
-shared float s_perFaceWeight[6];
-shared vec4 s_sliceL[6][GROUP_SIZE_Y][GROUP_SIZE_X][9];
-shared float s_weight[6][GROUP_SIZE_Y][GROUP_SIZE_X];
+shared CUBEMAP_ELEMENT s_perFaceL[6][9];
+shared float         s_perFaceWeight[6];
+shared CUBEMAP_ELEMENT s_sliceL[6][GROUP_SIZE_Y][GROUP_SIZE_X][9];
+shared float         s_weight[6][GROUP_SIZE_Y][GROUP_SIZE_X];
 
 // --------------------------------------------------------
 // Shader
 
 uint CUBEMAP_SIZE() { return cubemapSize; }
 uint SH_INDEX() { return shIndex; }
-vec4 SAMPLE_CUBEMAP_FUNCTION(vec3 dir) { return textureLod(inCubemap, dir, 0); }
+
+CUBEMAP_ELEMENT SAMPLE_CUBEMAP_FUNCTION(vec3 dir) {
+#if CUBEMAP_TYPE == CUBEMAP_TYPE_SKYBOX
+    return textureLod(inColorCubemap, dir, 0).xyz;
+#elif CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
+    vec3 color = textureLod(inColorCubemap, dir, 0).xyz;
+    float isSky = textureLod(inDepthCubemap, dir, 0).x > 64000.0 ? 1.0 : 0.0;
+    return vec4(color, isSky);
+#else
+    #error "Unhandled static branch"
+#endif
+}
+
+vec4 STORE_SH(CUBEMAP_ELEMENT value) {
+#if CUBEMAP_TYPE == CUBEMAP_TYPE_SKYBOX
+    return vec4(value, 0);
+#elif CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
+    return value;
+#else
+    #error "Unhandled static branch"
+#endif
+}
 
 float Y00  (vec3 dir) { return 0.282095f; };
 float Y1_1 (vec3 dir) { return 0.488603f * dir.y; };
@@ -59,8 +95,8 @@ vec3 getDir(uint face, float u, float v) {
 }
 
 void prefilter(uint face, uint x0, uint y0) {
-    vec4 scratch[9];
-    for (int i = 0; i < 9; i++) scratch[i] = vec4(0);
+    CUBEMAP_ELEMENT scratch[9];
+    for (int i = 0; i < 9; i++) scratch[i] = CUBEMAP_ELEMENT(0);
     float wSum = 0.0;
 
     uint size = CUBEMAP_SIZE();
@@ -72,7 +108,7 @@ void prefilter(uint face, uint x0, uint y0) {
             float w = 4.0 / (tmp * sqrt(tmp));
 
             vec3 dir = getDir(face, u, v);
-            vec4 color = w * SAMPLE_CUBEMAP_FUNCTION(dir);
+            CUBEMAP_ELEMENT color = w * SAMPLE_CUBEMAP_FUNCTION(dir);
 
             scratch[0] += color * Y00(dir);
             scratch[1] += color * Y1_1(dir);
@@ -102,8 +138,8 @@ void main() {
 
     s_perFaceWeight[face] = 0.0;
     for (int i = 0; i < 9; i++) {
-        s_perFaceL[face][i] = vec4(0);
-        s_sliceL[face][tid.y][tid.x][i] = vec4(0);
+        s_perFaceL[face][i] = CUBEMAP_ELEMENT(0);
+        s_sliceL[face][tid.y][tid.x][i] = CUBEMAP_ELEMENT(0);
         s_weight[face][tid.y][tid.x] = 0.0;
     }
     groupMemoryBarrier();
@@ -113,8 +149,8 @@ void main() {
 
     // Collect per-face data.
     if (tid.xy == uvec2(0, 0)) {
-        vec4 scratch[9];
-        for (int i = 0; i < 9; i++) scratch[i] = vec4(0);
+        CUBEMAP_ELEMENT scratch[9];
+        for (int i = 0; i < 9; i++) scratch[i] = CUBEMAP_ELEMENT(0);
         float wSum = 0.0;
 
         for (uint y = 0; y < GROUP_SIZE_Y; y++) {
@@ -153,7 +189,7 @@ void main() {
         float norm = 4.0 * PI / wSum;
 
         for (int i = 0; i < 9; i++) {
-            vec4 L = vec4(0);
+            CUBEMAP_ELEMENT L = CUBEMAP_ELEMENT(0);
             L += s_perFaceL[0][i];
             L += s_perFaceL[1][i];
             L += s_perFaceL[2][i];
@@ -161,7 +197,7 @@ void main() {
             L += s_perFaceL[4][i];
             L += s_perFaceL[5][i];
 
-            outSH[SH_INDEX()].Ls[i] = L * norm;
+            outSH[SH_INDEX()].Ls[i] = STORE_SH(L * norm);
         }
     }
 }

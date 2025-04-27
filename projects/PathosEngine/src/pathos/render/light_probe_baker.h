@@ -38,7 +38,9 @@ namespace pathos {
 		void initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 		void destroyResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList);
 
-		void bakeDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH, uint32 shIndex = 0);
+		// New SH methods for diffuse irradiance baking.
+		void bakeSkyDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH);
+		void bakeLightProbeSH_renderThread(RenderCommandList& cmdList, Texture* inColorCubemap, Texture* inDepthCubemap, Buffer* outSH, uint32 shIndex = 0);
 
 		/// <summary>
 		/// New implementation for reflection probe filtering, but only support 128-sized cubemaps.
