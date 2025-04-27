@@ -12,9 +12,9 @@
 
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_visLightProbe("r.visualizeLightProbe", 0, "0 = disable, 1 = enable");
-	static ConsoleVariable<float> cvar_visIrradianceProbeRadius("r.visualizeLightProbe.irradianceProbeRadius", 0.05f, "Radius of visualized probes in irradiance volumes (meters)");
-	static ConsoleVariable<float> cvar_visReflectionProbeRadius("r.visualizeLightProbe.reflectionProbeRadius", 1.0f, "Radius of visualized reflection probes (meters)");
+	static ConsoleVariable<int32> cvar_visLightProbe("r.lightProbe.visualize", 0, "0 = disable, 1 = enable");
+	static ConsoleVariable<float> cvar_visIrradianceProbeRadius("r.lightProbe.diffuseProbeRadius", 0.05f, "Radius of visualized diffuse probes (meters)");
+	static ConsoleVariable<float> cvar_visReflectionProbeRadius("r.lightProbe.specularProbeRadius", 1.0f, "Radius of visualized specular probes (meters)");
 
 	struct UBO_VisualizeLightProbe {
 		static constexpr uint32 BINDING_SLOT = 1;
