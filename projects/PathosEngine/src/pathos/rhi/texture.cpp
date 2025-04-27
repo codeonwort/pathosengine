@@ -11,18 +11,16 @@ namespace pathos {
 	}
 
 	void Texture::createGPUResource(bool flushGPU /*= false*/) {
-		if (created) {
+		if (bCreated) {
 			LOG(LogWarning, "Texture %s was already created", createParams.debugName.size() > 0 ? createParams.debugName : "<noname>");
 			return;
 		}
-		created = true;
+		bCreated = true;
 
 		auto This = this;
-		ENQUEUE_RENDER_COMMAND(
-			[This](RenderCommandList& cmdList) {
-				This->createGPUResource_renderThread(cmdList);
-			}
-		); // ENQUEUE_RENDER_COMMAND
+		ENQUEUE_RENDER_COMMAND([This](RenderCommandList& cmdList) {
+			This->createGPUResource_renderThread(cmdList);
+		}); // ENQUEUE_RENDER_COMMAND
 
 		if (flushGPU) {
 			FLUSH_RENDER_COMMAND(true);
@@ -44,6 +42,7 @@ namespace pathos {
 			glTexture = 0;
 		}
 		gRenderDevice->createTextures(createParams.glDimension, 1, &glTexture);
+		bCreated = true;
 
 		uint32 actualMipLevels = 1;
 		if (createParams.mipLevels != 1) {

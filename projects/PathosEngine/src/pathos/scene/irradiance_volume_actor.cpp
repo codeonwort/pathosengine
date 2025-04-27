@@ -185,17 +185,18 @@ namespace pathos {
 		lightProbeScene.getIrradianceTileTexelOffset(tileID, viewportOffset.x, viewportOffset.y);
 		lightProbeScene.getIrradianceTileBounds(tileID, tileBounds);
 
-		ENQUEUE_RENDER_COMMAND(
-			[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset, tileSize](RenderCommandList& cmdList) {
-				IrradianceMapBakeDesc bakeDesc;
-				bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
-				bakeDesc.renderTarget = RT_atlas;
-				bakeDesc.depthTarget = RT_depthAtlas;
-				bakeDesc.viewportSize = tileSize;
-				bakeDesc.viewportOffset = viewportOffset;
-				LightProbeBaker::get().bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
-			}
-		);
+		// #todo-light-probe: Obliterate legacy implementation of diffuse irradiance.
+		//ENQUEUE_RENDER_COMMAND(
+		//	[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset, tileSize](RenderCommandList& cmdList) {
+		//		IrradianceMapBakeDesc bakeDesc;
+		//		bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
+		//		bakeDesc.renderTarget = RT_atlas;
+		//		bakeDesc.depthTarget = RT_depthAtlas;
+		//		bakeDesc.viewportSize = tileSize;
+		//		bakeDesc.viewportOffset = viewportOffset;
+		//		LightProbeBaker::get().bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
+		//	}
+		//);
 
 		auto colorCube = radianceCubemap->getInternalTexture();
 		auto depthCube = depthCubemap->getInternalTexture();

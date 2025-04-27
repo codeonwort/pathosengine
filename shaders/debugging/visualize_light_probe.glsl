@@ -5,15 +5,17 @@
 // --------------------------------------------------------
 // Common
 
-#include "core/common.glsl"
-#include "core/image_based_lighting.glsl"
-#include "deferred_common.glsl"
+#include "../core/common.glsl"
+#include "../core/image_based_lighting.glsl"
+#include "../core/diffuse_sh.glsl"
+#include "../deferred_common.glsl"
 
 #if VERTEX_SHADER
 	#define INTERPOLANTS_QUALIFIER out
 #elif FRAGMENT_SHADER
 	#define INTERPOLANTS_QUALIFIER in
 #endif
+//?#define INTERPOLANTS_QUALIFIER out
 
 INTERPOLANTS_QUALIFIER Interpolants {
 	flat uint instanceID; // gl_InstanceID
@@ -44,6 +46,10 @@ layout (std140, binding = 2) buffer SSBO_0 {
 layout (std140, binding = 3) buffer SSBO_1 {
 	ReflectionProbe probeArray[];
 } ssbo1;
+
+layout (std140, binding = 4) readonly buffer SSBO_LightProbeSH {
+	SHBuffer shBuffer[];
+} ssboLightProbeSH;
 
 uvec3 getGridCoord(uint probeIndex, uvec3 gridSize) {
 	uint sizeXY = gridSize.x * gridSize.y;
@@ -134,6 +140,18 @@ layout (binding = 1) uniform samplerCubeArray radianceCubeArray;
 
 layout (location = 0) out vec4 outColor;
 
+vec3 evaluateLightProbe(uint index, vec3 N) {
+#if 0
+	vec4 uvBounds = getIrradianceTileBounds(index);
+	vec2 encodedUV = ONVEncode(N);
+	vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
+	return textureLod(irradianceAtlas, atlasUV, 0).xyz;
+#else
+	SHBuffer sh = ssboLightProbeSH.shBuffer[index];
+	return evaluateSH(sh, N).xyz;
+#endif
+}
+
 void main() {
 	vec3 N = normalize(interpolants.normalWS);
 	uint instanceID = interpolants.instanceID;
@@ -142,11 +160,7 @@ void main() {
 	if (instanceID < ubo.totalIrradianceProbes) {
 		IrradianceVolume volume = ssbo0.volumeArray[interpolants.irradianceVolumeIndex];
 		uint tileID = interpolants.irradianceProbeIndex + volume.firstTileID;
-		vec4 uvBounds = getIrradianceTileBounds(tileID);
-
-		vec2 encodedUV = ONVEncode(N);
-		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
-		debugColor.rgb = textureLod(irradianceAtlas, atlasUV, 0).rgb;
+		debugColor.rgb = evaluateLightProbe(tileID, N);
 	} else {
 		uint probeIndex = instanceID - ubo.totalIrradianceProbes;
 		vec4 R = vec4(N, float(probeIndex));

@@ -32,6 +32,7 @@ namespace pathos {
 	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2; // Irradiance volumes
 	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 3; // Reflection probes
 	static constexpr uint32 SSBO_SkyDiffuseSH_BINDING_SLOT = 4;
+	static constexpr uint32 SSBO_LightProbeSH_BINDING_SLOT = 5;
 
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
@@ -109,7 +110,7 @@ namespace pathos {
 			for (size_t i = 0; i < numReflectionProbes; ++i)
 			{
 				ReflectionProbeProxy* proxy = scene->proxyList_reflectionProbe[i];
-				if (proxy->specularIBL == nullptr) {
+				if (proxy->specularIBL == nullptr || proxy->specularIBL->isTextureValid() == false) {
 					continue;
 				}
 
@@ -163,6 +164,7 @@ namespace pathos {
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
 		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, SSBO_SkyDiffuseSH_BINDING_SLOT);
+		scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;
@@ -186,7 +188,7 @@ namespace pathos {
 		fullscreenQuad->drawPrimitive(cmdList);
 
 		// Fix a strange bug that IBL maps are randomly persistent across worlds.
-		cmdList.bindBuffersBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, 3, nullptr);
+		cmdList.bindBuffersBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, 4, nullptr);
 		cmdList.bindTextures(0, 10, nullptr);
 
 		// Restore render states

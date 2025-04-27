@@ -34,6 +34,7 @@ namespace pathos {
 
 	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2;
 	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 3;
+	static constexpr uint32 SSBO_LightProbeSH_BINDING_SLOT = 4;
 
 	class VisualizeLightProbeVS : public ShaderStage {
 	public:
@@ -130,6 +131,7 @@ namespace pathos {
 		ubo.update(cmdList, UBO_VisualizeLightProbe::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
+		scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
 
 		// Bind textures
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -49,12 +49,12 @@ namespace pathos {
 		inline GLuint internal_getGLName() const { return glTexture; }
 
 		// Game logic can assume that this texture have a valid GL texture.
-		inline bool isCreated() const { return created; }
+		inline bool isCreated() const { return bCreated; }
 
 	private:
 		const TextureCreateParams createParams;
 		GLuint glTexture = 0;
-		bool created = false;
+		bool bCreated = false;
 
 	};
 

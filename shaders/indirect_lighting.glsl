@@ -53,6 +53,10 @@ layout (std140, binding = 4) readonly buffer SSBO_SkyDiffuseSH {
 	SHBuffer shBuffer;
 } ssboSkyDiffuseSH;
 
+layout (std140, binding = 5) readonly buffer SSBO_LightProbeSH {
+	SHBuffer shBuffer[];
+} ssboLightProbeSH;
+
 layout (binding = 0) uniform usampler2D       gbufferA;
 layout (binding = 1) uniform sampler2D        gbufferB;
 layout (binding = 2) uniform usampler2D       gbufferC;
@@ -134,6 +138,19 @@ void findIrradianceProbes(vec3 position, IrradianceVolume vol, out ProbeDesc pro
 	}
 }
 
+vec4 evaluateLightProbe(ProbeDesc probe, vec3 dir) {
+#if 0
+	vec4 uvBounds = getIrradianceTileBounds(probe.tileIx);
+	vec2 encodedUV = ONVEncode(dir);
+	vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
+
+	return textureLod(irradianceProbeAtlas, atlasUV, 0);
+#else
+	SHBuffer sh = ssboLightProbeSH.shBuffer[probe.tileIx];
+	return evaluateSH(sh, dir);
+#endif
+}
+
 vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 	const vec3 surfacePositionWS = gbufferData.ws_coords;
 	const vec3 surfaceNormalWS   = gbufferData.ws_normal;
@@ -180,12 +197,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		vec4 uvBounds = getIrradianceTileBounds(probe.tileIx);
 		vec3 probeToSurface = normalize(surfacePositionWS - probe.center);
 
-		// Sample irradiance probe
-		vec2 encodedUV = ONVEncode(surfaceNormalWS);
-		vec2 atlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * encodedUV;
-		samples[i] = textureLod(irradianceProbeAtlas, atlasUV, 0);
-
-		// Calculate probe weight
+		samples[i] = evaluateLightProbe(probe, surfaceNormalWS);
 		weights[i] = max(0.0, dot(surfaceNormalWS, -probeToSurface));
 		totalWeights += weights[i];
 
