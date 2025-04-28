@@ -34,7 +34,13 @@ namespace pathos {
 		tempCamera.setYaw(componentRotation.yaw);
 		tempCamera.setPitch(componentRotation.pitch);
 
-		SceneProxy* sceneProxy = scene.createRenderProxy(SceneProxySource::SceneCapture, sceneCaptureFrameNumber, tempCamera);
+		SceneProxyCreateParams sceneProxyParams{
+			SceneProxySource::SceneCapture,
+			sceneCaptureFrameNumber,
+			tempCamera,
+		};
+
+		SceneProxy* sceneProxy = scene.createRenderProxy(sceneProxyParams);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
 		gEngine->internal_pushSceneProxy(sceneProxy);

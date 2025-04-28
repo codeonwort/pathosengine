@@ -534,11 +534,14 @@ namespace pathos {
 					{
 						SCOPED_CPU_COUNTER(MainSceneProxy);
 
-						SceneProxy* mainSceneProxy = currentWorld->getScene().createRenderProxy(
+						SceneProxyCreateParams sceneProxyParams{
 							SceneProxySource::MainScene,
 							frameNumber_mainThread,
 							currentWorld->getCamera(),
-							frameFence.get(), frameNumber_mainThread);
+							frameFence.get(),
+							frameNumber_mainThread,
+						};
+						SceneProxy* mainSceneProxy = currentWorld->getScene().createRenderProxy(sceneProxyParams);
 						CHECK(mainSceneProxy != nullptr);
 
 						internal_pushSceneProxy(mainSceneProxy);

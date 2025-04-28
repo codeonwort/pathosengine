@@ -22,6 +22,15 @@ namespace pathos {
 	class RenderTarget2D;
 	class Buffer;
 
+	struct SceneProxyCreateParams {
+		SceneProxySource proxySource;
+		uint32           frameNumber;
+		const Camera&    camera;
+		Fence*           fence        = nullptr;
+		uint64           fenceValue   = 0;
+		uint32           probeShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+	};
+
 	// Represents a 3D scene.
 	class Scene final {
 		friend class World;
@@ -36,12 +45,7 @@ namespace pathos {
 		Scene& operator=(const Scene&) = delete;
 		
 		// Generate frame-invariant proxy data.
-		SceneProxy* createRenderProxy(
-			SceneProxySource source,
-			uint32 frameNumber,
-			const Camera& camera,
-			Fence* fence = nullptr,
-			uint64 fenceValue = 0);
+		SceneProxy* createRenderProxy(const SceneProxyCreateParams& createParams);
 
 		inline World* getWorld() const { return owner; }
 

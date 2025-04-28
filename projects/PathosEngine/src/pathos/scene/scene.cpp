@@ -79,13 +79,13 @@ namespace pathos {
 		bInvalidateSkyLighting = true;
 	}
 
-	SceneProxy* Scene::createRenderProxy(
-		SceneProxySource source,
-		uint32 frameNumber,
-		const Camera& camera,
-		Fence* fence,
-		uint64 fenceValue)
-	{
+	SceneProxy* Scene::createRenderProxy(const SceneProxyCreateParams& createParams) {
+		SceneProxySource source = createParams.proxySource;
+		uint32 frameNumber      = createParams.frameNumber;
+		const Camera& camera    = createParams.camera;
+		Fence* fence            = createParams.fence;
+		uint64 fenceValue       = createParams.fenceValue;
+
 		char counterName[64];
 		sprintf_s(counterName, "CreateRenderProxy (%s)", pathos::getSceneProxySourceString(source));
 		SCOPED_CPU_COUNTER_STRING(counterName);

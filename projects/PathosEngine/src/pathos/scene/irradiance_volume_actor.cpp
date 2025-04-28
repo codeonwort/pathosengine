@@ -152,10 +152,12 @@ namespace pathos {
 		}
 		const uint32 tempFrameNumber = 0;
 
-		SceneProxy* sceneProxy = scene.createRenderProxy(
+		SceneProxyCreateParams sceneProxyParams{
 			SceneProxySource::IrradianceCapture,
 			tempFrameNumber,
-			tempCamera);
+			tempCamera,
+		};
+		SceneProxy* sceneProxy = scene.createRenderProxy(sceneProxyParams);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
 		gEngine->internal_pushSceneProxy(sceneProxy);
