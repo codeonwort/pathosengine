@@ -164,7 +164,11 @@ namespace pathos {
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
 		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, SSBO_SkyDiffuseSH_BINDING_SLOT);
-		scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
+		if (scene->irradianceSHBuffer != nullptr) {
+			scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
+		} else {
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_LightProbeSH_BINDING_SLOT, 0);
+		}
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;

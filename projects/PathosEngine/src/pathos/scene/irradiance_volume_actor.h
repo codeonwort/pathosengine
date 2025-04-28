@@ -6,8 +6,7 @@
 #include "pathos/render/image_based_lighting.h"
 #include "pathos/smart_pointer.h"
 
-// #todo-light-probe: Some probes are rendered incorrectly if this is not enabled.
-// Enable if wanna debug all cubemaps in GPU debugger
+// Enable if wanna debug all cubemaps in GPU debugger.
 #define SEPARATE_RADIANCE_CUBEMAPS 0
 
 namespace pathos {
@@ -52,7 +51,6 @@ namespace pathos {
 		vector3 getProbeLocationByCoord(uint32 gridX, uint32 gridY, uint32 gridZ) const;
 
 		void captureFace(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex, uint32 faceIndex);
-		void bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex);
 
 		RenderTargetCube* getRadianceCubemapForProbe(uint32 probeIndex, uint32 tileSize);
 		RenderTargetCube* getDepthCubemapForProbe(uint32 probeIndex, uint32 tileSize);

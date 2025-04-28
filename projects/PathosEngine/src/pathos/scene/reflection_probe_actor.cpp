@@ -3,6 +3,9 @@
 #include "pathos/scene/scene.h"
 
 // #todo-light-probe: If 0, update all at once for easy debugging.
+// CAUTION: If PROGRESSIVE_UPDATE is disabled, it has a bug that
+// the render command queued by bakeIBL() is executed prior to captureScene().
+// Need a fix similar that was done to IrradianceVolumeActor.
 #define PROGRESSIVE_UPDATE 1
 
 namespace pathos {

@@ -946,6 +946,9 @@
     <ClInclude Include="src\pathos\scene\sky_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\pathos\render\scene_proxy_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\thirdparty\glm\glm.natvis" />

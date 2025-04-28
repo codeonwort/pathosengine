@@ -2,6 +2,7 @@
 
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/render/image_based_lighting.h"
+#include "pathos/render/scene_proxy_common.h"
 #include "pathos/material/material_id.h"
 #include "pathos/scene/actor.h"
 #include "pathos/scene/camera.h"
@@ -21,15 +22,6 @@ namespace pathos {
 	class VolumetricCloudActor;
 	class RenderTarget2D;
 	class Buffer;
-
-	struct SceneProxyCreateParams {
-		SceneProxySource proxySource;
-		uint32           frameNumber;
-		const Camera&    camera;
-		Fence*           fence        = nullptr;
-		uint64           fenceValue   = 0;
-		uint32           probeShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
-	};
 
 	// Represents a 3D scene.
 	class Scene final {

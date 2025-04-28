@@ -263,6 +263,7 @@
     <ClInclude Include="src\pathos\render\image_based_lighting.h" />
     <ClInclude Include="src\pathos\render\landscape_rendering.h" />
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
+    <ClInclude Include="src\pathos\render\scene_proxy_common.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
     <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />

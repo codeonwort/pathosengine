@@ -93,7 +93,7 @@ namespace pathos {
 		World* const world = getWorld();
 		const bool isLightProbeRendering = pathos::isLightProbeRendering(source);
 
-		SceneProxy* proxy = new SceneProxy(source, frameNumber, camera, fence, fenceValue);
+		SceneProxy* proxy = new SceneProxy(createParams);
 
 		proxy->deltaSeconds = world->getLastDeltaSeconds();
 

@@ -60,10 +60,10 @@ namespace pathos {
 			RenderTargetCube* radianceCubemap = getRadianceCubemapForProbe(probeIndex, tileSize);
 			RenderTargetCube* depthCubemap = getDepthCubemapForProbe(probeIndex, tileSize);
 
+			// SH baking is queued at last call of captureFace().
 			for (uint32 face = 0; face < 6; ++face) {
 				captureFace(radianceCubemap, depthCubemap, probeIndex, face);
 			}
-			bakeIrradiance(radianceCubemap, depthCubemap, probeIndex);
 
 			currentUpdateIndex = (currentUpdateIndex + 1) % numProbes();
 		}
@@ -151,54 +151,22 @@ namespace pathos {
 			tempCamera.getLens().setProjectionFlips(true, true);
 		}
 		const uint32 tempFrameNumber = 0;
+		bool bLastFace = faceIndex == 5;
 
 		SceneProxyCreateParams sceneProxyParams{
 			SceneProxySource::IrradianceCapture,
 			tempFrameNumber,
 			tempCamera,
+			nullptr,
+			0,
+			(!bLastFace) ? IrradianceProbeAtlasDesc::INVALID_TILE_ID : probeID.firstTileID + probeIndex,
+			(!bLastFace) ? nullptr : radianceCubemap->getInternalTexture(),
+			(!bLastFace) ? nullptr : depthCubemap->getInternalTexture(),
 		};
 		SceneProxy* sceneProxy = scene.createRenderProxy(sceneProxyParams);
 		sceneProxy->overrideSceneRenderSettings(settings);
 
 		gEngine->internal_pushSceneProxy(sceneProxy);
-	}
-
-	void IrradianceVolumeActor::bakeIrradiance(RenderTargetCube* radianceCubemap, RenderTargetCube* depthCubemap, uint32 probeIndex) {
-		Scene& currentScene = getWorld()->getScene();
-		LightProbeScene& lightProbeScene = currentScene.getLightProbeScene();
-
-		GLuint inputRadianceTexture = radianceCubemap->getGLTextureName();
-		GLuint inputDepthTexture = depthCubemap->getGLTextureName();
-		GLuint RT_atlas = lightProbeScene.getIrradianceProbeAtlasTexture();
-		GLuint RT_depthAtlas = lightProbeScene.getDepthProbeAtlasTexture();
-
-		uint32 tileID = probeID.firstTileID + probeIndex;
-		uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
-		vector2ui viewportOffset;
-		vector4 tileBounds;
-		lightProbeScene.getIrradianceTileTexelOffset(tileID, viewportOffset.x, viewportOffset.y);
-		lightProbeScene.getIrradianceTileBounds(tileID, tileBounds);
-
-		// #todo-light-probe: Obliterate legacy implementation of diffuse irradiance.
-		//ENQUEUE_RENDER_COMMAND(
-		//	[inputRadianceTexture, inputDepthTexture, RT_atlas, RT_depthAtlas, viewportOffset, tileSize](RenderCommandList& cmdList) {
-		//		IrradianceMapBakeDesc bakeDesc;
-		//		bakeDesc.encoding = EIrradianceMapEncoding::OctahedralNormalVector;
-		//		bakeDesc.renderTarget = RT_atlas;
-		//		bakeDesc.depthTarget = RT_depthAtlas;
-		//		bakeDesc.viewportSize = tileSize;
-		//		bakeDesc.viewportOffset = viewportOffset;
-		//		LightProbeBaker::get().bakeDiffuseIBL_renderThread(cmdList, inputRadianceTexture, inputDepthTexture, bakeDesc);
-		//	}
-		//);
-
-		auto colorCube = radianceCubemap->getInternalTexture();
-		auto depthCube = depthCubemap->getInternalTexture();
-		auto shBuffer = lightProbeScene.getIrradianceSHBuffer();
-		auto shIndex = probeID.firstShIndex + probeIndex;
-		ENQUEUE_RENDER_COMMAND([colorCube, depthCube, shBuffer, shIndex](RenderCommandList& cmdList) {
-			LightProbeBaker::get().bakeLightProbeSH_renderThread(cmdList, colorCube, depthCube, shBuffer, shIndex);
-		});
 	}
 
 	RenderTargetCube* IrradianceVolumeActor::getRadianceCubemapForProbe(uint32 probeIndex, uint32 tileSize) {

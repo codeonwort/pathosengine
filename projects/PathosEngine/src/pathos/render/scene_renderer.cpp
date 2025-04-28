@@ -35,6 +35,7 @@
 #include "pathos/render/resolve_unlit.h"
 #include "pathos/render/screen_space_reflection.h"
 #include "pathos/render/landscape_rendering.h"
+#include "pathos/render/light_probe_baker.h"
 #include "pathos/render/postprocessing/ssao.h"
 #include "pathos/render/postprocessing/bloom_setup.h"
 #include "pathos/render/postprocessing/bloom.h"
@@ -387,6 +388,12 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(VisualizeLightProbe);
 			SCOPED_GPU_COUNTER(VisualizeLightProbe);
 			visualizeLightProbe->render(cmdList, scene, camera);
+		}
+
+		if (bLightProbeRendering && scene->lightProbeShIndex != IrradianceProbeAtlasDesc::INVALID_TILE_ID) {
+			LightProbeBaker::get().bakeLightProbeSH_renderThread(
+				cmdList, scene->lightProbeColorCubemap, scene->lightProbeDepthCubemap,
+				scene->irradianceSHBuffer, scene->lightProbeShIndex);
 		}
 
 		//////////////////////////////////////////////////////////////////////////

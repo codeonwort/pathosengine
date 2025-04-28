@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pathos/render/scene_proxy_common.h"
 #include "pathos/rhi/render_command_list.h"
 #include "pathos/material/material_id.h"
 #include "pathos/scene/camera.h"
@@ -22,40 +23,19 @@ namespace pathos {
 	class Buffer;
 	class DirectionalLightComponent;
 
-	using ShadowMeshProxyList = std::vector<struct ShadowMeshProxy*>;
-	using StaticMeshProxyList = std::vector<struct StaticMeshProxy*>;
-	using LandscapeProxyList = std::vector<struct LandscapeProxy*>;
-
-	enum class SceneProxySource : uint8 {
-		MainScene         = 0,
-		SceneCapture      = 1,
-		RadianceCapture   = 2,
-		IrradianceCapture = 3, // In fact same as RadianceCapture but render to smaller RT. Filtered for irradiance caching.
-	};
-
-	inline const char* getSceneProxySourceString(SceneProxySource source) {
-		const char* str[] = {
-			"MainScene",
-			"SceneCapture",
-			"RadianceCapture",
-			"IrradianceCapture",
-		};
-		return str[(uint8)source];
-	}
-
-	inline bool isLightProbeRendering(SceneProxySource source) {
-		return source == SceneProxySource::RadianceCapture || source == SceneProxySource::IrradianceCapture;
-	}
+	using DirectionalLightProxyList = std::vector<struct DirectionalLightProxy*>;
+	using PointLightProxyList       = std::vector<struct PointLightProxy*>;
+	using RectLightProxyList        = std::vector<struct RectLightProxy*>;
+	using ShadowMeshProxyList       = std::vector<struct ShadowMeshProxy*>;
+	using StaticMeshProxyList       = std::vector<struct StaticMeshProxy*>;
+	using LandscapeProxyList        = std::vector<struct LandscapeProxy*>;
+	using ReflectionProbeProxyList  = std::vector<struct ReflectionProbeProxy*>;
+	using IrradianceVolumeProxyList = std::vector<struct IrradianceVolumeProxy*>;
 
 	class SceneProxy final {
 		
 	public:
-		SceneProxy(
-			SceneProxySource inSource,
-			uint32 inFrameNumber,
-			const Camera& inCamera,
-			Fence* fence,
-			uint64 fenceValue);
+		SceneProxy(const SceneProxyCreateParams& createParams);
 		~SceneProxy();
 
 		void finalize_mainThread();
@@ -100,6 +80,11 @@ namespace pathos {
 		uint32                                     frameNumber; // number in game thread
 		Camera                                     camera;
 
+		// For sceneProxySource == IrradianceCapture
+		uint32                                     lightProbeShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		Texture*                                   lightProbeColorCubemap = nullptr;
+		Texture*                                   lightProbeDepthCubemap = nullptr;
+
 		float                                      deltaSeconds = 0.0f;
 
 		bool                                       bScreenshotReserved = false;
@@ -112,9 +97,9 @@ namespace pathos {
 		// #todo-renderthread: Needs allocator pool.
 		StackAllocator                             renderProxyAllocator;
 
-		std::vector<struct DirectionalLightProxy*> proxyList_directionalLight; // first is sun
-		std::vector<struct PointLightProxy*>       proxyList_pointLight;
-		std::vector<struct RectLightProxy*>        proxyList_rectLight;
+		DirectionalLightProxyList                  proxyList_directionalLight; // first is sun
+		PointLightProxyList                        proxyList_pointLight;
+		RectLightProxyList                         proxyList_rectLight;
 
 		// Shadowmap rendering
 		ShadowMeshProxyList                        proxyList_shadowMesh;
@@ -151,8 +136,8 @@ namespace pathos {
 		float                                      irradianceAtlasHeight = 0.0f;
 		uint32                                     irradianceTileCountX = 0;
 		uint32                                     irradianceTileSize = 0;
-		std::vector<struct ReflectionProbeProxy*>  proxyList_reflectionProbe;
-		std::vector<struct IrradianceVolumeProxy*> proxyList_irradianceVolume;
+		ReflectionProbeProxyList                   proxyList_reflectionProbe;
+		IrradianceVolumeProxyList                  proxyList_irradianceVolume;
 		GLuint                                     irradianceVolumeBuffer = 0;
 		GLuint                                     reflectionProbeBuffer = 0;
 		Buffer*                                    irradianceSHBuffer = nullptr;
