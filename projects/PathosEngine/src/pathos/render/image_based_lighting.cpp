@@ -44,7 +44,7 @@ namespace pathos {
 		if (irradianceSHBuffer == nullptr) {
 			const uint32 tileCountX = irradianceProbeAtlasDesc.tileCountX;
 			const uint32 tileCountY = irradianceProbeAtlasDesc.tileCountY;
-			const uint32 maxProbes = (tileCountX * tileCountY + 5) / 6;
+			const uint32 maxProbes = tileCountX * tileCountY;
 			const uint32 stride = sizeof(float) * 4 * 9;
 
 			BufferCreateParams desc{ EBufferUsage::CpuWrite, stride * maxProbes, nullptr, "Buffer_IrradianceSH" };
