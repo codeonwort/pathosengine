@@ -187,7 +187,7 @@ namespace pathos {
 		dummyCube = gEngine->getSystemGeometryUnitCube();
 
 		// BRDF integration map
-		bdfIntegrationMap = bakeBRDFIntegrationMap_renderThread(512, cmdList);
+		bdfIntegrationMap = bakeBRDFIntegrationMap_renderThread(cmdList, 512);
 		cmdList.objectLabel(GL_TEXTURE, bdfIntegrationMap, -1, "BRDF integration map");
 	}
 
@@ -258,13 +258,7 @@ namespace pathos {
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
 	}
 
-	void LightProbeBaker::projectPanoramaToCubemap_renderThread(
-		RenderCommandList& cmdList,
-		GLuint inputTexture,
-		GLuint outputTexture,
-		uint32 outputTextureSize,
-		int32 faceBegin,
-		int32 faceEnd)
+	void LightProbeBaker::projectPanoramaToCubemap_renderThread(RenderCommandList& cmdList, GLuint inputTexture, GLuint outputTexture, uint32 outputTextureSize, int32 faceBegin, int32 faceEnd)
 	{
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(PanoramaToCubemap);
@@ -296,11 +290,7 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void LightProbeBaker::bakeDiffuseIBL_renderThread(
-		RenderCommandList& cmdList,
-		GLuint inputRadianceCubemap,
-		GLuint inputDepthCubemap,
-		const IrradianceMapBakeDesc& bakeDesc)
+	void LightProbeBaker::bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputRadianceCubemap, GLuint inputDepthCubemap, const IrradianceMapBakeDesc& bakeDesc)
 	{
 		CHECK(isInRenderThread());
 		CHECK(bakeDesc.encoding == EIrradianceMapEncoding::Cubemap || bakeDesc.encoding == EIrradianceMapEncoding::OctahedralNormalVector);
@@ -432,12 +422,7 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void LightProbeBaker::bakeSpecularIBL_renderThread(
-		RenderCommandList& cmdList,
-		GLuint inputTexture,
-		uint32 outputTextureSize,
-		uint32 numMips,
-		GLuint outputTexture)
+	void LightProbeBaker::bakeSpecularIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 outputTextureSize, uint32 numMips, GLuint outputTexture)
 	{
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
@@ -547,7 +532,7 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(uint32 size, RenderCommandList& cmdList) {
+	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(RenderCommandList& cmdList, uint32 size) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
 
