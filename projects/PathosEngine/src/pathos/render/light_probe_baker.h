@@ -40,7 +40,8 @@ namespace pathos {
 
 		// New SH methods for diffuse irradiance baking.
 		void bakeSkyDiffuseSH_renderThread(RenderCommandList& cmdList, Texture* inCubemap, Buffer* outSH);
-		void bakeLightProbeSH_renderThread(RenderCommandList& cmdList, Texture* inColorCubemap, Texture* inDepthCubemap, Buffer* outSH, uint32 shIndex = 0);
+		void bakeLightProbeSH_renderThread(RenderCommandList& cmdList, Texture* inColorCubemap, Texture* inDepthCubemap, Buffer* outSH, uint32 shIndex);
+		void bakeOctahedralDepthAtlas_renderThread(RenderCommandList& cmdList, Texture* inDepthCubemap, GLuint depthAtlasTexture, const vector4ui& atlasTileCoordAndSize);
 
 		// #todo-light-probe: Use Texture* instead of GLuint. Assert cubemap size.
 		/// <summary>

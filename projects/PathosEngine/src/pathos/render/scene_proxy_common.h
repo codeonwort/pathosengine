@@ -33,12 +33,13 @@ namespace pathos {
 		SceneProxySource proxySource;
 		uint32           frameNumber;
 		const Camera&    camera;
-		Fence*           fence                  = nullptr;
-		uint64           fenceValue             = 0;
+		Fence*           fence                            = nullptr;
+		uint64           fenceValue                       = 0;
 		// For light probe SH
-		uint32           lightProbeShIndex      = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
-		Texture*         lightProbeColorCubemap = nullptr;
-		Texture*         lightProbeDepthCubemap = nullptr;
+		uint32           lightProbeShIndex                = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
+		Texture*         lightProbeColorCubemap           = nullptr;
+		Texture*         lightProbeDepthCubemap           = nullptr;
+		vector4ui        lightProbeDepthAtlasCoordAndSize = vector4ui(0, 0, 0, 0);
 	};
 
 }

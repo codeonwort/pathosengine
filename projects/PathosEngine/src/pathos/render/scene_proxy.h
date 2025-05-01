@@ -84,6 +84,7 @@ namespace pathos {
 		uint32                                     lightProbeShIndex = IrradianceProbeAtlasDesc::INVALID_TILE_ID;
 		Texture*                                   lightProbeColorCubemap = nullptr;
 		Texture*                                   lightProbeDepthCubemap = nullptr;
+		vector4ui                                  lightProbeDepthAtlasCoordAndSize = vector4ui(0);
 
 		float                                      deltaSeconds = 0.0f;
 

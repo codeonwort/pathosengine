@@ -153,15 +153,23 @@ namespace pathos {
 		const uint32 tempFrameNumber = 0;
 		bool bLastFace = faceIndex == 5;
 
+		const uint32 shIndex = probeID.firstTileID + probeIndex;
+
+		LightProbeScene& lightProbeScene = scene.getLightProbeScene();
+		const uint32 tileSize = lightProbeScene.getIrradianceProbeAtlasDesc().tileSize;
+		vector4ui depthAtlasCoordAndSize(0, 0, tileSize, tileSize);
+		lightProbeScene.getIrradianceTileTexelOffset(shIndex, depthAtlasCoordAndSize.x, depthAtlasCoordAndSize.y);
+
 		SceneProxyCreateParams sceneProxyParams{
 			SceneProxySource::IrradianceCapture,
 			tempFrameNumber,
 			tempCamera,
 			nullptr,
 			0,
-			(!bLastFace) ? IrradianceProbeAtlasDesc::INVALID_TILE_ID : probeID.firstTileID + probeIndex,
+			(!bLastFace) ? IrradianceProbeAtlasDesc::INVALID_TILE_ID : shIndex,
 			(!bLastFace) ? nullptr : radianceCubemap->getInternalTexture(),
 			(!bLastFace) ? nullptr : depthCubemap->getInternalTexture(),
+			depthAtlasCoordAndSize,
 		};
 		SceneProxy* sceneProxy = scene.createRenderProxy(sceneProxyParams);
 		sceneProxy->overrideSceneRenderSettings(settings);

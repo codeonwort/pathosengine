@@ -117,6 +117,14 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_BlitCubemap, BlitCubemapVS, BlitCubemapFS);
 
+	class OctahedralDepthAtlasCS : public ShaderStage {
+	public:
+		OctahedralDepthAtlasCS() : ShaderStage(GL_COMPUTE_SHADER, "OctahedralDepthAtlasCS") {
+			setFilepath("octahedral_depth_atlas.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_OctahedralDepthAtlas, OctahedralDepthAtlasCS);
+
 }
 
 namespace pathos {
@@ -256,6 +264,33 @@ namespace pathos {
 
 		cmdList.bindTextureUnit(0, 0);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+	}
+
+	void LightProbeBaker::bakeOctahedralDepthAtlas_renderThread(RenderCommandList& cmdList, Texture* inDepthCubemap, GLuint depthAtlasTexture, const vector4ui& atlasTileCoordAndSize) {
+		CHECK(isInRenderThread());
+		CHECK(inDepthCubemap->getCreateParams().glDimension == GL_TEXTURE_CUBE_MAP);
+		SCOPED_DRAW_EVENT(BakeOctahedralDepthAtlas);
+		SCOPED_GPU_COUNTER(BakeOctahedralDepthAtlas);
+
+		const uint32 cubemapSize = inDepthCubemap->getCreateParams().width;
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_OctahedralDepthAtlas);
+		cmdList.useProgram(program.getGLName());
+
+		uint32* uniformMemory = (uint32*)(cmdList.allocateSingleFrameMemory(sizeof(uint32) * 4));
+		std::memcpy(uniformMemory, &atlasTileCoordAndSize[0], sizeof(uint32) * 4);
+		cmdList.uniform4uiv(1, 1, uniformMemory);
+
+		cmdList.bindTextureUnit(0, inDepthCubemap->internal_getGLName());
+		cmdList.bindImageTexture(0, depthAtlasTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R16F);
+
+		cmdList.memoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		uint32 dispatchX = (atlasTileCoordAndSize.z + 7) / 8;
+		uint32 dispatchY = (atlasTileCoordAndSize.w + 7) / 8;
+		cmdList.dispatchCompute(dispatchX, dispatchY, 1);
+
+		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 
 	void LightProbeBaker::projectPanoramaToCubemap_renderThread(RenderCommandList& cmdList, GLuint inputTexture, GLuint outputTexture, uint32 outputTextureSize, int32 faceBegin, int32 faceEnd)

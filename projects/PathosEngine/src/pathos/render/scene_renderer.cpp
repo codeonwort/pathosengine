@@ -394,6 +394,9 @@ namespace pathos {
 			LightProbeBaker::get().bakeLightProbeSH_renderThread(
 				cmdList, scene->lightProbeColorCubemap, scene->lightProbeDepthCubemap,
 				scene->irradianceSHBuffer, scene->lightProbeShIndex);
+
+			LightProbeBaker::get().bakeOctahedralDepthAtlas_renderThread(
+				cmdList, scene->lightProbeDepthCubemap, scene->depthProbeAtlas, scene->lightProbeDepthAtlasCoordAndSize);
 		}
 
 		//////////////////////////////////////////////////////////////////////////

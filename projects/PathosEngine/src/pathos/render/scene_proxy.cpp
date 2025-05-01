@@ -25,6 +25,7 @@ namespace pathos {
 		, lightProbeShIndex(createParams.lightProbeShIndex)
 		, lightProbeColorCubemap(createParams.lightProbeColorCubemap)
 		, lightProbeDepthCubemap(createParams.lightProbeDepthCubemap)
+		, lightProbeDepthAtlasCoordAndSize(createParams.lightProbeDepthAtlasCoordAndSize)
 		, bSceneRenderSettingsOverriden(false)
 		, renderProxyAllocator(RENDER_PROXY_ALLOCATOR_BYTES)
 	{

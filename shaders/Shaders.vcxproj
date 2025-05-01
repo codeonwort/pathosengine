@@ -14,6 +14,7 @@
     <None Include="compute_diffuse_sh.glsl" />
     <None Include="core\diffuse_sh.glsl" />
     <None Include="materials\indirect_draw_dummy.glsl" />
+    <None Include="octahedral_depth_atlas.glsl" />
     <None Include="sky\atmosphere.glsl" />
     <None Include="sky\atmosphere_precompute.glsl" />
     <None Include="debugging\visualize_buffer.glsl" />

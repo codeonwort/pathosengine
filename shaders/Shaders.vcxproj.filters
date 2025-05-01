@@ -95,5 +95,6 @@
     <None Include="core\diffuse_sh.glsl" />
     <None Include="sky\copy_cubemap.glsl" />
     <None Include="sky\blit_cubemap.glsl" />
+    <None Include="octahedral_depth_atlas.glsl" />
   </ItemGroup>
 </Project>
