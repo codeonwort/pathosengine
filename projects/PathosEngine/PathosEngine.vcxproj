@@ -119,7 +119,7 @@
     <ClCompile Include="src\pathos\render\gbuffer_pass.cpp" />
     <ClCompile Include="src\pathos\render\overlay\overlaypass_image.cpp" />
     <ClCompile Include="src\pathos\render\visualize_light_probe.cpp" />
-    <ClCompile Include="src\pathos\render\visualize_sky_occlusion.cpp" />
+    <ClCompile Include="src\pathos\render\visualize_indirect_diffuse.cpp" />
     <ClCompile Include="src\pathos\rhi\gl_live_objects.cpp" />
     <ClCompile Include="src\pathos\rhi\buffer.cpp" />
     <ClCompile Include="src\pathos\scene\actor.cpp" />
@@ -265,7 +265,7 @@
     <ClInclude Include="src\pathos\render\overlay\overlaypass_image.h" />
     <ClInclude Include="src\pathos\render\scene_proxy_common.h" />
     <ClInclude Include="src\pathos\render\visualize_light_probe.h" />
-    <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h" />
+    <ClInclude Include="src\pathos\render\visualize_indirect_diffuse.h" />
     <ClInclude Include="src\pathos\rhi\gl_handles.h" />
     <ClInclude Include="src\pathos\rhi\gl_live_objects.h" />
     <ClInclude Include="src\pathos\rhi\indirect_draw.h" />

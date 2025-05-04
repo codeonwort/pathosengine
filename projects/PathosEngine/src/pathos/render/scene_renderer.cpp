@@ -27,7 +27,7 @@
 #include "pathos/render/god_ray.h"
 #include "pathos/render/visualize_buffer.h"
 #include "pathos/render/visualize_light_probe.h"
-#include "pathos/render/visualize_sky_occlusion.h"
+#include "pathos/render/visualize_indirect_diffuse.h"
 #include "pathos/render/auto_exposure.h"
 #include "pathos/render/forward/translucency_rendering.h"
 #include "pathos/render/direct_lighting.h"
@@ -157,17 +157,17 @@ namespace pathos {
 		const EAutoExposureMode autoExposureMode = (EAutoExposureMode)badger::clamp(0, cvar_exposure_mode.getInt(), 2);
 		
 		// Renderer-level conditions. Each render pass might reject to execute inside its logic.
-		const bool bRenderDepthPrepass              = (cvar_depth_prepass.getInt() != 0);
-		const bool bRenderGodRay                    = (bLightProbeRendering == false);
-		const bool bRenderVolumetricCloud           = (bLightProbeRendering == false);
+		const bool bRenderDepthPrepass                 = (cvar_depth_prepass.getInt() != 0);
+		const bool bRenderGodRay                       = (bLightProbeRendering == false);
+		const bool bRenderVolumetricCloud              = (bLightProbeRendering == false);
 		// #todo-light-probe: Render sky for light probes?
-		const bool bRenderSky                       = true || (bLightProbeRendering == false);
-		const bool bRenderIndirectLighting          = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
-		const bool bRenderSSR                       = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
-		const bool bRenderAutoExposure              = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
-		const bool bRenderLightProbeVisualization   = (bLightProbeRendering == false);
-		const bool bRenderBufferVisualization       = (bLightProbeRendering == false);
-		const bool bRenderSkyOcclusionVisualization = (bLightProbeRendering == false);
+		const bool bRenderSky                          = true || (bLightProbeRendering == false);
+		const bool bRenderIndirectLighting             = (bLightProbeRendering == false && cvar_indirectLighting.getInt() != 0);
+		const bool bRenderSSR                          = (bLightProbeRendering == false && cvar_enable_ssr.getInt() != 0);
+		const bool bRenderAutoExposure                 = (bLightProbeRendering == false && autoExposureMode != EAutoExposureMode::Manual);
+		const bool bRenderLightProbeVisualization      = (bLightProbeRendering == false);
+		const bool bRenderBufferVisualization          = (bLightProbeRendering == false);
+		const bool bRenderIndirectDiffuseVisualization = (bLightProbeRendering == false);
 
 		cmdList.sceneProxy = inScene;
 		cmdList.sceneRenderTargets = sceneRenderTargets;
@@ -665,11 +665,11 @@ namespace pathos {
 			SCOPED_GPU_COUNTER(VisualizeBuffer);
 			visualizeBuffer->render(cmdList, scene, camera);
 		}
-
-		if (bRenderSkyOcclusionVisualization) {
-			SCOPED_CPU_COUNTER(VisualizeSkyOcclusion);
-			SCOPED_GPU_COUNTER(VisualizeSkyOcclusion);
-			visualizeSkyOcclusionPass->renderSkyOcclusion(cmdList, scene, camera);
+		// Debug pass (r.visualizeIndirectDiffuse)
+		if (bRenderIndirectDiffuseVisualization) {
+			SCOPED_CPU_COUNTER(VisualizeIndirectDiffuse);
+			SCOPED_GPU_COUNTER(VisualizeIndirectDiffuse);
+			visualizeIndirectDiffusePass->renderVisualization(cmdList, scene);
 		}
 
 		sceneRenderTargets = nullptr;
@@ -824,7 +824,7 @@ namespace pathos {
 	// Debug rendering
 	uniquePtr<VisualizeBufferPass>       SceneRenderer::visualizeBuffer;
 	uniquePtr<VisualizeLightProbePass>   SceneRenderer::visualizeLightProbe;
-	uniquePtr<VisualizeSkyOcclusionPass> SceneRenderer::visualizeSkyOcclusionPass;
+	uniquePtr<VisualizeIndirectDiffuse>  SceneRenderer::visualizeIndirectDiffusePass;
 
 	// Post-processing
 	uniquePtr<GodRay>                    SceneRenderer::godRay;
@@ -916,8 +916,8 @@ namespace pathos {
 			visualizeLightProbe = makeUnique<VisualizeLightProbePass>();
 			visualizeLightProbe->initializeResources(cmdList);
 
-			visualizeSkyOcclusionPass = makeUnique<VisualizeSkyOcclusionPass>();
-			visualizeSkyOcclusionPass->initializeResources(cmdList);
+			visualizeIndirectDiffusePass = makeUnique<VisualizeIndirectDiffuse>();
+			visualizeIndirectDiffusePass->initializeResources(cmdList);
 		}
 
 		{
@@ -976,7 +976,7 @@ namespace pathos {
 
 		RELEASEPASS(visualizeBuffer);
 		RELEASEPASS(visualizeLightProbe);
-		RELEASEPASS(visualizeSkyOcclusionPass);
+		RELEASEPASS(visualizeIndirectDiffusePass);
 
 		RELEASEPASS(godRay);
 		RELEASEPASS(ssao);

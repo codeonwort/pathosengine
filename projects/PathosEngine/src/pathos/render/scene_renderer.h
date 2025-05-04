@@ -90,7 +90,7 @@ namespace pathos {
 		// Debug rendering
 		static uniquePtr<class VisualizeBufferPass>       visualizeBuffer;
 		static uniquePtr<class VisualizeLightProbePass>   visualizeLightProbe;
-		static uniquePtr<class VisualizeSkyOcclusionPass> visualizeSkyOcclusionPass;
+		static uniquePtr<class VisualizeIndirectDiffuse>  visualizeIndirectDiffusePass;
 
 		// Post-processing
 		static uniquePtr<class GodRay>                    godRay;

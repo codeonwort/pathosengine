@@ -338,7 +338,7 @@
     <ClCompile Include="src\pathos\render\auto_exposure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pathos\render\visualize_sky_occlusion.cpp">
+    <ClCompile Include="src\pathos\render\visualize_indirect_diffuse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pathos\scene\landscape_actor.cpp">
@@ -871,7 +871,7 @@
     <ClInclude Include="src\pathos\render\auto_exposure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pathos\render\visualize_sky_occlusion.h">
+    <ClInclude Include="src\pathos\render\visualize_indirect_diffuse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pathos\render\image_based_lighting.h">

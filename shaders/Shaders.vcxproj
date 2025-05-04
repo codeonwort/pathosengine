@@ -19,7 +19,7 @@
     <None Include="sky\atmosphere_precompute.glsl" />
     <None Include="debugging\visualize_buffer.glsl" />
     <None Include="debugging\visualize_light_probe.glsl" />
-    <None Include="debugging\visualize_sky_occlusion.glsl" />
+    <None Include="debugging\visualize_indirect_diffuse.glsl" />
     <None Include="postprocess\auto_exposure_scene_avg.glsl" />
     <None Include="postprocess\auto_exposure_histogram_avg.glsl" />
     <None Include="postprocess\auto_exposure_histogram_gen.glsl" />

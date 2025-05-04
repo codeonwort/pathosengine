@@ -18,7 +18,7 @@ in VS_OUT {
 	vec2 screenUV;
 } interpolants;
 
-layout (std140, binding = 1) uniform UBO_VisualizeSkyOcclusion {
+layout (std140, binding = 1) uniform UBO_VisualizeIndirectDiffuse {
 	uint  numIrradianceVolumes;
 	float irradianceAtlasWidth;
 	float irradianceAtlasHeight;

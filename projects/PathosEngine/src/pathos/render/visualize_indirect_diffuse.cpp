@@ -1,4 +1,4 @@
-#include "visualize_sky_occlusion.h"
+#include "visualize_indirect_diffuse.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/fullscreen_util.h"
 #include "pathos/rhi/shader_program.h"
@@ -10,9 +10,9 @@
 // cvars and shaders
 namespace pathos {
 
-	static ConsoleVariable<int32> cvar_visSkyOcclusion("r.visualizeSkyOcclusion", 0, "0 = disable, 1 = enable");
+	static ConsoleVariable<int32> cvar_visIndirectDiffuse("r.visualizeIndirectDiffuse", 0, "0 = disable, 1 = sky occlusion");
 
-	struct UBO_VisualizeSkyOcclusion {
+	struct UBO_VisualizeIndirectDiffuse {
 		static constexpr uint32 BINDING_SLOT = 1;
 
 		uint32 numIrradianceVolumes;
@@ -25,47 +25,47 @@ namespace pathos {
 	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2; // Irradiance volumes
 	static constexpr uint32 SSBO_IrradianceSH_BINDING_SLOT = 3; // Irradiance SH buffer
 
-	class VisualizeSkyOcclusionFS : public ShaderStage {
+	class VisualizeIndirectDiffuseFS : public ShaderStage {
 	public:
-		VisualizeSkyOcclusionFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeSkyOcclusionFS") {
-			setFilepath("debugging/visualize_sky_occlusion.glsl");
+		VisualizeIndirectDiffuseFS() : ShaderStage(GL_FRAGMENT_SHADER, "VisualizeIndirectDiffuseFS") {
+			setFilepath("debugging/visualize_indirect_diffuse.glsl");
 		}
 	};
 
-	DEFINE_SHADER_PROGRAM2(Program_VisualizeSkyOcclusion, FullscreenVS, VisualizeSkyOcclusionFS);
+	DEFINE_SHADER_PROGRAM2(Program_VisualizeIndirectDiffuse, FullscreenVS, VisualizeIndirectDiffuseFS);
 
 }
 
 namespace pathos {
 
-	VisualizeSkyOcclusionPass::VisualizeSkyOcclusionPass() {}
-	VisualizeSkyOcclusionPass::~VisualizeSkyOcclusionPass() {}
+	VisualizeIndirectDiffuse::VisualizeIndirectDiffuse() {}
+	VisualizeIndirectDiffuse::~VisualizeIndirectDiffuse() {}
 
-	void VisualizeSkyOcclusionPass::initializeResources(RenderCommandList& cmdList) {
+	void VisualizeIndirectDiffuse::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo);
-		ubo.init<UBO_VisualizeSkyOcclusion>("UBO_VisualizeSkyOcclusion");
+		ubo.init<UBO_VisualizeIndirectDiffuse>("UBO_VisualizeIndirectDiffuse");
 	}
 
-	void VisualizeSkyOcclusionPass::releaseResources(RenderCommandList& cmdList) {
+	void VisualizeIndirectDiffuse::releaseResources(RenderCommandList& cmdList) {
 		gRenderDevice->deleteFramebuffers(1, &fbo);
 		ubo.safeDestroy();
 	}
 
-	void VisualizeSkyOcclusionPass::renderSkyOcclusion(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void VisualizeIndirectDiffuse::renderVisualization(RenderCommandList& cmdList, SceneProxy* scene) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
 		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
-		if (cvar_visSkyOcclusion.getInt() == 0 || irradianceVolumeBuffer == 0) {
+		if (cvar_visIndirectDiffuse.getInt() == 0 || irradianceVolumeBuffer == 0) {
 			return;
 		}
 
-		SCOPED_DRAW_EVENT(VisualizeSkyOcclusion);
+		SCOPED_DRAW_EVENT(VisualizeIndirectDiffuse);
 
 		// ----------------------------------------------------------
 		// Prepare UBO & SSBO data
 
-		UBO_VisualizeSkyOcclusion uboData;
+		UBO_VisualizeIndirectDiffuse uboData;
 		uboData.numIrradianceVolumes       = (uint32)scene->proxyList_irradianceVolume.size();
 		uboData.irradianceAtlasWidth       = scene->irradianceAtlasWidth;
 		uboData.irradianceAtlasHeight      = scene->irradianceAtlasHeight;
@@ -76,7 +76,7 @@ namespace pathos {
 		// Rendering
 
 		// Bind shader program
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeSkyOcclusion);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VisualizeIndirectDiffuse);
 		cmdList.useProgram(program.getGLName());
 
 		// Bind framebuffer
@@ -88,7 +88,7 @@ namespace pathos {
 		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
 
 		// Bind buffers
-		ubo.update(cmdList, UBO_VisualizeSkyOcclusion::BINDING_SLOT, &uboData);
+		ubo.update(cmdList, UBO_VisualizeIndirectDiffuse::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
 		scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_IrradianceSH_BINDING_SLOT);
 

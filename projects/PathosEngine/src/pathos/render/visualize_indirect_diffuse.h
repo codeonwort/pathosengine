@@ -11,16 +11,16 @@ namespace pathos {
 	class SceneProxy;
 	class Camera;
 
-	class VisualizeSkyOcclusionPass {
+	class VisualizeIndirectDiffuse {
 
 	public:
-		VisualizeSkyOcclusionPass();
-		~VisualizeSkyOcclusionPass();
+		VisualizeIndirectDiffuse();
+		~VisualizeIndirectDiffuse();
 
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderSkyOcclusion(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
+		void renderVisualization(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
 		GLuint fbo = 0;
