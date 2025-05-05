@@ -344,7 +344,7 @@ namespace pathos {
 			SCOPED_CPU_COUNTER(IndirectLighting);
 			SCOPED_GPU_COUNTER(IndirectLighting);
 
-			indirectLightingPass->renderIndirectLighting(cmdList, scene, camera, fullscreenQuad);
+			indirectLightingPass->renderIndirectLighting(cmdList, scene);
 		}
 
 		// Add unlit and emissive

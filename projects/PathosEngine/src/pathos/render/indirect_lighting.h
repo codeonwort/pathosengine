@@ -9,7 +9,6 @@
 
 namespace pathos {
 
-	class Camera;
 	class SceneProxy;
 	class MeshGeometry;
 	class Buffer;
@@ -26,15 +25,16 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void renderIndirectLighting(
-			RenderCommandList& cmdList,
-			SceneProxy* scene,
-			Camera* camera,
-			MeshGeometry* fullscreenQuad);
+		void renderIndirectLighting(RenderCommandList& cmdList, SceneProxy* scene);
+
+	private:
+		void renderIndirectDiffuse(RenderCommandList& cmdList, SceneProxy* scene);
+		void renderIndirectSpecular(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
 		GLuint fbo = 0xffffffff;
-		UniformBuffer ubo;
+		UniformBuffer uboDiffuse;
+		UniformBuffer uboSpecular;
 
 		bool destroyed = false;
 

@@ -1,10 +1,10 @@
 #version 460 core
 
-#include "core/common.glsl"
-#include "core/brdf.glsl"
-#include "core/image_based_lighting.glsl"
-#include "core/diffuse_sh.glsl"
-#include "deferred_common.glsl"
+#include "../core/common.glsl"
+#include "../core/brdf.glsl"
+#include "../core/image_based_lighting.glsl"
+#include "../core/diffuse_sh.glsl"
+#include "../deferred_common.glsl"
 
 // #todo-light-probe: Finish indirect lighting shader
 #define COSINE_WEIGHTED_INTERPOLATION    0
@@ -14,7 +14,6 @@
 #define LIGHTINGMODE_ALL                 1
 #define LIGHTINGMODE_DIFFUSE_ONLY        2
 #define LIGHTINGMODE_SKY_DIFFUSE_ONLY    3
-#define LIGHTINGMODE_SPECULAR_ONLY       4
 
 // --------------------------------------------------------
 // Input
@@ -23,37 +22,27 @@ in VS_OUT {
 	vec2 screenUV;
 } fs_in;
 
-layout (std140, binding = 1) uniform UBO_IndirectLighting {
-	// Fake intensity controls
-	float skyLightBoost;
-	float diffuseBoost;
-	float specularBoost;
+layout (std140, binding = 1) uniform UBO_IndirectDiffuseLighting {
 	uint  lightingMode; // cvar_indirectLighting
-
-	float skyReflectionProbeMaxLOD;
-	float reflectionProbeMaxLOD; // Max LOD of local reflection probes
-	uint numReflectionProbes;
-	uint numIrradianceVolumes;
+	uint  numIrradianceVolumes;
+	uint  irradianceTileCountX;
+	uint  irradianceTileSize;
 
 	float irradianceAtlasWidth;
 	float irradianceAtlasHeight;
-	uint irradianceTileCountX;
-	uint irradianceTileSize;
+	float skyLightBoost;
+	float diffuseBoost;
 } ubo;
 
 layout (std140, binding = 2) readonly buffer SSBO_IrradianceVolume {
 	IrradianceVolume irradianceVolumeInfo[];
 } ssbo0;
 
-layout (std140, binding = 3) readonly buffer SSBO_ReflectionProbe {
-	ReflectionProbe reflectionProbeInfo[];
-} ssbo1;
-
-layout (std140, binding = 4) readonly buffer SSBO_SkyDiffuseSH {
+layout (std140, binding = 3) readonly buffer SSBO_SkyDiffuseSH {
 	SHBuffer shBuffer;
 } ssboSkyDiffuseSH;
 
-layout (std140, binding = 5) readonly buffer SSBO_LightProbeSH {
+layout (std140, binding = 4) readonly buffer SSBO_LightProbeSH {
 	SHBuffer shBuffer[];
 } ssboLightProbeSH;
 
@@ -61,11 +50,8 @@ layout (binding = 0) uniform usampler2D       gbufferA;
 layout (binding = 1) uniform sampler2D        gbufferB;
 layout (binding = 2) uniform usampler2D       gbufferC;
 layout (binding = 3) uniform sampler2D        ssaoMap;
-layout (binding = 5) uniform samplerCube      skyReflectionProbe;     // Sky specular IBL
-layout (binding = 6) uniform sampler2D        brdfIntegrationMap;     // Precomputed table for specular IBL
-layout (binding = 7) uniform samplerCubeArray localRadianceCubeArray; // Prefiltered local specular IBLs
-layout (binding = 8) uniform sampler2D        irradianceProbeAtlas;   // ONV-encoded irradiance maps from local irradiance probes
-layout (binding = 9) uniform sampler2D        depthProbeAtlas;        // ONV-encoded linear depths from local irradiance probes
+layout (binding = 4) uniform sampler2D        irradianceProbeAtlas;   // ONV-encoded irradiance maps from local irradiance probes
+layout (binding = 5) uniform sampler2D        depthProbeAtlas;        // ONV-encoded linear depths from local irradiance probes
 
 // --------------------------------------------------------
 // Output
@@ -151,9 +137,103 @@ vec4 evaluateLightProbe(ProbeDesc probe, vec3 dir) {
 #endif
 }
 
+vec3 getProbeSpacing(IrradianceVolume vol) {
+	uvec3 maxGridCoord   = vol.gridSize - uvec3(1, 1, 1);
+	vec3 fNumCells       = vec3(maxGridCoord);
+	vec3 volSize         = vol.maxBounds - vol.minBounds;
+	vec3 cellSize        = volSize / fNumCells;
+	return cellSize;
+}
+
+float getProbeDepth(ProbeDesc probe, vec3 direction) {
+	vec4 uvBounds          = getIrradianceTileBounds(probe.tileIx);
+	vec2 probeDepthLocalUV = ONVEncode(direction);
+	vec2 probeDepthAtlasUV = uvBounds.xy + (uvBounds.zw - uvBounds.xy) * probeDepthLocalUV;
+	float probeDepth       = textureLod(depthProbeAtlas, probeDepthAtlasUV, 0).r;
+	return probeDepth;
+}
+
+// Porting from DDGI, unfinished yet
+vec3 getVolumeIrradiance(
+	vec3 worldPosition,
+	vec3 surfaceBias,
+	vec3 direction,
+	IrradianceVolume volume)
+{
+	vec3 irradiance = vec3(0.0);
+	float accumWeights = 0.0;
+
+	vec3 biasedWorldPosition = worldPosition + surfaceBias;
+
+	ProbeDesc[8] probes;
+	findIrradianceProbes(worldPosition, volume, probes);
+
+	// Clamp the distance (in grid space) between the given point and the base probe's world position (on each axis) to [0, 1]
+    vec3 gridSpaceDistance = (biasedWorldPosition - probes[0].center);
+    vec3 alpha = clamp((gridSpaceDistance / getProbeSpacing(volume)), vec3(0.0), vec3(1.0));
+
+	for (int i = 0; i < 8; i++) {
+		ProbeDesc probe = probes[i];
+		ivec3 adjacentProbeOffset = ivec3(i, i >> 1, i >> 2) & ivec3(1, 1, 1);
+
+		vec3 worldPosToAdjProbe = normalize(probe.center - worldPosition);
+		vec3 biasedPosToAdjProbe = normalize(probe.center - biasedWorldPosition);
+		float biasedPosToAdjProbeDist = length(probe.center - biasedWorldPosition);
+
+		// Compute trilinear weights based on the distance to each adjacent probe
+		// to smoothly transition between probes. adjacentProbeOffset is binary, so we're
+		// using a 1-alpha when adjacentProbeOffset = 0 and alpha when adjacentProbeOffset = 1.
+		vec3 trilinear = max(vec3(0.001), mix(vec3(1 - alpha), vec3(alpha), adjacentProbeOffset));
+		float trilinearWeight = (trilinear.x * trilinear.y * trilinear.z);
+		float weight = 1.0;
+
+		// A naive soft backface weight would ignore a probe when
+		// it is behind the surface. That's good for walls, but for
+		// small details inside of a room, the normals on the details
+		// might rule out all of the probes that have mutual visibility 
+		// to the point. We instead use a "wrap shading" test. The small
+		// offset at the end reduces the "going to zero" impact.
+		float wrapShading = (dot(worldPosToAdjProbe, direction) + 1.0) * 0.5;
+		weight *= (wrapShading * wrapShading) + 0.2f;
+
+		#if 0
+		// #todo-light-probe: Sample distance probe for chebyshev weight
+		#elif PROBE_VISIBILITY_AWARE
+		float probeDepth = getProbeDepth(probe, -worldPosToAdjProbe);
+		const float tolerance = 0.05;
+		// dot() is for backface check
+		bool visible = dot(direction, -worldPosToAdjProbe) <= 0.0
+			&& biasedPosToAdjProbeDist - tolerance <= probeDepth;
+		if (!visible) {
+			//weight *= 0.01;
+		}
+
+		#endif
+
+		const float crushThreshold = 0.2;
+		if (weight < crushThreshold) {
+			weight *= (weight * weight) * (1.0 / (crushThreshold * crushThreshold));
+		}
+
+		weight *= trilinearWeight;
+		vec4 probeIrradiance = evaluateLightProbe(probe, direction);
+
+		irradiance += (weight * probeIrradiance.xyz);
+		accumWeights += weight;
+	}
+
+	if (accumWeights == 0.0) return vec3(0.0);
+
+	irradiance *= 1.0 / accumWeights;
+	irradiance *= irradiance;
+	irradiance *= TWO_PI;
+
+	return irradiance;
+}
+
 vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
-	const vec3 surfacePositionWS = gbufferData.ws_coords;
-	const vec3 surfaceNormalWS   = gbufferData.ws_normal;
+	vec3 surfacePositionWS = gbufferData.ws_coords;
+	vec3 surfaceNormalWS   = gbufferData.ws_normal;
 
 	// Find an irradiance volume that contains the surface position.
 	int irradianceVolumeIndex = -1;
@@ -196,6 +276,7 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		ProbeDesc probe = probes[i];
 		vec4 uvBounds = getIrradianceTileBounds(probe.tileIx);
 		vec3 probeToSurface = normalize(surfacePositionWS - probe.center);
+		float distanceToProbe = length(surfacePositionWS - probe.center);
 
 		samples[i] = evaluateLightProbe(probe, surfaceNormalWS);
 		weights[i] = max(0.0, dot(surfaceNormalWS, -probeToSurface));
@@ -208,7 +289,6 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		float probeDepth = textureLod(depthProbeAtlas, probeDepthAtlasUV, 0).r;
 
 		// Test visibility
-		float distanceToProbe = length(surfacePositionWS - probe.center);
 		const float tolerance = 0.005;
 		// dot() is for backface check
 		visibility[i] = dot(surfaceNormalWS, probeToSurface) <= 0.0 && distanceToProbe - tolerance <= probeDepth;
@@ -229,10 +309,12 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		skyOcclusion = min(1, skyOcclusion);
 		irradiance = ubo.skyLightBoost * skyOcclusion * evaluateSkyDiffuse(surfaceNormalWS);
 	} else {
+		vec3 L = vec3(0.0);
 		for (uint i = 0; i < 8; ++i) {
-			irradiance += samples[i].xyz * weights[i] / totalWeights;
+			L += samples[i].xyz * weights[i] / totalWeights;
 		}
-		irradiance = max(vec3(0.0), ubo.diffuseBoost * irradiance);
+		L = max(vec3(0.0), L);
+		irradiance = ubo.diffuseBoost * L;
 	}
 #else
 	// Trilinear interpolation
@@ -264,48 +346,14 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 	}
 #endif
 
+	// DDGI
+	//vec3 L = getVolumeIrradiance(surfacePositionWS, vec3(0.0), surfaceNormalWS, vol);
+	//irradiance = ubo.diffuseBoost * L / 100;
+
 	return irradiance;
 }
 
-vec3 getIndirectSpecular(GBufferData gbufferData) {
-	const vec3 surfacePositionWS   = gbufferData.ws_coords;
-	const vec3 surfaceNormalWS     = gbufferData.ws_normal;
-	const float roughness          = gbufferData.roughness;
-	const vec3 viewDirectionWS     = normalize(uboPerFrame.cameraPositionWS - surfacePositionWS);
-	const vec3 specularDirectionWS = reflect(-viewDirectionWS, surfaceNormalWS);
-
-	// Find the closest reflection probe.
-	int probeIndex = -1;
-	float probeMinDist = 60000.0f;
-	for (uint i = 0; i < ubo.numReflectionProbes; ++i) {
-		ReflectionProbe probe = ssbo1.reflectionProbeInfo[i];
-		float dist = length(surfacePositionWS - probe.positionWS);
-		// #todo: Fetch probe depth and check if this reflection probe is visible from the surface point.
-		if (dist <= probe.captureRadius && dist < probeMinDist) {
-			dist = probeMinDist;
-			probeIndex = int(i);
-		}
-	}
-
-	// Sample the reflection probe.
-	vec3 specularSample;
-	if (probeIndex == -1) {
-		specularSample = textureLod(skyReflectionProbe, specularDirectionWS, roughness * ubo.skyReflectionProbeMaxLOD).rgb;
-		specularSample *= ubo.skyLightBoost;
-	} else {
-		vec4 R4 = vec4(specularDirectionWS, float(probeIndex));
-		specularSample = textureLod(localRadianceCubeArray, R4, roughness * ubo.reflectionProbeMaxLOD).rgb;
-		specularSample *= ubo.specularBoost;
-		//if (probeIndex == 0) specularSample = vec3(10.0, 10.0, 0.0);
-		//if (probeIndex == 1) specularSample = vec3(0.0, 10.0, 0.0);
-		//if (probeIndex == 2) specularSample = vec3(0.0, 0.0, 10.0);
-		//if (probeIndex == 3) specularSample = vec3(10.0, 0.0, 10.0);
-	}
-
-	return specularSample;
-}
-
-vec3 getImageBasedLighting(GBufferData gbufferData) {
+vec3 getGlobalIllumination_defaultLit(GBufferData gbufferData) {
 	const vec3 surfacePositionWS   = gbufferData.ws_coords;
 	const vec3 surfaceNormalWS     = gbufferData.ws_normal;
 	const vec3 viewDirectionWS     = normalize(uboPerFrame.cameraPositionWS - surfacePositionWS);
@@ -319,23 +367,16 @@ vec3 getImageBasedLighting(GBufferData gbufferData) {
 	const vec3 F                   = fresnelSchlickRoughness(NdotV, F0, roughness);
 	const vec3 kS                  = F;
 	const vec3 kD                  = (1.0 - metallic) * (1.0 - kS);
-	const vec2 envBRDF             = texture(brdfIntegrationMap, vec2(NdotV, roughness)).rg;
 
-	vec3 diffuseIndirect  = vec3(0.0);
-	vec3 specularIndirect = vec3(0.0);
-	uint lightingMode     = ubo.lightingMode;
+	vec3 indirectDiffuse = vec3(0.0);
+	uint lightingMode    = ubo.lightingMode;
 	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_DIFFUSE_ONLY || lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY) {
-		diffuseIndirect = getIndirectDiffuse(gbufferData, lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY);
-	}
-	if (lightingMode == LIGHTINGMODE_ALL || lightingMode == LIGHTINGMODE_SPECULAR_ONLY) {
-		specularIndirect = getIndirectSpecular(gbufferData);
+		indirectDiffuse = getIndirectDiffuse(gbufferData, lightingMode == LIGHTINGMODE_SKY_DIFFUSE_ONLY);
 	}
 	float ambientOcclusion = texture2D(ssaoMap, fs_in.screenUV).r;
 
-	vec3 finalLighting = kD * albedo * diffuseIndirect;
-	finalLighting += (kS * envBRDF.x + envBRDF.y) * specularIndirect;
+	vec3 finalLighting = kD * albedo * indirectDiffuse;
 	// NOTE: Applying occlusion after integrating over hemisphere is physically wrong.
-	// #todo-light-probe: Specular occlusion for indirect specular
 	finalLighting *= ambientOcclusion;
 
 	return finalLighting;
@@ -346,10 +387,26 @@ vec3 getGlobalIllumination(GBufferData gbufferData) {
 	vec3 lighting = vec3(0.0);
 
 	if (shadingModel == MATERIAL_SHADINGMODEL_DEFAULTLIT) {
-		lighting.rgb = getImageBasedLighting(gbufferData);
+		lighting.rgb = getGlobalIllumination_defaultLit(gbufferData);
 	}
 
 	return lighting;
+}
+
+// interleaved gradient noise
+float noise_ig(ivec2 texel)
+{
+	const vec3 m = vec3(0.06711056, 0.0233486, 52.9829189);
+	float theta = fract(m.z * fract(dot(vec2(texel), m.xy)));
+	return theta;
+}
+vec2 VogelDiskOffset(int i, float phi)
+{
+	float r = sqrt(float(i) + 0.5) / sqrt(64.0);
+	float theta = 2.4 * float(i) + phi;
+	float x = r * cos(theta);
+	float y = r * sin(theta);
+	return vec2(x, y);
 }
 
 void main() {

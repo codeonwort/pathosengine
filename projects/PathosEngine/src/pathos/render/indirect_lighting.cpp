@@ -29,10 +29,21 @@ namespace pathos {
 	static ConsoleVariable<float> cvar_indirectLighting_diffuseBoost("r.indirectLighting.diffuseBoost", 1.0f, "IrradianceVolume indirect diffuse boost");
 	static ConsoleVariable<float> cvar_indirectLighting_specularBoost("r.indirectLighting.specularBoost", 1.0f, "ReflectionProbe indirect specular boost");
 
-	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2; // Irradiance volumes
-	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 3; // Reflection probes
-	static constexpr uint32 SSBO_SkyDiffuseSH_BINDING_SLOT = 4;
-	static constexpr uint32 SSBO_LightProbeSH_BINDING_SLOT = 5;
+	static bool shouldRenderDiffuseGI() {
+		int32 n = cvar_indirectLighting.getInt();
+		return n == 1 || n == 2 || n == 3;
+	}
+	static bool shouldRenderSpecularGI() {
+		int32 n = cvar_indirectLighting.getInt();
+		return n == 1 || n == 4;
+	}
+
+	// For diffuse GI
+	static constexpr uint32 SSBO_IrradianceVolume_BINDING_SLOT = 2;
+	static constexpr uint32 SSBO_SkyDiffuseSH_BINDING_SLOT = 3;
+	static constexpr uint32 SSBO_LightProbeSH_BINDING_SLOT = 4;
+	// For specular GI
+	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 2;
 
 	struct UBO_IndirectLighting {
 		static const uint32 BINDING_SLOT = 1;
@@ -53,13 +64,49 @@ namespace pathos {
 		uint32 irradianceTileSize;
 	};
 
-	class IndirectLightingFS : public ShaderStage {
+	struct UBO_IndirectDiffuseLighting {
+		static const uint32 BINDING_SLOT = 1;
+
+		uint32 lightingMode; // cvar_indirectLighting
+		uint32 numIrradianceVolumes;
+		uint32 irradianceTileCountX;
+		uint32 irradianceTileSize;
+
+		float  irradianceAtlasWidth;
+		float  irradianceAtlasHeight;
+		float  skyLightBoost;
+		float  diffuseBoost;
+	};
+
+	struct UBO_IndirectSpecularLighting {
+		static const uint32 BINDING_SLOT = 1;
+
+		uint32 lightingMode; // cvar_indirectLighting
+		uint32 numReflectionProbes;
+		uint32 _pad0;
+		uint32 _pad1;
+
+		float  skyLightBoost;
+		float  specularBoost;
+		float  skyRadianceProbeMaxLOD;
+		float  localReflectionProbeMaxLOD;
+	};
+
+	class IndirectDiffuseLightingFS : public ShaderStage {
 	public:
-		IndirectLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "IndirectLightingFS") {
-			setFilepath("indirect_lighting.glsl");
+		IndirectDiffuseLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "IndirectDiffuseLightingFS") {
+			setFilepath("gi/indirect_diffuse_lighting.glsl");
 		}
 	};
-	DEFINE_SHADER_PROGRAM2(Program_IndirectLighting, FullscreenVS, IndirectLightingFS);
+	DEFINE_SHADER_PROGRAM2(Program_IndirectDiffuseLighting, FullscreenVS, IndirectDiffuseLightingFS);
+
+	class IndirectSpecularLightingFS : public ShaderStage {
+	public:
+		IndirectSpecularLightingFS() : ShaderStage(GL_FRAGMENT_SHADER, "IndirectSpecularLightingFS") {
+			setFilepath("gi/indirect_specular_lighting.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_IndirectSpecularLighting, FullscreenVS, IndirectSpecularLightingFS);
 
 }
 
@@ -74,7 +121,8 @@ namespace pathos {
 	void IndirectLightingPass::initializeResources(RenderCommandList& cmdList) {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);
-		ubo.init<UBO_IndirectLighting>("UBO_IndirectLighting");
+		uboDiffuse.init<UBO_IndirectDiffuseLighting>("UBO_IndirectDiffuseLighting");
+		uboSpecular.init<UBO_IndirectSpecularLighting>("UBO_IndirectSpecularLighting");
 	}
 
 	void IndirectLightingPass::releaseResources(RenderCommandList& cmdList) {
@@ -84,20 +132,95 @@ namespace pathos {
 		destroyed = true;
 	}
 
-	void IndirectLightingPass::renderIndirectLighting(
-		RenderCommandList& cmdList,
-		SceneProxy* scene,
-		Camera* camera,
-		MeshGeometry* fullscreenQuad)
+	void IndirectLightingPass::renderIndirectLighting(RenderCommandList& cmdList, SceneProxy* scene)
 	{
 		SCOPED_DRAW_EVENT(IndirectLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
-		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
-		//////////////////////////////////////////////////////////////////////////
-		// Prepare for UBO & SSBO data
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
+		pathos::checkFramebufferStatus(cmdList, fbo, "[IndirectLighting] FBO is invalid");
+
+		// Set render states
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.enable(GL_BLEND);
+		cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE); // Additive blending to sceneColor
+		cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
+
+		if (shouldRenderDiffuseGI()) {
+			renderIndirectDiffuse(cmdList, scene);
+		}
+		if (shouldRenderSpecularGI()) {
+			renderIndirectSpecular(cmdList, scene);
+		}
+
+		// Restore render states
+		cmdList.disable(GL_BLEND);
+		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	}
+
+	void IndirectLightingPass::renderIndirectDiffuse(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(IndirectDiffuseLighting);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
+		const int32 indirectLightingMode = cvar_indirectLighting.getInt();
+
+		UBO_IndirectDiffuseLighting uboData;
+		{
+			uboData.lightingMode               = (uint32)indirectLightingMode;
+			uboData.numIrradianceVolumes       = (uint32)scene->proxyList_irradianceVolume.size();
+			uboData.irradianceTileCountX       = scene->irradianceTileCountX;
+			uboData.irradianceTileSize         = scene->irradianceTileSize;
+			uboData.irradianceAtlasWidth       = scene->irradianceAtlasWidth;
+			uboData.irradianceAtlasHeight      = scene->irradianceAtlasHeight;
+			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
+			uboData.diffuseBoost               = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
+		}
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IndirectDiffuseLighting);
+		cmdList.useProgram(program.getGLName());
+
+		uboDiffuse.update(cmdList, UBO_IndirectDiffuseLighting::BINDING_SLOT, &uboData);
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, SSBO_SkyDiffuseSH_BINDING_SLOT);
+		if (scene->irradianceSHBuffer != nullptr) {
+			scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
+		} else {
+			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_LightProbeSH_BINDING_SLOT, 0);
+		}
+
+		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
+		gbuffer_textures[0] = sceneContext.gbufferA;
+		gbuffer_textures[1] = sceneContext.gbufferB;
+		gbuffer_textures[2] = sceneContext.gbufferC;
+
+		if (scene->depthProbeAtlas != 0) {
+			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+
+		cmdList.bindTextures(0, 3, gbuffer_textures);
+		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
+		cmdList.bindTextureUnit(4, scene->irradianceAtlas);
+		cmdList.bindTextureUnit(5, scene->depthProbeAtlas);
+
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+
+		cmdList.bindBuffersBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, 4, nullptr);
+		cmdList.bindTextures(0, 6, nullptr); // Fix a strange bug that IBL maps are randomly persistent across worlds.
+	}
+
+	void IndirectLightingPass::renderIndirectSpecular(RenderCommandList& cmdList, SceneProxy* scene) {
+		SCOPED_DRAW_EVENT(IndirectSpecularLighting);
+
+		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
+		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
 		// #todo-light-probe: Only copy the cubemaps that need to be updated.
 		// Copy local cubemaps to the cubemap array.
@@ -127,80 +250,38 @@ namespace pathos {
 			}
 		}
 
-		UBO_IndirectLighting uboData;
+		UBO_IndirectSpecularLighting uboData;
 		{
-			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
-			uboData.diffuseBoost               = std::max(0.0f, cvar_indirectLighting_diffuseBoost.getFloat());
-			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
 			uboData.lightingMode               = (uint32)indirectLightingMode;
+			uboData.numReflectionProbes        = (uint32)scene->proxyList_reflectionProbe.size();
+			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
+			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
 			uboData.skyRadianceProbeMaxLOD     = badger::max(0.0f, (float)(sceneContext.getSkyPrefilterMapMipCount() - 1));
 			uboData.localReflectionProbeMaxLOD = badger::max(0.0f, (float)(pathos::reflectionProbeNumMips - 1));
-			uboData.numReflectionProbes        = (uint32)scene->proxyList_reflectionProbe.size();
-			uboData.numIrradianceVolumes       = (uint32)scene->proxyList_irradianceVolume.size();
-			uboData.irradianceAtlasWidth       = scene->irradianceAtlasWidth;
-			uboData.irradianceAtlasHeight      = scene->irradianceAtlasHeight;
-			uboData.irradianceTileCountX       = scene->irradianceTileCountX;
-			uboData.irradianceTileSize         = scene->irradianceTileSize;
 		}
 
-		//////////////////////////////////////////////////////////////////////////
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IndirectLighting);
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_IndirectSpecularLighting);
 		cmdList.useProgram(program.getGLName());
 
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, sceneContext.sceneColor, 0);
-		pathos::checkFramebufferStatus(cmdList, fbo, "[IndirectLighting] FBO is invalid");
-
-		// Set render states
-		{
-			cmdList.disable(GL_DEPTH_TEST);
-			cmdList.enable(GL_BLEND);
-			cmdList.blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
-			cmdList.viewport(0, 0, sceneContext.sceneWidth, sceneContext.sceneHeight);
-		}
-
-		ubo.update(cmdList, UBO_IndirectLighting::BINDING_SLOT, &uboData);
-		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, irradianceVolumeBuffer);
+		uboSpecular.update(cmdList, UBO_IndirectSpecularLighting::BINDING_SLOT, &uboData);
 		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, reflectionProbeBuffer);
-		sceneContext.skyDiffuseSH->bindAsSSBO(cmdList, SSBO_SkyDiffuseSH_BINDING_SLOT);
-		if (scene->irradianceSHBuffer != nullptr) {
-			scene->irradianceSHBuffer->bindAsSSBO(cmdList, SSBO_LightProbeSH_BINDING_SLOT);
-		} else {
-			cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_LightProbeSH_BINDING_SLOT, 0);
-		}
 
 		GLuint* gbuffer_textures = (GLuint*)cmdList.allocateSingleFrameMemory(3 * sizeof(GLuint));
 		gbuffer_textures[0] = sceneContext.gbufferA;
 		gbuffer_textures[1] = sceneContext.gbufferB;
 		gbuffer_textures[2] = sceneContext.gbufferC;
 
-		if (scene->depthProbeAtlas != 0) {
-			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			cmdList.textureParameteri(scene->depthProbeAtlas, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		}
-
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
-		cmdList.bindTextureUnit(5, sceneContext.getSkyPrefilterMapWithFallback());
-		cmdList.bindTextureUnit(6, LightProbeBaker::get().getBRDFIntegrationMap_512());
-		cmdList.bindTextureUnit(7, sceneContext.localSpecularIBLs);
-		cmdList.bindTextureUnit(8, scene->irradianceAtlas);
-		cmdList.bindTextureUnit(9, scene->depthProbeAtlas);
+		cmdList.bindTextureUnit(4, sceneContext.getSkyPrefilterMapWithFallback());
+		cmdList.bindTextureUnit(5, LightProbeBaker::get().getBRDFIntegrationMap_512());
+		cmdList.bindTextureUnit(6, sceneContext.localSpecularIBLs);
 
 		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);
 
-		// Fix a strange bug that IBL maps are randomly persistent across worlds.
-		cmdList.bindBuffersBase(GL_SHADER_STORAGE_BUFFER, SSBO_IrradianceVolume_BINDING_SLOT, 4, nullptr);
-		cmdList.bindTextures(0, 10, nullptr);
-
-		// Restore render states
-		{
-			cmdList.disable(GL_BLEND);
-			cmdList.namedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, 0, 0);
-			cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		}
+		cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_ReflectionProbe_BINDING_SLOT, 0);
+		cmdList.bindTextures(0, 7, nullptr); // Fix a strange bug that IBL maps are randomly persistent across worlds.
 	}
 
 }

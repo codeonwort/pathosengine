@@ -13,6 +13,8 @@
   <ItemGroup>
     <None Include="compute_diffuse_sh.glsl" />
     <None Include="core\diffuse_sh.glsl" />
+    <None Include="gi\indirect_diffuse_lighting.glsl" />
+    <None Include="gi\indirect_specular_lighting.glsl" />
     <None Include="materials\indirect_draw_dummy.glsl" />
     <None Include="octahedral_depth_atlas.glsl" />
     <None Include="sky\atmosphere.glsl" />
@@ -50,7 +52,6 @@
     <None Include="godray\god_ray_post.glsl" />
     <None Include="godray\god_ray_silhouette.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
-    <None Include="indirect_lighting.glsl" />
     <None Include="landscape_indirect_draw.glsl" />
     <None Include="materials\gltf_opaque.glsl" />
     <None Include="materials\guard_tower.glsl" />

@@ -47,7 +47,6 @@
     <None Include="sky\volumetric_clouds.glsl" />
     <None Include="core\common.glsl" />
     <None Include="ssao_blur.glsl" />
-    <None Include="indirect_lighting.glsl" />
     <None Include="hierarchical_z_buffer.glsl" />
     <None Include="ssr_preintegration.glsl" />
     <None Include="ssr_raytracing.glsl" />
@@ -96,5 +95,7 @@
     <None Include="sky\copy_cubemap.glsl" />
     <None Include="sky\blit_cubemap.glsl" />
     <None Include="octahedral_depth_atlas.glsl" />
+    <None Include="gi\indirect_diffuse_lighting.glsl" />
+    <None Include="gi\indirect_specular_lighting.glsl" />
   </ItemGroup>
 </Project>
