@@ -51,7 +51,7 @@ namespace pathos {
 
 		numProbeUpdates = (irradianceVolumes.size() == 0) ? 0 : std::min(cvar_numIrradianceProbeUpdates.getInt(), (int32)irradianceVolumes[0]->numProbes());
 		if (numProbeUpdates > 0) {
-			lightProbeScene.createIrradianceProbeAtlas();
+			lightProbeScene.createGPUResources();
 			irradianceVolumes[0]->updateProbes(lightProbeScene.getIrradianceProbeAtlasDesc(), numProbeUpdates);
 		}
 	}

@@ -19,7 +19,7 @@ namespace pathos {
 		void initializeResources(RenderCommandList& cmdList);
 		void releaseResources(RenderCommandList& cmdList);
 
-		void render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera);
+		void render(RenderCommandList& cmdList, SceneProxy* scene);
 
 	private:
 		SphereGeometry* sphereGeom = nullptr;

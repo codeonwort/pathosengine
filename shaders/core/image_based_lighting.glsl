@@ -17,4 +17,8 @@ struct IrradianceVolume {
 struct ReflectionProbe {
 	vec3  positionWS;
 	float captureRadius;
+	uint  cubemapIndex;
+	uint  _pad0;
+	uint  _pad1;
+	uint  _pad2;
 };

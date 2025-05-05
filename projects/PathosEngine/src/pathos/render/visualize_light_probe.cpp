@@ -2,10 +2,10 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/buffer.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/image_based_lighting.h"
-#include "pathos/scene/camera.h"
 #include "pathos/scene/reflection_probe_component.h"
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
@@ -76,7 +76,7 @@ namespace pathos {
 		ubo.safeDestroy();
 	}
 
-	void VisualizeLightProbePass::render(RenderCommandList& cmdList, SceneProxy* scene, Camera* camera) {
+	void VisualizeLightProbePass::render(RenderCommandList& cmdList, SceneProxy* scene) {
 		if (cvar_visLightProbe.getInt() == 0) {
 			return;
 		}
@@ -137,8 +137,10 @@ namespace pathos {
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		cmdList.textureParameteri(scene->irradianceAtlas, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+		auto cubeArray = scene->reflectionProbeArrayTexture;
+
 		cmdList.bindTextureUnit(0, scene->irradianceAtlas);
-		cmdList.bindTextureUnit(1, sceneContext.localSpecularIBLs);
+		cmdList.bindTextureUnit(1, cubeArray != nullptr ? cubeArray->internal_getGLName() : 0);
 
 		// Drawcall
 		uint32 instanceCount = totalIrradianceProbes + uboData.numReflectionProbes;

@@ -11,13 +11,16 @@
 namespace pathos {
 
 	void ReflectionProbeActor::captureScene() {
+		LightProbeScene& lightScene = getWorld()->getScene().getLightProbeScene();
+		Texture* cubemapArray = lightScene.getReflectionProbeArrayTexture();
+
 #if !PROGRESSIVE_UPDATE
 		for (int cnt = 0; cnt <= 6; ++cnt) {
 #endif
 			if (0 <= updatePhase && updatePhase < 6) {
 				probeComponent->captureScene(updatePhase);
 			} else if (updatePhase == 6) {
-				probeComponent->bakeIBL();
+				probeComponent->bakeIBL(cubemapArray);
 			}
 
 			if (updatePhase == 6) {
@@ -30,11 +33,19 @@ namespace pathos {
 	}
 
 	void ReflectionProbeActor::onSpawn() {
-		getWorld()->getScene().registerReflectionProbe(this);
+		Scene& scene = getWorld()->getScene();
+		scene.registerReflectionProbe(this);
+
+		uint32 ix = scene.lightProbeScene.allocateReflectionProbe();
+		probeComponent->setCubemapIndex(ix);
 	}
 
 	void ReflectionProbeActor::onDestroy() {
-		getWorld()->getScene().unregisterReflectionProbe(this);
+		Scene& scene = getWorld()->getScene();
+		scene.unregisterReflectionProbe(this);
+
+		uint32 ix = probeComponent->getCubemapIndex();
+		scene.lightProbeScene.releaseReflectionProbe(ix);
 	}
 
 }

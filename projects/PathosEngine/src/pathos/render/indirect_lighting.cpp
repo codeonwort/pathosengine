@@ -5,6 +5,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/buffer.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/render_target.h"
@@ -16,7 +17,6 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/geometry_primitive.h"
-#include "pathos/util/log.h"
 #include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
@@ -222,37 +222,9 @@ namespace pathos {
 		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
-		// #todo-light-probe: Only copy the cubemaps that need to be updated.
-		// Copy local cubemaps to the cubemap array.
-		int32 indirectLightingMode = cvar_indirectLighting.getInt();
-		if (indirectLightingMode == 1 || indirectLightingMode == 4) {
-			const size_t numReflectionProbes = scene->proxyList_reflectionProbe.size();
-			GLuint cubemapArray = sceneContext.localSpecularIBLs;
-
-			int32 cubemapIndex = 0;
-			for (size_t i = 0; i < numReflectionProbes; ++i)
-			{
-				ReflectionProbeProxy* proxy = scene->proxyList_reflectionProbe[i];
-				if (proxy->specularIBL == nullptr || proxy->specularIBL->isTextureValid() == false) {
-					continue;
-				}
-
-				GLuint cubemap = proxy->specularIBL->getGLTextureName();
-				GLuint size = reflectionProbeCubemapSize;
-				for (int32 mip = 0; mip < (int32)pathos::reflectionProbeNumMips; ++mip) {
-					cmdList.copyImageSubData(
-						cubemap, GL_TEXTURE_CUBE_MAP, mip, 0, 0, 0,
-						cubemapArray, GL_TEXTURE_CUBE_MAP_ARRAY, mip, 0, 0, cubemapIndex * 6,
-						size, size, 6);
-					size /= 2;
-				}
-				++cubemapIndex;
-			}
-		}
-
 		UBO_IndirectSpecularLighting uboData;
 		{
-			uboData.lightingMode               = (uint32)indirectLightingMode;
+			uboData.lightingMode               = (uint32)cvar_indirectLighting.getInt();
 			uboData.numReflectionProbes        = (uint32)scene->proxyList_reflectionProbe.size();
 			uboData.skyLightBoost              = std::max(0.0f, cvar_indirectLighting_skyBoost.getFloat());
 			uboData.specularBoost              = std::max(0.0f, cvar_indirectLighting_specularBoost.getFloat());
@@ -271,11 +243,13 @@ namespace pathos {
 		gbuffer_textures[1] = sceneContext.gbufferB;
 		gbuffer_textures[2] = sceneContext.gbufferC;
 
+		auto cubeArray = scene->reflectionProbeArrayTexture;
+
 		cmdList.bindTextures(0, 3, gbuffer_textures);
 		cmdList.bindTextureUnit(3, sceneContext.ssaoMap);
 		cmdList.bindTextureUnit(4, sceneContext.getSkyPrefilterMapWithFallback());
 		cmdList.bindTextureUnit(5, LightProbeBaker::get().getBRDFIntegrationMap_512());
-		cmdList.bindTextureUnit(6, sceneContext.localSpecularIBLs);
+		cmdList.bindTextureUnit(6, cubeArray != nullptr ? cubeArray->internal_getGLName() : 0);
 
 		fullscreenQuad->bindFullAttributesVAO(cmdList);
 		fullscreenQuad->drawPrimitive(cmdList);

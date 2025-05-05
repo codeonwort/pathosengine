@@ -83,6 +83,11 @@ namespace pathos {
 						blob->glPixelFormat, blob->glDataType, blob->rawBytes); // pixel data
 				}
 			}
+		} else if (createParams.glDimension == GL_TEXTURE_CUBE_MAP_ARRAY) {
+			cmdList.textureStorage3D(
+				glTexture, actualMipLevels, createParams.glStorageFormat,
+				createParams.width, createParams.height, createParams.depth * 6);
+			CHECK(createParams.imageBlobs.size() == 0); // #todo-rhi: Support initial data for cubemap array
 		} else if (createParams.glDimension == GL_TEXTURE_3D) {
 			cmdList.textureStorage3D(
 				glTexture, actualMipLevels, createParams.glStorageFormat,

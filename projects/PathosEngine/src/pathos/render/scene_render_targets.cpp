@@ -120,16 +120,13 @@ namespace pathos {
 		// reallocOmniShadowMaps() is called from shadow_omni.cpp
 
 		if (sceneProxySource == SceneProxySource::MainScene || sceneProxySource == SceneProxySource::SceneCapture) {
-			if (localSpecularIBLs == 0) {
-				reallocTextureCubeArray(localSpecularIBLs, GL_RGBA16F, pathos::reflectionProbeCubemapSize, pathos::reflectionProbeMaxCount, pathos::reflectionProbeNumMips, "LocalSpecularIBLs");
-			}
-			// One of sky passes will invoke reallocSkyPrefilterMap()
-
 			// Auto exposure (histogram)
 			if (luminanceFromHistogram == 0) {
 				reallocTexture2D(luminanceFromHistogram, GL_R32F, 1, 1, 1, "luminanceFromHistogram");
 			}
 		}
+
+		// One of sky passes will invoke reallocSkyPrefilterMap()
 		allocateSkyResources(cmdList);
 
 		//////////////////////////////////////////////////////////////////////////
@@ -304,7 +301,6 @@ namespace pathos {
 		safe_release(volumetricCloudB);
 		safe_release_array(cascadedShadowMaps);
 		safe_release(omniShadowMaps);
-		safe_release(localSpecularIBLs);
 		safe_release(skyPrefilteredMap);
 		safe_release(gbufferA);
 		safe_release(gbufferB);

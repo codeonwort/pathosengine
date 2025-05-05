@@ -61,7 +61,7 @@ vec3 getIndirectSpecular(GBufferData gbufferData) {
 		// #todo: Fetch probe depth and check if this reflection probe is visible from the surface point.
 		if (dist <= probe.captureRadius && dist < probeMinDist) {
 			dist = probeMinDist;
-			probeIndex = int(i);
+			probeIndex = int(probe.cubemapIndex);
 		}
 	}
 

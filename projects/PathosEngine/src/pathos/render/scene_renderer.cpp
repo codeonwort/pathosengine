@@ -387,7 +387,7 @@ namespace pathos {
 		if (bRenderLightProbeVisualization) {
 			SCOPED_CPU_COUNTER(VisualizeLightProbe);
 			SCOPED_GPU_COUNTER(VisualizeLightProbe);
-			visualizeLightProbe->render(cmdList, scene, camera);
+			visualizeLightProbe->render(cmdList, scene);
 		}
 
 		if (bLightProbeRendering && scene->lightProbeShIndex != IrradianceProbeAtlasDesc::INVALID_TILE_ID) {

@@ -15,10 +15,12 @@ namespace pathos {
 
 	class RenderTargetCube;
 	class RenderTarget2D;
+	class Texture;
 
 	struct ReflectionProbeProxy : public SceneComponentProxy {
 		vector3           positionWS;
 		float             captureRadius;
+		uint32            cubemapIndex;
 		RenderTargetCube* renderTarget; // #todo-light-probe: Not thread-safe but do it anyway. Fix later.
 		RenderTargetCube* specularIBL;
 	};
@@ -31,8 +33,11 @@ namespace pathos {
 
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
+		inline uint32 getCubemapIndex() const { return cubemapIndex; }
+		inline void setCubemapIndex(uint32 index) { cubemapIndex = index; }
+
 		void captureScene(uint32 faceIndex);
-		void bakeIBL();
+		void bakeIBL(Texture* cubemapArray);
 
 	public:
 		float captureRadius = 50.0f;
@@ -40,6 +45,7 @@ namespace pathos {
 	private:
 		uniquePtr<RenderTargetCube> radianceCubemap;
 		uniquePtr<RenderTargetCube> specularIBL;
+		uint32 cubemapIndex = 0xffffffff;
 
 	};
 

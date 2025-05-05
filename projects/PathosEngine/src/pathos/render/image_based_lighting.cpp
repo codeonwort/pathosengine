@@ -17,13 +17,14 @@ namespace pathos {
 		irradianceProbeAtlasDesc.tileSize = 6;
 		irradianceProbeAtlasDesc.tileCountX = 128;
 		irradianceProbeAtlasDesc.tileCountY = 128;
+		reflectionProbeAllocator.initialize(pathos::reflectionProbeMaxCount);
 	}
 
 	void LightProbeScene::initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc) {
 		irradianceProbeAtlasDesc = desc;
 	}
 
-	void LightProbeScene::createIrradianceProbeAtlas() {
+	void LightProbeScene::createGPUResources() {
 		if (irradianceProbeAtlas == nullptr) {
 			if (cvar_irradianceProbeAtlas_tileSize.getInt() > 0) irradianceProbeAtlasDesc.tileSize = cvar_irradianceProbeAtlas_tileSize.getInt();
 			if (cvar_irradianceProbeAtlas_tileCountX.getInt() > 0) irradianceProbeAtlasDesc.tileCountX = cvar_irradianceProbeAtlas_tileCountX.getInt();
@@ -50,6 +51,20 @@ namespace pathos {
 			BufferCreateParams desc{ EBufferUsage::CpuWrite, stride * maxProbes, nullptr, "Buffer_IrradianceSH" };
 			irradianceSHBuffer = makeUnique<Buffer>(desc);
 			irradianceSHBuffer->createGPUResource();
+		}
+
+		if (reflectionProbeArrayTexture == nullptr) {
+			TextureCreateParams desc;
+			desc.width           = pathos::reflectionProbeCubemapSize;
+			desc.height          = pathos::reflectionProbeCubemapSize;
+			desc.depth           = pathos::reflectionProbeMaxCount;
+			desc.mipLevels       = pathos::reflectionProbeNumMips;
+			desc.glDimension     = GL_TEXTURE_CUBE_MAP_ARRAY;
+			desc.glStorageFormat = GL_RGBA16F;
+			desc.debugName       = "Texture_ReflectionProbeArray";
+
+			reflectionProbeArrayTexture = makeUnique<Texture>(desc);
+			reflectionProbeArrayTexture->createGPUResource();
 		}
 	}
 
@@ -137,6 +152,18 @@ namespace pathos {
 		return irradianceSHBuffer.get();
 	}
 
+	uint32 LightProbeScene::allocateReflectionProbe() {
+		return reflectionProbeAllocator.allocateIndex();
+	}
+
+	void LightProbeScene::releaseReflectionProbe(uint32 index) {
+		reflectionProbeAllocator.releaseIndex(index);
+	}
+
+	Texture* LightProbeScene::getReflectionProbeArrayTexture() const {
+		return reflectionProbeArrayTexture.get();
+	}
+
 	void LightProbeScene::createSceneProxy(SceneProxy* proxy, bool isLightProbeRendering) {
 		if (irradianceProbeAtlas != nullptr) {
 			proxy->irradianceAtlas       = irradianceProbeAtlas->getInternalTexture()->internal_getGLName();
@@ -218,7 +245,7 @@ namespace pathos {
 						EBufferUsage::CpuWrite,
 						(uint32)(numProbes * sizeof(ReflectionProbeInfo)),
 						nullptr,
-						"Buffer_SSBO_IrradianceVolume",
+						"Buffer_SSBO_ReflectionProbeInfo",
 					};
 					reflectionProbeBuffer = makeUnique<Buffer>(createParams);
 					reflectionProbeBuffer->createGPUResource();
@@ -233,6 +260,7 @@ namespace pathos {
 					ReflectionProbeInfo bufferItem{
 						probeProxy->positionWS,
 						probeProxy->captureRadius,
+						probeProxy->cubemapIndex,
 					};
 					bufferData.emplace_back(bufferItem);
 				}
@@ -240,6 +268,7 @@ namespace pathos {
 			}
 		}
 		proxy->reflectionProbeBuffer = (reflectionProbeBuffer != nullptr) ? reflectionProbeBuffer->internal_getGLName() : 0;
+		proxy->reflectionProbeArrayTexture = reflectionProbeArrayTexture.get();
 	}
 
 }

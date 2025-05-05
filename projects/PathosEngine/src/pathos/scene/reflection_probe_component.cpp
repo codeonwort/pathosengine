@@ -1,8 +1,10 @@
 #include "reflection_probe_component.h"
 #include "pathos/scene/world.h"
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/texture.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/light_probe_baker.h"
+#include "pathos/render/scene_render_targets.h"
 
 namespace pathos {
 	const uint32 reflectionProbeCubemapSize = 128; // #todo-light-probe: Cubemap size is forced to 128.
@@ -22,10 +24,11 @@ namespace pathos {
 		}
 
 		ReflectionProbeProxy* proxy = ALLOC_RENDER_PROXY<ReflectionProbeProxy>(scene);
-		proxy->positionWS = getLocation();
+		proxy->positionWS    = getLocation();
 		proxy->captureRadius = captureRadius;
-		proxy->renderTarget = radianceCubemap.get();
-		proxy->specularIBL = specularIBL.get();
+		proxy->cubemapIndex  = cubemapIndex;
+		proxy->renderTarget  = radianceCubemap.get();
+		proxy->specularIBL   = specularIBL.get();
 
 		scene->proxyList_reflectionProbe.push_back(proxy);
 	}
@@ -94,14 +97,27 @@ namespace pathos {
 		gEngine->internal_pushSceneProxy(sceneProxy);
 	}
 
-	void ReflectionProbeComponent::bakeIBL() {
+	void ReflectionProbeComponent::bakeIBL(Texture* cubemapArray) {
 		GLuint srcCubemap = radianceCubemap->getGLTextureName();
 		GLuint dstCubemap = specularIBL->getGLTextureName();
-		if (srcCubemap == 0 || specularIBL == 0) return;
 		uint32 numMips = radianceCubemap->getNumMips();
+		uint32 cubemapIx = cubemapIndex;
+		CHECK(cubemapIx != 0xffffffff);
+
+		if (srcCubemap == 0 || specularIBL == 0) return;
+
 		ENQUEUE_RENDER_COMMAND(
-			[srcCubemap, dstCubemap, numMips](RenderCommandList& cmdList) {
+			[srcCubemap, dstCubemap, numMips, cubemapArray, cubemapIx](RenderCommandList& cmdList) {
 				LightProbeBaker::get().bakeReflectionProbe_renderThread(cmdList, srcCubemap, dstCubemap);
+
+				GLuint size = reflectionProbeCubemapSize;
+				for (int32 mip = 0; mip < (int32)pathos::reflectionProbeNumMips; ++mip) {
+					cmdList.copyImageSubData(
+						dstCubemap, GL_TEXTURE_CUBE_MAP, mip, 0, 0, 0,
+						cubemapArray->internal_getGLName(), GL_TEXTURE_CUBE_MAP_ARRAY,
+						mip, 0, 0, cubemapIx * 6, size, size, 6);
+					size /= 2;
+				}
 			}
 		);
 	}

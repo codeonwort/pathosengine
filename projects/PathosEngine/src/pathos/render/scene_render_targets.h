@@ -89,7 +89,6 @@ namespace pathos {
 		GLuint omniShadowMaps = 0; // cubemap array
 
 		// Indirect Lighting
-		GLuint localSpecularIBLs = 0;        // Cubemap array for local reflection probes
 		GLuint skyPrefilteredMap = 0;        // Cubemap for sky indirect specular
 		uint32 skyPrefilterMapMipCount = 1;
 		uint32 skyPrefilterMapSize = 0;

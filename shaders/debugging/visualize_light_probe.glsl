@@ -163,7 +163,8 @@ void main() {
 		debugColor.rgb = evaluateLightProbe(tileID, N);
 	} else {
 		uint probeIndex = instanceID - ubo.totalIrradianceProbes;
-		vec4 R = vec4(N, float(probeIndex));
+		uint cubemapIndex = ssbo1.probeArray[probeIndex].cubemapIndex;
+		vec4 R = vec4(N, float(cubemapIndex));
 		debugColor.rgb = textureLod(radianceCubeArray, R, 0).rgb;
 	}
 

@@ -6,6 +6,8 @@
 
 #include "badger/types/int_types.h"
 #include "badger/types/vector_types.h"
+#include <vector>
+#include <list>
 
 namespace pathos {
 
@@ -30,6 +32,10 @@ namespace pathos {
 	struct ReflectionProbeInfo {
 		vector3 positionWS;    // Center of the reflection probe
 		float   captureRadius; // Max draw distance of this probe
+		uint32  cubemapIndex;
+		uint32  _pad0;
+		uint32  _pad1;
+		uint32  _pad2;
 	};
 
 	struct IrradianceProbeAtlasDesc {
@@ -49,13 +55,51 @@ namespace pathos {
 		inline bool isValid() const { return firstTileID != IrradianceProbeAtlasDesc::INVALID_TILE_ID; }
 	};
 
+	class ReflectionProbeAllocator {
+
+	public:
+		void initialize(uint32 inMaxCount) {
+			maxCount = inMaxCount;
+
+			for (uint32 i = 0; i < maxCount; ++i) {
+				cubemapIndices.push_back(i);
+			}
+		}
+
+		inline bool canAllocate() const { return cubemapIndices.size() > 0; }
+
+		inline uint32 allocateIndex() {
+			CHECK(canAllocate());
+			uint32 ix = cubemapIndices.front();
+			cubemapIndices.pop_front();
+			return ix;
+		}
+
+		inline void releaseIndex(uint32 index) {
+			CHECK(0 <= index && index < maxCount);
+			auto it = cubemapIndices.begin();
+			while (it != cubemapIndices.end()) {
+				CHECK(*it != index);
+				if (index < *it) break;
+				++it;
+			}
+			cubemapIndices.insert(it, index);
+		}
+
+		inline uint32 getMaxCount() const { return maxCount; }
+
+	private:
+		uint32 maxCount = 0;
+		std::list<uint32> cubemapIndices;
+	};
+
 	// Manages light probe data in a Scene.
 	class LightProbeScene {
 	public:
 		LightProbeScene();
 
 		void initializeIrradianceProbeAtlasDesc(const IrradianceProbeAtlasDesc& desc);
-		void createIrradianceProbeAtlas();
+		void createGPUResources();
 
 		// @return First tile ID.
 		IrradianceProbeID allocateIrradianceTiles(uint32 numRequiredTiles);
@@ -75,6 +119,10 @@ namespace pathos {
 
 		Buffer* getIrradianceSHBuffer() const;
 
+		uint32 allocateReflectionProbe();
+		void releaseReflectionProbe(uint32 index);
+		Texture* getReflectionProbeArrayTexture() const;
+
 		void createSceneProxy(SceneProxy* sceneProxy, bool isLightProbeRendering);
 
 	private:
@@ -90,8 +138,11 @@ namespace pathos {
 		uniquePtr<RenderTarget2D>        irradianceProbeAtlas;
 		uniquePtr<RenderTarget2D>        depthProbeAtlas;
 		uniquePtr<Buffer>                irradianceVolumeBuffer;
-		uniquePtr<Buffer>                reflectionProbeBuffer;
 		uniquePtr<Buffer>                irradianceSHBuffer;
+
+		ReflectionProbeAllocator         reflectionProbeAllocator;
+		uniquePtr<Texture>               reflectionProbeArrayTexture;
+		uniquePtr<Buffer>                reflectionProbeBuffer;
 	};
 
 }

@@ -131,17 +131,19 @@ namespace pathos {
 		float                                      godRayIntensity = 1.0f;
 
 		// Light probe
-		GLuint                                     irradianceAtlas = 0;
-		GLuint                                     depthProbeAtlas = 0;
 		float                                      irradianceAtlasWidth = 0.0f;
 		float                                      irradianceAtlasHeight = 0.0f;
 		uint32                                     irradianceTileCountX = 0;
 		uint32                                     irradianceTileSize = 0;
-		ReflectionProbeProxyList                   proxyList_reflectionProbe;
 		IrradianceVolumeProxyList                  proxyList_irradianceVolume;
+		GLuint                                     irradianceAtlas = 0;
+		GLuint                                     depthProbeAtlas = 0;
 		GLuint                                     irradianceVolumeBuffer = 0;
 		GLuint                                     reflectionProbeBuffer = 0;
 		Buffer*                                    irradianceSHBuffer = nullptr;
+
+		ReflectionProbeProxyList                   proxyList_reflectionProbe;
+		Texture*                                   reflectionProbeArrayTexture = nullptr;
 
 	private:
 		DirectionalLightComponent*                 tempSunComponent = nullptr;
