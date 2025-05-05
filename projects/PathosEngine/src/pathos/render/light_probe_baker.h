@@ -16,7 +16,7 @@ namespace pathos {
 
 	enum class EIrradianceMapEncoding : uint32 { Cubemap, OctahedralNormalVector };
 
-	struct IrradianceMapBakeDesc {
+	struct Deprecated_IrradianceMapBakeDesc {
 		EIrradianceMapEncoding encoding;
 		GLuint renderTarget; // Cubemap or 2D atlas texture to render the irradiance map.
 		GLuint depthTarget; // 2D atlas to render probe linear depth.
@@ -103,7 +103,7 @@ namespace pathos {
 		/// <param name="inputRadianceCubemap">Input radiance cubemap</param>
 		/// <param name="inputDepthCubemap">Input depth cubemap</param>
 		/// <param name="bakeDesc">Baking options</param>
-		void bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputRadianceCubemap, GLuint inputDepthCubemap, const IrradianceMapBakeDesc& bakeDesc);
+		void deprecated_bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputRadianceCubemap, GLuint inputDepthCubemap, const Deprecated_IrradianceMapBakeDesc& bakeDesc);
 
 		/// <summary>
 		/// Render specular IBL cubemap from radiance capture cubemap.
@@ -114,7 +114,7 @@ namespace pathos {
 		/// <param name="outputTextureSize">Output cubemap size</param>
 		/// <param name="numMips">The number of mips to render</param>
 		/// <param name="outputTexture">Output cubemap</param>
-		void bakeSpecularIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 outputTextureSize, uint32 numMips, GLuint outputTexture);
+		void deprecated_bakeSpecularIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 outputTextureSize, uint32 numMips, GLuint outputTexture);
 
 	private:
 		GLuint        dummyVAO;

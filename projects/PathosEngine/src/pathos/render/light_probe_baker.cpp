@@ -10,6 +10,7 @@
 #include "pathos/util/engine_thread.h"
 #include "pathos/engine.h"
 
+// Cubemap utils
 namespace pathos {
 	
 	class EquirectangularToCubeVS : public ShaderStage {
@@ -27,71 +28,6 @@ namespace pathos {
 		}
 	};
 	DEFINE_SHADER_PROGRAM2(Program_EquirectangularToCubemap, EquirectangularToCubeVS, EquirectangularToCubeFS);
-
-	template<EIrradianceMapEncoding encoding>
-	class IrradianceMapVS : public ShaderStage {
-	public:
-		IrradianceMapVS() : ShaderStage(GL_VERTEX_SHADER, "IrradianceMapVS") {
-			if (encoding == EIrradianceMapEncoding::Cubemap) {
-				addDefine("VERTEX_SHADER", 1);
-				setFilepath("diffuse_irradiance.glsl");
-			} else if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
-				setFilepath("fullscreen_quad.glsl");
-			}
-		}
-	};
-	template<EIrradianceMapEncoding encoding>
-	class IrradianceMapFS : public ShaderStage {
-	public:
-		IrradianceMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "IrradianceMapFS") {
-			addDefine("FRAGMENT_SHADER", 1);
-			if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
-				addDefine("ONV_ENCODING", 1);
-			}
-			setFilepath("diffuse_irradiance.glsl");
-		}
-	};
-	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_Cube, IrradianceMapVS<EIrradianceMapEncoding::Cubemap>, IrradianceMapFS<EIrradianceMapEncoding::Cubemap>);
-	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_ONV, IrradianceMapVS<EIrradianceMapEncoding::OctahedralNormalVector>, IrradianceMapFS<EIrradianceMapEncoding::OctahedralNormalVector>);
-
-	class PrefilterEnvMapVS : public ShaderStage {
-	public:
-		PrefilterEnvMapVS() : ShaderStage(GL_VERTEX_SHADER, "PrefilterEnvMapVS") {
-			addDefine("VERTEX_SHADER", 1);
-			addDefine("PREFILTER_ENV_MAP", 1);
-			setFilepath("specular_ibl.glsl");
-		}
-	};
-	class PrefilterEnvMapFS : public ShaderStage {
-	public:
-		PrefilterEnvMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "PrefilterEnvMapFS") {
-			addDefine("FRAGMENT_SHADER", 1);
-			addDefine("PREFILTER_ENV_MAP", 1);
-			setFilepath("specular_ibl.glsl");
-		}
-	};
-	DEFINE_SHADER_PROGRAM2(Program_PrefilterEnvMap, PrefilterEnvMapVS, PrefilterEnvMapFS);
-
-	class BRDFIntegrationMapFS : public ShaderStage {
-	public:
-		BRDFIntegrationMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "BRDFIntegrationMapFS") {
-			addDefine("FRAGMENT_SHADER", 1);
-			addDefine("BRDF_INTEGRATION", 1);
-			setFilepath("specular_ibl.glsl");
-		}
-	};
-	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, FullscreenVS, BRDFIntegrationMapFS);
-
-	template<int CubemapType>
-	class DiffuseSHGenCS : public ShaderStage {
-	public:
-		DiffuseSHGenCS() : ShaderStage(GL_COMPUTE_SHADER, "DiffuseSHGenCS") {
-			addDefine("CUBEMAP_TYPE", CubemapType);
-			setFilepath("compute_diffuse_sh.glsl");
-		}
-	};
-	DEFINE_COMPUTE_PROGRAM(Program_SkyDiffuseSH, DiffuseSHGenCS<0>);
-	DEFINE_COMPUTE_PROGRAM(Program_LightProbeSH, DiffuseSHGenCS<1>);
 
 	class CopyCubemapCS : public ShaderStage {
 	public:
@@ -117,22 +53,48 @@ namespace pathos {
 	};
 	DEFINE_SHADER_PROGRAM2(Program_BlitCubemap, BlitCubemapVS, BlitCubemapFS);
 
+}
+
+// Diffuse GI
+namespace pathos {
+
+	template<int CubemapType>
+	class DiffuseSHGenCS : public ShaderStage {
+	public:
+		DiffuseSHGenCS() : ShaderStage(GL_COMPUTE_SHADER, "DiffuseSHGenCS") {
+			addDefine("CUBEMAP_TYPE", CubemapType);
+			setFilepath("gi/compute_diffuse_sh.glsl");
+		}
+	};
+	DEFINE_COMPUTE_PROGRAM(Program_SkyDiffuseSH, DiffuseSHGenCS<0>);
+	DEFINE_COMPUTE_PROGRAM(Program_LightProbeSH, DiffuseSHGenCS<1>);
+
 	class OctahedralDepthAtlasCS : public ShaderStage {
 	public:
 		OctahedralDepthAtlasCS() : ShaderStage(GL_COMPUTE_SHADER, "OctahedralDepthAtlasCS") {
-			setFilepath("octahedral_depth_atlas.glsl");
+			setFilepath("gi/octahedral_depth_atlas.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_OctahedralDepthAtlas, OctahedralDepthAtlasCS);
 
 }
 
+// Specular GI
 namespace pathos {
+
+	class BRDFIntegrationMapFS : public ShaderStage {
+	public:
+		BRDFIntegrationMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "BRDFIntegrationMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			setFilepath("gi/brdf_integration_map.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_BRDFIntegrationMap, FullscreenVS, BRDFIntegrationMapFS);
 
 	class ReflectionProbeDownsampleCS : public ShaderStage {
 	public:
 		ReflectionProbeDownsampleCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeDownsampleCS") {
-			setFilepath("reflection_probe_downsample.glsl");
+			setFilepath("gi/reflection_probe_downsample.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeDownsample, ReflectionProbeDownsampleCS);
@@ -140,11 +102,59 @@ namespace pathos {
 	class ReflectionProbeFilteringCS : public ShaderStage {
 	public:
 		ReflectionProbeFilteringCS() : ShaderStage(GL_COMPUTE_SHADER, "ReflectionProbeFilteringCS") {
-			setFilepath("reflection_probe_filtering.glsl");
+			setFilepath("gi/reflection_probe_filtering.glsl");
 		}
 	};
 	DEFINE_COMPUTE_PROGRAM(Program_ReflectionProbeFiltering, ReflectionProbeFilteringCS);
 
+}
+
+// Deprecated
+namespace pathos {
+
+	template<EIrradianceMapEncoding encoding>
+	class IrradianceMapVS : public ShaderStage {
+	public:
+		IrradianceMapVS() : ShaderStage(GL_VERTEX_SHADER, "IrradianceMapVS") {
+			if (encoding == EIrradianceMapEncoding::Cubemap) {
+				addDefine("VERTEX_SHADER", 1);
+				setFilepath("gi/deprecated_diffuse_irradiance.glsl");
+			} else if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
+				setFilepath("fullscreen_quad.glsl");
+			}
+		}
+	};
+	template<EIrradianceMapEncoding encoding>
+	class IrradianceMapFS : public ShaderStage {
+	public:
+		IrradianceMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "IrradianceMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			if (encoding == EIrradianceMapEncoding::OctahedralNormalVector) {
+				addDefine("ONV_ENCODING", 1);
+			}
+			setFilepath("gi/deprecated_diffuse_irradiance.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_Cube, IrradianceMapVS<EIrradianceMapEncoding::Cubemap>, IrradianceMapFS<EIrradianceMapEncoding::Cubemap>);
+	DEFINE_SHADER_PROGRAM2(Program_IrradianceMap_ONV, IrradianceMapVS<EIrradianceMapEncoding::OctahedralNormalVector>, IrradianceMapFS<EIrradianceMapEncoding::OctahedralNormalVector>);
+
+	class PrefilterEnvMapVS : public ShaderStage {
+	public:
+		PrefilterEnvMapVS() : ShaderStage(GL_VERTEX_SHADER, "PrefilterEnvMapVS") {
+			addDefine("VERTEX_SHADER", 1);
+			addDefine("PREFILTER_ENV_MAP", 1);
+			setFilepath("gi/deprecated_specular_ibl.glsl");
+		}
+	};
+	class PrefilterEnvMapFS : public ShaderStage {
+	public:
+		PrefilterEnvMapFS() : ShaderStage(GL_FRAGMENT_SHADER, "PrefilterEnvMapFS") {
+			addDefine("FRAGMENT_SHADER", 1);
+			addDefine("PREFILTER_ENV_MAP", 1);
+			setFilepath("gi/deprecated_specular_ibl.glsl");
+		}
+	};
+	DEFINE_SHADER_PROGRAM2(Program_PrefilterEnvMap, PrefilterEnvMapVS, PrefilterEnvMapFS);
 }
 
 namespace pathos {
@@ -293,8 +303,151 @@ namespace pathos {
 		cmdList.memoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 
-	void LightProbeBaker::projectPanoramaToCubemap_renderThread(RenderCommandList& cmdList, GLuint inputTexture, GLuint outputTexture, uint32 outputTextureSize, int32 faceBegin, int32 faceEnd)
-	{
+	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(RenderCommandList& cmdList, uint32 size) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
+
+		GLuint brdfLUT = 0;
+
+		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
+
+		cmdList.viewport(0, 0, size, size);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BRDFIntegrationMap);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, dummyFBO);
+		cmdList.namedFramebufferTexture(dummyFBO, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
+
+		fullscreenQuad->bindFullAttributesVAO(cmdList);
+		fullscreenQuad->drawPrimitive(cmdList);
+
+		return brdfLUT;
+	}
+
+	void LightProbeBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BakeReflectionProbe);
+		SCOPED_GPU_COUNTER(BakeReflectionProbe);
+
+		const uint32 BASE_SIZE = 128;
+		const uint32 MIP_COUNT = 7;
+		const uint32 MIPS_TOTAL_PIXELS = (128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1);
+
+		// Pass 1. Downsample
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeDownsample);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			uint32 inputCubemapSize = BASE_SIZE;
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				const uint32 targetCubemapSize = inputCubemapSize >> 1;
+				const uint32 numGroups = (targetCubemapSize + 7) / 8;
+
+				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
+				cmdList.bindTextureUnit(0, srcCubemap);
+				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+
+				cmdList.dispatchCompute(numGroups, numGroups, 6);
+
+				inputCubemapSize = targetCubemapSize;
+			}
+			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
+		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		// Pass 2. Filtering
+		{
+			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeFiltering);
+			cmdList.useProgram(program.getGLName());
+
+			cmdList.textureParameteri(dstCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+			const uint32 numGroups = (MIPS_TOTAL_PIXELS + 63) / 64;
+			cmdList.bindTextureUnit(0, srcCubemap);
+			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
+				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
+			}
+
+			cmdList.dispatchCompute(numGroups, 6, 1);
+		}
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
+
+	// #todo-rhi: Too slow? 0.3 ms for 128x128 cubemaps?
+	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(CopyCubemap);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
+		cmdList.useProgram(program.getGLName());
+
+		const auto& inputDesc = input->getCreateParams();
+		const auto& outputDesc = output->getCreateParams();
+		CHECK(inputDesc.glDimension == GL_TEXTURE_CUBE_MAP && outputDesc.glDimension == GL_TEXTURE_CUBE_MAP);
+		CHECK((inputDesc.width >> inputMip) == (outputDesc.width >> outputMip));
+
+		const GLuint mipSize = (inputDesc.width >> inputMip);
+
+		cmdList.uniform1ui(1, mipSize);
+
+		const GLint layer = 0; // Don't care if layere = GL_TRUE
+		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
+		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, outputDesc.glStorageFormat);
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		const uint32 groupSize = (mipSize + 7) / 8;
+		cmdList.dispatchCompute(groupSize, groupSize, 1);
+
+		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
+
+	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin, int32 faceEnd) {
+		CHECK(isInRenderThread());
+		SCOPED_DRAW_EVENT(BlitCubemap);
+
+		const GLuint outputSize = output->getCreateParams().width >> outputMip;
+
+		cmdList.viewport(0, 0, outputSize, outputSize);
+		cmdList.disable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_FRONT);
+
+		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BlitCubemap);
+		cmdList.useProgram(program.getGLName());
+
+		cmdList.uniform1f(1, (float)inputMip);
+		cmdList.bindTextureUnit(0, input->internal_getGLName());
+
+		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, dummyFBO);
+
+		dummyCube->bindPositionOnlyVAO(cmdList);
+
+		for (int32 i = faceBegin; i <= faceEnd; ++i) {
+			const matrix4& viewproj = cubeTransforms[i];
+
+			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, output->internal_getGLName(), outputMip, i);
+			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
+
+			dummyCube->drawPrimitive(cmdList);
+		}
+
+		dummyCube->unbindVAO(cmdList);
+
+		cmdList.enable(GL_DEPTH_TEST);
+		cmdList.cullFace(GL_BACK);
+	}
+
+	void LightProbeBaker::projectPanoramaToCubemap_renderThread(RenderCommandList& cmdList, GLuint inputTexture, GLuint outputTexture, uint32 outputTextureSize, int32 faceBegin, int32 faceEnd) {
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(PanoramaToCubemap);
 
@@ -325,8 +478,8 @@ namespace pathos {
 		cmdList.cullFace(GL_BACK);
 	}
 
-	void LightProbeBaker::bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputRadianceCubemap, GLuint inputDepthCubemap, const IrradianceMapBakeDesc& bakeDesc)
-	{
+	void LightProbeBaker::deprecated_bakeDiffuseIBL_renderThread(RenderCommandList& cmdList, GLuint inputRadianceCubemap, GLuint inputDepthCubemap, const Deprecated_IrradianceMapBakeDesc& bakeDesc) {
+		CHECK_NO_ENTRY();
 		CHECK(isInRenderThread());
 		CHECK(bakeDesc.encoding == EIrradianceMapEncoding::Cubemap || bakeDesc.encoding == EIrradianceMapEncoding::OctahedralNormalVector);
 		SCOPED_DRAW_EVENT(BakeDiffuseIBL);
@@ -404,61 +557,8 @@ namespace pathos {
 		}
 	}
 
-	void LightProbeBaker::bakeReflectionProbe_renderThread(RenderCommandList& cmdList, GLuint srcCubemap, GLuint dstCubemap) {
-		CHECK(isInRenderThread());
-		SCOPED_DRAW_EVENT(BakeReflectionProbe);
-		SCOPED_GPU_COUNTER(BakeReflectionProbe);
-
-		const uint32 BASE_SIZE = 128;
-		const uint32 MIP_COUNT = 7;
-		const uint32 MIPS_TOTAL_PIXELS = (128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1 * 1);
-
-		// Pass 1. Downsample
-		{
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeDownsample);
-			cmdList.useProgram(program.getGLName());
-
-			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-			uint32 inputCubemapSize = BASE_SIZE;
-			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
-				const uint32 targetCubemapSize = inputCubemapSize >> 1;
-				const uint32 numGroups = (targetCubemapSize + 7) / 8;
-
-				cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, mip);
-				cmdList.bindTextureUnit(0, srcCubemap);
-				cmdList.bindImageTexture(0, srcCubemap, mip + 1, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
-
-				cmdList.dispatchCompute(numGroups, numGroups, 6);
-
-				inputCubemapSize = targetCubemapSize;
-			}
-			cmdList.textureParameteri(srcCubemap, GL_TEXTURE_BASE_LEVEL, 0);
-		}
-
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-		// Pass 2. Filtering
-		{
-			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_ReflectionProbeFiltering);
-			cmdList.useProgram(program.getGLName());
-
-			cmdList.textureParameteri(dstCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-			const uint32 numGroups = (MIPS_TOTAL_PIXELS + 63) / 64;
-			cmdList.bindTextureUnit(0, srcCubemap);
-			for (uint32 mip = 0; mip < MIP_COUNT; ++mip) {
-				cmdList.bindImageTexture(mip, dstCubemap, mip, GL_TRUE, 6, GL_WRITE_ONLY, GL_RGBA16F);
-			}
-
-			cmdList.dispatchCompute(numGroups, 6, 1);
-		}
-
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	}
-
-	void LightProbeBaker::bakeSpecularIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 outputTextureSize, uint32 numMips, GLuint outputTexture)
-	{
+	void LightProbeBaker::deprecated_bakeSpecularIBL_renderThread(RenderCommandList& cmdList, GLuint inputTexture, uint32 outputTextureSize, uint32 numMips, GLuint outputTexture) {
+		CHECK_NO_ENTRY();
 		CHECK(isInRenderThread());
 		SCOPED_DRAW_EVENT(BakeSpecularIBL);
 		SCOPED_GPU_COUNTER(BakeSpecularIBL);
@@ -501,97 +601,6 @@ namespace pathos {
 
 		cmdList.enable(GL_DEPTH_TEST);
 		cmdList.cullFace(GL_BACK);
-	}
-
-	// #todo-rhi: Too slow? 0.3 ms for 128x128 cubemaps?
-	void LightProbeBaker::copyCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip /*= 0*/, uint32 outputMip /*= 0*/) {
-		CHECK(isInRenderThread());
-		SCOPED_DRAW_EVENT(CopyCubemap);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_CopyCubemap);
-		cmdList.useProgram(program.getGLName());
-
-		const auto& inputDesc = input->getCreateParams();
-		const auto& outputDesc = output->getCreateParams();
-		CHECK(inputDesc.glDimension == GL_TEXTURE_CUBE_MAP && outputDesc.glDimension == GL_TEXTURE_CUBE_MAP);
-		CHECK((inputDesc.width >> inputMip) == (outputDesc.width >> outputMip));
-
-		const GLuint mipSize = (inputDesc.width >> inputMip);
-
-		cmdList.uniform1ui(1, mipSize);
-
-		const GLint layer = 0; // Don't care if layere = GL_TRUE
-		cmdList.bindImageTexture(0, input->internal_getGLName(), inputMip, GL_TRUE, layer, GL_READ_ONLY, inputDesc.glStorageFormat);
-		cmdList.bindImageTexture(1, output->internal_getGLName(), outputMip, GL_TRUE, layer, GL_WRITE_ONLY, outputDesc.glStorageFormat);
-
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-		const uint32 groupSize = (mipSize + 7) / 8;
-		cmdList.dispatchCompute(groupSize, groupSize, 1);
-
-		cmdList.memoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	}
-
-	void LightProbeBaker::blitCubemap_renderThread(RenderCommandList& cmdList, Texture* input, Texture* output, uint32 inputMip, uint32 outputMip, int32 faceBegin, int32 faceEnd) {
-		CHECK(isInRenderThread());
-		SCOPED_DRAW_EVENT(BlitCubemap);
-
-		const GLuint outputSize = output->getCreateParams().width >> outputMip;
-
-		cmdList.viewport(0, 0, outputSize, outputSize);
-		cmdList.disable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_FRONT);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BlitCubemap);
-		cmdList.useProgram(program.getGLName());
-
-		cmdList.uniform1f(1, (float)inputMip);
-		cmdList.bindTextureUnit(0, input->internal_getGLName());
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, dummyFBO);
-
-		dummyCube->bindPositionOnlyVAO(cmdList);
-
-		for (int32 i = faceBegin; i <= faceEnd; ++i) {
-			const matrix4& viewproj = cubeTransforms[i];
-
-			cmdList.namedFramebufferTextureLayer(dummyFBO, GL_COLOR_ATTACHMENT0, output->internal_getGLName(), outputMip, i);
-			cmdList.uniformMatrix4fv(0, 1, GL_FALSE, &viewproj[0][0]);
-
-			dummyCube->drawPrimitive(cmdList);
-		}
-
-		dummyCube->unbindVAO(cmdList);
-
-		cmdList.enable(GL_DEPTH_TEST);
-		cmdList.cullFace(GL_BACK);
-	}
-
-	GLuint LightProbeBaker::bakeBRDFIntegrationMap_renderThread(RenderCommandList& cmdList, uint32 size) {
-		CHECK(isInRenderThread());
-		SCOPED_DRAW_EVENT(BRDFIntegrationMap);
-
-		GLuint brdfLUT = 0;
-
-		gRenderDevice->createTextures(GL_TEXTURE_2D, 1, &brdfLUT);
-		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		cmdList.textureParameteri(brdfLUT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		cmdList.textureStorage2D(brdfLUT, 1, GL_RG16F, size, size);
-
-		cmdList.viewport(0, 0, size, size);
-
-		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_BRDFIntegrationMap);
-		cmdList.useProgram(program.getGLName());
-
-		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, dummyFBO);
-		cmdList.namedFramebufferTexture(dummyFBO, GL_COLOR_ATTACHMENT0, brdfLUT, 0);
-
-		fullscreenQuad->bindFullAttributesVAO(cmdList);
-		fullscreenQuad->drawPrimitive(cmdList);
-
-		return brdfLUT;
 	}
 
 	void LightProbeBaker::static_initializeResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {

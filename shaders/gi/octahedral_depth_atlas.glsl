@@ -1,6 +1,6 @@
 #version 460 core
 
-#include "core/common.glsl"
+#include "../core/common.glsl"
 
 // --------------------------------------------------------
 // Layout

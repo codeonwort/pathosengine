@@ -1,7 +1,7 @@
 #version 460 core
 
-#include "core/common.glsl"
-#include "core/diffuse_sh.glsl"
+#include "../core/common.glsl"
+#include "../core/diffuse_sh.glsl"
 
 // "An Efficient Representation for Irradiance Environment Maps" by Ravi Ramamoorthi and Pat Hanrahan.
 

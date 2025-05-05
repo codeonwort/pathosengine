@@ -1,6 +1,6 @@
 #version 460 core
 
-#include "core/common.glsl"
+#include "../core/common.glsl"
 
 // #todo: Refactor all legacy code that uses this shader to use compute_diffuse_sh.glsl.
 

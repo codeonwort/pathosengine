@@ -11,12 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="compute_diffuse_sh.glsl" />
+    <None Include="gi\compute_diffuse_sh.glsl" />
     <None Include="core\diffuse_sh.glsl" />
+    <None Include="gi\brdf_integration_map.glsl" />
     <None Include="gi\indirect_diffuse_lighting.glsl" />
     <None Include="gi\indirect_specular_lighting.glsl" />
     <None Include="materials\indirect_draw_dummy.glsl" />
-    <None Include="octahedral_depth_atlas.glsl" />
+    <None Include="gi\octahedral_depth_atlas.glsl" />
     <None Include="sky\atmosphere.glsl" />
     <None Include="sky\atmosphere_precompute.glsl" />
     <None Include="debugging\visualize_buffer.glsl" />
@@ -40,7 +41,7 @@
     <None Include="deferred_common_fs.glsl" />
     <None Include="direct_lighting.glsl" />
     <None Include="postprocess\depth_of_field.glsl" />
-    <None Include="diffuse_irradiance.glsl" />
+    <None Include="gi\deprecated_diffuse_irradiance.glsl" />
     <None Include="equirectangular_to_cube.glsl" />
     <None Include="fsr1\fsr1_wrapper_common.glsl" />
     <None Include="fsr1\fsr1_wrapper_easu.glsl" />
@@ -70,16 +71,16 @@
     <None Include="overlay\overlay_standard.glsl" />
     <None Include="overlay\overlay_text.glsl" />
     <None Include="postprocess\dof_prefix_sum.glsl" />
-    <None Include="reflection_probe_coeffs_const_32.glsl" />
-    <None Include="reflection_probe_downsample.glsl" />
-    <None Include="reflection_probe_filtering.glsl" />
+    <None Include="gi\reflection_probe_coeffs_const_32.glsl" />
+    <None Include="gi\reflection_probe_downsample.glsl" />
+    <None Include="gi\reflection_probe_filtering.glsl" />
     <None Include="resolve_unlit.glsl" />
     <None Include="shadow_mapping.glsl" />
     <None Include="sky\blit_cubemap.glsl" />
     <None Include="sky\copy_cubemap.glsl" />
     <None Include="sky\skybox.glsl" />
     <None Include="sky\sky_panorama.glsl" />
-    <None Include="specular_ibl.glsl" />
+    <None Include="gi\deprecated_specular_ibl.glsl" />
     <None Include="ssao_ao.glsl" />
     <None Include="ssao_blur.glsl" />
     <None Include="ssao_downscale.glsl" />
