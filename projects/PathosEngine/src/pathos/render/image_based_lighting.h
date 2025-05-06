@@ -126,6 +126,9 @@ namespace pathos {
 		void createSceneProxy(SceneProxy* sceneProxy, bool isLightProbeRendering);
 
 	private:
+		void resizeIrradianceVolumeBuffer(size_t numVolumes);
+
+	private:
 		struct IrradianceTileRange {
 			uint32 begin, end; // Both inclusive
 			bool operator==(const IrradianceTileRange& other) const {

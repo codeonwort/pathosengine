@@ -57,7 +57,7 @@ namespace pathos {
 			TextureCreateParams desc;
 			desc.width           = pathos::reflectionProbeCubemapSize;
 			desc.height          = pathos::reflectionProbeCubemapSize;
-			desc.depth           = pathos::reflectionProbeMaxCount;
+			desc.depth           = reflectionProbeAllocator.getMaxCount();
 			desc.mipLevels       = pathos::reflectionProbeNumMips;
 			desc.glDimension     = GL_TEXTURE_CUBE_MAP_ARRAY;
 			desc.glStorageFormat = GL_RGBA16F;
@@ -65,6 +65,16 @@ namespace pathos {
 
 			reflectionProbeArrayTexture = makeUnique<Texture>(desc);
 			reflectionProbeArrayTexture->createGPUResource();
+		}
+		if (reflectionProbeBuffer == nullptr) {
+			BufferCreateParams createParams{
+				EBufferUsage::CpuWrite,
+				(uint32)(reflectionProbeAllocator.getMaxCount() * sizeof(ReflectionProbeInfo)),
+				nullptr,
+				"Buffer_SSBO_ReflectionProbeInfo",
+			};
+			reflectionProbeBuffer = makeUnique<Buffer>(createParams);
+			reflectionProbeBuffer->createGPUResource();
 		}
 	}
 
@@ -180,31 +190,8 @@ namespace pathos {
 		// Update irradiance volume buffer.
 		if (isLightProbeRendering == false) {
 			const size_t numVolumes = proxy->proxyList_irradianceVolume.size();
-			size_t numPrevVolumes = 0;
-			if (irradianceVolumeBuffer != nullptr) {
-				numPrevVolumes = irradianceVolumeBuffer->getCreateParams().bufferSize / sizeof(IrradianceVolumeInfo);
-			}
-			if (numVolumes == 0) {
-				if (irradianceVolumeBuffer != nullptr) {
-					irradianceVolumeBuffer->releaseGPUResource();
-					irradianceVolumeBuffer = nullptr;
-				}
-			} else {
-				// Buffer size does not fit; recreate the buffer.
-				if (numPrevVolumes < numVolumes || numPrevVolumes > numVolumes * 2) {
-					if (irradianceVolumeBuffer != nullptr) {
-						irradianceVolumeBuffer->releaseGPUResource();
-					}
-					BufferCreateParams createParams{
-						EBufferUsage::CpuWrite,
-						(uint32)(numVolumes * sizeof(IrradianceVolumeInfo)),
-						nullptr,
-						"Buffer_SSBO_IrradianceVolume",
-					};
-					irradianceVolumeBuffer = makeUnique<Buffer>(createParams);
-					irradianceVolumeBuffer->createGPUResource();
-				}
-				// Upload the data.
+			resizeIrradianceVolumeBuffer(numVolumes);
+			if (numVolumes != 0) {
 				// #todo-light-probe: Reupload only if changed.
 				std::vector<IrradianceVolumeInfo> bufferData;
 				for (const IrradianceVolumeProxy* volumeProxy : proxy->proxyList_irradianceVolume) {
@@ -225,32 +212,7 @@ namespace pathos {
 
 		// Update reflection probe buffer.
 		if (isLightProbeRendering == false) {
-			const size_t numProbes = proxy->proxyList_reflectionProbe.size();
-			size_t numPrevProbes = 0;
-			if (reflectionProbeBuffer != nullptr) {
-				numPrevProbes = reflectionProbeBuffer->getCreateParams().bufferSize / sizeof(ReflectionProbeInfo);
-			}
-			if (numProbes == 0) {
-				if (reflectionProbeBuffer != nullptr) {
-					reflectionProbeBuffer->releaseGPUResource();
-					reflectionProbeBuffer = nullptr;
-				}
-			} else {
-				// Buffer size does not fit; recreate the buffer.
-				if (numPrevProbes < numProbes || numPrevProbes > numProbes * 2) {
-					if (reflectionProbeBuffer != nullptr) {
-						reflectionProbeBuffer->releaseGPUResource();
-					}
-					BufferCreateParams createParams{
-						EBufferUsage::CpuWrite,
-						(uint32)(numProbes * sizeof(ReflectionProbeInfo)),
-						nullptr,
-						"Buffer_SSBO_ReflectionProbeInfo",
-					};
-					reflectionProbeBuffer = makeUnique<Buffer>(createParams);
-					reflectionProbeBuffer->createGPUResource();
-				}
-				// Upload the data.
+			if (proxy->proxyList_reflectionProbe.size() != 0) {
 				// #todo-light-probe: Reupload only if changed.
 				std::vector<ReflectionProbeInfo> bufferData;
 				for (const ReflectionProbeProxy* probeProxy : proxy->proxyList_reflectionProbe) {
@@ -269,6 +231,35 @@ namespace pathos {
 		}
 		proxy->reflectionProbeBuffer = (reflectionProbeBuffer != nullptr) ? reflectionProbeBuffer->internal_getGLName() : 0;
 		proxy->reflectionProbeArrayTexture = reflectionProbeArrayTexture.get();
+	}
+
+	void LightProbeScene::resizeIrradianceVolumeBuffer(size_t numVolumes) {
+		size_t numPrevVolumes = 0;
+		if (irradianceVolumeBuffer != nullptr) {
+			numPrevVolumes = irradianceVolumeBuffer->getCreateParams().bufferSize / sizeof(IrradianceVolumeInfo);
+		}
+
+		if (numVolumes == 0) {
+			if (irradianceVolumeBuffer != nullptr) {
+				irradianceVolumeBuffer->releaseGPUResource();
+				irradianceVolumeBuffer = nullptr;
+			}
+		} else {
+			// Buffer size does not fit; recreate the buffer.
+			if (numPrevVolumes < numVolumes || numPrevVolumes > numVolumes * 2) {
+				if (irradianceVolumeBuffer != nullptr) {
+					irradianceVolumeBuffer->releaseGPUResource();
+				}
+				BufferCreateParams createParams{
+					EBufferUsage::CpuWrite,
+					(uint32)(numVolumes * sizeof(IrradianceVolumeInfo)),
+					nullptr,
+					"Buffer_SSBO_IrradianceVolume",
+				};
+				irradianceVolumeBuffer = makeUnique<Buffer>(createParams);
+				irradianceVolumeBuffer->createGPUResource();
+			}
+		}
 	}
 
 }
