@@ -1,4 +1,5 @@
 #include "sky_panorama_component.h"
+#include "pathos/rhi/render_device.h"
 
 namespace pathos {
 
@@ -14,7 +15,7 @@ namespace pathos {
 	void IcosahedronGeometry::buildGeometry() {
 		const float X = 0.525731112119133606f;
 		const float Z = 0.850650808352039932f;
-		const float pi_inv = glm::one_over_pi<float>();
+		constexpr float pi_inv = glm::one_over_pi<float>();
 
 		numVertices = INITIAL_NUM_VERTICES;
 		numTriangles = INITIAL_NUM_TRIANLGES;
@@ -130,7 +131,10 @@ namespace pathos {
 
 	PanoramaSkyComponent::~PanoramaSkyComponent() {
 		if (sphere) {
-			delete sphere;
+			auto pSphere = sphere;
+			ENQUEUE_DEFERRED_RENDER_COMMAND([pSphere](RenderCommandList& cmdList) {
+				delete pSphere;
+			});
 			sphere = nullptr;
 		}
 	}
