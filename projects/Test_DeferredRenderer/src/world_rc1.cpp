@@ -143,7 +143,7 @@ void World_RC1::onTick(float deltaSeconds)
 		vector3(-3.0f, -2.5f, 2.0f),
 	};
 	for (uint32 i = 0; i < (uint32)rings.size(); ++i) {
-		RingActor* ring = rings[i];
+		const auto& ring = rings[i];
 		Rotator rot = ring->getActorRotation();
 		rot.pitch += ringRotations[i].x * deltaSeconds;
 		rot.yaw += ringRotations[i].y * deltaSeconds;
@@ -245,7 +245,7 @@ void World_RC1::setupSky()
 	Texture* weatherTexture = ImageUtils::createTexture2DFromImage(weatherMapBlob, 1, false, true, "Texture_WeatherMap");
 	Texture* cloudShapeNoise = ImageUtils::createTexture3DFromImage(cloudShapeNoiseBlob, calcVolumeSize(cloudShapeNoiseBlob), 0, false, true, "Texture_CloudShapeNoise");
 	Texture* cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
-	VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
+	auto cloudscape = spawnActor<VolumetricCloudActor>();
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 }
 
@@ -253,11 +253,11 @@ void World_RC1::setupScene()
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Light
-	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
+	auto dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
 	dirLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
-	PointLightActor* pointLight = spawnActor<PointLightActor>();
+	auto pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 	pointLight->setColor(vector3(1.0f, 1.0f, 1.0f));
 	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f);
@@ -322,7 +322,7 @@ void World_RC1::setupScene()
 	for (uint32 i = 0; i < NUM_LIGHTNING_PARTICLES; ++i) {
 		// Select outer rings more frequently
 		uint32 ringIx = badger::clamp(0u, (uint32)(numRings * Random()), numRings - 1);
-		RingActor* ring = rings[ringIx];
+		const auto& ring = rings[ringIx];
 		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition(), RC1_SCALE);
 		ringIndicesForParticleRotation.push_back(ringIx);
 	}

@@ -41,24 +41,21 @@ private:
 	Texture* weatherTexture = nullptr;
 	Texture* cloudShapeNoise = nullptr;
 	Texture* cloudErosionNoise = nullptr;
-	VolumetricCloudActor* cloudscape = nullptr;
+	actorPtr<VolumetricCloudActor> cloudscape;
 
-	SkyAtmosphereActor* skyAtmosphere = nullptr;
-	SkyboxActor* skybox = nullptr;
-	PanoramaSkyActor* skyEquimap = nullptr;
+	actorPtr<SkyAtmosphereActor> skyAtmosphere;
+	actorPtr<SkyboxActor> skybox;
+	actorPtr<PanoramaSkyActor> skyEquimap;
+	actorPtr<DirectionalLightActor> sun;
+	actorPtr<PointLightActor> pointLight0;
+	actorPtr<StaticMeshActor> playerCar;
+	actorPtr<LandscapeActor> landscape;
 
-	DirectionalLightActor* sun = nullptr;
-	PointLightActor* pointLight0 = nullptr;
+	actorPtr<StaticMesh> carMesh;
+	actorPtr<StaticMesh> carDummyMesh;
 
-	StaticMeshActor* playerCar = nullptr;
+	actorPtrList<StaticMeshActor> treeActors;
+	actorPtr<StaticMesh> treeMesh;
 
-	LandscapeActor* landscape = nullptr;
-
-	sharedPtr<StaticMesh> carMesh;
-	sharedPtr<StaticMesh> carDummyMesh;
-
-	std::vector<StaticMeshActor*> treeActors;
-	sharedPtr<StaticMesh> treeMesh;
-
-	PlayerController* playerController = nullptr;
+	actorPtr<PlayerController> playerController;
 };

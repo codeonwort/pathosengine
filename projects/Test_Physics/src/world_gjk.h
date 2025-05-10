@@ -22,11 +22,11 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 
 private:
-	PlayerController* controller = nullptr;
+	actorPtr<PlayerController> controller;
 
-	StaticMeshActor* modelA = nullptr;
-	StaticMeshActor* modelB = nullptr;
-	StaticMeshActor* arrow = nullptr;
+	actorPtr<StaticMeshActor> modelA;
+	actorPtr<StaticMeshActor> modelB;
+	actorPtr<StaticMeshActor> arrow;
 
 	badger::physics::Body bodyA;
 	badger::physics::Body bodyB;

@@ -19,7 +19,7 @@ public:
 private:
 	void onLoadGLTF(GLTFLoader* loader, uint64 payload);
 
-	PlayerController* playerController = nullptr;
+	actorPtr<PlayerController> playerController;
 	StaticMeshComponent* ballComponent = nullptr;
 
 	std::vector<StaticMeshComponent*> fractures;
@@ -30,5 +30,5 @@ private:
 	std::vector<vector3> leafOrigins;
 	std::vector<vector3> leafTargets;
 
-	std::vector<IrradianceVolumeActor*> irradianceVolumes;
+	actorPtrList<IrradianceVolumeActor> irradianceVolumes;
 };

@@ -127,17 +127,16 @@ void World_RacingGame::prepareAssets() {
 void World_RacingGame::reloadScene() {
 	destroyAllActors();
 
-	ActorBinder binder;
-	binder.addBinding("SkyAtmosphere", &skyAtmosphere);
-	binder.addBinding("Skybox", &skybox);
-	binder.addBinding("SkyEquirectangularMap", &skyEquimap);
-	binder.addBinding("Sun", &sun); // #todo-cloud: Real world illuminance makes clouds too bright
-	binder.addBinding("PointLight0", &pointLight0);
-	binder.addBinding("PlayerCar", &playerCar);
-	binder.addBinding("Landscape", &landscape);
-
 	SceneLoader sceneLoader;
-	sceneLoader.loadSceneDescription(this, SCENE_DESC_FILE, binder);
+	if (sceneLoader.loadSceneDescription(this, SCENE_DESC_FILE)) {
+		sceneLoader.bindActor("SkyAtmosphere", &skyAtmosphere);
+		sceneLoader.bindActor("Skybox", &skybox);
+		sceneLoader.bindActor("SkyEquirectangularMap", &skyEquimap);
+		sceneLoader.bindActor("Sun", &sun); // #todo-cloud: Real world illuminance makes clouds too bright
+		sceneLoader.bindActor("PointLight0", &pointLight0);
+		sceneLoader.bindActor("PlayerCar", &playerCar);
+		sceneLoader.bindActor("Landscape", &landscape);
+	}
 
 	skybox->getSkyComponent()->setVisibility(false);
 	//skyEquimap->getSkyComponent()->setVisibility(false);
@@ -145,8 +144,8 @@ void World_RacingGame::reloadScene() {
 
 	// reloadScene() destroys all actors so respawn here :/
 	playerController = spawnActor<PlayerController>();
-	playerController->setPlayerPawn(playerCar);
-	playerController->setLandscape(landscape);
+	playerController->setPlayerPawn(playerCar.get());
+	playerController->setLandscape(landscape.get());
 	playerController->cameraHeightOffset = PLAYERCAM_HEIGHT_OFFSET;
 	playerController->cameraForwardOffset = PLAYERCAM_FORWARD_OFFSET;
 
@@ -155,14 +154,14 @@ void World_RacingGame::reloadScene() {
 
 	treeActors.clear();
 	for (uint32 i = 0; i < NUM_TREES; ++i) {
-		StaticMeshActor* tree = spawnActor<StaticMeshActor>();
+		auto tree = spawnActor<StaticMeshActor>();
 		float x = (0.02f + (Random() - 0.02f)) * TREE_MAX_X;
 		float z = (0.02f + (Random() - 0.02f)) * TREE_MAX_Z;
 		if (Random() < 0.5f) x *= -1;
 		if (Random() < 0.5f) z *= -1;
 		tree->setActorLocation(x, 0.0f, z);
 		tree->setActorScale(TREE_SCALE);
-		treeActors.push_back(tree);
+		treeActors.emplace_back(tree);
 	}
 
 	constexpr bool sRGB = true, autoDestroyBlob = true;
@@ -206,10 +205,10 @@ void World_RacingGame::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	}
 
 	if (assetIndex == 0) {
-		carMesh = sharedPtr<StaticMesh>(loader->craftMeshFromAllShapes(true));
+		carMesh = loader->craftMeshFromAllShapes(true);
 		setupScene();
 	} else if (assetIndex == 1) {
-		treeMesh = sharedPtr<StaticMesh>(loader->craftMeshFromAllShapes());
+		treeMesh = loader->craftMeshFromAllShapes();
 		treeMesh->doubleSided = true;
 		setupScene();
 	}

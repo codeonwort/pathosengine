@@ -27,8 +27,8 @@ private:
 	void loadScene();
 	void createWidgets();
 
-	SkyboxActor* skybox = nullptr;
-	DirectionalLightActor* sun = nullptr;
+	actorPtr<SkyboxActor> skybox;
+	actorPtr<DirectionalLightActor> sun;
 
 	TitleWidget* titleWidget = nullptr;
 	GameOptionsWidget* optionsWidget = nullptr;

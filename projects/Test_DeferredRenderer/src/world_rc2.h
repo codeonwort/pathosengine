@@ -45,10 +45,10 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 
 private:
-	PlayerController* playerController = nullptr;
-	DirectionalLightActor* sunActor = nullptr;
-	std::vector<SquareDiamondActor*> squareDiamonds;
+	actorPtr<PlayerController> playerController;
+	actorPtr<DirectionalLightActor> sunActor;
+	actorPtrList<SquareDiamondActor> squareDiamonds;
 
-	SkyboxActor* skyActor = nullptr;
+	actorPtr<SkyboxActor> skyActor;
 	assetPtr<Material> skyMaterial;
 };

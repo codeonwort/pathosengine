@@ -113,7 +113,7 @@ void World2::setupScene()
 		probe->setActorLocation(reflectionProbeLocations[i]);
 	}
 
-	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	auto irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(
 		vector3(-20.0f, 1.0f, -30.0f),
 		vector3(20.0f, 20.0f, 10.0f),
@@ -175,7 +175,7 @@ void World2::setupScene()
 	alertText2->setColor(0.9f, 0.1f, 0.9f);
 	alertText2->setActorScale(8.0f);
 
-	SkyboxActor* sky = spawnActor<SkyboxActor>();
+	auto sky = spawnActor<SkyboxActor>();
 	sky->setCubemapTexture(skyCubemapTexture);
 	sky->setIntensityMultiplier(SKY_INTENSITY_MULTIPLIER);
 
@@ -201,7 +201,7 @@ void World2::loadDAE()
 		daeModel_my = dynamicCastAsset<SkinnedMesh>(loader1.getMesh());
 		debugPrintDAE(daeModel_my.get());
 
-		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
+		auto daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_my);
 
 		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
@@ -216,7 +216,7 @@ void World2::loadDAE()
 		daeModel_riggedFigure = dynamicCastAsset<SkinnedMesh>(loader2.getMesh());
 		debugPrintDAE(daeModel_riggedFigure.get());
 
-		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
+		auto daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_riggedFigure);
 
 		daeActor->setActorLocation(vector3(1.5f, 0.0f, 0.0f));

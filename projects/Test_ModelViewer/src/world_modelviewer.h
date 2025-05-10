@@ -5,6 +5,7 @@
 #include "pathos/overlay/rectangle.h"
 #include "pathos/overlay/label.h"
 #include "pathos/overlay/button.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 namespace pathos {
@@ -41,22 +42,22 @@ private:
 
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 	void onLoadGLTF(GLTFLoader* loader, uint64 payload);
-	void replaceModelActor(Actor* newActor);
+	void replaceModelActor(sharedPtr<Actor> newActor);
 
 private:
 	bool bEnableProbeGI = true;
 
-	SkyAtmosphereActor* skyAtmosphere = nullptr;
-	PanoramaSkyActor* panoramaSky = nullptr;
+	actorPtr<SkyAtmosphereActor> skyAtmosphere;
+	actorPtr<PanoramaSkyActor> panoramaSky;
 	Texture* panoramaTexture = nullptr;
 
-	DirectionalLightActor* sun = nullptr;
-	PlayerController* playerController = nullptr;
-	Actor* modelActor = nullptr;
-	StaticMeshActor* dummyBox = nullptr;
+	actorPtr<DirectionalLightActor> sun;
+	actorPtr<PlayerController> playerController;
+	actorPtr<Actor> modelActor;
+	actorPtr<StaticMeshActor> dummyBox;
 
-	IrradianceVolumeActor* irradianceVolume = nullptr;
-	std::vector<ReflectionProbeActor*> reflectionProbes;
+	actorPtr<IrradianceVolumeActor> irradianceVolume;
+	actorPtrList<ReflectionProbeActor> reflectionProbes;
 
 	vector3 sunDirection;
 	vector3 sunColor;

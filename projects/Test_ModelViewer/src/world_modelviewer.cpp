@@ -247,7 +247,7 @@ void World_ModelViewer::onInitialize() {
 		board_modelControl->onUpdateRotation = [this](float u, float v) {
 			u = 180.0f * (u - 0.5f);
 			v = 360.0f * (v - 0.5f);
-			Actor* targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
+			auto targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
 			targetActor->setActorRotation(Rotator(u, v, 0.0f));
 		};
 
@@ -371,7 +371,7 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 	}
 	
 	assetPtr<StaticMesh> newModelMesh = loader->craftMeshFromAllShapes(true);
-	StaticMeshActor* newActor = spawnActor<StaticMeshActor>();
+	auto newActor = spawnActor<StaticMeshActor>();
 	newActor->setStaticMesh(newModelMesh);
 
 	replaceModelActor(newActor);
@@ -383,13 +383,13 @@ void World_ModelViewer::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		return;
 	}
 
-	Actor* newActor = spawnActor<Actor>();
-	loader->attachToActor(newActor);
+	auto newActor = spawnActor<Actor>();
+	loader->attachToActor(newActor.get());
 
 	replaceModelActor(newActor);
 }
 
-void World_ModelViewer::replaceModelActor(Actor* newActor) {
+void World_ModelViewer::replaceModelActor(sharedPtr<Actor> newActor) {
 	if (modelActor != nullptr) {
 		modelActor->destroy();
 	}
@@ -401,7 +401,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		dummyBox = nullptr;
 	}
 
-	AABB originalWorldBounds = getActorWorldBounds(modelActor);
+	AABB originalWorldBounds = getActorWorldBounds(modelActor.get());
 
 	const float worldBoundsScaleFactor = 1.1f;
 	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), worldBoundsScaleFactor * originalWorldBounds.getHalfSize());
@@ -428,7 +428,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
 	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
 	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));
-	for (ReflectionProbeActor* oldProbe : reflectionProbes) {
+	for (const auto& oldProbe : reflectionProbes) {
 		oldProbe->destroy();
 	}
 	reflectionProbes.clear();
@@ -436,14 +436,14 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	for (uint32 xi = 0; xi < reflectionProbeCount.x; ++xi) {
 		for (uint32 yi = 0; yi < reflectionProbeCount.y; ++yi) {
 			for (uint32 zi = 0; zi < reflectionProbeCount.z; ++zi) {
-				ReflectionProbeActor* probe = spawnActor<ReflectionProbeActor>();
+				auto probe = spawnActor<ReflectionProbeActor>();
 				vector3 ratio;
 				ratio.x = ((float)xi / (reflectionProbeCount.x - 1));
 				ratio.y = ((float)yi / (reflectionProbeCount.y - 1));
 				ratio.z = ((float)zi / (reflectionProbeCount.z - 1));
 				vector3 pos = worldBounds.minBounds + ratio * (worldBounds.maxBounds - worldBounds.minBounds);
 				probe->setActorLocation(pos);
-				reflectionProbes.push_back(probe);
+				reflectionProbes.emplace_back(probe);
 				if (glm::length(pos) < 0.5f) {
 					bNeedReflectionProbeAtCenter = false;
 				}
@@ -451,7 +451,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		}
 	}
 	if (bNeedReflectionProbeAtCenter) {
-		ReflectionProbeActor* reflectionProbe0 = spawnActor<ReflectionProbeActor>();
+		auto reflectionProbe0 = spawnActor<ReflectionProbeActor>();
 		reflectionProbe0->setActorLocation(worldBounds.getCenter());
 		reflectionProbes.push_back(reflectionProbe0);
 	}

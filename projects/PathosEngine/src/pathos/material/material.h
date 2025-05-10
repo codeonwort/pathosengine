@@ -68,7 +68,7 @@ namespace pathos {
 		bool copyParametersFrom(Material* other);
 
 	public:
-		MaterialShader* internal_getMaterialShader() const { return materialShader; } // #wip: Delete this
+		MaterialShader* internal_getMaterialShader() const { return materialShader; }
 
 		MaterialProxy* createMaterialProxy(SceneProxy* scene) const;
 

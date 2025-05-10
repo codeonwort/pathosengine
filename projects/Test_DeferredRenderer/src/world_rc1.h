@@ -58,19 +58,19 @@ public:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	PlayerController* playerController = nullptr;
-	std::vector<RingActor*> rings;
+	actorPtr<PlayerController> playerController;
+	actorPtrList<RingActor> rings;
 
-	LightningActor* lightningSphere = nullptr;
+	actorPtr<LightningActor> lightningSphere;
 	std::vector<uint32> ringIndicesForParticleRotation;
 
-	SpaceshipActor* spaceship1 = nullptr;
-	SpaceshipActor* spaceship2 = nullptr;
-	StaticMeshActor* guardTower = nullptr;
+	actorPtr<SpaceshipActor> spaceship1;
+	actorPtr<SpaceshipActor> spaceship2;
+	actorPtr<StaticMeshActor> guardTower;
 
 	assetPtr<Material> M_tower;
 	
-	PanoramaSkyActor* panoramaSky = nullptr;
+	actorPtr<PanoramaSkyActor> panoramaSky;
 	Texture* starfieldTexture = nullptr;
 
 };

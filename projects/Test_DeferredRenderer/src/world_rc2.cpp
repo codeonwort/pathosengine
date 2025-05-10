@@ -52,7 +52,7 @@ void World_RC2::onInitialize() {
 
 	squareDiamonds.reserve(SQUARE_DIAMOND_COUNT);
 	for (size_t i = 0; i < SQUARE_DIAMOND_COUNT; ++i) {
-		SquareDiamondActor* diamond = spawnActor<SquareDiamondActor>();
+		auto diamond = spawnActor<SquareDiamondActor>();
 
 		float R = SQUARE_DIAMOND_R0;
 		R += i * SQUARE_DIAMOND_R_INC;
@@ -65,13 +65,13 @@ void World_RC2::onInitialize() {
 
 		diamond->setActorRotation(Rotator(0.0f, 0.0f, i * SQUARE_DIAMOND_ROLL));
 
-		squareDiamonds.push_back(diamond);
+		squareDiamonds.emplace_back(diamond);
 	}
 }
 
 void World_RC2::onTick(float deltaSeconds) {
 	for (size_t i = 0; i < squareDiamonds.size(); ++i) {
-		Actor* diamond = squareDiamonds[i];
+		const auto& diamond = squareDiamonds[i];
 
 		Rotator rotation = diamond->getActorRotation();
 		//rotation.roll += deltaSeconds * 5.0f * ((i & 1) ? 1 : -1);

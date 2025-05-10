@@ -92,9 +92,9 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		return;
 	}
 
-	Actor* newActor = spawnActor<Actor>();
+	auto newActor = spawnActor<Actor>();
 	std::vector<SceneComponent*> components;
-	loader->attachToActor(newActor, &components);
+	loader->attachToActor(newActor.get(), &components);
 
 	fractures.clear();
 	fractureOrigins.clear();

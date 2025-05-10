@@ -49,3 +49,26 @@ namespace pathos {
 	}
 
 }
+
+// Actor only
+namespace pathos {
+
+	template<typename T>
+	using actorPtr = std::shared_ptr<T>;
+
+	template<typename T>
+	using actorPtrList = std::vector<actorPtr<T>>;
+
+	// #todo: weakActorPtr
+
+	template<typename U, typename T>
+	actorPtr<U> dynamicCastActor(actorPtr<T>&& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
+	template<typename U, typename T>
+	actorPtr<U> dynamicCastActor(const actorPtr<T>& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
+}

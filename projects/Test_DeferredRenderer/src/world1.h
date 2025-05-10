@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include <vector>
@@ -39,18 +40,18 @@ public:
 	void setupCSMDebugger();
 
 private:
-	std::vector<StaticMeshActor*> balls;
-	std::vector<StaticMeshActor*> pillars;
-	StaticMeshActor* godRaySource = nullptr;
-	StaticMeshActor* ground = nullptr;
+	actorPtrList<StaticMeshActor> balls;
+	actorPtrList<StaticMeshActor> pillars;
+	actorPtr<StaticMeshActor> godRaySource;
+	actorPtr<StaticMeshActor> ground;
 #if VISUALIZE_CSM_FRUSTUM
-	CSMDebugger* csmDebugger = nullptr;
+	actorPtr<CSMDebugger> csmDebugger;
 #endif
-	TransformTestActor* transformTestActor = nullptr;
-	PlayerController* playerController = nullptr;
+	actorPtr<TransformTestActor> transformTestActor;
+	actorPtr<PlayerController> playerController;
 
 	// For scene capture
 	RenderTarget2D* tempRenderTarget = nullptr;
-	Actor* sceneCaptureActor = nullptr;
+	actorPtr<Actor> sceneCaptureActor;
 	SceneCaptureComponent* sceneCaptureComponent = nullptr;
 };
