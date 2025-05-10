@@ -644,6 +644,11 @@ namespace pathos {
 			return;
 		}
 
+		if (currentWorld != nullptr) {
+			currentWorld->destroy();
+			delete currentWorld;
+		}
+
 		mainWindow->stopMainLoop();
 
 		assetStreamer->destroy();

@@ -24,7 +24,9 @@ namespace pathos {
 	public:
 		virtual ~Actor();
 
+		/// Used by game logic. Remove this actor from its world.
 		void destroy();
+
 		inline bool isDestroyed() const { return markedForDeath; }
 
 		void registerComponent(ActorComponent* component);
@@ -63,6 +65,9 @@ namespace pathos {
 
 			return component;
 		}
+
+		/// World should invoke this, not destroy().
+		void destroyInternal();
 
 		void destroyComponents();
 

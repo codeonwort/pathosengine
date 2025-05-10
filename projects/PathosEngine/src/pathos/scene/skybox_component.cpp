@@ -59,7 +59,7 @@ namespace pathos {
 		proxy->texture             = cubemapTexture;
 		proxy->textureLod          = cubemapLod;
 		proxy->intensityMultiplier = intensityMultiplier;
-		proxy->skyboxMaterial      = skyboxMaterial->createMaterialProxy(scene);
+		proxy->skyboxMaterial      = skyboxMaterial ? skyboxMaterial->createMaterialProxy(scene) : nullptr;
 		proxy->bUseCubemapTexture  = bUseCubemapTexture;
 		proxy->bLightingDirty      = bMainScene && (lightingUpdateMode != ESkyLightingUpdateMode::Disabled);
 		proxy->lightingMode        = lightingUpdateMode;

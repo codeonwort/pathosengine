@@ -98,13 +98,12 @@ namespace pathos {
 
 	void World::destroy() {
 		for (auto& actor : actorsToDestroy) {
-			actor->onDestroy();
+			actor->destroyInternal();
 		}
 		actorsToDestroy.clear();
 
 		for (auto& actor : actors) {
-			actor->markedForDeath = true;
-			actor->onDestroy();
+			actor->destroyInternal();
 		}
 		actors.clear();
 

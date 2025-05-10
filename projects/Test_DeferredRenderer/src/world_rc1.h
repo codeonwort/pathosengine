@@ -23,8 +23,10 @@ class LightningActor;
 class RingActor : public StaticMeshActor {
 public:
 	RingActor();
+
 	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
 	vector3 getRandomInnerPosition() const;
+
 private:
 	assetPtr<ProceduralGeometry> G;
 	assetPtr<Material> M;
@@ -36,8 +38,10 @@ public:
 	virtual void onSpawn() override;
 	virtual void onDestroy() override {}
 	virtual void onTick(float deltaSeconds) override {}
+
 	HermiteSpline& getSpline() { return spline; }
 	void setSpline(const HermiteSpline& inSpline) { spline = inSpline; }
+
 private:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 

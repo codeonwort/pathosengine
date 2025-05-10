@@ -5,7 +5,6 @@
 #include "pathos/smart_pointer.h"
 
 #include "badger/types/int_types.h"
-#include "badger/system/mem_alloc.h"
 #include "badger/system/thread_pool.h"
 
 #include <list>
@@ -80,6 +79,8 @@ namespace pathos {
 
 	struct AssetLoadInfoBase_WavefrontOBJ : public AssetLoadInfoBase
 	{
+		~AssetLoadInfoBase_WavefrontOBJ();
+
 		virtual void invokeHandler() {}
 
 		AssetStreamer* streamer;
@@ -108,6 +109,8 @@ namespace pathos {
 	};
 
 	struct AssetLoadInfoBase_GLTF : public AssetLoadInfoBase {
+		~AssetLoadInfoBase_GLTF();
+
 		virtual void invokeHandler() {}
 
 		AssetStreamer* streamer;
@@ -163,6 +166,8 @@ namespace pathos {
 		// public due to thread pool callbacks.
 		OBJLoader* internal_allocateOBJLoader();
 		GLTFLoader* internal_allocateGLTFLoader();
+		void internal_destroyOBJLoader(OBJLoader* loader);
+		void internal_destroyGLTFLoader(GLTFLoader* loader);
 		void internal_onLoaded_WavefrontOBJ(AssetLoadInfoBase_WavefrontOBJ* info);
 		void internal_onLoaded_GLTF(AssetLoadInfoBase_GLTF* info);
 		void internal_unregisterLoadInfo(AssetLoadInfoBase* info);
@@ -176,8 +181,8 @@ namespace pathos {
 		ThreadPool threadPool;
 		std::list<AssetLoadInfoBase*> loadInfoList;
 
-		PoolAllocator<OBJLoader> objLoaderAllocator;
-		PoolAllocator<GLTFLoader> gltfLoaderAllocator;
+		std::list<OBJLoader*> objLoaderAllocator;
+		std::list<GLTFLoader*> gltfLoaderAllocator;
 
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> loadedOBJs;
 		std::vector<AssetLoadInfoBase_GLTF*> loadedGLTFs;
