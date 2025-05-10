@@ -130,20 +130,20 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Create materials
 
-	Material* material_color = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.2f, 0.2f));
 	material_color->setConstantParameter("metallic", 0.0f);
 	material_color->setConstantParameter("roughness", 0.1f);
 	material_color->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* material_mirrorGround = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_mirrorGround = Material::createMaterialInstance("solid_color");
 	material_mirrorGround->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	material_mirrorGround->setConstantParameter("metallic", 0.0f);
 	material_mirrorGround->setConstantParameter("roughness", 0.1f);
 	material_mirrorGround->setConstantParameter("emissive", vector3(0.0f));
 
 	// PBR material
-	Material* material_pbr = Material::createMaterialInstance("pbr_texture");
+	assetPtr<Material> material_pbr = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
@@ -230,7 +230,7 @@ void World1::setupScene()
 		balls.push_back(ball);
 	}
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
-		Material* ball_material = Material::createMaterialInstance("solid_color");
+		assetPtr<Material> ball_material = Material::createMaterialInstance("solid_color");
 		ball_material->setConstantParameter("albedo", vector3(0.5f, 0.3f, 0.3f));
 		ball_material->setConstantParameter("metallic", 0.0f);
 		ball_material->setConstantParameter("roughness", (float)i / NUM_BALLS);
@@ -244,7 +244,7 @@ void World1::setupScene()
 	}
 
 	float sinT = 0.0f;
-	Material* box_material = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> box_material = Material::createMaterialInstance("solid_color");
 
 	box_material->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	box_material->setConstantParameter("metallic", 0.0f);
@@ -283,7 +283,7 @@ void World1::setupScene()
 	}
 	sceneCaptureComponent->captureScene();
 
-	Material* material_sceneCapture = Material::createMaterialInstance("texture_viewer");
+	assetPtr<Material> material_sceneCapture = Material::createMaterialInstance("texture_viewer");
 	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getInternalTexture());
 	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
@@ -293,7 +293,7 @@ void World1::setupScene()
 
 	// --------------------------------------------------------
 	// Bloom test
-	Material* material_tooBright = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_tooBright = Material::createMaterialInstance("solid_color");
 	material_tooBright->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	material_tooBright->setConstantParameter("metallic", 0.0f);
 	material_tooBright->setConstantParameter("roughness", 1.0f);

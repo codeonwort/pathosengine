@@ -41,13 +41,13 @@ namespace pathos {
 
 	struct GLTFPendingTextureParameter {
 		GLTFPendingTextureParameter(
-			Material* inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
+			assetPtr<Material> inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
 			: material(inMaterial)
 			, parameterName(inParam)
 			, index(inIndex)
 			, fallbackTexture(inFallback)
 		{}
-		Material* material;
+		assetPtr<Material> material;
 		std::string parameterName;
 		uint32 index;
 		Texture* fallbackTexture;
@@ -134,10 +134,10 @@ namespace pathos {
 		std::vector<GLTFPendingGeometry> pendingGeometries;
 		std::vector<GLTFPendingLight> pendingLights;
 
-		std::vector<Material*> materials;
+		std::vector<assetPtr<Material>> materials;
 		std::vector<assetPtr<StaticMesh>> meshes;
 
-		Material* fallbackMaterial = nullptr;
+		assetPtr<Material> fallbackMaterial;
 		std::vector<GLTFModelDesc> finalModels;
 		std::vector<int32> transformParentIx;
 	};

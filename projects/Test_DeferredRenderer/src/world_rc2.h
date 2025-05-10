@@ -30,7 +30,7 @@ public:
 
 private:
 	std::vector<MeshGeometry*> geometries;
-	std::vector<Material*> materials;
+	std::vector<assetPtr<Material>> materials;
 	std::vector<assetPtr<StaticMesh>> staticMeshAssets;
 	std::vector<StaticMeshComponent*> staticMeshComponents;
 };
@@ -50,5 +50,5 @@ private:
 	std::vector<SquareDiamondActor*> squareDiamonds;
 
 	SkyboxActor* skyActor = nullptr;
-	Material* skyMaterial = nullptr;
+	assetPtr<Material> skyMaterial;
 };

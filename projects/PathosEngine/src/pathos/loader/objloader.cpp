@@ -55,7 +55,7 @@ namespace pathos {
 		unload();
 	}
 
-	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides) {
+	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, assetPtr<Material>>>&& overrides) {
 		materialOverrides = overrides;
 	}
 
@@ -131,7 +131,7 @@ namespace pathos {
 	void OBJLoader::analyzeMaterials() {
 		for (size_t i = 0; i < tiny_materials.size(); i++) {
 			tinyobj::material_t& t_mat = tiny_materials[i];
-			Material* M = nullptr;
+			assetPtr<Material> M;
 
 			int32 overrideIx = -1;
 			for (size_t k = 0; k < materialOverrides.size(); ++k) {
@@ -215,7 +215,7 @@ namespace pathos {
 			if (overrideIx != -1) {
 				// #todo-loader: Would be best not to create it at first...
 				if (M != nullptr) {
-					delete M;
+					M.reset();
 				}
 				M = materialOverrides[overrideIx].second;
 			}
@@ -500,13 +500,13 @@ namespace pathos {
 		return mesh;
 	}
 
-	Material* OBJLoader::getMaterial(int32 index) {
+	assetPtr<Material> OBJLoader::getMaterial(int32 index) {
 		CHECK(-1 <= index && index < (int32)materials.size());
 		if (index == -1) {
 			return defaultMaterial;
 		}
 
-		Material* M = materials[index];
+		assetPtr<Material> M = materials[index];
 
 		if (pendingTextureData.find(index) != pendingTextureData.end()) {
 			constexpr uint32 mipLevels = 0;

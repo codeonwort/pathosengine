@@ -180,14 +180,14 @@ namespace pathos {
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
-			fallbackMaterial = uniquePtr<Material>(Material::createMaterialInstance("solid_color"));
+			fallbackMaterial = Material::createMaterialInstance("solid_color");
 			fallbackMaterial->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 			fallbackMaterial->setConstantParameter("metallic", 0.0f);
 			fallbackMaterial->setConstantParameter("roughness", 0.0f);
 			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
 		}
 		if (indirectDrawDummyMaterial.get() == nullptr) {
-			indirectDrawDummyMaterial = uniquePtr<Material>(Material::createMaterialInstance("indirect_draw_dummy"));
+			indirectDrawDummyMaterial = Material::createMaterialInstance("indirect_draw_dummy");
 		}
 
 		// #todo-multiview
@@ -786,8 +786,8 @@ namespace pathos {
 
 namespace pathos {
 	
-	uniquePtr<Material>                  SceneRenderer::fallbackMaterial;
-	uniquePtr<Material>                  SceneRenderer::indirectDrawDummyMaterial;
+	assetPtr<Material>                   SceneRenderer::fallbackMaterial;
+	assetPtr<Material>                   SceneRenderer::indirectDrawDummyMaterial;
 	MeshGeometry*                        SceneRenderer::fullscreenQuad;
 	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	

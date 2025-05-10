@@ -122,7 +122,7 @@ void World_GJK::onTick(float deltaSeconds) {
 	badger::physics::Contact contact;
 	bool hit = badger::physics::intersect(&bodyA, &bodyB, contact);
 
-	Material* material = hit ? materialOnHit : materialNoHit;
+	auto material = hit ? materialOnHit : materialNoHit;
 	modelA->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
 	modelB->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
 

@@ -3,18 +3,20 @@
 #include "pathos/scene/scene_component.h"
 #include "pathos/scene/sky_common.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/smart_pointer.h"
 
 namespace pathos {
 
 	class Texture;
 	class Material;
+	class MaterialProxy;
 
 	struct SkyboxProxy : SceneComponentProxy {
 		CubeGeometry*           cube;
 		Texture*                texture;
 		float                   textureLod;
 		float                   intensityMultiplier;
-		Material*               skyboxMaterial;
+		MaterialProxy*          skyboxMaterial;
 		bool                    bUseCubemapTexture;
 		bool                    bLightingDirty;
 		ESkyLightingUpdateMode  lightingMode;
@@ -33,7 +35,7 @@ namespace pathos {
 		// then sky could be too dark compared to Sun.
 		void setIntensityMultiplier(float inMultiplier);
 
-		void setSkyboxMaterial(Material* inMaterial);
+		void setSkyboxMaterial(assetPtr<Material> inMaterial);
 
 		bool hasValidResources() const;
 
@@ -48,7 +50,7 @@ namespace pathos {
 		float cubemapLod = 0.0f;
 		float intensityMultiplier = 1.0f;
 
-		Material* skyboxMaterial = nullptr;
+		assetPtr<Material> skyboxMaterial;
 
 		ESkyLightingUpdatePhase lightingUpdatePhase = (ESkyLightingUpdatePhase)0;
 	};

@@ -130,13 +130,13 @@ void World2::setupScene()
 	auto cubeImageBlobs = ImageUtils::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL);
 	Texture* skyCubemapTexture = ImageUtils::createTextureCubeFromImages(cubeImageBlobs, 0, true, "Texture_Skybox");
 
-	Material* material_color = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	material_color->setConstantParameter("metallic", 0.0f);
 	material_color->setConstantParameter("roughness", 0.5f);
 	material_color->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* material_ground = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_ground = Material::createMaterialInstance("solid_color");
 	material_ground->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 	material_ground->setConstantParameter("metallic", 0.0f);
 	material_ground->setConstantParameter("roughness", 1.0f);

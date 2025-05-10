@@ -48,7 +48,7 @@ namespace pathos {
 		body = physicsScene.allocateBody();
 
 		MeshGeometry* G_bounds = gEngine->getSystemGeometryUnitCube();
-		Material* M_bounds = Material::createMaterialInstance("unlit");
+		auto M_bounds = Material::createMaterialInstance("unlit");
 		M_bounds->setConstantParameter("color", vector3(0.1f, 1.0f, 0.1f));
 		M_bounds->bWireframe = true;
 

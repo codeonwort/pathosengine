@@ -18,7 +18,7 @@ namespace pathos {
 
 	TextMeshComponent::TextMeshComponent() {
 		geom = makeUnique<TextGeometry>();
-		material = uniquePtr<Material>(Material::createMaterialInstance("unlit_text"));
+		material = Material::createMaterialInstance("unlit_text");
 
 		setFont(DEFAULT_FONT_TAG);
 	}
@@ -29,14 +29,14 @@ namespace pathos {
 		}
 
 		StaticMeshProxy* proxy = ALLOC_RENDER_PROXY<StaticMeshProxy>(scene);
-		proxy->doubleSided = true;
-		proxy->renderInternal = false;
-		proxy->modelMatrix = getLocalMatrix() * invertTextY;
+		proxy->doubleSided     = true;
+		proxy->renderInternal  = false;
+		proxy->modelMatrix     = getLocalMatrix() * invertTextY;
 		proxy->prevModelMatrix = proxy->modelMatrix; // #todo-motion-blur
-		proxy->geometry = geom.get();
-		proxy->material = material.get();
+		proxy->geometry        = geom.get();
+		proxy->material        = material->createMaterialProxy(scene);
 		// #todo-frustum-culling: Proper worldBounds for text component
-		proxy->worldBounds = badger::calculateWorldBounds(AABB::fromCenterAndHalfSize(vector3(0.0f), vector3(1.0f)), proxy->modelMatrix);
+		proxy->worldBounds     = badger::calculateWorldBounds(AABB::fromCenterAndHalfSize(vector3(0.0f), vector3(1.0f)), proxy->modelMatrix);
 
 		scene->addStaticMeshProxy(proxy);
 	}

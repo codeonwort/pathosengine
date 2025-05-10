@@ -28,7 +28,7 @@ namespace pathos {
 
 	LandscapeComponent::LandscapeComponent() {
 		cullDistance = LANDSCAPE_BASE_CULL_DISTANCE;
-		material = uniquePtr<Material>(Material::createMaterialInstance("landscape"));
+		material = Material::createMaterialInstance("landscape");
 	}
 
 	LandscapeComponent::~LandscapeComponent() {
@@ -211,7 +211,7 @@ namespace pathos {
 		proxy->indirectDrawCountBuffer = indirectDrawCountBuffer.get();
 		proxy->sectorParameterBuffer   = sectorParameterBuffer.get();
 		proxy->geometry                = geometry.get();
-		proxy->material                = material.get();
+		proxy->material                = material->createMaterialProxy(scene);
 		proxy->modelMatrix             = getLocalMatrix();
 		proxy->prevModelMatrix         = prevModelMatrix;
 		proxy->indirectDrawCount       = indirectDrawCount;

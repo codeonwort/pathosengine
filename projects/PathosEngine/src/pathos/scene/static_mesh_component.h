@@ -10,32 +10,31 @@ namespace pathos {
 	class StaticMesh;
 	class MeshGeometry;
 	class Material;
+	class MaterialProxy;
 
 	// #todo-renderer: Further decompose
 	struct StaticMeshProxy : public SceneComponentProxy {
-		uint32 doubleSided : 1;
-		uint32 renderInternal : 1;
-		matrix4 modelMatrix;
-		matrix4 prevModelMatrix;
-		MeshGeometry* geometry;
-		Material* material;
-		AABB worldBounds;
+		uint32         doubleSided : 1;
+		uint32         renderInternal : 1;
+		matrix4        modelMatrix;
+		matrix4        prevModelMatrix;
+		MeshGeometry*  geometry;
+		MaterialProxy* material;
+		AABB           worldBounds;
 
-		// Derived in render thread
-		bool bInFrustum = true;
-		// Derived in SceneProxy::addStaticMeshProxy()
-		bool bTrivialDepthOnly = false;
+		bool           bInFrustum = true; // Derived in render thread
+		bool           bTrivialDepthOnly = false; // Derived in SceneProxy::addStaticMeshProxy()
 	};
 
 	struct ShadowMeshProxy : public SceneComponentProxy {
-		matrix4 modelMatrix;
-		MeshGeometry* geometry;
-		Material* material;
-		AABB worldBounds;
-		uint32 doubleSided : 1;
-		uint32 renderInternal : 1;
+		matrix4        modelMatrix;
+		MeshGeometry*  geometry;
+		MaterialProxy* material;
+		AABB           worldBounds;
+		uint32         doubleSided : 1;
+		uint32         renderInternal : 1;
 
-		bool bTrivialDepthOnly = false;
+		bool           bTrivialDepthOnly = false;
 	};
 
 	class StaticMeshComponent : public SceneComponent {

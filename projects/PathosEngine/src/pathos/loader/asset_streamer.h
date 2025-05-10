@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "pathos/smart_pointer.h"
+
 #include "badger/types/int_types.h"
 #include "badger/system/mem_alloc.h"
 #include "badger/system/thread_pool.h"
@@ -43,7 +45,7 @@ namespace pathos {
 			, baseDir(inBaseDir)
 		{
 		}
-		void addMaterialOverride(const std::string& mtlName, Material* newMaterial) {
+		void addMaterialOverride(const std::string& mtlName, assetPtr<Material> newMaterial) {
 			for (auto& v : materialOverrides) {
 				if (v.first == mtlName) {
 					v.second = newMaterial;
@@ -55,7 +57,7 @@ namespace pathos {
 
 		std::string filepath;
 		std::string baseDir;
-		std::vector<std::pair<std::string, Material*>> materialOverrides;
+		std::vector<std::pair<std::string, assetPtr<Material>>> materialOverrides;
 	};
 
 	struct AssetReferenceGLTF {
@@ -84,7 +86,7 @@ namespace pathos {
 		OBJLoader* loader;
 		std::string filepath;
 		std::string mtlDir;
-		std::vector<std::pair<std::string, Material*>> materialOverrides;
+		std::vector<std::pair<std::string, assetPtr<Material>>> materialOverrides;
 
 		uint64 payload;
 	};

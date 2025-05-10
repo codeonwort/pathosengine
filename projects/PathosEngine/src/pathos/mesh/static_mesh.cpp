@@ -2,7 +2,7 @@
 
 namespace pathos {
 
-	StaticMesh::StaticMesh(MeshGeometry* geom, Material* mat) {
+	StaticMesh::StaticMesh(MeshGeometry* geom, assetPtr<Material> mat) {
 		bool bothNull = geom == nullptr && mat == nullptr;
 		bool bothValid = geom != nullptr && mat != nullptr;
 			
@@ -15,6 +15,7 @@ namespace pathos {
 	}
 
 	StaticMesh::~StaticMesh() {
+		// #wip: Crash when changing world. Need to wrap geometry with assetPtr.
 		for (auto& lod : lodArray) {
 			for (auto geom : lod.geometries) {
 				if (geom != nullptr) {
@@ -24,7 +25,7 @@ namespace pathos {
 		}
 	}
 
-	void pathos::StaticMesh::addSection(uint32 lod, MeshGeometry* G, Material* M) {
+	void pathos::StaticMesh::addSection(uint32 lod, MeshGeometry* G, assetPtr<Material> M) {
 		CHECK(lod >= 0 && G != nullptr && M != nullptr);
 		if ((uint32)lodArray.size() <= lod) {
 			lodArray.resize(lod + 1);

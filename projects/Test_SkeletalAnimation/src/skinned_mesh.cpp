@@ -8,7 +8,7 @@ namespace pathos {
 
 	SkinnedMesh::SkinnedMesh() : StaticMesh() {}
 
-	SkinnedMesh::SkinnedMesh(MeshGeometry* G, Material* M) : StaticMesh(G, M) {}
+	SkinnedMesh::SkinnedMesh(MeshGeometry* G, assetPtr<Material> M) : StaticMesh(G, M) {}
 
 	void SkinnedMesh::addBone(uint32_t geomIndex, const Bone& bone) {
 		if (boneMapping.size() <= geomIndex) {

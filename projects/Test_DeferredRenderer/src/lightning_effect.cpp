@@ -25,7 +25,7 @@ LightningActor::LightningActor()
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
 
 	SphereGeometry* sphereGeometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 50 });
-	Material* sphereMaterial = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> sphereMaterial = Material::createMaterialInstance("solid_color");
 	sphereMaterial->setConstantParameter("albedo", vector3(0.2f, 0.3f, 0.8f));
 	sphereMaterial->setConstantParameter("roughness", 0.0f);
 	sphereMaterial->setConstantParameter("metallic", 0.0f);

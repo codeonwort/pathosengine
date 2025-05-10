@@ -96,7 +96,7 @@ void World_RacingGame::prepareAssets() {
 		gEngine->getAssetStreamer()->enqueueWavefrontOBJ(wavefrontModelRefs[i], this, &World_RacingGame::onLoadOBJ, i);
 	}
 
-	Material* M_color = Material::createMaterialInstance("solid_color");
+	auto M_color = Material::createMaterialInstance("solid_color");
 	M_color->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
 	M_color->setConstantParameter("metallic", 0.0f);
 	M_color->setConstantParameter("roughness", 0.2f);

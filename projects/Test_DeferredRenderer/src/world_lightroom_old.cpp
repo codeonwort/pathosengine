@@ -70,14 +70,14 @@ void World_LightRoomOld::setupScene() {
 	MeshGeometry* G_ground = new PlaneGeometry(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
 
 #if 1
-	Material* M_ground = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.33f, 0.22f, 0.18f)); // brown
 	M_ground->setConstantParameter("roughness", 0.2f);
 	M_ground->setConstantParameter("metallic", 0.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 #else
 	// unlit test
-	Material* M_ground = Material::createMaterialInstance("unlit");
+	assetPtr<Material> M_ground = Material::createMaterialInstance("unlit");
 	M_ground->setConstantParameter("color", vector3(0.0f, 0.0f, 0.5f));
 #endif
 
@@ -86,7 +86,7 @@ void World_LightRoomOld::setupScene() {
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 
-	Material* M_wall = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> M_wall = Material::createMaterialInstance("solid_color");
 	M_wall->setConstantParameter("albedo", vector3(0.5f, 0.9f, 0.5f));
 	M_wall->setConstantParameter("roughness", 0.8f);
 	M_wall->setConstantParameter("metallic", 0.0f);
@@ -111,13 +111,13 @@ void World_LightRoomOld::setupScene() {
 	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
 	MeshGeometry* G_ball = new SphereGeometry(SphereGeometry::Input{ boxHalfSize });
 
-	Material* M_box = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> M_box = Material::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	M_box->setConstantParameter("roughness", 0.2f);
 	M_box->setConstantParameter("metallic", 0.0f);
 	M_box->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* M_ball = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> M_ball = Material::createMaterialInstance("solid_color");
 	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
 	M_ball->setConstantParameter("roughness", 0.3f);
 	M_ball->setConstantParameter("metallic", 0.0f);
@@ -145,7 +145,7 @@ void World_LightRoomOld::setupScene() {
 	pointLight0->setAttenuationRadius(0.7f);
 
 	MeshGeometry* G_pointLightGizmo = new SphereGeometry(SphereGeometry::Input{ 1.0f });
-	Material* M_pointLightGizmo = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> M_pointLightGizmo = Material::createMaterialInstance("solid_color");
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
 	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
@@ -171,8 +171,8 @@ void World_LightRoomOld::setupScene() {
 	};
 	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(rectLightGizmoInput);
 
-	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
-	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
+	assetPtr<Material> M_rectLightGizmo = Material::createMaterialInstance("solid_color");
+	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo.get());
 	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);

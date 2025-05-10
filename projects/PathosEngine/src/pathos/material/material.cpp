@@ -1,14 +1,16 @@
-#include "pathos/material/material.h"
+#include "material.h"
+#include "pathos/material/material_proxy.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/material/material_shader_assembler.h"
+#include "pathos/render/scene_proxy.h"
 #include "pathos/rhi/texture.h"
-#include "pathos/engine.h"
+#include "pathos/util/engine_util.h"
 
 #include "badger/math/minmax.h"
 
 namespace pathos {
 
-	Material* Material::createMaterialInstance(const char* materialName) {
+	Material* Material::createMaterialInstanceRaw(const char* materialName) {
 		const uint32 hash = COMPILE_TIME_CRC32_STR(materialName);
 		MaterialShader* ms = MaterialShaderAssembler::get().findMaterialShaderByHash(hash);
 		CHECKF(ms != nullptr, "Invalid material name");
@@ -17,6 +19,10 @@ namespace pathos {
 		material->bindMaterialShader(ms, instanceID);
 		material->materialName = materialName;
 		return material;
+	}
+
+	assetPtr<Material> Material::createMaterialInstance(const char* materialName) {
+		return assetPtr<Material>(createMaterialInstanceRaw(materialName));
 	}
 
 	void Material::bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID) {
@@ -58,47 +64,26 @@ namespace pathos {
 		return true;
 	}
 
-	void Material::internal_fillUniformBuffer(uint8* uboMemory) {
-		for (const MaterialConstantParameter& param : constantParameters) {
-			switch (param.datatype) {
-			case EMaterialParameterDataType::Float:
-			{
-				float* ptr = (float*)(uboMemory + param.offset);
-				for (uint32 i = 0; i < param.numElements; ++i) ptr[i] = param.fvalue[i];
-			}
-			break;
-			case EMaterialParameterDataType::Int:
-			{
-				int32* ptr = (int32*)(uboMemory + param.offset);
-				for (uint32 i = 0; i < param.numElements; ++i) ptr[i] = param.ivalue[i];
-			}
-			break;
-			case EMaterialParameterDataType::Uint:
-			{
-				uint32* ptr = (uint32*)(uboMemory + param.offset);
-				for (uint32 i = 0; i < param.numElements; ++i) ptr[i] = param.uvalue[i];
-			}
-			break;
-			case EMaterialParameterDataType::Bool:
-			{
-				uint32* ptr = (uint32*)(uboMemory + param.offset);
-				for (uint32 i = 0; i < param.numElements; ++i) ptr[i] = (uint32)param.bvalue[i];
-			}
-			break;
-			default:
-				CHECK_NO_ENTRY();
-				break;
-			}
-		}
+	MaterialProxy* Material::createMaterialProxy(SceneProxy* scene) const {
+		MaterialProxy* proxy = ALLOC_RENDER_PROXY<MaterialProxy>(scene);
+
+		proxy->materialShader     = materialShader;
+		proxy->materialInstanceID = materialInstanceID;
+		proxy->bWireframe         = bWireframe;
+
+		proxy->constantParameters = constantParameters;
+		proxy->textureParameters  = textureParameters;
+
+		return proxy;
 	}
 
 }
 
 namespace pathos {
 
-	Material* createPBRMaterial(Texture* albedoTex, Texture* normalTex /*= nullptr*/) {
+	assetPtr<Material> createPBRMaterial(Texture* albedoTex, Texture* normalTex /*= nullptr*/) {
 		CHECK(albedoTex != nullptr && albedoTex->isCreated()); // At least albedo must be there.
-		Material* M = Material::createMaterialInstance("pbr_texture");
+		assetPtr<Material> M = Material::createMaterialInstance("pbr_texture");
 
 		M->setConstantParameter("bOverrideAlbedo", false);
 		M->setConstantParameter("bOverrideNormal", false);

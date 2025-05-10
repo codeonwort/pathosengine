@@ -3,6 +3,7 @@
 #include "tiny_obj_loader.h"
 #include "pathos/loader/image_loader.h"
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/smart_pointer.h"
 
 #include <vector>
 #include <string>
@@ -69,7 +70,7 @@ namespace pathos {
 		OBJLoader(OBJLoader&& rhs) = delete;
 
 		// Should be called before load()
-		void setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides);
+		void setMaterialOverrides(const std::vector<std::pair<std::string, assetPtr<Material>>>&& overrides);
 		Texture* findTexture(const std::string& textureName) const;
 
 		// Load Wavefront OBJ file and prepare for GPU upload.
@@ -93,12 +94,12 @@ namespace pathos {
 		// CAUTION: Must be called in render thread
 		assetPtr<StaticMesh> craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial = false);
 
-		const std::vector<Material*>& getMaterials() { return materials; }
+		const std::vector<assetPtr<Material>>& getMaterials() { return materials; }
 
 	protected:
 		void analyzeMaterials();
 		void reconstructShapes();
-		Material* getMaterial(int32 index);
+		assetPtr<Material> getMaterial(int32 index);
 		assetPtr<StaticMesh> craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
 
 	private:
@@ -112,10 +113,10 @@ namespace pathos {
 		tinyobj::attrib_t tiny_attrib;
 
 		std::vector<PendingShape> pendingShapes;
-		std::vector<Material*> materials;
-		std::vector<std::pair<std::string, Material*>> materialOverrides;
+		std::vector<assetPtr<Material>> materials;
+		std::vector<std::pair<std::string, assetPtr<Material>>> materialOverrides;
 		// Fallback material if there's no matching material for that within .mtl
-		Material* defaultMaterial = nullptr;
+		assetPtr<Material> defaultMaterial;
 
 		std::map<std::string, ImageBlob*> cachedImageDB;
 		std::map<int32, PendingTextures> pendingTextureData; // key: material index

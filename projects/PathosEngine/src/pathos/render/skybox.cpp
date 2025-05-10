@@ -5,7 +5,7 @@
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/light_probe_baker.h"
-#include "pathos/material/material.h"
+#include "pathos/material/material_proxy.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/scene/camera.h"
@@ -87,7 +87,7 @@ namespace pathos {
 		}
 
 		ubo.init<UBO_Skybox>("UBO_Skybox");
-		uboPerObject.init<Material::UBO_PerObject>("UBO_SkyMaterialToCube");
+		uboPerObject.init<MaterialProxy::UBO_PerObject>("UBO_SkyMaterialToCube");
 	}
 
 	void SkyboxPass::releaseResources(RenderCommandList& cmdList) {
@@ -131,7 +131,7 @@ namespace pathos {
 		const Camera& camera = scene->camera;
 		SkyboxProxy* skybox = scene->skybox;
 
-		Material* skyMaterial = nullptr;
+		MaterialProxy* skyMaterial = nullptr;
 		MaterialShader* skyMaterialShader = nullptr;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
@@ -142,7 +142,7 @@ namespace pathos {
 			programName = program.getGLName();
 		} else {
 			skyMaterial = skybox->skyboxMaterial;
-			skyMaterialShader = skyMaterial->internal_getMaterialShader();
+			skyMaterialShader = skyMaterial->materialShader;
 			programName = skyMaterialShader->program->getGLName();
 		}
 		CHECK(programName != 0 && programName != 0xffffffff);
@@ -175,10 +175,10 @@ namespace pathos {
 		} else {
 			if (skyMaterialShader->uboTotalBytes > 0) {
 				uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(skyMaterialShader->uboTotalBytes));
-				skyMaterial->internal_fillUniformBuffer(uboMemory);
+				skyMaterial->fillUniformBuffer(uboMemory);
 				skyMaterialShader->uboMaterial.update(cmdList, skyMaterialShader->uboBindingPoint, uboMemory);
 			}
-			for (const MaterialTextureParameter& mtp : skyMaterial->internal_getTextureParameters()) {
+			for (const MaterialTextureParameter& mtp : skyMaterial->textureParameters) {
 				cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 			}
 		}
@@ -207,7 +207,7 @@ namespace pathos {
 	void SkyboxPass::renderSkyMaterialToCubemap(RenderCommandList& cmdList, SceneProxy* scene, int32 faceBegin, int32 faceEnd) {
 		SCOPED_DRAW_EVENT(SkyMaterialToCubemap);
 
-		GLuint programName = scene->skybox->skyboxMaterial->internal_getMaterialShader()->program->getGLName();
+		GLuint programName = scene->skybox->skyboxMaterial->materialShader->program->getGLName();
 		cmdList.useProgram(programName);
 
 		cmdList.bindFramebuffer(GL_DRAW_FRAMEBUFFER, fboCube);
@@ -225,8 +225,8 @@ namespace pathos {
 			cmdList.namedFramebufferTextureLayer(fboCube, GL_COLOR_ATTACHMENT0, cubeName, 0, i);
 
 			// Hack UBO_PerObject
-			Material::UBO_PerObject uboData{ cubeTransforms[i], cubeTransforms[i] };
-			uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+			MaterialProxy::UBO_PerObject uboData{ cubeTransforms[i], cubeTransforms[i] };
+			uboPerObject.update(cmdList, MaterialProxy::UBO_PerObject::BINDING_POINT, &uboData);
 
 			cubeGeometry->drawPrimitive(cmdList);
 		}

@@ -266,7 +266,7 @@ void World_RC1::setupScene()
 	//////////////////////////////////////////////////////////////////////////
 	// Materials
 
-	Material* material_ring = Material::createMaterialInstance("pbr_texture");
+	assetPtr<Material> material_ring = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;

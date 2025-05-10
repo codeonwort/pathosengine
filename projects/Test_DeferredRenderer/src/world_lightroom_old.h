@@ -6,7 +6,7 @@ using namespace pathos;
 
 #include <vector>
 
-// #todo: Actors are manually free'd in World::destroy() for now.
+// #wip: Actors are manually free'd in World::destroy() for now.
 // Using sharedPtr causes double free = crash.
 #define SHARED_PTR_ACTORS 0
 

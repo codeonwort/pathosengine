@@ -315,7 +315,7 @@ namespace pathos {
 		uint32 numMasks = 0, numBlends = 0;
 
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
-			Material* material = fallbackMaterial;
+			assetPtr<Material> material = fallbackMaterial;
 
 			const tinygltf::Material& tinyMat = tinyModel->materials[materialIx];
 
@@ -399,7 +399,7 @@ namespace pathos {
 
 				MeshGeometry* geometry = new MeshGeometry;
 				geometry->initializeVertexLayout(MeshGeometry::EVertexAttributes::All, true);
-				Material* material = fallbackMaterial;
+				assetPtr<Material> material = fallbackMaterial;
 
 				// #todo-gltf: Temp ignore mesh sections with unsupported materials.
 				if (tinyPrim.material == -1 || materials[tinyPrim.material] == fallbackMaterial) {

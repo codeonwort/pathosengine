@@ -20,7 +20,7 @@ public:
 
 private:
 	ProceduralGeometry* G;
-	Material* M;
+	assetPtr<Material> M;
 };
 
 class LightningActor : public Actor {

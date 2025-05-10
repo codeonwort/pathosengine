@@ -3,6 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/static_mesh_actor.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include <vector>
@@ -26,7 +27,7 @@ public:
 	vector3 getRandomInnerPosition() const;
 private:
 	ProceduralGeometry* G;
-	Material* M;
+	assetPtr<Material> M;
 	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };
 
@@ -67,7 +68,7 @@ private:
 	SpaceshipActor* spaceship2 = nullptr;
 	StaticMeshActor* guardTower = nullptr;
 
-	Material* M_tower = nullptr;
+	assetPtr<Material> M_tower;
 	
 	PanoramaSkyActor* panoramaSky = nullptr;
 	Texture* starfieldTexture = nullptr;

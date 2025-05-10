@@ -1,13 +1,16 @@
 #include "translucency_rendering.h"
-#include "pathos/engine_policy.h"
+
 #include "pathos/rhi/render_device.h"
+#include "pathos/rhi/shader_program.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/mesh/static_mesh.h"
-#include "pathos/scene/static_mesh_component.h"
-#include "pathos/rhi/shader_program.h"
+#include "pathos/material/material_proxy.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/render/scene_render_targets.h"
+#include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/directional_light_component.h"
 #include "pathos/scene/point_light_component.h"
+#include "pathos/engine_policy.h"
 #include "pathos/console.h"
 
 namespace pathos {
@@ -29,7 +32,7 @@ namespace pathos {
 
 	TranslucencyRendering::TranslucencyRendering()
 	{
-		uboPerObject.init<Material::UBO_PerObject>();
+		uboPerObject.init<MaterialProxy::UBO_PerObject>();
 		uboLightInfo.init<UBO_LightInfo>();
 	}
 
@@ -98,8 +101,8 @@ namespace pathos {
 		
 		const auto& meshBatches = scene->getTranslucentStaticMeshes();
 		for (const StaticMeshProxy* proxy : meshBatches) {
-			Material* material = proxy->material;
-			MaterialShader* materialShader = material->internal_getMaterialShader();
+			MaterialProxy* material = proxy->material;
+			MaterialShader* materialShader = material->materialShader;
 
 			// Early out
 			if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -107,10 +110,10 @@ namespace pathos {
 			}
 
 			bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-			bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+			bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->materialInstanceID);
 			bool bUseWireframeMode = material->bWireframe;
 			currentProgramHash = materialShader->programHash;
-			currentMIID = material->internal_getMaterialInstanceID();
+			currentMIID = material->materialInstanceID;
 
 			if (bShouldBindProgram) {
 				SCOPED_DRAW_EVENT(BindMaterialProgram);
@@ -122,23 +125,23 @@ namespace pathos {
 
 			// Update UBO (per object)
 			{
-				Material::UBO_PerObject uboData;
+				MaterialProxy::UBO_PerObject uboData;
 				uboData.modelTransform = proxy->modelMatrix;
 				uboData.prevModelTransform = proxy->prevModelMatrix;
-				uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+				uboPerObject.update(cmdList, MaterialProxy::UBO_PerObject::BINDING_POINT, &uboData);
 			}
 
 			// Update UBO (material)
 			if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
 				uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-				material->internal_fillUniformBuffer(uboMemory);
+				material->fillUniformBuffer(uboMemory);
 				materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 			}
 
 			// #todo-material-assembler: How to detect if binding textures is mandatory?
 			// No translucent materials that use textures yet.
 			//if (bShouldUpdateMaterialParameters) {
-			//	for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+			//	for (const MaterialTextureParameter& mtp : material->textureParameters) {
 			//		cmdList.bindTextureUnit(mtp.binding, mtp.glTexture);
 			//	}
 			//}

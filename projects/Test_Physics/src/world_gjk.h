@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include "badger/physics/shape.h"
@@ -30,7 +31,7 @@ private:
 	badger::physics::Body bodyA;
 	badger::physics::Body bodyB;
 
-	Material* materialNoHit = nullptr;
-	Material* materialOnHit = nullptr;
+	assetPtr<Material> materialNoHit;
+	assetPtr<Material> materialOnHit;
 
 };

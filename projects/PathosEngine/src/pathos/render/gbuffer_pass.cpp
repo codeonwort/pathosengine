@@ -5,7 +5,8 @@
 #include "pathos/rhi/texture.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/landscape_component.h"
-#include "pathos/material/material.h"
+#include "pathos/material/material_proxy.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/engine_policy.h"
 #include "pathos/console.h"
@@ -19,7 +20,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_gbuffer");
 
-		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_GBufferPass");
+		uboPerObject.init<MaterialProxy::UBO_PerObject>("UBO_PerObject_GBufferPass");
 	}
 
 	void GBufferPass::releaseResources(RenderCommandList& cmdList) {
@@ -101,8 +102,8 @@ namespace pathos {
 			
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
-				Material* material = proxy->material;
-				MaterialShader* materialShader = material->internal_getMaterialShader();
+				MaterialProxy* material = proxy->material;
+				MaterialShader* materialShader = material->materialShader;
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -111,12 +112,12 @@ namespace pathos {
 
 				// Proxies are sorted by this order. (see sortProxyList())
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+				bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->materialInstanceID);
 				bool bShouldUpdateWireframe = bCurrentWireframe != material->bWireframe;
 				bool bShouldUpdateWinding = bCurrentReverseWinding != proxy->renderInternal;
 				bool bShouldUpdateDoubleSided = bCurrentDoubleSided != proxy->doubleSided;
 				currentProgramHash = materialShader->programHash;
-				currentMIID = material->internal_getMaterialInstanceID();
+				currentMIID = material->materialInstanceID;
 				bCurrentWireframe = material->bWireframe;
 				bCurrentReverseWinding = proxy->renderInternal;
 				bCurrentDoubleSided = proxy->doubleSided;
@@ -131,22 +132,22 @@ namespace pathos {
 
 				// Update UBO (per object)
 				{
-					Material::UBO_PerObject uboData;
+					MaterialProxy::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
 					uboData.prevModelTransform = proxy->prevModelMatrix;
-					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+					uboPerObject.update(cmdList, MaterialProxy::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
 				// Update UBO (material)
 				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
 					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					material->internal_fillUniformBuffer(uboMemory);
+					material->fillUniformBuffer(uboMemory);
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
 				// Bind texture units
 				if (bShouldUpdateMaterialParameters) {
-					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+					for (const MaterialTextureParameter& mtp : material->textureParameters) {
 						cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 					}
 				}

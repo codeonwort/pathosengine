@@ -12,6 +12,7 @@ namespace pathos {
 
 	class OpenGLDevice;
 	class RenderTargetView;
+	class Material;
 
 	struct UBO_PerFrame {
 		static constexpr uint32 BINDING_POINT = 0;
@@ -53,8 +54,8 @@ namespace pathos {
 
 	private:
 		static class MeshGeometry* fullscreenQuad;
-		static uniquePtr<class Material> fallbackMaterial;
-		static uniquePtr<class Material> indirectDrawDummyMaterial;
+		static assetPtr<Material> fallbackMaterial;
+		static assetPtr<Material> indirectDrawDummyMaterial;
 		static GLuint copyTextureFBO; // for DeferredRenderer::copyTexture()
 
 		static uniquePtr<UniformBuffer> ubo_perFrame;
