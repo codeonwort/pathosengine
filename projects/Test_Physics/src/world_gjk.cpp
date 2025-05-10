@@ -78,8 +78,8 @@ void World_GJK::onInitialize() {
 	//materialOnHit->setConstantParameter("roughness", 1.0f);
 	//materialOnHit->setConstantParameter("emissive", vector3(0.0f));
 
-	StaticMesh* meshA = new StaticMesh(geometry, materialNoHit);
-	StaticMesh* meshB = new StaticMesh(geometry, materialNoHit);
+	assetPtr<StaticMesh> meshA = makeAssetPtr<StaticMesh>(geometry, materialNoHit);
+	assetPtr<StaticMesh> meshB = makeAssetPtr<StaticMesh>(geometry, materialNoHit);
 
 	modelA = spawnActor<StaticMeshActor>();
 	modelB = spawnActor<StaticMeshActor>();
@@ -105,7 +105,7 @@ void World_GJK::onInitialize() {
 		arrowM->setConstantParameter("metallic", 0.0f);
 		arrowM->setConstantParameter("roughness", 1.0f);
 		arrowM->setConstantParameter("emissive", vector3(0.0f));
-		auto arrowMesh = new StaticMesh(arrowG, arrowM);
+		assetPtr<StaticMesh> arrowMesh = makeAssetPtr<StaticMesh>(arrowG, arrowM);
 
 		arrow = spawnActor<StaticMeshActor>();
 		arrow->setStaticMesh(arrowMesh);

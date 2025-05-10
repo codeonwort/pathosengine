@@ -76,7 +76,7 @@ void World_Physics::onInitialize() {
 	// Sphere 1
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new StaticMesh(G_box, M_sphere));
+		sphere->setStaticMesh(makeAssetPtr<StaticMesh>(G_box, M_sphere));
 		sphere->setActorLocation(2.0f, 5.0f, -1.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -89,7 +89,7 @@ void World_Physics::onInitialize() {
 	// Sphere 2
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
+		sphere->setStaticMesh(makeAssetPtr<StaticMesh>(G_sphere, M_sphere));
 		sphere->setActorLocation(-2.0f, 6.0f, -5.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -107,7 +107,7 @@ void World_Physics::onInitialize() {
 			float z = (float)iz * GROUND_RADIUS;
 
 			auto ground = spawnActor<StaticMeshActor>();
-			ground->setStaticMesh(new StaticMesh(G_ground, M_ground));
+			ground->setStaticMesh(makeAssetPtr<StaticMesh>(G_ground, M_ground));
 			ground->setActorLocation(x, -GROUND_RADIUS - 10.0f, z);
 			auto physComponent2 = new PhysicsComponent;
 			physComponent2->setInfiniteMass();

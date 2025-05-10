@@ -342,7 +342,7 @@ namespace pathos {
 		}
 	}
 
-	StaticMesh* OBJLoader::craftMeshFrom(const std::string& shapeName) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFrom(const std::string& shapeName) {
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
 			if (tiny_shapes[i].name == shapeName) {
 				return craftMeshFrom(static_cast<uint32>(i));
@@ -350,19 +350,19 @@ namespace pathos {
 		}
 		return nullptr;
 	}
-	StaticMesh* OBJLoader::craftMeshFrom(uint32 shapeIndex) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFrom(uint32 shapeIndex) {
 		return craftMesh(shapeIndex, shapeIndex);
 	}
-	StaticMesh* OBJLoader::craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial) {
 		return craftMesh(0, static_cast<uint32>(pendingShapes.size() - 1), bMergeShapesIfSameMaterial);
 	}
 
-	StaticMesh* OBJLoader::craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial) {
+	assetPtr<StaticMesh> OBJLoader::craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial) {
 		CHECK(0 <= from && from < pendingShapes.size());
 		CHECK(0 <= to && to < pendingShapes.size());
 		CHECK(from <= to);
 
-		StaticMesh* mesh = new StaticMesh;
+		assetPtr<StaticMesh> mesh(new StaticMesh);
 
 		if (bMergeShapesIfSameMaterial) {
 			std::map<int32, std::vector<uint32>> materialToShapes;

@@ -53,7 +53,7 @@ namespace pathos {
 		M_bounds->bWireframe = true;
 
 		boundsComponent = new StaticMeshComponent;
-		boundsComponent->setStaticMesh(new StaticMesh(G_bounds, M_bounds));
+		boundsComponent->setStaticMesh(makeAssetPtr<StaticMesh>(G_bounds, M_bounds));
 		boundsComponent->setVisibility(false);
 		boundsComponent->castsShadow = false;
 		getOwner()->registerComponent(boundsComponent);

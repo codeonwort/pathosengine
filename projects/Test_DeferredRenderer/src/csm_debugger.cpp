@@ -9,7 +9,7 @@
 // #todo-shadow: Move to engine
 
 CSMDebugger::CSMDebugger() {
-	setStaticMesh(new StaticMesh);
+	setStaticMesh(makeAssetPtr<StaticMesh>());
 	getStaticMeshComponent()->castsShadow = false;
 
 	// #todo: Wireframe width can be controlled by glLineWidth() but it's a global state.

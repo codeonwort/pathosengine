@@ -85,13 +85,13 @@ namespace pathos {
 		inline const std::string& getShapeName(uint32 index) const { return tiny_shapes[index].name; }
 		
 		// CAUTION: Must be called in render thread
-		StaticMesh* craftMeshFrom(const std::string& shapeName);
+		assetPtr<StaticMesh> craftMeshFrom(const std::string& shapeName);
 
 		// CAUTION: Must be called in render thread
-		StaticMesh* craftMeshFrom(uint32 shapeIndex);
+		assetPtr<StaticMesh> craftMeshFrom(uint32 shapeIndex);
 
 		// CAUTION: Must be called in render thread
-		StaticMesh* craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial = false);
+		assetPtr<StaticMesh> craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial = false);
 
 		const std::vector<Material*>& getMaterials() { return materials; }
 
@@ -99,7 +99,7 @@ namespace pathos {
 		void analyzeMaterials();
 		void reconstructShapes();
 		Material* getMaterial(int32 index);
-		StaticMesh* craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
+		assetPtr<StaticMesh> craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
 
 	private:
 		std::string objFile;

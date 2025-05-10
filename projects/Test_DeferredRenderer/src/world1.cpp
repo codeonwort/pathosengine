@@ -203,7 +203,7 @@ void World1::setupScene()
 	pointLight2->setAttenuationRadius(2.0f);
 
 	godRaySource = spawnActor<StaticMeshActor>();
-	godRaySource->setStaticMesh(new StaticMesh(geom_sphere, material_color));
+	godRaySource->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sphere, material_color));
 	godRaySource->setActorScale(20.0f);
 	godRaySource->setActorLocation(vector3(0.0f, 5.0f, -15.0f));
 	godRaySource->getStaticMeshComponent()->castsShadow = false;
@@ -214,7 +214,7 @@ void World1::setupScene()
 	// Static meshes
 
 	ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new StaticMesh(geom_ground, material_mirrorGround));
+	ground->setStaticMesh(makeAssetPtr<StaticMesh>(geom_ground, material_mirrorGround));
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->setActorLocation(vector3(0.0f, -0.3f, 0.0f));
 	ground->getStaticMeshComponent()->castsShadow = false;
@@ -224,7 +224,7 @@ void World1::setupScene()
 
 	for (uint32 i = 0u; i < NUM_BALLS; ++i) {
 		StaticMeshActor* ball = spawnActor<StaticMeshActor>();
-		ball->setStaticMesh(new StaticMesh(geom_sphere, material_pbr));
+		ball->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sphere, material_pbr));
 		ball->setActorScale(5.0f + (float)i * 0.5f);
 		ball->setActorLocation(vector3(-4.0f, 0.5f, 3.0f - 1.0f * i));
 		balls.push_back(ball);
@@ -237,7 +237,7 @@ void World1::setupScene()
 		ball_material->setConstantParameter("emissive", vector3(0.0f));
 
 		StaticMeshActor* ball = spawnActor<StaticMeshActor>();
-		ball->setStaticMesh(new StaticMesh(geom_cube, ball_material));
+		ball->setStaticMesh(makeAssetPtr<StaticMesh>(geom_cube, ball_material));
 		ball->setActorScale(5.0f + (float)i * 0.5f);
 		ball->setActorLocation(vector3(-5.5f, 0.5f, 3.0f - 1.0f * i));
 		balls.push_back(ball);
@@ -257,7 +257,7 @@ void World1::setupScene()
 			float wave = ::sinf(sinT += 0.0417f);
 
 			StaticMeshActor* pillar = spawnActor<StaticMeshActor>();
-			pillar->setStaticMesh(new StaticMesh(geom_cube, box_material));
+			pillar->setStaticMesh(makeAssetPtr<StaticMesh>(geom_cube, box_material));
 			pillar->setActorLocation(vector3(PILLAR_x0 + i * PILLAR_spaceX, PILLAR_y0, PILLAR_z0 + j * PILLAR_spaceZ));
 			pillar->setActorScale(vector3(1.0f, PILLAR_height * 0.5f * (1.0f + wave), 1.0f));
 
@@ -287,7 +287,7 @@ void World1::setupScene()
 	material_sceneCapture->setTextureParameter("inputTexture", tempRenderTarget->getInternalTexture());
 	
 	StaticMeshActor* sceneCaptureViewer = spawnActor<StaticMeshActor>();
-	sceneCaptureViewer->setStaticMesh(new StaticMesh(geom_sceneCapture, material_sceneCapture));
+	sceneCaptureViewer->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sceneCapture, material_sceneCapture));
 	sceneCaptureViewer->setActorLocation(-5.0f, 5.0f, -3.0f);
 	sceneCaptureViewer->setActorScale(0.5f * vector3(16.0f, 9.0f, 1.0f));
 
@@ -301,7 +301,7 @@ void World1::setupScene()
 	StaticMeshActor* bloomActor = spawnActor<StaticMeshActor>();
 	bloomActor->setActorLocation(1.0f, 0.8f, -1.0f);
 	bloomActor->setActorScale(20.0f);
-	bloomActor->setStaticMesh(new StaticMesh(geom_sphere, material_tooBright));
+	bloomActor->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sphere, material_tooBright));
 }
 
 void World1::setupCSMDebugger()

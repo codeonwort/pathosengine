@@ -99,7 +99,7 @@ namespace pathos {
 	}
 	
 	void DAELoader::loadMeshes(bool invertWinding) {
-		SkinnedMesh* pathosMesh = new SkinnedMesh;
+		assetPtr<SkinnedMesh> pathosMesh(new SkinnedMesh);
 
 		for (auto i = 0u; i < scene->mNumMeshes; ++i) {
 			const auto aiMeshIndex = i;
@@ -228,7 +228,7 @@ namespace pathos {
 	}
 
 	void DAELoader::loadAnimations() {
-		SkinnedMesh* skinnedMesh = dynamic_cast<SkinnedMesh*>(mesh);
+		assetPtr<SkinnedMesh> skinnedMesh = dynamicCastAsset<SkinnedMesh>(mesh);
 		if (!skinnedMesh) {
 			return;
 		}

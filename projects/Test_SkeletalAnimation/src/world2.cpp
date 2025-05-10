@@ -152,13 +152,13 @@ void World2::setupScene()
 	// Actors
 
 	ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new StaticMesh(geom_plane, material_ground));
+	ground->setStaticMesh(makeAssetPtr<StaticMesh>(geom_plane, material_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->getStaticMesh()->doubleSided = true;
 
 	godRaySourceMesh = spawnActor<StaticMeshActor>();
-	godRaySourceMesh->setStaticMesh(new StaticMesh(geom_sphere, material_color));
+	godRaySourceMesh->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sphere, material_color));
 	godRaySourceMesh->setActorLocation(vector3(0.0f, 100.0f, -500.0f));
 
 	alertText1 = spawnActor<TextMeshActor>();
@@ -198,8 +198,8 @@ void World2::loadDAE()
 
 	DAELoader loader1(FILE_MY_ANIMTEST, DIR_MY_ANIMTEST);
 	if (loader1.getMesh()) {
-		daeModel_my = dynamic_cast<SkinnedMesh*>(loader1.getMesh());
-		debugPrintDAE(daeModel_my);
+		daeModel_my = dynamicCastAsset<SkinnedMesh>(loader1.getMesh());
+		debugPrintDAE(daeModel_my.get());
 
 		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_my);
@@ -213,8 +213,8 @@ void World2::loadDAE()
 
 	DAELoader loader2(FILE_RIGGED_FIGURE, DIR_RIGGED_FIGURE);
 	if (loader2.getMesh()) {
-		daeModel_riggedFigure = dynamic_cast<SkinnedMesh*>(loader2.getMesh());
-		debugPrintDAE(daeModel_riggedFigure);
+		daeModel_riggedFigure = dynamicCastAsset<SkinnedMesh>(loader2.getMesh());
+		debugPrintDAE(daeModel_riggedFigure.get());
 
 		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_riggedFigure);

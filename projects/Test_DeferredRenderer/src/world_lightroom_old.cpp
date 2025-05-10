@@ -82,7 +82,7 @@ void World_LightRoomOld::setupScene() {
 #endif
 
 	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	ground->setStaticMesh(new StaticMesh(G_ground, M_ground));
+	ground->setStaticMesh(makeAssetPtr<StaticMesh>(G_ground, M_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 
@@ -92,7 +92,7 @@ void World_LightRoomOld::setupScene() {
 	M_wall->setConstantParameter("metallic", 0.0f);
 	M_wall->setConstantParameter("emissive", vector3(0.0f));
 
-	StaticMesh* mesh_wall = new StaticMesh(G_ground, M_wall);
+	assetPtr<StaticMesh> mesh_wall = makeAssetPtr<StaticMesh>(G_ground, M_wall);
 	mesh_wall->doubleSided = true;
 
 	wallA = TEMP_SPAWN_ACTOR(StaticMeshActor);
@@ -124,11 +124,11 @@ void World_LightRoomOld::setupScene() {
 	M_ball->setConstantParameter("emissive", vector3(0.0f));
 
 	box = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	box->setStaticMesh(new StaticMesh(G_box, M_box));
+	box->setStaticMesh(makeAssetPtr<StaticMesh>(G_box, M_box));
 	box->setActorLocation(0.0f, boxHalfSize, 0.5f);
 
 	ball = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	ball->setStaticMesh(new StaticMesh(G_ball, M_ball));
+	ball->setStaticMesh(makeAssetPtr<StaticMesh>(G_ball, M_ball));
 	ball->setActorLocation(1.0f, boxHalfSize, 0.5f);
 
 	// --------------------------------------------------------
@@ -152,7 +152,7 @@ void World_LightRoomOld::setupScene() {
 	vector3 plGizmoEm = 10.0f * pointLight0->getLightComponent()->color;
 	M_pointLightGizmo->setConstantParameter("emissive", vector3(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z));
 	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	pointLight0Gizmo->setStaticMesh(new StaticMesh(G_pointLightGizmo, M_pointLightGizmo));
+	pointLight0Gizmo->setStaticMesh(makeAssetPtr<StaticMesh>(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
 #endif
 
@@ -176,7 +176,7 @@ void World_LightRoomOld::setupScene() {
 	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
 	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	rectLight0Gizmo->setStaticMesh(new StaticMesh(G_rectLightGizmo, M_rectLightGizmo));
+	rectLight0Gizmo->setStaticMesh(makeAssetPtr<StaticMesh>(G_rectLightGizmo, M_rectLightGizmo));
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
 	vector3 rectForward = rectLight0->getActorRotation().toDirection();
 	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation() - (0.01f * rectForward));

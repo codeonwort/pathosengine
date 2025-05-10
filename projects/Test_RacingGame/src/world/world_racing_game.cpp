@@ -187,9 +187,9 @@ void World_RacingGame::reloadScene() {
 }
 
 void World_RacingGame::setupScene() {
-	playerCar->setStaticMesh(carMesh ? carMesh.get() : carDummyMesh.get());
+	playerCar->setStaticMesh(carMesh ? carMesh : carDummyMesh);
 	for (size_t i = 0; i < treeActors.size(); ++i) {
-		treeActors[i]->setStaticMesh(treeMesh.get());
+		treeActors[i]->setStaticMesh(treeMesh);
 
 		vector3 treePos = treeActors[i]->getActorLocation();
 		treePos.y = -1.0f + landscape->getLandscapeY(treePos.x, treePos.z);

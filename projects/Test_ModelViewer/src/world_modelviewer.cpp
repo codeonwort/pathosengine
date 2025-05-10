@@ -169,7 +169,7 @@ void World_ModelViewer::onInitialize() {
 		M->setConstantParameter("metallicOverride", 1.0f);
 		M->setConstantParameter("roughnessOverride", 0.2f);
 		dummyBox = spawnActor<StaticMeshActor>();
-		dummyBox->setStaticMesh(new StaticMesh(G, M));
+		dummyBox->setStaticMesh(makeAssetPtr<StaticMesh>(G, M));
 
 		//auto dummyBox2 = spawnActor<StaticMeshActor>();
 		//dummyBox2->setStaticMesh(new Mesh(G, M));
@@ -369,7 +369,7 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		return;
 	}
 	
-	StaticMesh* newModelMesh = loader->craftMeshFromAllShapes(true);
+	assetPtr<StaticMesh> newModelMesh = loader->craftMeshFromAllShapes(true);
 	StaticMeshActor* newActor = spawnActor<StaticMeshActor>();
 	newActor->setStaticMesh(newModelMesh);
 
@@ -402,10 +402,11 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 
 	AABB originalWorldBounds = getActorWorldBounds(modelActor);
 
-	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 0.9f * originalWorldBounds.getHalfSize());
+	const float worldBoundsScaleFactor = 1.1f;
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), worldBoundsScaleFactor * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.
-	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
+	vector3 probeGridf = worldBounds.getSize() / 1.0f; // per 1.0 meters
 	vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
 	// Limit the size of the probe grid.
 	probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));

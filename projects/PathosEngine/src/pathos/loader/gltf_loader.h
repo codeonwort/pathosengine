@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/smart_pointer.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
@@ -23,7 +24,7 @@ namespace pathos {
 
 	struct GLTFModelDesc {
 		std::string name;
-		StaticMesh* mesh = nullptr;
+		assetPtr<StaticMesh> mesh;
 		int32 lightIndex = -1;
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
@@ -134,7 +135,7 @@ namespace pathos {
 		std::vector<GLTFPendingLight> pendingLights;
 
 		std::vector<Material*> materials;
-		std::vector<StaticMesh*> meshes;
+		std::vector<assetPtr<StaticMesh>> meshes;
 
 		Material* fallbackMaterial = nullptr;
 		std::vector<GLTFModelDesc> finalModels;

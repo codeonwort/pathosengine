@@ -3,6 +3,7 @@
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/actor.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include <vector>
@@ -30,7 +31,7 @@ public:
 private:
 	std::vector<MeshGeometry*> geometries;
 	std::vector<Material*> materials;
-	std::vector<StaticMesh*> staticMeshAssets;
+	std::vector<assetPtr<StaticMesh>> staticMeshAssets;
 	std::vector<StaticMeshComponent*> staticMeshComponents;
 };
 

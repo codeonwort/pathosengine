@@ -8,6 +8,7 @@
 
 namespace pathos {
 
+	// #wip: assetPtr for geometry and material
 	using Geometries = std::vector<MeshGeometry*>;
 	using Materials = std::vector<Material*>;
 

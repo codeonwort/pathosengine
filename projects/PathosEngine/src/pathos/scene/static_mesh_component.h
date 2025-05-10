@@ -2,6 +2,7 @@
 
 #include "pathos/scene/scene_component.h"
 #include "badger/types/matrix_types.h"
+#include "pathos/smart_pointer.h"
 #include "badger/math/aabb.h"
 
 namespace pathos {
@@ -43,8 +44,8 @@ namespace pathos {
 	public:
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
-		inline StaticMesh* getStaticMesh() const { return mesh; }
-		inline void setStaticMesh(StaticMesh* inMesh) { mesh = inMesh; }
+		inline assetPtr<StaticMesh> getStaticMesh() const { return mesh; }
+		inline void setStaticMesh(assetPtr<StaticMesh> inMesh) { mesh = inMesh; }
 
 		AABB getWorldBounds() const;
 
@@ -56,8 +57,7 @@ namespace pathos {
 		bool castsShadow = true;
 
 	private:
-		// #todo: Need to release StaticMesh so that it releases Geometry and Material instances.
-		StaticMesh* mesh = nullptr;
+		assetPtr<StaticMesh> mesh;
 		matrix4 prevModelMatrix;
 
 	};

@@ -39,8 +39,8 @@ private:
 
 	StaticMeshActor* lpsHead = nullptr;
 
-	SkinnedMesh* daeModel_my = nullptr;
-	SkinnedMesh* daeModel_riggedFigure = nullptr;
+	assetPtr<SkinnedMesh> daeModel_my;
+	assetPtr<SkinnedMesh> daeModel_riggedFigure;
 
 	TextMeshActor* alertText1 = nullptr;
 	TextMeshActor* alertText2 = nullptr;

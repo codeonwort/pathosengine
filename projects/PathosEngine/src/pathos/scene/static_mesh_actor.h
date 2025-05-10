@@ -16,12 +16,12 @@ namespace pathos {
 			setAsRootComponent(meshComponent);
 		}
 
-		void setStaticMesh(StaticMesh* inMesh) {
+		void setStaticMesh(assetPtr<StaticMesh> inMesh) {
 			meshComponent->setStaticMesh(inMesh);
 		}
 
 		inline StaticMeshComponent* getStaticMeshComponent() const { return meshComponent; }
-		inline StaticMesh* getStaticMesh() const { return meshComponent->getStaticMesh(); }
+		inline assetPtr<StaticMesh> getStaticMesh() const { return meshComponent->getStaticMesh(); }
 
 	private:
 		StaticMeshComponent* meshComponent;
