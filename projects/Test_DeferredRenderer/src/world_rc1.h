@@ -26,7 +26,7 @@ public:
 	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
 	vector3 getRandomInnerPosition() const;
 private:
-	ProceduralGeometry* G;
+	assetPtr<ProceduralGeometry> G;
 	assetPtr<Material> M;
 	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };

@@ -11,6 +11,8 @@
 
 namespace pathos {
 
+	class SceneProxy;
+
 	class MeshGeometry : public Noncopyable {
 
 	public:
@@ -72,6 +74,7 @@ namespace pathos {
 		bool bCalculateLocalBounds = true;
 
 	// API for render thread
+	// #todo-rhi: Render proxy for geometry?
 	public:
 		void bindPositionOnlyVAO(RenderCommandList& cmdList); // position + index if any
 		void bindFullAttributesVAO(RenderCommandList& cmdList); // position + varyings + index if any

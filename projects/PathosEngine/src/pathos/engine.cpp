@@ -441,6 +441,14 @@ namespace pathos {
 		pendingNewWorld = inWorld;
 	}
 
+	assetPtr<MeshGeometry> Engine::getSystemGeometryUnitPlane() const {
+		return geometry_unitPlane;
+	}
+
+	assetPtr<MeshGeometry> Engine::getSystemGeometryUnitCube() const {
+		return geometry_unitCube;
+	}
+
 	void Engine::internal_updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
 		conf.windowWidth = inScreenWidth;
 		conf.windowHeight = inScreenHeight;

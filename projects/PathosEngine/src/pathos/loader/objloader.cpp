@@ -1,5 +1,7 @@
 #include "pathos/engine.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/render_device.h"
+#include "pathos/material/material.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
@@ -453,7 +455,7 @@ namespace pathos {
 				}
 #endif
 
-				MeshGeometry* geom = new MeshGeometry;
+				assetPtr<MeshGeometry> geom = makeAssetPtr<MeshGeometry>();
 				geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
@@ -480,7 +482,7 @@ namespace pathos {
 					auto& texcoords = shape.texcoords[materialID];
 					auto& indices = shape.indices[materialID];
 
-					MeshGeometry* geom = new MeshGeometry;
+					assetPtr<MeshGeometry> geom = makeAssetPtr<MeshGeometry>();
 					geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 					geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));

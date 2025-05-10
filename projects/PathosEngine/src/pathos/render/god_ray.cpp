@@ -155,7 +155,7 @@ namespace pathos {
 		godRayIntensity = scene->godRayIntensity;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		// Bind framebuffer
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -276,7 +276,7 @@ namespace pathos {
 
 			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayPost);
-			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+			auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 			cmdList.useProgram(program.getGLName());
 

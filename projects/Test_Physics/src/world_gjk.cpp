@@ -4,6 +4,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
@@ -51,7 +52,7 @@ void World_GJK::onInitialize() {
 	}
 #else
 	//MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
-	MeshGeometry* geometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 6 });
+	auto geometry = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f, 6 });
 	SphereGeometry::Output geomOutput;
 	SphereGeometry::generate({ 1.0f, 6 }, geomOutput);
 	std::vector<vector3> geomVertices(geomOutput.positions.size() / 3);
@@ -99,7 +100,7 @@ void World_GJK::onInitialize() {
 #endif
 
 	{
-		auto arrowG = new CubeGeometry(vector3(1.0f, 0.05f, 0.05f));
+		auto arrowG = makeAssetPtr<CubeGeometry>(vector3(1.0f, 0.05f, 0.05f));
 		auto arrowM = Material::createMaterialInstance("solid_color");
 		arrowM->setConstantParameter("albedo", vector3(0.9f, 0.0f, 0.0f));
 		arrowM->setConstantParameter("metallic", 0.0f);

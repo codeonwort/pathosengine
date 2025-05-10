@@ -67,7 +67,7 @@ void World_LightRoomOld::setupScene() {
 	// --------------------------------------------------------
 	// Ground & walls
 
-	MeshGeometry* G_ground = new PlaneGeometry(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
+	auto G_ground = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
 
 #if 1
 	assetPtr<Material> M_ground = Material::createMaterialInstance("solid_color");
@@ -108,8 +108,8 @@ void World_LightRoomOld::setupScene() {
 
 	const float boxHalfSize = 0.1f;
 
-	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
-	MeshGeometry* G_ball = new SphereGeometry(SphereGeometry::Input{ boxHalfSize });
+	auto G_box = makeAssetPtr<CubeGeometry>(vector3(boxHalfSize));
+	auto G_ball = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ boxHalfSize });
 
 	assetPtr<Material> M_box = Material::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
@@ -144,8 +144,8 @@ void World_LightRoomOld::setupScene() {
 	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
 	pointLight0->setAttenuationRadius(0.7f);
 
-	MeshGeometry* G_pointLightGizmo = new SphereGeometry(SphereGeometry::Input{ 1.0f });
-	assetPtr<Material> M_pointLightGizmo = Material::createMaterialInstance("solid_color");
+	auto G_pointLightGizmo = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f });
+	auto M_pointLightGizmo = Material::createMaterialInstance("solid_color");
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
 	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
@@ -169,9 +169,9 @@ void World_LightRoomOld::setupScene() {
 		rectLight0->getLightComponent()->height,
 		1, 1, PlaneGeometry::Direction::X
 	};
-	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(rectLightGizmoInput);
+	auto G_rectLightGizmo = makeAssetPtr<PlaneGeometry>(rectLightGizmoInput);
 
-	assetPtr<Material> M_rectLightGizmo = Material::createMaterialInstance("solid_color");
+	auto M_rectLightGizmo = Material::createMaterialInstance("solid_color");
 	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo.get());
 	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));

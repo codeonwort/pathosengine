@@ -13,6 +13,7 @@
 #include "pathos/rhi/texture.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/fullscreen_util.h"
+#include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 
 // Render passes
@@ -838,7 +839,7 @@ namespace pathos {
 	uniquePtr<DepthOfField>              SceneRenderer::depthOfField;
 
 	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane().get();
 
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);

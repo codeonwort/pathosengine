@@ -2,6 +2,7 @@
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/transform_helper.h"
+#include "pathos/smart_pointer.h"
 
 #include <vector>
 #include <functional>
@@ -52,8 +53,6 @@ namespace pathos {
 		inline void setXY(float newX, float newY) { x = newX; y = newY; }
 		inline void setScaleX(float value) { scaleX = value; }
 		inline void setScaleY(float value) { scaleY = value; }
-
-		virtual MeshGeometry* getGeometry() { return nullptr; }
 
 		inline bool getVisible() { return bVisible; }
 		inline void setVisible(bool value) { bVisible = value; }

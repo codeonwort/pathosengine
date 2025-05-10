@@ -4,6 +4,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/loader/image_loader.h"
 
@@ -24,7 +25,7 @@ LightningActor::LightningActor()
 {
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
 
-	SphereGeometry* sphereGeometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 50 });
+	assetPtr<SphereGeometry> sphereGeometry = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f, 50 });
 	assetPtr<Material> sphereMaterial = Material::createMaterialInstance("solid_color");
 	sphereMaterial->setConstantParameter("albedo", vector3(0.2f, 0.3f, 0.8f));
 	sphereMaterial->setConstantParameter("roughness", 0.0f);
@@ -62,7 +63,7 @@ void LightningActor::onDestroy()
 
 LightningParticleComponent::LightningParticleComponent()
 {
-	G = new ProceduralGeometry;
+	G = makeAssetPtr<ProceduralGeometry>();
 
 	M = Material::createMaterialInstance("lightning_bolt");
 	M->setConstantParameter("emissive", LIGHTNING_PARTICLE_EMISSIVE);

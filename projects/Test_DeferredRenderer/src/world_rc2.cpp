@@ -173,7 +173,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 	}
 	std::vector<Subdiv>& finalQueue = queue1_is_input ? queue1 : queue2;
 
-	auto geometry = new CubeGeometry(vector3(1.0f));
+	auto geometry = makeAssetPtr<CubeGeometry>(vector3(1.0f));
 	geometries.push_back(geometry);
 
 	for (size_t i = 0; i < finalQueue.size(); ++i) {

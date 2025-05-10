@@ -9,6 +9,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/scene/sky_panorama_actor.h"
@@ -354,7 +355,7 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 
 RingActor::RingActor()
 {
-	G = new ProceduralGeometry;
+	G = makeAssetPtr<ProceduralGeometry>();
 	
 	// Overriden later by World_RC1::setupScene().
 	M = Material::createMaterialInstance("solid_color");

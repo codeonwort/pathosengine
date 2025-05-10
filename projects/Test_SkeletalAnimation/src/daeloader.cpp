@@ -154,7 +154,7 @@ namespace pathos {
 			}
 			
 			// construct geometry
-			MeshGeometry* G = new MeshGeometry;
+			assetPtr<MeshGeometry> G = makeAssetPtr<MeshGeometry>();
 			G->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 			if (true || ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);
 			if (true || ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);

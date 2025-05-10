@@ -255,7 +255,7 @@ namespace pathos {
 
 			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_VolumetricCloudPost);
-			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+			auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 			const bool bPanorama = cvar_cloud_panorama.getInt() != 0;
 

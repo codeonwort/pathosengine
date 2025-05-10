@@ -22,12 +22,10 @@ namespace pathos {
 		inline float getUnscaledWidth() const { return width; }
 		inline float getUnscaledHeight() const { return height; }
 
-		virtual MeshGeometry* getGeometry() override { return geom; }
-
 	protected:
 		float width;
 		float height;
-		MeshGeometry *geom = nullptr;
+		assetPtr<MeshGeometry> geom;
 
 		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) override;
 

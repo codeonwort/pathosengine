@@ -139,7 +139,7 @@ namespace pathos {
 				(param.index != -1) ? pendingTextures[param.index].glTexture : param.fallbackTexture);
 		}
 		for (GLTFPendingGeometry& pending : pendingGeometries) {
-			MeshGeometry* geometry = pending.geometry;
+			assetPtr<MeshGeometry> geometry = pending.geometry;
 
 			if (pending.bIndex16) {
 				geometry->updateIndex16Data((uint16*)pending.indexBlob, pending.indexLength);
@@ -397,7 +397,7 @@ namespace pathos {
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {
 				const tinygltf::Primitive& tinyPrim = tinyMesh.primitives[primIx];
 
-				MeshGeometry* geometry = new MeshGeometry;
+				assetPtr<MeshGeometry> geometry = makeAssetPtr<MeshGeometry>();
 				geometry->initializeVertexLayout(MeshGeometry::EVertexAttributes::All, true);
 				assetPtr<Material> material = fallbackMaterial;
 

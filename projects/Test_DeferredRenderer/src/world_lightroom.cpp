@@ -11,6 +11,7 @@
 #include "pathos/scene/irradiance_volume_actor.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/material/material.h"
 #include "pathos/util/log.h"
 #include "pathos/engine.h"
 #include "pathos/console.h"
@@ -185,7 +186,7 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		M_leafLight->setConstantParameter("roughness", 1.0f);
 		M_leafLight->setConstantParameter("emissive", vector3(100.0f, 60.0f, 30.0f));
 
-		auto G_leafLight = new SphereGeometry(SphereGeometry::Input{ 1.0f, 20 });
+		auto G_leafLight = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f, 20 });
 
 		float totalLeafWeight = 0.0f;
 		size_t numMarkers = leafMarkers.size();

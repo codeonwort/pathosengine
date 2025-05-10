@@ -33,7 +33,7 @@ void GalaxyGenerator::renderStarField(Texture* texture, uint32 width, uint32 hei
 
 		GLuint fbo = dummyFBO;
 		GLuint renderTarget = texture->internal_getGLName();
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		// Set shader program.
 		ShaderProgram& program = FIND_SHADER_PROGRAM(Program_Starfield);

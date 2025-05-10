@@ -1,5 +1,7 @@
 #include "static_mesh_component.h"
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/mesh/geometry.h"
+#include "pathos/material/material.h"
 #include "pathos/material/material_proxy.h"
 #include "pathos/render/scene_proxy.h"
 
@@ -29,7 +31,7 @@ namespace pathos {
 			for (size_t i = 0u; i < numSections; ++i) {
 				ShadowMeshProxy* proxy = ALLOC_RENDER_PROXY<ShadowMeshProxy>(scene);
 				proxy->modelMatrix     = getLocalMatrix();
-				proxy->geometry        = geoms[i];
+				proxy->geometry        = geoms[i].get();
 				proxy->material        = materialProxies[i];
 				proxy->worldBounds     = badger::calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 				proxy->doubleSided     = mesh->doubleSided;
@@ -45,7 +47,7 @@ namespace pathos {
 			proxy->renderInternal  = mesh->renderInternal;
 			proxy->modelMatrix     = getLocalMatrix();
 			proxy->prevModelMatrix = prevModelMatrix;
-			proxy->geometry        = geoms[i];
+			proxy->geometry        = geoms[i].get();
 			proxy->material        = materialProxies[i];
 			proxy->worldBounds     = badger::calculateWorldBounds(proxy->geometry->getLocalBounds(), proxy->modelMatrix);
 
@@ -91,7 +93,7 @@ namespace pathos {
 			proxy->doubleSided    = mesh->doubleSided;
 			proxy->renderInternal = mesh->renderInternal;
 			proxy->modelMatrix    = getLocalMatrix();
-			proxy->geometry       = G;
+			proxy->geometry       = G.get();
 			proxy->material       = M->createMaterialProxy(scene);
 			proxy->worldBounds    = badger::calculateWorldBounds(G->getLocalBounds(), proxy->modelMatrix);
 

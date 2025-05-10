@@ -114,8 +114,8 @@ namespace pathos {
 		// --------------------------------------------------------------------
 		// Common resources
 
-		inline MeshGeometry* getSystemGeometryUnitPlane() const { return geometry_unitPlane; }
-		inline MeshGeometry* getSystemGeometryUnitCube()  const { return geometry_unitCube;  }
+		assetPtr<MeshGeometry> getSystemGeometryUnitPlane() const;
+		assetPtr<MeshGeometry> getSystemGeometryUnitCube()  const;
 
 		inline Texture* getSystemTexture2DBlack()      const { return texture2D_black;     }
 		inline Texture* getSystemTexture2DWhite()      const { return texture2D_white;     }
@@ -236,8 +236,8 @@ namespace pathos {
 		std::mutex gpuQueryMutex;
 
 		// System geometry
-		MeshGeometry* geometry_unitPlane = nullptr; // width = height = 2
-		MeshGeometry* geometry_unitCube = nullptr;  // half size = (1, 1, 1)
+		assetPtr<MeshGeometry> geometry_unitPlane; // width = height = 2
+		assetPtr<MeshGeometry> geometry_unitCube;  // half size = (1, 1, 1)
 
 		// System textures
 		Texture* texture2D_black     = nullptr;

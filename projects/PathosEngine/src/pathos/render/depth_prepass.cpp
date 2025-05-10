@@ -5,6 +5,7 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/rhi/indirect_draw.h"
 #include "pathos/material/material.h"
 #include "pathos/material/material_proxy.h"

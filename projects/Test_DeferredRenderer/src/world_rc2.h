@@ -29,7 +29,7 @@ public:
 	void buildMesh(float R, float D);
 
 private:
-	std::vector<MeshGeometry*> geometries;
+	std::vector<assetPtr<MeshGeometry>> geometries;
 	std::vector<assetPtr<Material>> materials;
 	std::vector<assetPtr<StaticMesh>> staticMeshAssets;
 	std::vector<StaticMeshComponent*> staticMeshComponents;

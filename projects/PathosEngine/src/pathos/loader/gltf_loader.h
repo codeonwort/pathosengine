@@ -53,7 +53,7 @@ namespace pathos {
 		Texture* fallbackTexture;
 	};
 	struct GLTFPendingGeometry {
-		MeshGeometry* geometry;
+		assetPtr<MeshGeometry> geometry;
 
 		void* indexBlob;
 		uint32 indexLength;

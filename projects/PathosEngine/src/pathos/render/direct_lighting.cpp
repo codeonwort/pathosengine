@@ -125,7 +125,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(DirectLighting);
 		
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		// ----------------------------------------------------------
 		// Common setup
@@ -160,7 +160,7 @@ namespace pathos {
 
 	void DirectLightingPass::renderDirectionalLights(RenderCommandList& cmdList, SceneProxy* scene) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		const auto& dirLights = scene->proxyList_directionalLight;
 
@@ -197,7 +197,7 @@ namespace pathos {
 
 	void DirectLightingPass::renderLocalLights(RenderCommandList& cmdList, SceneProxy* scene) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		cmdList.bindTextureUnit(7, sceneContext.omniShadowMaps);
 

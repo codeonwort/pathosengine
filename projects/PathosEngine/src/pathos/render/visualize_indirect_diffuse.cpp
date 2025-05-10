@@ -54,7 +54,7 @@ namespace pathos {
 	void VisualizeIndirectDiffuse::renderVisualization(RenderCommandList& cmdList, SceneProxy* scene) {
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		if (cvar_visIndirectDiffuse.getInt() == 0 || irradianceVolumeBuffer == 0) {
 			return;

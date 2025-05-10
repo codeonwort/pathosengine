@@ -3,6 +3,7 @@
 
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
@@ -162,7 +163,7 @@ void World_ModelViewer::onInitialize() {
 	modelActor = spawnActor<StaticMeshActor>();
 
 	{
-		auto G = new CubeGeometry(vector3(1.0f));
+		auto G = makeAssetPtr<CubeGeometry>(vector3(1.0f));
 		auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DWhite());
 		M->setConstantParameter("bOverrideMetallic", true);
 		M->setConstantParameter("bOverrideRoughness", true);

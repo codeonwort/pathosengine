@@ -130,20 +130,20 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Create materials
 
-	assetPtr<Material> material_color = Material::createMaterialInstance("solid_color");
+	auto material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.2f, 0.2f));
 	material_color->setConstantParameter("metallic", 0.0f);
 	material_color->setConstantParameter("roughness", 0.1f);
 	material_color->setConstantParameter("emissive", vector3(0.0f));
 
-	assetPtr<Material> material_mirrorGround = Material::createMaterialInstance("solid_color");
+	auto material_mirrorGround = Material::createMaterialInstance("solid_color");
 	material_mirrorGround->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	material_mirrorGround->setConstantParameter("metallic", 0.0f);
 	material_mirrorGround->setConstantParameter("roughness", 0.1f);
 	material_mirrorGround->setConstantParameter("emissive", vector3(0.0f));
 
 	// PBR material
-	assetPtr<Material> material_pbr = Material::createMaterialInstance("pbr_texture");
+	auto material_pbr = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
@@ -169,11 +169,11 @@ void World1::setupScene()
 	// --------------------------------------------------------
 	// Create geometries
 
-	auto geom_sphere_big = new SphereGeometry(SphereGeometry::Input{ 0.15f, 30 });
-	auto geom_sphere = new SphereGeometry(SphereGeometry::Input{ 0.05f, 30 });
-	auto geom_sceneCapture = new PlaneGeometry(PlaneGeometry::Input{ 1.0f, 1.0f });
-	auto geom_ground = new PlaneGeometry(PlaneGeometry::Input{ 100.0f, 100.0f, 4, 4 });
-	auto geom_cube = new CubeGeometry(vector3(0.05f));
+	auto geom_sphere_big   = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 0.15f, 30 });
+	auto geom_sphere       = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 0.05f, 30 });
+	auto geom_sceneCapture = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 1.0f, 1.0f });
+	auto geom_ground       = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 100.0f, 100.0f, 4, 4 });
+	auto geom_cube         = makeAssetPtr<CubeGeometry>(vector3(0.05f));
 
 	// --------------------------------------------------------
 	// Lighting

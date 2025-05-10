@@ -6,6 +6,7 @@ using namespace pathos;
 
 namespace pathos {
 	class Texture;
+	class Material;
 	class StaticMeshComponent;
 	class SphereGeometry;
 	class ProceduralGeometry;
@@ -19,7 +20,7 @@ public:
 	void generateParticle(const vector3& p0, const vector3& p1);
 
 private:
-	ProceduralGeometry* G;
+	assetPtr<ProceduralGeometry> G;
 	assetPtr<Material> M;
 };
 

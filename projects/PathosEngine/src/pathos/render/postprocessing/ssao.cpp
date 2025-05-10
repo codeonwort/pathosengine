@@ -92,7 +92,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(SSAO);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		if (cvar_ssao_enable.getInt() == 0) {
 			GLfloat* clearValue = (GLfloat*)cmdList.allocateSingleFrameMemory(sizeof(GLfloat) * 4);

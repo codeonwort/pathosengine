@@ -52,7 +52,7 @@ namespace pathos {
 namespace pathos {
 
 	void SkyboxPass::initializeResources(RenderCommandList& cmdList) {
-		cubeGeometry = gEngine->getSystemGeometryUnitCube();
+		cubeGeometry = gEngine->getSystemGeometryUnitCube().get();
 
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_Skybox");

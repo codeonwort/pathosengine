@@ -3,6 +3,7 @@
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/material/material.h"
 
 static const float height = 0.4f;
 static const float radius = 0.5f;
@@ -13,25 +14,25 @@ TransformTestActor::TransformTestActor()
 	root = createDefaultComponent<StaticMeshComponent>();
 	setAsRootComponent(root);
 
-	assetPtr<Material> M_base = Material::createMaterialInstance("solid_color");
+	auto M_base = Material::createMaterialInstance("solid_color");
 	M_base->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 	M_base->setConstantParameter("metallic", 0.0f);
 	M_base->setConstantParameter("roughness", 0.9f);
 	M_base->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
-	MeshGeometry* rootG = new SphereGeometry(SphereGeometry::Input{ 0.1f });
-	assetPtr<Material> rootM = Material::createMaterialInstance("solid_color");
+	auto rootG = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 0.1f });
+	auto rootM = Material::createMaterialInstance("solid_color");
 	rootM->copyParametersFrom(M_base.get());
 	rootM->setConstantParameter("roughness", 0.35f);
 	root->setStaticMesh(makeAssetPtr<StaticMesh>(rootG, rootM));
 
-	MeshGeometry* starG = new CubeGeometry(vector3(0.1f, 0.1f, 0.1f));
-	assetPtr<Material> starM = Material::createMaterialInstance("solid_color");
+	auto starG = makeAssetPtr<CubeGeometry>(vector3(0.1f, 0.1f, 0.1f));
+	auto starM = Material::createMaterialInstance("solid_color");
 	starM->copyParametersFrom(M_base.get());
 	starM->setConstantParameter("emissive", vector3(1.0f, 1.0f, 5.0f));
 
-	MeshGeometry* moonG = new CubeGeometry(vector3(0.03f, 0.03f, 0.03f));
-	assetPtr<Material> moonM = Material::createMaterialInstance("solid_color");
+	auto moonG = makeAssetPtr<CubeGeometry>(vector3(0.03f, 0.03f, 0.03f));
+	auto moonM = Material::createMaterialInstance("solid_color");
 	moonM->copyParametersFrom(M_base.get());
 	moonM->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.1f));
 

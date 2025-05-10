@@ -2,15 +2,16 @@
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/model_transform.h"
-#include "pathos/material/material.h"
 #include "pathos/smart_pointer.h"
 
 #include <vector>
 
 namespace pathos {
 
-	// #wip: assetPtr for geometry and material
-	using Geometries = std::vector<MeshGeometry*>;
+	class MeshGeometry;
+	class Material;
+
+	using Geometries = std::vector<assetPtr<MeshGeometry>>;
 	using Materials = std::vector<assetPtr<Material>>;
 
 	struct StaticMeshLOD {
@@ -29,10 +30,11 @@ namespace pathos {
 		bool renderInternal = false;
 
 	public:
-		StaticMesh(MeshGeometry* geometry = nullptr, assetPtr<Material> material = nullptr);
+		StaticMesh();
+		StaticMesh(assetPtr<MeshGeometry> geometry, assetPtr<Material> material);
 		virtual ~StaticMesh();
 
-		void addSection(uint32 lod, MeshGeometry* geometry, assetPtr<Material> material);
+		void addSection(uint32 lod, assetPtr<MeshGeometry> geometry, assetPtr<Material> material);
 
 		inline StaticMeshLOD& getLOD(uint32 lod) { return lodArray[lod]; }
 		inline const StaticMeshLOD& getLOD(uint32 lod) const { return lodArray[lod]; }
