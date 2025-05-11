@@ -6,7 +6,8 @@
 #include "pathos/render/scene_render_targets.h"
 #include "pathos/render/scene_proxy.h"
 #include "pathos/render/fullscreen_util.h"
-#include "pathos/material/material.h"
+#include "pathos/material/material_proxy.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/scene/static_mesh_component.h"
@@ -154,7 +155,7 @@ namespace pathos {
 		godRayIntensity = scene->godRayIntensity;
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 		// Bind framebuffer
 		GLfloat transparent_black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -275,7 +276,7 @@ namespace pathos {
 
 			SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
 			ShaderProgram& program = FIND_SHADER_PROGRAM(Program_GodRayPost);
-			MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+			auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 
 			cmdList.useProgram(program.getGLName());
 

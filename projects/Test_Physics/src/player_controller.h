@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/scene/actor.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 class PlayerController : public Actor {
@@ -9,7 +10,7 @@ public:
 	virtual void onSpawn() override;
 	virtual void onTick(float deltaSeconds) override;
 
-	inline void setControlTarget(Actor* inTarget) { target = inTarget; }
+	inline void setControlTarget(sharedPtr<Actor> inTarget) { target = inTarget; }
 
 public:
 	// movement (meters/sec)
@@ -24,6 +25,6 @@ public:
 private:
 	void setupInput();
 
-	Actor* target = nullptr;
+	sharedPtr<Actor> target;
 
 };

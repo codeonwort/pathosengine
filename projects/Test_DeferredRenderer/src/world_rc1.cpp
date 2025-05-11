@@ -9,6 +9,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/volumetric_cloud_actor.h"
 #include "pathos/scene/sky_panorama_actor.h"
@@ -142,7 +143,7 @@ void World_RC1::onTick(float deltaSeconds)
 		vector3(-3.0f, -2.5f, 2.0f),
 	};
 	for (uint32 i = 0; i < (uint32)rings.size(); ++i) {
-		RingActor* ring = rings[i];
+		const auto& ring = rings[i];
 		Rotator rot = ring->getActorRotation();
 		rot.pitch += ringRotations[i].x * deltaSeconds;
 		rot.yaw += ringRotations[i].y * deltaSeconds;
@@ -244,7 +245,7 @@ void World_RC1::setupSky()
 	Texture* weatherTexture = ImageUtils::createTexture2DFromImage(weatherMapBlob, 1, false, true, "Texture_WeatherMap");
 	Texture* cloudShapeNoise = ImageUtils::createTexture3DFromImage(cloudShapeNoiseBlob, calcVolumeSize(cloudShapeNoiseBlob), 0, false, true, "Texture_CloudShapeNoise");
 	Texture* cloudErosionNoise = ImageUtils::createTexture3DFromImage(cloudErosionNoiseBlob, calcVolumeSize(cloudErosionNoiseBlob), 0, false, true, "Texture_CloudErosionNoise");
-	VolumetricCloudActor* cloudscape = spawnActor<VolumetricCloudActor>();
+	auto cloudscape = spawnActor<VolumetricCloudActor>();
 	cloudscape->setTextures(weatherTexture, cloudShapeNoise, cloudErosionNoise);
 }
 
@@ -252,11 +253,11 @@ void World_RC1::setupScene()
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Light
-	DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
+	auto dirLight = spawnActor<DirectionalLightActor>();
 	dirLight->setDirection(SUN_DIRECTION);
 	dirLight->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
-	PointLightActor* pointLight = spawnActor<PointLightActor>();
+	auto pointLight = spawnActor<PointLightActor>();
 	pointLight->setActorLocation(0.0f, Y_OFFSET, 0.0f);
 	pointLight->setColor(vector3(1.0f, 1.0f, 1.0f));
 	pointLight->setIntensity(RC1_SCALE * RC1_SCALE * 1000.0f);
@@ -266,7 +267,7 @@ void World_RC1::setupScene()
 	//////////////////////////////////////////////////////////////////////////
 	// Materials
 
-	Material* material_ring = Material::createMaterialInstance("pbr_texture");
+	assetPtr<Material> material_ring = Material::createMaterialInstance("pbr_texture");
 	{
 		constexpr uint32 mipLevels = 0;
 		constexpr bool sRGB = true;
@@ -321,7 +322,7 @@ void World_RC1::setupScene()
 	for (uint32 i = 0; i < NUM_LIGHTNING_PARTICLES; ++i) {
 		// Select outer rings more frequently
 		uint32 ringIx = badger::clamp(0u, (uint32)(numRings * Random()), numRings - 1);
-		RingActor* ring = rings[ringIx];
+		const auto& ring = rings[ringIx];
 		lightningSphere->generateParticle(vector3(0.0f), ring->getRandomInnerPosition(), RC1_SCALE);
 		ringIndicesForParticleRotation.push_back(ringIx);
 	}
@@ -354,7 +355,7 @@ void World_RC1::onLoadOBJ(OBJLoader* loader, uint64 payload)
 
 RingActor::RingActor()
 {
-	G = new ProceduralGeometry;
+	G = makeAssetPtr<ProceduralGeometry>();
 	
 	// Overriden later by World_RC1::setupScene().
 	M = Material::createMaterialInstance("solid_color");
@@ -363,7 +364,7 @@ RingActor::RingActor()
 	M->setConstantParameter("roughness", 1.0f);
 	M->setConstantParameter("emissive", vector3(0.0f, 0.0f, 0.0f));
 
-	setStaticMesh(new StaticMesh(G, M));
+	setStaticMesh(makeAssetPtr<StaticMesh>(G, M));
 }
 
 void RingActor::buildRing(

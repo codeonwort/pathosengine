@@ -4,6 +4,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/loader/image_loader.h"
 
@@ -24,13 +25,13 @@ LightningActor::LightningActor()
 {
 	sphereComponent = createDefaultComponent<StaticMeshComponent>();
 
-	SphereGeometry* sphereGeometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 50 });
-	Material* sphereMaterial = Material::createMaterialInstance("solid_color");
+	assetPtr<SphereGeometry> sphereGeometry = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f, 50 });
+	assetPtr<Material> sphereMaterial = Material::createMaterialInstance("solid_color");
 	sphereMaterial->setConstantParameter("albedo", vector3(0.2f, 0.3f, 0.8f));
 	sphereMaterial->setConstantParameter("roughness", 0.0f);
 	sphereMaterial->setConstantParameter("metallic", 0.0f);
 	sphereMaterial->setConstantParameter("emissive", vector3(30.0f, 30.0f, 30.0f));
-	sphereComponent->setStaticMesh(new StaticMesh(sphereGeometry, sphereMaterial));
+	sphereComponent->setStaticMesh(makeAssetPtr<StaticMesh>(sphereGeometry, sphereMaterial));
 
 	setAsRootComponent(sphereComponent);
 }
@@ -62,14 +63,14 @@ void LightningActor::onDestroy()
 
 LightningParticleComponent::LightningParticleComponent()
 {
-	G = new ProceduralGeometry;
+	G = makeAssetPtr<ProceduralGeometry>();
 
 	M = Material::createMaterialInstance("lightning_bolt");
 	M->setConstantParameter("emissive", LIGHTNING_PARTICLE_EMISSIVE);
 	M->setConstantParameter("billboardWidth", LIGHTNING_PARTICLE_THICKNESS);
 	M->setConstantParameter("warpAngle", 15.0f + 30.0f * Random());
 
-	setStaticMesh(new StaticMesh(G, M));
+	setStaticMesh(makeAssetPtr<StaticMesh>(G, M));
 	getStaticMesh()->doubleSided = true;
 }
 

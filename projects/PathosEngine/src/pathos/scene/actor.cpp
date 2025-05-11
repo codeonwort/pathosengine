@@ -7,10 +7,11 @@
 namespace pathos {
 
 	Actor::~Actor() {
-		destroyComponents();
+		CHECK(markedForDeath);
 	}
 
 	void Actor::destroy() {
+		destroyInternal();
 		owner->destroyActor(this);
 	}
 
@@ -31,6 +32,11 @@ namespace pathos {
 			component->owner = nullptr;
 			components.erase(it);
 		}
+	}
+
+	void Actor::destroyInternal() {
+		markedForDeath = true;
+		destroyComponents();
 	}
 
 	void Actor::destroyComponents() {

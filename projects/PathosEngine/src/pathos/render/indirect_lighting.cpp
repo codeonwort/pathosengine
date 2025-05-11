@@ -165,7 +165,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(IndirectDiffuseLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 		const GLuint irradianceVolumeBuffer = scene->irradianceVolumeBuffer;
 		const int32 indirectLightingMode = cvar_indirectLighting.getInt();
 
@@ -219,7 +219,7 @@ namespace pathos {
 		SCOPED_DRAW_EVENT(IndirectSpecularLighting);
 
 		SceneRenderTargets& sceneContext = *cmdList.sceneRenderTargets;
-		MeshGeometry* fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		auto fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
 		const GLuint reflectionProbeBuffer = scene->reflectionProbeBuffer;
 
 		UBO_IndirectSpecularLighting uboData;

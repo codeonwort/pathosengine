@@ -2,8 +2,9 @@
 
 #pragma once
 
+#include "pathos/smart_pointer.h"
+
 #include "badger/types/int_types.h"
-#include "badger/system/mem_alloc.h"
 #include "badger/system/thread_pool.h"
 
 #include <list>
@@ -43,7 +44,7 @@ namespace pathos {
 			, baseDir(inBaseDir)
 		{
 		}
-		void addMaterialOverride(const std::string& mtlName, Material* newMaterial) {
+		void addMaterialOverride(const std::string& mtlName, assetPtr<Material> newMaterial) {
 			for (auto& v : materialOverrides) {
 				if (v.first == mtlName) {
 					v.second = newMaterial;
@@ -55,7 +56,7 @@ namespace pathos {
 
 		std::string filepath;
 		std::string baseDir;
-		std::vector<std::pair<std::string, Material*>> materialOverrides;
+		std::vector<std::pair<std::string, assetPtr<Material>>> materialOverrides;
 	};
 
 	struct AssetReferenceGLTF {
@@ -69,22 +70,20 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	// Load info
 
-	struct AssetLoadInfoBase
-	{
+	struct AssetLoadInfoBase {
 		class DummyType {};
 
 		virtual ~AssetLoadInfoBase() {}
 	};
 
-	struct AssetLoadInfoBase_WavefrontOBJ : public AssetLoadInfoBase
-	{
+	struct AssetLoadInfoBase_WavefrontOBJ : public AssetLoadInfoBase {
 		virtual void invokeHandler() {}
 
 		AssetStreamer* streamer;
 		OBJLoader* loader;
 		std::string filepath;
 		std::string mtlDir;
-		std::vector<std::pair<std::string, Material*>> materialOverrides;
+		std::vector<std::pair<std::string, assetPtr<Material>>> materialOverrides;
 
 		uint64 payload;
 	};
@@ -147,17 +146,40 @@ namespace pathos {
 
 		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler, uint64 payload);
 
+		/// <summary>
+		/// Request a Wavefront OBJ file and register a callback for load complete event. Use when the callback is a class method.
+		/// You need to release the loader manually by releaseOBJLoader() or it will be alive until process termination.
+		/// </summary>
+		/// <typeparam name="UserClass">Class type that declares the callback method.</typeparam>
+		/// <param name="assetRef">Asset to load.</param>
+		/// <param name="handlerOwner">Class instance that will receive the event.</param>
+		/// <param name="handlerMethod">Class method to use as a callback.</param>
+		/// <param name="payload">A value that will be passed as an argument to the callback.</param>
 		template<typename UserClass>
 		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
 		void enqueueGLTF(const char* inFilepath, GLTFHandler handler, uint64 payload);
 
+		/// <summary>
+		/// Request a GLTF file and register a callback for load complete event. Use when the callback is a class method.
+		/// You need to release the loader manually by releaseGLTFLoader() or it will be alive until process termination.
+		/// </summary>
+		/// <typeparam name="UserClass">Class type that declares the callback method.</typeparam>
+		/// <param name="assetRef">Asset to load.</param>
+		/// <param name="handlerOwner">Class instance that will receive the event.</param>
+		/// <param name="handlerMethod">Class method to use as a callback.</param>
+		/// <param name="payload">A value that will be passed as an argument to the callback.</param>
 		template<typename UserClass>
 		void enqueueGLTF(const AssetReferenceGLTF& assetRef, UserClass* handlerOwner, GLTFHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
-		// Should be called in render thread
-		void flushLoadedAssets();
+		/// User should call this when they don't need the loader anymore, or it will be alive until process termination.
+		void releaseOBJLoader(OBJLoader* loader);
+		/// User should call this when they don't need the loader anymore, or it will be alive until process termination.
+		void releaseGLTFLoader(GLTFLoader* loader);
 
+	public:
+		// Should be called in render thread
+		void internal_flushLoadedAssets();
 		// public due to thread pool callbacks.
 		OBJLoader* internal_allocateOBJLoader();
 		GLTFLoader* internal_allocateGLTFLoader();
@@ -174,8 +196,8 @@ namespace pathos {
 		ThreadPool threadPool;
 		std::list<AssetLoadInfoBase*> loadInfoList;
 
-		PoolAllocator<OBJLoader> objLoaderAllocator;
-		PoolAllocator<GLTFLoader> gltfLoaderAllocator;
+		std::list<OBJLoader*> objLoaderAllocator;
+		std::list<GLTFLoader*> gltfLoaderAllocator;
 
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> loadedOBJs;
 		std::vector<AssetLoadInfoBase_GLTF*> loadedGLTFs;
@@ -183,6 +205,8 @@ namespace pathos {
 		std::mutex mutex_loadedOBJs;
 		std::mutex mutex_loadedGLTFs;
 		
+		std::list<OBJLoader*> objLoadersToDelete;
+		std::list<GLTFLoader*> gltfLoadersToDelete;
 	};
 
 	template<typename UserClass>

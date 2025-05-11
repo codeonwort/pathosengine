@@ -53,8 +53,6 @@ namespace pathos {
 		inline void setScaleX(float value) { scaleX = value; }
 		inline void setScaleY(float value) { scaleY = value; }
 
-		virtual MeshGeometry* getGeometry() { return nullptr; }
-
 		inline bool getVisible() { return bVisible; }
 		inline void setVisible(bool value) { bVisible = value; }
 

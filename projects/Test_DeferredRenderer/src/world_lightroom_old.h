@@ -6,10 +6,6 @@ using namespace pathos;
 
 #include <vector>
 
-// #todo: Actors are manually free'd in World::destroy() for now.
-// Using sharedPtr causes double free = crash.
-#define SHARED_PTR_ACTORS 0
-
 // --------------------------------------------------------
 
 namespace pathos {
@@ -35,31 +31,15 @@ private:
 	void setupScene();
 
 private:
-#if SHARED_PTR_ACTORS
-	sharedPtr<StaticMeshActor> ground;
-	sharedPtr<StaticMeshActor> wallA;
-	sharedPtr<StaticMeshActor> wallB;
-	sharedPtr<StaticMeshActor> box;
-	sharedPtr<StaticMeshActor> ball;
-	sharedPtr<DirectionalLightActor> sun;
-	sharedPtr<PointLightActor> pointLight0;
-	sharedPtr<StaticMeshActor> pointLight0Gizmo;
-	sharedPtr<RectLightActor> rectLight0;
-	sharedPtr<StaticMeshActor> rectLight0Gizmo;
-
-	sharedPtr<PlayerController> playerController;
-#else
-	StaticMeshActor* ground = nullptr;
-	StaticMeshActor* wallA = nullptr;
-	StaticMeshActor* wallB = nullptr;
-	StaticMeshActor* box = nullptr;
-	StaticMeshActor* ball = nullptr;
-	DirectionalLightActor* sun = nullptr;
-	PointLightActor* pointLight0 = nullptr;
-	StaticMeshActor* pointLight0Gizmo = nullptr;
-	RectLightActor* rectLight0 = nullptr;
-	StaticMeshActor* rectLight0Gizmo = nullptr;
-
-	PlayerController* playerController = nullptr;
-#endif
+	actorPtr<StaticMeshActor> ground;
+	actorPtr<StaticMeshActor> wallA;
+	actorPtr<StaticMeshActor> wallB;
+	actorPtr<StaticMeshActor> box;
+	actorPtr<StaticMeshActor> ball;
+	actorPtr<DirectionalLightActor> sun;
+	actorPtr<PointLightActor> pointLight0;
+	actorPtr<StaticMeshActor> pointLight0Gizmo;
+	actorPtr<RectLightActor> rectLight0;
+	actorPtr<StaticMeshActor> rectLight0Gizmo;
+	actorPtr<PlayerController> playerController;
 };

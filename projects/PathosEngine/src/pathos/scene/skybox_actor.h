@@ -2,6 +2,7 @@
 
 #include "pathos/scene/sky_actor.h"
 #include "pathos/scene/skybox_component.h"
+#include "pathos/smart_pointer.h"
 
 namespace pathos {
 
@@ -22,7 +23,7 @@ namespace pathos {
 
 		void setIntensityMultiplier(float multiplier);
 
-		void setSkyboxMaterial(Material* material);
+		void setSkyboxMaterial(assetPtr<Material> material);
 
 		inline SkyboxComponent* getSkyComponent() const { return component; }
 

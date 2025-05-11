@@ -113,7 +113,7 @@ void World2::setupScene()
 		probe->setActorLocation(reflectionProbeLocations[i]);
 	}
 
-	IrradianceVolumeActor* irradianceVolume = spawnActor<IrradianceVolumeActor>();
+	auto irradianceVolume = spawnActor<IrradianceVolumeActor>();
 	irradianceVolume->initializeVolume(
 		vector3(-20.0f, 1.0f, -30.0f),
 		vector3(20.0f, 20.0f, 10.0f),
@@ -130,13 +130,13 @@ void World2::setupScene()
 	auto cubeImageBlobs = ImageUtils::loadCubemapImages(cubeImageNames, ECubemapImagePreference::HLSL);
 	Texture* skyCubemapTexture = ImageUtils::createTextureCubeFromImages(cubeImageBlobs, 0, true, "Texture_Skybox");
 
-	Material* material_color = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_color = Material::createMaterialInstance("solid_color");
 	material_color->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	material_color->setConstantParameter("metallic", 0.0f);
 	material_color->setConstantParameter("roughness", 0.5f);
 	material_color->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* material_ground = Material::createMaterialInstance("solid_color");
+	assetPtr<Material> material_ground = Material::createMaterialInstance("solid_color");
 	material_ground->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 	material_ground->setConstantParameter("metallic", 0.0f);
 	material_ground->setConstantParameter("roughness", 1.0f);
@@ -145,20 +145,20 @@ void World2::setupScene()
 	//---------------------------------------------------------------------------------------
 	// Geometries
 
-	auto geom_sphere = new SphereGeometry(SphereGeometry::Input{ 5.0f, 30 });
-	auto geom_plane = new PlaneGeometry(PlaneGeometry::Input{ 100.0f, 100.0f });
+	auto geom_sphere = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 5.0f, 30 });
+	auto geom_plane = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 100.0f, 100.0f });
 
 	//---------------------------------------------------------------------------------------
 	// Actors
 
 	ground = spawnActor<StaticMeshActor>();
-	ground->setStaticMesh(new StaticMesh(geom_plane, material_ground));
+	ground->setStaticMesh(makeAssetPtr<StaticMesh>(geom_plane, material_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 	ground->getStaticMesh()->doubleSided = true;
 
 	godRaySourceMesh = spawnActor<StaticMeshActor>();
-	godRaySourceMesh->setStaticMesh(new StaticMesh(geom_sphere, material_color));
+	godRaySourceMesh->setStaticMesh(makeAssetPtr<StaticMesh>(geom_sphere, material_color));
 	godRaySourceMesh->setActorLocation(vector3(0.0f, 100.0f, -500.0f));
 
 	alertText1 = spawnActor<TextMeshActor>();
@@ -175,7 +175,7 @@ void World2::setupScene()
 	alertText2->setColor(0.9f, 0.1f, 0.9f);
 	alertText2->setActorScale(8.0f);
 
-	SkyboxActor* sky = spawnActor<SkyboxActor>();
+	auto sky = spawnActor<SkyboxActor>();
 	sky->setCubemapTexture(skyCubemapTexture);
 	sky->setIntensityMultiplier(SKY_INTENSITY_MULTIPLIER);
 
@@ -198,10 +198,10 @@ void World2::loadDAE()
 
 	DAELoader loader1(FILE_MY_ANIMTEST, DIR_MY_ANIMTEST);
 	if (loader1.getMesh()) {
-		daeModel_my = dynamic_cast<SkinnedMesh*>(loader1.getMesh());
-		debugPrintDAE(daeModel_my);
+		daeModel_my = dynamicCastAsset<SkinnedMesh>(loader1.getMesh());
+		debugPrintDAE(daeModel_my.get());
 
-		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
+		auto daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_my);
 
 		daeActor->setActorLocation(vector3(0.0f, 0.0f, 0.0f));
@@ -213,10 +213,10 @@ void World2::loadDAE()
 
 	DAELoader loader2(FILE_RIGGED_FIGURE, DIR_RIGGED_FIGURE);
 	if (loader2.getMesh()) {
-		daeModel_riggedFigure = dynamic_cast<SkinnedMesh*>(loader2.getMesh());
-		debugPrintDAE(daeModel_riggedFigure);
+		daeModel_riggedFigure = dynamicCastAsset<SkinnedMesh>(loader2.getMesh());
+		debugPrintDAE(daeModel_riggedFigure.get());
 
-		StaticMeshActor* daeActor = spawnActor<StaticMeshActor>();
+		auto daeActor = spawnActor<StaticMeshActor>();
 		daeActor->setStaticMesh(daeModel_riggedFigure);
 
 		daeActor->setActorLocation(vector3(1.5f, 0.0f, 0.0f));

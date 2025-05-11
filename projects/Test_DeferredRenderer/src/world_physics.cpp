@@ -26,8 +26,8 @@ static const vector3 BOX_EXTENTS     = 10.0f * vector3(1.0f, 1.0f, 0.5f);
 static const float   GROUND_RADIUS   = 100.0f;
 
 void World_Physics::onInitialize() {
-	auto G_sphere = new SphereGeometry(SphereGeometry::Input{ SPHERE_RADIUS, 30 });
-	auto G_box = new CubeGeometry(0.5f * BOX_EXTENTS);
+	auto G_sphere = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ SPHERE_RADIUS, 30 });
+	auto G_box = makeAssetPtr<CubeGeometry>(0.5f * BOX_EXTENTS);
 #if !BALL_RANDOM_MATERIALS
 	auto M_sphere = Material::createMaterialInstance("solid_color");
 	M_sphere->setConstantParameter("albedo", vector3(0.9f));
@@ -36,7 +36,7 @@ void World_Physics::onInitialize() {
 	M_sphere->setConstantParameter("emissive", vector3(0.0f));
 #endif
 
-	auto G_ground = new SphereGeometry(SphereGeometry::Input{ GROUND_RADIUS, 60 });
+	auto G_ground = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ GROUND_RADIUS, 60 });
 	auto M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.9f));
 	M_ground->setConstantParameter("metallic", 0.0f);
@@ -76,7 +76,7 @@ void World_Physics::onInitialize() {
 	// Sphere 1
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new StaticMesh(G_box, M_sphere));
+		sphere->setStaticMesh(makeAssetPtr<StaticMesh>(G_box, M_sphere));
 		sphere->setActorLocation(2.0f, 5.0f, -1.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -89,7 +89,7 @@ void World_Physics::onInitialize() {
 	// Sphere 2
 	{
 		auto sphere = spawnActor<StaticMeshActor>();
-		sphere->setStaticMesh(new StaticMesh(G_sphere, M_sphere));
+		sphere->setStaticMesh(makeAssetPtr<StaticMesh>(G_sphere, M_sphere));
 		sphere->setActorLocation(-2.0f, 6.0f, -5.0f);
 		auto physComponent = new PhysicsComponent;
 		physComponent->setMass(10.0f);
@@ -107,7 +107,7 @@ void World_Physics::onInitialize() {
 			float z = (float)iz * GROUND_RADIUS;
 
 			auto ground = spawnActor<StaticMeshActor>();
-			ground->setStaticMesh(new StaticMesh(G_ground, M_ground));
+			ground->setStaticMesh(makeAssetPtr<StaticMesh>(G_ground, M_ground));
 			ground->setActorLocation(x, -GROUND_RADIUS - 10.0f, z);
 			auto physComponent2 = new PhysicsComponent;
 			physComponent2->setInfiniteMass();

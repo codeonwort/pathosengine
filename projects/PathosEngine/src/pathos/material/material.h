@@ -2,6 +2,7 @@
 
 #include "pathos/material/material_id.h"
 #include "pathos/material/material_shader.h"
+#include "pathos/smart_pointer.h"
 
 #include "badger/types/vector_types.h"
 #include "badger/types/matrix_types.h"
@@ -10,33 +11,26 @@
 namespace pathos {
 
 	class Texture;
+	class MaterialProxy;
+	class SceneProxy;
 
 	// a MaterialShader relates to a unique material shader program.
 	// a Material is (material shader + own parameters).
 	// Multiple materials might share a same material shader, but they can have their own parameters.
 	class Material {
 
+	private:
+		static Material* createMaterialInstanceRaw(const char* materialName);
 	public:
 		// Use this to create a Material.
-		static Material* createMaterialInstance(const char* materialName);
-
-		struct UBO_PerObject {
-			static constexpr uint32 BINDING_POINT = 1;
-
-			// #todo-material: Upload only object ID. Read model transform from some buffer.
-			matrix4 modelTransform;
-			matrix4 prevModelTransform;
-		};
+		static assetPtr<Material> createMaterialInstance(const char* materialName);
 
 	private:
 		Material() = default;
 	public:
 		virtual ~Material() = default;
 
-		bool bWireframe = false;
-
 		const std::string& getMaterialName() const { return materialName; }
-		EMaterialShadingModel getShadingModel() const { return materialShader->shadingModel; }
 
 		template<typename ValueType>
 		void setConstantParameter(const char* name, const ValueType& value) {
@@ -73,15 +67,16 @@ namespace pathos {
 		// Only successful when their material shaders are same. Returns true if successful.
 		bool copyParametersFrom(Material* other);
 
-	// CAUTION: INTERNAL USE ONLY
 	public:
-		void internal_fillUniformBuffer(uint8* uboMemory);
 		MaterialShader* internal_getMaterialShader() const { return materialShader; }
-		uint32 internal_getMaterialInstanceID() const { return materialInstanceID; }
-		const std::vector<MaterialTextureParameter>& internal_getTextureParameters() const { return textureParameters; }
+
+		MaterialProxy* createMaterialProxy(SceneProxy* scene) const;
 
 	private:
 		void bindMaterialShader(MaterialShader* inMaterialShader, uint32 inInstanceID);
+
+	public:
+		bool bWireframe = false;
 
 	private:
 		MaterialShader* materialShader = nullptr;
@@ -94,6 +89,6 @@ namespace pathos {
 	};
 
 	// Temp util to easily create 'pbr_texture' material.
-	class Material* createPBRMaterial(Texture* albedoTex, Texture* normalTex = nullptr);
+	assetPtr<Material> createPBRMaterial(Texture* albedoTex, Texture* normalTex = nullptr);
 
 }

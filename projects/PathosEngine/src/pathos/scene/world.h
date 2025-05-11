@@ -22,11 +22,15 @@ namespace pathos {
 
 	public:
 		template<typename T>
-		T* spawnActor() {
+		actorPtr<T> spawnActor() {
 			static_assert(std::is_base_of<Actor, T>::value, "T should be an Actor-derived type");
 
-			T* actor = new T;
-			actors.emplace_back(actor);
+			// #todo-memory: Can't call makeShared<Actor>() because Actor has protected constructor :(
+			T* actorRaw = new T;
+			actorPtr<T> actor(actorRaw);
+
+			actors.push_back(actor);
+
 			actor->isInConstructor = false;
 			actor->owner = this;
 			actor->fixRootComponent();
@@ -64,8 +68,8 @@ namespace pathos {
 
 		float lastDeltaSeconds = 0.0f;
 
-		std::vector<Actor*> actors;          // Actors in this world
-		std::vector<Actor*> actorsToDestroy; // Actors marked for death (destroyed in next tick)
+		std::vector<actorPtr<Actor>> actors;          // Actors in this world
+		std::vector<actorPtr<Actor>> actorsToDestroy; // Actors marked for death (destroyed in next tick)
 
 		InputManager* inputManager = nullptr;
 	};

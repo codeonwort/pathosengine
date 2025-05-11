@@ -20,7 +20,7 @@ namespace pathos {
 
 		int32 ix = -1;
 		for (int32 i = 0; i < actors.size(); ++i) {
-			if (actors[i] == actor) {
+			if (actors[i].get() == actor) {
 				ix = i;
 				break;
 			}
@@ -31,16 +31,19 @@ namespace pathos {
 			CHECK_NO_ENTRY();
 		} else {
 			actor->markedForDeath = true;
-			actorsToDestroy.push_back(actors[ix]);
-			actors.erase(actors.begin() + ix);
+
+			auto it = actors.begin() + ix;
+			actorsToDestroy.push_back(std::move(*it));
+			actors[ix] = std::move(actors.back());
+			actors.pop_back();
 		}
 	}
 
 	void World::destroyAllActors() {
 		for (size_t i = 0; i < actors.size(); ++i) {
-			Actor* actor = actors[i];
+			auto& actor = actors[i];
 			actor->markedForDeath = true;
-			actorsToDestroy.push_back(actor);
+			actorsToDestroy.push_back(std::move(actor));
 		}
 		actors.clear();
 	}
@@ -50,7 +53,6 @@ namespace pathos {
 		// Destroy actors that were marked for death
 		for (auto& actor : actorsToDestroy) {
 			actor->onDestroy();
-			delete actor;
 		}
 		actorsToDestroy.clear();
 
@@ -96,13 +98,12 @@ namespace pathos {
 
 	void World::destroy() {
 		for (auto& actor : actorsToDestroy) {
-			actor->onDestroy();
-			delete actor;
+			actor->destroyInternal();
 		}
 		actorsToDestroy.clear();
+
 		for (auto& actor : actors) {
-			actor->onDestroy();
-			delete actor;
+			actor->destroyInternal();
 		}
 		actors.clear();
 

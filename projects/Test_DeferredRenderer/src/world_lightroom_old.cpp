@@ -9,12 +9,6 @@
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/rect_light_actor.h"
 
-#if SHARED_PTR_ACTORS
-	#define TEMP_SPAWN_ACTOR(T) sharedPtr<T>(spawnActor<T>())
-#else
-	#define TEMP_SPAWN_ACTOR(T) spawnActor<T>()
-#endif
-
 #define TEST_POINT_LIGHT 1
 #define TEST_RECT_LIGHT  1
 
@@ -60,45 +54,45 @@ void World_LightRoomOld::onTick(float deltaSeconds) {
 }
 
 void World_LightRoomOld::setupInput() {
-	playerController = TEMP_SPAWN_ACTOR(PlayerController);
+	playerController = spawnActor<PlayerController>();
 }
 
 void World_LightRoomOld::setupScene() {
 	// --------------------------------------------------------
 	// Ground & walls
 
-	MeshGeometry* G_ground = new PlaneGeometry(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
+	auto G_ground = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 10.0f, 10.0f, 10, 10 });
 
 #if 1
-	Material* M_ground = Material::createMaterialInstance("solid_color");
+	auto M_ground = Material::createMaterialInstance("solid_color");
 	M_ground->setConstantParameter("albedo", vector3(0.33f, 0.22f, 0.18f)); // brown
 	M_ground->setConstantParameter("roughness", 0.2f);
 	M_ground->setConstantParameter("metallic", 0.0f);
 	M_ground->setConstantParameter("emissive", vector3(0.0f));
 #else
 	// unlit test
-	Material* M_ground = Material::createMaterialInstance("unlit");
+	auto M_ground = Material::createMaterialInstance("unlit");
 	M_ground->setConstantParameter("color", vector3(0.0f, 0.0f, 0.5f));
 #endif
 
-	ground = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	ground->setStaticMesh(new StaticMesh(G_ground, M_ground));
+	ground = spawnActor<StaticMeshActor>();
+	ground->setStaticMesh(makeAssetPtr<StaticMesh>(G_ground, M_ground));
 	ground->setActorLocation(0.0f, 0.0f, 0.0f);
 	ground->setActorRotation(Rotator(0.0f, -90.0f, 0.0f));
 
-	Material* M_wall = Material::createMaterialInstance("solid_color");
+	auto M_wall = Material::createMaterialInstance("solid_color");
 	M_wall->setConstantParameter("albedo", vector3(0.5f, 0.9f, 0.5f));
 	M_wall->setConstantParameter("roughness", 0.8f);
 	M_wall->setConstantParameter("metallic", 0.0f);
 	M_wall->setConstantParameter("emissive", vector3(0.0f));
 
-	StaticMesh* mesh_wall = new StaticMesh(G_ground, M_wall);
+	auto mesh_wall = makeAssetPtr<StaticMesh>(G_ground, M_wall);
 	mesh_wall->doubleSided = true;
 
-	wallA = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	wallA = spawnActor<StaticMeshActor>();
 	wallA->setStaticMesh(mesh_wall);
 	wallA->setActorLocation(0.0f, 0.0f, -0.3f);
-	wallB = TEMP_SPAWN_ACTOR(StaticMeshActor);
+	wallB = spawnActor<StaticMeshActor>();
 	wallB->setStaticMesh(mesh_wall);
 	wallB->setActorLocation(-0.3f, 0.0f, 0.0f);
 	wallB->setActorRotation(Rotator(90.0f, 0.0f, 0.0f));
@@ -108,56 +102,56 @@ void World_LightRoomOld::setupScene() {
 
 	const float boxHalfSize = 0.1f;
 
-	MeshGeometry* G_box = new CubeGeometry(vector3(boxHalfSize));
-	MeshGeometry* G_ball = new SphereGeometry(SphereGeometry::Input{ boxHalfSize });
+	auto G_box = makeAssetPtr<CubeGeometry>(vector3(boxHalfSize));
+	auto G_ball = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ boxHalfSize });
 
-	Material* M_box = Material::createMaterialInstance("solid_color");
+	auto M_box = Material::createMaterialInstance("solid_color");
 	M_box->setConstantParameter("albedo", vector3(0.9f, 0.9f, 0.9f));
 	M_box->setConstantParameter("roughness", 0.2f);
 	M_box->setConstantParameter("metallic", 0.0f);
 	M_box->setConstantParameter("emissive", vector3(0.0f));
 
-	Material* M_ball = Material::createMaterialInstance("solid_color");
+	auto M_ball = Material::createMaterialInstance("solid_color");
 	M_ball->setConstantParameter("albedo", vector3(0.9f, 0.1f, 0.1f));
 	M_ball->setConstantParameter("roughness", 0.3f);
 	M_ball->setConstantParameter("metallic", 0.0f);
 	M_ball->setConstantParameter("emissive", vector3(0.0f));
 
-	box = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	box->setStaticMesh(new StaticMesh(G_box, M_box));
+	box = spawnActor<StaticMeshActor>();
+	box->setStaticMesh(makeAssetPtr<StaticMesh>(G_box, M_box));
 	box->setActorLocation(0.0f, boxHalfSize, 0.5f);
 
-	ball = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	ball->setStaticMesh(new StaticMesh(G_ball, M_ball));
+	ball = spawnActor<StaticMeshActor>();
+	ball->setStaticMesh(makeAssetPtr<StaticMesh>(G_ball, M_ball));
 	ball->setActorLocation(1.0f, boxHalfSize, 0.5f);
 
 	// --------------------------------------------------------
 	// Lights
 
-	sun = TEMP_SPAWN_ACTOR(DirectionalLightActor);
+	sun = spawnActor<DirectionalLightActor>();
 	sun->setDirection(SUN_DIRECTION);
 	sun->setColorAndIlluminance(SUN_COLOR, SUN_ILLUMINANCE);
 
 #if TEST_POINT_LIGHT
-	pointLight0 = TEMP_SPAWN_ACTOR(PointLightActor);
+	pointLight0 = spawnActor<PointLightActor>();
 	pointLight0->setActorLocation(1.0f + boxHalfSize * 1.5f, boxHalfSize * 3.0f, 0.0f);
 	pointLight0->setColorAndIntensity(POINT_LIGHT_COLOR, POINT_LIGHT_INTENSITY);
 	pointLight0->setAttenuationRadius(0.7f);
 
-	MeshGeometry* G_pointLightGizmo = new SphereGeometry(SphereGeometry::Input{ 1.0f });
-	Material* M_pointLightGizmo = Material::createMaterialInstance("solid_color");
+	auto G_pointLightGizmo = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f });
+	auto M_pointLightGizmo = Material::createMaterialInstance("solid_color");
 	M_pointLightGizmo->setConstantParameter("albedo", vector3(0.0f, 0.0f, 0.0f));
 	M_pointLightGizmo->setConstantParameter("metallic", 0.0f);
 	M_pointLightGizmo->setConstantParameter("roughness", 0.0f);
 	vector3 plGizmoEm = 10.0f * pointLight0->getLightComponent()->color;
 	M_pointLightGizmo->setConstantParameter("emissive", vector3(plGizmoEm.x, plGizmoEm.y, plGizmoEm.z));
-	pointLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	pointLight0Gizmo->setStaticMesh(new StaticMesh(G_pointLightGizmo, M_pointLightGizmo));
+	pointLight0Gizmo = spawnActor<StaticMeshActor>();
+	pointLight0Gizmo->setStaticMesh(makeAssetPtr<StaticMesh>(G_pointLightGizmo, M_pointLightGizmo));
 	pointLight0Gizmo->setActorLocation(pointLight0->getActorLocation());
 #endif
 
 #if TEST_RECT_LIGHT
-	rectLight0 = TEMP_SPAWN_ACTOR(RectLightActor);
+	rectLight0 = spawnActor<RectLightActor>();
 	rectLight0->setActorLocation(boxHalfSize * 1.5f, boxHalfSize * 2.5f, -0.1f);
 	rectLight0->setActorRotation(Rotator(-120.0f, 0.0f, -20.0f));
 	rectLight0->setLightSize(0.25f, 0.15f);
@@ -169,14 +163,14 @@ void World_LightRoomOld::setupScene() {
 		rectLight0->getLightComponent()->height,
 		1, 1, PlaneGeometry::Direction::X
 	};
-	MeshGeometry* G_rectLightGizmo = new PlaneGeometry(rectLightGizmoInput);
+	auto G_rectLightGizmo = makeAssetPtr<PlaneGeometry>(rectLightGizmoInput);
 
-	Material* M_rectLightGizmo = Material::createMaterialInstance("solid_color");
-	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo);
+	auto M_rectLightGizmo = Material::createMaterialInstance("solid_color");
+	M_rectLightGizmo->copyParametersFrom(M_pointLightGizmo.get());
 	vector3 rectGizmoEm = 10.0f * rectLight0->getLightComponent()->color;
 	M_rectLightGizmo->setConstantParameter("emissive", vector3(rectGizmoEm.x, rectGizmoEm.y, rectGizmoEm.z));
-	rectLight0Gizmo = TEMP_SPAWN_ACTOR(StaticMeshActor);
-	rectLight0Gizmo->setStaticMesh(new StaticMesh(G_rectLightGizmo, M_rectLightGizmo));
+	rectLight0Gizmo = spawnActor<StaticMeshActor>();
+	rectLight0Gizmo->setStaticMesh(makeAssetPtr<StaticMesh>(G_rectLightGizmo, M_rectLightGizmo));
 	rectLight0Gizmo->getStaticMeshComponent()->castsShadow = false;
 	vector3 rectForward = rectLight0->getActorRotation().toDirection();
 	rectLight0Gizmo->setActorLocation(rectLight0->getActorLocation() - (0.01f * rectForward));

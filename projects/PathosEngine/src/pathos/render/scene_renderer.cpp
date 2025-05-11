@@ -13,6 +13,7 @@
 #include "pathos/rhi/texture.h"
 #include "pathos/render/render_target.h"
 #include "pathos/render/fullscreen_util.h"
+#include "pathos/material/material.h"
 #include "pathos/material/material_shader.h"
 
 // Render passes
@@ -180,14 +181,14 @@ namespace pathos {
 
 		// Prepare fallback material.
 		if (fallbackMaterial.get() == nullptr) {
-			fallbackMaterial = uniquePtr<Material>(Material::createMaterialInstance("solid_color"));
+			fallbackMaterial = Material::createMaterialInstance("solid_color");
 			fallbackMaterial->setConstantParameter("albedo", vector3(0.5f, 0.5f, 0.5f));
 			fallbackMaterial->setConstantParameter("metallic", 0.0f);
 			fallbackMaterial->setConstantParameter("roughness", 0.0f);
 			fallbackMaterial->setConstantParameter("emissive", vector3(0.0f));
 		}
 		if (indirectDrawDummyMaterial.get() == nullptr) {
-			indirectDrawDummyMaterial = uniquePtr<Material>(Material::createMaterialInstance("indirect_draw_dummy"));
+			indirectDrawDummyMaterial = Material::createMaterialInstance("indirect_draw_dummy");
 		}
 
 		// #todo-multiview
@@ -786,8 +787,8 @@ namespace pathos {
 
 namespace pathos {
 	
-	uniquePtr<Material>                  SceneRenderer::fallbackMaterial;
-	uniquePtr<Material>                  SceneRenderer::indirectDrawDummyMaterial;
+	assetPtr<Material>                   SceneRenderer::fallbackMaterial;
+	assetPtr<Material>                   SceneRenderer::indirectDrawDummyMaterial;
 	MeshGeometry*                        SceneRenderer::fullscreenQuad;
 	GLuint                               SceneRenderer::copyTextureFBO = 0;
 	
@@ -838,7 +839,7 @@ namespace pathos {
 	uniquePtr<DepthOfField>              SceneRenderer::depthOfField;
 
 	void SceneRenderer::internal_initGlobalResources(OpenGLDevice* renderDevice, RenderCommandList& cmdList) {
-		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane().get();
 
 		gRenderDevice->createFramebuffers(1, &copyTextureFBO);
 		cmdList.namedFramebufferDrawBuffer(copyTextureFBO, GL_COLOR_ATTACHMENT0);

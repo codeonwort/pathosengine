@@ -44,12 +44,11 @@ void World_RacingTitle::onCloseOptionsWidget() {
 }
 
 void World_RacingTitle::loadScene() {
-	ActorBinder binder;
-	binder.addBinding("Skybox", &skybox);
-	binder.addBinding("Sun", &sun);
-
 	SceneLoader sceneLoader;
-	sceneLoader.loadSceneDescription(this, TITLE_SCENE_DESC_FILE, binder);
+	if (sceneLoader.loadSceneDescription(this, TITLE_SCENE_DESC_FILE)) {
+		sceneLoader.bindActor("Skybox", &skybox);
+		sceneLoader.bindActor("Sun", &sun);
+	}
 }
 
 void World_RacingTitle::createWidgets() {

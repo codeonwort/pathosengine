@@ -146,7 +146,7 @@ namespace pathos {
 
 		for (auto& actor : world->actors) {
 			if (!actor->markedForDeath) {
-				auto vol = dynamic_cast<IrradianceVolumeActor*>(actor);
+				auto vol = dynamicCastActor<IrradianceVolumeActor>(actor);
 				if (vol != nullptr) {
 					vol->internal_createRenderProxy(proxy);
 				}

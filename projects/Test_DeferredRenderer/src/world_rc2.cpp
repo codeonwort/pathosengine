@@ -52,7 +52,7 @@ void World_RC2::onInitialize() {
 
 	squareDiamonds.reserve(SQUARE_DIAMOND_COUNT);
 	for (size_t i = 0; i < SQUARE_DIAMOND_COUNT; ++i) {
-		SquareDiamondActor* diamond = spawnActor<SquareDiamondActor>();
+		auto diamond = spawnActor<SquareDiamondActor>();
 
 		float R = SQUARE_DIAMOND_R0;
 		R += i * SQUARE_DIAMOND_R_INC;
@@ -65,13 +65,13 @@ void World_RC2::onInitialize() {
 
 		diamond->setActorRotation(Rotator(0.0f, 0.0f, i * SQUARE_DIAMOND_ROLL));
 
-		squareDiamonds.push_back(diamond);
+		squareDiamonds.emplace_back(diamond);
 	}
 }
 
 void World_RC2::onTick(float deltaSeconds) {
 	for (size_t i = 0; i < squareDiamonds.size(); ++i) {
-		Actor* diamond = squareDiamonds[i];
+		const auto& diamond = squareDiamonds[i];
 
 		Rotator rotation = diamond->getActorRotation();
 		//rotation.roll += deltaSeconds * 5.0f * ((i & 1) ? 1 : -1);
@@ -173,7 +173,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 	}
 	std::vector<Subdiv>& finalQueue = queue1_is_input ? queue1 : queue2;
 
-	auto geometry = new CubeGeometry(vector3(1.0f));
+	auto geometry = makeAssetPtr<CubeGeometry>(vector3(1.0f));
 	geometries.push_back(geometry);
 
 	for (size_t i = 0; i < finalQueue.size(); ++i) {
@@ -195,7 +195,7 @@ void SquareDiamondActor::buildMesh(float R, float D) {
 		material->setConstantParameter("emissive", emissive);
 		materials.push_back(material);
 
-		StaticMesh* staticMesh = new StaticMesh(geometry, material);
+		assetPtr<StaticMesh> staticMesh = makeAssetPtr<StaticMesh>(geometry, material);
 		staticMeshAssets.push_back(staticMesh);
 
 		smc->setStaticMesh(staticMesh);

@@ -1,6 +1,7 @@
 #include "label.h"
 #include "brush.h"
 #include "display_object_proxy.h"
+
 #include "pathos/text/font_mgr.h"
 
 // Fallback font that must exist.
@@ -14,7 +15,7 @@ namespace pathos {
 
 		bReceivesMouseInput = false;
 
-		geometry = new TextGeometry;
+		geometry = makeAssetPtr<TextGeometry>();
 		geometry->bCalculateLocalBounds = false;
 
 		setBrush(new TextBrush(1.0f, 1.0f, 1.0f));
@@ -29,10 +30,7 @@ namespace pathos {
 	}
 
 	Label::~Label() {
-		ENQUEUE_DEFERRED_RENDER_COMMAND([geometry = this->geometry](RenderCommandList& cmdList) {
-			// Should be called after UI rendering.
-			cmdList.registerDeferredCleanup(geometry);
-		});
+		geometry.reset();
 	}
 
 	DisplayObject2DProxy* Label::createRenderProxy(OverlaySceneProxy* sceneProxy) {
@@ -44,7 +42,7 @@ namespace pathos {
 			proxy->y = y;
 			proxy->scaleX = scaleX;
 			proxy->scaleY = scaleY;
-			proxy->geometry = geometry;
+			proxy->geometry = geometry.get();
 			proxy->brush = getBrush();
 			proxy->transform = transform;
 			proxy->text = text;

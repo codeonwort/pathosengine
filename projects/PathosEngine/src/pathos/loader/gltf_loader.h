@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathos/rhi/gl_handles.h"
+#include "pathos/smart_pointer.h"
 
 #include "badger/types/noncopyable.h"
 #include "badger/types/vector_types.h"
@@ -23,7 +24,7 @@ namespace pathos {
 
 	struct GLTFModelDesc {
 		std::string name;
-		StaticMesh* mesh = nullptr;
+		assetPtr<StaticMesh> mesh;
 		int32 lightIndex = -1;
 		vector3 translation = vector3(0.0f);
 		vector3 scale = vector3(1.0f);
@@ -40,19 +41,19 @@ namespace pathos {
 
 	struct GLTFPendingTextureParameter {
 		GLTFPendingTextureParameter(
-			Material* inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
+			assetPtr<Material> inMaterial, const std::string& inParam, uint32 inIndex, Texture* inFallback)
 			: material(inMaterial)
 			, parameterName(inParam)
 			, index(inIndex)
 			, fallbackTexture(inFallback)
 		{}
-		Material* material;
+		assetPtr<Material> material;
 		std::string parameterName;
 		uint32 index;
 		Texture* fallbackTexture;
 	};
 	struct GLTFPendingGeometry {
-		MeshGeometry* geometry;
+		assetPtr<MeshGeometry> geometry;
 
 		void* indexBlob;
 		uint32 indexLength;
@@ -133,10 +134,10 @@ namespace pathos {
 		std::vector<GLTFPendingGeometry> pendingGeometries;
 		std::vector<GLTFPendingLight> pendingLights;
 
-		std::vector<Material*> materials;
-		std::vector<StaticMesh*> meshes;
+		std::vector<assetPtr<Material>> materials;
+		std::vector<assetPtr<StaticMesh>> meshes;
 
-		Material* fallbackMaterial = nullptr;
+		assetPtr<Material> fallbackMaterial;
 		std::vector<GLTFModelDesc> finalModels;
 		std::vector<int32> transformParentIx;
 	};

@@ -441,6 +441,14 @@ namespace pathos {
 		pendingNewWorld = inWorld;
 	}
 
+	assetPtr<MeshGeometry> Engine::getSystemGeometryUnitPlane() const {
+		return geometry_unitPlane;
+	}
+
+	assetPtr<MeshGeometry> Engine::getSystemGeometryUnitCube() const {
+		return geometry_unitCube;
+	}
+
 	void Engine::internal_updateScreenSize(int32 inScreenWidth, int32 inScreenHeight) {
 		conf.windowWidth = inScreenWidth;
 		conf.windowHeight = inScreenHeight;
@@ -500,6 +508,7 @@ namespace pathos {
 		}
 
 		// Start world tick.
+		if (engineStatus == EngineStatus::Running)
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
@@ -510,7 +519,7 @@ namespace pathos {
 
 			{
 				SCOPED_CPU_COUNTER(FlushLoadedAssets);
-				getAssetStreamer()->flushLoadedAssets();
+				getAssetStreamer()->internal_flushLoadedAssets();
 			}
 
 			if (currentWorld != nullptr) {
@@ -634,6 +643,11 @@ namespace pathos {
 	void Engine::stopDeferred() {
 		if (engineStatus != EngineStatus::Destroying) {
 			return;
+		}
+
+		if (currentWorld != nullptr) {
+			currentWorld->destroy();
+			delete currentWorld;
 		}
 
 		mainWindow->stopMainLoop();

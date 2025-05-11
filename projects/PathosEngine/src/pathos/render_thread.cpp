@@ -433,8 +433,8 @@ namespace pathos {
 		CHECK(gpuTimerQuery != 0);
 
 		// Create engine resources
-		gEngine->geometry_unitPlane = new PlaneGeometry(PlaneGeometry::Input{ 2.0f, 2.0f });
-		gEngine->geometry_unitCube = new CubeGeometry(vector3(1.0f));
+		gEngine->geometry_unitPlane = makeAssetPtr<PlaneGeometry>(PlaneGeometry::Input{ 2.0f, 2.0f });
+		gEngine->geometry_unitCube = makeAssetPtr<CubeGeometry>(vector3(1.0f));
 
 		TextureCreateParams textureCreateParams[6] = {
 			{ 1, 1, 1, 1, GL_TEXTURE_2D, GL_RGBA8, false, {}, "Texture_Black1x1" },
@@ -512,8 +512,8 @@ namespace pathos {
 	bool RenderThread::destroyOpenGL() {
 		ScopedGpuCounter::destroyQueryObjectPool();
 		
-		delete gEngine->geometry_unitPlane;
-		delete gEngine->geometry_unitCube;
+		gEngine->geometry_unitPlane.reset();
+		gEngine->geometry_unitCube.reset();
 
 		return true;
 	}

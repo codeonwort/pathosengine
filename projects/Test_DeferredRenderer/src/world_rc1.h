@@ -3,6 +3,7 @@
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/static_mesh_actor.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include <vector>
@@ -22,11 +23,13 @@ class LightningActor;
 class RingActor : public StaticMeshActor {
 public:
 	RingActor();
+
 	void buildRing(float innerRadius, float outerRadius, float thickness, const std::vector<float>& segmentRanges);
 	vector3 getRandomInnerPosition() const;
+
 private:
-	ProceduralGeometry* G;
-	Material* M;
+	assetPtr<ProceduralGeometry> G;
+	assetPtr<Material> M;
 	std::vector<uint32> innerVertexIndices; // For lightning effect pivot
 };
 
@@ -35,8 +38,10 @@ public:
 	virtual void onSpawn() override;
 	virtual void onDestroy() override {}
 	virtual void onTick(float deltaSeconds) override {}
+
 	HermiteSpline& getSpline() { return spline; }
 	void setSpline(const HermiteSpline& inSpline) { spline = inSpline; }
+
 private:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
@@ -57,19 +62,19 @@ public:
 	void onLoadOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	PlayerController* playerController = nullptr;
-	std::vector<RingActor*> rings;
+	actorPtr<PlayerController> playerController;
+	actorPtrList<RingActor> rings;
 
-	LightningActor* lightningSphere = nullptr;
+	actorPtr<LightningActor> lightningSphere;
 	std::vector<uint32> ringIndicesForParticleRotation;
 
-	SpaceshipActor* spaceship1 = nullptr;
-	SpaceshipActor* spaceship2 = nullptr;
-	StaticMeshActor* guardTower = nullptr;
+	actorPtr<SpaceshipActor> spaceship1;
+	actorPtr<SpaceshipActor> spaceship2;
+	actorPtr<StaticMeshActor> guardTower;
 
-	Material* M_tower = nullptr;
+	assetPtr<Material> M_tower;
 	
-	PanoramaSkyActor* panoramaSky = nullptr;
+	actorPtr<PanoramaSkyActor> panoramaSky;
 	Texture* starfieldTexture = nullptr;
 
 };

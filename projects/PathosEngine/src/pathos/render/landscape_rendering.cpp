@@ -3,8 +3,8 @@
 #include "pathos/rhi/buffer.h"
 #include "pathos/rhi/texture.h"
 #include "pathos/mesh/geometry.h"
+#include "pathos/material/material_proxy.h"
 #include "pathos/material/material_shader.h"
-#include "pathos/material/material.h"
 #include "pathos/scene/landscape_component.h"
 
 #include "badger/math/plane.h"
@@ -115,14 +115,14 @@ namespace pathos {
 
 		for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 			LandscapeProxy* proxy = proxyList[proxyIx];
-			Material* material = proxy->material;
-			MaterialShader* materialShader = material->internal_getMaterialShader();
+			MaterialProxy* material = proxy->material;
+			MaterialShader* materialShader = material->materialShader;
 
 			bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-			bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID());
+			bool bShouldUpdateMaterialParameters = bShouldBindProgram || (currentMIID != material->materialInstanceID);
 			bool bUseWireframeMode = material->bWireframe;
 			currentProgramHash = materialShader->programHash;
-			currentMIID = material->internal_getMaterialInstanceID();
+			currentMIID = material->materialInstanceID;
 
 			if (bShouldBindProgram) {
 				SCOPED_DRAW_EVENT(BindMaterialProgram);
@@ -134,22 +134,22 @@ namespace pathos {
 
 			// Update UBO (per object)
 			{
-				Material::UBO_PerObject uboData;
+				MaterialProxy::UBO_PerObject uboData;
 				uboData.modelTransform = proxy->modelMatrix;
 				uboData.prevModelTransform = proxy->prevModelMatrix;
-				uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+				uboPerObject.update(cmdList, MaterialProxy::UBO_PerObject::BINDING_POINT, &uboData);
 			}
 
 			// Update UBO (material)
 			if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
 				uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-				material->internal_fillUniformBuffer(uboMemory);
+				material->fillUniformBuffer(uboMemory);
 				materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 			}
 
 			// Bind texture units
 			if (bShouldUpdateMaterialParameters) {
-				for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+				for (const MaterialTextureParameter& mtp : material->textureParameters) {
 					cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 				}
 			}

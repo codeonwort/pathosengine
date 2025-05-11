@@ -1,6 +1,8 @@
 #pragma once
 
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/smart_pointer.h"
+
 #include "badger/types/vector_types.h"
 
 #include "glm/gtx/quaternion.hpp"
@@ -24,7 +26,7 @@ namespace pathos {
 
 	public:
 		SkinnedMesh();
-		SkinnedMesh(MeshGeometry* G, Material* M);
+		SkinnedMesh(assetPtr<MeshGeometry> G, assetPtr<Material> M);
 
 		void addBone(uint32_t geomIndex, const Bone& bone);
 

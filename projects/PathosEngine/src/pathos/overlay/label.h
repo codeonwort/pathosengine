@@ -3,6 +3,8 @@
 #include "display_object.h"
 #include "pathos/text/text_geometry.h"
 #include "pathos/text/font_mgr.h"
+#include "pathos/smart_pointer.h"
+
 #include <string>
 
 namespace pathos {
@@ -25,14 +27,12 @@ namespace pathos {
 		const std::wstring& getText() const { return text; }
 		std::wstring getText() { return text; }
 
-		virtual MeshGeometry* getGeometry() override { return geometry; }
-
 	protected:
 		virtual void updateTransform(uint32 viewportWidth, uint32 viewportHeight) override;
 
 	private:
 		std::wstring text;
-		TextGeometry* geometry;
+		assetPtr<TextGeometry> geometry;
 		FontDesc fontDesc;
 
 	};

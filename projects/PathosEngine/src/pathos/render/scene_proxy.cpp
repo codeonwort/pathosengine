@@ -2,7 +2,7 @@
 #include "pathos/engine_policy.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/mesh/geometry.h"
-#include "pathos/material/material.h"
+#include "pathos/material/material_proxy.h"
 #include "pathos/material/material_shader.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/landscape_component.h"
@@ -54,12 +54,12 @@ namespace pathos {
 			std::sort(v.begin(), v.end(),
 				[](const StaticMeshProxy* A, const StaticMeshProxy* B) -> bool {
 					// 1. Program
-					const uint32 programA = A->material->internal_getMaterialShader()->programHash;
-					const uint32 programB = B->material->internal_getMaterialShader()->programHash;
+					const uint32 programA = A->material->materialShader->programHash;
+					const uint32 programB = B->material->materialShader->programHash;
 					if (programA != programB) return programA < programB;
 					// 2. Material instance -> wireframe -> internal -> doubleSided
-					uint64 keyA = (uint64)A->material->internal_getMaterialInstanceID() << 32;
-					uint64 keyB = (uint64)B->material->internal_getMaterialInstanceID() << 32;
+					uint64 keyA = (uint64)A->material->materialInstanceID << 32;
+					uint64 keyB = (uint64)B->material->materialInstanceID << 32;
 					keyA |= ((uint64)A->material->bWireframe) << 31;
 					keyA |= ((uint64)A->renderInternal) << 30;
 					keyA |= ((uint64)A->doubleSided) << 29;
@@ -135,7 +135,7 @@ namespace pathos {
 	}
 
 	void SceneProxy::addStaticMeshProxy(StaticMeshProxy* proxy) {
-		if (proxy->material->internal_getMaterialShader() == nullptr) {
+		if (proxy->material->materialShader == nullptr) {
 			return;
 		}
 
@@ -145,7 +145,7 @@ namespace pathos {
 		} else {
 			proxyList_staticMeshOpaque.push_back(proxy);
 
-			MaterialShader* materialShader = proxy->material->internal_getMaterialShader();
+			MaterialShader* materialShader = proxy->material->materialShader;
 			bool bTrivial = materialShader->bTrivialDepthOnlyPass
 				&& proxy->material->bWireframe == false
 				&& proxy->renderInternal == false
@@ -160,13 +160,13 @@ namespace pathos {
 	}
 
 	void SceneProxy::addShadowMeshProxy(ShadowMeshProxy* proxy) {
-		if (proxy->material->internal_getMaterialShader() == nullptr) {
+		if (proxy->material->materialShader == nullptr) {
 			return;
 		}
 
 		proxyList_shadowMesh.push_back(proxy);
 
-		MaterialShader* materialShader = proxy->material->internal_getMaterialShader();
+		MaterialShader* materialShader = proxy->material->materialShader;
 		bool bTrivial = materialShader->bTrivialDepthOnlyPass
 			&& proxy->material->bWireframe == false
 			&& proxy->renderInternal == false

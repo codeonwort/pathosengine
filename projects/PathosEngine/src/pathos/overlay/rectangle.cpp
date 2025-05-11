@@ -20,7 +20,7 @@ namespace pathos {
 			proxy->y = y;
 			proxy->scaleX = scaleX;
 			proxy->scaleY = scaleY;
-			proxy->geometry = geom;
+			proxy->geometry = geom.get();
 			proxy->brush = getBrush();
 			proxy->transform = transform;
 			proxy->width = width;

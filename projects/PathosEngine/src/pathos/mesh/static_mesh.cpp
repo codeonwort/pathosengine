@@ -2,10 +2,13 @@
 
 namespace pathos {
 
-	StaticMesh::StaticMesh(MeshGeometry* geom, Material* mat) {
+	StaticMesh::StaticMesh() {
+	}
+
+	StaticMesh::StaticMesh(assetPtr<MeshGeometry> geom, assetPtr<Material> mat) {
 		bool bothNull = geom == nullptr && mat == nullptr;
 		bool bothValid = geom != nullptr && mat != nullptr;
-			
+		
 		// Only 'both null' or 'both not null' are allowed
 		CHECK(bothNull || bothValid);
 
@@ -15,16 +18,10 @@ namespace pathos {
 	}
 
 	StaticMesh::~StaticMesh() {
-		for (auto& lod : lodArray) {
-			for (auto geom : lod.geometries) {
-				if (geom != nullptr) {
-					delete geom;
-				}
-			}
-		}
+		lodArray.clear();
 	}
 
-	void pathos::StaticMesh::addSection(uint32 lod, MeshGeometry* G, Material* M) {
+	void pathos::StaticMesh::addSection(uint32 lod, assetPtr<MeshGeometry> G, assetPtr<Material> M) {
 		CHECK(lod >= 0 && G != nullptr && M != nullptr);
 		if ((uint32)lodArray.size() <= lod) {
 			lodArray.resize(lod + 1);

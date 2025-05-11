@@ -99,7 +99,7 @@ namespace pathos {
 	}
 	
 	void DAELoader::loadMeshes(bool invertWinding) {
-		SkinnedMesh* pathosMesh = new SkinnedMesh;
+		assetPtr<SkinnedMesh> pathosMesh(new SkinnedMesh);
 
 		for (auto i = 0u; i < scene->mNumMeshes; ++i) {
 			const auto aiMeshIndex = i;
@@ -154,7 +154,7 @@ namespace pathos {
 			}
 			
 			// construct geometry
-			MeshGeometry* G = new MeshGeometry;
+			assetPtr<MeshGeometry> G = makeAssetPtr<MeshGeometry>();
 			G->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 			if (true || ai_mesh->HasPositions()) G->updatePositionData(positions.data(), 3 * N);
 			if (true || ai_mesh->HasNormals()) G->updateNormalData(normals.data(), 3 * N);
@@ -173,7 +173,7 @@ namespace pathos {
 			G->updateIndexData(&indices[0], (uint32_t)indices.size());
 
 			// create material
-			Material* M;
+			assetPtr<Material> M;
 			const aiMaterial* ai_material = scene->mMaterials[ai_mesh->mMaterialIndex];
 			bool hasDiffuseTexture = ai_material->GetTextureCount(aiTextureType_DIFFUSE) >= 1;
 			bool hasNormalTexture = ai_material->GetTextureCount(aiTextureType_NORMALS) >= 1;
@@ -228,7 +228,7 @@ namespace pathos {
 	}
 
 	void DAELoader::loadAnimations() {
-		SkinnedMesh* skinnedMesh = dynamic_cast<SkinnedMesh*>(mesh);
+		assetPtr<SkinnedMesh> skinnedMesh = dynamicCastAsset<SkinnedMesh>(mesh);
 		if (!skinnedMesh) {
 			return;
 		}

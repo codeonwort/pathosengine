@@ -4,6 +4,7 @@
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
 #include "pathos/mesh/geometry_procedural.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
@@ -51,7 +52,7 @@ void World_GJK::onInitialize() {
 	}
 #else
 	//MeshGeometry* geometry = new CubeGeometry(vector3(1.0f));
-	MeshGeometry* geometry = new SphereGeometry(SphereGeometry::Input{ 1.0f, 6 });
+	auto geometry = makeAssetPtr<SphereGeometry>(SphereGeometry::Input{ 1.0f, 6 });
 	SphereGeometry::Output geomOutput;
 	SphereGeometry::generate({ 1.0f, 6 }, geomOutput);
 	std::vector<vector3> geomVertices(geomOutput.positions.size() / 3);
@@ -78,8 +79,8 @@ void World_GJK::onInitialize() {
 	//materialOnHit->setConstantParameter("roughness", 1.0f);
 	//materialOnHit->setConstantParameter("emissive", vector3(0.0f));
 
-	StaticMesh* meshA = new StaticMesh(geometry, materialNoHit);
-	StaticMesh* meshB = new StaticMesh(geometry, materialNoHit);
+	assetPtr<StaticMesh> meshA = makeAssetPtr<StaticMesh>(geometry, materialNoHit);
+	assetPtr<StaticMesh> meshB = makeAssetPtr<StaticMesh>(geometry, materialNoHit);
 
 	modelA = spawnActor<StaticMeshActor>();
 	modelB = spawnActor<StaticMeshActor>();
@@ -99,13 +100,13 @@ void World_GJK::onInitialize() {
 #endif
 
 	{
-		auto arrowG = new CubeGeometry(vector3(1.0f, 0.05f, 0.05f));
+		auto arrowG = makeAssetPtr<CubeGeometry>(vector3(1.0f, 0.05f, 0.05f));
 		auto arrowM = Material::createMaterialInstance("solid_color");
 		arrowM->setConstantParameter("albedo", vector3(0.9f, 0.0f, 0.0f));
 		arrowM->setConstantParameter("metallic", 0.0f);
 		arrowM->setConstantParameter("roughness", 1.0f);
 		arrowM->setConstantParameter("emissive", vector3(0.0f));
-		auto arrowMesh = new StaticMesh(arrowG, arrowM);
+		assetPtr<StaticMesh> arrowMesh = makeAssetPtr<StaticMesh>(arrowG, arrowM);
 
 		arrow = spawnActor<StaticMeshActor>();
 		arrow->setStaticMesh(arrowMesh);
@@ -122,7 +123,7 @@ void World_GJK::onTick(float deltaSeconds) {
 	badger::physics::Contact contact;
 	bool hit = badger::physics::intersect(&bodyA, &bodyB, contact);
 
-	Material* material = hit ? materialOnHit : materialNoHit;
+	auto material = hit ? materialOnHit : materialNoHit;
 	modelA->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
 	modelB->getStaticMeshComponent()->getStaticMesh()->getLOD(0).setMaterial(0, material);
 

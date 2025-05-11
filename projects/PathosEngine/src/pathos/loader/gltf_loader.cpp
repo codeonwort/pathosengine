@@ -139,7 +139,7 @@ namespace pathos {
 				(param.index != -1) ? pendingTextures[param.index].glTexture : param.fallbackTexture);
 		}
 		for (GLTFPendingGeometry& pending : pendingGeometries) {
-			MeshGeometry* geometry = pending.geometry;
+			assetPtr<MeshGeometry> geometry = pending.geometry;
 
 			if (pending.bIndex16) {
 				geometry->updateIndex16Data((uint16*)pending.indexBlob, pending.indexLength);
@@ -315,7 +315,7 @@ namespace pathos {
 		uint32 numMasks = 0, numBlends = 0;
 
 		for (size_t materialIx = 0; materialIx < tinyModel->materials.size(); ++materialIx) {
-			Material* material = fallbackMaterial;
+			assetPtr<Material> material = fallbackMaterial;
 
 			const tinygltf::Material& tinyMat = tinyModel->materials[materialIx];
 
@@ -391,15 +391,15 @@ namespace pathos {
 		// For each mesh
 		for (size_t meshIx = 0; meshIx < tinyModel->meshes.size(); ++meshIx) {
 			const tinygltf::Mesh& tinyMesh = tinyModel->meshes[meshIx];
-			StaticMesh* mesh = new StaticMesh;
+			assetPtr<StaticMesh> mesh = makeAssetPtr<StaticMesh>();
 
 			// For each mesh section
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {
 				const tinygltf::Primitive& tinyPrim = tinyMesh.primitives[primIx];
 
-				MeshGeometry* geometry = new MeshGeometry;
+				assetPtr<MeshGeometry> geometry = makeAssetPtr<MeshGeometry>();
 				geometry->initializeVertexLayout(MeshGeometry::EVertexAttributes::All, true);
-				Material* material = fallbackMaterial;
+				assetPtr<Material> material = fallbackMaterial;
 
 				// #todo-gltf: Temp ignore mesh sections with unsupported materials.
 				if (tinyPrim.material == -1 || materials[tinyPrim.material] == fallbackMaterial) {

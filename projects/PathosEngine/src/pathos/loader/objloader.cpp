@@ -1,5 +1,7 @@
 #include "pathos/engine.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/render_device.h"
+#include "pathos/material/material.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/util/resource_finder.h"
 #include "pathos/util/log.h"
@@ -55,7 +57,7 @@ namespace pathos {
 		unload();
 	}
 
-	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, Material*>>&& overrides) {
+	void OBJLoader::setMaterialOverrides(const std::vector<std::pair<std::string, assetPtr<Material>>>&& overrides) {
 		materialOverrides = overrides;
 	}
 
@@ -131,7 +133,7 @@ namespace pathos {
 	void OBJLoader::analyzeMaterials() {
 		for (size_t i = 0; i < tiny_materials.size(); i++) {
 			tinyobj::material_t& t_mat = tiny_materials[i];
-			Material* M = nullptr;
+			assetPtr<Material> M;
 
 			int32 overrideIx = -1;
 			for (size_t k = 0; k < materialOverrides.size(); ++k) {
@@ -215,7 +217,7 @@ namespace pathos {
 			if (overrideIx != -1) {
 				// #todo-loader: Would be best not to create it at first...
 				if (M != nullptr) {
-					delete M;
+					M.reset();
 				}
 				M = materialOverrides[overrideIx].second;
 			}
@@ -342,7 +344,7 @@ namespace pathos {
 		}
 	}
 
-	StaticMesh* OBJLoader::craftMeshFrom(const std::string& shapeName) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFrom(const std::string& shapeName) {
 		for (size_t i = 0; i < tiny_shapes.size(); ++i) {
 			if (tiny_shapes[i].name == shapeName) {
 				return craftMeshFrom(static_cast<uint32>(i));
@@ -350,19 +352,19 @@ namespace pathos {
 		}
 		return nullptr;
 	}
-	StaticMesh* OBJLoader::craftMeshFrom(uint32 shapeIndex) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFrom(uint32 shapeIndex) {
 		return craftMesh(shapeIndex, shapeIndex);
 	}
-	StaticMesh* OBJLoader::craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial) {
+	assetPtr<StaticMesh> OBJLoader::craftMeshFromAllShapes(bool bMergeShapesIfSameMaterial) {
 		return craftMesh(0, static_cast<uint32>(pendingShapes.size() - 1), bMergeShapesIfSameMaterial);
 	}
 
-	StaticMesh* OBJLoader::craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial) {
+	assetPtr<StaticMesh> OBJLoader::craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial) {
 		CHECK(0 <= from && from < pendingShapes.size());
 		CHECK(0 <= to && to < pendingShapes.size());
 		CHECK(from <= to);
 
-		StaticMesh* mesh = new StaticMesh;
+		assetPtr<StaticMesh> mesh(new StaticMesh);
 
 		if (bMergeShapesIfSameMaterial) {
 			std::map<int32, std::vector<uint32>> materialToShapes;
@@ -453,7 +455,7 @@ namespace pathos {
 				}
 #endif
 
-				MeshGeometry* geom = new MeshGeometry;
+				assetPtr<MeshGeometry> geom = makeAssetPtr<MeshGeometry>();
 				geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 				geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 				geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
@@ -480,7 +482,7 @@ namespace pathos {
 					auto& texcoords = shape.texcoords[materialID];
 					auto& indices = shape.indices[materialID];
 
-					MeshGeometry* geom = new MeshGeometry;
+					assetPtr<MeshGeometry> geom = makeAssetPtr<MeshGeometry>();
 					geom->initializeVertexLayout(MeshGeometry::EVertexAttributes::All);
 					geom->updatePositionData(&positions[0], static_cast<uint32>(positions.size()));
 					geom->updateUVData(&texcoords[0], static_cast<uint32>(texcoords.size()));
@@ -500,13 +502,13 @@ namespace pathos {
 		return mesh;
 	}
 
-	Material* OBJLoader::getMaterial(int32 index) {
+	assetPtr<Material> OBJLoader::getMaterial(int32 index) {
 		CHECK(-1 <= index && index < (int32)materials.size());
 		if (index == -1) {
 			return defaultMaterial;
 		}
 
-		Material* M = materials[index];
+		assetPtr<Material> M = materials[index];
 
 		if (pendingTextureData.find(index) != pendingTextureData.end()) {
 			constexpr uint32 mipLevels = 0;

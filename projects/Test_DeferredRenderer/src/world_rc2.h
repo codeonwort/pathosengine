@@ -3,6 +3,7 @@
 #include "pathos/rhi/gl_handles.h"
 #include "pathos/scene/world.h"
 #include "pathos/scene/actor.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include <vector>
@@ -28,9 +29,9 @@ public:
 	void buildMesh(float R, float D);
 
 private:
-	std::vector<MeshGeometry*> geometries;
-	std::vector<Material*> materials;
-	std::vector<StaticMesh*> staticMeshAssets;
+	std::vector<assetPtr<MeshGeometry>> geometries;
+	std::vector<assetPtr<Material>> materials;
+	std::vector<assetPtr<StaticMesh>> staticMeshAssets;
 	std::vector<StaticMeshComponent*> staticMeshComponents;
 };
 
@@ -44,10 +45,10 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 
 private:
-	PlayerController* playerController = nullptr;
-	DirectionalLightActor* sunActor = nullptr;
-	std::vector<SquareDiamondActor*> squareDiamonds;
+	actorPtr<PlayerController> playerController;
+	actorPtr<DirectionalLightActor> sunActor;
+	actorPtrList<SquareDiamondActor> squareDiamonds;
 
-	SkyboxActor* skyActor = nullptr;
-	Material* skyMaterial = nullptr;
+	actorPtr<SkyboxActor> skyActor;
+	assetPtr<Material> skyMaterial;
 };

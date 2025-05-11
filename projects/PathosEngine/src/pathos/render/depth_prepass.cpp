@@ -5,9 +5,11 @@
 #include "pathos/rhi/render_device.h"
 #include "pathos/rhi/shader_program.h"
 #include "pathos/rhi/texture.h"
+#include "pathos/rhi/buffer.h"
 #include "pathos/rhi/indirect_draw.h"
-#include "pathos/material/material_shader.h"
 #include "pathos/material/material.h"
+#include "pathos/material/material_proxy.h"
+#include "pathos/material/material_shader.h"
 #include "pathos/mesh/geometry.h"
 #include "pathos/scene/static_mesh_component.h"
 #include "pathos/scene/camera.h"
@@ -23,7 +25,7 @@ namespace pathos {
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.objectLabel(GL_FRAMEBUFFER, fbo, -1, "FBO_DepthPrepass");
 
-		uboPerObject.init<Material::UBO_PerObject>("UBO_PerObject_DepthPrepass");
+		uboPerObject.init<MaterialProxy::UBO_PerObject>("UBO_PerObject_DepthPrepass");
 	}
 
 	void DepthPrepass::releaseResources(RenderCommandList& cmdList) {
@@ -71,14 +73,14 @@ namespace pathos {
 
 			reallocateIndirectDrawBuffers(cmdList, maxDrawcalls);
 			std::vector<DrawElementsIndirectCommand> drawCommands;
-			std::vector<Material::UBO_PerObject> modelTransforms;
+			std::vector<MaterialProxy::UBO_PerObject> modelTransforms;
 			drawCommands.reserve(maxDrawcalls);
 			modelTransforms.reserve(maxDrawcalls);
 
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
-				Material* material = proxy->material;
-				MaterialShader* materialShader = material->internal_getMaterialShader();
+				MaterialProxy* material = proxy->material;
+				MaterialShader* materialShader = material->materialShader;
 
 				// Early out
 				if (bEnableFrustumCulling && !proxy->bInFrustum) {
@@ -94,7 +96,7 @@ namespace pathos {
 				};
 				drawCommands.emplace_back(cmd);
 
-				Material::UBO_PerObject transforms;
+				MaterialProxy::UBO_PerObject transforms;
 				transforms.modelTransform = proxy->modelMatrix;
 				transforms.prevModelTransform = proxy->prevModelMatrix;
 				modelTransforms.emplace_back(transforms);
@@ -103,11 +105,11 @@ namespace pathos {
 			const uint32 mergedCalls = (uint32)drawCommands.size();
 			if (mergedCalls > 0) {
 				indirectDrawBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(DrawElementsIndirectCommand) * mergedCalls, drawCommands.data());
-				modelTransformBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(Material::UBO_PerObject) * mergedCalls, modelTransforms.data());
+				modelTransformBuffer->writeToGPU_renderThread(cmdList, 0, sizeof(MaterialProxy::UBO_PerObject) * mergedCalls, modelTransforms.data());
 
 				cmdList.useProgram(indirectDrawDummyMaterial->internal_getMaterialShader()->program->getGLName());
 				
-				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, modelTransformBuffer->internal_getGLName());
+				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, MaterialProxy::UBO_PerObject::BINDING_POINT, modelTransformBuffer->internal_getGLName());
 				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer->internal_getGLName());
 				cmdList.bindVertexArray(gPositionOnlyVAO);
 
@@ -119,7 +121,7 @@ namespace pathos {
 					0 // stride
 				);
 
-				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, Material::UBO_PerObject::BINDING_POINT, 0);
+				cmdList.bindBufferBase(GL_SHADER_STORAGE_BUFFER, MaterialProxy::UBO_PerObject::BINDING_POINT, 0);
 				cmdList.bindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 				cmdList.bindVertexArray(0);
 			}
@@ -138,8 +140,8 @@ namespace pathos {
 
 			for (size_t proxyIx = 0; proxyIx < numProxies; ++proxyIx) {
 				StaticMeshProxy* proxy = proxyList[proxyIx];
-				Material* material = proxy->material;
-				MaterialShader* materialShader = material->internal_getMaterialShader();
+				MaterialProxy* material = proxy->material;
+				MaterialShader* materialShader = material->materialShader;
 
 #if MERGE_TRIVIAL_DRAW_CALLS
 				// Drawcall for this proxy was auto-merged in the above block.
@@ -154,12 +156,12 @@ namespace pathos {
 				}
 
 				bool bShouldBindProgram = (currentProgramHash != materialShader->programHash);
-				bool bShouldUpdateMaterialParameters = (!materialShader->bTrivialDepthOnlyPass) && (bShouldBindProgram || (currentMIID != material->internal_getMaterialInstanceID()));
+				bool bShouldUpdateMaterialParameters = (!materialShader->bTrivialDepthOnlyPass) && (bShouldBindProgram || (currentMIID != material->materialInstanceID));
 				bool bShouldUpdateWireframe = material->bWireframe;
 				bool bShouldUpdateWinding = bCurrentReverseWinding != proxy->renderInternal;
 				bool bShouldUpdateDoubleSided = bCurrentDoubleSided != proxy->doubleSided;
 				currentProgramHash = materialShader->programHash;
-				currentMIID = material->internal_getMaterialInstanceID();
+				currentMIID = material->materialInstanceID;
 				bCurrentWireframe = material->bWireframe;
 				bCurrentReverseWinding = proxy->renderInternal;
 				bCurrentDoubleSided = proxy->doubleSided;
@@ -174,16 +176,16 @@ namespace pathos {
 
 				// Update UBO (per object)
 				{
-					Material::UBO_PerObject uboData;
+					MaterialProxy::UBO_PerObject uboData;
 					uboData.modelTransform = proxy->modelMatrix;
 					uboData.prevModelTransform = proxy->prevModelMatrix;
-					uboPerObject.update(cmdList, Material::UBO_PerObject::BINDING_POINT, &uboData);
+					uboPerObject.update(cmdList, MaterialProxy::UBO_PerObject::BINDING_POINT, &uboData);
 				}
 
 				// Update UBO (material)
 				if (bShouldUpdateMaterialParameters && materialShader->uboTotalBytes > 0) {
 					uint8* uboMemory = reinterpret_cast<uint8*>(cmdList.allocateSingleFrameMemory(materialShader->uboTotalBytes));
-					material->internal_fillUniformBuffer(uboMemory);
+					material->fillUniformBuffer(uboMemory);
 					materialShader->uboMaterial.update(cmdList, materialShader->uboBindingPoint, uboMemory);
 				}
 
@@ -192,7 +194,7 @@ namespace pathos {
 				// - The vertex shader uses VTF(Vertex Texture Fetch)
 				// - The pixel shader uses discard
 				if (bShouldUpdateMaterialParameters) {
-					for (const MaterialTextureParameter& mtp : material->internal_getTextureParameters()) {
+					for (const MaterialTextureParameter& mtp : material->textureParameters) {
 						cmdList.bindTextureUnit(mtp.binding, mtp.texture->internal_getGLName());
 					}
 				}
@@ -242,10 +244,10 @@ namespace pathos {
 			indirectDrawBuffer = makeUnique<Buffer>(createParams);
 			indirectDrawBuffer->createGPUResource_renderThread(cmdList);
 		}
-		if (maxDrawcalls > getCount(modelTransformBuffer.get(), sizeof(Material::UBO_PerObject))) {
+		if (maxDrawcalls > getCount(modelTransformBuffer.get(), sizeof(MaterialProxy::UBO_PerObject))) {
 			BufferCreateParams createParams{
 				EBufferUsage::CpuWrite,
-				sizeof(Material::UBO_PerObject) * maxDrawcalls,
+				sizeof(MaterialProxy::UBO_PerObject) * maxDrawcalls,
 				nullptr, // initialData
 				"Buffer_DepthPrepass_ModelTransforms",
 			};

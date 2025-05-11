@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 //////////////////////////////////////////////////////////////////////////
@@ -29,20 +30,17 @@ public:
 	void onLoadWavefrontOBJ(OBJLoader* loader, uint64 payload);
 
 private:
-	PlayerController* playerController = nullptr;
+	actorPtr<PlayerController> playerController;
+	actorPtr<DirectionalLightActor> sunLight;
+	actorPtr<PointLightActor> pointLight0;
+	actorPtr<StaticMeshActor> ground;
+	actorPtr<StaticMeshActor> godRaySourceMesh;
+	actorPtr<StaticMeshActor> lpsHead;
 
-	DirectionalLightActor* sunLight = nullptr;
-	PointLightActor* pointLight0 = nullptr;
+	assetPtr<SkinnedMesh> daeModel_my;
+	assetPtr<SkinnedMesh> daeModel_riggedFigure;
 
-	StaticMeshActor* ground = nullptr;
-	StaticMeshActor* godRaySourceMesh = nullptr;
-
-	StaticMeshActor* lpsHead = nullptr;
-
-	SkinnedMesh* daeModel_my = nullptr;
-	SkinnedMesh* daeModel_riggedFigure = nullptr;
-
-	TextMeshActor* alertText1 = nullptr;
-	TextMeshActor* alertText2 = nullptr;
+	actorPtr<TextMeshActor> alertText1;
+	actorPtr<TextMeshActor> alertText2;
 
 };

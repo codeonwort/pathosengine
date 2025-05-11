@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pathos/render/scene_render_targets.h"
 #include "pathos/rhi/render_command_list.h"
 #include "pathos/rhi/uniform_buffer.h"
 

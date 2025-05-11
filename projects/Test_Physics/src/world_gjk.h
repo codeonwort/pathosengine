@@ -2,6 +2,7 @@
 
 #include "pathos/engine.h"
 #include "pathos/scene/world.h"
+#include "pathos/smart_pointer.h"
 using namespace pathos;
 
 #include "badger/physics/shape.h"
@@ -21,16 +22,16 @@ public:
 	virtual void onTick(float deltaSeconds) override;
 
 private:
-	PlayerController* controller = nullptr;
+	actorPtr<PlayerController> controller;
 
-	StaticMeshActor* modelA = nullptr;
-	StaticMeshActor* modelB = nullptr;
-	StaticMeshActor* arrow = nullptr;
+	actorPtr<StaticMeshActor> modelA;
+	actorPtr<StaticMeshActor> modelB;
+	actorPtr<StaticMeshActor> arrow;
 
 	badger::physics::Body bodyA;
 	badger::physics::Body bodyB;
 
-	Material* materialNoHit = nullptr;
-	Material* materialOnHit = nullptr;
+	assetPtr<Material> materialNoHit;
+	assetPtr<Material> materialOnHit;
 
 };

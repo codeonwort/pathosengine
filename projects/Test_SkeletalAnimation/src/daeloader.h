@@ -3,6 +3,7 @@
 #pragma once
 
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/smart_pointer.h"
 
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -33,7 +34,7 @@ namespace pathos {
 		bool load(const char* filename, unsigned int flags, bool invertWinding = false);
 		bool unload();
 
-		inline StaticMesh* getMesh() const { return mesh; }
+		inline assetPtr<StaticMesh> getMesh() const { return mesh; }
 
 	protected:
 		void loadNodes();
@@ -51,7 +52,7 @@ namespace pathos {
 
 	private:
 		const aiScene* scene = nullptr;
-		StaticMesh* mesh = nullptr;
+		assetPtr<StaticMesh> mesh;
 		Node* root = nullptr;
 
 		std::string materialDir;

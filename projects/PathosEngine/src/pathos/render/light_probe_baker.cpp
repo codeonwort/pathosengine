@@ -201,8 +201,8 @@ namespace pathos {
 		cmdList.namedFramebufferDrawBuffers(dummyFBO_2color, _countof(drawBuffers_color2), drawBuffers_color2);
 
 		// Dummy meshes
-		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
-		dummyCube = gEngine->getSystemGeometryUnitCube();
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane().get();
+		dummyCube = gEngine->getSystemGeometryUnitCube().get();
 
 		// BRDF integration map
 		bdfIntegrationMap = bakeBRDFIntegrationMap_renderThread(cmdList, 512);

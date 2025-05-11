@@ -1,6 +1,7 @@
 #include "asset_streamer.h"
 #include "pathos/loader/objloader.h"
 #include "pathos/loader/gltf_loader.h"
+#include "pathos/rhi/render_device.h"
 #include "pathos/util/cpu_profiler.h"
 #include "pathos/util/engine_thread.h"
 #include "pathos/util/log.h"
@@ -9,9 +10,6 @@
 #include <sstream>
 
 namespace pathos {
-
-	static constexpr uint32 OBJ_POOL_SIZE = 32;
-	static constexpr uint32 GLTF_POOL_SIZE = 4;
 
 	void internal_loadWavefrontOBJ(const WorkItemParam* param) {
 		SCOPED_CPU_COUNTER(AsyncLoad_WavefrontOBJ);
@@ -34,8 +32,7 @@ namespace pathos {
 		streamer->internal_onLoaded_WavefrontOBJ(arg);
 	}
 
-	void internal_loadGLTF(const WorkItemParam* param)
-	{
+	void internal_loadGLTF(const WorkItemParam* param) {
 		SCOPED_CPU_COUNTER(AsyncLoad_GLTF);
 
 		AssetLoadInfoBase_GLTF* arg = (AssetLoadInfoBase_GLTF*)param->arg;
@@ -55,12 +52,12 @@ namespace pathos {
 		streamer->internal_onLoaded_GLTF(arg);
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
 
-	AssetStreamer::AssetStreamer()
-		: objLoaderAllocator(PoolAllocator<OBJLoader>(OBJ_POOL_SIZE))
-		, gltfLoaderAllocator(PoolAllocator<GLTFLoader>(GLTF_POOL_SIZE))
-	{
+// AssetStreamer
+namespace pathos {
+
+	AssetStreamer::AssetStreamer() {
 	}
 
 	AssetStreamer::~AssetStreamer() {
@@ -82,6 +79,10 @@ namespace pathos {
 
 	void AssetStreamer::destroy() {
 		threadPool.Stop();
+		for (auto loader : objLoaderAllocator) delete loader;
+		for (auto loader : objLoadersToDelete) delete loader;
+		for (auto loader : gltfLoaderAllocator) delete loader;
+		for (auto loader : gltfLoadersToDelete) delete loader;
 		LOG(LogInfo, "[AssetStreamer] Destroy asset streamer");
 	}
 
@@ -125,7 +126,7 @@ namespace pathos {
 		threadPool.AddWorkSafe(work);
 	}
 
-	void AssetStreamer::flushLoadedAssets() {
+	void AssetStreamer::internal_flushLoadedAssets() {
 		CHECK(!isInRenderThread());
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> tempLoadedOBJs;
 		std::vector<AssetLoadInfoBase_GLTF*> tempLoadedGLTFs;
@@ -153,17 +154,37 @@ namespace pathos {
 				delete assetInfo;
 			}
 		}
+
+		// Delete stale loaders.
+		for (auto loader : objLoadersToDelete) delete loader;
+		for (auto loader : gltfLoadersToDelete) delete loader;
+		objLoadersToDelete.clear();
+		gltfLoadersToDelete.clear();
 	}
 
-	pathos::OBJLoader* AssetStreamer::internal_allocateOBJLoader() {
-		auto loader = objLoaderAllocator.alloc();
-		CHECK(loader != nullptr);
+	void AssetStreamer::releaseOBJLoader(OBJLoader* loader) {
+		auto it = std::find(objLoaderAllocator.begin(), objLoaderAllocator.end(), loader);
+		CHECK(it != objLoaderAllocator.end());
+		objLoaderAllocator.erase(it);
+		objLoadersToDelete.push_back(loader);
+	}
+
+	void AssetStreamer::releaseGLTFLoader(GLTFLoader* loader) {
+		auto it = std::find(gltfLoaderAllocator.begin(), gltfLoaderAllocator.end(), loader);
+		CHECK(it != gltfLoaderAllocator.end());
+		gltfLoaderAllocator.erase(it);
+		gltfLoadersToDelete.push_back(loader);
+	}
+
+	OBJLoader* AssetStreamer::internal_allocateOBJLoader() {
+		auto loader = new OBJLoader;
+		objLoaderAllocator.push_back(loader);
 		return loader;
 	}
 
-	pathos::GLTFLoader* AssetStreamer::internal_allocateGLTFLoader() {
-		auto loader = gltfLoaderAllocator.alloc();
-		CHECK(loader != nullptr);
+	GLTFLoader* AssetStreamer::internal_allocateGLTFLoader() {
+		auto loader = new GLTFLoader;
+		gltfLoaderAllocator.push_back(loader);
 		return loader;
 	}
 

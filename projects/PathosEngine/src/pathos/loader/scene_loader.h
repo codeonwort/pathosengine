@@ -8,6 +8,7 @@
 
 #include "scene_desc_parser.h"
 #include "pathos/scene/actor.h"
+#include "pathos/smart_pointer.h"
 
 #include <vector>
 #include <map>
@@ -15,41 +16,31 @@
 namespace pathos {
 
 	class World;
-	//class Actor;
-
-	class ActorBinder {
-		friend class SceneLoader;
-		struct Info {
-			void** actor;
-			bool bound;
-		};
-	public:
-		template<typename ActorType>
-		void addBinding(const std::string& name, ActorType** actor) {
-			static_assert(std::is_base_of<Actor, ActorType>::value, "Target type is not derived from pathos::Actor");
-			CHECKF(bindings.find(name) == bindings.end(), "Duplicate name");
-
-			void** actorBase = reinterpret_cast<void**>(actor);
-			bindings.insert(std::make_pair(name, Info{ actorBase, false }));
-		}
-	private:
-		std::map<std::string, Info> bindings;
-	};
 
 	class SceneLoader {
+
 	public:
-		bool loadSceneDescription(
-			World* world,
-			const char* inFilename,
-			ActorBinder& actorBinder);
+		bool loadSceneDescription(World* world, const char* inFilename);
+
+		template<typename T>
+		void bindActor(const std::string& name, actorPtr<T>* targetActor) {
+			auto it = actorMap.find(name);
+			if (it != actorMap.end()) {
+				*targetActor = dynamicCastActor<T>(it->second);
+			} else {
+				CHECK_NO_ENTRY();
+			}
+		}
 
 	private:
-		using ActorMap = std::map<std::string, Actor*>;
+		using ActorMap = std::map<std::string, actorPtr<Actor>>;
 
 		bool loadJSON(const char* inFilename, std::string& outJSON);
 		bool parseJSON(const std::string& inJSON, SceneDescription& outDesc);
 		void applyDescription(World* world, const SceneDescription& desc, ActorMap& outActorMap);
-		void bindActors(SceneDescription& desc, const ActorMap& actorMap, ActorBinder& binder);
+
+	private:
+		ActorMap actorMap;
 	};
 
 }

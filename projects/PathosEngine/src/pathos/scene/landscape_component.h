@@ -10,31 +10,32 @@ namespace pathos {
 
 	class MeshGeometry;
 	class Material;
+	class MaterialProxy;
 	class Buffer;
 	class Texture;
 	struct ImageBlob;
 
 	struct LandscapeProxy : public SceneComponentProxy {
-		Buffer*       indirectDrawArgsBuffer;
-		Buffer*       indirectDrawCountBuffer;
-		Buffer*       sectorParameterBuffer;
-		MeshGeometry* geometry;
-		Material*     material;
-		matrix4       modelMatrix;
-		matrix4       prevModelMatrix;
-		uint32        indirectDrawCount;
-		bool          bGpuDriven;
+		Buffer*        indirectDrawArgsBuffer;
+		Buffer*        indirectDrawCountBuffer;
+		Buffer*        sectorParameterBuffer;
+		MeshGeometry*  geometry;
+		MaterialProxy* material;
+		matrix4        modelMatrix;
+		matrix4        prevModelMatrix;
+		uint32         indirectDrawCount;
+		bool           bGpuDriven;
 		// For gpu driven
-		vector4ui     indexCountPerLOD;
-		vector4ui     firstIndexPerLOD;
-		vector3       actorPosition;
-		float         sectorSizeX;
-		vector3       cameraPosition;
-		float         sectorSizeY;
-		uint32        sectorCountX;
-		uint32        sectorCountY;
-		float         cullDistance;
-		float         heightMultiplier;
+		vector4ui      indexCountPerLOD;
+		vector4ui      firstIndexPerLOD;
+		vector3        actorPosition;
+		float          sectorSizeX;
+		vector3        cameraPosition;
+		float          sectorSizeY;
+		uint32         sectorCountX;
+		uint32         sectorCountY;
+		float          cullDistance;
+		float          heightMultiplier;
 	};
 
 	class LandscapeComponent : public SceneComponent {
@@ -87,7 +88,7 @@ namespace pathos {
 		std::vector<float> heightMapValues;
 		float heightMultiplier = 1.0f;
 
-		uniquePtr<Material> material;
+		assetPtr<Material> material;
 		Texture* albedoTexture = nullptr;
 		Texture* heightmapTexture = nullptr;
 		Texture* normalmapTexture = nullptr;

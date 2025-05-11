@@ -72,7 +72,7 @@ namespace pathos {
 	}
 
 	void AutoExposurePass::initializeResources(RenderCommandList& cmdList) {
-		fullscreenQuad = gEngine->getSystemGeometryUnitPlane();
+		fullscreenQuad = gEngine->getSystemGeometryUnitPlane().get();
 
 		gRenderDevice->createFramebuffers(1, &fbo);
 		cmdList.namedFramebufferDrawBuffer(fbo, GL_COLOR_ATTACHMENT0);

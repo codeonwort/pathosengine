@@ -4,6 +4,7 @@
 
 // It's far-off that I'll implement my own smart pointers, but here is minimal abstraction.
 
+// General purpose
 namespace pathos {
 
 	template<typename T>
@@ -24,4 +25,50 @@ namespace pathos {
 	sharedPtr<T> makeShared(Args&& ...args) {
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
+}
+
+// Engine 'asset' only
+namespace pathos {
+
+	template<typename T>
+	using assetPtr = std::shared_ptr<T>;
+
+	template<typename T, typename ...Args>
+	assetPtr<T> makeAssetPtr(Args&& ...args) {
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
+
+	template<typename U, typename T>
+	assetPtr<U> dynamicCastAsset(assetPtr<T>&& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
+	template<typename U, typename T>
+	assetPtr<U> dynamicCastAsset(const assetPtr<T>& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
+}
+
+// Actor only
+namespace pathos {
+
+	template<typename T>
+	using actorPtr = std::shared_ptr<T>;
+
+	template<typename T>
+	using actorPtrList = std::vector<actorPtr<T>>;
+
+	// #todo: weakActorPtr
+
+	template<typename U, typename T>
+	actorPtr<U> dynamicCastActor(actorPtr<T>&& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
+	template<typename U, typename T>
+	actorPtr<U> dynamicCastActor(const actorPtr<T>& ptr) {
+		return std::dynamic_pointer_cast<U>(ptr);
+	}
+
 }

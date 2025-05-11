@@ -1,4 +1,4 @@
-#include "pathos/mesh/geometry.h"
+#include "geometry.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/util/log.h"
 

@@ -1,5 +1,6 @@
 #include "csm_debugger.h"
 #include "pathos/mesh/static_mesh.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/camera.h"
 #include "pathos/console.h"
 
@@ -9,21 +10,21 @@
 // #todo-shadow: Move to engine
 
 CSMDebugger::CSMDebugger() {
-	setStaticMesh(new StaticMesh);
+	setStaticMesh(makeAssetPtr<StaticMesh>());
 	getStaticMeshComponent()->castsShadow = false;
 
 	// #todo: Wireframe width can be controlled by glLineWidth() but it's a global state.
 
 	// For camera frustum
-	G = new ProceduralGeometry;
-	Material* M = Material::createMaterialInstance("unlit");
+	G = makeAssetPtr<ProceduralGeometry>();
+	assetPtr<Material> M = Material::createMaterialInstance("unlit");
 	M->setConstantParameter("color", vector3(0.7f));
 	M->bWireframe = true;
 	getStaticMesh()->addSection(0, G, M);
 
 	// For bounds of light view projections
-	G2 = new ProceduralGeometry;
-	Material* M2 = Material::createMaterialInstance("unlit");
+	G2 = makeAssetPtr<ProceduralGeometry>();
+	assetPtr<Material> M2 = Material::createMaterialInstance("unlit");
 	M2->setConstantParameter("color", vector3(0.7f, 0.0f, 0.0f));
 	M2->bWireframe = true;
 	getStaticMesh()->addSection(0, G2, M2);

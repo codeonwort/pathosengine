@@ -2,39 +2,38 @@
 
 #include "pathos/scene/scene_component.h"
 #include "badger/types/matrix_types.h"
+#include "pathos/smart_pointer.h"
 #include "badger/math/aabb.h"
 
 namespace pathos {
 
 	class StaticMesh;
 	class MeshGeometry;
-	class Material;
+	class MaterialProxy;
 
 	// #todo-renderer: Further decompose
 	struct StaticMeshProxy : public SceneComponentProxy {
-		uint32 doubleSided : 1;
-		uint32 renderInternal : 1;
-		matrix4 modelMatrix;
-		matrix4 prevModelMatrix;
-		MeshGeometry* geometry;
-		Material* material;
-		AABB worldBounds;
+		uint32             doubleSided : 1;
+		uint32             renderInternal : 1;
+		matrix4            modelMatrix;
+		matrix4            prevModelMatrix;
+		MeshGeometry*      geometry;
+		MaterialProxy*     material;
+		AABB               worldBounds;
 
-		// Derived in render thread
-		bool bInFrustum = true;
-		// Derived in SceneProxy::addStaticMeshProxy()
-		bool bTrivialDepthOnly = false;
+		bool               bInFrustum = true; // Derived in render thread
+		bool               bTrivialDepthOnly = false; // Derived in SceneProxy::addStaticMeshProxy()
 	};
 
 	struct ShadowMeshProxy : public SceneComponentProxy {
-		matrix4 modelMatrix;
-		MeshGeometry* geometry;
-		Material* material;
-		AABB worldBounds;
-		uint32 doubleSided : 1;
-		uint32 renderInternal : 1;
+		matrix4            modelMatrix;
+		MeshGeometry*      geometry;
+		MaterialProxy*     material;
+		AABB               worldBounds;
+		uint32             doubleSided : 1;
+		uint32             renderInternal : 1;
 
-		bool bTrivialDepthOnly = false;
+		bool               bTrivialDepthOnly = false;
 	};
 
 	class StaticMeshComponent : public SceneComponent {
@@ -43,8 +42,8 @@ namespace pathos {
 	public:
 		virtual void createRenderProxy(SceneProxy* scene) override;
 
-		inline StaticMesh* getStaticMesh() const { return mesh; }
-		inline void setStaticMesh(StaticMesh* inMesh) { mesh = inMesh; }
+		inline assetPtr<StaticMesh> getStaticMesh() const { return mesh; }
+		inline void setStaticMesh(assetPtr<StaticMesh> inMesh) { mesh = inMesh; }
 
 		AABB getWorldBounds() const;
 
@@ -56,8 +55,7 @@ namespace pathos {
 		bool castsShadow = true;
 
 	private:
-		// #todo: Need to release StaticMesh so that it releases Geometry and Material instances.
-		StaticMesh* mesh = nullptr;
+		assetPtr<StaticMesh> mesh;
 		matrix4 prevModelMatrix;
 
 	};

@@ -3,6 +3,7 @@
 
 #include "pathos/mesh/static_mesh.h"
 #include "pathos/mesh/geometry_primitive.h"
+#include "pathos/material/material.h"
 #include "pathos/scene/static_mesh_actor.h"
 #include "pathos/scene/directional_light_actor.h"
 #include "pathos/scene/sky_atmosphere_actor.h"
@@ -162,14 +163,14 @@ void World_ModelViewer::onInitialize() {
 	modelActor = spawnActor<StaticMeshActor>();
 
 	{
-		auto G = new CubeGeometry(vector3(1.0f));
+		auto G = makeAssetPtr<CubeGeometry>(vector3(1.0f));
 		auto M = pathos::createPBRMaterial(gEngine->getSystemTexture2DWhite());
 		M->setConstantParameter("bOverrideMetallic", true);
 		M->setConstantParameter("bOverrideRoughness", true);
 		M->setConstantParameter("metallicOverride", 1.0f);
 		M->setConstantParameter("roughnessOverride", 0.2f);
 		dummyBox = spawnActor<StaticMeshActor>();
-		dummyBox->setStaticMesh(new StaticMesh(G, M));
+		dummyBox->setStaticMesh(makeAssetPtr<StaticMesh>(G, M));
 
 		//auto dummyBox2 = spawnActor<StaticMeshActor>();
 		//dummyBox2->setStaticMesh(new Mesh(G, M));
@@ -246,7 +247,7 @@ void World_ModelViewer::onInitialize() {
 		board_modelControl->onUpdateRotation = [this](float u, float v) {
 			u = 180.0f * (u - 0.5f);
 			v = 360.0f * (v - 0.5f);
-			Actor* targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
+			auto targetActor = (dummyBox != nullptr) ? dummyBox : modelActor;
 			targetActor->setActorRotation(Rotator(u, v, 0.0f));
 		};
 
@@ -369,8 +370,8 @@ void World_ModelViewer::onLoadOBJ(OBJLoader* loader, uint64 payload) {
 		return;
 	}
 	
-	StaticMesh* newModelMesh = loader->craftMeshFromAllShapes(true);
-	StaticMeshActor* newActor = spawnActor<StaticMeshActor>();
+	assetPtr<StaticMesh> newModelMesh = loader->craftMeshFromAllShapes(true);
+	auto newActor = spawnActor<StaticMeshActor>();
 	newActor->setStaticMesh(newModelMesh);
 
 	replaceModelActor(newActor);
@@ -382,13 +383,13 @@ void World_ModelViewer::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 		return;
 	}
 
-	Actor* newActor = spawnActor<Actor>();
-	loader->attachToActor(newActor);
+	auto newActor = spawnActor<Actor>();
+	loader->attachToActor(newActor.get());
 
 	replaceModelActor(newActor);
 }
 
-void World_ModelViewer::replaceModelActor(Actor* newActor) {
+void World_ModelViewer::replaceModelActor(sharedPtr<Actor> newActor) {
 	if (modelActor != nullptr) {
 		modelActor->destroy();
 	}
@@ -400,12 +401,13 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		dummyBox = nullptr;
 	}
 
-	AABB originalWorldBounds = getActorWorldBounds(modelActor);
+	AABB originalWorldBounds = getActorWorldBounds(modelActor.get());
 
-	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), 0.9f * originalWorldBounds.getHalfSize());
+	const float worldBoundsScaleFactor = 1.1f;
+	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), worldBoundsScaleFactor * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.
-	vector3 probeGridf = worldBounds.getSize() / 0.5f; // per 0.5 meters
+	vector3 probeGridf = worldBounds.getSize() / 1.0f; // per 1.0 meters
 	vector3ui probeGrid = vector3ui(std::ceil(probeGridf.x), std::ceil(probeGridf.y), std::ceil(probeGridf.z));
 	// Limit the size of the probe grid.
 	probeGrid = (glm::max)(probeGrid, vector3ui(2, 2, 2));
@@ -426,7 +428,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	vector3 uvw = worldBounds.getSize() / 10.0f; // per 10.0 meters
 	vector3ui reflectionProbeCount = vector3ui(std::ceil(uvw.x), std::ceil(uvw.y), std::ceil(uvw.z));
 	reflectionProbeCount = (glm::max)(reflectionProbeCount, vector3ui(2, 2, 2));
-	for (ReflectionProbeActor* oldProbe : reflectionProbes) {
+	for (const auto& oldProbe : reflectionProbes) {
 		oldProbe->destroy();
 	}
 	reflectionProbes.clear();
@@ -434,14 +436,14 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 	for (uint32 xi = 0; xi < reflectionProbeCount.x; ++xi) {
 		for (uint32 yi = 0; yi < reflectionProbeCount.y; ++yi) {
 			for (uint32 zi = 0; zi < reflectionProbeCount.z; ++zi) {
-				ReflectionProbeActor* probe = spawnActor<ReflectionProbeActor>();
+				auto probe = spawnActor<ReflectionProbeActor>();
 				vector3 ratio;
 				ratio.x = ((float)xi / (reflectionProbeCount.x - 1));
 				ratio.y = ((float)yi / (reflectionProbeCount.y - 1));
 				ratio.z = ((float)zi / (reflectionProbeCount.z - 1));
 				vector3 pos = worldBounds.minBounds + ratio * (worldBounds.maxBounds - worldBounds.minBounds);
 				probe->setActorLocation(pos);
-				reflectionProbes.push_back(probe);
+				reflectionProbes.emplace_back(probe);
 				if (glm::length(pos) < 0.5f) {
 					bNeedReflectionProbeAtCenter = false;
 				}
@@ -449,7 +451,7 @@ void World_ModelViewer::replaceModelActor(Actor* newActor) {
 		}
 	}
 	if (bNeedReflectionProbeAtCenter) {
-		ReflectionProbeActor* reflectionProbe0 = spawnActor<ReflectionProbeActor>();
+		auto reflectionProbe0 = spawnActor<ReflectionProbeActor>();
 		reflectionProbe0->setActorLocation(worldBounds.getCenter());
 		reflectionProbes.push_back(reflectionProbe0);
 	}

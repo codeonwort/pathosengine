@@ -15,7 +15,7 @@ public:
 	virtual void onInitialize() override {
 		getCamera().lookAt(vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 0.0f, 1.0f), vector3(0.0f, 1.0f, 0.0f));
 
-		DirectionalLightActor* dirLight = spawnActor<DirectionalLightActor>();
+		auto dirLight = spawnActor<DirectionalLightActor>();
 		dirLight->setDirection(glm::normalize(vector3(-0.5f, -1.0f, 1.0f)));
 		dirLight->setColorAndIlluminance(vector3(1.0f, 1.0f, 1.0f), 10.0f);
 

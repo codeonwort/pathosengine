@@ -18,11 +18,7 @@
 
 namespace pathos {
 
-	bool SceneLoader::loadSceneDescription(
-		World* world,
-		const char* inFilename,
-		ActorBinder& actorBinder)
-	{
+	bool SceneLoader::loadSceneDescription(World* world, const char* inFilename) {
 		LOG(LogDebug, "Loading scene description...: %s", inFilename);
 
 		Stopwatch timer;
@@ -39,9 +35,7 @@ namespace pathos {
 			return false;
 		}
 
-		ActorMap actorMap;
 		applyDescription(world, desc, actorMap);
-		bindActors(desc, actorMap, actorBinder);
 
 		LOG(LogDebug, "Loading done in %f ms", timer.stop());
 
@@ -78,7 +72,7 @@ namespace pathos {
 		// sky
 		bool skyBound = false;
 		if (sceneDesc.skyAtmosphere.valid) {
-			SkyAtmosphereActor* actor = world->spawnActor<SkyAtmosphereActor>();
+			auto actor = world->spawnActor<SkyAtmosphereActor>();
 
 			skyBound = true;
 			outActorMap.insert(std::make_pair(sceneDesc.skyAtmosphere.name, actor));
@@ -92,7 +86,7 @@ namespace pathos {
 			uint32 mipLevels = sceneDesc.skybox.generateMipmaps ? 0 : 1;
 			Texture* cubeTexture = ImageUtils::createTextureCubeFromImages(imageBlobs, mipLevels, sceneDesc.skybox.name.c_str());
 
-			SkyboxActor* actor = world->spawnActor<SkyboxActor>();
+			auto actor = world->spawnActor<SkyboxActor>();
 			actor->setCubemapTexture(cubeTexture);
 
 			skyBound = true;
@@ -102,7 +96,7 @@ namespace pathos {
 			ImageBlob* blob = ImageUtils::loadImage(sceneDesc.skyEquimap.texture.c_str());
 			Texture* texture = ImageUtils::createTexture2DFromImage(blob, 1, false, true, "Texture_Sky");
 
-			PanoramaSkyActor* actor = world->spawnActor<PanoramaSkyActor>();
+			auto actor = world->spawnActor<PanoramaSkyActor>();
 			actor->setTexture(texture);
 
 			skyBound = true;
@@ -110,7 +104,7 @@ namespace pathos {
 		}
 		// directional lights
 		for (const SceneDescription::DirLight& dirLight : sceneDesc.dirLights) {
-			DirectionalLightActor* actor = world->spawnActor<DirectionalLightActor>();
+			auto actor = world->spawnActor<DirectionalLightActor>();
 			actor->setDirection(dirLight.direction);
 			actor->setColor(dirLight.color);
 			actor->setIlluminance(dirLight.illuminance);
@@ -119,7 +113,7 @@ namespace pathos {
 		}
 		// point lights
 		for (const SceneDescription::PointLight& pLight : sceneDesc.pointLights) {
-			PointLightActor* actor = world->spawnActor<PointLightActor>();
+			auto actor = world->spawnActor<PointLightActor>();
 			actor->setColor(pLight.color);
 			actor->setIntensity(pLight.intensity);
 			actor->setAttenuationRadius(pLight.attenuationRadius);
@@ -131,7 +125,7 @@ namespace pathos {
 		}
 		// static meshes
 		for (const SceneDescription::StaticMesh& sm : sceneDesc.staticMeshes) {
-			StaticMeshActor* actor = world->spawnActor<StaticMeshActor>();
+			auto actor = world->spawnActor<StaticMeshActor>();
 			actor->setActorLocation(sm.location);
 			actor->setActorRotation(sm.rotation);
 			actor->setActorScale(sm.scale);
@@ -140,44 +134,12 @@ namespace pathos {
 		}
 		// landscapes
 		for (const SceneDescription::Landscape& land : sceneDesc.landscapes) {
-			LandscapeActor* actor = world->spawnActor<LandscapeActor>();
+			auto actor = world->spawnActor<LandscapeActor>();
 			actor->setActorLocation(land.location);
 			actor->setActorRotation(land.rotation);
 			actor->setActorScale(land.scale);
 
 			outActorMap.insert(std::make_pair(land.name, actor));
-		}
-	}
-
-	void SceneLoader::bindActors(SceneDescription& desc, const ActorMap& actorMap, ActorBinder& binder) {
-		if (binder.bindings.size() == 0) {
-			return;
-		}
-
-		// Find bindings between names in scene description and actors in world
-		for (auto& it : binder.bindings) {
-			const std::string& targetName = it.first;
-			ActorBinder::Info& bindInfo = it.second;
-
-			auto it = actorMap.find(targetName);
-			if (it != actorMap.end()) {
-				Actor* targetActor = it->second;
-				*bindInfo.actor = targetActor;
-				bindInfo.bound = true;
-			}
-		}
-
-		// Validate if all actors are bound
-		int32 countNotBound = 0;
-		for (const auto& it : binder.bindings) {
-			if (it.second.bound == false) {
-				*it.second.actor = nullptr;
-				LOG(LogError, "Not bound. target actor will be set to NULL: %s", it.first.c_str());
-				++countNotBound;
-			}
-		}
-		if (countNotBound > 0) {
-			LOG(LogWarning, "%d actors are not bound", countNotBound);
 		}
 	}
 
