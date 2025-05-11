@@ -11,8 +11,6 @@
 
 namespace pathos {
 
-	class SceneProxy;
-
 	class MeshGeometry : public Noncopyable {
 
 	public:

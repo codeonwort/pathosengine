@@ -3,7 +3,6 @@
 #include "display_object_proxy.h"
 
 #include "pathos/text/font_mgr.h"
-#include "pathos/rhi/render_device.h"
 
 // Fallback font that must exist.
 #define DEFAULT_FONT_TAG    "default"

@@ -81,7 +81,7 @@ namespace pathos {
 			GLTFModelDesc desc{};
 			desc.name = tinyNode.name;
 			// Mesh
-			desc.mesh = (tinyNode.mesh != -1) ? assetPtr<StaticMesh>(meshes[tinyNode.mesh]) : nullptr;
+			desc.mesh = (tinyNode.mesh != -1) ? meshes[tinyNode.mesh] : nullptr;
 			// Transform
 			if (tinyNode.translation.size() >= 3) {
 				desc.translation.x = (float)tinyNode.translation[0];
@@ -391,7 +391,7 @@ namespace pathos {
 		// For each mesh
 		for (size_t meshIx = 0; meshIx < tinyModel->meshes.size(); ++meshIx) {
 			const tinygltf::Mesh& tinyMesh = tinyModel->meshes[meshIx];
-			assetPtr<StaticMesh> mesh(new StaticMesh);
+			assetPtr<StaticMesh> mesh = makeAssetPtr<StaticMesh>();
 
 			// For each mesh section
 			for (size_t primIx = 0; primIx < tinyMesh.primitives.size(); ++primIx) {

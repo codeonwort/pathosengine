@@ -3,6 +3,8 @@
 #include "display_object.h"
 #include "pathos/text/text_geometry.h"
 #include "pathos/text/font_mgr.h"
+#include "pathos/smart_pointer.h"
+
 #include <string>
 
 namespace pathos {

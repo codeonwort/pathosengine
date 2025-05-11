@@ -2,7 +2,6 @@
 
 #include "pathos/mesh/geometry.h"
 #include "pathos/util/transform_helper.h"
-#include "pathos/smart_pointer.h"
 
 #include <vector>
 #include <functional>

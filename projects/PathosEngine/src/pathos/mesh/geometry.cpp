@@ -1,8 +1,6 @@
 #include "geometry.h"
-#include "pathos/render/scene_proxy.h"
 #include "pathos/rhi/render_device.h"
 #include "pathos/util/log.h"
-#include "pathos/util/engine_util.h"
 
 #include "badger/assertion/assertion.h"
 #include <vector>
