@@ -227,4 +227,6 @@ void World_LightRoom::onLoadGLTF(GLTFLoader* loader, uint64 payload) {
 			leafComponents[i] = sphere->getStaticMeshComponent();
 		}
 	}
+
+	gEngine->getAssetStreamer()->releaseGLTFLoader(loader);
 }

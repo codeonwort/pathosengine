@@ -518,7 +518,7 @@ namespace pathos {
 
 			{
 				SCOPED_CPU_COUNTER(FlushLoadedAssets);
-				getAssetStreamer()->flushLoadedAssets();
+				getAssetStreamer()->internal_flushLoadedAssets();
 			}
 
 			if (currentWorld != nullptr) {

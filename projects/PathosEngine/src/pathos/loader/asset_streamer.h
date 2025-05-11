@@ -70,17 +70,13 @@ namespace pathos {
 	//////////////////////////////////////////////////////////////////////////
 	// Load info
 
-	struct AssetLoadInfoBase
-	{
+	struct AssetLoadInfoBase {
 		class DummyType {};
 
 		virtual ~AssetLoadInfoBase() {}
 	};
 
-	struct AssetLoadInfoBase_WavefrontOBJ : public AssetLoadInfoBase
-	{
-		~AssetLoadInfoBase_WavefrontOBJ();
-
+	struct AssetLoadInfoBase_WavefrontOBJ : public AssetLoadInfoBase {
 		virtual void invokeHandler() {}
 
 		AssetStreamer* streamer;
@@ -109,8 +105,6 @@ namespace pathos {
 	};
 
 	struct AssetLoadInfoBase_GLTF : public AssetLoadInfoBase {
-		~AssetLoadInfoBase_GLTF();
-
 		virtual void invokeHandler() {}
 
 		AssetStreamer* streamer;
@@ -152,22 +146,43 @@ namespace pathos {
 
 		void enqueueWavefrontOBJ(const char* inFilepath, const char* inBaseDir, WavefrontOBJHandler handler, uint64 payload);
 
+		/// <summary>
+		/// Request a Wavefront OBJ file and register a callback for load complete event. Use when the callback is a class method.
+		/// You need to release the loader manually by releaseOBJLoader() or it will be alive until process termination.
+		/// </summary>
+		/// <typeparam name="UserClass">Class type that declares the callback method.</typeparam>
+		/// <param name="assetRef">Asset to load.</param>
+		/// <param name="handlerOwner">Class instance that will receive the event.</param>
+		/// <param name="handlerMethod">Class method to use as a callback.</param>
+		/// <param name="payload">A value that will be passed as an argument to the callback.</param>
 		template<typename UserClass>
 		void enqueueWavefrontOBJ(const AssetReferenceWavefrontOBJ& assetRef, UserClass* handlerOwner, WavefrontOBJHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
 		void enqueueGLTF(const char* inFilepath, GLTFHandler handler, uint64 payload);
 
+		/// <summary>
+		/// Request a GLTF file and register a callback for load complete event. Use when the callback is a class method.
+		/// You need to release the loader manually by releaseGLTFLoader() or it will be alive until process termination.
+		/// </summary>
+		/// <typeparam name="UserClass">Class type that declares the callback method.</typeparam>
+		/// <param name="assetRef">Asset to load.</param>
+		/// <param name="handlerOwner">Class instance that will receive the event.</param>
+		/// <param name="handlerMethod">Class method to use as a callback.</param>
+		/// <param name="payload">A value that will be passed as an argument to the callback.</param>
 		template<typename UserClass>
 		void enqueueGLTF(const AssetReferenceGLTF& assetRef, UserClass* handlerOwner, GLTFHandlerMethod<UserClass> handlerMethod, uint64 payload);
 
-		// Should be called in render thread
-		void flushLoadedAssets();
+		/// User should call this when they don't need the loader anymore, or it will be alive until process termination.
+		void releaseOBJLoader(OBJLoader* loader);
+		/// User should call this when they don't need the loader anymore, or it will be alive until process termination.
+		void releaseGLTFLoader(GLTFLoader* loader);
 
+	public:
+		// Should be called in render thread
+		void internal_flushLoadedAssets();
 		// public due to thread pool callbacks.
 		OBJLoader* internal_allocateOBJLoader();
 		GLTFLoader* internal_allocateGLTFLoader();
-		void internal_destroyOBJLoader(OBJLoader* loader);
-		void internal_destroyGLTFLoader(GLTFLoader* loader);
 		void internal_onLoaded_WavefrontOBJ(AssetLoadInfoBase_WavefrontOBJ* info);
 		void internal_onLoaded_GLTF(AssetLoadInfoBase_GLTF* info);
 		void internal_unregisterLoadInfo(AssetLoadInfoBase* info);
@@ -190,6 +205,8 @@ namespace pathos {
 		std::mutex mutex_loadedOBJs;
 		std::mutex mutex_loadedGLTFs;
 		
+		std::list<OBJLoader*> objLoadersToDelete;
+		std::list<GLTFLoader*> gltfLoadersToDelete;
 	};
 
 	template<typename UserClass>

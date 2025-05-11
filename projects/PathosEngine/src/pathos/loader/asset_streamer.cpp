@@ -52,14 +52,6 @@ namespace pathos {
 		streamer->internal_onLoaded_GLTF(arg);
 	}
 
-	AssetLoadInfoBase_WavefrontOBJ::~AssetLoadInfoBase_WavefrontOBJ() {
-		streamer->internal_destroyOBJLoader(loader);
-	}
-
-	AssetLoadInfoBase_GLTF::~AssetLoadInfoBase_GLTF() {
-		streamer->internal_destroyGLTFLoader(loader);
-	}
-
 }
 
 // AssetStreamer
@@ -87,6 +79,10 @@ namespace pathos {
 
 	void AssetStreamer::destroy() {
 		threadPool.Stop();
+		for (auto loader : objLoaderAllocator) delete loader;
+		for (auto loader : objLoadersToDelete) delete loader;
+		for (auto loader : gltfLoaderAllocator) delete loader;
+		for (auto loader : gltfLoadersToDelete) delete loader;
 		LOG(LogInfo, "[AssetStreamer] Destroy asset streamer");
 	}
 
@@ -130,7 +126,7 @@ namespace pathos {
 		threadPool.AddWorkSafe(work);
 	}
 
-	void AssetStreamer::flushLoadedAssets() {
+	void AssetStreamer::internal_flushLoadedAssets() {
 		CHECK(!isInRenderThread());
 		std::vector<AssetLoadInfoBase_WavefrontOBJ*> tempLoadedOBJs;
 		std::vector<AssetLoadInfoBase_GLTF*> tempLoadedGLTFs;
@@ -158,6 +154,26 @@ namespace pathos {
 				delete assetInfo;
 			}
 		}
+
+		// Delete stale loaders.
+		for (auto loader : objLoadersToDelete) delete loader;
+		for (auto loader : gltfLoadersToDelete) delete loader;
+		objLoadersToDelete.clear();
+		gltfLoadersToDelete.clear();
+	}
+
+	void AssetStreamer::releaseOBJLoader(OBJLoader* loader) {
+		auto it = std::find(objLoaderAllocator.begin(), objLoaderAllocator.end(), loader);
+		CHECK(it != objLoaderAllocator.end());
+		objLoaderAllocator.erase(it);
+		objLoadersToDelete.push_back(loader);
+	}
+
+	void AssetStreamer::releaseGLTFLoader(GLTFLoader* loader) {
+		auto it = std::find(gltfLoaderAllocator.begin(), gltfLoaderAllocator.end(), loader);
+		CHECK(it != gltfLoaderAllocator.end());
+		gltfLoaderAllocator.erase(it);
+		gltfLoadersToDelete.push_back(loader);
 	}
 
 	OBJLoader* AssetStreamer::internal_allocateOBJLoader() {
@@ -170,24 +186,6 @@ namespace pathos {
 		auto loader = new GLTFLoader;
 		gltfLoaderAllocator.push_back(loader);
 		return loader;
-	}
-
-	void AssetStreamer::internal_destroyOBJLoader(OBJLoader* loader) {
-		auto it = std::find(objLoaderAllocator.begin(), objLoaderAllocator.end(), loader);
-		CHECK(it != objLoaderAllocator.end());
-		objLoaderAllocator.erase(it);
-		
-		// #wip: When to delete loaders?
-		//delete loader;
-	}
-
-	void AssetStreamer::internal_destroyGLTFLoader(GLTFLoader* loader) {
-		auto it = std::find(gltfLoaderAllocator.begin(), gltfLoaderAllocator.end(), loader);
-		CHECK(it != gltfLoaderAllocator.end());
-		gltfLoaderAllocator.erase(it);
-
-		// #wip: When to delete loaders?
-		//delete loader;
 	}
 
 	void AssetStreamer::internal_onLoaded_WavefrontOBJ(AssetLoadInfoBase_WavefrontOBJ* info) {
