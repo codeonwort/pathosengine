@@ -508,6 +508,7 @@ namespace pathos {
 		}
 
 		// Start world tick.
+		if (engineStatus == EngineStatus::Running)
 		{
 			SCOPED_CPU_COUNTER(WorldTick);
 
