@@ -45,25 +45,6 @@ namespace pathos {
 	// For specular GI
 	static constexpr uint32 SSBO_ReflectionProbe_BINDING_SLOT = 2;
 
-	struct UBO_IndirectLighting {
-		static const uint32 BINDING_SLOT = 1;
-
-		float  skyLightBoost;
-		float  diffuseBoost;
-		float  specularBoost;
-		uint32 lightingMode; // cvar_indirectLighting
-
-		float  skyRadianceProbeMaxLOD;
-		float  localReflectionProbeMaxLOD;
-		uint32 numReflectionProbes;
-		uint32 numIrradianceVolumes;
-
-		float  irradianceAtlasWidth;
-		float  irradianceAtlasHeight;
-		uint32 irradianceTileCountX;
-		uint32 irradianceTileSize;
-	};
-
 	struct UBO_IndirectDiffuseLighting {
 		static const uint32 BINDING_SLOT = 1;
 
