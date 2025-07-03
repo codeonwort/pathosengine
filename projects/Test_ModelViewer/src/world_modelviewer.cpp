@@ -403,7 +403,7 @@ void World_ModelViewer::replaceModelActor(sharedPtr<Actor> newActor) {
 
 	AABB originalWorldBounds = getActorWorldBounds(modelActor.get());
 
-	const float worldBoundsScaleFactor = 1.1f;
+	const float worldBoundsScaleFactor = 1.2f;
 	AABB worldBounds = AABB::fromCenterAndHalfSize(originalWorldBounds.getCenter(), worldBoundsScaleFactor * originalWorldBounds.getHalfSize());
 
 	// Calculate proper grid size for irradiance volume.

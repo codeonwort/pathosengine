@@ -9,6 +9,7 @@
 // #todo-light-probe: Finish indirect lighting shader
 #define COSINE_WEIGHTED_INTERPOLATION    0
 #define PROBE_VISIBILITY_AWARE           0
+#define DDGI_LIKE_FILTERING              0
 
 #define LIGHTINGMODE_NONE                0
 #define LIGHTINGMODE_ALL                 1
@@ -153,13 +154,9 @@ float getProbeDepth(ProbeDesc probe, vec3 direction) {
 	return probeDepth;
 }
 
-// Porting from DDGI, unfinished yet
-vec3 getVolumeIrradiance(
-	vec3 worldPosition,
-	vec3 surfaceBias,
-	vec3 direction,
-	IrradianceVolume volume)
-{
+// #wip: DDGI
+// https://github.com/NVIDIAGameWorks/RTXGI-DDGI/blob/main/rtxgi-sdk/shaders/ddgi/Irradiance.hlsl
+vec3 DDGIGetVolumeIrradiance(vec3 worldPosition, vec3 surfaceBias, vec3 direction, IrradianceVolume volume) {
 	vec3 irradiance = vec3(0.0);
 	float accumWeights = 0.0;
 
@@ -169,8 +166,8 @@ vec3 getVolumeIrradiance(
 	findIrradianceProbes(worldPosition, volume, probes);
 
 	// Clamp the distance (in grid space) between the given point and the base probe's world position (on each axis) to [0, 1]
-    vec3 gridSpaceDistance = (biasedWorldPosition - probes[0].center);
-    vec3 alpha = clamp((gridSpaceDistance / getProbeSpacing(volume)), vec3(0.0), vec3(1.0));
+	vec3 gridSpaceDistance = (biasedWorldPosition - probes[0].center);
+	vec3 alpha = clamp((gridSpaceDistance / getProbeSpacing(volume)), vec3(0.0), vec3(1.0));
 
 	for (int i = 0; i < 8; i++) {
 		ProbeDesc probe = probes[i];
@@ -196,27 +193,50 @@ vec3 getVolumeIrradiance(
 		float wrapShading = (dot(worldPosToAdjProbe, direction) + 1.0) * 0.5;
 		weight *= (wrapShading * wrapShading) + 0.2f;
 
-		#if 0
-		// #todo-light-probe: Sample distance probe for chebyshev weight
-		#elif PROBE_VISIBILITY_AWARE
-		float probeDepth = getProbeDepth(probe, -worldPosToAdjProbe);
-		const float tolerance = 0.05;
-		// dot() is for backface check
-		bool visible = dot(direction, -worldPosToAdjProbe) <= 0.0
-			&& biasedPosToAdjProbeDist - tolerance <= probeDepth;
-		if (!visible) {
-			//weight *= 0.01;
+#if PROBE_VISIBILITY_AWARE
+		// Sample the probe's distance texture to get the mean distance to nearby surfaces
+		vec2 filteredDistance = vec2(0, 0); // #wip
+
+		// Find the variance of the mean distance
+		float variance = abs((filteredDistance.x * filteredDistance.x) - filteredDistance.y);
+
+		// Occlusion test
+		float chebyshevWeight = 1.0;
+		if (biasedPosToAdjProbeDist > filteredDistance.x) { // occluded
+			// v must be greater than 0, which is guaranteed by the if condition above.
+			float v = biasedPosToAdjProbeDist - filteredDistance.x;
+			chebyshevWeight = variance / (variance + (v * v));
+
+			// Increase the contrast in the weight
+			chebyshevWeight = max((chebyshevWeight * chebyshevWeight * chebyshevWeight), 0.0);
 		}
 
-		#endif
+		// Avoid visibility weights ever going all the way to zero because
+		// when *no* probe has visibility we need a fallback value
+		weight *= max(0.05, chebyshevWeight);
 
+		// Avoid a weight of zero
+		weight = max(0.000001f, weight);
+
+		//float probeDepth = getProbeDepth(probe, -worldPosToAdjProbe);
+#endif
+
+		// A small amount of light is visible due to logarithmic perception, so
+		// crush tiny weights but keep the curve continuous
 		const float crushThreshold = 0.2;
 		if (weight < crushThreshold) {
 			weight *= (weight * weight) * (1.0 / (crushThreshold * crushThreshold));
 		}
 
+		// Apply the trilinear weights
 		weight *= trilinearWeight;
+
+		// Sample the probe's irradiance
 		vec4 probeIrradiance = evaluateLightProbe(probe, direction);
+
+		// Decode the tone curve, but leave a gamma = 2 curve to approximate sRGB blending
+		//vec3 exponent = volume.probeIrradianceEncodingGamma * 0.5; // #wip
+		//irradiance = pow(irradiance, exponent);
 
 		irradiance += (weight * probeIrradiance.xyz);
 		accumWeights += weight;
@@ -268,9 +288,6 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 
 	vec4 samples[8];
 	float weights[8], totalWeights = 0.0;
-#if PROBE_VISIBILITY_AWARE
-	bool visibility[8];
-#endif
 
 	for (uint i = 0; i < 8; ++i) {
 		ProbeDesc probe = probes[i];
@@ -280,7 +297,6 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 
 		samples[i] = evaluateLightProbe(probe, surfaceNormalWS);
 		weights[i] = max(0.0, dot(surfaceNormalWS, -probeToSurface));
-		totalWeights += weights[i];
 
 #if PROBE_VISIBILITY_AWARE
 		// Sample depth probe
@@ -289,14 +305,13 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 		float probeDepth = textureLod(depthProbeAtlas, probeDepthAtlasUV, 0).r;
 
 		// Test visibility
-		const float tolerance = 0.005;
+		const float tolerance = -0.05;
 		// dot() is for backface check
-		visibility[i] = dot(surfaceNormalWS, probeToSurface) <= 0.0 && distanceToProbe - tolerance <= probeDepth;
-		if (visibility[i] == false) {
-			totalWeights -= weights[i];
-			weights[i] = 0.0;
-		}
+		bool bVisible = dot(surfaceNormalWS, probeToSurface) <= 0.0 && distanceToProbe - tolerance <= probeDepth;
+		if (!bVisible) weights[i] = 0;
 #endif
+
+		totalWeights += weights[i];
 	}
 
 	vec3 irradiance = vec3(0.0);
@@ -323,6 +338,10 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 	vec3 cellSize  = volSize / fNumCells;
 	vec3 ratio     = (surfacePositionWS - probes[0].center) / cellSize;
 
+	for (uint i = 0; i < 8; ++i) {
+		samples[i] *= weights[i] / totalWeights;
+	}
+
 	if (skyLightingOnly) {
 		float C00 = mix(samples[0].w, samples[1].w, ratio.x);
 		float C01 = mix(samples[2].w, samples[3].w, ratio.x);
@@ -346,9 +365,10 @@ vec3 getIndirectDiffuse(GBufferData gbufferData, bool skyLightingOnly) {
 	}
 #endif
 
-	// DDGI
-	//vec3 L = getVolumeIrradiance(surfacePositionWS, vec3(0.0), surfaceNormalWS, vol);
-	//irradiance = ubo.diffuseBoost * L / 100;
+#if DDGI_LIKE_FILTERING
+	vec3 L = DDGIGetVolumeIrradiance(surfacePositionWS, vec3(0.0), surfaceNormalWS, vol);
+	irradiance = ubo.diffuseBoost * L / 100;
+#endif
 
 	return irradiance;
 }

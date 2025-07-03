@@ -33,8 +33,10 @@ layout (location = 1) uniform uint cubemapSize;
 layout (location = 2) uniform uint shIndex;
 
 layout (binding = 0) uniform samplerCube inColorCubemap;
+
 #if CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
 layout (binding = 1) uniform samplerCube inDepthCubemap;
+layout (binding = 0, rg16f) writeonly uniform image2D rwFilteredDepthAtlas;
 #endif
 
 layout (std140, binding = 2) writeonly buffer Buffer_SH {
@@ -57,7 +59,7 @@ CUBEMAP_ELEMENT SAMPLE_CUBEMAP_FUNCTION(vec3 dir) {
     return textureLod(inColorCubemap, dir, 0).xyz;
 #elif CUBEMAP_TYPE == CUBEMAP_TYPE_LIGHT_PROBE
     vec3 color = textureLod(inColorCubemap, dir, 0).xyz;
-    float isSky = textureLod(inDepthCubemap, dir, 0).x > 64000.0 ? 1.0 : 0.0;
+    float isSky = textureLod(inDepthCubemap, dir, 0).x > 64000.0 ? 1.0 : 0.0; // #wip: Calc filtered depth
     return vec4(color, isSky);
 #else
     #error "Unhandled static branch"
