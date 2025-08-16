@@ -132,8 +132,7 @@ namespace pathos {
 
 	void OBJLoader::analyzeMaterials() {
 		for (size_t i = 0; i < tiny_materials.size(); i++) {
-			tinyobj::material_t& t_mat = tiny_materials[i];
-			assetPtr<Material> M;
+			const tinyobj::material_t& t_mat = tiny_materials[i];
 
 			int32 overrideIx = -1;
 			for (size_t k = 0; k < materialOverrides.size(); ++k) {
@@ -143,83 +142,11 @@ namespace pathos {
 				}
 			}
 
-			// #todo-loader: More robust criteria
-			bool isPBR = t_mat.diffuse_texname.length() > 0;
-
-			if (isPBR)
-			{
-				auto getOrLoadImage = [&](const std::string& texname, ImageBlob** outBitmap) {
-					*outBitmap = nullptr;
-					if (texname.length() > 0) {
-						std::string filepath = mtlDir + texname;
-						if (cachedImageDB.find(filepath) == cachedImageDB.end()) {
-							*outBitmap = pathos::ImageUtils::loadImage(filepath.c_str());
-							cachedImageDB.insert(std::make_pair(filepath, *outBitmap));
-						} else {
-							*outBitmap = cachedImageDB[filepath];
-						}
-					}
-				};
-
-				// File loading is performed in worker threads. Actual GL textures are created later.
-				PendingTextures pending;
-				getOrLoadImage(t_mat.diffuse_texname, &pending.albedoBlob);
-				getOrLoadImage(t_mat.normal_texname, &pending.normalBlob);
-				getOrLoadImage(t_mat.roughness_texname, &pending.roughnessBlob);
-				getOrLoadImage(t_mat.metallic_texname, &pending.metallicBlob);
-				pending.albedoFilename = t_mat.diffuse_texname;
-				pending.normalFilename = t_mat.normal_texname;
-				pending.roughnessFilename = t_mat.roughness_texname;
-				pending.metallicFilename = t_mat.metallic_texname;
-				// #todo-loader: Self AO texture is not supported in Wavefront format
-
-				std::string image_path = mtlDir + t_mat.diffuse_texname;
-				ImageBlob* bmp;
-				if (cachedImageDB.find(image_path) == cachedImageDB.end()) {
-					bmp = pathos::ImageUtils::loadImage(image_path.c_str());
-					cachedImageDB.insert(std::make_pair(image_path, bmp));
-				} else {
-					bmp = cachedImageDB[image_path];
-				}
-
-				M = pathos::createPBRMaterial(gEngine->getSystemTexture2DGrey());
-				pendingTextureData.insert(std::make_pair(static_cast<int32>(i), pending));
-			}
-			else if (t_mat.dissolve < 1.0f
-				|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
-				|| (0.0f <= t_mat.transmittance[1] && t_mat.transmittance[1] < 1.0f)
-				|| (0.0f <= t_mat.transmittance[2] && t_mat.transmittance[2] < 1.0f))
-			{
-				M = Material::createMaterialInstance("translucent_color");
-				M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
-				M->setConstantParameter("roughness", t_mat.roughness);
-				M->setConstantParameter("transmittance", vector3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
-			}
-			else
-			{
-				M = Material::createMaterialInstance("solid_color");
-
-				float roughness = t_mat.roughness;
-				if (roughness <= 0.0f) {
-					vector3 specular = toVec3(t_mat.specular);
-					roughness = PhongSpecularToRoughness(specular, t_mat.shininess);
-				}
-				
-				// Ignore ambient term and let GI system handle indirect illumination.
- 				//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
-
-				M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
-				M->setConstantParameter("metallic", t_mat.metallic);
-				M->setConstantParameter("roughness", roughness);
-				M->setConstantParameter("emissive", vector3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]));
-			}
-
+			assetPtr<Material> M;
 			if (overrideIx != -1) {
-				// #todo-loader: Would be best not to create it at first...
-				if (M != nullptr) {
-					M.reset();
-				}
 				M = materialOverrides[overrideIx].second;
+			} else {
+				M = craftMaterialFrom(i);
 			}
 
 			materials.push_back(M);
@@ -500,6 +427,78 @@ namespace pathos {
 		}
 
 		return mesh;
+	}
+
+	assetPtr<Material> OBJLoader::craftMaterialFrom(size_t ix) {
+		// #todo-loader: More robust criteria
+		const tinyobj::material_t& t_mat = tiny_materials[ix];
+		bool isPBR = t_mat.diffuse_texname.length() > 0;
+
+		assetPtr<Material> M;
+		if (isPBR) {
+			auto getOrLoadImage = [&](const std::string& texname, ImageBlob** outBitmap) {
+				*outBitmap = nullptr;
+				if (texname.length() > 0) {
+					std::string filepath = mtlDir + texname;
+					if (cachedImageDB.find(filepath) == cachedImageDB.end()) {
+						*outBitmap = pathos::ImageUtils::loadImage(filepath.c_str());
+						cachedImageDB.insert(std::make_pair(filepath, *outBitmap));
+					} else {
+						*outBitmap = cachedImageDB[filepath];
+					}
+				}
+			};
+
+			// File loading is performed in worker threads. Actual GL textures are created later.
+			PendingTextures pending;
+			getOrLoadImage(t_mat.diffuse_texname, &pending.albedoBlob);
+			getOrLoadImage(t_mat.normal_texname, &pending.normalBlob);
+			getOrLoadImage(t_mat.roughness_texname, &pending.roughnessBlob);
+			getOrLoadImage(t_mat.metallic_texname, &pending.metallicBlob);
+			pending.albedoFilename = t_mat.diffuse_texname;
+			pending.normalFilename = t_mat.normal_texname;
+			pending.roughnessFilename = t_mat.roughness_texname;
+			pending.metallicFilename = t_mat.metallic_texname;
+			// #todo-loader: Self AO texture is not supported in Wavefront format
+
+			std::string image_path = mtlDir + t_mat.diffuse_texname;
+			ImageBlob* bmp;
+			if (cachedImageDB.find(image_path) == cachedImageDB.end()) {
+				bmp = pathos::ImageUtils::loadImage(image_path.c_str());
+				cachedImageDB.insert(std::make_pair(image_path, bmp));
+			} else {
+				bmp = cachedImageDB[image_path];
+			}
+
+			M = pathos::createPBRMaterial(gEngine->getSystemTexture2DGrey());
+			pendingTextureData.insert(std::make_pair(static_cast<int32>(ix), pending));
+		} else if (t_mat.dissolve < 1.0f
+			|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
+			|| (0.0f <= t_mat.transmittance[1] && t_mat.transmittance[1] < 1.0f)
+			|| (0.0f <= t_mat.transmittance[2] && t_mat.transmittance[2] < 1.0f)) {
+			M = Material::createMaterialInstance("translucent_color");
+			M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
+			M->setConstantParameter("roughness", t_mat.roughness);
+			M->setConstantParameter("transmittance", vector3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]));
+		} else {
+			M = Material::createMaterialInstance("solid_color");
+
+			float roughness = t_mat.roughness;
+			if (roughness <= 0.0f) {
+				vector3 specular = toVec3(t_mat.specular);
+				roughness = PhongSpecularToRoughness(specular, t_mat.shininess);
+			}
+
+			// Ignore ambient term and let GI system handle indirect illumination.
+			//solidColor->setAmbient(t_mat.ambient[0], t_mat.ambient[1], t_mat.ambient[2]);
+
+			M->setConstantParameter("albedo", vector3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]));
+			M->setConstantParameter("metallic", t_mat.metallic);
+			M->setConstantParameter("roughness", roughness);
+			M->setConstantParameter("emissive", vector3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]));
+		}
+
+		return M;
 	}
 
 	assetPtr<Material> OBJLoader::getMaterial(int32 index) {

@@ -96,9 +96,10 @@ namespace pathos {
 
 		const std::vector<assetPtr<Material>>& getMaterials() { return materials; }
 
-	protected:
+	private:
 		void analyzeMaterials();
 		void reconstructShapes();
+		assetPtr<Material> craftMaterialFrom(size_t materialIndex);
 		assetPtr<Material> getMaterial(int32 index);
 		assetPtr<StaticMesh> craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
 
