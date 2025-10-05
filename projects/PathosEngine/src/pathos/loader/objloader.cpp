@@ -142,6 +142,8 @@ namespace pathos {
 				}
 			}
 
+			preloadMaterialResources(i);
+
 			assetPtr<Material> M;
 			if (overrideIx != -1) {
 				M = materialOverrides[overrideIx].second;
@@ -429,12 +431,10 @@ namespace pathos {
 		return mesh;
 	}
 
-	assetPtr<Material> OBJLoader::craftMaterialFrom(size_t ix) {
-		// #todo-loader: More robust criteria
+	void OBJLoader::preloadMaterialResources(size_t ix) {
 		const tinyobj::material_t& t_mat = tiny_materials[ix];
 		bool isPBR = t_mat.diffuse_texname.length() > 0;
 
-		assetPtr<Material> M;
 		if (isPBR) {
 			auto getOrLoadImage = [&](const std::string& texname, ImageBlob** outBitmap) {
 				*outBitmap = nullptr;
@@ -470,8 +470,18 @@ namespace pathos {
 				bmp = cachedImageDB[image_path];
 			}
 
-			M = pathos::createPBRMaterial(gEngine->getSystemTexture2DGrey());
 			pendingTextureData.insert(std::make_pair(static_cast<int32>(ix), pending));
+		}
+	}
+
+	assetPtr<Material> OBJLoader::craftMaterialFrom(size_t ix) {
+		// #todo-loader: More robust criteria
+		const tinyobj::material_t& t_mat = tiny_materials[ix];
+		bool isPBR = t_mat.diffuse_texname.length() > 0;
+
+		assetPtr<Material> M;
+		if (isPBR) {
+			M = pathos::createPBRMaterial(gEngine->getSystemTexture2DGrey());
 		} else if (t_mat.dissolve < 1.0f
 			|| (0.0f <= t_mat.transmittance[0] && t_mat.transmittance[0] < 1.0f)
 			|| (0.0f <= t_mat.transmittance[1] && t_mat.transmittance[1] < 1.0f)

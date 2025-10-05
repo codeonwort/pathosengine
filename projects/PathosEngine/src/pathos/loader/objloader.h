@@ -99,6 +99,7 @@ namespace pathos {
 	private:
 		void analyzeMaterials();
 		void reconstructShapes();
+		void preloadMaterialResources(size_t materialIndex); // craftMaterialFrom might not be called due to materialOverrides, so ensure resources are always loaded.
 		assetPtr<Material> craftMaterialFrom(size_t materialIndex);
 		assetPtr<Material> getMaterial(int32 index);
 		assetPtr<StaticMesh> craftMesh(uint32 from, uint32 to, bool bMergeShapesIfSameMaterial = false); // both inclusive
